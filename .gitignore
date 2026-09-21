@@ -1,0 +1,50 @@
+# macOS metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Xcode: local user settings and window state
+xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+
+# Xcode / Swift build output and caches
+/build/
+/Build/
+/DerivedData/
+.build/
+.swiftpm/
+*.xcactivitylog
+*.xcresult
+
+# Archives, exported applications and debug symbols
+*.xcarchive
+*.ipa
+*.app
+*.dSYM
+*.dSYM.zip
+
+# Signing material: keep certificates and provisioning profiles outside Git
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+
+# Local environment values (keep example templates versioned)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Editor temporary files
+*.swp
+*.swo
+*~
+
+# Keep project.pbxproj, shared schemes, workspace settings, Package.resolved,
+# asset catalogs, Swift/Metal sources, entitlements and shared xcconfig files.
+
+# Duplicate of the app icon in Assets.xcassets
+/Pasted 2026-09-21 at 11.18.41 PM.png

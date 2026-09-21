@@ -1,0 +1,14 @@
+{
+  "images" : [
+    {
+      "filename" : "Pasted 2026-09-21 at 11.18.41 PM.png",
+      "idiom" : "universal",
+      "platform" : "watchos",
+      "size" : "1024x1024"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

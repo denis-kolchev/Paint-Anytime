@@ -6,11 +6,49 @@
 	objectVersion = 110;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		257D4058305EA358002072CB /* Paint All the Time (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint All the Time (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		257D4059305EA358002072CB /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 25AC818F305D90C700C8F69E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 257D4056305EA358002072CB;
+			remoteInfo = "Paint All the Time (Watch) Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		257D4064305EA359002072CB /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolder = Product;
+			files = (
+				257D4058305EA358002072CB /* Paint All the Time (Watch) Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		257D4052305EA358002072CB /* Paint All the Time (Watch).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint All the Time (Watch).app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		257D4057305EA358002072CB /* Paint All the Time (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint All the Time (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		25AC8197305D90C700C8F69E /* Paint All the Time.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint All the Time.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		2523992A3060233F00774395 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		257D405B305EA358002072CB /* Paint All the Time (Watch) Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Paint All the Time (Watch) Watch App";
+			sourceTree = "<group>";
+		};
 		25AC8199305D90C700C8F69E /* Paint All the Time */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Paint All the Time";
@@ -19,6 +57,11 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		257D4054305EA358002072CB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 		25AC8194305D90C700C8F69E /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
@@ -31,7 +74,9 @@
 			isa = PBXGroup;
 			children = (
 				25AC8199305D90C700C8F69E /* Paint All the Time */,
+				257D405B305EA358002072CB /* Paint All the Time (Watch) Watch App */,
 				25AC8198305D90C700C8F69E /* Products */,
+				2523992A3060233F00774395 /* Shared */,
 			);
 			sourceTree = "<group>";
 		};
@@ -39,6 +84,8 @@
 			isa = PBXGroup;
 			children = (
 				25AC8197305D90C700C8F69E /* Paint All the Time.app */,
+				257D4052305EA358002072CB /* Paint All the Time (Watch).app */,
+				257D4057305EA358002072CB /* Paint All the Time (Watch) Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -46,6 +93,42 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		257D4051305EA358002072CB /* Paint All the Time (Watch) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 257D4068305EA359002072CB /* Build configuration list for PBXNativeTarget "Paint All the Time (Watch)" */;
+			buildPhases = (
+				257D4050305EA358002072CB /* Resources */,
+				257D4064305EA359002072CB /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				257D405A305EA358002072CB /* PBXTargetDependency */,
+			);
+			name = "Paint All the Time (Watch)";
+			productName = "Paint All the Time (Watch)";
+			productReference = 257D4052305EA358002072CB /* Paint All the Time (Watch).app */;
+			productType = "com.apple.product-type.application.watchapp2-container";
+		};
+		257D4056305EA358002072CB /* Paint All the Time (Watch) Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 257D4067305EA359002072CB /* Build configuration list for PBXNativeTarget "Paint All the Time (Watch) Watch App" */;
+			buildPhases = (
+				257D4053305EA358002072CB /* Sources */,
+				257D4054305EA358002072CB /* Frameworks */,
+				257D4055305EA358002072CB /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				2523992A3060233F00774395 /* Shared */,
+				257D405B305EA358002072CB /* Paint All the Time (Watch) Watch App */,
+			);
+			name = "Paint All the Time (Watch) Watch App";
+			productName = "Paint All the Time (Watch) Watch App";
+			productReference = 257D4057305EA358002072CB /* Paint All the Time (Watch) Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 		25AC8196305D90C700C8F69E /* Paint All the Time */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 25AC81A2305D90C900C8F69E /* Build configuration list for PBXNativeTarget "Paint All the Time" */;
@@ -57,6 +140,7 @@
 			buildRules = (
 			);
 			fileSystemSynchronizedGroups = (
+				2523992A3060233F00774395 /* Shared */,
 				25AC8199305D90C700C8F69E /* Paint All the Time */,
 			);
 			name = "Paint All the Time";
@@ -74,6 +158,12 @@
 				LastSwiftUpdateCheck = 2700;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
+					257D4051305EA358002072CB = {
+						CreatedOnToolsVersion = 27.0;
+					};
+					257D4056305EA358002072CB = {
+						CreatedOnToolsVersion = 27.0;
+					};
 					25AC8196305D90C700C8F69E = {
 						CreatedOnToolsVersion = 27.0;
 					};
@@ -94,11 +184,23 @@
 			projectRoot = "";
 			targets = (
 				25AC8196305D90C700C8F69E /* Paint All the Time */,
+				257D4051305EA358002072CB /* Paint All the Time (Watch) */,
+				257D4056305EA358002072CB /* Paint All the Time (Watch) Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		257D4050305EA358002072CB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		257D4055305EA358002072CB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 		25AC8195305D90C700C8F69E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
@@ -107,6 +209,11 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		257D4053305EA358002072CB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 		25AC8193305D90C700C8F69E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -114,7 +221,119 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		257D405A305EA358002072CB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 257D4056305EA358002072CB /* Paint All the Time (Watch) Watch App */;
+			targetProxy = 257D4059305EA358002072CB /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		257D4062305EA359002072CB /* Debug configuration for PBXNativeTarget "Paint All the Time (Watch)" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q79J5YD4PU;
+				INFOPLIST_KEY_CFBundleDisplayName = "Paint All the Time (Watch)";
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "KolchevDenisOrg.Paint-All-the-Time--Watch-";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		257D4063305EA359002072CB /* Release configuration for PBXNativeTarget "Paint All the Time (Watch)" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q79J5YD4PU;
+				INFOPLIST_KEY_CFBundleDisplayName = "Paint All the Time (Watch)";
+				IPHONEOS_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "KolchevDenisOrg.Paint-All-the-Time--Watch-";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		257D4065305EA359002072CB /* Debug configuration for PBXNativeTarget "Paint All the Time (Watch) Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q79J5YD4PU;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Paint All the Time (Watch)";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "KolchevDenisOrg.Paint-All-the-Time--Watch-.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Debug;
+		};
+		257D4066305EA359002072CB /* Release configuration for PBXNativeTarget "Paint All the Time (Watch) Watch App" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q79J5YD4PU;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Paint All the Time (Watch)";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKWatchOnly = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "KolchevDenisOrg.Paint-All-the-Time--Watch-.watchkitapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = 27.0;
+			};
+			name = Release;
+		};
 		25AC81A0305D90C900C8F69E /* Debug configuration for PBXProject "Paint All the Time" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -302,6 +521,22 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		257D4067305EA359002072CB /* Build configuration list for PBXNativeTarget "Paint All the Time (Watch) Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				257D4065305EA359002072CB /* Debug configuration for PBXNativeTarget "Paint All the Time (Watch) Watch App" */,
+				257D4066305EA359002072CB /* Release configuration for PBXNativeTarget "Paint All the Time (Watch) Watch App" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		257D4068305EA359002072CB /* Build configuration list for PBXNativeTarget "Paint All the Time (Watch)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				257D4062305EA359002072CB /* Debug configuration for PBXNativeTarget "Paint All the Time (Watch)" */,
+				257D4063305EA359002072CB /* Release configuration for PBXNativeTarget "Paint All the Time (Watch)" */,
+			);
+			defaultConfigurationName = Release;
+		};
 		25AC8192305D90C700C8F69E /* Build configuration list for PBXProject "Paint All the Time" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
