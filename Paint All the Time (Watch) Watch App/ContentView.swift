@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var isMovingCanvas = false
     @State private var showsAppSettings = false
     @State private var showsGallery = false
+    @State private var canvasSessionID = UUID()
     @State private var canvasSize: CGSize = .zero
     @State private var savedDrawing: CanvasExport?
     @State private var photoTransferStatus = ""
@@ -30,6 +31,8 @@ struct ContentView: View {
                 if showsGallery {
                     SavedDrawingsView(onClose: { showsGallery = false }) { document in
                         controller.load(document)
+                        // Reset zoom, offset, and gesture state whenever a saved drawing opens.
+                        canvasSessionID = UUID()
                         isMovingCanvas = false
                         showsToolSettings = false
                         showsGallery = false
@@ -165,5 +168,6 @@ struct ContentView: View {
 
     private var drawingPage: some View {
         WatchCanvasView(controller: controller, acceptsInput: !showsToolSettings && !showsAppSettings && !showsGallery && savedDrawing == nil, isMovingCanvas: $isMovingCanvas)
+            .id(canvasSessionID)
     }
 }
