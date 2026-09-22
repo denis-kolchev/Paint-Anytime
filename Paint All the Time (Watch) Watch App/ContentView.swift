@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var showsGallery = false
     @State private var canvasSessionID = UUID()
     @State private var canvasSize: CGSize = .zero
+    @State private var canvasControlFrames: [CanvasToolbarControl: CGRect] = [:]
     @State private var savedDrawing: CanvasExport?
     @State private var pendingCanvasAction: PendingCanvasAction?
     @State private var photoTransferStatus = ""
@@ -61,18 +62,21 @@ struct ContentView: View {
                         BroomIcon()
                     }
                     .accessibilityLabel("Очистить холст")
+                    .trackCanvasControl(.clear, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
                     Button { controller.undo() } label: {
                         Image(systemName: "arrow.uturn.backward")
                     }
                     .disabled(!controller.canUndo)
                     .accessibilityLabel("Отменить")
+                    .trackCanvasControl(.undo, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
                     Button { controller.redo() } label: {
                         Image(systemName: "arrow.uturn.forward")
                     }
                     .disabled(!controller.canRedo)
                     .accessibilityLabel("Повторить")
+                    .trackCanvasControl(.redo, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
                     Button {
                         do {
@@ -90,6 +94,7 @@ struct ContentView: View {
                         Image(systemName: "square.and.arrow.down")
                     }
                     .accessibilityLabel("Сохранить рисунок")
+                    .trackCanvasControl(.save, frames: $canvasControlFrames)
                 }
             }
 
@@ -114,6 +119,7 @@ struct ContentView: View {
                     }
                     .buttonStyle(.automatic)
                     .accessibilityLabel("Дополнительно")
+                    .trackCanvasControl(.more, frames: $canvasControlFrames)
                 }
             }
             if !showsGallery && (showsToolSettings || controller.activeStroke == nil) {
@@ -135,6 +141,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.automatic)
                 .accessibilityLabel(showsToolSettings || isMovingCanvas ? "Готово" : "Настройки инструмента")
+                .trackCanvasControl(.tools, frames: $canvasControlFrames)
             }
             }
         }
@@ -172,8 +179,15 @@ struct ContentView: View {
     }
 
     private var drawingPage: some View {
-        WatchCanvasView(controller: controller, acceptsInput: !showsToolSettings && !showsAppSettings && !showsGallery && savedDrawing == nil && pendingCanvasAction == nil, isMovingCanvas: $isMovingCanvas)
+        WatchCanvasView(controller: controller, acceptsInput: !showsToolSettings && !showsAppSettings && !showsGallery && savedDrawing == nil && pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas)
             .id(canvasSessionID)
+    }
+
+    private var protectedCanvasControls: [CanvasToolbarControl: CGRect] {
+        guard !showsGallery && !showsToolSettings && controller.activeStroke == nil else { return [:] }
+        return canvasControlFrames.filter { control, _ in
+            !isMovingCanvas || control == .tools
+        }
     }
 
     private func requestCanvasAction(_ action: PendingCanvasAction) {
@@ -215,6 +229,18 @@ struct ContentView: View {
             case .clear: "Очистить холст?"
             case .open: "Очистить предыдущий несохранённый холст?"
             }
+        }
+    }
+}
+
+private extension View {
+    func trackCanvasControl(_ control: CanvasToolbarControl,
+                            frames: Binding<[CanvasToolbarControl: CGRect]>) -> some View {
+        onGeometryChange(for: CGRect.self) { geometry in
+            // Toolbar items and the canvas have different local coordinate spaces.
+            geometry.frame(in: .global)
+        } action: { frame in
+            frames.wrappedValue[control] = frame
         }
     }
 }

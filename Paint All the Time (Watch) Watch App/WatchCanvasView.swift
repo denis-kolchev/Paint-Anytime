@@ -8,13 +8,19 @@
 import SwiftUI
 import WatchKit
 
+enum CanvasToolbarControl: Hashable {
+    case more, tools, clear, undo, redo, save
+}
+
 struct WatchCanvasView: View {
     @ObservedObject var controller: CanvasController
     var acceptsInput = true
+    var protectedControls: [CanvasToolbarControl: CGRect] = [:]
     @Binding var isMovingCanvas: Bool
     @State private var crownZoom = 1.0
     @State private var offset = CGSize.zero
     @State private var panOrigin: CGSize?
+    @State private var acceptsCurrentGesture: Bool?
     @GestureState private var isDragging = false
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
     @FocusState private var crownFocused: Bool
@@ -38,6 +44,12 @@ struct WatchCanvasView: View {
                     .updating($isDragging) { _, state, _ in state = true }
                     .onChanged { value in
                         guard acceptsInput else { return }
+                        if acceptsCurrentGesture == nil {
+                            acceptsCurrentGesture = !isProtectedStart(value.startLocation,
+                                canvasFrame: geometry.frame(in: .global))
+                        }
+                        // Keep the initial decision even when controls hide or the finger moves away.
+                        guard acceptsCurrentGesture == true else { return }
                         if isMovingCanvas {
                             if panOrigin == nil { panOrigin = offset }
                             let origin = panOrigin ?? offset
@@ -63,6 +75,8 @@ struct WatchCanvasView: View {
                             at: canvasPoint(value.location, size: geometry.size), time: value.time))
                     }
                     .onEnded { value in
+                        defer { acceptsCurrentGesture = nil; panOrigin = nil }
+                        guard acceptsInput && acceptsCurrentGesture == true else { return }
                         if isMovingCanvas { panOrigin = nil; return }
                         guard controller.activeStroke != nil else { return }
                         controller.endStroke(at: sample(
@@ -88,7 +102,10 @@ struct WatchCanvasView: View {
         .accessibilityValue("Масштаб \(Int(zoom * 100)) процентов")
         .onAppear { crownFocused = acceptsInput }
         .onChange(of: isDragging) { _, dragging in
-            if !dragging { panOrigin = nil }
+            if !dragging {
+                panOrigin = nil
+                acceptsCurrentGesture = nil
+            }
         }
         .onChange(of: isMovingCanvas) { _, moving in
             panOrigin = nil
@@ -100,6 +117,28 @@ struct WatchCanvasView: View {
             if !enabled { controller.cancelStroke() }
         }
         .onDisappear { controller.cancelStroke() }
+    }
+
+    private func isProtectedStart(_ point: CGPoint, canvasFrame: CGRect) -> Bool {
+        let screenPoint = CGPoint(x: canvasFrame.minX + point.x, y: canvasFrame.minY + point.y)
+        for (control, frame) in protectedControls {
+            guard !frame.isNull && !frame.isEmpty else { continue }
+            // Include the full touch target even if the toolbar reports only the icon bounds.
+            let target = CGRect(x: frame.midX - max(44, frame.width) / 2,
+                                y: frame.midY - max(44, frame.height) / 2,
+                                width: max(44, frame.width), height: max(44, frame.height))
+                .insetBy(dx: -8, dy: -8)
+            switch control {
+            case .more:
+                if screenPoint.x <= target.maxX && screenPoint.y <= target.maxY { return true }
+            case .tools:
+                if screenPoint.x >= target.minX && screenPoint.y <= target.maxY { return true }
+            case .clear, .undo, .redo, .save:
+                // Protect the gaps between bottom buttons and the space down to the screen edge.
+                if screenPoint.y >= target.minY { return true }
+            }
+        }
+        return false
     }
 
     private func canvasPoint(_ point: CGPoint, size: CGSize) -> CGPoint {
