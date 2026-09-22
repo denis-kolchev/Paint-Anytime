@@ -49,14 +49,14 @@
 			path = "Paint All the Time (Watch) Watch App";
 			sourceTree = "<group>";
 		};
-		A10000050000000000000005 /* Paint Anytime iPhone */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Paint Anytime iPhone";
-			sourceTree = "<group>";
-		};
 		25AC8199305D90C700C8F69E /* Paint All the Time */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Paint All the Time";
+			sourceTree = "<group>";
+		};
+		A10000050000000000000005 /* Paint Anytime iPhone */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Paint Anytime iPhone";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -260,10 +260,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "KolchevDenisOrg.Paint-All-the-Time--Watch-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -282,10 +282,10 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "KolchevDenisOrg.Paint-All-the-Time--Watch-";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
