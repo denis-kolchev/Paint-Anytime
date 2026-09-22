@@ -119,6 +119,8 @@ enum CanvasExportStore {
 
 struct SavedDrawingView: View {
     let drawing: CanvasExport
+    @State var photoTransferStatus: String
+    @State var canRetryPhotoTransfer: Bool
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
@@ -127,6 +129,16 @@ struct SavedDrawingView: View {
                 }
                 ShareLink(item: drawing.url, preview: SharePreview("Paint All the Time", image: Image(systemName: "photo"))) {
                     Label("Поделиться", systemImage: "square.and.arrow.up")
+                }
+                Text(photoTransferStatus).font(.caption2)
+                if canRetryPhotoTransfer {
+                    Button("Повторить отправку на iPhone") {
+                        let queued = WatchPhotoTransfer.shared.queue(drawing.url)
+                        canRetryPhotoTransfer = !queued
+                        photoTransferStatus = queued
+                        ? "Рисунок отправляется в Фото на iPhone."
+                        : "Приложение на iPhone пока недоступно."
+                    }
                 }
                 Text(drawing.url.lastPathComponent).font(.caption2)
             }
@@ -212,22 +224,18 @@ struct SavedDrawingsView: View {
                         .allowsHitTesting(false)
                 }
 
-                Button(action: goBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.headline)
-                        .frame(width: 38, height: 38)
-                        .background(.black.opacity(selectedDrawing == nil ? 0.35 : 0.7), in: Circle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Назад")
-                .padding(.leading, 8)
-                .padding(.top, max(20, geometry.safeAreaInsets.top))
-                .zIndex(2)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .ignoresSafeArea()
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: goBack) {
+                    Image(systemName: "chevron.left")
+                }
+                .buttonStyle(.automatic)
+                .accessibilityLabel("Назад")
+            }
             if let selectedDrawing {
                 ToolbarItemGroup(placement: .bottomBar) {
                     Button(role: .destructive) { deleteDrawing(selectedDrawing) } label: {

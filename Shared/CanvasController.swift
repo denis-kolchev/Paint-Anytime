@@ -16,21 +16,12 @@ final class CanvasController: ObservableObject {
 
     var maximumWidth: Float { pencilStyle.instrument.maximumWidth }
 
-    func setSynchronizeAll(_ enabled: Bool) {
-        synchronization.all = enabled
-        synchronization.width = enabled
-        synchronization.color = enabled
-        synchronizationChanged()
-    }
-
     func setSynchronizeWidth(_ enabled: Bool) {
-        guard !synchronization.all else { return }
         synchronization.width = enabled
         synchronizationChanged()
     }
 
     func setSynchronizeColor(_ enabled: Bool) {
-        guard !synchronization.all else { return }
         synchronization.color = enabled
         synchronizationChanged()
     }
@@ -213,7 +204,6 @@ final class CanvasController: ObservableObject {
 }
 
 struct ToolSynchronization: Codable {
-    var all = false
     var width = false
     var color = false
     var sharedWidth: Float = 4

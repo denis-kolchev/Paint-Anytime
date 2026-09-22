@@ -24,23 +24,18 @@ private struct ToolSynchronizationView: View {
 
     var body: some View {
         List {
-            Toggle("Синхронизировать всё", isOn: Binding(
-                get: { controller.synchronization.all },
-                set: { controller.setSynchronizeAll($0) }
-            ))
             Section {
-                Toggle("Только толщину", isOn: Binding(
+                Toggle("Общая толщина", isOn: Binding(
                     get: { controller.synchronization.width },
                     set: { controller.setSynchronizeWidth($0) }
                 ))
-                Toggle("Только цвет", isOn: Binding(
+                Toggle("Общий цвет", isOn: Binding(
                     get: { controller.synchronization.color },
                     set: { controller.setSynchronizeColor($0) }
                 ))
             } footer: {
                 Text("Выбранные параметры общие для инструментов. Цвет не применяется к ластику.")
             }
-            .disabled(controller.synchronization.all)
         }
         .navigationTitle("Синхронизация")
     }

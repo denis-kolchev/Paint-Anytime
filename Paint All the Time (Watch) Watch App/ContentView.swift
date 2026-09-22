@@ -8,6 +8,8 @@ struct ContentView: View {
     @State private var showsGallery = false
     @State private var canvasSize: CGSize = .zero
     @State private var savedDrawing: CanvasExport?
+    @State private var photoTransferStatus = ""
+    @State private var photoTransferCanRetry = false
     @State private var exportError: String?
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
@@ -75,8 +77,14 @@ struct ContentView: View {
                     Spacer(minLength: 0)
                     Button {
                         do {
-                            savedDrawing = try CanvasExportStore.save(
+                            let drawing = try CanvasExportStore.save(
                                 strokes: controller.document.strokes, size: canvasSize, scale: displayScale)
+                            let queued = WatchPhotoTransfer.shared.queue(drawing.url)
+                            photoTransferCanRetry = !queued
+                            photoTransferStatus = queued
+                                ? "Рисунок отправляется в Фото на iPhone."
+                                : "Рисунок сохранён на часах. Для отправки в Фото откройте приложение на iPhone."
+                            savedDrawing = drawing
                         } catch { exportError = error.localizedDescription }
                     } label: {
                         Image(systemName: "square.and.arrow.down")
@@ -138,7 +146,10 @@ struct ContentView: View {
             }
         }
         .sheet(item: $savedDrawing) { drawing in
-            NavigationStack { SavedDrawingView(drawing: drawing) }
+            NavigationStack {
+                SavedDrawingView(drawing: drawing, photoTransferStatus: photoTransferStatus,
+                                 canRetryPhotoTransfer: photoTransferCanRetry)
+            }
         }
         .alert("Не удалось сохранить", isPresented: Binding(
             get: { exportError != nil }, set: { if !$0 { exportError = nil } }
