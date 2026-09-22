@@ -1,5 +1,33 @@
 import SwiftUI
 
+struct BroomIcon: View {
+    var body: some View {
+        Canvas { context, size in
+            var drawing = context
+            drawing.scaleBy(x: size.width / 24, y: size.height / 24)
+            var path = Path()
+            // Diagonal handle and flared bristles.
+            path.move(to: CGPoint(x: 21, y: 3))
+            path.addLine(to: CGPoint(x: 12, y: 12))
+            path.move(to: CGPoint(x: 10, y: 10))
+            path.addLine(to: CGPoint(x: 14, y: 14))
+            path.addLine(to: CGPoint(x: 10, y: 22))
+            path.addLine(to: CGPoint(x: 2, y: 14))
+            path.closeSubpath()
+            path.move(to: CGPoint(x: 7, y: 11.5))
+            path.addLine(to: CGPoint(x: 12.5, y: 17))
+            path.move(to: CGPoint(x: 8, y: 15))
+            path.addLine(to: CGPoint(x: 5, y: 17))
+            path.move(to: CGPoint(x: 10, y: 17))
+            path.addLine(to: CGPoint(x: 8, y: 20))
+            drawing.stroke(path, with: .color(.primary),
+                           style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
+        }
+        .frame(width: 22, height: 22)
+        .accessibilityHidden(true)
+    }
+}
+
 // Upright tool tips, rather than the diagonal editing/pencil action symbol.
 struct ToolIcon: View {
     let instrument: DrawingInstrument

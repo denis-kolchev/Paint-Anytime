@@ -1,7 +1,7 @@
 import Foundation
 import simd
 
-struct PointerSample: Codable {
+struct PointerSample: Codable, Equatable {
     var position: SIMD2<Float>
     var pressure: Float
     var timestamp: TimeInterval
@@ -50,7 +50,7 @@ enum EraserMode: Int, Codable, CaseIterable {
     var title: String { self == .pixels ? "Ластик пикселей" : "Ластик объектов" }
 }
 
-struct PencilStyle: Codable {
+struct PencilStyle: Codable, Equatable {
     var instrument: DrawingInstrument = .monoline
     var color = SIMD4<Float>(0, 0, 0, 1)
     var width: Float = 4
@@ -83,11 +83,11 @@ struct PencilStyle: Codable {
     }
 }
 
-struct Stroke: Codable {
+struct Stroke: Codable, Equatable {
     var points: [PointerSample]
     let style: PencilStyle
 }
 
-struct CanvasDocument: Codable {
+struct CanvasDocument: Codable, Equatable {
     var strokes: [Stroke] = []
 }

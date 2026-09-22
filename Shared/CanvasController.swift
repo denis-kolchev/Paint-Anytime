@@ -51,6 +51,9 @@ final class CanvasController: ObservableObject {
     }
 
     private(set) var document = CanvasDocument()
+    private var savedDocument = CanvasDocument()
+    var hasUnsavedChanges: Bool { document != savedDocument }
+    var needsDiscardConfirmation: Bool { !document.strokes.isEmpty && hasUnsavedChanges }
     private let pencil = PencilTool()
     private let defaults: UserDefaults
     private var savedStyles: [Int: PencilStyle]
@@ -150,7 +153,13 @@ final class CanvasController: ObservableObject {
         undoStack.removeAll()
         redoStack.removeAll()
         document = savedDocument
+        self.savedDocument = savedDocument
         onNeedsDisplay?()
+    }
+
+    func markSaved() {
+        objectWillChange.send()
+        savedDocument = document
     }
 
     func clear() {

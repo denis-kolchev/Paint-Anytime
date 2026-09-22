@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var canvasSessionID = UUID()
     @State private var canvasSize: CGSize = .zero
     @State private var savedDrawing: CanvasExport?
+    @State private var pendingCanvasAction: PendingCanvasAction?
     @State private var photoTransferStatus = ""
     @State private var photoTransferCanRetry = false
     @State private var exportError: String?
@@ -30,12 +31,7 @@ struct ContentView: View {
 
                 if showsGallery {
                     SavedDrawingsView(onClose: { showsGallery = false }) { document in
-                        controller.load(document)
-                        // Reset zoom, offset, and gesture state whenever a saved drawing opens.
-                        canvasSessionID = UUID()
-                        isMovingCanvas = false
-                        showsToolSettings = false
-                        showsGallery = false
+                        requestCanvasAction(.open(document))
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .zIndex(2)
@@ -61,8 +57,8 @@ struct ContentView: View {
         .toolbar {
             if !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Button(role: .destructive) { controller.clear() } label: {
-                        Image(systemName: "trash")
+                    Button { requestCanvasAction(.clear) } label: {
+                        BroomIcon()
                     }
                     .accessibilityLabel("Очистить холст")
                     Spacer(minLength: 0)
@@ -82,6 +78,7 @@ struct ContentView: View {
                         do {
                             let drawing = try CanvasExportStore.save(
                                 strokes: controller.document.strokes, size: canvasSize, scale: displayScale)
+                            controller.markSaved()
                             let queued = WatchPhotoTransfer.shared.queue(drawing.url)
                             photoTransferCanRetry = !queued
                             photoTransferStatus = queued
@@ -154,6 +151,14 @@ struct ContentView: View {
                                  canRetryPhotoTransfer: photoTransferCanRetry)
             }
         }
+        .fullScreenCover(item: $pendingCanvasAction) { action in
+            DestructiveConfirmationView(title: action.title, confirmTitle: "Очистить") {
+                pendingCanvasAction = nil
+            } onConfirm: {
+                pendingCanvasAction = nil
+                performCanvasAction(action)
+            }
+        }
         .alert("Не удалось сохранить", isPresented: Binding(
             get: { exportError != nil }, set: { if !$0 { exportError = nil } }
         )) {
@@ -167,7 +172,88 @@ struct ContentView: View {
     }
 
     private var drawingPage: some View {
-        WatchCanvasView(controller: controller, acceptsInput: !showsToolSettings && !showsAppSettings && !showsGallery && savedDrawing == nil, isMovingCanvas: $isMovingCanvas)
+        WatchCanvasView(controller: controller, acceptsInput: !showsToolSettings && !showsAppSettings && !showsGallery && savedDrawing == nil && pendingCanvasAction == nil, isMovingCanvas: $isMovingCanvas)
             .id(canvasSessionID)
+    }
+
+    private func requestCanvasAction(_ action: PendingCanvasAction) {
+        controller.cancelStroke()
+        if controller.needsDiscardConfirmation {
+            pendingCanvasAction = action
+        } else {
+            performCanvasAction(action)
+        }
+    }
+
+    private func performCanvasAction(_ action: PendingCanvasAction) {
+        switch action {
+        case .clear:
+            controller.clear()
+        case .open(let document):
+            controller.load(document)
+            // Reset zoom, offset, and gesture state whenever a saved drawing opens.
+            canvasSessionID = UUID()
+            isMovingCanvas = false
+            showsToolSettings = false
+            showsGallery = false
+        }
+    }
+
+    private enum PendingCanvasAction: Identifiable {
+        case clear
+        case open(CanvasDocument)
+
+        var id: Int {
+            switch self {
+            case .clear: 0
+            case .open: 1
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .clear: "Очистить холст?"
+            case .open: "Очистить предыдущий несохранённый холст?"
+            }
+        }
+    }
+}
+
+struct DestructiveConfirmationView: View {
+    let title: String
+    let confirmTitle: String
+    var onCancel: () -> Void
+    var onConfirm: () -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                Text(title)
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: 8) {
+                    Button(action: onCancel) {
+                        Text("Нет")
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    }
+                    .buttonStyle(.glass)
+
+                    Button(role: .destructive, action: onConfirm) {
+                        Text(confirmTitle)
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    }
+                    .buttonStyle(.glass(.regular.tint(.red.opacity(0.2))))
+                    .foregroundStyle(.red)
+                }
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 16)
+        }
+        .background(.black)
     }
 }

@@ -157,6 +157,8 @@ struct SavedDrawingsView: View {
     @State private var crownPosition = 0.0
     @State private var selectedDrawing: CanvasExport?
     @State private var focusedDrawing: CanvasExport?
+    @State private var pendingDeletion: CanvasExport?
+    @State private var confirmedDeletion: CanvasExport?
     @FocusState private var crownFocused: Bool
 
     private var columnCount: Int { zoomLevel == 0 ? 5 : 3 }
@@ -238,7 +240,10 @@ struct SavedDrawingsView: View {
             }
             if let selectedDrawing {
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Button(role: .destructive) { deleteDrawing(selectedDrawing) } label: {
+                    Button(role: .destructive) {
+                        crownFocused = false
+                        pendingDeletion = selectedDrawing
+                    } label: {
                         Image(systemName: "trash")
                     }
                     .accessibilityLabel("Удалить рисунок")
@@ -250,16 +255,32 @@ struct SavedDrawingsView: View {
                 }
             }
         }
-        .focusable(true)
+        .focusable(pendingDeletion == nil)
         .focused($crownFocused)
         .digitalCrownRotation($crownPosition, from: 0, through: 2, by: 1,
                               sensitivity: .low, isContinuous: false,
                               isHapticFeedbackEnabled: false)
         .onChange(of: crownPosition) { _, position in
+            guard pendingDeletion == nil else { return }
             let next = min(2, max(0, Int(position.rounded())))
             guard next != zoomLevel else { return }
             if next == 2, let drawing = focusedDrawing ?? drawings.first { open(drawing) }
             else { setZoom(next) }
+        }
+        .fullScreenCover(item: $pendingDeletion, onDismiss: {
+            crownFocused = true
+            // Delete after dismissal so any error can appear over the gallery.
+            if let drawing = confirmedDeletion {
+                confirmedDeletion = nil
+                deleteDrawing(drawing)
+            }
+        }) { drawing in
+            DestructiveConfirmationView(title: "Удалить изображение?", confirmTitle: "Удалить") {
+                pendingDeletion = nil
+            } onConfirm: {
+                confirmedDeletion = drawing
+                pendingDeletion = nil
+            }
         }
         .alert("Ошибка", isPresented: Binding(
             get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } }
