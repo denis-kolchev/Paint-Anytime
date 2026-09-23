@@ -9,11 +9,17 @@ import SwiftUI
 
 @main
 struct Paint_All_the_Time__Watch__Watch_AppApp: App {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+
     init() { WatchPhotoTransfer.shared.start() }
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(\.locale, Locale(identifier: AppLanguage.currentCode))
+                .environment(\.layoutDirection,
+                             Locale.Language(identifier: AppLanguage.currentCode).characterDirection == .rightToLeft
+                             ? .rightToLeft : .leftToRight)
         }
     }
 }

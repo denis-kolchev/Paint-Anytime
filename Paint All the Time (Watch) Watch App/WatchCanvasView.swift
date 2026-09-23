@@ -13,6 +13,7 @@ enum CanvasToolbarControl: Hashable {
 }
 
 struct WatchCanvasView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
     var acceptsInput = true
     var protectedControls: [CanvasToolbarControl: CGRect] = [:]
@@ -98,8 +99,8 @@ struct WatchCanvasView: View {
             }
         ), from: 0.25, through: 4, by: 0.05, sensitivity: .low,
            isContinuous: false, isHapticFeedbackEnabled: false)
-        .accessibilityLabel(isMovingCanvas ? "Перемещение холста" : "Холст для рисования пальцем")
-        .accessibilityValue("Масштаб \(Int(zoom * 100)) процентов")
+        .accessibilityLabel(isMovingCanvas ? L10n.text("Moving canvas") : L10n.text("Finger drawing canvas"))
+        .accessibilityValue(L10n.format("Zoom %d percent", Int(zoom * 100)))
         .onAppear { crownFocused = acceptsInput }
         .onChange(of: isDragging) { _, dragging in
             if !dragging {

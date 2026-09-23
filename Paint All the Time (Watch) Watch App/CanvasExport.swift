@@ -96,11 +96,12 @@ enum CanvasExportStore {
 
     enum ExportError: LocalizedError {
         case render, encoding
-        var errorDescription: String? { "Не удалось сохранить изображение холста. Попробуйте ещё раз." }
+        var errorDescription: String? { L10n.text("Could not save the canvas image. Please try again.") }
     }
 }
 
 struct SavedDrawingView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     let drawing: CanvasExport
     @State var photoTransferStatus: String
     @State var canRetryPhotoTransfer: Bool
@@ -111,27 +112,28 @@ struct SavedDrawingView: View {
                     Image(uiImage: image).resizable().scaledToFit()
                 }
                 ShareLink(item: drawing.url, preview: SharePreview("Paint All the Time", image: Image(systemName: "photo"))) {
-                    Label("Поделиться", systemImage: "square.and.arrow.up")
+                    Label(L10n.text("Share"), systemImage: "square.and.arrow.up")
                 }
                 Text(photoTransferStatus).font(.caption2)
                 if canRetryPhotoTransfer {
-                    Button("Повторить отправку на iPhone") {
+                    Button(L10n.text("Retry sending to iPhone")) {
                         let queued = WatchPhotoTransfer.shared.queue(drawing.url)
                         canRetryPhotoTransfer = !queued
                         photoTransferStatus = queued
-                        ? "Рисунок отправляется в Фото на iPhone."
-                        : "Приложение на iPhone пока недоступно."
+                        ? L10n.text("Your drawing is being sent to Photos on iPhone.")
+                        : L10n.text("The iPhone app is currently unavailable.")
                     }
                 }
                 Text(drawing.url.lastPathComponent).font(.caption2)
             }
             .padding(.horizontal)
         }
-        .navigationTitle("Сохранено")
+        .navigationTitle(L10n.text("Saved"))
     }
 }
 
 struct SavedDrawingsView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     var onClose: () -> Void
     var onEditDrawing: (CanvasDocument) -> Void
     @State private var drawings: [CanvasExport] = []
@@ -172,7 +174,7 @@ struct SavedDrawingsView: View {
                         if let errorMessage {
                             Text(errorMessage).foregroundStyle(.red).padding()
                         } else if drawings.isEmpty {
-                            ContentUnavailableView("Нет рисунков", systemImage: "photo.on.rectangle")
+                            ContentUnavailableView(L10n.text("No drawings"), systemImage: "photo.on.rectangle")
                         } else {
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnCount), spacing: spacing) {
                                 ForEach(drawings) { drawing in
@@ -194,7 +196,7 @@ struct SavedDrawingsView: View {
                                             if zoomLevel == 0 { setZoom(1) }
                                             else { open(drawing) }
                                         }
-                                        .accessibilityLabel("Открыть рисунок")
+                                        .accessibilityLabel(L10n.text("Open drawing"))
                                         .id(drawing.id)
                                 }
                             }
@@ -281,7 +283,7 @@ struct SavedDrawingsView: View {
                 guard !Task.isCancelled, selectedDrawing?.url == request.url else { return }
                 guard let bitmap else {
                     returnToGrid()
-                    errorMessage = "Не удалось открыть изображение."
+                    errorMessage = L10n.text("Could not open the image.")
                     return
                 }
                 transitionBitmap = bitmap
@@ -300,7 +302,7 @@ struct SavedDrawingsView: View {
                 }
                 .buttonStyle(.automatic)
                 .disabled(isTransitioning)
-                .accessibilityLabel("Назад")
+                .accessibilityLabel(L10n.text("Back"))
             }
             if showsFullscreen && !isTransitioning, let selectedDrawing {
                 ToolbarItemGroup(placement: .bottomBar) {
@@ -311,13 +313,13 @@ struct SavedDrawingsView: View {
                         Image(systemName: "trash")
                     }
                     .disabled(isTransitioning)
-                    .accessibilityLabel("Удалить рисунок")
+                    .accessibilityLabel(L10n.text("Delete drawing"))
                     Spacer()
                     Button { editDrawing(selectedDrawing) } label: {
                         Image(systemName: "pencil")
                     }
                     .disabled(isTransitioning)
-                    .accessibilityLabel("Изменить рисунок")
+                    .accessibilityLabel(L10n.text("Edit drawing"))
                 }
             }
         }
@@ -342,16 +344,16 @@ struct SavedDrawingsView: View {
                 deleteDrawing(drawing)
             }
         }) { drawing in
-            DestructiveConfirmationView(title: "Удалить изображение?", confirmTitle: "Удалить") {
+            DestructiveConfirmationView(title: L10n.text("Delete the image?"), confirmTitle: L10n.text("Delete")) {
                 pendingDeletion = nil
             } onConfirm: {
                 confirmedDeletion = drawing
                 pendingDeletion = nil
             }
         }
-        .alert("Ошибка", isPresented: Binding(
+        .alert(L10n.text("Error"), isPresented: Binding(
             get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } }
-        )) { Button("ОК", role: .cancel) { errorMessage = nil } }
+        )) { Button(L10n.text("OK"), role: .cancel) { errorMessage = nil } }
         message: { Text(errorMessage ?? "") }
         .onAppear { crownFocused = true; reload() }
     }
@@ -503,7 +505,7 @@ struct SavedDrawingsView: View {
         do {
             onEditDrawing(try CanvasExportStore.loadDocument(for: drawing))
         } catch {
-            errorMessage = "Этот рисунок сохранён без данных штрихов и не может быть восстановлен для редактирования."
+            errorMessage = L10n.text("This drawing was saved without stroke data and cannot be restored for editing.")
         }
     }
 

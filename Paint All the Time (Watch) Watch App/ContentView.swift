@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @StateObject private var controller = CanvasController()
     @State private var showsToolSettings = false
     @State private var isMovingCanvas = false
@@ -61,21 +62,21 @@ struct ContentView: View {
                     Button { requestCanvasAction(.clear) } label: {
                         BroomIcon()
                     }
-                    .accessibilityLabel("Очистить холст")
+                    .accessibilityLabel(L10n.text("Clear canvas"))
                     .trackCanvasControl(.clear, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
                     Button { controller.undo() } label: {
                         Image(systemName: "arrow.uturn.backward")
                     }
                     .disabled(!controller.canUndo)
-                    .accessibilityLabel("Отменить")
+                    .accessibilityLabel(L10n.text("Undo"))
                     .trackCanvasControl(.undo, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
                     Button { controller.redo() } label: {
                         Image(systemName: "arrow.uturn.forward")
                     }
                     .disabled(!controller.canRedo)
-                    .accessibilityLabel("Повторить")
+                    .accessibilityLabel(L10n.text("Redo"))
                     .trackCanvasControl(.redo, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
                     Button {
@@ -86,14 +87,14 @@ struct ContentView: View {
                             let queued = WatchPhotoTransfer.shared.queue(drawing.url)
                             photoTransferCanRetry = !queued
                             photoTransferStatus = queued
-                                ? "Рисунок отправляется в Фото на iPhone."
-                                : "Рисунок сохранён на часах. Для отправки в Фото откройте приложение на iPhone."
+                                ? L10n.text("Your drawing is being sent to Photos on iPhone.")
+                                : L10n.text("Your drawing is saved on your watch. Open the iPhone app to send it to Photos.")
                             savedDrawing = drawing
                         } catch { exportError = error.localizedDescription }
                     } label: {
                         Image(systemName: "square.and.arrow.down")
                     }
-                    .accessibilityLabel("Сохранить рисунок")
+                    .accessibilityLabel(L10n.text("Save drawing"))
                     .trackCanvasControl(.save, frames: $canvasControlFrames)
                 }
             }
@@ -107,7 +108,7 @@ struct ContentView: View {
                             .foregroundStyle(.red)
                     }
                     .buttonStyle(.automatic)
-                    .accessibilityLabel("Закрыть настройки")
+                    .accessibilityLabel(L10n.text("Close settings"))
                 }
             } else if !showsGallery && !isMovingCanvas && controller.activeStroke == nil {
                 ToolbarItem(placement: .topBarLeading) {
@@ -118,7 +119,7 @@ struct ContentView: View {
                         Image(systemName: "ellipsis")
                     }
                     .buttonStyle(.automatic)
-                    .accessibilityLabel("Дополнительно")
+                    .accessibilityLabel(L10n.text("More"))
                     .trackCanvasControl(.more, frames: $canvasControlFrames)
                 }
             }
@@ -140,7 +141,7 @@ struct ContentView: View {
                     }
                 }
                 .buttonStyle(.automatic)
-                .accessibilityLabel(showsToolSettings || isMovingCanvas ? "Готово" : "Настройки инструмента")
+                .accessibilityLabel(showsToolSettings || isMovingCanvas ? L10n.text("Done") : L10n.text("Tool settings"))
                 .trackCanvasControl(.tools, frames: $canvasControlFrames)
             }
             }
@@ -159,17 +160,17 @@ struct ContentView: View {
             }
         }
         .fullScreenCover(item: $pendingCanvasAction) { action in
-            DestructiveConfirmationView(title: action.title, confirmTitle: "Очистить") {
+            DestructiveConfirmationView(title: action.title, confirmTitle: L10n.text("Clear")) {
                 pendingCanvasAction = nil
             } onConfirm: {
                 pendingCanvasAction = nil
                 performCanvasAction(action)
             }
         }
-        .alert("Не удалось сохранить", isPresented: Binding(
+        .alert(L10n.text("Could not save"), isPresented: Binding(
             get: { exportError != nil }, set: { if !$0 { exportError = nil } }
         )) {
-            Button("ОК", role: .cancel) { exportError = nil }
+            Button(L10n.text("OK"), role: .cancel) { exportError = nil }
         } message: {
             Text(exportError ?? "")
         }
@@ -226,8 +227,8 @@ struct ContentView: View {
 
         var title: String {
             switch self {
-            case .clear: "Очистить холст?"
-            case .open: "Очистить предыдущий несохранённый холст?"
+            case .clear: L10n.text("Clear the canvas?")
+            case .open: L10n.text("Discard the previous unsaved canvas?")
             }
         }
     }
@@ -246,6 +247,7 @@ private extension View {
 }
 
 struct DestructiveConfirmationView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     let title: String
     let confirmTitle: String
     var onCancel: () -> Void
@@ -261,7 +263,7 @@ struct DestructiveConfirmationView: View {
 
                 HStack(spacing: 8) {
                     Button(action: onCancel) {
-                        Text("Нет")
+                        Text(L10n.text("No"))
                             .frame(maxWidth: .infinity, minHeight: 32)
                     }
                     .buttonStyle(.glass)

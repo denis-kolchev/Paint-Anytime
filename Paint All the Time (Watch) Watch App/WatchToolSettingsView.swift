@@ -9,23 +9,27 @@ private struct InkPreset {
               blue: Double(rgba.z), opacity: Double(rgba.w))
     }
 
-    static let all: [InkPreset] = [
-        .init(name: "Чёрный", rgba: SIMD4(0, 0, 0, 1)),
-        .init(name: "Серый", rgba: SIMD4(0.45, 0.45, 0.48, 1)),
-        .init(name: "Красный", rgba: SIMD4(0.95, 0.18, 0.22, 1)),
-        .init(name: "Оранжевый", rgba: SIMD4(1, 0.5, 0.1, 1)),
-        .init(name: "Жёлтый", rgba: SIMD4(1, 0.8, 0.1, 1)),
-        .init(name: "Зелёный", rgba: SIMD4(0.2, 0.7, 0.35, 1)),
-        .init(name: "Голубой", rgba: SIMD4(0.15, 0.7, 0.9, 1)),
-        .init(name: "Синий", rgba: SIMD4(0.15, 0.35, 0.95, 1)),
-        .init(name: "Фиолетовый", rgba: SIMD4(0.6, 0.3, 0.85, 1)),
-        .init(name: "Розовый", rgba: SIMD4(0.95, 0.35, 0.65, 1)),
-        .init(name: "Коричневый", rgba: SIMD4(0.55, 0.32, 0.18, 1)),
-        .init(name: "Белый", rgba: SIMD4(1, 1, 1, 1))
-    ]
+    static var all: [InkPreset] {
+        let presets: [InkPreset] = [
+            .init(name: L10n.text("Black"), rgba: SIMD4(0, 0, 0, 1)),
+            .init(name: L10n.text("Gray"), rgba: SIMD4(0.45, 0.45, 0.48, 1)),
+            .init(name: L10n.text("Red"), rgba: SIMD4(0.95, 0.18, 0.22, 1)),
+            .init(name: L10n.text("Orange"), rgba: SIMD4(1, 0.5, 0.1, 1)),
+            .init(name: L10n.text("Yellow"), rgba: SIMD4(1, 0.8, 0.1, 1)),
+            .init(name: L10n.text("Green"), rgba: SIMD4(0.2, 0.7, 0.35, 1)),
+            .init(name: L10n.text("Light blue"), rgba: SIMD4(0.15, 0.7, 0.9, 1)),
+            .init(name: L10n.text("Blue"), rgba: SIMD4(0.15, 0.35, 0.95, 1)),
+            .init(name: L10n.text("Purple"), rgba: SIMD4(0.6, 0.3, 0.85, 1)),
+            .init(name: L10n.text("Pink"), rgba: SIMD4(0.95, 0.35, 0.65, 1)),
+            .init(name: L10n.text("Brown"), rgba: SIMD4(0.55, 0.32, 0.18, 1)),
+            .init(name: L10n.text("White"), rgba: SIMD4(1, 1, 1, 1))
+        ]
+        return presets.filter { AppReleaseFeatures.current.allowsColor($0.rgba) }
+    }
 }
 
 struct WatchToolSettingsView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
     let onClose: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -54,7 +58,7 @@ struct WatchToolSettingsView: View {
 
     private var valueTitle: String {
         switch selection {
-        case .width: "\(Int(controller.pencilStyle.width)) пт"
+        case .width: L10n.format("%d pt", Int(controller.pencilStyle.width))
         case .color: InkPreset.all[colorIndex].name
         case .instrument: controller.pencilStyle.instrument.title
         case .mode: controller.pencilStyle.eraserMode.title
@@ -76,11 +80,11 @@ struct WatchToolSettingsView: View {
         case width, color, instrument, mode, direction
         var title: String {
             switch self {
-            case .width: "Толщина"
-            case .color: "Цвет"
-            case .instrument: "Инструмент"
-            case .mode: "Режим"
-            case .direction: "Угол"
+            case .width: L10n.text("Width")
+            case .color: L10n.text("Color")
+            case .instrument: L10n.text("Tool")
+            case .mode: L10n.text("Mode")
+            case .direction: L10n.text("Angle")
             }
         }
     }
@@ -326,7 +330,7 @@ struct WatchToolSettingsView: View {
                     .frame(width: 40, height: 30)
             }
             .disabled(controller.pencilStyle.reedAngle >= 90)
-            .accessibilityLabel("Повернуть наконечник по часовой стрелке")
+            .accessibilityLabel(L10n.text("Rotate tip clockwise"))
 
             Circle()
                 .strokeBorder(.secondary, lineWidth: 1)
@@ -338,8 +342,8 @@ struct WatchToolSettingsView: View {
                         .rotationEffect(.degrees(Double(controller.pencilStyle.reedAngle)))
                 }
                 .animation(choiceAnimation, value: controller.pencilStyle.reedAngle)
-                .accessibilityLabel("Направление наконечника")
-                .accessibilityValue("\(Int(controller.pencilStyle.reedAngle)) градусов")
+                .accessibilityLabel(L10n.text("Tip direction"))
+                .accessibilityValue(L10n.format("%d degrees", Int(controller.pencilStyle.reedAngle)))
                 .accessibilityAdjustableAction { direction in
                     switch direction {
                     case .increment: adjustDirection(by: 5)
@@ -355,7 +359,7 @@ struct WatchToolSettingsView: View {
                     .frame(width: 40, height: 30)
             }
             .disabled(controller.pencilStyle.reedAngle <= -90)
-            .accessibilityLabel("Повернуть наконечник против часовой стрелки")
+            .accessibilityLabel(L10n.text("Rotate tip counterclockwise"))
         }
         .buttonStyle(.plain)
     }
@@ -452,7 +456,7 @@ struct WatchToolSettingsView: View {
             Text("\(colorIndex + 1)/\(InkPreset.all.count)")
                 .font(.system(size: 9).monospacedDigit())
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("Цвет \(colorIndex + 1) из \(InkPreset.all.count)")
+                .accessibilityLabel(L10n.format("Color %d of %d", colorIndex + 1, InkPreset.all.count))
         }
     }
 
@@ -485,6 +489,6 @@ struct WatchToolSettingsView: View {
             }
         }
         .background(Color(white: 0.88), in: RoundedRectangle(cornerRadius: 16))
-        .accessibilityLabel("Образец штриха")
+        .accessibilityLabel(L10n.text("Stroke preview"))
     }
 }

@@ -12,21 +12,21 @@ enum DrawingInstrument: Int, CaseIterable, Codable {
     case monoline = 0, fountainPen = 1, pen, marker, pencil, crayon, reed, watercolor, eraser
 
     static var displayOrder: [Self] {
-        [.monoline, .pen, .marker, .pencil, .crayon, .fountainPen, .reed, .watercolor, .eraser]
+        let order: [Self] = [.monoline, .pen, .marker, .pencil, .crayon, .fountainPen, .reed, .watercolor, .eraser]
+        return order.filter { AppReleaseFeatures.current.allows($0) }
     }
 
-    // Apple's Russian PencilKit localization.
     var title: String {
         switch self {
-        case .monoline: "Монолиния"
-        case .pen: "Перо"
-        case .marker: "Маркер"
-        case .pencil: "Карандаш"
-        case .crayon: "Пастель"
-        case .fountainPen: "Перьевая ручка"
-        case .reed: "Тростник"
-        case .watercolor: "Акварель"
-        case .eraser: "Ластик"
+        case .monoline: L10n.text("Monoline")
+        case .pen: L10n.text("Pen")
+        case .marker: L10n.text("Marker")
+        case .pencil: L10n.text("Pencil")
+        case .crayon: L10n.text("Crayon")
+        case .fountainPen: L10n.text("Fountain pen")
+        case .reed: L10n.text("Reed pen")
+        case .watercolor: L10n.text("Watercolor")
+        case .eraser: L10n.text("Eraser")
         }
     }
 
@@ -47,7 +47,7 @@ enum DrawingInstrument: Int, CaseIterable, Codable {
 
 enum EraserMode: Int, Codable, CaseIterable {
     case pixels, objects
-    var title: String { self == .pixels ? "Ластик пикселей" : "Ластик объектов" }
+    var title: String { self == .pixels ? L10n.text("Pixel eraser") : L10n.text("Object eraser") }
 }
 
 struct PencilStyle: Codable, Equatable {

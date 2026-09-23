@@ -4,6 +4,8 @@ import Foundation
 final class CanvasController: ObservableObject {
     @Published var pencilStyle: PencilStyle {
         didSet {
+            let availableStyle = AppReleaseFeatures.current.availableStyle(pencilStyle)
+            if pencilStyle != availableStyle { pencilStyle = availableStyle }
             savedStyles[pencilStyle.instrument.rawValue] = pencilStyle
             propagateSynchronizedStyle()
             if let data = try? JSONEncoder().encode(savedStyles) {
@@ -71,27 +73,29 @@ final class CanvasController: ObservableObject {
         let data = defaults.data(forKey: "drawing.styles.v1")
         let decoded = data.flatMap { try? JSONDecoder().decode([Int: PencilStyle].self, from: $0) } ?? [:]
         savedStyles = decoded
-        let restoredSynchronization = defaults.data(forKey: "drawing.synchronization.v1")
+        var restoredSynchronization = defaults.data(forKey: "drawing.synchronization.v1")
             .flatMap { try? JSONDecoder().decode(ToolSynchronization.self, from: $0) } ?? ToolSynchronization()
-        let instrument = DrawingInstrument(rawValue: defaults.integer(forKey: "drawing.instrument.v1")) ?? .monoline
+        restoredSynchronization.sharedColor = AppReleaseFeatures.current.availableColor(restoredSynchronization.sharedColor)
+        let savedInstrument = DrawingInstrument(rawValue: defaults.integer(forKey: "drawing.instrument.v1")) ?? .monoline
+        let instrument = AppReleaseFeatures.current.allows(savedInstrument) ? savedInstrument : .monoline
         var restored = decoded[instrument.rawValue] ?? .initial(for: instrument)
         if !restored.width.isFinite { restored.width = instrument.defaultWidth }
         restored.width = min(instrument.maximumWidth, max(1, restored.width))
         if restoredSynchronization.width { restored.width = restoredSynchronization.sharedWidth }
         if restoredSynchronization.color && instrument != .eraser { restored.color = restoredSynchronization.sharedColor }
         synchronization = restoredSynchronization
-        pencilStyle = restored
+        pencilStyle = AppReleaseFeatures.current.availableStyle(restored)
     }
 
     var activeStroke: Stroke? { pencil.activeStroke }
 
     func selectInstrument(_ instrument: DrawingInstrument) {
-        guard instrument != pencilStyle.instrument else { return }
+        guard AppReleaseFeatures.current.allows(instrument), instrument != pencilStyle.instrument else { return }
         var style = savedStyles[instrument.rawValue] ?? .initial(for: instrument)
         if synchronization.width { style.width = synchronization.sharedWidth }
         else { style.width = min(instrument.maximumWidth, max(1, style.width)) }
         if synchronization.color && instrument != .eraser { style.color = synchronization.sharedColor }
-        pencilStyle = style
+        pencilStyle = AppReleaseFeatures.current.availableStyle(style)
     }
 
     func beginStroke(at sample: PointerSample) {

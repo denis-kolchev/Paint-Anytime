@@ -16,7 +16,7 @@ struct ContentView: View {
             .ignoresSafeArea()
             .overlay(alignment: .bottom) {
                 HStack(spacing: 12) {
-                    Label("Карандаш", systemImage: "pencil")
+                    Label(controller.pencilStyle.instrument.title, systemImage: "pencil")
 
                     Slider(
                         value: $controller.pencilStyle.width,
