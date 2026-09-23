@@ -15,7 +15,7 @@ struct Paint_All_the_Time__Watch__Watch_AppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            WatchWelcomeView()
                 .environment(\.locale, Locale(identifier: AppLanguage.currentCode))
                 .environment(\.layoutDirection,
                              Locale.Language(identifier: AppLanguage.currentCode).characterDirection == .rightToLeft

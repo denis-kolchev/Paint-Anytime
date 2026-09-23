@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct ContentView: View {
+    var isActive = true
+    var onStartTutorial: () -> Void = {}
+    @State private var startsTutorialAfterDismiss = false
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @StateObject private var controller = CanvasController()
     @State private var showsToolSettings = false
@@ -54,8 +57,10 @@ struct ContentView: View {
         }
         // Establish full-screen bounds before applying any presentation effects.
         .ignoresSafeArea()
+        // Reinstall toolbar items when returning from onboarding so watchOS
+        // recalculates the clock position around the trailing tool button.
         .toolbar {
-            if !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
+            if isActive && !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
                 ToolbarItemGroup(placement: .bottomBar) {
                     Button { requestCanvasAction(.clear) } label: {
                         BroomIcon()
@@ -97,7 +102,7 @@ struct ContentView: View {
                 }
             }
 
-            if !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
+            if isActive && !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         controller.cancelStroke()
@@ -110,7 +115,7 @@ struct ContentView: View {
                     .trackCanvasControl(.more, frames: $canvasControlFrames)
                 }
             }
-            if !showsGallery && (showsToolSettings || controller.activeStroke == nil) {
+            if isActive && !showsGallery && (showsToolSettings || controller.activeStroke == nil) {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     controller.cancelStroke()
@@ -134,11 +139,19 @@ struct ContentView: View {
             }
         }
         }
-        .sheet(isPresented: $showsAppSettings) {
-            WatchAppSettingsView(controller: controller) {
+        .sheet(isPresented: $showsAppSettings, onDismiss: {
+            if startsTutorialAfterDismiss {
+                startsTutorialAfterDismiss = false
+                onStartTutorial()
+            }
+        }) {
+            WatchAppSettingsView(controller: controller, onOpenDrawings: {
                 showsAppSettings = false
                 showsGallery = true
-            }
+            }, onStartTutorial: {
+                startsTutorialAfterDismiss = true
+                showsAppSettings = false
+            })
         }
         .sheet(item: $savedDrawing) { drawing in
             NavigationStack {
@@ -170,7 +183,7 @@ struct ContentView: View {
     }
 
     private var drawingPage: some View {
-        WatchCanvasView(controller: controller, rendersArtwork: !showsToolSettings && !showsGallery, acceptsInput: !showsToolSettings && !showsAppSettings && !showsGallery && savedDrawing == nil && pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas)
+        WatchCanvasView(controller: controller, rendersArtwork: !showsToolSettings && !showsGallery, acceptsInput: isActive && !showsToolSettings && !showsAppSettings && !showsGallery && savedDrawing == nil && pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas)
             .id(canvasSessionID)
     }
 
@@ -224,7 +237,7 @@ struct ContentView: View {
     }
 }
 
-private extension View {
+extension View {
     func trackCanvasControl(_ control: CanvasToolbarControl,
                             frames: Binding<[CanvasToolbarControl: CGRect]>) -> some View {
         onGeometryChange(for: CGRect.self) { geometry in

@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		257D4058305EA358002072CB /* Paint All the Time (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint All the Time (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +37,7 @@
 		257D4052305EA358002072CB /* Paint All the Time (Watch).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint All the Time (Watch).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		257D4057305EA358002072CB /* Paint All the Time (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint All the Time (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		25AC8197305D90C700C8F69E /* Paint All the Time.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint All the Time.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B20000020000000000000002 /* Preset Photos */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preset Photos"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -78,6 +80,7 @@
 		25AC818E305D90C700C8F69E = {
 			isa = PBXGroup;
 			children = (
+				B20000020000000000000002 /* Preset Photos */,
 				25AC8199305D90C700C8F69E /* Paint All the Time */,
 				A10000050000000000000005 /* Paint Anytime iPhone */,
 				257D405B305EA358002072CB /* Paint All the Time (Watch) Watch App */,
@@ -239,6 +242,7 @@
 		257D4055305EA358002072CB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
+				B20000010000000000000001 /* Preset Photos in Resources */,
 			);
 		};
 		25AC8195305D90C700C8F69E /* Resources */ = {

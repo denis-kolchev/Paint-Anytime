@@ -15,6 +15,7 @@ enum CanvasToolbarControl: Hashable {
 struct WatchCanvasView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
+    @ObservedObject var tutorial = TutorialSession.inactive
     var rendersArtwork = true
     var acceptsInput = true
     var protectedControls: [CanvasToolbarControl: CGRect] = [:]
@@ -47,7 +48,9 @@ struct WatchCanvasView: View {
                 DragGesture(minimumDistance: 0)
                     .updating($isDragging) { _, state, _ in state = true }
                     .onChanged { value in
-                        guard acceptsInput else { return }
+                        guard acceptsInput && tutorial.acceptsActions else { return }
+                        guard (isMovingCanvas ? tutorial.allowsCanvasPan : tutorial.allowsDrawing) else { return }
+                        tutorial.activity()
                         if acceptsCurrentGesture == nil {
                             acceptsCurrentGesture = !isProtectedStart(value.startLocation,
                                 canvasFrame: geometry.frame(in: .global))
@@ -81,30 +84,41 @@ struct WatchCanvasView: View {
                     .onEnded { value in
                         defer { acceptsCurrentGesture = nil; panOrigin = nil }
                         guard acceptsInput && acceptsCurrentGesture == true else { return }
-                        if isMovingCanvas { panOrigin = nil; return }
+                        if isMovingCanvas {
+                            if abs(value.translation.width) + abs(value.translation.height) > 2 { tutorial.record(.panned) }
+                            panOrigin = nil
+                            return
+                        }
                         guard controller.activeStroke != nil else { return }
+                        let previousCount = controller.document.strokes.count
                         controller.endStroke(at: sample(
                             at: canvasPoint(value.location, size: geometry.size), time: value.time))
+                        if controller.document.strokes.count > previousCount { tutorial.record(.stroke) }
                     }
             )
         }
-        .focusable(acceptsInput)
+        .focusable(acceptsInput && tutorial.acceptsActions && (!tutorial.isActive || tutorial.allowsCanvasZoom))
         .focused($crownFocused)
         .digitalCrownRotation(Binding(
             get: { crownZoom },
             set: { value in
+                guard tutorial.allowsCanvasZoom else { return }
                 guard acceptsInput && !isDragging && controller.activeStroke == nil else { return }
                 guard value != crownZoom else { return }
                 let wasSnapped = zoom == 1
                 isMovingCanvas = true
                 crownZoom = value
+                tutorial.changedZoom()
                 if zoom == 1 && !wasSnapped { WKInterfaceDevice.current().play(.click) }
             }
         ), from: 0.25, through: 4, by: 0.05, sensitivity: .low,
            isContinuous: false, isHapticFeedbackEnabled: false)
         .accessibilityLabel(isMovingCanvas ? L10n.text("Moving canvas") : L10n.text("Finger drawing canvas"))
         .accessibilityValue(L10n.format("Zoom %d percent", Int(zoom * 100)))
-        .onAppear { crownFocused = acceptsInput }
+        .onAppear { crownFocused = acceptsInput && tutorial.allowsCanvasZoom }
+        .onChange(of: tutorial.showsInstruction) { _, showing in
+            crownFocused = !showing && acceptsInput && tutorial.allowsCanvasZoom
+        }
         .onChange(of: isDragging) { _, dragging in
             if !dragging {
                 panOrigin = nil
@@ -114,10 +128,10 @@ struct WatchCanvasView: View {
         .onChange(of: isMovingCanvas) { _, moving in
             panOrigin = nil
             if !moving && zoom == 1 { crownZoom = 1 }
-            crownFocused = acceptsInput
+            crownFocused = acceptsInput && tutorial.allowsCanvasZoom
         }
         .onChange(of: acceptsInput) { _, enabled in
-            crownFocused = enabled
+            crownFocused = enabled && tutorial.allowsCanvasZoom
             if !enabled { controller.cancelStroke() }
         }
         .onDisappear { controller.cancelStroke() }

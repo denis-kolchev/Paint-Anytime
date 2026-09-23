@@ -6,6 +6,7 @@ struct WatchAppSettingsView: View {
     private let supportEmail = "deniskolchev2001@gmail.com"
     @ObservedObject var controller: CanvasController
     var onOpenDrawings: () -> Void
+    var onStartTutorial: () -> Void
 
     var body: some View {
         NavigationStack {
@@ -22,6 +23,9 @@ struct WatchAppSettingsView: View {
                     ToolSynchronizationView(controller: controller)
                 } label: {
                     Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
+                }
+                Button(action: onStartTutorial) {
+                    Label(L10n.text("Tutorial"), systemImage: "graduationcap")
                 }
                 Button(action: reportBug) {
                     Label(L10n.text("Report a bug"), systemImage: "envelope")
@@ -82,14 +86,19 @@ private struct ToolSynchronizationView: View {
     }
 }
 
-private struct AppLanguageSelectionView: View {
+struct AppLanguageSelectionView: View {
+    var onSelection: (() -> Void)? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @State private var pendingLanguageCode: String?
 
     var body: some View {
         List(AppLanguage.displayOrder) { language in
             Button {
-                guard pendingLanguageCode == nil, language.id != AppLanguage.currentCode else { return }
+                guard pendingLanguageCode == nil else { return }
+                if language.id == AppLanguage.currentCode {
+                    onSelection?()
+                    return
+                }
                 pendingLanguageCode = language.id
             } label: {
                 HStack {
@@ -133,6 +142,8 @@ private struct AppLanguageSelectionView: View {
                 languageCode = code
                 // Keep the overlay through the first layout of the updated interface.
                 try await Task.sleep(for: .milliseconds(150))
+                try Task.checkCancellation()
+                onSelection?()
             } catch {
                 // SwiftUI cancels this task if the selection screen disappears.
             }

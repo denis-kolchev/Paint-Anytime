@@ -17,8 +17,8 @@ enum CanvasExportStore {
         return folder
     }
 
-    static func all() throws -> [CanvasExport] {
-        try FileManager.default.contentsOfDirectory(at: directory(), includingPropertiesForKeys: nil)
+    static func all(in folder: URL? = nil) throws -> [CanvasExport] {
+        try FileManager.default.contentsOfDirectory(at: folder ?? directory(), includingPropertiesForKeys: nil)
             .filter { $0.pathExtension.lowercased() == "png" }
             .sorted { drawingSortKey($0) > drawingSortKey($1) }
             .map { CanvasExport(url: $0) }
@@ -37,8 +37,8 @@ enum CanvasExportStore {
         return try JSONDecoder().decode(CanvasDocument.self, from: Data(contentsOf: url))
     }
 
-    static func delete(_ drawing: CanvasExport) throws {
-        let folder = try directory().resolvingSymlinksInPath().standardizedFileURL
+    static func delete(_ drawing: CanvasExport, in destination: URL? = nil) throws {
+        let folder = try (destination ?? directory()).resolvingSymlinksInPath().standardizedFileURL
         let file = drawing.url.resolvingSymlinksInPath().standardizedFileURL
         guard file.deletingLastPathComponent() == folder, file.pathExtension.lowercased() == "png"
         else { throw CocoaError(.fileWriteNoPermission) }
@@ -50,7 +50,7 @@ enum CanvasExportStore {
     }
 
     @MainActor
-    static func save(strokes: [Stroke], size: CGSize, scale: CGFloat) throws -> CanvasExport {
+    static func save(strokes: [Stroke], size: CGSize, scale: CGFloat, in folder: URL? = nil) throws -> CanvasExport {
         guard size.width > 0, size.height > 0 else { throw ExportError.render }
         let renderer = ImageRenderer(content: WatchCanvasArtwork(strokes: strokes)
             .frame(width: size.width, height: size.height))
@@ -62,7 +62,7 @@ enum CanvasExportStore {
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss_SSS"
         let name = "Paint-Anytime_\(formatter.string(from: now))_\(UUID().uuidString.prefix(8))"
-        let url = try directory().appendingPathComponent(name).appendingPathExtension("png")
+        let url = try (folder ?? directory()).appendingPathComponent(name).appendingPathExtension("png")
         let device = WKInterfaceDevice.current()
         let details: [String: Any] = [
             "application": "Paint All the Time",
@@ -113,6 +113,7 @@ struct SavedDrawingView: View {
     let drawing: CanvasExport
     @State var photoTransferStatus: String
     @State var canRetryPhotoTransfer: Bool
+    @ObservedObject var tutorial = TutorialSession.inactive
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
@@ -122,7 +123,8 @@ struct SavedDrawingView: View {
                 ShareLink(item: drawing.url, preview: SharePreview("Paint All the Time", image: Image(systemName: "photo"))) {
                     Label(L10n.text("Share"), systemImage: "square.and.arrow.up")
                 }
-                if AppReleaseFeatures.current.showsPhotoTransferControls {
+                .simultaneousGesture(TapGesture().onEnded { tutorial.activity() })
+                if AppReleaseFeatures.current.showsPhotoTransferControls && !tutorial.isActive {
                     Text(photoTransferStatus).font(.caption2)
                     if canRetryPhotoTransfer {
                         Button(L10n.text("Retry sending to iPhone")) {
@@ -144,11 +146,18 @@ struct SavedDrawingView: View {
             }
             .padding(.horizontal)
         }
+        .scrollDisabled(tutorial.isActive && !tutorial.permits([14]))
+        .onScrollPhaseChange { _, _ in tutorial.activity() }
+        .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentOffset.y }) { _, _ in
+            tutorial.activity()
+        }
         .navigationTitle(L10n.text("Saved"))
     }
 }
 
 struct SavedDrawingsView: View {
+    @ObservedObject var tutorial = TutorialSession.inactive
+    var galleryFolder: URL? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     var onClose: () -> Void
     var onEditDrawing: (CanvasDocument) -> Void
@@ -208,6 +217,8 @@ struct SavedDrawingsView: View {
                                         }
                                         .contentShape(Rectangle())
                                         .onTapGesture {
+                                            guard tutorial.allowsGalleryZoom else { return }
+                                            tutorial.activity()
                                             focusedDrawing = drawing
                                             if zoomLevel == 0 { setZoom(1) }
                                             else { open(drawing) }
@@ -222,7 +233,12 @@ struct SavedDrawingsView: View {
                     }
                     .contentMargins(.top, navigationHeight + 4, for: .scrollContent)
                     .scrollIndicators(.hidden)
-                    .allowsHitTesting(!showsFullscreen && !isTransitioning)
+                    // Observe native scrolling without competing with its swipe gesture.
+                    .onScrollPhaseChange { _, _ in tutorial.activity() }
+                    .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentOffset.y }) { _, _ in
+                        tutorial.activity()
+                    }
+                    .allowsHitTesting(!showsFullscreen && !isTransitioning && tutorial.allowsGalleryZoom)
                     .accessibilityHidden(showsFullscreen)
                     .onChange(of: zoomLevel) { previousLevel, level in
                         if previousLevel != 2, level < 2, let drawing = focusedDrawing {
@@ -268,7 +284,7 @@ struct SavedDrawingsView: View {
                     fullscreenGallery(size: geometry.size, canvasOriginY: geometry.frame(in: .global).minY,
                                       thumbnailPixels: thumbnailPixels)
                         .opacity(imageTransition == nil && transitionRequest != .opening ? 1 : 0)
-                        .allowsHitTesting(!isTransitioning)
+                        .allowsHitTesting(!isTransitioning && tutorial.allowsGalleryPaging)
                         .accessibilityHidden(isTransitioning)
                 }
 
@@ -312,47 +328,60 @@ struct SavedDrawingsView: View {
         }
         .ignoresSafeArea()
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                Button(action: goBack) {
-                    Image(systemName: "chevron.left")
+            if tutorial.allowsGalleryBack {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: goBack) {
+                        Image(systemName: "chevron.left")
+                    }
+                    .buttonStyle(.automatic)
+                    .disabled(isTransitioning)
+                    .accessibilityLabel(L10n.text("Back"))
                 }
-                .buttonStyle(.automatic)
-                .disabled(isTransitioning)
-                .accessibilityLabel(L10n.text("Back"))
             }
             if showsFullscreen && !isTransitioning, let selectedDrawing {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { editDrawing(selectedDrawing) } label: {
-                        Image(systemName: "pencil")
+                if !tutorial.isActive {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { editDrawing(selectedDrawing) } label: {
+                            Image(systemName: "pencil")
+                        }
+                        .accessibilityLabel(L10n.text("Edit drawing"))
                     }
-                    .accessibilityLabel(L10n.text("Edit drawing"))
                 }
-                ToolbarItemGroup(placement: .bottomBar) {
-                    Button(role: .destructive) {
-                        crownFocused = false
-                        pendingDeletion = selectedDrawing
-                    } label: {
-                        Image(systemName: "trash")
+                if tutorial.allowsGalleryDelete {
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        Button(role: .destructive) {
+                            crownFocused = false
+                            tutorial.pauseReminders()
+                            pendingDeletion = selectedDrawing
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .disabled(isTransitioning)
+                        .accessibilityLabel(L10n.text("Delete drawing"))
+                        Spacer()
+                        if !tutorial.isActive {
+                            ShareLink(item: selectedDrawing.url,
+                                      preview: SharePreview(Text(verbatim: selectedDrawing.url.lastPathComponent),
+                                                            image: Image(systemName: "photo"))) {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                            .accessibilityLabel(L10n.text("Share"))
+                        }
                     }
-                    .disabled(isTransitioning)
-                    .accessibilityLabel(L10n.text("Delete drawing"))
-                    Spacer()
-                    ShareLink(item: selectedDrawing.url,
-                              preview: SharePreview(Text(verbatim: selectedDrawing.url.lastPathComponent),
-                                                    image: Image(systemName: "photo"))) {
-                        Image(systemName: "square.and.arrow.up")
-                    }
-                    .accessibilityLabel(L10n.text("Share"))
                 }
             }
         }
-        .focusable(pendingDeletion == nil)
+        .focusable(pendingDeletion == nil && tutorial.allowsGalleryZoom)
         .focused($crownFocused)
-        .digitalCrownRotation($crownPosition, from: 0, through: 2, by: 1,
+        .digitalCrownRotation(Binding(get: { crownPosition }, set: { value in
+            guard tutorial.allowsGalleryZoom else { return }
+            tutorial.activity()
+            crownPosition = value
+        }), from: 0, through: 2, by: 1,
                               sensitivity: .low, isContinuous: false,
                               isHapticFeedbackEnabled: false)
         .onChange(of: crownPosition) { _, position in
-            guard pendingDeletion == nil, !isTransitioning else { return }
+            guard pendingDeletion == nil, !isTransitioning, tutorial.allowsGalleryZoom else { return }
             let next = min(2, max(0, Int(position.rounded())))
             guard next != zoomLevel else { return }
             if next == 2 {
@@ -361,7 +390,8 @@ struct SavedDrawingsView: View {
             } else { setZoom(next) }
         }
         .fullScreenCover(item: $pendingDeletion, onDismiss: {
-            crownFocused = true
+            tutorial.resumeReminders()
+            crownFocused = tutorial.allowsGalleryZoom
             if let drawing = confirmedDeletion {
                 confirmedDeletion = nil
                 deleteDrawing(drawing)
@@ -378,10 +408,19 @@ struct SavedDrawingsView: View {
             get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } }
         )) { Button(L10n.text("OK"), role: .cancel) { errorMessage = nil } }
         message: { Text(errorMessage ?? "") }
-        .onAppear { crownFocused = true; reload() }
+        .onAppear { crownFocused = tutorial.allowsGalleryZoom; reload() }
+        .onChange(of: tutorial.showsInstruction) { _, showing in
+            crownFocused = !showing && tutorial.allowsGalleryZoom && pendingDeletion == nil
+            if !showing && showsFullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
+        }
+        .onChange(of: isTransitioning) { _, transitioning in
+            if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
+        }
     }
 
     private func goBack() {
+        guard tutorial.allowsGalleryBack else { return }
+        tutorial.activity()
         guard !isTransitioning else { return }
         if zoomLevel == 0 { onClose() }
         else { setZoom(zoomLevel - 1) }
@@ -479,8 +518,9 @@ struct SavedDrawingsView: View {
         return TabView(selection: Binding<URL?>(
             get: { selectedDrawing?.id },
             set: { id in
-                guard !isTransitioning, id != selectedDrawing?.id,
+                guard tutorial.allowsGalleryPaging, !isTransitioning, id != selectedDrawing?.id,
                       let drawing = drawings.first(where: { $0.id == id }) else { return }
+                tutorial.activity()
                 selectedDrawing = drawing
                 focusedDrawing = drawing
                 galleryScrollTarget = drawing.id
@@ -513,12 +553,13 @@ struct SavedDrawingsView: View {
 
     private func deleteDrawing(_ drawing: CanvasExport) {
         do {
-            try CanvasExportStore.delete(drawing)
+            try CanvasExportStore.delete(drawing, in: galleryFolder)
             Task { await GalleryImageCache.shared.remove(drawing.url) }
             drawings.removeAll { $0.id == drawing.id }
             focusedDrawing = nil
             returnToGrid()
             WKInterfaceDevice.current().play(.click)
+            tutorial.record(.deleted)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -533,7 +574,7 @@ struct SavedDrawingsView: View {
     }
 
     private func reload() {
-        do { drawings = try CanvasExportStore.all(); errorMessage = nil }
+        do { drawings = try CanvasExportStore.all(in: galleryFolder); errorMessage = nil }
         catch { errorMessage = error.localizedDescription }
     }
 }

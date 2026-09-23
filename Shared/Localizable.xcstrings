@@ -17591,6 +17591,5545 @@
           }
         }
       }
+    },
+    "Welcome to Paint Anytime! Draw two separate strokes in the center of the canvas. Your own drawings are safe during this tutorial.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welcome to Paint Anytime! Draw two separate strokes in the center of the canvas. Your own drawings are safe during this tutorial."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добро пожаловать в Paint Anytime! Нарисуй два отдельных штриха по центру холста. Во время обучения твои собственные рисунки в безопасности."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bienvenue dans Paint Anytime ! Trace deux traits au centre. Tes propres dessins restent en sécurité."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Willkommen bei Paint Anytime! Zeichne zwei Striche in der Mitte. Deine eigenen Zeichnungen bleiben sicher."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benvenuto in Paint Anytime! Disegna due tratti al centro. I tuoi disegni personali sono al sicuro."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Bienvenido a Paint Anytime! Dibuja dos trazos en el centro. Tus propios dibujos están a salvo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bem-vindo ao Paint Anytime! Desenhe dois traços no centro. Os seus desenhos pessoais estão seguros."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مرحبًا بك في Paint Anytime! ارسم خطين منفصلين في الوسط. رسوماتك الخاصة آمنة أثناء التدريب."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytimeへようこそ！中央に2本の線を描きましょう。練習中も自分の作品は保護されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytime에 오신 것을 환영합니다! 중앙에 선 두 개를 그려보세요. 기존 그림은 안전하게 보관됩니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "欢迎使用 Paint Anytime！在画布中央画两笔。练习不会影响你自己的作品。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "歡迎使用 Paint Anytime！在畫布中央畫兩筆。練習不會影響你自己的作品。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytime’a hoş geldin! Ortaya iki ayrı çizgi çiz. Kendi çizimlerin eğitim sırasında güvende."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Witaj w Paint Anytime! Narysuj dwie osobne kreski na środku. Twoje własne rysunki są bezpieczne."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welkom bij Paint Anytime! Teken twee losse lijnen in het midden. Je eigen tekeningen blijven veilig."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Välkommen till Paint Anytime! Rita två separata streck i mitten. Dina egna teckningar är säkra."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velkommen til Paint Anytime! Tegn to separate streger i midten. Dine egne tegninger er sikre."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velkommen til Paint Anytime! Tegn to separate streker i midten. Dine egne tegninger er trygge."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tervetuloa Paint Anytimeen! Piirrä keskelle kaksi erillistä viivaa. Omat piirroksesi pysyvät turvassa."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytime में आपका स्वागत है! कैनवास के बीच में दो अलग-अलग स्ट्रोक बनाएँ। इस प्रशिक्षण के दौरान आपके अपने चित्र सुरक्षित हैं।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytime-க்கு வரவேற்கிறோம்! கேன்வாஸின் நடுவில் இரண்டு தனித்தனி கோடுகளை வரையுங்கள். இந்தப் பயிற்சியில் உங்கள் சொந்த ஓவியங்கள் பாதுகாப்பாக இருக்கும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytimeకి స్వాగతం! కాన్వాస్ మధ్యలో రెండు వేర్వేరు గీతలు గీయండి. ఈ శిక్షణలో మీ సొంత చిత్రాలు సురక్షితంగా ఉంటాయి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytime मध्ये स्वागत आहे! कॅनव्हासच्या मध्यभागी दोन स्वतंत्र रेषा काढा. या प्रशिक्षणात तुमची स्वतःची चित्रे सुरक्षित राहतील."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytimeમાં સ્વાગત છે! કેનવાસની વચ્ચે બે અલગ રેખાઓ દોરો. આ તાલીમ દરમિયાન તમારાં પોતાનાં ચિત્રો સુરક્ષિત છે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytime ਵਿੱਚ ਜੀ ਆਇਆਂ ਨੂੰ! ਕੈਨਵਸ ਦੇ ਵਿਚਕਾਰ ਦੋ ਵੱਖਰੀਆਂ ਲਕੀਰਾਂ ਬਣਾਓ। ਇਸ ਸਿਖਲਾਈ ਦੌਰਾਨ ਤੁਹਾਡੀਆਂ ਆਪਣੀਆਂ ਤਸਵੀਰਾਂ ਸੁਰੱਖਿਅਤ ਹਨ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytime-এ স্বাগতম! ক্যানভাসের মাঝে দুটি আলাদা রেখা আঁকুন। এই প্রশিক্ষণে আপনার নিজের ছবিগুলো নিরাপদ থাকবে।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selamat datang di Paint Anytime! Buat dua goresan terpisah di tengah kanvas. Gambar pribadi Anda tetap aman selama tutorial ini."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytime میں خوش آمدید! کینوس کے درمیان دو الگ لکیریں بنائیں۔ اس تربیت کے دوران آپ کی اپنی تصویریں محفوظ ہیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chào mừng đến với Paint Anytime! Vẽ hai nét riêng biệt ở giữa khung vẽ. Tranh của bạn vẫn an toàn trong bài hướng dẫn này."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ยินดีต้อนรับสู่ Paint Anytime! วาดเส้นแยกกันสองเส้นตรงกลางผืนผ้าใบ ภาพของคุณจะปลอดภัยระหว่างบทสอนนี้"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selamat datang ke Paint Anytime! Lukis dua sapuan berasingan di tengah kanvas. Lukisan peribadi anda kekal selamat semasa tutorial ini."
+          }
+        }
+      }
+    },
+    "Let's try another brush. Tap the tool button in the upper-right corner.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Let's try another brush. Tap the tool button in the upper-right corner."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Давай попробуем другую кисть. Нажми на кнопку инструмента в правом верхнем углу."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Essaie un autre pinceau : touche le bouton de l’outil en haut à droite."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probiere einen anderen Pinsel: Tippe oben rechts auf die Werkzeugtaste."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova un altro pennello: tocca il pulsante dello strumento in alto a destra."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba otro pincel: toca el botón de herramienta arriba a la derecha."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimente outro pincel: toque no botão da ferramenta no canto superior direito."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لنجرب فرشاة أخرى. اضغط زر الأداة الأعلى."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "別のブラシを試しましょう。右上のツールボタンをタップします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 브러시를 써볼까요? 오른쪽 위 도구 버튼을 누르세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "试试另一种画笔。点击右上角的工具按钮。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "試試另一種畫筆。點一下右上角的工具按鈕。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başka bir fırça deneyelim. Sağ üstteki araç düğmesine dokun."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wypróbuj inny pędzel. Stuknij przycisk narzędzia w prawym górnym rogu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probeer een andere kwast. Tik rechtsboven op de gereedschapsknop."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova en annan pensel. Tryck på verktygsknappen uppe till höger."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv en anden pensel. Tryk på værktøjsknappen øverst til højre."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv en annen pensel. Trykk på verktøyknappen øverst til høyre."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokeile toista sivellintä. Napauta työkalupainiketta oikeassa yläkulmassa."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "दूसरा ब्रश आज़माएँ। ऊपर दाईं ओर टूल बटन दबाएँ।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வேறு தூரிகையை முயல்வோம். மேல் வலப்புறக் கருவிப் பொத்தானைத் தட்டுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మరో బ్రష్ ప్రయత్నిద్దాం. ఎగువ కుడి మూలలో సాధనం బటన్ నొక్కండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "दुसरा ब्रश वापरून पाहू. वर उजवीकडील साधन बटण दाबा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "બીજું બ્રશ અજમાવીએ. ઉપર જમણી બાજુનું સાધન બટન દબાવો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਆਓ ਹੋਰ ਬੁਰਸ਼ ਅਜ਼ਮਾਈਏ। ਉੱਪਰ ਸੱਜੇ ਪਾਸੇ ਸੰਦ ਬਟਨ ਦਬਾਓ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অন্য একটি ব্রাশ চেষ্টা করি। ওপরের ডান কোণে টুল বোতাম চাপুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mari mencoba kuas lain. Ketuk tombol alat di kanan atas."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آئیں دوسرا برش آزمائیں۔ اوپر موجود ٹول بٹن دبائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy thử cọ khác. Chạm nút công cụ ở góc trên bên phải."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลองใช้แปรงอื่นกัน แตะปุ่มเครื่องมือที่มุมขวาบน"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mari cuba berus lain. Ketik butang alat di sudut kanan atas."
+          }
+        }
+      }
+    },
+    "Turn the Digital Crown or tap a neighboring color to select green.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn the Digital Crown or tap a neighboring color to select green."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поверни колёсико часов или нажимай на соседние цвета, чтобы выбрать зелёный."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tourne la Digital Crown ou touche les couleurs voisines pour choisir le vert."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drehe die Digital Crown oder tippe auf benachbarte Farben, bis Grün ausgewählt ist."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota la Digital Crown o tocca i colori vicini per scegliere il verde."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gira la Digital Crown o toca los colores vecinos para elegir verde."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rode a Digital Crown ou toque nas cores vizinhas para escolher verde."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدر Digital Crown أو اضغط الألوان المجاورة لاختيار الأخضر."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crownを回すか隣の色をタップして、緑を選びましょう。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown을 돌리거나 옆 색상을 눌러 초록을 선택하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转动数码表冠或点击相邻颜色，选择绿色。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉動數位錶冠或點一下相鄰顏色，選擇綠色。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown’u çevir veya komşu renklere dokunarak yeşili seç."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obróć Digital Crown lub stukaj sąsiednie kolory, aby wybrać zielony."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draai de Digital Crown of tik op naburige kleuren om groen te kiezen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrid på Digital Crown eller tryck på färgerna bredvid för att välja grönt."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drej Digital Crown eller tryk på nabofarverne for at vælge grøn."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vri Digital Crown eller trykk på nabofargene for å velge grønt."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valitse vihreä kiertämällä Digital Crownia tai napauttamalla viereisiä värejä."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हरा रंग चुनने के लिए Digital Crown घुमाएँ या पास वाले रंग पर टैप करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பச்சை நிறத்தைத் தேர்வுசெய்ய Digital Crown-ஐச் சுழற்றுங்கள் அல்லது அருகிலுள்ள நிறத்தைத் தட்டுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ఆకుపచ్చని ఎంచుకోవడానికి Digital Crown తిప్పండి లేదా పక్కనున్న రంగును నొక్కండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हिरवा रंग निवडण्यासाठी Digital Crown फिरवा किंवा शेजारच्या रंगावर टॅप करा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "લીલો રંગ પસંદ કરવા Digital Crown ફેરવો અથવા બાજુના રંગ પર ટૅપ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਹਰਾ ਰੰਗ ਚੁਣਨ ਲਈ Digital Crown ਘੁਮਾਓ ਜਾਂ ਨਾਲ ਵਾਲੇ ਰੰਗ ਨੂੰ ਟੈਪ ਕਰੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সবুজ রং বাছতে Digital Crown ঘোরান বা পাশের রঙে ট্যাপ করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Putar Digital Crown atau ketuk warna di sebelahnya untuk memilih hijau."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سبز رنگ منتخب کرنے کے لیے Digital Crown گھمائیں یا ساتھ والے رنگ کو تھپتھپائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoay Digital Crown hoặc chạm màu bên cạnh để chọn màu xanh lá."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หมุน Digital Crown หรือแตะสีข้างเคียงเพื่อเลือกสีเขียว"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Putar Digital Crown atau ketik warna bersebelahan untuk memilih hijau."
+          }
+        }
+      }
+    },
+    "Swipe left or tap Width at the bottom to open the width setting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe left or tap Width at the bottom to open the width setting."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проведи пальцем справа налево или нажми «Толщина» внизу, чтобы открыть настройку толщины."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balaye vers la gauche ou touche Épaisseur en bas pour ouvrir ce réglage."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wische nach links oder tippe unten auf Breite, um die Einstellung zu öffnen."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scorri verso sinistra o tocca Spessore in basso per aprire l’impostazione."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desliza hacia la izquierda o toca Grosor abajo para abrir el ajuste."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deslize para a esquerda ou toque em Espessura em baixo para abrir a definição."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب لليسار أو اضغط السُمك في الأسفل لفتح الإعداد."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左にスワイプするか、下の「太さ」をタップして設定を開きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "왼쪽으로 쓸어넘기거나 아래의 두께를 눌러 설정을 여세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向左轻扫或点击底部的“粗细”打开设置。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向左滑動或點一下底部的「粗細」開啟設定。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sola kaydır veya alttaki Kalınlık seçeneğine dokun."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń w lewo lub stuknij Grubość na dole, aby otworzyć ustawienie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veeg naar links of tik onderaan op Dikte om de instelling te openen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svep åt vänster eller tryck på Tjocklek längst ner för att öppna inställningen."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skub til venstre eller tryk på Tykkelse nederst for at åbne indstillingen."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sveip til venstre eller trykk på Tykkelse nederst for å åpne innstillingen."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avaa asetus pyyhkäisemällä vasemmalle tai napauttamalla alhaalta Paksuus."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चौड़ाई सेटिंग खोलने के लिए बाईं ओर स्वाइप करें या नीचे चौड़ाई पर टैप करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அகல அமைப்பைத் திறக்க இடப்புறம் ஸ்வைப் செய்யுங்கள் அல்லது கீழே அகலத்தைத் தட்டுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "వెడల్పు సెట్టింగ్ తెరవడానికి ఎడమవైపు స్వైప్ చేయండి లేదా దిగువన వెడల్పును నొక్కండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रुंदीचे सेटिंग उघडण्यासाठी डावीकडे स्वाइप करा किंवा खाली रुंदीवर टॅप करा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "પહોળાઈની સેટિંગ ખોલવા ડાબી તરફ સ્વાઇપ કરો અથવા નીચે પહોળાઈ પર ટૅપ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਚੌੜਾਈ ਦੀ ਸੈਟਿੰਗ ਖੋਲ੍ਹਣ ਲਈ ਖੱਬੇ ਸਵਾਈਪ ਕਰੋ ਜਾਂ ਹੇਠਾਂ ਚੌੜਾਈ ਨੂੰ ਟੈਪ ਕਰੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রস্থের সেটিং খুলতে বাঁয়ে সোয়াইপ করুন বা নিচে প্রস্থে ট্যাপ করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geser ke kiri atau ketuk Lebar di bawah untuk membuka pengaturan lebar."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "چوڑائی کی ترتیب کھولنے کے لیے بائیں سوائپ کریں یا نیچے چوڑائی کو تھپتھپائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuốt sang trái hoặc chạm Độ rộng ở dưới để mở cài đặt độ rộng."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ปัดไปทางซ้ายหรือแตะความกว้างด้านล่างเพื่อเปิดการตั้งค่าความกว้าง"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leret ke kiri atau ketik Lebar di bawah untuk membuka tetapan lebar."
+          }
+        }
+      }
+    },
+    "Turn the Digital Crown to set the width to 10 pt.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn the Digital Crown to set the width to 10 pt."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Поверни колёсико часов и установи толщину 10 пт."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tourne la Digital Crown pour régler l’épaisseur sur 10 pt."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stelle mit der Digital Crown eine Breite von 10 pt ein."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota la Digital Crown per impostare lo spessore su 10 pt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gira la Digital Crown para ajustar el grosor a 10 pt."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rode a Digital Crown para definir a espessura como 10 pt."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدر Digital Crown لضبط السُمك على 10 نقاط."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crownを回して太さを10 ptにします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown을 돌려 두께를 10 pt로 맞추세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转动数码表冠，将粗细设为10磅。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉動數位錶冠，將粗細設為10點。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown’u çevirerek kalınlığı 10 pt yap."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obróć Digital Crown i ustaw grubość na 10 pkt."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stel met de Digital Crown de dikte in op 10 pt."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrid på Digital Crown och ställ in tjockleken på 10 pt."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drej Digital Crown og indstil tykkelsen til 10 pkt."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vri Digital Crown og still tykkelsen til 10 pkt."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aseta paksuudeksi 10 pt kiertämällä Digital Crownia."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown घुमाकर चौड़ाई 10 pt करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown-ஐச் சுழற்றி அகலத்தை 10 pt ஆக மாற்றுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown తిప్పి వెడల్పును 10 pt చేయండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown फिरवून रुंदी 10 pt करा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown ફેરવીને પહોળાઈ 10 pt કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown ਘੁਮਾ ਕੇ ਚੌੜਾਈ 10 pt ਕਰੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown ঘুরিয়ে প্রস্থ 10 pt করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Putar Digital Crown untuk mengatur lebar ke 10 pt."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown گھما کر چوڑائی 10 pt کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoay Digital Crown để đặt độ rộng thành 10 pt."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หมุน Digital Crown เพื่อตั้งความกว้างเป็น 10 pt"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Putar Digital Crown untuk menetapkan lebar kepada 10 pt."
+          }
+        }
+      }
+    },
+    "Open the Tool page and select Reed pen using the Digital Crown or the tool list.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Tool page and select Reed pen using the Digital Crown or the tool list."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перейди в раздел «Инструмент» и выбери «Тростник» колёсиком или нажатием в списке инструментов."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvre Outil et choisis Calame avec la Digital Crown ou la liste."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Werkzeug und wähle Rohrfeder mit der Digital Crown oder in der Liste."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Strumento e scegli Calamo con la Digital Crown o nell’elenco."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Herramienta y elige Cálamo con la Digital Crown o en la lista."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra Ferramenta e escolha Cálamo com a Digital Crown ou na lista."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح الأداة واختر قلم قصب باستخدام Digital Crown أو القائمة."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「ツール」を開き、Digital Crownか一覧で「葦ペン」を選びます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "도구를 열고 Digital Crown이나 목록에서 갈대 펜을 선택하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开“工具”，用数码表冠或列表选择“芦苇笔”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「工具」，用數位錶冠或列表選擇「蘆葦筆」。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Araç sayfasını aç ve Digital Crown veya listeyle Kamış kalem seç."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Narzędzie i wybierz Pióro trzcinowe za pomocą Digital Crown lub listy."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Gereedschap en kies Rietpen met de Digital Crown of de lijst."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öppna Verktyg och välj Vasspenna med Digital Crown eller listan."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åbn Værktøj og vælg Rørpen med Digital Crown eller listen."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åpne Verktøy og velg Rørpenn med Digital Crown eller listen."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avaa Työkalu ja valitse Ruokokynä Digital Crownilla tai luettelosta."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "टूल पृष्ठ खोलें और Digital Crown या टूल सूची से रीड पेन चुनें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கருவிப் பக்கத்தைத் திறந்து Digital Crown அல்லது கருவிப் பட்டியலில் நாணல் பேனாவைத் தேர்வுசெய்யுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "సాధనం పేజీ తెరిచి Digital Crown లేదా సాధనాల జాబితాతో రీడ్ పెన్ ఎంచుకోండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साधन पान उघडा आणि Digital Crown किंवा साधनांच्या यादीतून रीड पेन निवडा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "સાધન પાનું ખોલો અને Digital Crown અથવા સાધનોની યાદીથી રીડ પેન પસંદ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਸੰਦ ਪੰਨਾ ਖੋਲ੍ਹੋ ਅਤੇ Digital Crown ਜਾਂ ਸੰਦਾਂ ਦੀ ਸੂਚੀ ਤੋਂ ਕਾਨੇ ਦੀ ਕਲਮ ਚੁਣੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "টুল পৃষ্ঠা খুলে Digital Crown বা টুলের তালিকা থেকে রিড পেন বেছে নিন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buka halaman Alat dan pilih Pena buluh melalui Digital Crown atau daftar alat."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ٹول صفحہ کھولیں اور Digital Crown یا ٹول کی فہرست سے سرکنڈے کا قلم منتخب کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở trang Công cụ và chọn Bút sậy bằng Digital Crown hoặc danh sách công cụ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดหน้าเครื่องมือ แล้วเลือกปากกาอ้อด้วย Digital Crown หรือรายการเครื่องมือ"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buka halaman Alat dan pilih Pen buluh melalui Digital Crown atau senarai alat."
+          }
+        }
+      }
+    },
+    "Tap the information button at the top left. Read about the tool, then close the page with the cross.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the information button at the top left. Read about the tool, then close the page with the cross."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажми кнопку информации слева вверху. Прочитай об инструменте, затем закрой описание крестиком."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touche le bouton d’information en haut à gauche. Lis la description, puis ferme-la avec la croix."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe oben links auf die Infotaste. Lies die Beschreibung und schließe sie mit dem Kreuz."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca il pulsante informazioni in alto a sinistra. Leggi la descrizione e chiudila con la croce."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca el botón de información arriba a la izquierda. Lee la descripción y ciérrala con la cruz."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque no botão de informações no canto superior esquerdo. Leia a descrição e feche-a com a cruz."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط زر المعلومات الأعلى. اقرأ الوصف ثم أغلقه بعلامة الإغلاق."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左上の情報ボタンをタップします。説明を読んだら×で閉じます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "왼쪽 위 정보 버튼을 누르세요. 설명을 읽고 닫기 버튼으로 닫으세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击左上角的信息按钮。阅读说明后，点击叉号关闭。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下左上角的資訊按鈕。閱讀說明後，以叉號關閉。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sol üstteki bilgi düğmesine dokun. Açıklamayı oku, sonra çarpıyla kapat."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij przycisk informacji w lewym górnym rogu. Przeczytaj opis i zamknij go krzyżykiem."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik linksboven op de informatieknop. Lees de uitleg en sluit deze met het kruisje."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryck på informationsknappen uppe till vänster. Läs beskrivningen och stäng den med krysset."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryk på informationsknappen øverst til venstre. Læs beskrivelsen og luk den med krydset."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trykk på informasjonsknappen øverst til venstre. Les beskrivelsen og lukk den med krysset."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napauta tietopainiketta vasemmassa yläkulmassa. Lue kuvaus ja sulje se rististä."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ऊपर बाईं ओर जानकारी बटन दबाएँ। टूल के बारे में पढ़ें, फिर क्रॉस से पृष्ठ बंद करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "மேல் இடப்புறத் தகவல் பொத்தானைத் தட்டுங்கள். கருவியைப் பற்றிப் படித்து, பின்னர் குறுக்குக்குறியால் பக்கத்தை மூடுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ఎగువ ఎడమవైపు సమాచారం బటన్ నొక్కండి. సాధనం గురించి చదివి క్రాస్ గుర్తుతో పేజీ మూసివేయండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वर डावीकडील माहिती बटण दाबा. साधनाबद्दल वाचा, मग फुलीने पान बंद करा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ઉપર ડાબે માહિતી બટન દબાવો. સાધન વિશે વાંચો, પછી ચોકડીથી પાનું બંધ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਉੱਪਰ ਖੱਬੇ ਜਾਣਕਾਰੀ ਬਟਨ ਦਬਾਓ। ਸੰਦ ਬਾਰੇ ਪੜ੍ਹੋ, ਫਿਰ ਕਰਾਸ ਨਾਲ ਪੰਨਾ ਬੰਦ ਕਰੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ওপরে বাঁয়ের তথ্য বোতাম চাপুন। টুল সম্পর্কে পড়ুন, তারপর ক্রস দিয়ে পৃষ্ঠা বন্ধ করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk tombol informasi di kiri atas. Baca penjelasan alat, lalu tutup halaman dengan tanda silang."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اوپر معلومات کا بٹن دبائیں۔ ٹول کے بارے میں پڑھیں، پھر کراس سے صفحہ بند کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm nút thông tin ở góc trên bên trái. Đọc về công cụ, rồi đóng trang bằng dấu nhân."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะปุ่มข้อมูลที่มุมซ้ายบน อ่านข้อมูลเครื่องมือ แล้วปิดหน้าด้วยกากบาท"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketik butang maklumat di kiri atas. Baca tentang alat, kemudian tutup halaman dengan tanda pangkah."
+          }
+        }
+      }
+    },
+    "Open the Angle page and set the nib angle to 20 degrees. Use the Digital Crown or the arrow buttons.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open the Angle page and set the nib angle to 20 degrees. Use the Digital Crown or the arrow buttons."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перейди в раздел «Угол» и установи наклон наконечника 20 градусов колёсиком или кнопками со стрелками."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvre Angle et règle la pointe sur 20 degrés avec la Digital Crown ou les flèches."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne Winkel und stelle mit der Digital Crown oder den Pfeilen 20 Grad ein."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Angolo e imposta 20 gradi con la Digital Crown o le frecce."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Ángulo y ajusta la punta a 20 grados con la Digital Crown o las flechas."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra Ângulo e defina 20 graus com a Digital Crown ou as setas."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح الزاوية واضبطها على 20 درجة باستخدام Digital Crown أو الأسهم."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「角度」を開き、Digital Crownか矢印で20度にします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "각도를 열고 Digital Crown이나 화살표로 20도를 맞추세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开“角度”，用数码表冠或箭头将笔尖设为20度。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「角度」，用數位錶冠或箭頭將筆尖設為20度。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açı sayfasında Digital Crown veya oklarla ucu 20 dereceye ayarla."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Kąt i ustaw 20 stopni za pomocą Digital Crown lub strzałek."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Hoek en stel met de Digital Crown of pijlen 20 graden in."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öppna Vinkel och ställ in 20 grader med Digital Crown eller pilarna."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åbn Vinkel og indstil 20 grader med Digital Crown eller pilene."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åpne Vinkel og still inn 20 grader med Digital Crown eller pilene."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avaa Kulma ja aseta 20 astetta Digital Crownilla tai nuolilla."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कोण पृष्ठ खोलें और निब का कोण 20 डिग्री करें। Digital Crown या तीर बटन इस्तेमाल करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கோணப் பக்கத்தைத் திறந்து முனையின் கோணத்தை 20 டிகிரியாக அமைக்கவும். Digital Crown அல்லது அம்புப் பொத்தான்களைப் பயன்படுத்துங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "కోణం పేజీ తెరిచి పెన్ కొన కోణాన్ని 20 డిగ్రీలకు సెట్ చేయండి. Digital Crown లేదా బాణం బటన్లు వాడండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कोन पान उघडून टोकाचा कोन 20 अंश करा. Digital Crown किंवा बाणांची बटणे वापरा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ખૂણાનું પાનું ખોલી અણીનો ખૂણો 20 ડિગ્રી કરો. Digital Crown અથવા તીર બટનો વાપરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਕੋਣ ਪੰਨਾ ਖੋਲ੍ਹ ਕੇ ਨੋਕ ਦਾ ਕੋਣ 20 ਡਿਗਰੀ ਕਰੋ। Digital Crown ਜਾਂ ਤੀਰ ਬਟਨ ਵਰਤੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কোণ পৃষ্ঠা খুলে কলমের নিবের কোণ 20 ডিগ্রি করুন। Digital Crown বা তীর বোতাম ব্যবহার করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buka halaman Sudut dan atur sudut ujung pena ke 20 derajat. Gunakan Digital Crown atau tombol panah."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زاویہ صفحہ کھول کر نوک کا زاویہ 20 ڈگری کریں۔ Digital Crown یا تیر والے بٹن استعمال کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở trang Góc và đặt góc ngòi bút thành 20 độ. Dùng Digital Crown hoặc các nút mũi tên."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดหน้ามุม แล้วตั้งมุมปลายปากกาเป็น 20 องศา ใช้ Digital Crown หรือปุ่มลูกศร"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buka halaman Sudut dan tetapkan sudut mata pen kepada 20 darjah. Gunakan Digital Crown atau butang anak panah."
+          }
+        }
+      }
+    },
+    "Tap the green checkmark to return to the canvas, then draw two strokes with your new brush.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the green checkmark to return to the canvas, then draw two strokes with your new brush."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажми зелёную галочку, чтобы вернуться к холсту, и нарисуй два штриха новой кистью."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touche la coche verte pour revenir à la toile, puis trace deux traits avec ce pinceau."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe auf den grünen Haken, um zur Leinwand zurückzukehren, und zeichne zwei Striche mit dem neuen Pinsel."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca il segno di spunta verde per tornare alla tela, poi disegna due tratti con il nuovo pennello."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca la marca verde para volver al lienzo y dibuja dos trazos con el pincel nuevo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque no visto verde para voltar à tela e desenhe dois traços com o novo pincel."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط علامة الصح الخضراء للعودة إلى اللوحة، ثم ارسم خطين بالفرشاة الجديدة."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "緑のチェックをタップしてキャンバスに戻り、新しいブラシで2本の線を描きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "초록 체크 표시를 눌러 캔버스로 돌아가 새 브러시로 선 두 개를 그리세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击绿色对勾返回画布，用新画笔画两笔。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下綠色勾號返回畫布，用新畫筆畫兩筆。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeşil onay işaretine dokunarak tuvale dön ve yeni fırçayla iki çizgi çiz."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij zielony znacznik, aby wrócić do płótna, i narysuj dwie kreski nowym pędzlem."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik op het groene vinkje om naar het canvas terug te keren en teken twee lijnen met de nieuwe kwast."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryck på den gröna bocken för att återgå till duken och rita två streck med den nya penseln."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryk på det grønne flueben for at vende tilbage til lærredet og tegn to streger med den nye pensel."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trykk på det grønne merket for å gå tilbake til lerretet, og tegn to streker med den nye penselen."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palaa piirtoalueelle vihreästä valintamerkistä ja piirrä kaksi viivaa uudella siveltimellä."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हरे चेकमार्क से कैनवास पर लौटें और नए ब्रश से दो स्ट्रोक बनाएँ।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பச்சைச் சரிக்குறியைத் தட்டி கேன்வாஸுக்குத் திரும்பி, புதிய தூரிகையால் இரண்டு கோடுகளை வரையுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ఆకుపచ్చ చెక్‌మార్క్‌తో కాన్వాస్‌కు తిరిగి వచ్చి కొత్త బ్రష్‌తో రెండు గీతలు గీయండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हिरव्या टिकमार्कने कॅनव्हासवर परत जा आणि नव्या ब्रशने दोन रेषा काढा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "લીલી નિશાનીથી કેનવાસ પર પાછા આવો અને નવા બ્રશથી બે રેખાઓ દોરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਹਰੇ ਸਹੀ ਦੇ ਨਿਸ਼ਾਨ ਨਾਲ ਕੈਨਵਸ ਉੱਤੇ ਵਾਪਸ ਆਓ ਅਤੇ ਨਵੇਂ ਬੁਰਸ਼ ਨਾਲ ਦੋ ਲਕੀਰਾਂ ਬਣਾਓ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সবুজ টিক চিহ্নে চাপ দিয়ে ক্যানভাসে ফিরুন এবং নতুন ব্রাশে দুটি রেখা আঁকুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk tanda centang hijau untuk kembali ke kanvas, lalu buat dua goresan dengan kuas baru."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سبز ٹک سے کینوس پر واپس آئیں اور نئے برش سے دو لکیریں بنائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm dấu tích xanh để về khung vẽ, rồi vẽ hai nét bằng cọ mới."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะเครื่องหมายถูกสีเขียวเพื่อกลับสู่ผืนผ้าใบ แล้ววาดสองเส้นด้วยแปรงใหม่"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketik tanda semak hijau untuk kembali ke kanvas, kemudian lukis dua sapuan dengan berus baharu."
+          }
+        }
+      }
+    },
+    "Turn the Digital Crown to zoom the canvas in or out, then stop turning.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn the Digital Crown to zoom the canvas in or out, then stop turning."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Покрути колёсико часов, чтобы приблизить или отдалить холст, затем остановись."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tourne la Digital Crown pour zoomer sur la toile, puis arrête."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drehe die Digital Crown, um die Leinwand zu vergrößern oder zu verkleinern. Höre dann auf zu drehen."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota la Digital Crown per ingrandire o ridurre la tela, poi fermati."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gira la Digital Crown para acercar o alejar el lienzo y después deja de girar."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rode a Digital Crown para ampliar ou reduzir a tela e depois pare."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدر Digital Crown لتكبير اللوحة أو تصغيرها، ثم توقف."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crownを回してキャンバスを拡大・縮小し、回すのを止めます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown을 돌려 캔버스를 확대하거나 축소한 뒤 멈추세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转动数码表冠缩放画布，然后停止转动。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉動數位錶冠縮放畫布，然後停止轉動。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown’u çevirerek tuvali yakınlaştır veya uzaklaştır, sonra dur."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obróć Digital Crown, aby przybliżyć lub oddalić płótno, a potem przestań obracać."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draai de Digital Crown om in of uit te zoomen en stop daarna met draaien."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrid på Digital Crown för att zooma in eller ut och sluta sedan vrida."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drej Digital Crown for at zoome ind eller ud og stop derefter med at dreje."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vri Digital Crown for å zoome inn eller ut, og slutt deretter å vri."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lähennä tai loitonna piirtoaluetta kiertämällä Digital Crownia ja lopeta sitten kiertäminen."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digital Crown घुमाकर कैनवास का ज़ूम बदलें, फिर घुमाना रोक दें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கேன்வாஸைப் பெரிதாக்க அல்லது சிறிதாக்க Digital Crown-ஐச் சுழற்றி, பின்னர் நிறுத்துங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "కాన్వాస్‌ను జూమ్ చేయడానికి Digital Crown తిప్పి, తర్వాత ఆపండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कॅनव्हास जवळ किंवा दूर करण्यासाठी Digital Crown फिरवा, मग थांबा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "કેનવાસ ઝૂમ કરવા Digital Crown ફેરવો, પછી ફેરવવાનું બંધ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਕੈਨਵਸ ਨੂੰ ਜ਼ੂਮ ਕਰਨ ਲਈ Digital Crown ਘੁਮਾਓ, ਫਿਰ ਰੁਕ ਜਾਓ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ক্যানভাস জুম করতে Digital Crown ঘোরান, তারপর ঘোরানো থামান।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Putar Digital Crown untuk memperbesar atau memperkecil kanvas, lalu berhenti memutar."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کینوس کو بڑا یا چھوٹا کرنے کے لیے Digital Crown گھمائیں، پھر رک جائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoay Digital Crown để phóng to hoặc thu nhỏ khung vẽ, rồi ngừng xoay."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หมุน Digital Crown เพื่อซูมผืนผ้าใบเข้าหรือออก แล้วหยุดหมุน"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Putar Digital Crown untuk mengezum kanvas masuk atau keluar, kemudian berhenti memutar."
+          }
+        }
+      }
+    },
+    "You are in camera mode. Drag to move the canvas, then tap the green checkmark.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are in camera mode. Drag to move the canvas, then tap the green checkmark."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сейчас включён режим камеры. Подвигай холст пальцем, затем нажми зелёную галочку."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu es en mode caméra. Déplace la toile avec le doigt, puis touche la coche verte."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du bist im Kameramodus. Verschiebe die Leinwand mit dem Finger und tippe auf den grünen Haken."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sei in modalità fotocamera. Trascina la tela, poi tocca il segno di spunta verde."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estás en modo cámara. Arrastra el lienzo y toca la marca verde."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Está no modo de câmara. Arraste a tela e toque no visto verde."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أنت في وضع الكاميرا. حرّك اللوحة بإصبعك ثم اضغط علامة الصح الخضراء."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カメラモードです。指でキャンバスを動かしてから緑のチェックをタップします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "카메라 모드입니다. 손가락으로 캔버스를 옮긴 뒤 초록 체크 표시를 누르세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "现在处于相机模式。用手指拖动画布，然后点击绿色对勾。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "現在處於相機模式。用手指拖動畫布，然後點一下綠色勾號。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kamera modundasın. Tuvali parmağınla taşı, ardından yeşil onay işaretine dokun."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jesteś w trybie kamery. Przesuń płótno palcem i stuknij zielony znacznik."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je bent in de cameramodus. Verschuif het canvas met je vinger en tik op het groene vinkje."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du är i kameraläge. Flytta duken med fingret och tryck på den gröna bocken."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du er i kameratilstand. Flyt lærredet med fingeren og tryk på det grønne flueben."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du er i kameramodus. Flytt lerretet med fingeren og trykk på det grønne merket."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Olet kameratilassa. Siirrä piirtoaluetta sormella ja napauta vihreää valintamerkkiä."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आप कैमरा मोड में हैं। कैनवास खिसकाने के लिए उंगली खींचें, फिर हरा चेकमार्क दबाएँ।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "நீங்கள் கேமரா பயன்முறையில் இருக்கிறீர்கள். கேன்வாஸை நகர்த்த இழுத்து, பின்னர் பச்சைச் சரிக்குறியைத் தட்டுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మీరు కెమెరా మోడ్‌లో ఉన్నారు. కాన్వాస్‌ను జరపడానికి లాగి, ఆకుపచ్చ చెక్‌మార్క్ నొక్కండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तुम्ही कॅमेरा मोडमध्ये आहात. कॅनव्हास हलवण्यासाठी बोट ओढा, मग हिरवी टिक दाबा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "તમે કૅમેરા મોડમાં છો. કેનવાસ ખસેડવા આંગળી ખેંચો, પછી લીલી નિશાની દબાવો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਤੁਸੀਂ ਕੈਮਰਾ ਮੋਡ ਵਿੱਚ ਹੋ। ਕੈਨਵਸ ਹਿਲਾਉਣ ਲਈ ਉਂਗਲ ਖਿੱਚੋ, ਫਿਰ ਹਰਾ ਸਹੀ ਦਾ ਨਿਸ਼ਾਨ ਦਬਾਓ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনি ক্যামেরা মোডে আছেন। ক্যানভাস সরাতে টেনে নিন, তারপর সবুজ টিক চিহ্ন চাপুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda berada dalam mode kamera. Seret untuk memindahkan kanvas, lalu ketuk tanda centang hijau."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آپ کیمرا موڈ میں ہیں۔ کینوس کو حرکت دینے کے لیے انگلی کھینچیں، پھر سبز ٹک دبائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đang ở chế độ camera. Kéo để di chuyển khung vẽ, rồi chạm dấu tích xanh."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณอยู่ในโหมดกล้อง ลากเพื่อเลื่อนผืนผ้าใบ แล้วแตะเครื่องหมายถูกสีเขียว"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda dalam mod kamera. Seret untuk menggerakkan kanvas, kemudian ketik tanda semak hijau."
+          }
+        }
+      }
+    },
+    "Try Undo and Redo at the bottom. Use these buttons twice in total.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try Undo and Redo at the bottom. Use these buttons twice in total."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Попробуй кнопки отмены и повтора внизу экрана. Нажми их в общей сложности два раза."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Essaie Annuler et Rétablir en bas. Utilise ces boutons deux fois au total."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probiere unten Rückgängig und Wiederholen aus. Benutze die Tasten insgesamt zweimal."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova Annulla e Ripristina in basso. Usa questi pulsanti due volte in totale."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prueba Deshacer y Rehacer abajo. Usa estos botones dos veces en total."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Experimente Desfazer e Refazer em baixo. Use estes botões duas vezes no total."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جرّب التراجع والإعادة في الأسفل. استخدم الزرين مرتين إجمالًا."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下の取り消しとやり直しを試しましょう。合計2回使います。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아래의 실행 취소와 다시 실행을 써보세요. 두 버튼을 합쳐 두 번 사용하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "试试底部的撤销和重做按钮，总共使用两次。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "試試底部的還原和重做按鈕，總共使用兩次。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alttaki Geri al ve Yinele düğmelerini toplam iki kez kullan."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wypróbuj Cofnij i Ponów na dole. Użyj tych przycisków łącznie dwa razy."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probeer onderaan Ongedaan maken en Opnieuw. Gebruik de knoppen in totaal twee keer."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova Ångra och Gör om längst ner. Använd knapparna totalt två gånger."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv Fortryd og Gentag nederst. Brug knapperne to gange i alt."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prøv Angre og Gjør om nederst. Bruk knappene totalt to ganger."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kokeile alhaalta Kumoa ja Tee uudelleen. Käytä painikkeita yhteensä kahdesti."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नीचे पूर्ववत और फिर करें बटन आज़माएँ। इनका कुल दो बार इस्तेमाल करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கீழே உள்ள செயல்தவிர் மற்றும் மீண்டும் செய் பொத்தான்களை மொத்தம் இரண்டு முறை பயன்படுத்துங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "దిగువన రద్దు మరియు మళ్లీ చేయి బటన్లను మొత్తం రెండుసార్లు వాడండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "खालील पूर्ववत आणि पुन्हा करा बटणे एकूण दोनदा वापरा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "નીચેનાં પૂર્વવત્ અને ફરી કરો બટનો કુલ બે વાર વાપરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਹੇਠਲੇ ਵਾਪਸ ਅਤੇ ਮੁੜ ਕਰੋ ਬਟਨ ਕੁੱਲ ਦੋ ਵਾਰ ਵਰਤੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "নিচের পূর্বাবস্থা এবং আবার করুন বোতাম মোট দুবার ব্যবহার করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coba Urungkan dan Ulangi di bawah. Gunakan tombol-tombol ini sebanyak dua kali."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نیچے کالعدم اور دوبارہ کریں کے بٹن کل دو بار استعمال کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử Hoàn tác và Làm lại ở dưới. Dùng các nút này tổng cộng hai lần."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลองปุ่มเลิกทำและทำซ้ำด้านล่าง ใช้ปุ่มเหล่านี้รวมสองครั้ง"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuba Buat asal dan Buat semula di bawah. Gunakan butang ini sebanyak dua kali keseluruhannya."
+          }
+        }
+      }
+    },
+    "Save your drawing with the button in the lower-right corner. It goes into the temporary tutorial gallery.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save your drawing with the button in the lower-right corner. It goes into the temporary tutorial gallery."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохрани рисунок кнопкой в правом нижнем углу. Он попадёт во временную учебную галерею."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistre ton dessin avec le bouton en bas à droite. Il rejoint la galerie temporaire du tutoriel."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speichere die Zeichnung mit der Taste unten rechts in der vorübergehenden Übungsgalerie."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva il disegno con il pulsante in basso a destra nella galleria temporanea del tutorial."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guarda el dibujo con el botón inferior derecho en la galería temporal del tutorial."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guarde o desenho com o botão inferior direito na galeria temporária do tutorial."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "احفظ الرسم بالزر الأسفل في معرض التدريب المؤقت."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "右下の保存ボタンをタップします。作品は練習用の一時ギャラリーに保存されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오른쪽 아래 저장 버튼을 누르세요. 그림은 임시 연습 갤러리에 저장됩니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击右下角保存。作品会保存到临时练习画廊。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下右下角儲存。作品會儲存到臨時練習圖庫。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sağ alttaki düğmeyle çizimini geçici eğitim galerisine kaydet."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz rysunek przyciskiem w prawym dolnym rogu w tymczasowej galerii samouczka."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sla je tekening met de knop rechtsonder op in de tijdelijke oefengalerij."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spara teckningen med knappen nere till höger i guidens tillfälliga galleri."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gem tegningen med knappen nederst til højre i vejledningens midlertidige galleri."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lagre tegningen med knappen nederst til høyre i omvisningens midlertidige galleri."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tallenna piirros oikean alakulman painikkeella opastuksen väliaikaiseen galleriaan."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नीचे दाईं ओर के बटन से चित्र सहेजें। यह अस्थायी प्रशिक्षण गैलरी में जाएगा।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கீழ் வலப்புறப் பொத்தானால் ஓவியத்தைச் சேமியுங்கள். அது தற்காலிகப் பயிற்சிக் கேலரியில் சேரும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "దిగువ కుడి మూల బటన్‌తో చిత్రాన్ని సేవ్ చేయండి. అది తాత్కాలిక శిక్షణ గ్యాలరీలో చేరుతుంది."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "खाली उजवीकडील बटणाने चित्र जतन करा. ते तात्पुरत्या प्रशिक्षण गॅलरीत जाईल."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "નીચે જમણી બાજુના બટનથી ચિત્ર સાચવો. તે કામચલાઉ તાલીમ ગૅલેરીમાં જશે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਹੇਠਾਂ ਸੱਜੇ ਬਟਨ ਨਾਲ ਚਿੱਤਰ ਸੰਭਾਲੋ। ਇਹ ਅਸਥਾਈ ਸਿਖਲਾਈ ਗੈਲਰੀ ਵਿੱਚ ਜਾਵੇਗਾ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "নিচের ডান কোণের বোতাম দিয়ে ছবিটি সংরক্ষণ করুন। এটি অস্থায়ী প্রশিক্ষণ গ্যালারিতে যাবে।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simpan gambar dengan tombol di kanan bawah. Gambar masuk ke galeri tutorial sementara."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نیچے محفوظ کرنے کا بٹن دبائیں۔ تصویر عارضی تربیتی گیلری میں جائے گی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu tranh bằng nút ở góc dưới bên phải. Tranh được đưa vào bộ sưu tập hướng dẫn tạm thời."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บันทึกภาพด้วยปุ่มที่มุมขวาล่าง ภาพจะอยู่ในแกลเลอรีบทสอนชั่วคราว"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simpan lukisan dengan butang di kanan bawah. Lukisan masuk ke galeri tutorial sementara."
+          }
+        }
+      }
+    },
+    "Share offers the options available on your watch. You can try sharing, then close this page with the cross to continue.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share offers the options available on your watch. You can try sharing, then close this page with the cross to continue."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В меню «Поделиться» доступны способы отправки, которые поддерживают твои часы. Можешь попробовать отправить рисунок, затем закрой эту страницу крестиком."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partager propose les options disponibles sur ta montre. Tu peux les essayer, puis fermer cette page avec la croix."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teilen zeigt die Optionen deiner Watch. Probiere sie aus oder schließe diese Seite mit dem Kreuz."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi offre le opzioni disponibili sull’orologio. Puoi provarle, poi chiudere questa pagina con la croce."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir ofrece las opciones disponibles en tu reloj. Puedes probarlas y después cerrar esta página con la cruz."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partilhar oferece as opções disponíveis no relógio. Pode experimentá-las e depois fechar esta página com a cruz."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعرض المشاركة الخيارات المتاحة على ساعتك. يمكنك تجربتها ثم إغلاق الصفحة بعلامة الإغلاق."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共有には時計で利用できる方法が表示されます。試してから×でページを閉じましょう。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공유에는 시계에서 사용할 수 있는 방법이 표시됩니다. 사용해 본 뒤 닫기 버튼으로 페이지를 닫으세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“分享”会显示手表支持的方式。你可以试用，然后点击叉号关闭页面。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「分享」會顯示手錶支援的方式。你可以試用，然後以叉號關閉頁面。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paylaş, saatinde kullanılabilen seçenekleri sunar. Deneyebilir, ardından sayfayı çarpıyla kapatabilirsin."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij pokazuje opcje dostępne na zegarku. Możesz je wypróbować, a potem zamknąć stronę krzyżykiem."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delen toont de opties op je horloge. Je kunt ze proberen en daarna deze pagina met het kruisje sluiten."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dela visar alternativen på din klocka. Du kan prova dem och sedan stänga sidan med krysset."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Del viser mulighederne på dit ur. Du kan prøve dem og derefter lukke siden med krydset."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Del viser alternativene på klokken. Du kan prøve dem og deretter lukke siden med krysset."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jaa näyttää kellosi tarjoamat vaihtoehdot. Voit kokeilla niitä ja sulkea sitten sivun rististä."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साझा करें में आपकी घड़ी पर उपलब्ध विकल्प दिखते हैं। साझा करना आज़मा सकते हैं, फिर आगे बढ़ने के लिए क्रॉस से पृष्ठ बंद करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பகிர் பகுதியில் உங்கள் கடிகாரத்தில் கிடைக்கும் வழிகள் உள்ளன. பகிர முயற்சித்த பின், தொடர குறுக்குக்குறியால் இந்தப் பக்கத்தை மூடுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "షేర్‌లో మీ వాచ్‌లో అందుబాటులో ఉన్న ఎంపికలు ఉంటాయి. షేర్ చేయడం ప్రయత్నించి, కొనసాగడానికి క్రాస్‌తో ఈ పేజీ మూసివేయండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "शेअरमध्ये तुमच्या घड्याळावरील उपलब्ध पर्याय दिसतात. शेअर करून पाहा, मग पुढे जाण्यासाठी फुलीने पान बंद करा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "શેરમાં તમારી ઘડિયાળ પર ઉપલબ્ધ વિકલ્પો દેખાય છે. શેર કરવાનું અજમાવી શકો છો, પછી આગળ વધવા ચોકડીથી પાનું બંધ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਸਾਂਝਾ ਕਰੋ ਵਿੱਚ ਤੁਹਾਡੀ ਘੜੀ ਉੱਤੇ ਉਪਲਬਧ ਵਿਕਲਪ ਹਨ। ਸਾਂਝਾ ਕਰਨਾ ਅਜ਼ਮਾ ਕੇ, ਅੱਗੇ ਜਾਣ ਲਈ ਕਰਾਸ ਨਾਲ ਪੰਨਾ ਬੰਦ ਕਰੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "শেয়ার-এ আপনার ঘড়িতে উপলব্ধ বিকল্পগুলো আছে। শেয়ার করা চেষ্টা করে, এগোতে ক্রস দিয়ে পৃষ্ঠা বন্ধ করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bagikan menampilkan pilihan yang tersedia di jam Anda. Anda boleh mencoba berbagi, lalu tutup halaman ini dengan tanda silang untuk melanjutkan."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شیئر میں آپ کی گھڑی پر دستیاب طریقے نظر آتے ہیں۔ شیئر کرنا آزما سکتے ہیں، پھر آگے بڑھنے کے لیے کراس سے صفحہ بند کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chia sẻ hiển thị các lựa chọn có trên đồng hồ của bạn. Bạn có thể thử chia sẻ, rồi đóng trang bằng dấu nhân để tiếp tục."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แชร์จะแสดงตัวเลือกที่มีในนาฬิกาของคุณ คุณลองแชร์ได้ แล้วปิดหน้านี้ด้วยกากบาทเพื่อดำเนินการต่อ"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kongsi memaparkan pilihan yang tersedia pada jam anda. Anda boleh mencuba perkongsian, kemudian tutup halaman ini dengan tanda pangkah untuk meneruskan."
+          }
+        }
+      }
+    },
+    "Tap the three dots at the top left, then choose Gallery.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the three dots at the top left, then choose Gallery."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажми три точки слева вверху и выбери «Галерея»."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touche les trois points en haut à gauche, puis Galerie."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe oben links auf die drei Punkte und wähle Galerie."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca i tre puntini in alto a sinistra, poi Galleria."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca los tres puntos arriba a la izquierda y elige Galería."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque nos três pontos no canto superior esquerdo e escolha Galeria."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط النقاط الثلاث الأعلى ثم اختر المعرض."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左上の3点ボタンをタップし、「ギャラリー」を選びます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "왼쪽 위 점 세 개를 누르고 갤러리를 선택하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击左上角的三个点，选择“画廊”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下左上角的三個點，選擇「圖庫」。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sol üstteki üç noktaya dokun ve Galeri’yi seç."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij trzy kropki w lewym górnym rogu i wybierz Galeria."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik linksboven op de drie puntjes en kies Galerij."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryck på de tre punkterna uppe till vänster och välj Galleri."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryk på de tre prikker øverst til venstre og vælg Galleri."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trykk på de tre prikkene øverst til venstre og velg Galleri."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napauta vasemman yläkulman kolmea pistettä ja valitse Galleria."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ऊपर बाईं ओर तीन बिंदु दबाएँ, फिर गैलरी चुनें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "மேல் இடப்புற மூன்று புள்ளிகளைத் தட்டி கேலரியைத் தேர்வுசெய்யுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ఎగువ ఎడమ మూలలో మూడు చుక్కలు నొక్కి గ్యాలరీ ఎంచుకోండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "वर डावीकडील तीन ठिपके दाबून गॅलरी निवडा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ઉપર ડાબે ત્રણ બિંદુ દબાવી ગૅલેરી પસંદ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਉੱਪਰ ਖੱਬੇ ਤਿੰਨ ਬਿੰਦੀਆਂ ਦਬਾ ਕੇ ਗੈਲਰੀ ਚੁਣੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ওপরে বাঁয়ে তিনটি বিন্দু চাপুন, তারপর গ্যালারি বেছে নিন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk tiga titik di kiri atas, lalu pilih Galeri."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اوپر تین نقطے دبائیں، پھر گیلری منتخب کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm ba chấm ở góc trên bên trái, rồi chọn Bộ sưu tập."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะสามจุดที่มุมซ้ายบน แล้วเลือกแกลเลอรี"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketik tiga titik di kiri atas, kemudian pilih Galeri."
+          }
+        }
+      }
+    },
+    "These are practice pictures. Turn the Digital Crown or tap a picture twice to open it at full size.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These are practice pictures. Turn the Digital Crown or tap a picture twice to open it at full size."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это учебные рисунки. Поверни колёсико или дважды нажми на рисунок, чтобы открыть его в полном размере."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce sont des images d’entraînement. Tourne la Digital Crown ou touche deux fois une image pour l’ouvrir en plein format."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das sind Übungsbilder. Drehe die Digital Crown oder tippe zweimal auf ein Bild, um es in voller Größe zu öffnen."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questi sono disegni di prova. Ruota la Digital Crown o tocca due volte un disegno per aprirlo a grandezza intera."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son imágenes de práctica. Gira la Digital Crown o toca una imagen dos veces para abrirla a tamaño completo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estas são imagens de treino. Rode a Digital Crown ou toque duas vezes numa imagem para a abrir em tamanho completo."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هذه صور للتدريب. أدر Digital Crown أو اضغط الصورة مرتين لفتحها بالحجم الكامل."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "練習用の画像です。Digital Crownを回すか画像を2回タップして、フルサイズで開きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연습용 그림입니다. Digital Crown을 돌리거나 그림을 두 번 눌러 전체 크기로 여세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这些是练习图片。转动数码表冠或点击图片两次，以完整尺寸打开。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "這些是練習圖片。轉動數位錶冠或點圖片兩次，以完整尺寸開啟。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bunlar alıştırma resimleri. Digital Crown’u çevir veya bir resme iki kez dokunarak tam boyutta aç."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To obrazy do ćwiczeń. Obróć Digital Crown lub stuknij obraz dwa razy, aby otworzyć go w pełnym rozmiarze."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit zijn oefenafbeeldingen. Draai de Digital Crown of tik twee keer op een afbeelding om deze op volledig formaat te openen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Det här är övningsbilder. Vrid på Digital Crown eller tryck två gånger på en bild för att öppna den i full storlek."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dette er øvebilleder. Drej Digital Crown eller tryk to gange på et billede for at åbne det i fuld størrelse."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dette er øvingsbilder. Vri Digital Crown eller trykk to ganger på et bilde for å åpne det i full størrelse."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nämä ovat harjoituskuvia. Kierrä Digital Crownia tai napauta kuvaa kahdesti avataksesi sen täysikokoisena."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ये अभ्यास के चित्र हैं। पूरा आकार देखने के लिए Digital Crown घुमाएँ या किसी चित्र पर दो बार टैप करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "இவை பயிற்சிப் படங்கள். முழு அளவில் திறக்க Digital Crown-ஐச் சுழற்றுங்கள் அல்லது படத்தை இருமுறை தட்டுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ఇవి అభ్యాస చిత్రాలు. పూర్తి పరిమాణంలో తెరవడానికి Digital Crown తిప్పండి లేదా చిత్రాన్ని రెండుసార్లు నొక్కండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ही सरावाची चित्रे आहेत. पूर्ण आकारात उघडण्यासाठी Digital Crown फिरवा किंवा चित्रावर दोनदा टॅप करा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "આ અભ્યાસનાં ચિત્રો છે. પૂરા કદમાં ખોલવા Digital Crown ફેરવો અથવા ચિત્ર પર બે વાર ટૅપ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਇਹ ਅਭਿਆਸ ਦੀਆਂ ਤਸਵੀਰਾਂ ਹਨ। ਪੂਰੇ ਆਕਾਰ ਵਿੱਚ ਖੋਲ੍ਹਣ ਲਈ Digital Crown ਘੁਮਾਓ ਜਾਂ ਤਸਵੀਰ ਨੂੰ ਦੋ ਵਾਰ ਟੈਪ ਕਰੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এগুলো অনুশীলনের ছবি। পূর্ণ আকারে খুলতে Digital Crown ঘোরান বা ছবিতে দুবার ট্যাপ করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ini adalah gambar latihan. Putar Digital Crown atau ketuk gambar dua kali untuk membukanya dalam ukuran penuh."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "یہ مشق کی تصویریں ہیں۔ پورے سائز میں کھولنے کے لیے Digital Crown گھمائیں یا تصویر کو دو بار تھپتھپائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đây là các ảnh thực hành. Xoay Digital Crown hoặc chạm ảnh hai lần để mở ở kích thước đầy đủ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "นี่คือภาพฝึกหัด หมุน Digital Crown หรือแตะภาพสองครั้งเพื่อเปิดแบบเต็มขนาด"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ini ialah gambar latihan. Putar Digital Crown atau ketik gambar dua kali untuk membukanya pada saiz penuh."
+          }
+        }
+      }
+    },
+    "Use the back button at the top left until you return to the canvas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use the back button at the top left until you return to the canvas."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажимай кнопку «Назад» слева вверху, пока не вернёшься к холсту."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilise le bouton Retour en haut à gauche jusqu’à retrouver la toile."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe oben links auf Zurück, bis du wieder auf der Leinwand bist."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Indietro in alto a sinistra finché non torni alla tela."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Atrás arriba a la izquierda hasta volver al lienzo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Voltar no canto superior esquerdo até regressar à tela."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدم زر الرجوع الأعلى حتى تعود إلى اللوحة."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左上の戻るボタンでキャンバスまで戻ります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "왼쪽 위 뒤로 버튼을 눌러 캔버스로 돌아가세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用左上角的返回按钮，直到回到画布。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用左上角的返回按鈕，直到回到畫布。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sol üstteki Geri düğmesiyle tuvale dön."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Używaj przycisku Wstecz w lewym górnym rogu, aż wrócisz do płótna."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruik linksboven Terug totdat je weer op het canvas bent."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Använd Tillbaka uppe till vänster tills du återvänder till duken."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brug Tilbage øverst til venstre, indtil du er tilbage på lærredet."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bruk Tilbake øverst til venstre til du kommer tilbake til lerretet."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Palaa piirtoalueelle vasemman yläkulman Takaisin-painikkeella."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ऊपर बाईं ओर वापस बटन दबाते हुए कैनवास पर लौटें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கேன்வாஸுக்குத் திரும்பும் வரை மேல் இடப்புறப் பின்செல் பொத்தானைப் பயன்படுத்துங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "కాన్వాస్‌కు తిరిగి వచ్చేవరకు ఎగువ ఎడమ మూలలో వెనుకకు బటన్ వాడండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कॅनव्हासवर परत येईपर्यंत वर डावीकडील मागे बटण वापरा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "કેનવાસ પર પાછા આવો ત્યાં સુધી ઉપર ડાબે પાછા બટન વાપરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਕੈਨਵਸ ਉੱਤੇ ਵਾਪਸ ਆਉਣ ਤੱਕ ਉੱਪਰ ਖੱਬੇ ਵਾਪਸ ਬਟਨ ਵਰਤੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ক্যানভাসে না ফেরা পর্যন্ত ওপরে বাঁয়ের ফিরে যান বোতাম ব্যবহার করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gunakan tombol kembali di kiri atas hingga Anda kembali ke kanvas."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کینوس پر واپس آنے تک اوپر واپسی کا بٹن استعمال کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng nút quay lại ở góc trên bên trái cho đến khi về khung vẽ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ใช้ปุ่มย้อนกลับที่มุมซ้ายบนจนกลับถึงผืนผ้าใบ"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gunakan butang kembali di kiri atas sehingga anda kembali ke kanvas."
+          }
+        }
+      }
+    },
+    "Tap the broom in the lower-left corner and confirm to clear the practice canvas.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the broom in the lower-left corner and confirm to clear the practice canvas."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажми метлу слева внизу и подтверди очистку учебного холста."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touche le balai en bas à gauche et confirme pour effacer la toile d’entraînement."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe unten links auf den Besen und bestätige, um die Übungsleinwand zu leeren."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca la scopa in basso a sinistra e conferma per svuotare la tela di prova."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca la escoba abajo a la izquierda y confirma para borrar el lienzo de práctica."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque na vassoura no canto inferior esquerdo e confirme para limpar a tela de treino."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط المكنسة الأسفل وأكّد لمسح لوحة التدريب."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左下のほうきをタップし、練習用キャンバスの消去を確定します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "왼쪽 아래 빗자루를 누르고 연습 캔버스 지우기를 확인하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点击左下角的扫帚，并确认清空练习画布。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下左下角的掃帚，並確認清除練習畫布。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sol alttaki süpürgeye dokun ve alıştırma tuvalini temizlemeyi onayla."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij miotłę w lewym dolnym rogu i potwierdź wyczyszczenie płótna do ćwiczeń."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik linksonder op de bezem en bevestig om het oefencanvas te wissen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryck på kvasten nere till vänster och bekräfta för att rensa övningsduken."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryk på kosten nederst til venstre og bekræft for at rydde øvelærredet."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trykk på kosten nederst til venstre og bekreft for å tømme øvingslerretet."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napauta vasemman alakulman luutaa ja vahvista harjoitusalueen tyhjennys."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नीचे बाईं ओर झाड़ू दबाएँ और अभ्यास कैनवास साफ़ करने की पुष्टि करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "கீழ் இடப்புறத் துடைப்பத்தைத் தட்டி பயிற்சி கேன்வாஸை அழிப்பதை உறுதிசெய்யுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "దిగువ ఎడమ మూలలో చీపురు నొక్కి అభ్యాస కాన్వాస్‌ను తుడవడాన్ని నిర్ధారించండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "खाली डावीकडील झाडू दाबून सरावाचा कॅनव्हास साफ करण्याची पुष्टी करा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "નીચે ડાબે સાવરણી દબાવી અભ્યાસનો કેનવાસ સાફ કરવાની ખાતરી કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਹੇਠਾਂ ਖੱਬੇ ਝਾੜੂ ਦਬਾ ਕੇ ਅਭਿਆਸ ਕੈਨਵਸ ਸਾਫ਼ ਕਰਨ ਦੀ ਪੁਸ਼ਟੀ ਕਰੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "নিচে বাঁয়ের ঝাড়ু চাপুন এবং অনুশীলনের ক্যানভাস সাফ করা নিশ্চিত করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk sapu di kiri bawah dan konfirmasi untuk membersihkan kanvas latihan."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نیچے جھاڑو دبائیں اور مشق کا کینوس صاف کرنے کی تصدیق کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm chổi ở góc dưới bên trái và xác nhận để xóa khung vẽ thực hành."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะไม้กวาดที่มุมซ้ายล่าง แล้วยืนยันเพื่อล้างผืนผ้าใบฝึกหัด"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketik penyapu di kiri bawah dan sahkan untuk mengosongkan kanvas latihan."
+          }
+        }
+      }
+    },
+    "Well done! Your own canvas and gallery will return. To repeat the tour, tap the three dots and choose Tutorial.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Well done! Your own canvas and gallery will return. To repeat the tour, tap the three dots and choose Tutorial."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отлично, обучение завершено! Сейчас вернутся твой холст и галерея. Чтобы повторить, нажми три точки и выбери «Обучение»."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bravo ! Ta toile et ta galerie vont revenir. Pour recommencer, touche les trois points, puis Tutoriel."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geschafft! Deine Leinwand und Galerie kommen zurück. Zum Wiederholen tippe auf die drei Punkte und wähle Einführung."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ottimo! Torneranno la tua tela e la tua galleria. Per ripetere, tocca i tre puntini e scegli Tutorial."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Muy bien! Volverán tu lienzo y tu galería. Para repetir, toca los tres puntos y elige Tutorial."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muito bem! A sua tela e galeria vão regressar. Para repetir, toque nos três pontos e escolha Tutorial."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أحسنت! ستعود لوحتك ومعرضك. لإعادة التدريب، اضغط النقاط الثلاث ثم اختر التدريب."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "お疲れさまでした！自分のキャンバスとギャラリーに戻ります。もう一度試すには3点ボタンから「チュートリアル」を選びます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "잘하셨습니다! 원래 캔버스와 갤러리로 돌아갑니다. 다시 배우려면 점 세 개에서 튜토리얼을 선택하세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成啦！现在将返回你自己的画布和画廊。想再练习时，点击三个点并选择“教程”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "完成了！現在將返回你自己的畫布和圖庫。想再練習時，點三個點並選擇「教學」。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tebrikler! Kendi tuvalin ve galerin geri gelecek. Tekrarlamak için üç noktadan Eğitim’i seç."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brawo! Twoje płótno i galeria powrócą. Aby powtórzyć, stuknij trzy kropki i wybierz Samouczek."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Goed gedaan! Je eigen canvas en galerij komen terug. Kies via de drie puntjes Rondleiding om opnieuw te oefenen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bra gjort! Din egen duk och ditt galleri kommer tillbaka. Välj Guide via de tre punkterna för att öva igen."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Godt klaret! Dit eget lærred og galleri vender tilbage. Vælg Vejledning via de tre prikker for at prøve igen."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bra jobbet! Ditt eget lerret og galleri kommer tilbake. Velg Omvisning via de tre prikkene for å prøve igjen."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hienoa! Oma piirtoalueesi ja galleriasi palaavat. Voit kerrata valitsemalla kolmen pisteen valikosta Opastus."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बहुत अच्छा! आपका अपना कैनवास और गैलरी लौट आएँगे। दोबारा सीखने के लिए तीन बिंदु दबाकर प्रशिक्षण चुनें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அருமை! உங்கள் சொந்த கேன்வாஸும் கேலரியும் திரும்பும். மீண்டும் பயில மூன்று புள்ளிகளைத் தட்டி பயிற்சி என்பதைத் தேர்வுசெய்யுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "చాలా బాగుంది! మీ సొంత కాన్వాస్, గ్యాలరీ తిరిగి వస్తాయి. మళ్లీ నేర్చుకోవడానికి మూడు చుక్కలు నొక్కి శిక్షణ ఎంచుకోండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "छान! तुमचा स्वतःचा कॅनव्हास आणि गॅलरी परत येतील. पुन्हा शिकण्यासाठी तीन ठिपके दाबून प्रशिक्षण निवडा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "સરસ! તમારો પોતાનો કેનવાસ અને ગૅલેરી પાછાં આવશે. ફરી શીખવા ત્રણ બિંદુ દબાવી તાલીમ પસંદ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਸ਼ਾਬਾਸ਼! ਤੁਹਾਡਾ ਆਪਣਾ ਕੈਨਵਸ ਤੇ ਗੈਲਰੀ ਵਾਪਸ ਆਉਣਗੇ। ਦੁਬਾਰਾ ਸਿੱਖਣ ਲਈ ਤਿੰਨ ਬਿੰਦੀਆਂ ਦਬਾ ਕੇ ਸਿਖਲਾਈ ਚੁਣੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "দারুণ! আপনার নিজের ক্যানভাস ও গ্যালারি ফিরে আসবে। আবার শিখতে তিনটি বিন্দু চেপে প্রশিক্ষণ বেছে নিন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bagus! Kanvas dan galeri pribadi Anda akan kembali. Untuk mengulang, ketuk tiga titik lalu pilih Tutorial."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بہت خوب! آپ کا اپنا کینوس اور گیلری واپس آ جائیں گے۔ دوبارہ سیکھنے کے لیے تین نقطے دبا کر تربیت منتخب کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rất tốt! Khung vẽ và bộ sưu tập của bạn sẽ trở lại. Để học lại, chạm ba chấm rồi chọn Hướng dẫn."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เยี่ยมมาก! ผืนผ้าใบและแกลเลอรีของคุณจะกลับมา หากต้องการเรียนอีกครั้ง ให้แตะสามจุดแล้วเลือกบทสอน"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bagus! Kanvas dan galeri peribadi anda akan kembali. Untuk mengulang, ketik tiga titik dan pilih Tutorial."
+          }
+        }
+      }
+    },
+    "Tutorial": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutorial"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обучение"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutoriel"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einführung"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutorial"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutorial"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutorial"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التدريب"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チュートリアル"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "튜토리얼"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "教程"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "教學"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samouczek"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rondleiding"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guide"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vejledning"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omvisning"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opastus"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रशिक्षण"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பயிற்சி"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "శిక్షణ"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रशिक्षण"
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "તાલીમ"
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਸਿਖਲਾਈ"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রশিক্ষণ"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutorial"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تربیت"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hướng dẫn"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บทสอน"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutorial"
+          }
+        }
+      }
+    },
+    "The tutorial could not start. Please try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The tutorial could not start. Please try again."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не удалось запустить обучение. Попробуйте ещё раз."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de démarrer le tutoriel. Réessayez."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Einführung konnte nicht gestartet werden. Versuche es erneut."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile avviare il tutorial. Riprova."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo iniciar el tutorial. Inténtalo de nuevo."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível iniciar o tutorial. Tente novamente."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعذر بدء التدريب. حاول مرة أخرى."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チュートリアルを開始できませんでした。もう一度お試しください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "튜토리얼을 시작할 수 없습니다. 다시 시도해 주세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无法开始教程。请重试。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "無法開始教學。請再試一次。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitim başlatılamadı. Lütfen tekrar deneyin."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się uruchomić samouczka. Spróbuj ponownie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De rondleiding kon niet starten. Probeer het opnieuw."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guiden kunde inte startas. Försök igen."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vejledningen kunne ikke starte. Prøv igen."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omvisningen kunne ikke starte. Prøv igjen."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opastusta ei voitu aloittaa. Yritä uudelleen."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रशिक्षण शुरू नहीं हो सका। फिर कोशिश करें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பயிற்சியைத் தொடங்க முடியவில்லை. மீண்டும் முயலுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "శిక్షణ ప్రారంభించలేకపోయాము. మళ్లీ ప్రయత్నించండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रशिक्षण सुरू करता आले नाही. पुन्हा प्रयत्न करा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "તાલીમ શરૂ થઈ શકી નથી. ફરી પ્રયાસ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਸਿਖਲਾਈ ਸ਼ੁਰੂ ਨਹੀਂ ਹੋ ਸਕੀ। ਮੁੜ ਕੋਸ਼ਿਸ਼ ਕਰੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রশিক্ষণ শুরু করা যায়নি। আবার চেষ্টা করুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutorial tidak dapat dimulai. Silakan coba lagi."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تربیت شروع نہیں ہو سکی۔ دوبارہ کوشش کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể bắt đầu hướng dẫn. Vui lòng thử lại."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เริ่มบทสอนไม่ได้ โปรดลองอีกครั้ง"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutorial tidak dapat dimulakan. Sila cuba lagi."
+          }
+        }
+      }
+    },
+    "Is %@ your language?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Is %@ your language?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваш язык — %@?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre langue est-elle %@ ?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ist %@ deine Sprache?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La tua lingua è %@?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Tu idioma es %@?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O seu idioma é %@?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل لغتك هي %@؟"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "言語は%@でよろしいですか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "언어가 %@인가요?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的语言是%@吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "你的語言是%@嗎？"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diliniz %@ mı?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy Twój język to %@?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Is %@ jouw taal?"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Är %@ ditt språk?"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er %@ dit sprog?"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er %@ språket ditt?"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onko kielesi %@?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्या आपकी भाषा %@ है?"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "உங்கள் மொழி %@ தானா?"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మీ భాష %@ కదా?"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तुमची भाषा %@ आहे का?"
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "શું તમારી ભાષા %@ છે?"
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਕੀ ਤੁਹਾਡੀ ਭਾਸ਼ਾ %@ ਹੈ?"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার ভাষা কি %@?"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apakah bahasa Anda %@?"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کیا آپ کی زبان %@ ہے؟"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngôn ngữ của bạn là %@ phải không?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ภาษาของคุณคือ %@ ใช่ไหม"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adakah bahasa anda %@?"
+          }
+        }
+      }
+    },
+    "Would you like a guided tour?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Would you like a guided tour?"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Хотите пройти обучение?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Souhaitez-vous suivre le tutoriel ?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Möchtest du eine Einführung?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuoi seguire il tutorial?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Quieres hacer el tutorial?"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quer fazer o tutorial?"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هل ترغب في جولة تدريبية؟"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チュートリアルを始めますか？"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "튜토리얼을 시작할까요?"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要开始教程吗？"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要開始教學嗎？"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitime başlamak ister misiniz?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy chcesz przejść samouczek?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wil je een rondleiding?"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vill du gå igenom guiden?"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vil du gennemgå vejledningen?"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vil du ta en omvisning?"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haluatko käydä opastuksen läpi?"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "क्या आप प्रशिक्षण लेना चाहेंगे?"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பயிற்சியைத் தொடங்க விரும்புகிறீர்களா?"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "శిక్షణ ప్రారంభించాలనుకుంటున్నారా?"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तुम्हाला प्रशिक्षण घ्यायचे आहे का?"
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "શું તમે તાલીમ લેવા માંગો છો?"
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਕੀ ਤੁਸੀਂ ਸਿਖਲਾਈ ਲੈਣਾ ਚਾਹੁੰਦੇ ਹੋ?"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনি কি প্রশিক্ষণ নিতে চান?"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingin mengikuti tutorial?"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کیا آپ تربیت لینا چاہیں گے؟"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn muốn xem hướng dẫn không?"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ต้องการเริ่มบทสอนไหม"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ingin mengikuti tutorial?"
+          }
+        }
+      }
+    },
+    "You can start the tutorial anytime: tap the three dots, then Tutorial.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can start the tutorial anytime: tap the three dots, then Tutorial."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обучение можно пройти в любой момент: нажмите три точки и выберите «Обучение»."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous pouvez lancer le tutoriel à tout moment : touchez les trois points, puis Tutoriel."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kannst die Einführung jederzeit starten: Tippe auf die drei Punkte und dann auf Einführung."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puoi avviare il tutorial in qualsiasi momento: tocca i tre puntini, poi Tutorial."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puedes iniciar el tutorial cuando quieras: toca los tres puntos y luego Tutorial."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pode iniciar o tutorial a qualquer momento: toque nos três pontos e depois em Tutorial."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمكنك بدء التدريب في أي وقت: اضغط على النقاط الثلاث، ثم التدريب."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "いつでも3つの点をタップし、「チュートリアル」を選ぶと練習できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "언제든지 점 세 개를 누르고 튜토리얼을 선택하면 시작할 수 있습니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "随时可以开始教程：轻点三个点，然后选择“教程”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隨時可以開始教學：點一下三個點，然後選擇「教學」。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eğitimi istediğiniz zaman başlatabilirsiniz: üç noktaya dokunun, ardından Eğitim seçeneğini seçin."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Samouczek możesz uruchomić w każdej chwili: stuknij trzy kropki, a potem Samouczek."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je kunt de rondleiding altijd starten: tik op de drie stippen en kies Rondleiding."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kan starta guiden när som helst: tryck på de tre punkterna och välj Guide."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kan starte vejledningen når som helst: tryk på de tre prikker, og vælg Vejledning."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du kan starte omvisningen når som helst: trykk på de tre prikkene og velg Omvisning."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voit aloittaa opastuksen milloin tahansa: napauta kolmea pistettä ja valitse Opastus."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आप कभी भी प्रशिक्षण शुरू कर सकते हैं: तीन बिंदु दबाएँ, फिर प्रशिक्षण चुनें।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "எப்போது வேண்டுமானாலும் பயிற்சியைத் தொடங்கலாம்: மூன்று புள்ளிகளைத் தட்டி பயிற்சியைத் தேர்வுசெய்யுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ఎప్పుడైనా శిక్షణ ప్రారంభించవచ్చు: మూడు చుక్కలు నొక్కి శిక్షణ ఎంచుకోండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तुम्ही कधीही प्रशिक्षण सुरू करू शकता: तीन ठिपके दाबा आणि प्रशिक्षण निवडा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "તમે ગમે ત્યારે તાલીમ શરૂ કરી શકો છો: ત્રણ બિંદુ દબાવી તાલીમ પસંદ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਤੁਸੀਂ ਕਦੇ ਵੀ ਸਿਖਲਾਈ ਸ਼ੁਰੂ ਕਰ ਸਕਦੇ ਹੋ: ਤਿੰਨ ਬਿੰਦੀਆਂ ਦਬਾ ਕੇ ਸਿਖਲਾਈ ਚੁਣੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "যেকোনো সময় প্রশিক্ষণ শুরু করতে পারেন: তিনটি বিন্দু চেপে প্রশিক্ষণ বেছে নিন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda bisa memulai tutorial kapan saja: ketuk tiga titik, lalu Tutorial."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آپ کسی بھی وقت تربیت شروع کر سکتے ہیں: تین نقطے دبائیں، پھر تربیت منتخب کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn có thể bắt đầu hướng dẫn bất cứ lúc nào: chạm ba chấm, rồi chọn Hướng dẫn."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณเริ่มบทสอนได้ทุกเมื่อ โดยแตะสามจุดแล้วเลือกบทสอน"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anda boleh memulakan tutorial pada bila-bila masa: ketik tiga titik, kemudian Tutorial."
+          }
+        }
+      }
+    },
+    "Yes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yes"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Да"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oui"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ja"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sì"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sí"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sim"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نعم"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "はい"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "예"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "是"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evet"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tak"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ja"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ja"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ja"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ja"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kyllä"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हाँ"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஆம்"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "అవును"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "होय"
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "હા"
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਹਾਂ"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "হ্যাঁ"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ہاں"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Có"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ใช่"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ya"
+          }
+        }
+      }
+    },
+    "Lesson %d of 20": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lesson %d of 20"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Урок %d из 20"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leçon %d sur 20"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lektion %d von 20"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lezione %d di 20"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lección %d de 20"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lição %d de 20"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الدرس %d من 20"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "レッスン %d / 20"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "20개 중 %d번째 수업"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %d 课，共 20 课"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "第 %d 課，共 20 課"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ders %d / 20"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lekcja %d z 20"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les %d van 20"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lektion %d av 20"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lektion %d af 20"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leksjon %d av 20"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oppitunti %d / 20"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पाठ %d / 20"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பாடம் %d / 20"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "పాఠం %d / 20"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "धडा %d / 20"
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "પાઠ %d / 20"
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਪਾਠ %d / 20"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পাঠ %d / 20"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pelajaran %d dari 20"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سبق %d از 20"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bài %d trên 20"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บทที่ %d จาก 20"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pelajaran %d daripada 20"
+          }
+        }
+      }
+    },
+    "When you are ready, tap Next.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "When you are ready, tap Next."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Когда будешь готов(а), нажми «Далее»."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quand vous êtes prêt, touchez Suivant."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wenn du bereit bist, tippe auf Weiter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando sei pronto, tocca Avanti."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cuando estés listo, toca Siguiente."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando estiver pronto, toque em Seguinte."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عندما تكون جاهزًا، اضغط على التالي."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "準備ができたら「次へ」をタップしてください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "준비되면 다음을 누르세요."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "准备好后，请轻点“下一步”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "準備好後，請點一下「下一步」。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hazır olduğunuzda İleri seçeneğine dokunun."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy będziesz gotowy, stuknij Dalej."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik op Volgende als je klaar bent."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryck på Nästa när du är redo."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryk på Næste, når du er klar."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trykk på Neste når du er klar."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kun olet valmis, napauta Seuraava."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तैयार होने पर अगला दबाएँ।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தயாரானதும் அடுத்து என்பதைத் தட்டுங்கள்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "సిద్ధమైనప్పుడు తదుపరి నొక్కండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "तयार झाल्यावर पुढे दाबा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "તૈયાર થાઓ ત્યારે આગળ દબાવો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਤਿਆਰ ਹੋਣ ਉੱਤੇ ਅੱਗੇ ਦਬਾਓ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রস্তুত হলে পরবর্তী চাপুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saat siap, ketuk Berikutnya."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تیار ہونے پر اگلا دبائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Khi sẵn sàng, hãy chạm Tiếp."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เมื่อพร้อมแล้ว ให้แตะถัดไป"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apabila bersedia, ketik Seterusnya."
+          }
+        }
+      }
+    },
+    "Next": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Next"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Далее"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suivant"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiter"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avanti"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiente"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguinte"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التالي"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次へ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다음"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下一步"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İleri"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dalej"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volgende"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nästa"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Næste"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neste"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seuraava"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अगला"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "அடுத்து"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "తదుపరి"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पुढे"
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "આગળ"
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਅੱਗੇ"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পরবর্তী"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berikutnya"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اگلا"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiếp"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ถัดไป"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seterusnya"
+          }
+        }
+      }
+    },
+    "In the regular gallery, you can also edit and share drawings. Swipe to browse the pictures. Choose one, tap the trash button and confirm deletion. Only a tutorial copy is deleted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In the regular gallery, you can also edit and share drawings. Swipe to browse the pictures. Choose one, tap the trash button and confirm deletion. Only a tutorial copy is deleted."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В обычной галерее также можно вернуться к редактированию рисунка или поделиться им. Листай рисунки свайпами. Выбери один, нажми корзину и подтверди удаление. Удалится только учебная копия."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans la galerie habituelle, vous pouvez aussi modifier et partager vos dessins. Balaye pour parcourir les images. Choisis-en une, touche la corbeille et confirme. Seule une copie d’entraînement sera supprimée."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In der normalen Galerie kannst du Zeichnungen auch bearbeiten und teilen. Wische durch die Bilder. Wähle eines, tippe auf den Papierkorb und bestätige. Nur eine Übungskopie wird gelöscht."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nella galleria normale puoi anche modificare e condividere i disegni. Scorri tra i disegni. Scegline uno, tocca il cestino e conferma. Verrà eliminata solo una copia di prova."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En la galería normal también puedes editar y compartir dibujos. Desliza para ver las imágenes. Elige una, toca la papelera y confirma. Solo se elimina una copia de práctica."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na galeria normal, também pode editar e partilhar desenhos. Deslize para ver as imagens. Escolha uma, toque no caixote do lixo e confirme. Só é eliminada uma cópia de treino."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "في المعرض العادي، يمكنك أيضًا تعديل الرسومات ومشاركتها. اسحب لتصفح الصور. اختر واحدة واضغط سلة المهملات وأكّد الحذف. ستُحذف نسخة التدريب فقط."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通常のギャラリーでは、絵の編集や共有もできます。 スワイプして画像を選び、ゴミ箱をタップして削除を確定します。練習用のコピーだけが削除されます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일반 갤러리에서는 그림을 편집하거나 공유할 수도 있습니다. 쓸어넘겨 그림을 고르고 휴지통을 누른 뒤 삭제를 확인하세요. 연습용 복사본만 삭제됩니다."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在普通图库中，还可以编辑和分享画作。 轻扫浏览图片，选择一张，点击垃圾桶并确认删除。只会删除练习副本。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在一般圖庫中，還可以編輯和分享作品。 滑動瀏覽圖片，選擇一張，點一下垃圾桶並確認刪除。只會刪除練習副本。"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normal galeride çizimleri düzenleyebilir ve paylaşabilirsiniz. Resimleri kaydırarak gez. Birini seç, çöp kutusuna dokun ve silmeyi onayla. Yalnızca eğitim kopyası silinir."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W zwykłej galerii możesz też edytować i udostępniać rysunki. Przesuwaj, aby przeglądać obrazy. Wybierz jeden, stuknij kosz i potwierdź. Usuniesz tylko kopię do ćwiczeń."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In de gewone galerij kun je tekeningen ook bewerken en delen. Veeg door de afbeeldingen. Kies er één, tik op de prullenmand en bevestig. Alleen een oefenkopie wordt verwijderd."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I det vanliga galleriet kan du också redigera och dela teckningar. Svep mellan bilderna. Välj en, tryck på papperskorgen och bekräfta. Bara en övningskopia raderas."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I det almindelige galleri kan du også redigere og dele tegninger. Skub mellem billederne. Vælg et, tryk på papirkurven og bekræft. Kun en øvekopi slettes."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I det vanlige galleriet kan du også redigere og dele tegninger. Sveip mellom bildene. Velg ett, trykk på papirkurven og bekreft. Bare en øvingskopi slettes."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tavallisessa galleriassa voit myös muokata ja jakaa piirroksia. Selaa kuvia pyyhkäisemällä. Valitse yksi, napauta roskakoria ja vahvista. Vain harjoituskopio poistetaan."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सामान्य गैलरी में आप चित्र संपादित और साझा भी कर सकते हैं। चित्र देखने के लिए स्वाइप करें। एक चुनें, कूड़ेदान दबाएँ और पुष्टि करें। केवल प्रशिक्षण की प्रति मिटेगी।"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வழக்கமான கேலரியில் ஓவியங்களைத் திருத்தவும் பகிரவும் முடியும். படங்களைப் பார்க்க ஸ்வைப் செய்யுங்கள். ஒன்றைத் தேர்ந்து குப்பைத்தொட்டியைத் தட்டி உறுதிசெய்யுங்கள். பயிற்சி நகல் மட்டுமே நீக்கப்படும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "సాధారణ గ్యాలరీలో చిత్రాలను సవరించవచ్చు, షేర్ చేయవచ్చు. చిత్రాలు చూడటానికి స్వైప్ చేయండి. ఒకటి ఎంచుకుని చెత్తబుట్ట నొక్కి నిర్ధారించండి. శిక్షణ కాపీ మాత్రమే తొలగుతుంది."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नेहमीच्या गॅलरीत चित्रे संपादित आणि शेअरही करता येतात. चित्रे पाहण्यासाठी स्वाइप करा. एक निवडा, कचरापेटी दाबा आणि पुष्टी करा. केवळ प्रशिक्षणातील प्रत हटवली जाईल."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "સામાન્ય ગૅલેરીમાં ચિત્રો સંપાદિત અને શેર પણ કરી શકો છો. ચિત્રો જોવા સ્વાઇપ કરો. એક પસંદ કરી કચરાપેટી દબાવો અને ખાતરી કરો. માત્ર તાલીમની નકલ કાઢી નાખવામાં આવશે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਆਮ ਗੈਲਰੀ ਵਿੱਚ ਤੁਸੀਂ ਚਿੱਤਰ ਸੋਧ ਅਤੇ ਸਾਂਝੇ ਵੀ ਕਰ ਸਕਦੇ ਹੋ। ਤਸਵੀਰਾਂ ਵੇਖਣ ਲਈ ਸਵਾਈਪ ਕਰੋ। ਇੱਕ ਚੁਣੋ, ਕੂੜੇਦਾਨ ਦਬਾਓ ਤੇ ਪੁਸ਼ਟੀ ਕਰੋ। ਸਿਰਫ਼ ਸਿਖਲਾਈ ਦੀ ਕਾਪੀ ਮਿਟੇਗੀ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সাধারণ গ্যালারিতে ছবি সম্পাদনা ও শেয়ারও করতে পারেন। ছবি দেখতে সোয়াইপ করুন। একটি বেছে আবর্জনার ঝুড়ি চাপুন এবং নিশ্চিত করুন। শুধু প্রশিক্ষণের কপিটি মুছবে।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di galeri biasa, Anda juga dapat mengedit dan membagikan gambar. Geser untuk melihat gambar. Pilih satu, ketuk tempat sampah, lalu konfirmasi. Hanya salinan latihan yang dihapus."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عام گیلری میں آپ تصویروں میں ترمیم اور انہیں شیئر بھی کر سکتے ہیں۔ تصویریں دیکھنے کے لیے سوائپ کریں۔ ایک چنیں، کوڑے دان کا بٹن دبائیں اور تصدیق کریں۔ صرف تربیتی نقل حذف ہوگی۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trong bộ sưu tập thông thường, bạn còn có thể chỉnh sửa và chia sẻ tranh. Vuốt để xem các ảnh. Chọn một ảnh, chạm thùng rác và xác nhận. Chỉ bản sao thực hành bị xóa."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ในแกลเลอรีปกติ คุณแก้ไขและแชร์ภาพได้ด้วย ปัดเพื่อดูภาพ เลือกหนึ่งภาพ แตะถังขยะและยืนยัน จะลบเฉพาะสำเนาฝึกหัดเท่านั้น"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dalam galeri biasa, anda juga boleh menyunting dan berkongsi lukisan. Leret untuk melihat gambar. Pilih satu, ketik tong sampah dan sahkan. Hanya salinan latihan dipadamkan."
+          }
+        }
+      }
     }
   },
   "version": "1.1"

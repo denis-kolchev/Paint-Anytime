@@ -55,6 +55,7 @@ final class CanvasController: ObservableObject {
     private var stylePreferencesDirty = false
 
     private func scheduleStylePersistence() {
+        guard persistsPreferences else { return }
         stylePreferencesDirty = true
         pendingStyleSave?.cancel()
         pendingStyleSave = Task { @MainActor [weak self] in
@@ -84,6 +85,7 @@ final class CanvasController: ObservableObject {
     var needsDiscardConfirmation: Bool { !document.strokes.isEmpty && hasUnsavedChanges }
     private let pencil = PencilTool()
     private let defaults: UserDefaults
+    private let persistsPreferences: Bool
     private var savedStyles: [Int: PencilStyle]
     private var documentBeforeErasing: CanvasDocument?
     private var documentAtStrokeStart: CanvasDocument?
@@ -94,8 +96,14 @@ final class CanvasController: ObservableObject {
     var canRedo: Bool { !redoStack.isEmpty }
     var onNeedsDisplay: (() -> Void)?
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, persistsPreferences: Bool = true) {
         self.defaults = defaults
+        self.persistsPreferences = persistsPreferences
+        if !persistsPreferences {
+            savedStyles = [:]
+            pencilStyle = .initial(for: .monoline)
+            return
+        }
         let data = defaults.data(forKey: "drawing.styles.v1")
         let decoded = data.flatMap { try? JSONDecoder().decode([Int: PencilStyle].self, from: $0) } ?? [:]
         savedStyles = decoded

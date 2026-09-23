@@ -32,10 +32,13 @@ private struct InkPreset {
 struct WatchToolSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
+    @ObservedObject var tutorial = TutorialSession.inactive
     @State private var showsInformation = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var crownFocused: Bool
-    @AppStorage("watch.settings.lastPage") private var selectedPage = 1
+    @AppStorage("watch.settings.lastPage") private var savedPage = 1
+    @State private var selectedPage = 1
+    @State private var didRestorePage = false
 
     private var selection: Setting {
         get {
@@ -50,9 +53,11 @@ struct WatchToolSettingsView: View {
     private var instrumentIndex: Int { instruments.firstIndex(of: controller.pencilStyle.instrument) ?? 0 }
 
     private var availableSettings: [Setting] {
-        if isEraser { return [.width, .instrument, .mode] }
-        if controller.pencilStyle.instrument == .reed { return [.color, .width, .instrument, .direction] }
-        return [.color, .width, .instrument]
+        let pages: [Setting]
+        if isEraser { pages = [.width, .instrument, .mode] }
+        else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .instrument, .direction] }
+        else { pages = [.color, .width, .instrument] }
+        return tutorial.isActive ? pages.filter { tutorial.visibleToolPages.contains($0.rawValue) } : pages
     }
 
     private func title(for setting: Setting) -> String { setting.title }
@@ -105,7 +110,8 @@ struct WatchToolSettingsView: View {
             case .direction: Double(controller.pencilStyle.reedAngle)
             }
         } set: { value in
-            guard !showsInformation else { return }
+            guard !showsInformation, tutorial.allowsToolAdjustment(page: selection.rawValue) else { return }
+            tutorial.activity()
             if selection == .instrument {
                 let index = min(instruments.count - 1, max(0, Int(value.rounded())))
                 controller.selectInstrument(instruments[index])
@@ -194,14 +200,14 @@ struct WatchToolSettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.colorScheme, .dark)
         .contentShape(Rectangle())
-        .focusable(!showsInformation)
+        .focusable(!showsInformation && tutorial.allowsToolAdjustment(page: selection.rawValue))
         .focused($crownFocused)
         .digitalCrownRotation(
             crownValue,
             from: selection == .width ? 1 : selection == .direction ? -90 : 0,
             through: crownMaximum,
             by: selection == .direction ? 5 : 1,
-            sensitivity: .low,
+            sensitivity: selection == .direction ? .high : .low,
             isContinuous: false,
             isHapticFeedbackEnabled: true
         )
@@ -216,10 +222,11 @@ struct WatchToolSettingsView: View {
                 }
         )
         .toolbar {
-            if selection == .instrument || selection == .mode {
+            if (selection == .instrument || selection == .mode) && tutorial.allowsToolInfo {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         crownFocused = false
+                        tutorial.record(.openedInfo)
                         showsInformation = true
                     } label: {
                         Image(systemName: "info")
@@ -229,7 +236,10 @@ struct WatchToolSettingsView: View {
                 }
             }
         }
-        .fullScreenCover(isPresented: $showsInformation, onDismiss: { crownFocused = true }) {
+        .fullScreenCover(isPresented: $showsInformation, onDismiss: {
+            tutorial.record(.closedInfo)
+            crownFocused = tutorial.allowsToolAdjustment(page: selection.rawValue)
+        }) {
             ToolInformationView(
                 title: selection == .mode ? controller.pencilStyle.eraserMode.title : controller.pencilStyle.instrument.title,
                 description: selection == .mode ? controller.pencilStyle.eraserMode.helpDescription : controller.pencilStyle.instrument.helpDescription
@@ -238,18 +248,32 @@ struct WatchToolSettingsView: View {
             .environment(\.colorScheme, .dark)
         }
         .onAppear {
+            if !didRestorePage {
+                selectedPage = tutorial.isActive ? Setting.color.rawValue : savedPage
+                didRestorePage = true
+            }
             // Migrate the old eraser page, previously stored in the color slot.
             if isEraser && selectedPage == Setting.color.rawValue { selectedPage = Setting.mode.rawValue }
             else { selectedPage = selection.rawValue }
-            crownFocused = true
+            crownFocused = tutorial.allowsToolAdjustment(page: selection.rawValue)
         }
         .onDisappear { controller.flushStylePreferences() }
+        .onChange(of: tutorial.showsInstruction) { _, showing in
+            crownFocused = !showing && tutorial.allowsToolAdjustment(page: selection.rawValue)
+        }
+        .onChange(of: selectedPage) { _, page in
+            if !tutorial.isActive { savedPage = page }
+            tutorial.changedPage(page)
+        }
+        .onChange(of: controller.pencilStyle) { _, style in tutorial.changedStyle(style) }
         .onChange(of: controller.pencilStyle.instrument) { _, _ in
             withAnimation(pageAnimation) { selectedPage = selection.rawValue }
         }
     }
 
     private func select(_ setting: Setting) {
+        guard tutorial.allowsToolPage(setting.rawValue) else { return }
+        tutorial.activity()
         withAnimation(pageAnimation) {
             selection = setting
         }
@@ -273,6 +297,7 @@ struct WatchToolSettingsView: View {
                                     .frame(width: 90, height: 30)
                             }
                             .buttonStyle(.plain)
+                            .disabled(!tutorial.allowsToolPage(setting.rawValue))
                             .accessibilityAddTraits(selection == setting ? [.isSelected] : [])
                             .id(setting)
                             .transition(reduceMotion ? .opacity : .scale(scale: 0.7).combined(with: .opacity))
@@ -311,6 +336,8 @@ struct WatchToolSettingsView: View {
                             ForEach(instruments.indices, id: \.self) { index in
                                 let instrument = instruments[index]
                                 Button {
+                                    guard tutorial.allowsToolAdjustment(page: Setting.instrument.rawValue) else { return }
+                                    tutorial.activity()
                                     controller.selectInstrument(instrument)
                                     crownFocused = true
                                 } label: {
@@ -321,6 +348,7 @@ struct WatchToolSettingsView: View {
                                         .frame(width: 40, height: 36)
                                 }
                                 .buttonStyle(.plain)
+                                .disabled(!tutorial.allowsToolAdjustment(page: Setting.instrument.rawValue))
                                 .accessibilityLabel(instrument.title)
                                 .accessibilityAddTraits(instrumentIndex == index ? [.isSelected] : [])
                                 .id(index)
@@ -364,7 +392,7 @@ struct WatchToolSettingsView: View {
                 Image(systemName: "rotate.right")
                     .frame(width: 40, height: 30)
             }
-            .disabled(controller.pencilStyle.reedAngle >= 90)
+            .disabled(controller.pencilStyle.reedAngle >= 90 || !tutorial.allowsToolAdjustment(page: Setting.direction.rawValue))
             .accessibilityLabel(L10n.text("Rotate tip clockwise"))
 
             Circle()
@@ -393,13 +421,15 @@ struct WatchToolSettingsView: View {
                 Image(systemName: "rotate.left")
                     .frame(width: 40, height: 30)
             }
-            .disabled(controller.pencilStyle.reedAngle <= -90)
+            .disabled(controller.pencilStyle.reedAngle <= -90 || !tutorial.allowsToolAdjustment(page: Setting.direction.rawValue))
             .accessibilityLabel(L10n.text("Rotate tip counterclockwise"))
         }
         .buttonStyle(.plain)
     }
 
     private func adjustDirection(by amount: Float) {
+        guard tutorial.allowsToolAdjustment(page: Setting.direction.rawValue) else { return }
+        tutorial.activity()
         controller.pencilStyle.reedAngle = min(90, max(-90, controller.pencilStyle.reedAngle + amount))
         crownFocused = true
     }
@@ -408,6 +438,7 @@ struct WatchToolSettingsView: View {
         VStack(spacing: 8) {
             ForEach(EraserMode.allCases, id: \.rawValue) { mode in
                 Button {
+                    guard tutorial.allowsToolAdjustment(page: Setting.mode.rawValue) else { return }
                     controller.pencilStyle.eraserMode = mode
                     crownFocused = true
                 } label: {
@@ -439,6 +470,8 @@ struct WatchToolSettingsView: View {
                     VStack(spacing: 3) {
                         ForEach(InkPreset.all.indices, id: \.self) { index in
                             Button {
+                                guard tutorial.allowsToolAdjustment(page: Setting.color.rawValue) else { return }
+                                tutorial.activity()
                                 controller.pencilStyle.color = InkPreset.all[index].rgba
                                 crownFocused = true
                             } label: {
@@ -453,6 +486,7 @@ struct WatchToolSettingsView: View {
                                     .frame(width: 40, height: 30)
                             }
                             .buttonStyle(.plain)
+                            .disabled(!tutorial.allowsToolAdjustment(page: Setting.color.rawValue))
                             .accessibilityLabel(InkPreset.all[index].name)
                             .accessibilityAddTraits(colorIndex == index ? [.isSelected] : [])
                             .id(index)
