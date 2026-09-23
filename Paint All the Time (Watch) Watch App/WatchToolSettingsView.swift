@@ -1,7 +1,8 @@
 import SwiftUI
 
 private struct InkPreset {
-    let name: String
+    let nameKey: String
+    var name: String { L10n.text(nameKey) }
     let rgba: SIMD4<Float>
 
     var color: Color {
@@ -9,23 +10,23 @@ private struct InkPreset {
               blue: Double(rgba.z), opacity: Double(rgba.w))
     }
 
-    static var all: [InkPreset] {
+    static let all: [InkPreset] = {
         let presets: [InkPreset] = [
-            .init(name: L10n.text("Black"), rgba: SIMD4(0, 0, 0, 1)),
-            .init(name: L10n.text("Gray"), rgba: SIMD4(0.45, 0.45, 0.48, 1)),
-            .init(name: L10n.text("Red"), rgba: SIMD4(0.95, 0.18, 0.22, 1)),
-            .init(name: L10n.text("Orange"), rgba: SIMD4(1, 0.5, 0.1, 1)),
-            .init(name: L10n.text("Yellow"), rgba: SIMD4(1, 0.8, 0.1, 1)),
-            .init(name: L10n.text("Green"), rgba: SIMD4(0.2, 0.7, 0.35, 1)),
-            .init(name: L10n.text("Light blue"), rgba: SIMD4(0.15, 0.7, 0.9, 1)),
-            .init(name: L10n.text("Blue"), rgba: SIMD4(0.15, 0.35, 0.95, 1)),
-            .init(name: L10n.text("Purple"), rgba: SIMD4(0.6, 0.3, 0.85, 1)),
-            .init(name: L10n.text("Pink"), rgba: SIMD4(0.95, 0.35, 0.65, 1)),
-            .init(name: L10n.text("Brown"), rgba: SIMD4(0.55, 0.32, 0.18, 1)),
-            .init(name: L10n.text("White"), rgba: SIMD4(1, 1, 1, 1))
+            .init(nameKey: "Black", rgba: SIMD4(0, 0, 0, 1)),
+            .init(nameKey: "Gray", rgba: SIMD4(0.45, 0.45, 0.48, 1)),
+            .init(nameKey: "Red", rgba: SIMD4(0.95, 0.18, 0.22, 1)),
+            .init(nameKey: "Orange", rgba: SIMD4(1, 0.5, 0.1, 1)),
+            .init(nameKey: "Yellow", rgba: SIMD4(1, 0.8, 0.1, 1)),
+            .init(nameKey: "Green", rgba: SIMD4(0.2, 0.7, 0.35, 1)),
+            .init(nameKey: "Light blue", rgba: SIMD4(0.15, 0.7, 0.9, 1)),
+            .init(nameKey: "Blue", rgba: SIMD4(0.15, 0.35, 0.95, 1)),
+            .init(nameKey: "Purple", rgba: SIMD4(0.6, 0.3, 0.85, 1)),
+            .init(nameKey: "Pink", rgba: SIMD4(0.95, 0.35, 0.65, 1)),
+            .init(nameKey: "Brown", rgba: SIMD4(0.55, 0.32, 0.18, 1)),
+            .init(nameKey: "White", rgba: SIMD4(1, 1, 1, 1))
         ]
         return presets.filter { AppReleaseFeatures.current.allowsColor($0.rgba) }
-    }
+    }()
 }
 
 struct WatchToolSettingsView: View {
@@ -105,19 +106,28 @@ struct WatchToolSettingsView: View {
             }
         } set: { value in
             guard !showsInformation else { return }
-            if selection == .width {
-                controller.pencilStyle.width = Float(min(crownMaximum, max(1, value.rounded())))
-            } else if selection == .instrument {
+            if selection == .instrument {
                 let index = min(instruments.count - 1, max(0, Int(value.rounded())))
                 controller.selectInstrument(instruments[index])
-            } else if selection == .mode {
-                controller.pencilStyle.eraserMode = value.rounded() < 1 ? .pixels : .objects
-            } else if selection == .direction {
-                controller.pencilStyle.reedAngle = Float(min(90, max(-90, (value / 5).rounded() * 5)))
-            } else {
-                let index = min(InkPreset.all.count - 1, max(0, Int(value.rounded())))
-                controller.pencilStyle.color = InkPreset.all[index].rgba
+                return
             }
+            var style = controller.pencilStyle
+            switch selection {
+            case .width:
+                style.width = Float(min(crownMaximum, max(1, value.rounded())))
+            case .mode:
+                style.eraserMode = value.rounded() < 1 ? .pixels : .objects
+            case .direction:
+                style.reedAngle = Float(min(90, max(-90, (value / 5).rounded() * 5)))
+            case .color:
+                let index = min(InkPreset.all.count - 1, max(0, Int(value.rounded())))
+                style.color = InkPreset.all[index].rgba
+            case .instrument:
+                break
+            }
+            // Fractional Crown events often round to the same setting.
+            // Avoid publishing those duplicates to every observing view.
+            if style != controller.pencilStyle { controller.pencilStyle = style }
         }
     }
 
@@ -233,6 +243,7 @@ struct WatchToolSettingsView: View {
             else { selectedPage = selection.rawValue }
             crownFocused = true
         }
+        .onDisappear { controller.flushStylePreferences() }
         .onChange(of: controller.pencilStyle.instrument) { _, _ in
             withAnimation(pageAnimation) { selectedPage = selection.rawValue }
         }

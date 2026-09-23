@@ -10,10 +10,15 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var controller = CanvasController()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         CanvasView(controller: controller)
             .ignoresSafeArea()
+            .onChange(of: scenePhase) { _, phase in
+                if phase != .active { controller.flushStylePreferences() }
+            }
+            .onDisappear { controller.flushStylePreferences() }
             .overlay(alignment: .bottom) {
                 HStack(spacing: 12) {
                     Label(controller.pencilStyle.instrument.title, systemImage: "pencil")

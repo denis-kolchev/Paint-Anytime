@@ -15,6 +15,7 @@ enum CanvasToolbarControl: Hashable {
 struct WatchCanvasView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
+    var rendersArtwork = true
     var acceptsInput = true
     var protectedControls: [CanvasToolbarControl: CGRect] = [:]
     @Binding var isMovingCanvas: Bool
@@ -30,12 +31,14 @@ struct WatchCanvasView: View {
         GeometryReader { geometry in
             ZStack {
                 Color(white: 0.16)
-                WatchCanvasArtwork(strokes: controller.document.strokes + [controller.activeStroke].compactMap { $0 })
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
-                    .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
-                    .scaleEffect(zoom)
-                    .offset(offset)
+                if rendersArtwork {
+                    WatchCanvasArtwork(strokes: controller.document.strokes + [controller.activeStroke].compactMap { $0 })
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
+                        .scaleEffect(zoom)
+                        .offset(offset)
+                }
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()

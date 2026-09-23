@@ -6,12 +6,10 @@ final class CanvasController: ObservableObject {
         didSet {
             let availableStyle = AppReleaseFeatures.current.availableStyle(pencilStyle)
             if pencilStyle != availableStyle { pencilStyle = availableStyle }
+            guard pencilStyle != oldValue else { return }
             savedStyles[pencilStyle.instrument.rawValue] = pencilStyle
             propagateSynchronizedStyle()
-            if let data = try? JSONEncoder().encode(savedStyles) {
-                defaults.set(data, forKey: "drawing.styles.v1")
-            }
-            defaults.set(pencilStyle.instrument.rawValue, forKey: "drawing.instrument.v1")
+            scheduleStylePersistence()
         }
     }
     @Published private(set) var synchronization = ToolSynchronization()
@@ -19,11 +17,13 @@ final class CanvasController: ObservableObject {
     var maximumWidth: Float { pencilStyle.instrument.maximumWidth }
 
     func setSynchronizeWidth(_ enabled: Bool) {
+        guard synchronization.width != enabled else { return }
         synchronization.width = enabled
         synchronizationChanged()
     }
 
     func setSynchronizeColor(_ enabled: Bool) {
+        guard synchronization.color != enabled else { return }
         synchronization.color = enabled
         synchronizationChanged()
     }
@@ -31,25 +31,51 @@ final class CanvasController: ObservableObject {
     private func synchronizationChanged() {
         // Enabling synchronization uses the current tool as the starting value.
         propagateSynchronizedStyle()
-        if let data = try? JSONEncoder().encode(savedStyles) {
-            defaults.set(data, forKey: "drawing.styles.v1")
-        }
+        scheduleStylePersistence()
     }
 
     private func propagateSynchronizedStyle() {
-        if synchronization.width { synchronization.sharedWidth = pencilStyle.width }
-        if synchronization.color && pencilStyle.instrument != .eraser {
-            synchronization.sharedColor = pencilStyle.color
+        guard synchronization.width || synchronization.color else { return }
+        var updated = synchronization
+        if updated.width { updated.sharedWidth = pencilStyle.width }
+        if updated.color && pencilStyle.instrument != .eraser {
+            updated.sharedColor = pencilStyle.color
         }
+        // Publish once, and only if shared values actually changed.
+        if updated != synchronization { synchronization = updated }
         for instrument in DrawingInstrument.allCases {
             var style = savedStyles[instrument.rawValue] ?? .initial(for: instrument)
             if synchronization.width { style.width = synchronization.sharedWidth }
             if synchronization.color && instrument != .eraser { style.color = synchronization.sharedColor }
             savedStyles[instrument.rawValue] = style
         }
-        if let data = try? JSONEncoder().encode(synchronization) {
-            defaults.set(data, forKey: "drawing.synchronization.v1")
+    }
+
+    private var pendingStyleSave: Task<Void, Never>?
+    private var stylePreferencesDirty = false
+
+    private func scheduleStylePersistence() {
+        stylePreferencesDirty = true
+        pendingStyleSave?.cancel()
+        pendingStyleSave = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .milliseconds(250)) }
+            catch { return }
+            guard !Task.isCancelled else { return }
+            self?.flushStylePreferences()
         }
+    }
+
+    /// Flush when leaving settings or going inactive, even during a Crown gesture.
+    func flushStylePreferences() {
+        pendingStyleSave?.cancel()
+        pendingStyleSave = nil
+        guard stylePreferencesDirty,
+              let stylesData = try? JSONEncoder().encode(savedStyles),
+              let synchronizationData = try? JSONEncoder().encode(synchronization) else { return }
+        defaults.set(stylesData, forKey: "drawing.styles.v1")
+        defaults.set(synchronizationData, forKey: "drawing.synchronization.v1")
+        defaults.set(pencilStyle.instrument.rawValue, forKey: "drawing.instrument.v1")
+        stylePreferencesDirty = false
     }
 
     private(set) var document = CanvasDocument()
@@ -216,7 +242,7 @@ final class CanvasController: ObservableObject {
     }
 }
 
-struct ToolSynchronization: Codable {
+struct ToolSynchronization: Codable, Equatable {
     var width = false
     var color = false
     var sharedWidth: Float = 4

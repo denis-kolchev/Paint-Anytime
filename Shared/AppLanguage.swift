@@ -6,6 +6,7 @@ struct AppLanguage: Identifiable {
     let nativeName: String
 
     static let storageKey = "app.language"
+    private static let preferredCodeCache = NSCache<NSString, NSString>()
     // Keep English first for language negotiation; sort the picker separately.
     static let supported: [AppLanguage] = [
         .init(id: "en", nativeName: "English"),
@@ -56,8 +57,12 @@ struct AppLanguage: Identifiable {
     /// Match regional variants (ru-RU, en-GB) in the user's preference order.
     /// English is the development language when none of them is supported.
     static func preferredCode(for preferences: [String]) -> String {
-        Bundle.preferredLocalizations(from: supported.map(\.id),
-                                      forPreferences: preferences).first ?? "en"
+        let key = preferences.joined(separator: "\u{001F}") as NSString
+        if let cached = preferredCodeCache.object(forKey: key) { return cached as String }
+        let code = Bundle.preferredLocalizations(from: supported.map(\.id),
+                                                forPreferences: preferences).first ?? "en"
+        preferredCodeCache.setObject(code as NSString, forKey: key)
+        return code
     }
 
     static var currentCode: String {
@@ -69,10 +74,23 @@ struct AppLanguage: Identifiable {
 /// Explicit bundle selection also localizes model titles and error messages.
 /// Missing translations fall back to English, then to the readable English key.
 enum L10n {
+    // Cache by language as well as key so switching languages never reuses old text.
+    private static let bundles = NSCache<NSString, Bundle>()
+    private static let strings: NSCache<NSString, NSString> = {
+        let cache = NSCache<NSString, NSString>()
+        cache.countLimit = 512
+        return cache
+    }()
+
     static func text(_ key: String) -> String {
+        let code = AppLanguage.currentCode
+        let cacheKey = (code + "\u{001F}" + key) as NSString
+        if let cached = strings.object(forKey: cacheKey) { return cached as String }
         let fallback = bundle(for: "en")?.localizedString(forKey: key, value: key, table: nil) ?? key
-        return bundle(for: AppLanguage.currentCode)?
+        let result = bundle(for: code)?
             .localizedString(forKey: key, value: fallback, table: nil) ?? fallback
+        strings.setObject(result as NSString, forKey: cacheKey)
+        return result
     }
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {
@@ -80,7 +98,10 @@ enum L10n {
     }
 
     private static func bundle(for code: String) -> Bundle? {
-        guard let path = Bundle.main.path(forResource: code, ofType: "lproj") else { return nil }
-        return Bundle(path: path)
+        if let cached = bundles.object(forKey: code as NSString) { return cached }
+        guard let path = Bundle.main.path(forResource: code, ofType: "lproj"),
+              let bundle = Bundle(path: path) else { return nil }
+        bundles.setObject(bundle, forKey: code as NSString)
+        return bundle
     }
 }

@@ -162,12 +162,15 @@ struct ContentView: View {
             Text(exportError ?? "")
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active { controller.cancelStroke() }
+            if phase != .active {
+                controller.cancelStroke()
+                controller.flushStylePreferences()
+            }
         }
     }
 
     private var drawingPage: some View {
-        WatchCanvasView(controller: controller, acceptsInput: !showsToolSettings && !showsAppSettings && !showsGallery && savedDrawing == nil && pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas)
+        WatchCanvasView(controller: controller, rendersArtwork: !showsToolSettings && !showsGallery, acceptsInput: !showsToolSettings && !showsAppSettings && !showsGallery && savedDrawing == nil && pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas)
             .id(canvasSessionID)
     }
 
