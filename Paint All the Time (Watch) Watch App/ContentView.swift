@@ -40,9 +40,7 @@ struct ContentView: View {
                 }
 
                 if showsToolSettings {
-                    WatchToolSettingsView(controller: controller) {
-                        showsToolSettings = false
-                    }
+                    WatchToolSettingsView(controller: controller)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .background(.black)
                     .transition(.identity)
@@ -99,18 +97,7 @@ struct ContentView: View {
                 }
             }
 
-            if !showsGallery && showsToolSettings {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        showsToolSettings = false
-                    } label: {
-                        Image(systemName: "xmark")
-                            .foregroundStyle(.red)
-                    }
-                    .buttonStyle(.automatic)
-                    .accessibilityLabel(L10n.text("Close settings"))
-                }
-            } else if !showsGallery && !isMovingCanvas && controller.activeStroke == nil {
+            if !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         controller.cancelStroke()

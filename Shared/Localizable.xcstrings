@@ -15299,6 +15299,2298 @@
           }
         }
       }
+    },
+    "Information": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Information"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Информация"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "معلومات"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informations"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informationen"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जानकारी"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informazioni"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "情報"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "정보"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informações"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "信息"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Información"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilgi"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "資訊"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informacje"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informatie"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Information"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Information"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informasjon"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tietoja"
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தகவல்"
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "సమాచారం"
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "माहिती"
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "માહિતી"
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਜਾਣਕਾਰੀ"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "তথ্য"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informasi"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "معلومات"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông tin"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อมูล"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maklumat"
+          }
+        }
+      }
+    },
+    "Draws a smooth line with a constant width.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draws a smooth line with a constant width."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рисует ровную линию постоянной толщины."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرسم خطًا ناعمًا بسُمك ثابت."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trace une ligne lisse d’épaisseur constante."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeichnet eine glatte Linie mit gleichbleibender Breite."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "एकसमान मोटाई की चिकनी रेखा बनाता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disegna una linea uniforme di spessore costante."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "一定の太さで滑らかな線を描きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일정한 두께의 매끄러운 선을 그립니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desenha uma linha suave com espessura constante."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绘制粗细均匀的平滑线条。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dibuja una línea suave de grosor constante."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sabit kalınlıkta pürüzsüz bir çizgi çizer."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繪製粗細均勻的平滑線條。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rysuje gładką linię o stałej grubości."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekent een vloeiende lijn met een constante dikte."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ritar en jämn linje med konstant tjocklek."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tegner en jævn linje med konstant tykkelse."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tegner en jevn linje med konstant tykkelse."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piirtää tasaisen viivan, jonka paksuus pysyy samana."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஒரே தடிமனில் மென்மையான கோட்டை வரைகிறது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ఒకే మందంతో మృదువైన గీతను గీస్తుంది."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "समान जाडीची गुळगुळीत रेषा काढते."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "એકસરખી જાડાઈની લીસી રેખા દોરે છે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਇਕਸਾਰ ਮੋਟਾਈ ਦੀ ਮੁਲਾਇਮ ਲਕੀਰ ਬਣਾਉਂਦਾ ਹੈ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "একই পুরুত্বের মসৃণ রেখা আঁকে।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menggambar garis halus dengan ketebalan tetap."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "یکساں موٹائی کی ہموار لکیر بناتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vẽ đường mượt với độ dày không đổi."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "วาดเส้นเรียบที่มีความหนาคงที่"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melukis garisan licin dengan ketebalan tetap."
+          }
+        }
+      }
+    },
+    "Draw slowly for thicker lines and quickly for thinner lines.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draw slowly for thicker lines and quickly for thinner lines."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "При медленном движении линия толще, при быстром — тоньше."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ارسم ببطء لخطوط أكثر سُمكًا وبسرعة لخطوط أرفع."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dessinez lentement pour un trait épais et rapidement pour un trait fin."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeichne langsam für dickere und schnell für dünnere Linien."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मोटी रेखाओं के लिए धीरे और पतली रेखाओं के लिए तेज़ी से बनाएँ।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disegna lentamente per linee spesse e velocemente per linee sottili."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ゆっくり描くと太く、速く描くと細くなります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "천천히 그리면 굵게, 빠르게 그리면 가늘게 그려집니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desenhe devagar para linhas mais grossas e depressa para linhas mais finas."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "慢画时线条较粗，快画时线条较细。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dibuja despacio para líneas más gruesas y rápido para líneas más finas."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalın çizgiler için yavaş, ince çizgiler için hızlı çizin."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "慢畫時線條較粗，快畫時線條較細。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rysuj wolno, aby uzyskać grubsze linie, i szybko, aby uzyskać cieńsze."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teken langzaam voor dikkere lijnen en snel voor dunnere lijnen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rita långsamt för tjockare linjer och snabbt för tunnare linjer."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tegn langsomt for tykkere linjer og hurtigt for tyndere linjer."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tegn sakte for tykkere linjer og raskt for tynnere linjer."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piirrä hitaasti saadaksesi paksumpia ja nopeasti saadaksesi ohuempia viivoja."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தடிமனான கோடுகளுக்கு மெதுவாகவும், மெல்லிய கோடுகளுக்கு வேகமாகவும் வரையவும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మందమైన గీతల కోసం నెమ్మదిగా, సన్నని గీతల కోసం వేగంగా గీయండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जाड रेषांसाठी हळू आणि बारीक रेषांसाठी वेगाने रेखाटा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "જાડી રેખાઓ માટે ધીમે અને પાતળી રેખાઓ માટે ઝડપથી દોરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਮੋਟੀਆਂ ਲਕੀਰਾਂ ਲਈ ਹੌਲੀ ਅਤੇ ਪਤਲੀਆਂ ਲਕੀਰਾਂ ਲਈ ਤੇਜ਼ੀ ਨਾਲ ਬਣਾਓ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মোটা রেখার জন্য ধীরে এবং সরু রেখার জন্য দ্রুত আঁকুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gambar perlahan untuk garis lebih tebal dan cepat untuk garis lebih tipis."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "موٹی لکیروں کے لیے آہستہ اور باریک لکیروں کے لیے تیزی سے بنائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vẽ chậm để có nét dày hơn và vẽ nhanh để có nét mảnh hơn."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "วาดช้าเพื่อให้เส้นหนาขึ้น และวาดเร็วเพื่อให้เส้นบางลง"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lukis perlahan untuk garisan lebih tebal dan pantas untuk garisan lebih nipis."
+          }
+        }
+      }
+    },
+    "Creates translucent strokes. Overlapping strokes darken the color.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates translucent strokes. Overlapping strokes darken the color."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Создаёт полупрозрачные штрихи. При наложении штрихов цвет становится темнее."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ينشئ خطوطًا شبه شفافة. يؤدي تراكب الخطوط إلى تغميق اللون."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crée des traits translucides. Leur superposition assombrit la couleur."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erzeugt halbtransparente Striche. Überlappende Striche verdunkeln die Farbe."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अर्धपारदर्शी रेखाएँ बनाता है। रेखाएँ एक-दूसरे पर आने से रंग गहरा होता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea tratti traslucidi. I tratti sovrapposti scuriscono il colore."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "半透明の線を描きます。線を重ねると色が濃くなります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "반투명한 선을 그립니다. 선이 겹치면 색이 진해집니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cria traços translúcidos. A sobreposição de traços escurece a cor."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绘制半透明笔画。笔画重叠时颜色会变深。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea trazos translúcidos. Al superponerlos, el color se oscurece."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yarı saydam çizgiler oluşturur. Üst üste gelen çizgiler rengi koyulaştırır."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繪製半透明筆畫。筆畫重疊時顏色會變深。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tworzy półprzezroczyste kreski. Nakładanie kresek przyciemnia kolor."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maakt doorschijnende lijnen. Overlappende lijnen maken de kleur donkerder."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skapar halvgenomskinliga streck. Överlappande streck gör färgen mörkare."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laver halvgennemsigtige streger. Overlappende streger gør farven mørkere."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lager halvgjennomsiktige streker. Overlappende streker gjør fargen mørkere."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekee läpikuultavia viivoja. Päällekkäiset viivat tummentavat väriä."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பகுதி ஒளிபுகும் கோடுகளை உருவாக்குகிறது. கோடுகள் ஒன்றன்மேல் ஒன்று வரும்போது நிறம் அடர்த்தியாகும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "పాక్షికంగా పారదర్శకమైన గీతలను గీస్తుంది. గీతలు ఒకదానిపై మరొకటి పడితే రంగు ముదురుతుంది."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अर्धपारदर्शक रेषा तयार करते. रेषा एकमेकींवर आल्यास रंग गडद होतो."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "અર્ધપારદર્શક રેખાઓ બનાવે છે. રેખાઓ એકબીજા પર આવે ત્યારે રંગ ઘેરો થાય છે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਅਰਧ-ਪਾਰਦਰਸ਼ੀ ਲਕੀਰਾਂ ਬਣਾਉਂਦਾ ਹੈ। ਲਕੀਰਾਂ ਇੱਕ ਦੂਜੇ ਉੱਤੇ ਆਉਣ ਨਾਲ ਰੰਗ ਗੂੜ੍ਹਾ ਹੁੰਦਾ ਹੈ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আধা স্বচ্ছ রেখা তৈরি করে। রেখা একটির ওপর আরেকটি পড়লে রং গাঢ় হয়।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membuat goresan tembus pandang. Goresan yang bertumpuk mempergelap warna."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نیم شفاف لکیریں بناتا ہے۔ ایک دوسرے پر آنے والی لکیروں سے رنگ گہرا ہوتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo nét bán trong suốt. Các nét chồng lên nhau làm màu đậm hơn."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สร้างเส้นกึ่งโปร่งใส เส้นที่ซ้อนกันจะทำให้สีเข้มขึ้น"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menghasilkan garisan lut cahaya. Garisan bertindih menggelapkan warna."
+          }
+        }
+      }
+    },
+    "Creates a light, finely textured line.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates a light, finely textured line."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Рисует лёгкую линию с мелкой текстурой."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يرسم خطًا خفيفًا بملمس دقيق."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trace une ligne légère à la texture fine."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zeichnet eine leichte Linie mit feiner Textur."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बारीक बनावट वाली हल्की रेखा बनाता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disegna una linea leggera con una trama fine."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "細かな質感のある淡い線を描きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "섬세한 질감의 옅은 선을 그립니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desenha uma linha leve com textura fina."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绘制带有细腻纹理的浅色线条。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dibuja una línea ligera con una textura fina."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İnce dokulu, hafif bir çizgi çizer."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繪製帶有細緻紋理的淡色線條。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rysuje lekką linię o drobnej fakturze."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekent een lichte lijn met een fijne textuur."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ritar en lätt linje med fin textur."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tegner en let linje med fin tekstur."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tegner en lett linje med fin tekstur."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piirtää kevyen viivan, jossa on hieno tekstuuri."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "நுண்ணிய அமைப்புடன் லேசான கோட்டை வரைகிறது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "సూక్ష్మ ఆకృతితో లేత గీతను గీస్తుంది."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बारीक पोत असलेली हलकी रेषा काढते."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ઝીણી રચનાવાળી હળવી રેખા દોરે છે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਬਰੀਕ ਬਣਤਰ ਵਾਲੀ ਹਲਕੀ ਲਕੀਰ ਬਣਾਉਂਦਾ ਹੈ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সূক্ষ্ম টেক্সচারযুক্ত হালকা রেখা আঁকে।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menggambar garis ringan dengan tekstur halus."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "باریک بناوٹ والی ہلکی لکیر بناتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vẽ nét nhẹ với kết cấu mịn."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "วาดเส้นจางที่มีพื้นผิวละเอียด"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melukis garisan ringan dengan tekstur halus."
+          }
+        }
+      }
+    },
+    "Creates a grainy stroke with a denser texture than the pencil.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates a grainy stroke with a denser texture than the pencil."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Создаёт зернистый штрих с более плотной текстурой, чем у карандаша."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ينشئ خطًا حبيبيًا بملمس أكثف من قلم الرصاص."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crée un trait granuleux à la texture plus dense que le crayon."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erzeugt einen körnigen Strich mit dichterer Textur als der Bleistift."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पेंसिल से अधिक घनी बनावट वाली दानेदार रेखा बनाता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea un tratto granuloso con una trama più densa della matita."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鉛筆よりも密な質感のある、粒状の線を描きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연필보다 밀도 높은 질감의 거친 선을 그립니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cria um traço granulado com textura mais densa do que o lápis."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绘制颗粒状笔画，纹理比铅笔更浓密。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea un trazo granulado con una textura más densa que el lápiz."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurşun kalemden daha yoğun dokulu, tanecikli bir çizgi oluşturur."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繪製顆粒狀筆畫，紋理比鉛筆更濃密。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tworzy ziarnistą kreskę o gęstszej fakturze niż ołówek."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maakt een korrelige lijn met een dichtere textuur dan het potlood."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skapar ett kornigt streck med tätare textur än blyertspennan."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laver en kornet streg med tættere tekstur end blyanten."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lager en kornete strek med tettere tekstur enn blyanten."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekee rakeisen viivan, jonka tekstuuri on lyijykynää tiheämpi."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பென்சிலை விட அடர்த்தியான அமைப்புடன் துகள்கள் நிறைந்த கோட்டை உருவாக்குகிறது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "పెన్సిల్ కంటే దట్టమైన ఆకృతితో రేణువుల వంటి గీతను గీస్తుంది."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "पेन्सिलपेक्षा दाट पोत असलेली कणदार रेषा तयार करते."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "પેન્સિલ કરતાં ગાઢ રચનાવાળી દાણાદાર રેખા બનાવે છે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਪੈਨਸਿਲ ਨਾਲੋਂ ਸੰਘਣੀ ਬਣਤਰ ਵਾਲੀ ਦਾਣੇਦਾਰ ਲਕੀਰ ਬਣਾਉਂਦਾ ਹੈ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "পেনসিলের চেয়ে ঘন টেক্সচারযুক্ত দানাদার রেখা তৈরি করে।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membuat goresan berbutir dengan tekstur lebih padat daripada pensil."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "پنسل سے زیادہ گھنی بناوٹ والی دانے دار لکیر بناتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo nét có hạt với kết cấu dày hơn bút chì."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สร้างเส้นที่มีเม็ดสีและพื้นผิวหนาแน่นกว่าดินสอ"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menghasilkan garisan berbutir dengan tekstur lebih padat daripada pensel."
+          }
+        }
+      }
+    },
+    "A rounded calligraphy nib varies line width with stroke direction.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A rounded calligraphy nib varies line width with stroke direction."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скруглённое каллиграфическое перо меняет толщину линии в зависимости от направления движения."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يغيّر سن الخط المستدير سُمك الخط حسب اتجاه الحركة."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une plume calligraphique arrondie fait varier l’épaisseur selon la direction du trait."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine abgerundete Kalligrafiefeder verändert die Linienbreite je nach Strichrichtung."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "गोल सुलेख नोक रेखा की दिशा के अनुसार उसकी मोटाई बदलती है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un pennino calligrafico arrotondato varia lo spessore in base alla direzione del tratto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "丸みのあるカリグラフィーのペン先が、描く方向に応じて線の太さを変えます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "둥근 캘리그래피 펜촉이 그리는 방향에 따라 선의 두께를 바꿉니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma ponta de caligrafia arredondada varia a espessura conforme a direção do traço."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圆润的书法笔尖会随绘画方向改变线条粗细。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una punta caligráfica redondeada varía el grosor según la dirección del trazo."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yuvarlatılmış hat ucu, çizgi yönüne göre kalınlığı değiştirir."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圓潤的書法筆尖會隨繪畫方向改變線條粗細。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaokrąglona stalówka kaligraficzna zmienia grubość linii zależnie od kierunku kreski."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een afgeronde kalligrafiepunt verandert de lijndikte afhankelijk van de tekenrichting."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En rundad kalligrafispets varierar linjens tjocklek efter streckets riktning."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En afrundet kalligrafispids varierer linjens tykkelse efter stregens retning."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En avrundet kalligrafispiss varierer linjetykkelsen etter strekens retning."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pyöristetty kalligrafiakärki muuttaa viivan paksuutta piirtosuunnan mukaan."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வட்டமான எழுத்துக்கலை முனை, வரையும் திசைக்கு ஏற்ப கோட்டின் தடிமனை மாற்றுகிறது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "గుండ్రని కాలిగ్రఫీ మొన గీసే దిశను బట్టి గీత మందాన్ని మారుస్తుంది."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "गोलसर सुलेखन टोक रेषेच्या दिशेनुसार जाडी बदलते."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ગોળાકાર સુલેખન અણી રેખાની દિશા પ્રમાણે તેની જાડાઈ બદલે છે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਗੋਲ ਸੁਲੇਖ ਨੋਕ ਲਕੀਰ ਦੀ ਦਿਸ਼ਾ ਅਨੁਸਾਰ ਉਸ ਦੀ ਮੋਟਾਈ ਬਦਲਦੀ ਹੈ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "গোলাকার ক্যালিগ্রাফি নিব আঁকার দিক অনুযায়ী রেখার পুরুত্ব বদলায়।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ujung kaligrafi membulat mengubah ketebalan garis sesuai arah goresan."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "گول خطاطی نوک لکیر کی سمت کے مطابق موٹائی بدلتی ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngòi thư pháp bo tròn thay đổi độ dày theo hướng nét vẽ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ปลายปากกาคัดลายมือแบบมนเปลี่ยนความหนาของเส้นตามทิศทางการวาด"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mata kaligrafi membulat mengubah ketebalan garisan mengikut arah garisan."
+          }
+        }
+      }
+    },
+    "A flat calligraphy nib creates sharp edges. Adjust its angle on the Angle page.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A flat calligraphy nib creates sharp edges. Adjust its angle on the Angle page."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Плоское каллиграфическое перо создаёт чёткие края. Его наклон можно настроить на странице «Угол»."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ينشئ سن الخط المسطح حواف واضحة. اضبط زاويته في صفحة الزاوية."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une plume calligraphique plate crée des bords nets. Réglez son inclinaison sur la page Angle."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine flache Kalligrafiefeder erzeugt scharfe Kanten. Passe ihre Neigung auf der Seite Winkel an."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चपटी सुलेख नोक स्पष्ट किनारे बनाती है। कोण पृष्ठ पर उसका झुकाव बदलें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un pennino calligrafico piatto crea bordi netti. Regola l’inclinazione nella pagina Angolo."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "平らなカリグラフィーのペン先が、くっきりした輪郭を描きます。「角度」ページで傾きを調整できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "평평한 캘리그래피 펜촉이 선명한 가장자리를 만듭니다. 각도 페이지에서 기울기를 조절하세요."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uma ponta de caligrafia plana cria contornos nítidos. Ajuste a inclinação na página Ângulo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扁平的书法笔尖形成清晰边缘。可在“角度”页面调整笔尖倾斜角度。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Una punta caligráfica plana crea bordes definidos. Ajusta su inclinación en la página Ángulo."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düz hat ucu keskin kenarlar oluşturur. Eğimini Açı sayfasından ayarlayın."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扁平的書法筆尖形成清晰邊緣。可在「角度」頁面調整筆尖傾斜角度。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Płaska stalówka kaligraficzna tworzy ostre krawędzie. Dostosuj jej nachylenie na stronie Kąt."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Een platte kalligrafiepunt maakt scherpe randen. Pas de helling aan op de pagina Hoek."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En platt kalligrafispets skapar skarpa kanter. Justera lutningen på sidan Vinkel."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En flad kalligrafispids skaber skarpe kanter. Juster hældningen på siden Vinkel."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En flat kalligrafispiss lager skarpe kanter. Juster helningen på siden Vinkel."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Litteä kalligrafiakärki tekee terävät reunat. Säädä sen kallistusta Kulma-sivulla."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "தட்டையான எழுத்துக்கலை முனை தெளிவான விளிம்புகளை உருவாக்குகிறது. கோணம் பக்கத்தில் அதன் சாய்வை மாற்றவும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "చదునైన కాలిగ్రఫీ మొన స్పష్టమైన అంచులను గీస్తుంది. కోణం పేజీలో దాని వాలును మార్చండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सपाट सुलेखन टोक स्पष्ट कडा तयार करते. कोन पृष्ठावर त्याचा कल बदला."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "સપાટ સુલેખન અણી સ્પષ્ટ કિનારીઓ બનાવે છે. ખૂણો પેજ પર તેનો ઢાળ બદલો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਚਪਟੀ ਸੁਲੇਖ ਨੋਕ ਸਾਫ਼ ਕਿਨਾਰੇ ਬਣਾਉਂਦੀ ਹੈ। ਕੋਣ ਪੰਨੇ ’ਤੇ ਇਸ ਦਾ ਝੁਕਾਅ ਬਦਲੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "চ্যাপ্টা ক্যালিগ্রাফি নিব স্পষ্ট প্রান্ত তৈরি করে। কোণ পাতায় এর ঢাল বদলান।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ujung kaligrafi datar membuat tepi yang tegas. Sesuaikan kemiringannya di halaman Sudut."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "چپٹی خطاطی نوک واضح کنارے بناتی ہے۔ زاویہ صفحے پر اس کا جھکاؤ بدلیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ngòi thư pháp phẳng tạo cạnh sắc nét. Điều chỉnh độ nghiêng trên trang Góc."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ปลายปากกาคัดลายมือแบบแบนสร้างขอบคมชัด ปรับความเอียงได้ที่หน้า มุม"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mata kaligrafi rata menghasilkan tepi yang tajam. Laraskan kecondongannya pada halaman Sudut."
+          }
+        }
+      }
+    },
+    "Creates soft, translucent strokes. Layer strokes to deepen the color.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Creates soft, translucent strokes. Layer strokes to deepen the color."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Создаёт мягкие полупрозрачные штрихи. Накладывайте их друг на друга, чтобы сделать цвет насыщеннее."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ينشئ خطوطًا ناعمة شبه شفافة. راكم الخطوط لتعميق اللون."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crée des traits doux et translucides. Superposez-les pour intensifier la couleur."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erzeugt weiche, halbtransparente Striche. Durch Überlagern wird die Farbe kräftiger."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नरम, अर्धपारदर्शी रेखाएँ बनाता है। रंग गहरा करने के लिए रेखाओं की परतें बनाएँ।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea tratti morbidi e traslucidi. Sovrapponili per intensificare il colore."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "柔らかな半透明の線を描きます。線を重ねると色が深まります。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "부드러운 반투명 선을 그립니다. 선을 겹쳐 그리면 색이 진해집니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cria traços suaves e translúcidos. Sobreponha-os para intensificar a cor."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "绘制柔和的半透明笔画。叠加笔画可加深颜色。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crea trazos suaves y translúcidos. Superponlos para intensificar el color."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yumuşak, yarı saydam çizgiler oluşturur. Rengi koyulaştırmak için çizgileri üst üste çizin."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "繪製柔和的半透明筆畫。疊加筆畫可加深顏色。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tworzy miękkie, półprzezroczyste kreski. Nakładaj je, aby pogłębić kolor."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maakt zachte, doorschijnende lijnen. Teken lagen over elkaar om de kleur te verdiepen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skapar mjuka, halvgenomskinliga streck. Lägg streck ovanpå varandra för djupare färg."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laver bløde, halvgennemsigtige streger. Læg streger oven på hinanden for en dybere farve."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lager myke, halvgjennomsiktige streker. Legg streker oppå hverandre for en dypere farge."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekee pehmeitä, läpikuultavia viivoja. Syvennä väriä piirtämällä viivoja päällekkäin."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "மென்மையான, பகுதி ஒளிபுகும் கோடுகளை உருவாக்குகிறது. நிறத்தை அடர்த்தியாக்க கோடுகளை அடுக்கி வரையவும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మృదువైన, పాక్షికంగా పారదర్శకమైన గీతలను గీస్తుంది. రంగు ముదరడానికి గీతలను పొరలుగా గీయండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मऊ, अर्धपारदर्शक रेषा तयार करते. रंग गडद करण्यासाठी रेषांचे थर द्या."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "નરમ, અર્ધપારદર્શક રેખાઓ બનાવે છે. રંગ ઘેરો કરવા માટે રેખાઓના સ્તર બનાવો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਨਰਮ, ਅਰਧ-ਪਾਰਦਰਸ਼ੀ ਲਕੀਰਾਂ ਬਣਾਉਂਦਾ ਹੈ। ਰੰਗ ਗੂੜ੍ਹਾ ਕਰਨ ਲਈ ਲਕੀਰਾਂ ਦੀਆਂ ਪਰਤਾਂ ਬਣਾਓ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "নরম, আধা স্বচ্ছ রেখা তৈরি করে। রং গাঢ় করতে রেখার ওপর রেখা আঁকুন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Membuat goresan lembut dan tembus pandang. Tumpuk goresan untuk memperdalam warna."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نرم، نیم شفاف لکیریں بناتا ہے۔ رنگ گہرا کرنے کے لیے لکیروں کی تہیں بنائیں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tạo nét mềm, bán trong suốt. Vẽ chồng các nét để màu đậm hơn."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สร้างเส้นนุ่มกึ่งโปร่งใส วาดเส้นซ้อนกันเพื่อให้สีเข้มขึ้น"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menghasilkan garisan lembut dan lut cahaya. Tindihkan garisan untuk memperdalam warna."
+          }
+        }
+      }
+    },
+    "Removes marks. Choose Pixel eraser or Object eraser on the Mode page.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removes marks. Choose Pixel eraser or Object eraser on the Mode page."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаляет нарисованное. На странице «Режим» выберите ластик пикселей или ластик объектов."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يزيل الرسم. اختر ممحاة البكسل أو ممحاة العناصر في صفحة الوضع."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Efface le dessin. Choisissez Gomme de pixels ou Gomme d’objets sur la page Mode."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernt Gezeichnetes. Wähle auf der Seite Modus den Pixel- oder Objektradierer."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बनाई हुई रेखाएँ मिटाता है। मोड पृष्ठ पर पिक्सेल रबर या ऑब्जेक्ट रबर चुनें।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuove i segni. Scegli Gomma pixel o Gomma oggetti nella pagina Modalità."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "描いた線を消します。「モード」ページでピクセル消しゴムかオブジェクト消しゴムを選びます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "그린 흔적을 지웁니다. 모드 페이지에서 픽셀 지우개 또는 개체 지우개를 선택하세요."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apaga o desenho. Escolha Borracha de píxeis ou Borracha de objetos na página Modo."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "擦除已画内容。在“模式”页面选择像素橡皮擦或对象橡皮擦。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borra lo dibujado. Elige Goma de píxeles o Goma de objetos en la página Modo."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çizimleri siler. Mod sayfasında Piksel silgisi veya Nesne silgisi seçin."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "擦除已畫內容。在「模式」頁面選擇像素橡皮擦或物件橡皮擦。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuwa narysowane kreski. Na stronie Tryb wybierz gumkę pikseli lub obiektów."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gumt getekende lijnen uit. Kies Pixelgum of Objectgum op de pagina Modus."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tar bort det ritade. Välj pixelsuddgummi eller objektsuddgummi på sidan Läge."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjerner det tegnede. Vælg pixelviskelæder eller objektviskelæder på siden Tilstand."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjerner det du har tegnet. Velg pikselviskelær eller objektviskelær på siden Modus."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poistaa piirtojälkiä. Valitse Tila-sivulta pikselipyyhekumi tai objektipyyhekumi."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "வரைந்ததை அழிக்கிறது. பயன்முறை பக்கத்தில் பிக்சல் அழிப்பான் அல்லது பொருள் அழிப்பானைத் தேர்ந்தெடுக்கவும்."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "గీసిన వాటిని చెరిపేస్తుంది. మోడ్ పేజీలో పిక్సెల్ ఎరేజర్ లేదా వస్తువుల ఎరేజర్ ఎంచుకోండి."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रेखाटलेले मिटवते. मोड पृष्ठावर पिक्सेल खोडरबर किंवा वस्तू खोडरबर निवडा."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "દોરેલું ભૂંસે છે. મોડ પેજ પર પિક્સેલ માટે રબર અથવા વસ્તુઓ માટે રબર પસંદ કરો."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਬਣਾਈਆਂ ਲਕੀਰਾਂ ਮਿਟਾਉਂਦਾ ਹੈ। ਮੋਡ ਪੰਨੇ ’ਤੇ ਪਿਕਸਲ ਰਬੜ ਜਾਂ ਵਸਤੂ ਰਬੜ ਚੁਣੋ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আঁকা দাগ মুছে দেয়। মোড পাতায় পিক্সেল রাবার বা অবজেক্ট রাবার বেছে নিন।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menghapus goresan. Pilih Penghapus piksel atau Penghapus objek di halaman Mode."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بنائی ہوئی لکیریں مٹاتا ہے۔ موڈ صفحے پر پکسل ربڑ یا اشیاء کا ربڑ منتخب کریں۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa nét vẽ. Chọn Tẩy điểm ảnh hoặc Tẩy đối tượng trên trang Chế độ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบรอยที่วาด เลือกยางลบพิกเซลหรือยางลบวัตถุที่หน้า โหมด"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memadamkan lukisan. Pilih Pemadam piksel atau Pemadam objek pada halaman Mod."
+          }
+        }
+      }
+    },
+    "Erases only the parts you touch. Width sets the size of the erased area.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erases only the parts you touch. Width sets the size of the erased area."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Стирает только те участки, которых вы касаетесь. Толщина задаёт размер стираемой области."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يمحو الأجزاء التي تلمسها فقط. يحدد السُمك حجم المنطقة الممحوة."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Efface uniquement les parties touchées. L’épaisseur définit la taille de la zone effacée."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Radiert nur die berührten Stellen. Die Breite bestimmt die Größe des radierten Bereichs."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "केवल छुए गए हिस्से मिटाता है। मोटाई से मिटाए जाने वाले क्षेत्र का आकार तय होता है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancella solo le parti toccate. Lo spessore determina le dimensioni dell’area cancellata."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "触れた部分だけを消します。太さで消す範囲の大きさを設定します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "닿은 부분만 지웁니다. 두께로 지워지는 영역의 크기를 설정합니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apaga apenas as partes em que toca. A espessura define o tamanho da área apagada."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅擦除触碰的部分。粗细设置决定擦除区域的大小。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Borra solo las partes que tocas. El grosor determina el tamaño del área borrada."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalnızca dokunduğunuz kısımları siler. Kalınlık, silinen alanın boyutunu belirler."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "只擦除觸碰的部分。粗細設定決定擦除區域的大小。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ściera tylko dotknięte fragmenty. Grubość określa rozmiar ścieranego obszaru."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gumt alleen de aangeraakte delen uit. De dikte bepaalt de grootte van het gewiste gebied."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suddar bara de delar du rör vid. Tjockleken bestämmer storleken på området som suddas."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sletter kun de dele, du rører ved. Tykkelsen bestemmer størrelsen på det slettede område."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visker bare ut delene du berører. Tykkelsen bestemmer størrelsen på området som viskes ut."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pyyhkii vain koskettamasi osat. Paksuus määrittää pyyhittävän alueen koon."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "நீங்கள் தொடும் பகுதிகளை மட்டும் அழிக்கிறது. தடிமன், அழிக்கப்படும் பகுதியின் அளவை அமைக்கிறது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మీరు తాకిన భాగాలను మాత్రమే చెరిపేస్తుంది. మందం చెరిపే ప్రాంతం పరిమాణాన్ని నిర్ణయిస్తుంది."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "फक्त स्पर्श केलेले भाग मिटवते. जाडी मिटवल्या जाणाऱ्या क्षेत्राचा आकार ठरवते."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "તમે સ્પર્શ કરો તે ભાગો જ ભૂંસે છે. જાડાઈ ભૂંસાતા વિસ્તારનું કદ નક્કી કરે છે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਸਿਰਫ਼ ਛੂਹੇ ਹੋਏ ਹਿੱਸੇ ਮਿਟਾਉਂਦਾ ਹੈ। ਮੋਟਾਈ ਮਿਟਾਏ ਜਾਣ ਵਾਲੇ ਖੇਤਰ ਦਾ ਆਕਾਰ ਤੈਅ ਕਰਦੀ ਹੈ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "শুধু স্পর্শ করা অংশগুলি মুছে দেয়। পুরুত্ব দিয়ে মুছে যাওয়া এলাকার আকার নির্ধারণ করা হয়।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hanya menghapus bagian yang disentuh. Ketebalan mengatur ukuran area yang dihapus."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صرف چھوئے گئے حصے مٹاتا ہے۔ موٹائی مٹائے جانے والے حصے کا سائز مقرر کرتی ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ xóa phần bạn chạm vào. Độ dày quyết định kích thước vùng bị xóa."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบเฉพาะส่วนที่คุณสัมผัส ความหนากำหนดขนาดของพื้นที่ที่ลบ"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memadamkan hanya bahagian yang disentuh. Ketebalan menentukan saiz kawasan yang dipadamkan."
+          }
+        }
+      }
+    },
+    "Removes each entire stroke you touch, even if you touch only part of it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Removes each entire stroke you touch, even if you touch only part of it."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удаляет каждый затронутый штрих целиком, даже если коснуться только его части."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يزيل كل خط تلمسه بالكامل، حتى لو لمست جزءًا منه فقط."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprime entièrement chaque trait touché, même si vous n’en touchez qu’une partie."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entfernt jeden berührten Strich vollständig, auch wenn du nur einen Teil davon berührst."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जिस रेखा को छूते हैं, उसे पूरा मिटाता है, भले ही केवल उसका एक हिस्सा छुआ हो।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuove completamente ogni tratto toccato, anche se ne tocchi solo una parte."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "線の一部に触れるだけで、その線全体を削除します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "선의 일부만 터치해도 해당 선 전체를 지웁니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove por inteiro cada traço em que toca, mesmo que toque apenas numa parte."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "触碰笔画的任意部分，即可删除整个笔画。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina por completo cada trazo que tocas, aunque solo toques una parte."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalnızca bir kısmına dokunsanız bile dokunduğunuz çizginin tamamını siler."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "觸碰筆畫的任何部分，即可刪除整個筆畫。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuwa każdą dotkniętą kreskę w całości, nawet jeśli dotkniesz tylko jej fragmentu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwijdert elke aangeraakte lijn volledig, ook als je maar een deel ervan aanraakt."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tar bort varje streck du rör vid i sin helhet, även om du bara rör vid en del."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjerner hver streg, du rører ved, helt, selv hvis du kun rører ved en del af den."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fjerner hver strek du berører, i sin helhet, selv om du bare berører en del av den."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poistaa koko koskettamasi viivan, vaikka koskettaisit vain osaa siitä."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ஒரு கோட்டின் ஒரு பகுதியை மட்டும் தொட்டாலும், அந்தக் கோடு முழுவதையும் நீக்குகிறது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "మీరు ఒక గీతలో కొంత భాగాన్ని మాత్రమే తాకినా, ఆ గీత మొత్తాన్ని తొలగిస్తుంది."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रेषेच्या फक्त एका भागाला स्पर्श केला तरी ती संपूर्ण रेषा काढून टाकते."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "રેખાના માત્ર એક ભાગને સ્પર્શ કરો તો પણ તે આખી રેખા કાઢી નાખે છે."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਲਕੀਰ ਦੇ ਸਿਰਫ਼ ਇੱਕ ਹਿੱਸੇ ਨੂੰ ਛੂਹਣ ’ਤੇ ਵੀ ਪੂਰੀ ਲਕੀਰ ਮਿਟਾ ਦਿੰਦਾ ਹੈ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেখার শুধু একটি অংশ স্পর্শ করলেও পুরো রেখাটি মুছে দেয়।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menghapus seluruh goresan yang disentuh, meskipun Anda hanya menyentuh sebagian kecilnya."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لکیر کا صرف ایک حصہ چھونے پر بھی پوری لکیر مٹا دیتا ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa toàn bộ mỗi nét bạn chạm vào, ngay cả khi bạn chỉ chạm một phần của nét đó."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบเส้นที่คุณสัมผัสทั้งเส้น แม้จะสัมผัสเพียงบางส่วนของเส้นก็ตาม"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Memadamkan setiap garisan yang disentuh sepenuhnya, walaupun anda hanya menyentuh sebahagiannya."
+          }
+        }
+      }
     }
   },
   "version": "1.1"

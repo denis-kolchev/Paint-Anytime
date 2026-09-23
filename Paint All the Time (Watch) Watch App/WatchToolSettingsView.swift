@@ -31,7 +31,7 @@ private struct InkPreset {
 struct WatchToolSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
-    let onClose: () -> Void
+    @State private var showsInformation = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var crownFocused: Bool
     @AppStorage("watch.settings.lastPage") private var selectedPage = 1
@@ -104,6 +104,7 @@ struct WatchToolSettingsView: View {
             case .direction: Double(controller.pencilStyle.reedAngle)
             }
         } set: { value in
+            guard !showsInformation else { return }
             if selection == .width {
                 controller.pencilStyle.width = Float(min(crownMaximum, max(1, value.rounded())))
             } else if selection == .instrument {
@@ -183,7 +184,7 @@ struct WatchToolSettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.colorScheme, .dark)
         .contentShape(Rectangle())
-        .focusable()
+        .focusable(!showsInformation)
         .focused($crownFocused)
         .digitalCrownRotation(
             crownValue,
@@ -197,12 +198,35 @@ struct WatchToolSettingsView: View {
         .simultaneousGesture(
             DragGesture(minimumDistance: 20)
                 .onEnded { value in
+                    guard !showsInformation else { return }
                     guard abs(value.translation.width) > abs(value.translation.height) else { return }
                     guard let current = availableSettings.firstIndex(of: selection) else { return }
                     let next = current + (value.translation.width < 0 ? 1 : -1)
                     if availableSettings.indices.contains(next) { select(availableSettings[next]) }
                 }
         )
+        .toolbar {
+            if selection == .instrument || selection == .mode {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        crownFocused = false
+                        showsInformation = true
+                    } label: {
+                        Image(systemName: "info")
+                    }
+                    .buttonStyle(.automatic)
+                    .accessibilityLabel(L10n.text("Information"))
+                }
+            }
+        }
+        .fullScreenCover(isPresented: $showsInformation, onDismiss: { crownFocused = true }) {
+            ToolInformationView(
+                title: selection == .mode ? controller.pencilStyle.eraserMode.title : controller.pencilStyle.instrument.title,
+                description: selection == .mode ? controller.pencilStyle.eraserMode.helpDescription : controller.pencilStyle.instrument.helpDescription
+            )
+            .presentationBackground(.black)
+            .environment(\.colorScheme, .dark)
+        }
         .onAppear {
             // Migrate the old eraser page, previously stored in the color slot.
             if isEraser && selectedPage == Setting.color.rawValue { selectedPage = Setting.mode.rawValue }
@@ -490,5 +514,30 @@ struct WatchToolSettingsView: View {
         }
         .background(Color(white: 0.88), in: RoundedRectangle(cornerRadius: 16))
         .accessibilityLabel(L10n.text("Stroke preview"))
+    }
+}
+
+private struct ToolInformationView: View {
+    let title: String
+    let description: String
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(title)
+                        .font(.headline)
+                        .accessibilityAddTraits(.isHeader)
+                    Text(description)
+                        .font(.body)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+            }
+            .background(Color.black.ignoresSafeArea())
+            .containerBackground(.black, for: .navigation)
+        }
     }
 }
