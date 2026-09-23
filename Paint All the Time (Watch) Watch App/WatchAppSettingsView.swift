@@ -2,13 +2,17 @@ import SwiftUI
 
 struct WatchAppSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @Environment(\.openURL) private var openURL
+    private let supportEmail = "deniskolchev2001@gmail.com"
     @ObservedObject var controller: CanvasController
     var onOpenDrawings: () -> Void
 
     var body: some View {
         NavigationStack {
             List {
-                Button(L10n.text("Gallery")) { onOpenDrawings() }
+                Button(action: onOpenDrawings) {
+                    Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
+                }
                 NavigationLink {
                     AppLanguageSelectionView()
                 } label: {
@@ -17,10 +21,40 @@ struct WatchAppSettingsView: View {
                 NavigationLink {
                     ToolSynchronizationView(controller: controller)
                 } label: {
-                    Text(L10n.text("Tool synchronization"))
+                    Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
+                }
+                Button(action: reportBug) {
+                    Label(L10n.text("Report a bug"), systemImage: "envelope")
                 }
             }
+            .labelStyle(CenteredMenuLabelStyle())
             .navigationTitle(L10n.text("More"))
+        }
+    }
+
+    private func reportBug() {
+        var components = URLComponents()
+        components.scheme = "mailto"
+        components.path = supportEmail
+        components.queryItems = [
+            URLQueryItem(name: "subject", value: "Paint Anytime — " + L10n.text("Report a bug"))
+        ]
+        guard let url = components.url else { return }
+        // watchOS supports opening URLs, but not the completion-handler overload.
+        openURL(url)
+    }
+}
+
+private struct CenteredMenuLabelStyle: LabelStyle {
+    @ScaledMetric(relativeTo: .body) private var iconWidth = 24.0
+
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(alignment: .center, spacing: 8) {
+            configuration.icon
+                .frame(width: iconWidth)
+            configuration.title
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
