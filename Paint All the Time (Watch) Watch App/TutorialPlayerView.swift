@@ -19,7 +19,7 @@ struct TutorialPlayerView: View {
 
     var body: some View {
         ZStack {
-            NavigationStack {
+            Group {
                 ZStack {
                     GeometryReader { geometry in
                         ZStack {

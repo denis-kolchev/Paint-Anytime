@@ -21,7 +21,7 @@ struct ContentView: View {
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
-        NavigationStack {
+        Group {
         GeometryReader { geometry in
             ZStack {
                 Color.black

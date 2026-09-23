@@ -11,30 +11,34 @@ struct WatchWelcomeView: View {
     private enum WelcomePage { case language, chooseLanguage, offer, later }
 
     var body: some View {
-        ZStack {
-            // Keep the real editor alive, including its document, undo history and camera.
-            ContentView(isActive: hasCompletedWelcome && tutorialFolder == nil && !preparesTutorial,
-                        onStartTutorial: { preparesTutorial = true })
-                .opacity(hasCompletedWelcome && tutorialFolder == nil ? 1 : 0)
-                .allowsHitTesting(hasCompletedWelcome && tutorialFolder == nil && !preparesTutorial)
-                .accessibilityHidden(!hasCompletedWelcome || tutorialFolder != nil)
+        // One navigation host owns the clock and toolbars throughout onboarding,
+        // tutorial confirmations and the return to the preserved editor.
+        NavigationStack {
+            ZStack {
+                // Keep the real editor alive, including its document, undo history and camera.
+                ContentView(isActive: hasCompletedWelcome && tutorialFolder == nil && !preparesTutorial,
+                            onStartTutorial: { preparesTutorial = true })
+                    .opacity(hasCompletedWelcome && tutorialFolder == nil ? 1 : 0)
+                    .allowsHitTesting(hasCompletedWelcome && tutorialFolder == nil && !preparesTutorial)
+                    .accessibilityHidden(!hasCompletedWelcome || tutorialFolder != nil)
 
-            if let tutorialFolder {
-                TutorialPlayerView(folder: tutorialFolder) {
-                    self.tutorialFolder = nil
-                    hasCompletedWelcome = true
-                    try? FileManager.default.removeItem(at: tutorialFolder)
+                if let tutorialFolder {
+                    TutorialPlayerView(folder: tutorialFolder) {
+                        self.tutorialFolder = nil
+                        hasCompletedWelcome = true
+                        try? FileManager.default.removeItem(at: tutorialFolder)
+                    }
+                    .id(tutorialFolder)
+                } else if !hasCompletedWelcome {
+                    welcome
+                        .background(Color.black.ignoresSafeArea())
                 }
-                .id(tutorialFolder)
-            } else if !hasCompletedWelcome {
-                welcome
-                    .background(Color.black.ignoresSafeArea())
-            }
 
-            if preparesTutorial {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.ignoresSafeArea())
+                if preparesTutorial {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.black.ignoresSafeArea())
+                }
             }
         }
         .environment(\.colorScheme, .dark)
@@ -62,9 +66,7 @@ struct WatchWelcomeView: View {
                 welcomePage = .chooseLanguage
             }
         case .chooseLanguage:
-            NavigationStack {
-                AppLanguageSelectionView(onSelection: { welcomePage = .offer })
-            }
+            AppLanguageSelectionView(onSelection: { welcomePage = .offer })
         case .offer:
             WelcomeQuestion(text: L10n.text("Would you like a guided tour?")) {
                 preparesTutorial = true
@@ -112,6 +114,8 @@ private struct WelcomeQuestion: View {
 struct TutorialLessonView: View {
     @ObservedObject var tutorial: TutorialSession
     let onFinish: () -> Void
+    @State private var confirmsFinish = false
+    @State private var didConfirmFinish = false
 
     var body: some View {
         VStack(spacing: 8) {
@@ -127,19 +131,55 @@ struct TutorialLessonView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
             }
-            Button(L10n.text("Next")) {
-                if tutorial.step == 20 {
-                    tutorial.stop()
-                    onFinish()
-                } else { tutorial.beginExercise() }
+            HStack(spacing: 8) {
+                Button {
+                    tutorial.pauseReminders()
+                    confirmsFinish = true
+                } label: {
+                    Text(L10n.text("Finish"))
+                        .frame(maxWidth: .infinity, minHeight: 32)
+                }
+                .buttonStyle(.glass(.regular.tint(.red.opacity(0.2))))
+                .foregroundStyle(.red)
+
+                Button {
+                    if tutorial.step == 20 {
+                        tutorial.stop()
+                        onFinish()
+                    } else { tutorial.beginExercise() }
+                } label: {
+                    Text(L10n.text("Next"))
+                        .frame(maxWidth: .infinity, minHeight: 32)
+                }
+                .buttonStyle(.glass)
             }
-            .buttonStyle(.glass)
-            .frame(maxWidth: .infinity)
+            .font(.caption.weight(.semibold))
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
         .ignoresSafeArea(.container, edges: .vertical)
+        .fullScreenCover(isPresented: $confirmsFinish, onDismiss: {
+            if didConfirmFinish {
+                didConfirmFinish = false
+                tutorial.stop()
+                onFinish()
+            } else {
+                tutorial.resumeReminders()
+            }
+        }) {
+            DestructiveConfirmationView(
+                title: L10n.text("Are you sure you want to finish the tutorial?"),
+                confirmTitle: L10n.text("Yes")
+            ) {
+                confirmsFinish = false
+            } onConfirm: {
+                didConfirmFinish = true
+                confirmsFinish = false
+            }
+        }
     }
 }
