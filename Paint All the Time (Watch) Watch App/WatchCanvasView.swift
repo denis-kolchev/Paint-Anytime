@@ -124,20 +124,31 @@ struct WatchCanvasView: View {
         let screenPoint = CGPoint(x: canvasFrame.minX + point.x, y: canvasFrame.minY + point.y)
         for (control, frame) in protectedControls {
             guard !frame.isNull && !frame.isEmpty else { continue }
-            // Include the full touch target even if the toolbar reports only the icon bounds.
-            let target = CGRect(x: frame.midX - max(44, frame.width) / 2,
-                                y: frame.midY - max(44, frame.height) / 2,
-                                width: max(44, frame.width), height: max(44, frame.height))
-                .insetBy(dx: -8, dy: -8)
+            // Include the button when the toolbar reports only its icon, without
+            // adding a margin toward the canvas. Extend its rounded footprint
+            // outward to the screen edges, never across the whole bottom row.
+            let radiusX = max(44, frame.width) / 2
+            let radiusY = max(44, frame.height) / 2
+            // Follow the actual screen position, including right-to-left layouts.
+            let outwardSideDistance = frame.midX < canvasFrame.midX
+                ? max(0, screenPoint.x - frame.midX)
+                : max(0, frame.midX - screenPoint.x)
+            let dx: CGFloat
+            let dy: CGFloat
             switch control {
-            case .more:
-                if screenPoint.x <= target.maxX && screenPoint.y <= target.maxY { return true }
-            case .tools:
-                if screenPoint.x >= target.minX && screenPoint.y <= target.maxY { return true }
-            case .clear, .undo, .redo, .save:
-                // Protect the gaps between bottom buttons and the space down to the screen edge.
-                if screenPoint.y >= target.minY { return true }
+            case .more, .tools:
+                dx = outwardSideDistance
+                dy = max(0, screenPoint.y - frame.midY)
+            case .clear, .save:
+                dx = outwardSideDistance
+                dy = max(0, frame.midY - screenPoint.y)
+            case .undo, .redo:
+                dx = abs(screenPoint.x - frame.midX)
+                dy = max(0, frame.midY - screenPoint.y)
             }
+            let normalizedX = dx / radiusX
+            let normalizedY = dy / radiusY
+            if normalizedX * normalizedX + normalizedY * normalizedY <= 1 { return true }
         }
         return false
     }

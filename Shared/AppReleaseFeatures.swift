@@ -7,10 +7,12 @@ struct AppReleaseFeatures {
     )
 
     let includesSecondReleaseTools: Bool
+    let showsPhotoTransferControls: Bool
 
     init(version: String) {
         let majorVersion = Int(version.split(separator: ".").first ?? "") ?? 1
         includesSecondReleaseTools = majorVersion >= 2
+        showsPhotoTransferControls = majorVersion >= 2
     }
 
     func allows(_ instrument: DrawingInstrument) -> Bool {

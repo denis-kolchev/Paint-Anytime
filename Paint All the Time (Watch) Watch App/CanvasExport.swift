@@ -20,8 +20,16 @@ enum CanvasExportStore {
     static func all() throws -> [CanvasExport] {
         try FileManager.default.contentsOfDirectory(at: directory(), includingPropertiesForKeys: nil)
             .filter { $0.pathExtension.lowercased() == "png" }
-            .sorted { $0.lastPathComponent > $1.lastPathComponent }
+            .sorted { drawingSortKey($0) > drawingSortKey($1) }
             .map { CanvasExport(url: $0) }
+    }
+
+    private static func drawingSortKey(_ url: URL) -> String {
+        // Both naming formats have the same date suffix after the first underscore.
+        // Keep old and new drawings together in chronological order.
+        let name = url.lastPathComponent
+        guard let separator = name.firstIndex(of: "_") else { return name }
+        return String(name[name.index(after: separator)...])
     }
 
     static func loadDocument(for drawing: CanvasExport) throws -> CanvasDocument {
@@ -53,7 +61,7 @@ enum CanvasExportStore {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss_SSS"
-        let name = "Paint All the Time_\(formatter.string(from: now))_\(UUID().uuidString.prefix(8))"
+        let name = "Paint-Anytime_\(formatter.string(from: now))_\(UUID().uuidString.prefix(8))"
         let url = try directory().appendingPathComponent(name).appendingPathExtension("png")
         let device = WKInterfaceDevice.current()
         let details: [String: Any] = [
@@ -114,14 +122,16 @@ struct SavedDrawingView: View {
                 ShareLink(item: drawing.url, preview: SharePreview("Paint All the Time", image: Image(systemName: "photo"))) {
                     Label(L10n.text("Share"), systemImage: "square.and.arrow.up")
                 }
-                Text(photoTransferStatus).font(.caption2)
-                if canRetryPhotoTransfer {
-                    Button(L10n.text("Retry sending to iPhone")) {
-                        let queued = WatchPhotoTransfer.shared.queue(drawing.url)
-                        canRetryPhotoTransfer = !queued
-                        photoTransferStatus = queued
-                        ? L10n.text("Your drawing is being sent to Photos on iPhone.")
-                        : L10n.text("The iPhone app is currently unavailable.")
+                if AppReleaseFeatures.current.showsPhotoTransferControls {
+                    Text(photoTransferStatus).font(.caption2)
+                    if canRetryPhotoTransfer {
+                        Button(L10n.text("Retry sending to iPhone")) {
+                            let queued = WatchPhotoTransfer.shared.queue(drawing.url)
+                            canRetryPhotoTransfer = !queued
+                            photoTransferStatus = queued
+                            ? L10n.text("Your drawing is being sent to Photos on iPhone.")
+                            : L10n.text("The iPhone app is currently unavailable.")
+                        }
                     }
                 }
                 Text(drawing.url.lastPathComponent).font(.caption2)
@@ -305,6 +315,12 @@ struct SavedDrawingsView: View {
                 .accessibilityLabel(L10n.text("Back"))
             }
             if showsFullscreen && !isTransitioning, let selectedDrawing {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { editDrawing(selectedDrawing) } label: {
+                        Image(systemName: "pencil")
+                    }
+                    .accessibilityLabel(L10n.text("Edit drawing"))
+                }
                 ToolbarItemGroup(placement: .bottomBar) {
                     Button(role: .destructive) {
                         crownFocused = false
@@ -315,11 +331,12 @@ struct SavedDrawingsView: View {
                     .disabled(isTransitioning)
                     .accessibilityLabel(L10n.text("Delete drawing"))
                     Spacer()
-                    Button { editDrawing(selectedDrawing) } label: {
-                        Image(systemName: "pencil")
+                    ShareLink(item: selectedDrawing.url,
+                              preview: SharePreview(Text(verbatim: selectedDrawing.url.lastPathComponent),
+                                                    image: Image(systemName: "photo"))) {
+                        Image(systemName: "square.and.arrow.up")
                     }
-                    .disabled(isTransitioning)
-                    .accessibilityLabel(L10n.text("Edit drawing"))
+                    .accessibilityLabel(L10n.text("Share"))
                 }
             }
         }
