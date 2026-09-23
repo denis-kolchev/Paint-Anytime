@@ -133,6 +133,12 @@ struct SavedDrawingView: View {
                             : L10n.text("The iPhone app is currently unavailable.")
                         }
                     }
+                } else {
+                    Text(L10n.text("Sharing options depend on watchOS. Saving directly to Photos on iPhone requires a companion iPhone app; it is not available with the watch app alone."))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Text(drawing.url.lastPathComponent).font(.caption2)
             }

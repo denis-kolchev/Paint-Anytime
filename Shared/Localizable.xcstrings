@@ -14725,6 +14725,198 @@
           }
         }
       }
+    },
+    "Sharing options depend on watchOS. Saving directly to Photos on iPhone requires a companion iPhone app; it is not available with the watch app alone.": {
+      "extractionState": "manual",
+      "comment": "Explanation beneath Share on the Saved screen in version 1.x. Direct app-to-app transfer needs an iPhone companion; do not imply that every alternative transfer mechanism is impossible.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sharing options depend on watchOS. Saving directly to Photos on iPhone requires a companion iPhone app; it is not available with the watch app alone."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Способы отправки в меню «Поделиться» зависят от watchOS. Для прямого сохранения в «Фото» на iPhone нужно приложение-компаньон на телефоне. С одним лишь приложением для часов эта функция недоступна."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعتمد خيارات المشاركة على watchOS. يتطلب الحفظ مباشرةً في الصور على iPhone تطبيقًا مرافقًا على الهاتف؛ ولا تتوفر هذه الميزة باستخدام تطبيق الساعة وحده."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les options de partage dépendent de watchOS. L’enregistrement direct dans Photos sur iPhone nécessite une app compagnon sur l’iPhone. Cette fonction n’est pas disponible avec la seule app pour montre."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Optionen zum Teilen hängen von watchOS ab. Zum direkten Speichern in Fotos auf dem iPhone ist eine zugehörige iPhone-App erforderlich. Mit der Watch-App allein ist diese Funktion nicht verfügbar."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "शेयर करने के विकल्प watchOS पर निर्भर करते हैं। iPhone के Photos में सीधे सहेजने के लिए फ़ोन पर साथी ऐप चाहिए। केवल घड़ी के ऐप से यह सुविधा उपलब्ध नहीं है।"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le opzioni di condivisione dipendono da watchOS. Per salvare direttamente in Foto su iPhone serve un’app complementare su iPhone. Questa funzione non è disponibile con la sola app per l’orologio."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共有方法はwatchOSによって異なります。iPhoneの「写真」に直接保存するには、iPhone用の連携アプリが必要です。時計のアプリだけではこの機能は利用できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공유 옵션은 watchOS에 따라 다릅니다. iPhone의 사진 앱에 직접 저장하려면 iPhone용 연동 앱이 필요합니다. 시계 앱만으로는 이 기능을 사용할 수 없습니다."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As opções de partilha dependem do watchOS. Para guardar diretamente em Fotografias no iPhone, é necessária uma app complementar no iPhone. Esta função não está disponível apenas com a app do relógio."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分享方式取决于 watchOS。要直接保存到 iPhone 的“照片”，需要在 iPhone 上安装配套 App。仅使用手表 App 时无法使用此功能。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las opciones para compartir dependen de watchOS. Para guardar directamente en Fotos en el iPhone, se necesita una app complementaria en el iPhone. Esta función no está disponible solo con la app del reloj."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paylaşım seçenekleri watchOS’e bağlıdır. iPhone’daki Fotoğraflar’a doğrudan kaydetmek için telefonda eşlik eden bir uygulama gerekir. Bu özellik yalnızca saat uygulamasıyla kullanılamaz."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分享方式取決於 watchOS。若要直接儲存至 iPhone 的「照片」，需要在 iPhone 上安裝配套 App。僅使用手錶 App 時無法使用此功能。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opcje udostępniania zależą od watchOS. Bezpośrednie zapisywanie w Zdjęciach na iPhonie wymaga aplikacji towarzyszącej na telefonie. Ta funkcja nie jest dostępna przy używaniu samej aplikacji na zegarku."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De opties voor delen zijn afhankelijk van watchOS. Om rechtstreeks in Foto’s op de iPhone op te slaan, is een bijbehorende iPhone-app nodig. Deze functie is niet beschikbaar met alleen de app op het horloge."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delningsalternativen beror på watchOS. För att spara direkt i Bilder på iPhone behövs en tillhörande iPhone-app. Funktionen är inte tillgänglig med enbart appen på klockan."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delingsmulighederne afhænger af watchOS. For at gemme direkte i Fotos på iPhone kræves en tilhørende iPhone-app. Funktionen er ikke tilgængelig med appen på uret alene."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delingsalternativene avhenger av watchOS. For å lagre direkte i Bilder på iPhone trengs en tilhørende iPhone-app. Funksjonen er ikke tilgjengelig med bare appen på klokken."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jakamisvaihtoehdot riippuvat watchOS:stä. Tallentaminen suoraan iPhonen Kuvat-appiin vaatii kumppaniapin iPhoneen. Toiminto ei ole käytettävissä pelkällä kellon apilla."
+          }
+        },
+        "ta": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "பகிரும் வழிகள் watchOS-ஐப் பொறுத்தவை. iPhone-இல் உள்ள Photos-க்கு நேரடியாகச் சேமிக்க, தொலைபேசியில் துணைச் செயலி தேவை. கடிகாரச் செயலியை மட்டும் பயன்படுத்தும்போது இந்த வசதி கிடைக்காது."
+          }
+        },
+        "te": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "షేర్ చేసే ఎంపికలు watchOSపై ఆధారపడి ఉంటాయి. iPhoneలోని Photosకు నేరుగా సేవ్ చేయడానికి ఫోన్‌లో అనుబంధ యాప్ అవసరం. వాచ్ యాప్ మాత్రమే ఉంటే ఈ సదుపాయం అందుబాటులో ఉండదు."
+          }
+        },
+        "mr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "शेअर करण्याचे पर्याय watchOS वर अवलंबून असतात. iPhone वरील Photos मध्ये थेट जतन करण्यासाठी फोनवर साथीचे अ‍ॅप आवश्यक आहे. केवळ घड्याळावरील अ‍ॅप वापरत असल्यास हे वैशिष्ट्य उपलब्ध नाही."
+          }
+        },
+        "gu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "શેર કરવાના વિકલ્પો watchOS પર આધાર રાખે છે. iPhone પરના Photos માં સીધું સાચવવા માટે ફોન પર સાથી ઍપ જરૂરી છે. માત્ર ઘડિયાળની ઍપથી આ સુવિધા ઉપલબ્ધ નથી."
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ਸਾਂਝਾ ਕਰਨ ਦੇ ਵਿਕਲਪ watchOS ’ਤੇ ਨਿਰਭਰ ਕਰਦੇ ਹਨ। iPhone ਦੇ Photos ਵਿੱਚ ਸਿੱਧਾ ਸੰਭਾਲਣ ਲਈ ਫ਼ੋਨ ’ਤੇ ਸਾਥੀ ਐਪ ਦੀ ਲੋੜ ਹੈ। ਸਿਰਫ਼ ਘੜੀ ਵਾਲੀ ਐਪ ਨਾਲ ਇਹ ਸਹੂਲਤ ਉਪਲਬਧ ਨਹੀਂ ਹੈ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "শেয়ার করার বিকল্পগুলি watchOS-এর ওপর নির্ভর করে। iPhone-এর Photos-এ সরাসরি সেভ করতে ফোনে একটি সহযোগী অ্যাপ প্রয়োজন। শুধু ঘড়ির অ্যাপ ব্যবহার করলে এই সুবিধা পাওয়া যায় না।"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilihan berbagi bergantung pada watchOS. Untuk menyimpan langsung ke Foto di iPhone, diperlukan app pendamping di iPhone. Fitur ini tidak tersedia jika hanya menggunakan app jam."
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شیئر کرنے کے طریقے watchOS پر منحصر ہیں۔ iPhone پر Photos میں براہ راست محفوظ کرنے کے لیے فون پر ساتھی ایپ ضروری ہے۔ صرف گھڑی کی ایپ استعمال کرنے پر یہ سہولت دستیاب نہیں ہے۔"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các tùy chọn chia sẻ phụ thuộc vào watchOS. Để lưu trực tiếp vào Ảnh trên iPhone, cần có ứng dụng đồng hành trên iPhone. Tính năng này không khả dụng khi chỉ dùng ứng dụng trên đồng hồ."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ตัวเลือกการแชร์ขึ้นอยู่กับ watchOS การบันทึกลงในแอปรูปภาพบน iPhone โดยตรงต้องมีแอปคู่กันบน iPhone ฟังก์ชันนี้ไม่พร้อมใช้งานหากใช้เฉพาะแอปบนนาฬิกา"
+          }
+        },
+        "ms": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilihan perkongsian bergantung pada watchOS. Untuk menyimpan terus ke Foto pada iPhone, app pendamping pada iPhone diperlukan. Fungsi ini tidak tersedia dengan app jam sahaja."
+          }
+        }
+      }
     }
   },
   "version": "1.1"
