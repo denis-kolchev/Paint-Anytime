@@ -179,6 +179,7 @@ struct TutorialPlayerView: View {
             }
         }
         .background(Color.black.ignoresSafeArea())
+        .toolbarBackgroundVisibility(tutorial.showsInstruction ? .hidden : .automatic, for: .navigationBar)
         .onAppear {
             if !tutorial.isActive {
                 // Carry the color and width taught earlier into the new brush, without changing user preferences.

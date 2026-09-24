@@ -132,7 +132,7 @@ final class TutorialSession: ObservableObject {
             if hasPanned { advance() }
         case (12, .history):
             count += 1
-            if count >= 2 { advance() }
+            if count >= 2 { advanceAfterResult(lockInput: true) }
         case (15, .openedGallery), (18, .returnedToCanvas), (19, .cleared):
             advanceAfterResult(lockInput: true)
         case (13, .saved), (14, .closedSave), (16, .galleryFullscreen), (17, .deleted): advance()

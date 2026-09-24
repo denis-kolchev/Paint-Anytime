@@ -131,6 +131,7 @@ struct TutorialLessonView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
             }
+            .scrollEdgeEffectHidden(true, for: .top)
             HStack(spacing: 8) {
                 Button {
                     tutorial.pauseReminders()
