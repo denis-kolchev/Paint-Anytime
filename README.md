@@ -3,6 +3,10 @@ A drawing app for Apple Watch, built with SwiftUI. Sketch on your wrist with adj
 
 ## License
 
-Copyright (c) 2026 Denis Kolchev. This project is licensed under the GNU Affero General Public License, version 3 (AGPL-3.0-only). See [LICENSE](LICENSE) for the full terms.
+Copyright (c) 2026 Denis Kolchev.
 
-You may fork, modify, and distribute the project under the AGPLv3. If you distribute a modified version, you must provide its corresponding source code under the same license. If users interact with a modified version remotely over a network, you must offer those users access to its corresponding source code as required by section 13 of the license.
+The source code of Paint Anytime is open source and licensed under the GNU Affero General Public License version 3 only (`AGPL-3.0-only`), unless explicitly stated otherwise. See [LICENSE](LICENSE) for the full terms.
+
+Official builds distributed by Denis Kolchev through the Apple App Store are licensed separately under the [Apple Standard EULA](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/). Third-party components retain their applicable licenses.
+
+See [LICENSING.md](LICENSING.md) for details and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution requirements.
