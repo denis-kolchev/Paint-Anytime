@@ -92,25 +92,31 @@ struct AppLanguageSelectionView: View {
     @State private var pendingLanguageCode: String?
 
     var body: some View {
-        List(AppLanguage.displayOrder) { language in
-            Button {
-                guard pendingLanguageCode == nil else { return }
-                if language.id == AppLanguage.currentCode {
-                    onSelection?()
-                    return
-                }
-                pendingLanguageCode = language.id
-            } label: {
-                HStack {
-                    Text(verbatim: language.nativeName)
-                    Spacer()
-                    if AppLanguage.currentCode == language.id {
-                        Image(systemName: "checkmark")
-                            .foregroundStyle(.green)
+        ScrollViewReader { proxy in
+            List(AppLanguage.displayOrder) { language in
+                Button {
+                    guard pendingLanguageCode == nil else { return }
+                    if language.id == AppLanguage.currentCode {
+                        onSelection?()
+                        return
+                    }
+                    pendingLanguageCode = language.id
+                } label: {
+                    HStack {
+                        Text(verbatim: language.nativeName)
+                        Spacer()
+                        if AppLanguage.currentCode == language.id {
+                            Image(systemName: "checkmark")
+                                .foregroundStyle(.green)
+                        }
                     }
                 }
+                .id(language.id)
+                .accessibilityAddTraits(AppLanguage.currentCode == language.id ? .isSelected : [])
             }
-            .accessibilityAddTraits(AppLanguage.currentCode == language.id ? .isSelected : [])
+            .onAppear {
+                proxy.scrollTo(AppLanguage.currentCode, anchor: .center)
+            }
         }
         .disabled(pendingLanguageCode != nil)
         .accessibilityHidden(pendingLanguageCode != nil)

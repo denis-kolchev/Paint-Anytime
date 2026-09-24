@@ -18,7 +18,8 @@ struct AppLanguage: Identifiable {
         .init(id: "it", nativeName: "Italiano"),
         .init(id: "ja", nativeName: "日本語"),
         .init(id: "ko", nativeName: "한국어"),
-        .init(id: "pt", nativeName: "Português"),
+        .init(id: "pt-PT", nativeName: "Português (Portugal)"),
+        .init(id: "pt-BR", nativeName: "Português (Brasil)"),
         .init(id: "zh-Hans", nativeName: "简体中文"),
         .init(id: "es", nativeName: "Español"),
         .init(id: "tr", nativeName: "Türkçe"),
@@ -39,7 +40,17 @@ struct AppLanguage: Identifiable {
         .init(id: "ur", nativeName: "اردو"),
         .init(id: "vi", nativeName: "Tiếng Việt"),
         .init(id: "th", nativeName: "ไทย"),
-        .init(id: "ms", nativeName: "Bahasa Melayu")
+        .init(id: "ms", nativeName: "Bahasa Melayu"),
+        .init(id: "uk", nativeName: "Українська"),
+        .init(id: "cs", nativeName: "Čeština"),
+        .init(id: "ro", nativeName: "Română"),
+        .init(id: "hu", nativeName: "Magyar"),
+        .init(id: "el", nativeName: "Ελληνικά"),
+        .init(id: "he", nativeName: "עברית"),
+        .init(id: "sk", nativeName: "Slovenčina"),
+        .init(id: "hr", nativeName: "Hrvatski"),
+        .init(id: "sl", nativeName: "Slovenščina"),
+        .init(id: "ca", nativeName: "Català")
     ]
 
     /// Use system collation for native names, independent of the in-app language.
@@ -67,7 +78,19 @@ struct AppLanguage: Identifiable {
 
     static var currentCode: String {
         let saved = UserDefaults.standard.string(forKey: storageKey) ?? defaultCode
-        return supported.contains { $0.id == saved } ? saved : defaultCode
+        return resolvedSavedCode(saved, preferences: Locale.preferredLanguages)
+    }
+
+    /// Preserve the previous generic Portuguese selection after adding regional variants.
+    static func resolvedSavedCode(_ saved: String, preferences: [String]) -> String {
+        if saved == "pt" {
+            let portuguesePreferences = preferences.filter {
+                $0.replacingOccurrences(of: "_", with: "-")
+                    .split(separator: "-").first?.lowercased() == "pt"
+            }
+            return preferredCode(for: portuguesePreferences + ["pt-PT"])
+        }
+        return supported.contains { $0.id == saved } ? saved : preferredCode(for: preferences)
     }
 }
 
