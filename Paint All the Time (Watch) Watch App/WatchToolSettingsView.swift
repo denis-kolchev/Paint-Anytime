@@ -206,7 +206,8 @@ struct WatchToolSettingsView: View {
             crownValue,
             from: selection == .width ? 1 : selection == .direction ? -90 : 0,
             through: crownMaximum,
-            by: selection == .direction ? 5 : 1,
+            // Half the angular travel per Crown rotation; displayed values still snap to 5°.
+            by: selection == .direction ? 2.5 : 1,
             sensitivity: selection == .direction ? .high : .low,
             isContinuous: false,
             isHapticFeedbackEnabled: true

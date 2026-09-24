@@ -19,7 +19,8 @@ changing the in-app language does not change the sorting rule.
 Selection is stored locally on the watch in UserDefaults (`app.language`). On first
 launch, the app matches `Locale.preferredLanguages` in preference order, including
 regional variants, and falls back to English. A supported manual selection takes
-priority on later launches.
+priority on later launches. If a saved language is no longer supported, the app
+uses the device’s supported language preferences, falling back to English.
 
 Changing language temporarily disables the picker and dismissal while a progress
 overlay is shown. Existing views update without resetting the canvas or navigation.
@@ -33,10 +34,10 @@ watch preference does not change the iPhone companion app's language.
 - Portuguese has separate Portugal (`pt-PT`) and Brazil (`pt-BR`) resources. A saved
   legacy `pt` selection is resolved using the device's Portuguese preferences,
   falling back to `pt-PT`.
-- Norwegian uses Bokmål (`nb`), labelled “Norsk”. Punjabi uses Gurmukhi (`pa`).
+- Norwegian uses Bokmål (`nb`), labelled “Norsk”.
 - Layout direction follows the selected language through
-  `Locale.Language.characterDirection`, including right-to-left layout for Arabic,
-  Urdu, and Hebrew.
+  `Locale.Language.characterDirection`, including right-to-left layout for Arabic
+  and Hebrew.
 
 Native language names are displayed verbatim so users can recover from an
 accidental selection.
@@ -66,3 +67,12 @@ English keys and translations to the catalog.
 Views resolving strings through these helpers observe `AppLanguage.storageKey`
 with `@AppStorage`, so language changes invalidate their body without changing view
 identity. Do not use translated display names as identifiers for persisted drawings.
+
+## In-app privacy policy
+
+The complete privacy policy is bundled for offline reading in all 28 supported
+languages. `WatchLegalText.privacy` resolves each paragraph through `L10n.text`
+using the current app language. The English source remains in `docs/PRIVACY.md`
+and `WatchLegalText.privacyKeys`; keep both and every catalog translation in sync
+when the policy changes. Preserve contact addresses, URLs, and the revision date.
+The Apple Standard EULA remains the original English text; its menu title is localized.

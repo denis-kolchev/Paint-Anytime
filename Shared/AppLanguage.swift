@@ -14,7 +14,6 @@ struct AppLanguage: Identifiable {
         .init(id: "ar", nativeName: "العربية"),
         .init(id: "fr", nativeName: "Français"),
         .init(id: "de", nativeName: "Deutsch"),
-        .init(id: "hi", nativeName: "हिन्दी"),
         .init(id: "it", nativeName: "Italiano"),
         .init(id: "ja", nativeName: "日本語"),
         .init(id: "ko", nativeName: "한국어"),
@@ -30,27 +29,14 @@ struct AppLanguage: Identifiable {
         .init(id: "da", nativeName: "Dansk"),
         .init(id: "nb", nativeName: "Norsk"),
         .init(id: "fi", nativeName: "Suomi"),
-        .init(id: "ta", nativeName: "தமிழ்"),
-        .init(id: "te", nativeName: "తెలుగు"),
-        .init(id: "mr", nativeName: "मराठी"),
-        .init(id: "gu", nativeName: "ગુજરાતી"),
-        .init(id: "pa", nativeName: "ਪੰਜਾਬੀ"),
-        .init(id: "bn", nativeName: "বাংলা"),
         .init(id: "id", nativeName: "Bahasa Indonesia"),
-        .init(id: "ur", nativeName: "اردو"),
         .init(id: "vi", nativeName: "Tiếng Việt"),
         .init(id: "th", nativeName: "ไทย"),
-        .init(id: "ms", nativeName: "Bahasa Melayu"),
         .init(id: "uk", nativeName: "Українська"),
         .init(id: "cs", nativeName: "Čeština"),
-        .init(id: "ro", nativeName: "Română"),
         .init(id: "hu", nativeName: "Magyar"),
         .init(id: "el", nativeName: "Ελληνικά"),
-        .init(id: "he", nativeName: "עברית"),
-        .init(id: "sk", nativeName: "Slovenčina"),
-        .init(id: "hr", nativeName: "Hrvatski"),
-        .init(id: "sl", nativeName: "Slovenščina"),
-        .init(id: "ca", nativeName: "Català")
+        .init(id: "he", nativeName: "עברית")
     ]
 
     /// Use system collation for native names, independent of the in-app language.

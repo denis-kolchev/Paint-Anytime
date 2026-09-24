@@ -27,6 +27,16 @@ struct WatchAppSettingsView: View {
                 Button(action: onStartTutorial) {
                     Label(L10n.text("Tutorial"), systemImage: "graduationcap")
                 }
+                NavigationLink {
+                    WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
+                } label: {
+                    Label(L10n.text("Privacy Policy"), systemImage: "hand.raised")
+                }
+                NavigationLink {
+                    WatchLegalDocumentView(title: "Terms of Use", paragraphs: WatchLegalText.terms)
+                } label: {
+                    Label(L10n.text("Terms of Use"), systemImage: "doc.text")
+                }
                 Button(action: reportBug) {
                     Label(L10n.text("Report a bug"), systemImage: "envelope")
                 }
@@ -154,5 +164,26 @@ struct AppLanguageSelectionView: View {
                 // SwiftUI cancels this task if the selection screen disappears.
             }
         }
+    }
+}
+
+private struct WatchLegalDocumentView: View {
+    let title: String
+    let paragraphs: [String]
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 14) {
+                ForEach(paragraphs.indices, id: \.self) { index in
+                    Text(verbatim: paragraphs[index])
+                        .font(.footnote)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.bottom)
+        }
+        .navigationTitle(L10n.text(title))
     }
 }

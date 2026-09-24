@@ -13,6 +13,8 @@ See [LICENSING.md](docs/LICENSING.md) for details and [CONTRIBUTING.md](docs/CON
 
 ## Documentation
 
+- [Privacy Policy](docs/PRIVACY.md): local data, sharing, Photos, and support.
+
 - [Localization](docs/LOCALIZATION.md): language selection and translation workflow.
 - [Contributing](docs/CONTRIBUTING.md): pull requests and contributor agreement.
 - [Licensing](docs/LICENSING.md): source code and official App Store builds.
