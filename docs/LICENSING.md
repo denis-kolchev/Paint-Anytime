@@ -6,7 +6,7 @@ Paint Anytime uses separate licensing terms for its repository source code and o
 
 The source code contained in this repository is licensed under the GNU Affero General Public License version 3 only (`AGPL-3.0-only`), unless explicitly stated otherwise.
 
-See [LICENSE](LICENSE) for the complete license terms.
+See [LICENSE](../LICENSE) for the complete license terms.
 
 Copyright (c) 2026 Denis Kolchev. Contributors retain copyright in their own contributions.
 

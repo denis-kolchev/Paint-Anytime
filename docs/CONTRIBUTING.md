@@ -10,7 +10,7 @@ Code, documentation, artwork, and other material submitted for inclusion in the 
 
 Read the CLA, then post the following statement in each pull request from your own GitHub account, replacing the placeholders with the full commit SHA and your name:
 
-> I have read and agree to the Paint Anytime Contributor License Agreement version 1.0 in CLA.md as of commit <full commit SHA>. My agreement covers my contributions in this pull request, including subsequent revisions I submit to it. I confirm that I have the authority to grant these rights. Name: <your name>.
+> I have read and agree to the Paint Anytime Contributor License Agreement version 1.0 in docs/CLA.md as of commit <full commit SHA>. My agreement covers my contributions in this pull request, including subsequent revisions I submit to it. I confirm that I have the authority to grant these rights. Name: <your name>.
 
 Each contributor to a pull request must provide their own agreement. If an employer or another organization owns the contribution, obtain its authorization before agreeing and identify that organization in your statement. If you cannot grant the required rights, explain this before submitting material for inclusion.
 

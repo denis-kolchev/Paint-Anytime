@@ -9,4 +9,10 @@ The source code of Paint Anytime is open source and licensed under the GNU Affer
 
 Official builds distributed by Denis Kolchev through the Apple App Store are licensed separately under the [Apple Standard EULA](https://www.apple.com/legal/internet-services/itunes/dev/stdeula/). Third-party components retain their applicable licenses.
 
-See [LICENSING.md](LICENSING.md) for details and [CONTRIBUTING.md](CONTRIBUTING.md) for contribution requirements.
+See [LICENSING.md](docs/LICENSING.md) for details and [CONTRIBUTING.md](docs/CONTRIBUTING.md) for contribution requirements.
+
+## Documentation
+
+- [Localization](docs/LOCALIZATION.md): language selection and translation workflow.
+- [Contributing](docs/CONTRIBUTING.md): pull requests and contributor agreement.
+- [Licensing](docs/LICENSING.md): source code and official App Store builds.
