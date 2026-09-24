@@ -32,11 +32,6 @@ struct WatchAppSettingsView: View {
                 } label: {
                     Label(L10n.text("Privacy Policy"), systemImage: "hand.raised")
                 }
-                NavigationLink {
-                    WatchLegalDocumentView(title: "Terms of Use", paragraphs: WatchLegalText.terms)
-                } label: {
-                    Label(L10n.text("Terms of Use"), systemImage: "doc.text")
-                }
                 Button(action: reportBug) {
                     Label(L10n.text("Report a bug"), systemImage: "envelope")
                 }

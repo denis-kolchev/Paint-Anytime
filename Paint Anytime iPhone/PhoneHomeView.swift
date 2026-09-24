@@ -31,11 +31,8 @@ struct PhoneHomeView: View {
                     .foregroundStyle(.green)
             }
 
-            VStack(spacing: 12) {
-                Link("Политика конфиденциальности", destination: URL(string: "https://github.com/denis-kolchev/Paint-Anytime/blob/main/docs/PRIVACY.md")!)
-                Link("Условия использования", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
-            }
-            .font(.footnote)
+            Link("Политика конфиденциальности", destination: URL(string: "https://github.com/denis-kolchev/Paint-Anytime/blob/main/docs/PRIVACY.md")!)
+                .font(.footnote)
 
             if photoInbox.pendingCount > 0 {
                 Text("Ожидают сохранения: \(photoInbox.pendingCount)")

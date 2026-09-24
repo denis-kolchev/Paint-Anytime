@@ -75,4 +75,3 @@ languages. `WatchLegalText.privacy` resolves each paragraph through `L10n.text`
 using the current app language. The English source remains in `docs/PRIVACY.md`
 and `WatchLegalText.privacyKeys`; keep both and every catalog translation in sync
 when the policy changes. Preserve contact addresses, URLs, and the revision date.
-The Apple Standard EULA remains the original English text; its menu title is localized.
