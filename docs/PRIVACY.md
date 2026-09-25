@@ -20,7 +20,7 @@ Your device backups and iCloud Photos settings may cause Apple to back up app da
 
 ## Contacting support
 
-If you email deniskolchev2001@gmail.com, the developer receives your email address and the message and attachments you choose to send. The in-app bug-report action opens an email draft with a subject; it does not automatically attach drawings or diagnostic logs.
+If you email paintanytime.app@gmail.com, the developer receives your email address and the message and attachments you choose to send. The in-app bug-report action opens an email draft with a subject; it does not automatically attach drawings or diagnostic logs.
 
 Support messages are used to respond to your request and investigate problems. They are processed by the email providers involved in delivery, including Gmail for the support inbox. Avoid sending sensitive information that is not needed for your request. Messages are retained for as long as reasonably needed to handle the request and related follow-up, or meet applicable legal obligations. You may request deletion using the same email address, subject to those obligations.
 
@@ -42,4 +42,4 @@ Opening links to this policy, the source repository, or Apple's license agreemen
 
 This policy will be updated if the app's data practices change. The date above identifies the latest revision.
 
-For privacy questions or requests, contact Denis Kolchev at [deniskolchev2001@gmail.com](mailto:deniskolchev2001@gmail.com).
+For privacy questions or requests, contact Denis Kolchev at [paintanytime.app@gmail.com](mailto:paintanytime.app@gmail.com).

@@ -3,7 +3,7 @@ import SwiftUI
 struct WatchAppSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @Environment(\.openURL) private var openURL
-    private let supportEmail = "deniskolchev2001@gmail.com"
+    private let supportEmail = "paintanytime.app@gmail.com"
     @ObservedObject var controller: CanvasController
     var onOpenDrawings: () -> Void
     var onStartTutorial: () -> Void

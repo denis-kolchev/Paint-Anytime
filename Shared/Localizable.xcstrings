@@ -23386,176 +23386,176 @@
         }
       }
     },
-    "If you email deniskolchev2001@gmail.com, the developer receives your email address and the message and attachments you choose to send. The in-app bug-report action opens an email draft with a subject; it does not automatically attach drawings or diagnostic logs.": {
+    "If you email paintanytime.app@gmail.com, the developer receives your email address and the message and attachments you choose to send. The in-app bug-report action opens an email draft with a subject; it does not automatically attach drawings or diagnostic logs.": {
       "comment": "Privacy policy, paragraph 12 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "If you email deniskolchev2001@gmail.com, the developer receives your email address and the message and attachments you choose to send. The in-app bug-report action opens an email draft with a subject; it does not automatically attach drawings or diagnostic logs."
+            "value": "If you email paintanytime.app@gmail.com, the developer receives your email address and the message and attachments you choose to send. The in-app bug-report action opens an email draft with a subject; it does not automatically attach drawings or diagnostic logs."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "إذا راسلت deniskolchev2001@gmail.com، يتلقى المطوّر عنوان بريدك الإلكتروني والرسالة والمرفقات التي تختار إرسالها. يفتح إجراء الإبلاغ عن خطأ داخل التطبيق مسودة بريد إلكتروني بعنوان موضوع؛ ولا يرفق الرسومات أو سجلات التشخيص تلقائيًا."
+            "value": "إذا راسلت paintanytime.app@gmail.com، يتلقى المطوّر عنوان بريدك الإلكتروني والرسالة والمرفقات التي تختار إرسالها. يفتح إجراء الإبلاغ عن خطأ داخل التطبيق مسودة بريد إلكتروني بعنوان موضوع؛ ولا يرفق الرسومات أو سجلات التشخيص تلقائيًا."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pokud napíšete na deniskolchev2001@gmail.com, vývojář obdrží vaši e-mailovou adresu, zprávu a přílohy, které se rozhodnete poslat. Funkce hlášení chyby v aplikaci otevře koncept e-mailu s předmětem; nepřipojuje automaticky kresby ani diagnostické protokoly."
+            "value": "Pokud napíšete na paintanytime.app@gmail.com, vývojář obdrží vaši e-mailovou adresu, zprávu a přílohy, které se rozhodnete poslat. Funkce hlášení chyby v aplikaci otevře koncept e-mailu s předmětem; nepřipojuje automaticky kresby ani diagnostické protokoly."
           }
         },
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hvis du skriver til deniskolchev2001@gmail.com, modtager udvikleren din e-mailadresse samt den besked og de vedhæftede filer, du vælger at sende. Appens fejlrapporteringsfunktion åbner en e-mailkladde med et emne; den vedhæfter ikke automatisk tegninger eller diagnosticeringslogfiler."
+            "value": "Hvis du skriver til paintanytime.app@gmail.com, modtager udvikleren din e-mailadresse samt den besked og de vedhæftede filer, du vælger at sende. Appens fejlrapporteringsfunktion åbner en e-mailkladde med et emne; den vedhæfter ikke automatisk tegninger eller diagnosticeringslogfiler."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Als je naar deniskolchev2001@gmail.com mailt, ontvangt de ontwikkelaar je e-mailadres, bericht en de bijlagen die je verstuurt. De functie om een fout te melden opent een e-mailconcept met een onderwerp; tekeningen of diagnostische logboeken worden niet automatisch bijgevoegd."
+            "value": "Als je naar paintanytime.app@gmail.com mailt, ontvangt de ontwikkelaar je e-mailadres, bericht en de bijlagen die je verstuurt. De functie om een fout te melden opent een e-mailconcept met een onderwerp; tekeningen of diagnostische logboeken worden niet automatisch bijgevoegd."
           }
         },
         "fi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jos lähetät sähköpostia osoitteeseen deniskolchev2001@gmail.com, kehittäjä saa sähköpostiosoitteesi sekä lähettämäsi viestin ja liitteet. Sovelluksen virheilmoitustoiminto avaa sähköpostiluonnoksen, jossa on aihe; se ei liitä automaattisesti piirroksia tai diagnostiikkalokeja."
+            "value": "Jos lähetät sähköpostia osoitteeseen paintanytime.app@gmail.com, kehittäjä saa sähköpostiosoitteesi sekä lähettämäsi viestin ja liitteet. Sovelluksen virheilmoitustoiminto avaa sähköpostiluonnoksen, jossa on aihe; se ei liitä automaattisesti piirroksia tai diagnostiikkalokeja."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Si vous écrivez à deniskolchev2001@gmail.com, le développeur reçoit votre adresse e-mail ainsi que le message et les pièces jointes que vous choisissez d’envoyer. L’action de signalement d’un bug dans l’application ouvre un brouillon d’e-mail avec un objet ; elle ne joint pas automatiquement de dessins ni de journaux de diagnostic."
+            "value": "Si vous écrivez à paintanytime.app@gmail.com, le développeur reçoit votre adresse e-mail ainsi que le message et les pièces jointes que vous choisissez d’envoyer. L’action de signalement d’un bug dans l’application ouvre un brouillon d’e-mail avec un objet ; elle ne joint pas automatiquement de dessins ni de journaux de diagnostic."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wenn du eine E-Mail an deniskolchev2001@gmail.com sendest, erhält der Entwickler deine E-Mail-Adresse sowie die Nachricht und Anhänge, die du sendest. Die Funktion zum Melden eines Fehlers in der App öffnet einen E-Mail-Entwurf mit einem Betreff; Zeichnungen oder Diagnoseprotokolle werden nicht automatisch angehängt."
+            "value": "Wenn du eine E-Mail an paintanytime.app@gmail.com sendest, erhält der Entwickler deine E-Mail-Adresse sowie die Nachricht und Anhänge, die du sendest. Die Funktion zum Melden eines Fehlers in der App öffnet einen E-Mail-Entwurf mit einem Betreff; Zeichnungen oder Diagnoseprotokolle werden nicht automatisch angehängt."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Αν στείλετε email στο deniskolchev2001@gmail.com, ο προγραμματιστής λαμβάνει τη διεύθυνση email σας, το μήνυμα και τα συνημμένα που επιλέγετε να στείλετε. Η ενέργεια αναφοράς σφάλματος στην εφαρμογή ανοίγει ένα πρόχειρο email με θέμα· δεν επισυνάπτει αυτόματα σχέδια ή διαγνωστικά αρχεία καταγραφής."
+            "value": "Αν στείλετε email στο paintanytime.app@gmail.com, ο προγραμματιστής λαμβάνει τη διεύθυνση email σας, το μήνυμα και τα συνημμένα που επιλέγετε να στείλετε. Η ενέργεια αναφοράς σφάλματος στην εφαρμογή ανοίγει ένα πρόχειρο email με θέμα· δεν επισυνάπτει αυτόματα σχέδια ή διαγνωστικά αρχεία καταγραφής."
           }
         },
         "he": {
           "stringUnit": {
             "state": "translated",
-            "value": "אם נשלחת הודעת דוא״ל אל deniskolchev2001@gmail.com, המפתח מקבל את כתובת הדוא״ל שלך ואת ההודעה והקבצים המצורפים שבחרת לשלוח. פעולת דיווח על תקלה באפליקציה פותחת טיוטת דוא״ל עם נושא; היא אינה מצרפת ציורים או יומני אבחון באופן אוטומטי."
+            "value": "אם נשלחת הודעת דוא״ל אל paintanytime.app@gmail.com, המפתח מקבל את כתובת הדוא״ל שלך ואת ההודעה והקבצים המצורפים שבחרת לשלוח. פעולת דיווח על תקלה באפליקציה פותחת טיוטת דוא״ל עם נושא; היא אינה מצרפת ציורים או יומני אבחון באופן אוטומטי."
           }
         },
         "hu": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ha a deniskolchev2001@gmail.com címre ír, a fejlesztő megkapja az Ön e-mail-címét, valamint az elküldött üzenetet és mellékleteket. Az alkalmazás hibabejelentő funkciója tárggyal ellátott e-mail-piszkozatot nyit meg; nem csatol automatikusan rajzokat vagy diagnosztikai naplókat."
+            "value": "Ha a paintanytime.app@gmail.com címre ír, a fejlesztő megkapja az Ön e-mail-címét, valamint az elküldött üzenetet és mellékleteket. Az alkalmazás hibabejelentő funkciója tárggyal ellátott e-mail-piszkozatot nyit meg; nem csatol automatikusan rajzokat vagy diagnosztikai naplókat."
           }
         },
         "id": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jika Anda mengirim email ke deniskolchev2001@gmail.com, pengembang menerima alamat email Anda serta pesan dan lampiran yang Anda pilih untuk dikirim. Tindakan pelaporan bug di aplikasi membuka draf email dengan subjek; tindakan ini tidak otomatis melampirkan gambar atau log diagnostik."
+            "value": "Jika Anda mengirim email ke paintanytime.app@gmail.com, pengembang menerima alamat email Anda serta pesan dan lampiran yang Anda pilih untuk dikirim. Tindakan pelaporan bug di aplikasi membuka draf email dengan subjek; tindakan ini tidak otomatis melampirkan gambar atau log diagnostik."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se scrivi a deniskolchev2001@gmail.com, lo sviluppatore riceve il tuo indirizzo e-mail, il messaggio e gli allegati che scegli di inviare. L’azione per segnalare un errore nell’app apre una bozza di e-mail con un oggetto; non allega automaticamente disegni o registri diagnostici."
+            "value": "Se scrivi a paintanytime.app@gmail.com, lo sviluppatore riceve il tuo indirizzo e-mail, il messaggio e gli allegati che scegli di inviare. L’azione per segnalare un errore nell’app apre una bozza di e-mail con un oggetto; non allega automaticamente disegni o registri diagnostici."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "deniskolchev2001@gmail.comにメールを送ると、開発者はメールアドレスと、ご自身で送信を選んだメッセージおよび添付ファイルを受け取ります。アプリ内の不具合報告操作では、件名が入力されたメールの下書きが開きます。絵や診断ログが自動的に添付されることはありません。"
+            "value": "paintanytime.app@gmail.comにメールを送ると、開発者はメールアドレスと、ご自身で送信を選んだメッセージおよび添付ファイルを受け取ります。アプリ内の不具合報告操作では、件名が入力されたメールの下書きが開きます。絵や診断ログが自動的に添付されることはありません。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "deniskolchev2001@gmail.com으로 이메일을 보내면 개발자는 사용자의 이메일 주소와 사용자가 보내기로 선택한 메시지 및 첨부파일을 받습니다. 앱 내 버그 신고 기능은 제목이 입력된 이메일 초안을 열며, 그림이나 진단 로그를 자동으로 첨부하지 않습니다."
+            "value": "paintanytime.app@gmail.com으로 이메일을 보내면 개발자는 사용자의 이메일 주소와 사용자가 보내기로 선택한 메시지 및 첨부파일을 받습니다. 앱 내 버그 신고 기능은 제목이 입력된 이메일 초안을 열며, 그림이나 진단 로그를 자동으로 첨부하지 않습니다."
           }
         },
         "nb": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hvis du sender e-post til deniskolchev2001@gmail.com, mottar utvikleren e-postadressen din samt meldingen og vedleggene du velger å sende. Appens funksjon for feilrapportering åpner et e-postutkast med et emne; den legger ikke automatisk ved tegninger eller diagnostikklogger."
+            "value": "Hvis du sender e-post til paintanytime.app@gmail.com, mottar utvikleren e-postadressen din samt meldingen og vedleggene du velger å sende. Appens funksjon for feilrapportering åpner et e-postutkast med et emne; den legger ikke automatisk ved tegninger eller diagnostikklogger."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Jeśli napiszesz na deniskolchev2001@gmail.com, deweloper otrzyma Twój adres e-mail oraz wiadomość i załączniki, które wyślesz. Funkcja zgłaszania błędu w aplikacji otwiera szkic e-maila z tematem; nie dołącza automatycznie rysunków ani dzienników diagnostycznych."
+            "value": "Jeśli napiszesz na paintanytime.app@gmail.com, deweloper otrzyma Twój adres e-mail oraz wiadomość i załączniki, które wyślesz. Funkcja zgłaszania błędu w aplikacji otwiera szkic e-maila z tematem; nie dołącza automatycznie rysunków ani dzienników diagnostycznych."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se você enviar um e-mail para deniskolchev2001@gmail.com, o desenvolvedor receberá seu endereço de e-mail, a mensagem e os anexos que você escolher enviar. A ação de relatar um erro no aplicativo abre um rascunho de e-mail com um assunto; não anexa automaticamente desenhos nem registros de diagnóstico."
+            "value": "Se você enviar um e-mail para paintanytime.app@gmail.com, o desenvolvedor receberá seu endereço de e-mail, a mensagem e os anexos que você escolher enviar. A ação de relatar um erro no aplicativo abre um rascunho de e-mail com um assunto; não anexa automaticamente desenhos nem registros de diagnóstico."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Se enviar um e-mail para deniskolchev2001@gmail.com, o programador recebe o seu endereço de e-mail, a mensagem e os anexos que decidir enviar. A ação de comunicar um erro na aplicação abre um rascunho de e-mail com um assunto; não anexa automaticamente desenhos nem registos de diagnóstico."
+            "value": "Se enviar um e-mail para paintanytime.app@gmail.com, o programador recebe o seu endereço de e-mail, a mensagem e os anexos que decidir enviar. A ação de comunicar um erro na aplicação abre um rascunho de e-mail com um assunto; não anexa automaticamente desenhos nem registos de diagnóstico."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Если вы пишете на deniskolchev2001@gmail.com, разработчик получает ваш адрес электронной почты, сообщение и вложения, которые вы отправляете. Действие отправки отчёта об ошибке в приложении открывает черновик письма с темой; рисунки и диагностические журналы автоматически не прикрепляются."
+            "value": "Если вы пишете на paintanytime.app@gmail.com, разработчик получает ваш адрес электронной почты, сообщение и вложения, которые вы отправляете. Действие отправки отчёта об ошибке в приложении открывает черновик письма с темой; рисунки и диагностические журналы автоматически не прикрепляются."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "如果您发送邮件至 deniskolchev2001@gmail.com，开发者会收到您的电子邮件地址以及您选择发送的消息和附件。应用内的错误报告操作会打开一封已填写主题的邮件草稿，不会自动附加画作或诊断日志。"
+            "value": "如果您发送邮件至 paintanytime.app@gmail.com，开发者会收到您的电子邮件地址以及您选择发送的消息和附件。应用内的错误报告操作会打开一封已填写主题的邮件草稿，不会自动附加画作或诊断日志。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Si escribes a deniskolchev2001@gmail.com, el desarrollador recibe tu dirección de correo electrónico, el mensaje y los archivos adjuntos que decidas enviar. La acción de informar de un error en la aplicación abre un borrador de correo con un asunto; no adjunta automáticamente dibujos ni registros de diagnóstico."
+            "value": "Si escribes a paintanytime.app@gmail.com, el desarrollador recibe tu dirección de correo electrónico, el mensaje y los archivos adjuntos que decidas enviar. La acción de informar de un error en la aplicación abre un borrador de correo con un asunto; no adjunta automáticamente dibujos ni registros de diagnóstico."
           }
         },
         "sv": {
           "stringUnit": {
             "state": "translated",
-            "value": "Om du mejlar deniskolchev2001@gmail.com får utvecklaren din e-postadress samt det meddelande och de bilagor du väljer att skicka. Appens funktion för felrapportering öppnar ett e-postutkast med en ämnesrad; den bifogar inte automatiskt teckningar eller diagnostikloggar."
+            "value": "Om du mejlar paintanytime.app@gmail.com får utvecklaren din e-postadress samt det meddelande och de bilagor du väljer att skicka. Appens funktion för felrapportering öppnar ett e-postutkast med en ämnesrad; den bifogar inte automatiskt teckningar eller diagnostikloggar."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "หากคุณส่งอีเมลไปที่ deniskolchev2001@gmail.com ผู้พัฒนาจะได้รับที่อยู่อีเมลของคุณ รวมถึงข้อความและไฟล์แนบที่คุณเลือกส่ง การแจ้งข้อผิดพลาดในแอปจะเปิดอีเมลฉบับร่างที่มีหัวเรื่อง โดยไม่แนบภาพวาดหรือบันทึกการวินิจฉัยโดยอัตโนมัติ"
+            "value": "หากคุณส่งอีเมลไปที่ paintanytime.app@gmail.com ผู้พัฒนาจะได้รับที่อยู่อีเมลของคุณ รวมถึงข้อความและไฟล์แนบที่คุณเลือกส่ง การแจ้งข้อผิดพลาดในแอปจะเปิดอีเมลฉบับร่างที่มีหัวเรื่อง โดยไม่แนบภาพวาดหรือบันทึกการวินิจฉัยโดยอัตโนมัติ"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "若您寄送電子郵件至 deniskolchev2001@gmail.com，開發者會收到您的電子郵件地址，以及您選擇傳送的訊息和附件。App 內的錯誤回報操作會開啟一封已填寫主旨的郵件草稿，不會自動附加畫作或診斷記錄。"
+            "value": "若您寄送電子郵件至 paintanytime.app@gmail.com，開發者會收到您的電子郵件地址，以及您選擇傳送的訊息和附件。App 內的錯誤回報操作會開啟一封已填寫主旨的郵件草稿，不會自動附加畫作或診斷記錄。"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "deniskolchev2001@gmail.com adresine e-posta gönderirseniz geliştirici e-posta adresinizi, göndermeyi seçtiğiniz mesajı ve ekleri alır. Uygulamadaki hata bildirme işlemi, konusu doldurulmuş bir e-posta taslağı açar; çizimler veya tanılama günlükleri otomatik olarak eklenmez."
+            "value": "paintanytime.app@gmail.com adresine e-posta gönderirseniz geliştirici e-posta adresinizi, göndermeyi seçtiğiniz mesajı ve ekleri alır. Uygulamadaki hata bildirme işlemi, konusu doldurulmuş bir e-posta taslağı açar; çizimler veya tanılama günlükleri otomatik olarak eklenmez."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Якщо ви пишете на deniskolchev2001@gmail.com, розробник отримує вашу електронну адресу, повідомлення та вкладення, які ви надсилаєте. Дія повідомлення про помилку в застосунку відкриває чернетку листа з темою; малюнки й діагностичні журнали автоматично не додаються."
+            "value": "Якщо ви пишете на paintanytime.app@gmail.com, розробник отримує вашу електронну адресу, повідомлення та вкладення, які ви надсилаєте. Дія повідомлення про помилку в застосунку відкриває чернетку листа з темою; малюнки й діагностичні журнали автоматично не додаються."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nếu bạn gửi email đến deniskolchev2001@gmail.com, nhà phát triển nhận được địa chỉ email cùng tin nhắn và tệp đính kèm mà bạn chọn gửi. Thao tác báo lỗi trong ứng dụng mở bản nháp email có tiêu đề; không tự động đính kèm bản vẽ hoặc nhật ký chẩn đoán."
+            "value": "Nếu bạn gửi email đến paintanytime.app@gmail.com, nhà phát triển nhận được địa chỉ email cùng tin nhắn và tệp đính kèm mà bạn chọn gửi. Thao tác báo lỗi trong ứng dụng mở bản nháp email có tiêu đề; không tự động đính kèm bản vẽ hoặc nhật ký chẩn đoán."
           }
         }
       }
@@ -25126,176 +25126,176 @@
         }
       }
     },
-    "For privacy questions or requests, contact Denis Kolchev at deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com).": {
+    "For privacy questions or requests, contact Denis Kolchev at paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com).": {
       "comment": "Privacy policy, paragraph 22 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "For privacy questions or requests, contact Denis Kolchev at deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "For privacy questions or requests, contact Denis Kolchev at paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "للأسئلة أو الطلبات المتعلقة بالخصوصية، تواصل مع Denis Kolchev على deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "للأسئلة أو الطلبات المتعلقة بالخصوصية، تواصل مع Denis Kolchev على paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "S dotazy nebo požadavky ohledně soukromí kontaktujte Denise Kolcheva na deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "S dotazy nebo požadavky ohledně soukromí kontaktujte Denise Kolcheva na paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ved spørgsmål eller anmodninger om privatliv kan du kontakte Denis Kolchev på deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Ved spørgsmål eller anmodninger om privatliv kan du kontakte Denis Kolchev på paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Neem voor privacyvragen of -verzoeken contact op met Denis Kolchev via deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Neem voor privacyvragen of -verzoeken contact op met Denis Kolchev via paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "fi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tietosuojaa koskevissa kysymyksissä ja pyynnöissä ota yhteyttä Denis Kolcheviin osoitteessa deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Tietosuojaa koskevissa kysymyksissä ja pyynnöissä ota yhteyttä Denis Kolcheviin osoitteessa paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pour toute question ou demande relative à la confidentialité, contactez Denis Kolchev à deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Pour toute question ou demande relative à la confidentialité, contactez Denis Kolchev à paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bei Datenschutzfragen oder entsprechenden Anfragen kontaktiere Denis Kolchev unter deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Bei Datenschutzfragen oder entsprechenden Anfragen kontaktiere Denis Kolchev unter paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Για ερωτήσεις ή αιτήματα απορρήτου, επικοινωνήστε με τον Denis Kolchev στο deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Για ερωτήσεις ή αιτήματα απορρήτου, επικοινωνήστε με τον Denis Kolchev στο paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "he": {
           "stringUnit": {
             "state": "translated",
-            "value": "לשאלות או לבקשות בנושא פרטיות, ניתן לפנות אל Denis Kolchev בכתובת deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "לשאלות או לבקשות בנושא פרטיות, ניתן לפנות אל Denis Kolchev בכתובת paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "hu": {
           "stringUnit": {
             "state": "translated",
-            "value": "Adatvédelmi kérdésekkel vagy kérésekkel forduljon Denis Kolchevhez a deniskolchev2001@gmail.com címen (mailto:deniskolchev2001@gmail.com)."
+            "value": "Adatvédelmi kérdésekkel vagy kérésekkel forduljon Denis Kolchevhez a paintanytime.app@gmail.com címen (mailto:paintanytime.app@gmail.com)."
           }
         },
         "id": {
           "stringUnit": {
             "state": "translated",
-            "value": "Untuk pertanyaan atau permintaan terkait privasi, hubungi Denis Kolchev di deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Untuk pertanyaan atau permintaan terkait privasi, hubungi Denis Kolchev di paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Per domande o richieste sulla privacy, contatta Denis Kolchev all’indirizzo deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Per domande o richieste sulla privacy, contatta Denis Kolchev all’indirizzo paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "プライバシーに関するご質問やご依頼は、Denis Kolchev（deniskolchev2001@gmail.com、mailto:deniskolchev2001@gmail.com）までお寄せください。"
+            "value": "プライバシーに関するご質問やご依頼は、Denis Kolchev（paintanytime.app@gmail.com、mailto:paintanytime.app@gmail.com）までお寄せください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "개인정보 관련 질문이나 요청은 Denis Kolchev에게 deniskolchev2001@gmail.com으로 연락하세요(mailto:deniskolchev2001@gmail.com)."
+            "value": "개인정보 관련 질문이나 요청은 Denis Kolchev에게 paintanytime.app@gmail.com으로 연락하세요(mailto:paintanytime.app@gmail.com)."
           }
         },
         "nb": {
           "stringUnit": {
             "state": "translated",
-            "value": "For spørsmål eller forespørsler om personvern kan du kontakte Denis Kolchev på deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "For spørsmål eller forespørsler om personvern kan du kontakte Denis Kolchev på paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Z pytaniami lub wnioskami dotyczącymi prywatności skontaktuj się z Denis Kolchev pod adresem deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Z pytaniami lub wnioskami dotyczącymi prywatności skontaktuj się z Denis Kolchev pod adresem paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Para dúvidas ou solicitações sobre privacidade, entre em contato com Denis Kolchev pelo endereço deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Para dúvidas ou solicitações sobre privacidade, entre em contato com Denis Kolchev pelo endereço paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Para questões ou pedidos sobre privacidade, contacte Denis Kolchev através de deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Para questões ou pedidos sobre privacidade, contacte Denis Kolchev através de paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "По вопросам конфиденциальности или с запросами обращайтесь к Denis Kolchev: deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "По вопросам конфиденциальности или с запросами обращайтесь к Denis Kolchev: paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "如有隐私相关问题或请求，请联系 Denis Kolchev：deniskolchev2001@gmail.com（mailto:deniskolchev2001@gmail.com）。"
+            "value": "如有隐私相关问题或请求，请联系 Denis Kolchev：paintanytime.app@gmail.com（mailto:paintanytime.app@gmail.com）。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Para consultas o solicitudes sobre privacidad, contacta con Denis Kolchev en deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Para consultas o solicitudes sobre privacidad, contacta con Denis Kolchev en paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "sv": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kontakta Denis Kolchev på deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com) vid frågor eller förfrågningar om integritet."
+            "value": "Kontakta Denis Kolchev på paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com) vid frågor eller förfrågningar om integritet."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "หากมีคำถามหรือคำขอเกี่ยวกับความเป็นส่วนตัว โปรดติดต่อ Denis Kolchev ที่ deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)"
+            "value": "หากมีคำถามหรือคำขอเกี่ยวกับความเป็นส่วนตัว โปรดติดต่อ Denis Kolchev ที่ paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "如有隱私權相關問題或請求，請聯絡 Denis Kolchev：deniskolchev2001@gmail.com（mailto:deniskolchev2001@gmail.com）。"
+            "value": "如有隱私權相關問題或請求，請聯絡 Denis Kolchev：paintanytime.app@gmail.com（mailto:paintanytime.app@gmail.com）。"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gizlilikle ilgili soru veya talepleriniz için Denis Kolchev ile deniskolchev2001@gmail.com adresinden iletişime geçin (mailto:deniskolchev2001@gmail.com)."
+            "value": "Gizlilikle ilgili soru veya talepleriniz için Denis Kolchev ile paintanytime.app@gmail.com adresinden iletişime geçin (mailto:paintanytime.app@gmail.com)."
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Із питаннями чи запитами щодо конфіденційності звертайтеся до Denis Kolchev: deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Із питаннями чи запитами щодо конфіденційності звертайтеся до Denis Kolchev: paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nếu có câu hỏi hoặc yêu cầu về quyền riêng tư, hãy liên hệ Denis Kolchev tại deniskolchev2001@gmail.com (mailto:deniskolchev2001@gmail.com)."
+            "value": "Nếu có câu hỏi hoặc yêu cầu về quyền riêng tư, hãy liên hệ Denis Kolchev tại paintanytime.app@gmail.com (mailto:paintanytime.app@gmail.com)."
           }
         }
       }
