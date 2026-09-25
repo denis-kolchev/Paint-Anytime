@@ -65,6 +65,7 @@ struct ContentView: View {
                     Button { requestCanvasAction(.clear) } label: {
                         BroomIcon()
                     }
+                    .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Clear canvas"))
                     .trackCanvasControl(.clear, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
@@ -72,6 +73,7 @@ struct ContentView: View {
                         Image(systemName: "arrow.uturn.backward")
                     }
                     .disabled(!controller.canUndo)
+                    .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Undo"))
                     .trackCanvasControl(.undo, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
@@ -79,6 +81,7 @@ struct ContentView: View {
                         Image(systemName: "arrow.uturn.forward")
                     }
                     .disabled(!controller.canRedo)
+                    .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Redo"))
                     .trackCanvasControl(.redo, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
@@ -97,6 +100,7 @@ struct ContentView: View {
                     } label: {
                         Image(systemName: "square.and.arrow.down")
                     }
+                    .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Save drawing"))
                     .trackCanvasControl(.save, frames: $canvasControlFrames)
                 }
@@ -110,7 +114,7 @@ struct ContentView: View {
                     } label: {
                         Image(systemName: "ellipsis")
                     }
-                    .buttonStyle(.automatic)
+                    .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("More"))
                     .trackCanvasControl(.more, frames: $canvasControlFrames)
                 }
@@ -132,7 +136,7 @@ struct ContentView: View {
                         }
                     }
                 }
-                .buttonStyle(.automatic)
+                .watchToolbarButtonStyle()
                 .accessibilityLabel(showsToolSettings || isMovingCanvas ? L10n.text("Done") : L10n.text("Tool settings"))
                 .trackCanvasControl(.tools, frames: $canvasControlFrames)
             }
@@ -269,13 +273,14 @@ struct DestructiveConfirmationView: View {
                         Text(L10n.text("No"))
                             .frame(maxWidth: .infinity, minHeight: 32)
                     }
-                    .buttonStyle(.glass)
+                    .watchActionButtonStyle()
 
                     Button(role: .destructive, action: onConfirm) {
                         Text(confirmTitle)
                             .frame(maxWidth: .infinity, minHeight: 32)
                     }
-                    .buttonStyle(.glass(.regular.tint(.red.opacity(0.2))))
+                    .watchActionButtonStyle()
+                    .tint(.red)
                     .foregroundStyle(.red)
                 }
                 .font(.caption.weight(.semibold))

@@ -144,13 +144,12 @@ struct SavedDrawingView: View {
                 }
                 Text(drawing.url.lastPathComponent).font(.caption2)
             }
+            .watchActionButtonStyle()
             .padding(.horizontal)
+            .reportLegacyScrollPosition()
         }
         .scrollDisabled(tutorial.isActive && !tutorial.permits([14]))
-        .onScrollPhaseChange { _, _ in tutorial.activity() }
-        .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentOffset.y }) { _, _ in
-            tutorial.activity()
-        }
+        .onTutorialScrollActivity { tutorial.activity() }
         .navigationTitle(L10n.text("Saved"))
     }
 }
@@ -196,48 +195,13 @@ struct SavedDrawingsView: View {
                 Color.black
                 ScrollViewReader { scrollProxy in
                     ScrollView {
-                        if let errorMessage {
-                            Text(errorMessage).foregroundStyle(.red).padding()
-                        } else if drawings.isEmpty {
-                            ContentUnavailableView(L10n.text("No drawings"), systemImage: "photo.on.rectangle")
-                        } else {
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnCount), spacing: spacing) {
-                                ForEach(drawings) { drawing in
-                                    GalleryThumbnailView(request: GalleryImageRequest(
-                                        url: drawing.url, shortSidePixels: thumbnailPixels, displayScale: displayScale),
-                                        loadsImage: imageTransition == nil)
-                                        .frame(width: width, height: width)
-                                        .clipped()
-                                        .opacity(hidesThumbnail(drawing) ? 0 : 1)
-                                        .background {
-                                            GeometryReader { tileGeometry in
-                                                Color.clear.preference(key: GalleryThumbnailFramesKey.self,
-                                                    value: [drawing.id: tileGeometry.frame(in: .named("drawingGallery"))])
-                                            }
-                                        }
-                                        .contentShape(Rectangle())
-                                        .onTapGesture {
-                                            guard tutorial.allowsGalleryZoom else { return }
-                                            tutorial.activity()
-                                            focusedDrawing = drawing
-                                            if zoomLevel == 0 { setZoom(1) }
-                                            else { open(drawing) }
-                                        }
-                                        .accessibilityLabel(L10n.text("Open drawing"))
-                                        .id(drawing.id)
-                                }
-                            }
-                            .padding(.horizontal, 3)
-                            .padding(.bottom, 12)
-                        }
+                        galleryGrid(spacing: spacing, width: width, thumbnailPixels: thumbnailPixels)
+                            .reportLegacyScrollPosition()
                     }
                     .contentMargins(.top, navigationHeight + 4, for: .scrollContent)
                     .scrollIndicators(.hidden)
                     // Observe native scrolling without competing with its swipe gesture.
-                    .onScrollPhaseChange { _, _ in tutorial.activity() }
-                    .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentOffset.y }) { _, _ in
-                        tutorial.activity()
-                    }
+                    .onTutorialScrollActivity { tutorial.activity() }
                     .allowsHitTesting(!showsFullscreen && !isTransitioning && tutorial.allowsGalleryZoom)
                     .accessibilityHidden(showsFullscreen)
                     .onChange(of: zoomLevel) { previousLevel, level in
@@ -333,8 +297,8 @@ struct SavedDrawingsView: View {
                     Button(action: goBack) {
                         Image(systemName: "chevron.left")
                     }
-                    .buttonStyle(.automatic)
                     .disabled(isTransitioning)
+                    .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Back"))
                 }
             }
@@ -344,6 +308,7 @@ struct SavedDrawingsView: View {
                         Button { editDrawing(selectedDrawing) } label: {
                             Image(systemName: "pencil")
                         }
+                        .watchToolbarButtonStyle()
                         .accessibilityLabel(L10n.text("Edit drawing"))
                     }
                 }
@@ -357,6 +322,7 @@ struct SavedDrawingsView: View {
                             Image(systemName: "trash")
                         }
                         .disabled(isTransitioning)
+                        .watchToolbarButtonStyle()
                         .accessibilityLabel(L10n.text("Delete drawing"))
                         Spacer()
                         if !tutorial.isActive {
@@ -365,6 +331,7 @@ struct SavedDrawingsView: View {
                                                             image: Image(systemName: "photo"))) {
                                 Image(systemName: "square.and.arrow.up")
                             }
+                            .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Share"))
                         }
                     }
@@ -415,6 +382,46 @@ struct SavedDrawingsView: View {
         }
         .onChange(of: isTransitioning) { _, transitioning in
             if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
+        }
+    }
+
+    @ViewBuilder
+    private func galleryGrid(spacing: CGFloat, width: CGFloat, thumbnailPixels: Int) -> some View {
+        if let errorMessage {
+            Text(errorMessage).foregroundStyle(.red).padding()
+        } else if drawings.isEmpty {
+            ContentUnavailableView(L10n.text("No drawings"), systemImage: "photo.on.rectangle")
+        } else {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnCount), spacing: spacing) {
+                ForEach(drawings) { drawing in
+                    Button {
+                        tutorial.activity()
+                        focusedDrawing = drawing
+                        if zoomLevel == 0 { setZoom(1) }
+                        else { open(drawing) }
+                    } label: {
+                        GalleryThumbnailView(request: GalleryImageRequest(
+                            url: drawing.url, shortSidePixels: thumbnailPixels, displayScale: displayScale),
+                            loadsImage: imageTransition == nil)
+                            .frame(width: width, height: width)
+                            .clipped()
+                            .opacity(hidesThumbnail(drawing) ? 0 : 1)
+                            .background {
+                                GeometryReader { tileGeometry in
+                                    Color.clear.preference(key: GalleryThumbnailFramesKey.self,
+                                        value: [drawing.id: tileGeometry.frame(in: .named("drawingGallery"))])
+                                }
+                            }
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(!tutorial.allowsGalleryZoom)
+                    .accessibilityLabel(L10n.text("Open drawing"))
+                    .id(drawing.id)
+                }
+            }
+            .padding(.horizontal, 3)
+            .padding(.bottom, 12)
         }
     }
 
@@ -596,5 +603,44 @@ private struct GalleryThumbnailFramesKey: PreferenceKey {
 
     static func reduce(value: inout [URL: CGRect], nextValue: () -> [URL: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
+}
+
+// Observe content movement on watchOS 10 without intercepting touch or Crown scrolling.
+private struct LegacyScrollPositionKey: PreferenceKey {
+    static var defaultValue: CGFloat? { nil }
+
+    static func reduce(value: inout CGFloat?, nextValue: () -> CGFloat?) {
+        if let next = nextValue() { value = next }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func reportLegacyScrollPosition() -> some View {
+        if #available(watchOS 11.0, *) {
+            self
+        } else {
+            background {
+                GeometryReader { geometry in
+                    Color.clear.preference(key: LegacyScrollPositionKey.self,
+                                           value: geometry.frame(in: .global).minY)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    func onTutorialScrollActivity(_ activity: @escaping () -> Void) -> some View {
+        if #available(watchOS 11.0, *) {
+            onScrollPhaseChange { _, _ in activity() }
+                .onScrollGeometryChange(for: CGFloat.self, of: { $0.contentOffset.y }) { _, _ in
+                    activity()
+                }
+        } else {
+            onPreferenceChange(LegacyScrollPositionKey.self) { position in
+                if position != nil { activity() }
+            }
+        }
     }
 }

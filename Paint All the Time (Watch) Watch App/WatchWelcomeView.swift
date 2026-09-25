@@ -40,7 +40,13 @@ struct WatchWelcomeView: View {
                         .background(Color.black.ignoresSafeArea())
                 }
             }
+            // Keep both toolbar hosts in the same scheme when conditional items
+            // are removed/reinserted while switching between tools and canvas.
+            // A colorScheme environment override on a button only affects its
+            // content; declare the scheme for the system bars here as well.
+            .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
         }
+        .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
         .task(id: preparesTutorial) {
             guard preparesTutorial else { return }
@@ -80,7 +86,7 @@ struct WatchWelcomeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Button(L10n.text("OK")) { hasCompletedWelcome = true }
-                    .buttonStyle(.glass)
+                    .watchActionButtonStyle()
             }
             .padding()
         }
@@ -105,7 +111,7 @@ private struct WelcomeQuestion: View {
                 Button(L10n.text("Yes"), action: onYes)
                 Button(L10n.text("No"), action: onNo)
             }
-            .buttonStyle(.glass)
+            .watchActionButtonStyle()
         }
         .padding()
     }
@@ -131,7 +137,7 @@ struct TutorialLessonView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 8)
             }
-            .scrollEdgeEffectHidden(true, for: .top)
+            .hideTopScrollEdgeEffectIfAvailable()
             HStack(spacing: 8) {
                 Button {
                     tutorial.pauseReminders()
@@ -140,7 +146,8 @@ struct TutorialLessonView: View {
                     Text(L10n.text("Finish"))
                         .frame(maxWidth: .infinity, minHeight: 32)
                 }
-                .buttonStyle(.glass(.regular.tint(.red.opacity(0.2))))
+                .watchActionButtonStyle()
+                .tint(.red)
                 .foregroundStyle(.red)
 
                 Button {
@@ -152,7 +159,7 @@ struct TutorialLessonView: View {
                     Text(L10n.text("Next"))
                         .frame(maxWidth: .infinity, minHeight: 32)
                 }
-                .buttonStyle(.glass)
+                .watchActionButtonStyle()
             }
             .font(.caption.weight(.semibold))
             .lineLimit(1)
@@ -181,6 +188,17 @@ struct TutorialLessonView: View {
                 didConfirmFinish = true
                 confirmsFinish = false
             }
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func hideTopScrollEdgeEffectIfAvailable() -> some View {
+        if #available(watchOS 26.0, *) {
+            scrollEdgeEffectHidden(true, for: .top)
+        } else {
+            self
         }
     }
 }

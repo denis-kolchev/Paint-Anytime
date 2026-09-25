@@ -75,6 +75,7 @@ struct TutorialPlayerView: View {
                             } label: {
                                 ToolIcon(instrument: controller.pencilStyle.instrument).frame(width: 18, height: 18)
                             }
+                            .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Tool settings"))
                             .trackCanvasControl(.tools, frames: $controls)
                         }
@@ -93,6 +94,7 @@ struct TutorialPlayerView: View {
                                 Image(systemName: "checkmark").foregroundStyle(.green)
                             }
                             .disabled(page == .canvas && !tutorial.canFinishCamera)
+                            .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Done"))
                             .trackCanvasControl(.tools, frames: $controls)
                         }
@@ -101,6 +103,7 @@ struct TutorialPlayerView: View {
                         ToolbarItemGroup(placement: .bottomBar) {
                             // Keep the same four slots as the regular canvas toolbar.
                             Button {} label: { BroomIcon() }
+                                .watchToolbarButtonStyle()
                                 .hidden()
                                 .disabled(true)
                                 .allowsHitTesting(false)
@@ -111,6 +114,7 @@ struct TutorialPlayerView: View {
                                 tutorial.record(.history)
                             } label: { Image(systemName: "arrow.uturn.backward") }
                             .disabled(!controller.canUndo)
+                            .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Undo"))
                             .trackCanvasControl(.undo, frames: $controls)
                             Spacer(minLength: 0)
@@ -119,10 +123,12 @@ struct TutorialPlayerView: View {
                                 tutorial.record(.history)
                             } label: { Image(systemName: "arrow.uturn.forward") }
                             .disabled(!controller.canRedo)
+                            .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Redo"))
                             .trackCanvasControl(.redo, frames: $controls)
                             Spacer(minLength: 0)
                             Button {} label: { Image(systemName: "square.and.arrow.down") }
+                                .watchToolbarButtonStyle()
                                 .hidden()
                                 .disabled(true)
                                 .allowsHitTesting(false)
@@ -134,6 +140,7 @@ struct TutorialPlayerView: View {
                             HStack {
                                 Spacer()
                                 Button(action: save) { Image(systemName: "square.and.arrow.down") }
+                                    .watchToolbarButtonStyle()
                                     .accessibilityLabel(L10n.text("Save drawing"))
                                     .trackCanvasControl(.save, frames: $controls)
                             }
@@ -145,12 +152,14 @@ struct TutorialPlayerView: View {
                                 page = .canvas
                                 tutorial.record(.closedSave)
                             } label: { Image(systemName: "xmark") }
+                            .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Back"))
                         }
                     }
                     if page == .canvas && tutorial.permits([15]) {
                         ToolbarItem(placement: .topBarLeading) {
                             Button { page = .menu; tutorial.activity() } label: { Image(systemName: "ellipsis") }
+                                .watchToolbarButtonStyle()
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
                         }
@@ -162,6 +171,7 @@ struct TutorialPlayerView: View {
                                     tutorial.pauseReminders()
                                     confirmsClear = true
                                 } label: { BroomIcon() }
+                                .watchToolbarButtonStyle()
                                 .accessibilityLabel(L10n.text("Clear canvas"))
                                 .trackCanvasControl(.clear, frames: $controls)
                                 Spacer()
@@ -179,7 +189,7 @@ struct TutorialPlayerView: View {
             }
         }
         .background(Color.black.ignoresSafeArea())
-        .toolbarBackgroundVisibility(tutorial.showsInstruction ? .hidden : .automatic, for: .navigationBar)
+        .tutorialToolbarBackground(hidden: tutorial.showsInstruction)
         .onAppear {
             if !tutorial.isActive {
                 // Carry the color and width taught earlier into the new brush, without changing user preferences.
@@ -231,6 +241,17 @@ struct TutorialPlayerView: View {
         } catch {
             tutorial.pauseReminders()
             saveError = error.localizedDescription
+        }
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func tutorialToolbarBackground(hidden: Bool) -> some View {
+        if #available(watchOS 11.0, *) {
+            toolbarBackgroundVisibility(hidden ? .hidden : .automatic, for: .navigationBar)
+        } else {
+            toolbarBackground(hidden ? .hidden : .automatic, for: .navigationBar)
         }
     }
 }

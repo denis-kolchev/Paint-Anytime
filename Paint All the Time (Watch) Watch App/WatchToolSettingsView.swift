@@ -225,6 +225,9 @@ struct WatchToolSettingsView: View {
         .toolbar {
             if (selection == .instrument || selection == .mode) && tutorial.allowsToolInfo {
                 ToolbarItem(placement: .topBarLeading) {
+                    // Reference: the compact Information button seen after returning
+                    // from Width. The shared modifier fixes that diameter on first
+                    // appearance too, and applies it to every canvas toolbar button.
                     Button {
                         crownFocused = false
                         tutorial.record(.openedInfo)
@@ -232,7 +235,7 @@ struct WatchToolSettingsView: View {
                     } label: {
                         Image(systemName: "info")
                     }
-                    .buttonStyle(.automatic)
+                    .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Information"))
                 }
             }
@@ -296,8 +299,9 @@ struct WatchToolSettingsView: View {
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.65)
                                     .frame(width: 90, height: 30)
+                                    .contentShape(Rectangle())
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.borderless)
                             .disabled(!tutorial.allowsToolPage(setting.rawValue))
                             .accessibilityAddTraits(selection == setting ? [.isSelected] : [])
                             .id(setting)
@@ -347,8 +351,9 @@ struct WatchToolSettingsView: View {
                                                      : instrumentIndex == index ? 1 : 0.72)
                                         .animation(choiceAnimation, value: instrumentIndex)
                                         .frame(width: 40, height: 36)
+                                        .contentShape(Rectangle())
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(.borderless)
                                 .disabled(!tutorial.allowsToolAdjustment(page: Setting.instrument.rawValue))
                                 .accessibilityLabel(instrument.title)
                                 .accessibilityAddTraits(instrumentIndex == index ? [.isSelected] : [])
@@ -392,6 +397,7 @@ struct WatchToolSettingsView: View {
             } label: {
                 Image(systemName: "rotate.right")
                     .frame(width: 40, height: 30)
+                    .contentShape(Rectangle())
             }
             .disabled(controller.pencilStyle.reedAngle >= 90 || !tutorial.allowsToolAdjustment(page: Setting.direction.rawValue))
             .accessibilityLabel(L10n.text("Rotate tip clockwise"))
@@ -421,11 +427,12 @@ struct WatchToolSettingsView: View {
             } label: {
                 Image(systemName: "rotate.left")
                     .frame(width: 40, height: 30)
+                    .contentShape(Rectangle())
             }
             .disabled(controller.pencilStyle.reedAngle <= -90 || !tutorial.allowsToolAdjustment(page: Setting.direction.rawValue))
             .accessibilityLabel(L10n.text("Rotate tip counterclockwise"))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(.borderless)
     }
 
     private func adjustDirection(by amount: Float) {
@@ -449,7 +456,8 @@ struct WatchToolSettingsView: View {
                                     ? Color.white.opacity(0.2) : .clear, in: Circle())
                         .scaleEffect(reduceMotion ? 1 : controller.pencilStyle.eraserMode == mode ? 1 : 0.75)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(.borderless)
+                .disabled(!tutorial.allowsToolAdjustment(page: Setting.mode.rawValue))
                 .accessibilityLabel(mode.title)
                 .accessibilityAddTraits(controller.pencilStyle.eraserMode == mode ? [.isSelected] : [])
             }
@@ -485,8 +493,9 @@ struct WatchToolSettingsView: View {
                                                  : colorIndex == index ? 1 : 0.72)
                                     .animation(choiceAnimation, value: colorIndex)
                                     .frame(width: 40, height: 30)
+                                    .contentShape(Rectangle())
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(.borderless)
                             .disabled(!tutorial.allowsToolAdjustment(page: Setting.color.rawValue))
                             .accessibilityLabel(InkPreset.all[index].name)
                             .accessibilityAddTraits(colorIndex == index ? [.isSelected] : [])

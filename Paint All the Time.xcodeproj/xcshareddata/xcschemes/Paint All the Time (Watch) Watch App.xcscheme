@@ -30,6 +30,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "257D4051305EA358002072CB"
                BuildableName = "Paint All the Time (Watch).app"
+               BlueprintName = "Paint All the Time (Watch)"
                ReferencedContainer = "container:Paint All the Time.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>

@@ -94,7 +94,8 @@ struct WatchCanvasView: View {
                         controller.endStroke(at: sample(
                             at: canvasPoint(value.location, size: geometry.size), time: value.time))
                         if controller.document.strokes.count > previousCount { tutorial.record(.stroke) }
-                    }
+                    },
+                including: acceptsInput && tutorial.acceptsActions ? .all : .none
             )
         }
         .focusable(acceptsInput && tutorial.acceptsActions && (!tutorial.isActive || tutorial.allowsCanvasZoom))
