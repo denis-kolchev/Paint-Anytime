@@ -18,6 +18,7 @@ struct TutorialPlayerView: View {
     private enum Page { case canvas, tools, saved, menu, gallery }
 
     var body: some View {
+        let _ = TutorialDebug.trace("player.body", "page=\(page) \(tutorial.debugState)")
         ZStack {
             Group {
                 ZStack {
@@ -70,6 +71,7 @@ struct TutorialPlayerView: View {
                     if page == .canvas && tutorial.permits([2]) {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
+                                TutorialDebug.trace("tools.tap", tutorial.debugState)
                                 page = .tools
                                 tutorial.record(.openedTools)
                             } label: {
@@ -77,6 +79,7 @@ struct TutorialPlayerView: View {
                             }
                             .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Tool settings"))
+                            .onAppear { TutorialDebug.trace("tools.button.appear", tutorial.debugState) }
                             .trackCanvasControl(.tools, frames: $controls)
                         }
                     }
@@ -96,6 +99,7 @@ struct TutorialPlayerView: View {
                             .disabled(page == .canvas && !tutorial.canFinishCamera)
                             .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Done"))
+                            .onAppear { TutorialDebug.trace("tools.button.appear", tutorial.debugState) }
                             .trackCanvasControl(.tools, frames: $controls)
                         }
                     }
@@ -199,15 +203,21 @@ struct TutorialPlayerView: View {
             }
             else { tutorial.resumeReminders() }
         }
-        .onChange(of: tutorial.step) { _, _ in controls = [:] }
+        .onChange(of: tutorial.step) { _, _ in
+            controls = [:]
+        }
         .onChange(of: tutorial.showsInstruction) { _, showing in
+            TutorialDebug.trace("player.instruction", "showing=\(showing) page=\(page) \(tutorial.debugState)")
             if showing { controller.cancelStroke() }
         }
         .onChange(of: scenePhase) { _, phase in
+            TutorialDebug.trace("player.scenePhase", "phase=\(phase)")
             if phase == .active { tutorial.resumeReminders() }
             else { tutorial.pauseReminders(); controller.cancelStroke() }
         }
-        .onDisappear { tutorial.pauseReminders() }
+        .onDisappear {
+            tutorial.pauseReminders()
+        }
         .fullScreenCover(isPresented: $confirmsClear, onDismiss: {
             tutorial.resumeReminders()
             if didConfirmClear {

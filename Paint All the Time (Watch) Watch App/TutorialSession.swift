@@ -56,6 +56,10 @@ final class TutorialSession: ObservableObject {
         !isActive || (acceptsActions && [(4, 0), (6, 2), (8, 4)].contains { $0.0 == step && $0.1 == page })
     }
 
+    var debugState: String {
+        "session=\(ObjectIdentifier(self)) step=\(step) instruction=\(showsInstruction) result=\(showsResult) paused=\(remindersPaused) acceptsActions=\(acceptsActions) allowsDrawing=\(allowsDrawing) count=\(count)"
+    }
+
     func start() {
         cancelPendingAdvance()
         count = 0
@@ -73,6 +77,7 @@ final class TutorialSession: ObservableObject {
                 do { try await Task.sleep(for: .seconds(1)) } catch { return }
                 guard let self, self.isActive else { return }
                 if !self.showsInstruction && !self.remindersPaused && self.pendingAdvanceStep == nil && Date().timeIntervalSince(self.lastActivity) >= 5 {
+                    TutorialDebug.trace("reminder.showCard", self.debugState)
                     self.showsInstruction = true
                 }
             }
@@ -81,8 +86,11 @@ final class TutorialSession: ObservableObject {
 
     /// Next dismisses a lesson card. It never skips an unfinished exercise.
     func beginExercise() {
+        TutorialDebug.trace("beginExercise.beforeHide", debugState)
         showsInstruction = false
+        TutorialDebug.trace("beginExercise.afterHide", debugState)
         activity()
+        TutorialDebug.trace("beginExercise.exit", debugState)
     }
 
     func activity() { if isActive { lastActivity = Date() } }

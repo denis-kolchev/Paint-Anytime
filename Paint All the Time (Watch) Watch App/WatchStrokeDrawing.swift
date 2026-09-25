@@ -3,11 +3,30 @@ import SwiftUI
 // Procedural watchOS brushes. Apple Pencil pressure/tilt and PencilKit's
 // proprietary ink textures are not available to this finger-driven canvas.
 enum WatchStrokeDrawing {
+    static func commands(for stroke: Stroke) -> [WatchDrawingCommand] {
+        var context = WatchDrawingContext()
+        draw(stroke, in: &context)
+        return context.storage.commands
+    }
+
     static func draw(_ stroke: Stroke, in context: inout GraphicsContext) {
+        for command in commands(for: stroke) {
+            var paint = context
+            paint.opacity *= command.opacity
+            if command.blendMode != .normal { paint.blendMode = command.blendMode }
+            let c = command.rgba
+            let color = Color(.sRGB, red: Double(c.x), green: Double(c.y),
+                              blue: Double(c.z), opacity: Double(c.w))
+            switch command.shape {
+            case let .fill(path): paint.fill(path, with: .color(color))
+            case let .stroke(path, style): paint.stroke(path, with: .color(color), style: style)
+            }
+        }
+    }
+
+    private static func draw(_ stroke: Stroke, in context: inout WatchDrawingContext) {
         guard !stroke.points.isEmpty else { return }
-        let rgba = stroke.style.color
-        let ink = Color(.sRGB, red: Double(rgba.x), green: Double(rgba.y),
-                        blue: Double(rgba.z), opacity: Double(rgba.w))
+        let ink = stroke.style.color
         var paint = context
         switch stroke.style.instrument {
         case .monoline:
@@ -38,9 +57,9 @@ enum WatchStrokeDrawing {
             guard stroke.style.eraserMode == .pixels else { return }
             // Erase alpha, never paint white over the drawing.
             paint.blendMode = .destinationOut
-            paint.stroke(centerline(stroke), with: .color(.black), style: StrokeStyle(
+            paint.stroke(centerline(stroke), with: .color(SIMD4<Float>(0, 0, 0, 1)), style: StrokeStyle(
                 lineWidth: CGFloat(stroke.style.width), lineCap: .round, lineJoin: .round))
-            drawDotIfNeeded(stroke, ink: .black, in: &paint)
+            drawDotIfNeeded(stroke, ink: SIMD4<Float>(0, 0, 0, 1), in: &paint)
         }
     }
 
@@ -52,7 +71,7 @@ enum WatchStrokeDrawing {
         return path
     }
 
-    private static func drawDotIfNeeded(_ stroke: Stroke, ink: Color, in context: inout GraphicsContext) {
+    private static func drawDotIfNeeded(_ stroke: Stroke, ink: SIMD4<Float>, in context: inout WatchDrawingContext) {
         guard stroke.points.count == 1, let sample = stroke.points.first else { return }
         let radius = CGFloat(stroke.style.width) / 2
         context.fill(Path(ellipseIn: CGRect(x: CGFloat(sample.position.x) - radius,
@@ -71,7 +90,7 @@ enum WatchStrokeDrawing {
         return path
     }
 
-    private static func texture(_ stroke: Stroke, ink: Color, in context: inout GraphicsContext) {
+    private static func texture(_ stroke: Stroke, ink: SIMD4<Float>, in context: inout WatchDrawingContext) {
         let pastel = stroke.style.instrument == .crayon
         let radius = Double(stroke.style.width) / 2
         let points = BrushGeometry.spacedPoints(for: stroke, spacing: max(0.6, stroke.style.width * 0.13))
@@ -101,7 +120,7 @@ enum WatchStrokeDrawing {
         }
     }
 
-    private static func watercolor(_ stroke: Stroke, ink: Color, in context: inout GraphicsContext) {
+    private static func watercolor(_ stroke: Stroke, ink: SIMD4<Float>, in context: inout WatchDrawingContext) {
         let radius = Double(stroke.style.width) / 2
         let points = BrushGeometry.spacedPoints(for: stroke, spacing: max(0.5, stroke.style.width * 0.12))
         // Nested translucent washes produce a soft edge. Each wash is filled once;

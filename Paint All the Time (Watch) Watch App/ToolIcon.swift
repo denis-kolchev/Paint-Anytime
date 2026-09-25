@@ -34,6 +34,9 @@ struct ToolIcon: View {
 
     var body: some View {
         Canvas { context, size in
+            let started = TutorialDebug.timestamp()
+            TutorialDebug.trace("toolIcon.draw.enter", "size=\(size)")
+            defer { TutorialDebug.finish("toolIcon.draw", since: started) }
             var c = context
             c.scaleBy(x: size.width / 24, y: size.height / 28)
             let ink = GraphicsContext.Shading.color(.primary)

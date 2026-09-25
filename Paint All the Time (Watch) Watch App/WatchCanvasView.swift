@@ -25,15 +25,17 @@ struct WatchCanvasView: View {
     @State private var panOrigin: CGSize?
     @State private var acceptsCurrentGesture: Bool?
     @GestureState private var isDragging = false
+
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
     @FocusState private var crownFocused: Bool
 
     var body: some View {
+        let _ = TutorialDebug.trace("canvas.body", "input=\(acceptsInput) controls=\(protectedControls.count) \(tutorial.debugState)")
         GeometryReader { geometry in
             ZStack {
                 Color(white: 0.16)
                 if rendersArtwork {
-                    WatchCanvasArtwork(strokes: controller.document.strokes + [controller.activeStroke].compactMap { $0 })
+                    WatchRasterArtwork(strokes: controller.document.strokes + [controller.activeStroke].compactMap { $0 }, zoom: zoom)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .clipped()
                         .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
@@ -74,7 +76,9 @@ struct WatchCanvasView: View {
                             return
                         }
                         let start = canvasPoint(value.startLocation, size: geometry.size)
-                        guard CGRect(origin: .zero, size: geometry.size).contains(start) else { return }
+                        guard CGRect(origin: .zero, size: geometry.size).contains(start) else {
+                            return
+                        }
                         if controller.activeStroke == nil {
                             controller.beginStroke(at: sample(at: start, time: value.time))
                         }
@@ -116,8 +120,12 @@ struct WatchCanvasView: View {
            isContinuous: false, isHapticFeedbackEnabled: false)
         .accessibilityLabel(isMovingCanvas ? L10n.text("Moving canvas") : L10n.text("Finger drawing canvas"))
         .accessibilityValue(L10n.format("Zoom %d percent", Int(zoom * 100)))
-        .onAppear { crownFocused = acceptsInput && tutorial.allowsCanvasZoom }
+        .onAppear {
+            crownFocused = acceptsInput && tutorial.allowsCanvasZoom
+        }
         .onChange(of: tutorial.showsInstruction) { _, showing in
+            TutorialDebug.trace("canvas.showing.enter", "value=\(showing)")
+            defer { TutorialDebug.trace("canvas.showing.exit", "focused=\(crownFocused)") }
             crownFocused = !showing && acceptsInput && tutorial.allowsCanvasZoom
         }
         .onChange(of: isDragging) { _, dragging in
@@ -132,10 +140,14 @@ struct WatchCanvasView: View {
             crownFocused = acceptsInput && tutorial.allowsCanvasZoom
         }
         .onChange(of: acceptsInput) { _, enabled in
+            TutorialDebug.trace("canvas.enabled.enter", "value=\(enabled)")
+            defer { TutorialDebug.trace("canvas.enabled.exit", "focused=\(crownFocused)") }
             crownFocused = enabled && tutorial.allowsCanvasZoom
             if !enabled { controller.cancelStroke() }
         }
-        .onDisappear { controller.cancelStroke() }
+        .onDisappear {
+            controller.cancelStroke()
+        }
     }
 
     private func isProtectedStart(_ point: CGPoint, canvasFrame: CGRect) -> Bool {
@@ -187,7 +199,8 @@ struct WatchCanvasArtwork: View {
     let strokes: [Stroke]
 
     var body: some View {
-        Canvas { context, _ in
+        Canvas { context, size in
+            // Isolate ink from the paper: destinationOut must erase only ink.
             context.drawLayer { layer in
                 for stroke in strokes { WatchStrokeDrawing.draw(stroke, in: &layer) }
             }

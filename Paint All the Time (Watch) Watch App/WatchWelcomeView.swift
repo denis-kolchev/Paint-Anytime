@@ -52,7 +52,9 @@ struct WatchWelcomeView: View {
             guard preparesTutorial else { return }
             await Task.yield()
             do { tutorialFolder = try TutorialGallery.prepare() }
-            catch { tutorialError = true }
+            catch {
+                tutorialError = true
+            }
             preparesTutorial = false
         }
         .alert(L10n.text("Tutorial"), isPresented: $tutorialError) {
@@ -151,6 +153,9 @@ struct TutorialLessonView: View {
                 .foregroundStyle(.red)
 
                 Button {
+                    if tutorial.step == 2 { TutorialDebug.startNextTrace() }
+                    TutorialDebug.trace("next.action.enter", tutorial.debugState)
+                    defer { TutorialDebug.trace("next.action.exit", tutorial.debugState) }
                     if tutorial.step == 20 {
                         tutorial.stop()
                         onFinish()
@@ -170,6 +175,7 @@ struct TutorialLessonView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
         .ignoresSafeArea(.container, edges: .vertical)
+        .onDisappear { TutorialDebug.trace("lessonCard.disappear", tutorial.debugState) }
         .fullScreenCover(isPresented: $confirmsFinish, onDismiss: {
             if didConfirmFinish {
                 didConfirmFinish = false
