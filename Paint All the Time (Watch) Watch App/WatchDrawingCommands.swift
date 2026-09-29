@@ -92,7 +92,7 @@ nonisolated enum WatchBitmapRenderer {
         }
     }
 
-    /// Owned by one canvas view. Only committed changes or resolution changes rebuild it.
+    /// Owned by one canvas view. Appends extend the ink; history edits rebuild it.
     final class Cache {
         private var key: CacheKey?
         private(set) var geometry: [UUID: StrokeGeometry] = [:]
@@ -100,6 +100,19 @@ nonisolated enum WatchBitmapRenderer {
         private var committedInk: InkSnapshot?
         private var committedImage: CGImage?
         private(set) var rebuildCount = 0
+        private(set) var appendCount = 0
+        private(set) var committedRasterizedStrokeCount = 0
+        private var committedStrokes: [StrokeVersion] = []
+
+        private struct StrokeVersion: Equatable {
+            let id: UUID
+            let revision: UUID
+
+            init(_ stroke: Stroke) {
+                id = stroke.id
+                revision = stroke.geometryRevision
+            }
+        }
         private var activeInk: ActiveInk?
         private var activeImage: CGImage?
         private(set) var activeCoverageBuildCount = 0
@@ -125,13 +138,28 @@ nonisolated enum WatchBitmapRenderer {
                     geometry[stroke.id] = entry
                     geometryBuildCount += 1
                 }
-                guard let ink = WatchBitmapRenderer.renderInk(strokes: strokes, size: nextKey.size,
-                                                             scale: nextKey.scale, geometry: geometry),
-                      let image = WatchBitmapRenderer.flatten(ink, paperWhite: 1) else { return nil }
+                let versions = strokes.map(StrokeVersion.init)
+                // Reuse only an unchanged prefix at the same resolution and canvas size.
+                // Requests may skip intermediate commits, so append the whole unseen suffix.
+                let canAppend = committedInk != nil &&
+                    key?.documentID == nextKey.documentID &&
+                    key?.size == nextKey.size && key?.scale == nextKey.scale &&
+                    versions.count > committedStrokes.count &&
+                    versions.starts(with: committedStrokes)
+                let pendingStrokes = canAppend ? Array(strokes.dropFirst(committedStrokes.count)) : strokes
+                guard let ink = WatchBitmapRenderer.renderInk(strokes: pendingStrokes, size: nextKey.size,
+                                                             scale: nextKey.scale,
+                                                             base: canAppend ? committedInk : nil,
+                                                             geometry: geometry),
+                      let image = WatchBitmapRenderer.flatten(ink, paperWhite: 1),
+                      !Task.isCancelled else { return nil }
+                // Publish the snapshot and its prefix together only after success.
                 committedInk = ink
                 committedImage = image
+                committedStrokes = versions
                 key = nextKey
-                rebuildCount += 1
+                if canAppend { appendCount += 1 } else { rebuildCount += 1 }
+                committedRasterizedStrokeCount += pendingStrokes.count
                 activeInk = nil
                 activeImage = nil
             }

@@ -170,9 +170,9 @@ struct RenderCheck {
         for (revision, strokes) in [(UInt64(2), history), (3, Array(history.dropLast())),
                                     (4, history), (5, [background]), (6, [])] {
             assertSame(cache.render(strokes: strokes, activeStroke: nil, key: key(revision)),
-                       render(strokes), "Commit/undo/redo/object deletion/clear must rebuild")
+                       render(strokes), "Commit/undo/redo/object deletion/clear must preserve replay parity")
         }
-        precondition(cache.rebuildCount == 6)
+        precondition(cache.rebuildCount == 4 && cache.appendCount == 2)
         for scale: CGFloat in [1, 3] {
             assertSame(cache.render(strokes: history, activeStroke: marker, key: key(7, scale: scale)),
                        WatchBitmapRenderer.render(strokes: history + [marker], size: CGSize(width: 100, height: 100), scale: scale),
@@ -264,6 +264,60 @@ struct RenderCheck {
             let value = pixel(diagonalImage, Int(p.x * 2), Int(p.y * 2))[0]
             precondition(abs(Int(value) - 77) <= 1, "Moving square cap must not have an internal seam")
         }
+        // Commit transparent strokes in rapid batches; only the unseen suffix is rasterized.
+        let appendCache = WatchBitmapRenderer.Cache()
+        var appended: [Stroke] = []
+        _ = appendCache.render(strokes: appended, activeStroke: nil, key: key(300))
+        for index in 0..<24 {
+            var style = PencilStyle()
+            style.instrument = index % 5 == 4 ? .eraser : (index % 2 == 0 ? .marker : .watercolor)
+            style.width = 14
+            style.color = SIMD4(0.2, 0.4, 0.8, 0.6)
+            appended.append(Stroke(points: [sample(20, 20 + Float(index)), sample(70, 60),
+                                            sample(20, 20 + Float(index))], style: style))
+            // Simulate cancelled/skipped requests between several commits.
+            if index % 3 == 2 {
+                let snapshotKey = key(UInt64(301 + index))
+                assertSame(appendCache.render(strokes: appended, activeStroke: nil, key: snapshotKey),
+                           render(appended), "Batched append must preserve transparency and pixel erasing")
+                precondition(appendCache.rebuildCount == 1)
+                precondition(appendCache.committedRasterizedStrokeCount == appended.count,
+                             "Old strokes must not be rasterized again on append")
+            }
+        }
+        precondition(appendCache.appendCount == 8)
+        var editedPrefix = appended
+        editedPrefix[0].points.append(sample(90, 90))
+        editedPrefix.append(marker)
+        assertSame(appendCache.render(strokes: editedPrefix, activeStroke: nil, key: key(330)),
+                   render(editedPrefix), "Edited prefix plus append requires a full rebuild")
+        precondition(appendCache.rebuildCount == 2)
+        let reordered = Array(editedPrefix.reversed())
+        assertSame(appendCache.render(strokes: reordered, activeStroke: nil, key: key(331)),
+                   render(reordered), "Reordering must rebuild in the new compositing order")
+        precondition(appendCache.rebuildCount == 3)
+        let cancelledAppend = Task { @MainActor in
+            withUnsafeCurrentTask { $0?.cancel() }
+            return appendCache.render(strokes: reordered + [marker], activeStroke: nil, key: key(332))
+        }
+        let cancelledFrame = await cancelledAppend.value
+        precondition(cancelledFrame == nil)
+        assertSame(appendCache.render(strokes: reordered + [marker], activeStroke: nil, key: key(333)),
+                   render(reordered + [marker]), "Cancelled append must not corrupt the saved prefix")
+        precondition(appendCache.rebuildCount == 3 && appendCache.appendCount == 9)
+        let transitionCache = WatchBitmapRenderer.Cache()
+        _ = transitionCache.render(strokes: [background], activeStroke: marker,
+                                   key: key(340), activeStrokeID: 1)
+        assertSame(transitionCache.render(strokes: [background, marker], activeStroke: appended[1],
+                                          key: key(341), activeStrokeID: 2),
+                   render([background, marker, appended[1]]),
+                   "Committing while a new gesture starts must not duplicate active ink")
+        assertSame(transitionCache.render(strokes: [background, marker], activeStroke: nil,
+                                          key: key(341), activeStrokeID: 2),
+                   render([background, marker]), "Cancelling the next gesture must retain committed ink")
+        precondition(transitionCache.rebuildCount == 1 && transitionCache.appendCount == 1)
+        print("PASS: incremental commits, skipped batches, transparent overlap, erasing, edited/reordered prefix, cancellation")
+
         // Geometry and bounds are resolution-independent for every brush, including
         // marker caps and watercolor bands (whose blending differs from normal paths).
         let geometryCache = WatchBitmapRenderer.Cache()

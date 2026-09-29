@@ -76,3 +76,22 @@ geometry reuse across resolutions, bounds containment, edits, clear/undo, docume
 the scale cap, actor execution, and cancellation. Architecture checks cover ID migration,
 persistence, completion, and undo/redo. Device profiling is still needed to measure frame rate
 and peak memory for large drawings.
+
+
+## Incremental committed ink
+
+When a document revision adds strokes to an unchanged prefix, `WatchBitmapRenderer.Cache`
+copies its transparent committed ink and rasterizes only the unseen suffix, in document order.
+The prefix is validated using stroke IDs and geometry revisions, without point-array comparisons.
+This supports several commits arriving between rendered frames. Marker/watercolor still composite
+their coverage against the existing ink, and pixel erasers remove alpha before paper is flattened.
+
+Document-owner, resolution, or size changes, edited/reordered prefixes, and removals use full
+replay. A redo that only restores a suffix can use the same append path. Successful rendering
+updates the ink, image, key, and prefix together; failed/cancelled work cannot advance the prefix.
+The active-stroke layer remains separate and is reset after a committed update to avoid double ink.
+
+Bitmap checks compare incremental batches against full replay, including translucent overlap,
+pixel erasing, skipped intermediate requests, prefix edits/reordering, and cancellation recovery.
+Counters verify that old strokes are not rasterized again on append. Frame copying/flattening
+still scales with bitmap size; active coverage is not yet reused when committing a stroke.
