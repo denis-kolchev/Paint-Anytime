@@ -34,18 +34,19 @@ struct WatchCanvasView: View {
         GeometryReader { geometry in
             ZStack {
                 Color(white: 0.16)
-                if rendersArtwork {
-                    WatchRasterArtwork(strokes: controller.document.strokes,
-                        activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
-                        documentRevision: controller.documentRevision,
-                        activeStrokeRevision: controller.activeStrokeRevision,
-                        activeStrokeID: controller.activeStrokeID, zoom: zoom)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
-                        .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
-                        .scaleEffect(zoom)
-                        .offset(offset)
-                }
+                // Hiding settings/gallery must not destroy the raster view's image and cache.
+                // Keep its identity so returning to the canvas displays the last frame immediately.
+                WatchRasterArtwork(strokes: controller.document.strokes,
+                    activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
+                    documentRevision: controller.documentRevision,
+                    activeStrokeRevision: controller.activeStrokeRevision,
+                    activeStrokeID: controller.activeStrokeID, zoom: zoom)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
+                    .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
+                    .scaleEffect(zoom)
+                    .offset(offset)
+                    .opacity(rendersArtwork ? 1 : 0)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()

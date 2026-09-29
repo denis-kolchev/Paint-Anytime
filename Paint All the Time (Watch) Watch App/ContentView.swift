@@ -41,10 +41,11 @@ struct ContentView: View {
                     WatchToolSettingsView(controller: controller)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .background(.black)
-                    .transition(.identity)
+                    .transition(.opacity)
                     .zIndex(1)
                 }
             }
+            .animation(.easeInOut(duration: 0.25), value: showsToolSettings)
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
             .onAppear { canvasSize = geometry.size }
@@ -177,7 +178,8 @@ struct ContentView: View {
     }
 
     private var drawingPage: some View {
-        WatchCanvasView(controller: controller, rendersArtwork: !showsToolSettings && !showsGallery, acceptsInput: isActive && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas)
+        // Animate the whole page above, keeping the cached artwork fully visible inside it.
+        WatchCanvasView(controller: controller, acceptsInput: isActive && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas)
             .id(session.canvasSessionID)
     }
 
