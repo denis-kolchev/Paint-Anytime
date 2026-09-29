@@ -2,7 +2,7 @@ import Foundation
 import simd
 
 // Input-dependent geometry shared independently of the display technology.
-enum BrushGeometry {
+nonisolated enum BrushGeometry {
     static func radii(for stroke: Stroke) -> [Float] {
         let base = max(0.1, stroke.style.width) / 2
         guard stroke.style.instrument == .pen else {

@@ -6,7 +6,7 @@ The app uses MVC responsibilities with SwiftUI observation and bindings.
 - **Drawing:** `CanvasController` owns stroke editing and undo/redo. `ToolSettings` owns tool selection and synchronization; `ToolPreferencesStore` reads and writes the existing preference keys. CanvasController forwards tool change notifications so existing SwiftUI bindings continue to update.
 - **Drawing session:** `DrawingSessionController` coordinates saving, transfer to iPhone, opening documents, and confirmation before discarding changes. `ContentView` owns presentation, layout, and resets its navigation state when a new canvas session opens.
 - **Gallery:** `GalleryController` loads the list, deletes drawings, and restores editable documents. `SavedDrawingsView` owns selection, scrolling, gesture state, and transitions.
-- **Export and storage:** `CanvasExporter` renders artwork and encodes PNG metadata. `CanvasExportStore` writes the PNG/JSON pair, lists drawings, loads documents, and deletes files. The on-disk format and naming convention remain unchanged.
+- **Export and storage:** `CanvasExporter` renders artwork and encodes PNG metadata. `CanvasExportStore` writes the PNG/JSON pair, lists drawings, loads documents, and deletes files. The PNG/JSON pairing and naming convention remain unchanged; stroke JSON now also stores stable IDs.
 - **Views:** `SavedDrawingView` presents a saved image. Shared tutorial scrolling modifiers live in `TutorialScrollActivity.swift`.
 
 ## Tutorial
@@ -44,3 +44,35 @@ Run `bash Tests/check-photo-inbox.sh` for incoming file ownership, serial proces
 ## Marker compositing
 
 Live artwork and PNG export both use `WatchBitmapRenderer`. Marker commands isolate coverage in a transparency layer before applying brush opacity and blending, preventing Core Graphics path batches from darkening overlaps within a single long gesture. Separate strokes still build color. The SwiftUI drawing helper is used only for the short settings preview.
+
+
+## Watch canvas performance (stages 1–2)
+
+Digital Crown updates only the visual `scaleEffect`. After 200 ms without another zoom value,
+`WatchRasterArtwork` requests the settled resolution. Screen raster scale is capped at 4 pixels
+per canvas point (native sharpness through 2× zoom on a 2× display); export retains its explicit
+resolution. The previous image stays visible while the next frame is prepared.
+
+`WatchArtworkRenderer` serializes mutable cache access on its own actor. Rendering models and
+geometry helpers are explicitly `nonisolated`; only image publication occurs on the UI actor.
+Cancelled queued work is skipped, full replay checks cancellation between strokes, and obsolete
+results are not published. An already-running primitive cannot be interrupted mid-rasterization.
+
+Each stroke has a persisted UUID. Legacy JSON without an ID receives one during decoding and
+writes it on the next save. IDs survive appending points, completion, undo/redo, and save/load.
+A separate transient geometry revision changes on point edits; it is excluded from document
+encoding and equality.
+
+The canvas cache stores resolution-independent geometry and its bounds per committed stroke.
+Normal brushes retain drawing commands; marker and watercolor retain the exact coverage paths
+and watercolor bands produced by the live generator. Bounds include stroke widths, caps, and
+joins and exclude the raster antialiasing fringe. Zoom/resize reuse geometry; new or edited
+strokes rebuild their entry. Removed entries are released, so undo after deletion regenerates
+them. Changing the document owner clears the geometry cache. Bounds are available for future
+viewport/tile culling; no tile rendering is introduced here.
+
+Bitmap checks cover cached/full parity for all brushes, coverage dots and intersections,
+geometry reuse across resolutions, bounds containment, edits, clear/undo, document ownership,
+the scale cap, actor execution, and cancellation. Architecture checks cover ID migration,
+persistence, completion, and undo/redo. Device profiling is still needed to measure frame rate
+and peak memory for large drawings.

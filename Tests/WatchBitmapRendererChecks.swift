@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct RenderCheck {
-    @MainActor static func main() {
+    @MainActor static func main() async {
         let point = PointerSample(position: SIMD2<Float>(40, 40), pressure: 1, timestamp: 0)
         func render(_ strokes: [Stroke]) -> CGImage {
             guard let image = WatchBitmapRenderer.render(strokes: strokes, size: CGSize(width: 100, height: 100), scale: 2) else { fatalError("No bitmap") }
@@ -264,6 +264,98 @@ struct RenderCheck {
             let value = pixel(diagonalImage, Int(p.x * 2), Int(p.y * 2))[0]
             precondition(abs(Int(value) - 77) <= 1, "Moving square cap must not have an internal seam")
         }
+        // Geometry and bounds are resolution-independent for every brush, including
+        // marker caps and watercolor bands (whose blending differs from normal paths).
+        let geometryCache = WatchBitmapRenderer.Cache()
+        let brushStrokes = DrawingInstrument.allCases.map { instrument in
+            var style = PencilStyle()
+            style.instrument = instrument
+            style.width = 9
+            return Stroke(points: [sample(20, 20), sample(60, 60), sample(20, 60),
+                                   sample(60, 20), sample(20, 20)], style: style)
+        }
+        for scale: CGFloat in [1, 2, 4, 2] {
+            let frameKey = key(200, scale: scale)
+            assertSame(geometryCache.render(strokes: brushStrokes, activeStroke: nil, key: frameKey),
+                       WatchBitmapRenderer.render(strokes: brushStrokes, size: frameKey.size, scale: scale),
+                       "Cached brush geometry must preserve full replay at every scale")
+            precondition(geometryCache.geometryBuildCount == brushStrokes.count,
+                         "Zoom must reuse all brush geometry")
+            for stroke in brushStrokes {
+                let bounds = geometryCache.geometry[stroke.id]!.bounds
+                precondition(!bounds.isNull && bounds.contains(CGPoint(x: 20, y: 20)))
+                // The cached bounds must enclose every painted pixel, with an AA fringe.
+                let single = WatchBitmapRenderer.render(strokes: [stroke], size: frameKey.size, scale: scale)!
+                let pixels = single.dataProvider!.data! as Data
+                let padded = bounds.insetBy(dx: -2 / scale, dy: -2 / scale)
+                for y in 0..<single.height {
+                    for x in 0..<single.width {
+                        let offset = y * single.bytesPerRow + x * 4
+                        if pixels[offset] < 250 || pixels[offset + 1] < 250 || pixels[offset + 2] < 250 {
+                            precondition(padded.contains(CGPoint(x: CGFloat(x) / scale, y: CGFloat(y) / scale)),
+                                         "Bounds must include all visible brush geometry")
+                        }
+                    }
+                }
+            }
+        }
+        var edited = brushStrokes[0]
+        let originalID = edited.id
+        edited.points.append(sample(90, 90))
+        precondition(edited.id == originalID)
+        let changed = [edited] + Array(brushStrokes.dropFirst())
+        assertSame(geometryCache.render(strokes: changed, activeStroke: nil, key: key(201)),
+                   WatchBitmapRenderer.render(strokes: changed, size: key(201).size, scale: 2),
+                   "Editing points must invalidate just that stroke's geometry")
+        precondition(geometryCache.geometryBuildCount == brushStrokes.count + 1)
+        _ = geometryCache.render(strokes: [], activeStroke: nil, key: key(202))
+        precondition(geometryCache.geometry.isEmpty, "Clear must release geometry and bounds")
+        assertSame(geometryCache.render(strokes: brushStrokes, activeStroke: nil, key: key(203)),
+                   WatchBitmapRenderer.render(strokes: brushStrokes, size: key(203).size, scale: 2),
+                   "Undo after clear must restore identical artwork")
+        let priorBuildCount = geometryCache.geometryBuildCount
+        _ = geometryCache.render(strokes: brushStrokes, activeStroke: nil, key: otherKey)
+        precondition(geometryCache.geometryBuildCount == priorBuildCount + brushStrokes.count,
+                     "Switching documents must clear geometry ownership")
+        let copies = [brushStrokes[0], edited]
+        assertSame(geometryCache.render(strokes: copies, activeStroke: nil, key: key(204)),
+                   WatchBitmapRenderer.render(strokes: copies, size: key(204).size, scale: 2),
+                   "Separately edited copies sharing an ID must not substitute geometry")
+        for instrument in [DrawingInstrument.marker, .watercolor] {
+            var style = PencilStyle()
+            style.instrument = instrument
+            let dot = Stroke(points: [sample(40, 40), sample(40, 40)], style: style)
+            let dotCache = WatchBitmapRenderer.Cache()
+            assertSame(dotCache.render(strokes: [dot], activeStroke: nil, key: key(205, scale: 4)),
+                       WatchBitmapRenderer.render(strokes: [dot], size: key(205).size, scale: 4),
+                       "Cached coverage must preserve stationary dots")
+        }
+        precondition(WatchBitmapRenderer.rasterScale(displayScale: 2, zoom: 0.5) == 2)
+        precondition(WatchBitmapRenderer.rasterScale(displayScale: 2, zoom: 1.5) == 3)
+        precondition(WatchBitmapRenderer.rasterScale(displayScale: 2, zoom: 4) == 4)
+        print("PASS: geometry reuse, cached bounds, edits, clear/undo, document isolation, raster scale cap")
+
+        // Exercise the actor boundary, resolution changes, and cancellation recovery.
+        let renderer = WatchArtworkRenderer()
+        let actorStrokes = [diagonal]
+        for scale: CGFloat in [2, 8, 2] {
+            let frameKey = key(100, scale: scale)
+            let frame = await renderer.render(strokes: actorStrokes, activeStroke: nil,
+                                              key: frameKey, activeStrokeID: 0)
+            assertSame(frame, WatchBitmapRenderer.render(strokes: actorStrokes,
+                       size: frameKey.size, scale: scale), "Actor render must match full replay")
+        }
+        let cancelled = Task {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return await renderer.render(strokes: [], activeStroke: nil,
+                                         key: key(101), activeStrokeID: 0)
+        }
+        let cancelledImage = await cancelled.value
+        precondition(cancelledImage == nil, "Cancelled requests must not return a frame")
+        let recovered = await renderer.render(strokes: actorStrokes, activeStroke: nil,
+                                              key: key(100), activeStrokeID: 0)
+        assertSame(recovered, render(actorStrokes), "Cancellation must preserve usable cache")
+        print("PASS: background actor parity, resolution changes, cancellation and recovery")
         print("PASS: incremental coverage, self-crossings, moving caps, batched samples, clipping, gesture identity")
         print("PASS: cached/full replay parity, active cache reuse, cancel, history changes, zoom, resize, document identity")
         print("PASS: all brush dots and lines, orientation, opacity overlap, white pigment coverage, long marker opacity, eraser modes, empty canvas, invalid sizes, 2x resolution")

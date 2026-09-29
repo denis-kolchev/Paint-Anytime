@@ -10,6 +10,7 @@ struct WatchRasterArtwork: View {
     let activeStrokeRevision: UInt64
     let activeStrokeID: UInt64
     let zoom: Double
+    @State private var rasterZoom: Double = 1
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
@@ -20,7 +21,17 @@ struct WatchRasterArtwork: View {
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
-                            scale: displayScale * max(1, zoom)))
+                            // Keep the previous resolution until Crown input settles.
+                            scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom)))
+        }
+        .task(id: zoom) {
+            do {
+                try await Task.sleep(for: .milliseconds(200))
+                try Task.checkCancellation()
+                rasterZoom = max(1, zoom)
+            } catch {
+                // A new zoom value restarts the quiet period.
+            }
         }
     }
 
@@ -32,7 +43,7 @@ struct WatchRasterArtwork: View {
         let key: WatchBitmapRenderer.CacheKey
 
         @State private var image: CGImage?
-        @State private var cache = WatchBitmapRenderer.Cache()
+        @State private var renderer = WatchArtworkRenderer()
 
         // No stroke arrays or point comparisons in task identity.
         private struct Request: Equatable {
@@ -52,13 +63,10 @@ struct WatchRasterArtwork: View {
                 }
             }
             .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision)) { @MainActor in
-                // Do not synchronously ask SwiftUI to render another view from body.
-                // New artwork cancels pending work; keep the previous frame meanwhile.
-                TutorialDebug.trace("raster.task.beforeYield")
-                await Task.yield()
-                TutorialDebug.trace("raster.task.afterYield", "cancelled=\(Task.isCancelled)")
-                guard !Task.isCancelled else { return }
-                let next = render()
+                // Cancellation also follows this task into the renderer actor.
+                // Queued obsolete requests are skipped; the last image stays visible.
+                let next = await renderer.render(strokes: strokes, activeStroke: activeStroke,
+                                                 key: key, activeStrokeID: activeStrokeID)
                 guard !Task.isCancelled else { return }
                 if let next {
                     TutorialDebug.trace("raster.image.beforeWrite")
@@ -68,15 +76,5 @@ struct WatchRasterArtwork: View {
             }
         }
 
-        @MainActor
-        private func render() -> CGImage? {
-            guard key.size.width > 0, key.size.height > 0 else { return nil }
-            TutorialDebug.trace("bitmap.render.enter", "strokes=\(strokes.count) size=\(key.size)")
-            defer { TutorialDebug.trace("bitmap.render.exit") }
-            let image = TutorialDebug.measure("bitmap.renderer") {
-                cache.render(strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
-            }
-            return image
-        }
     }
 }

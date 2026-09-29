@@ -47,9 +47,21 @@ struct ArchitectureChecks {
         let start = PointerSample(position: SIMD2(10, 10), pressure: 1, timestamp: 0)
         let end = PointerSample(position: SIMD2(30, 30), pressure: 1, timestamp: 1)
         canvas.beginStroke(at: start)
+        let strokeID = canvas.activeStroke!.id
         canvas.endStroke(at: end)
+        precondition(canvas.document.strokes.first?.id == strokeID)
         precondition(canvas.document.strokes.count == 1 && canvas.canUndo)
         precondition(canvas.document.strokes.first?.style.color == white)
+        // Legacy documents migrate IDs once; subsequent saves retain them.
+        struct LegacyStroke: Encodable { let points: [PointerSample]; let style: PencilStyle }
+        struct LegacyDocument: Encodable { let strokes: [LegacyStroke] }
+        let legacy = LegacyDocument(strokes: [LegacyStroke(points: [start, end], style: whiteStyle),
+                                              LegacyStroke(points: [start], style: whiteStyle)])
+        let migrated = try JSONDecoder().decode(CanvasDocument.self, from: JSONEncoder().encode(legacy))
+        precondition(Set(migrated.strokes.map(\.id)).count == 2)
+        let roundTrip = try JSONDecoder().decode(CanvasDocument.self, from: JSONEncoder().encode(migrated))
+        precondition(roundTrip == migrated)
+        precondition(roundTrip.strokes.map(\.id) == migrated.strokes.map(\.id))
         let document = canvas.document
         canvas.undo()
         precondition(canvas.document.strokes.isEmpty && canvas.canRedo)

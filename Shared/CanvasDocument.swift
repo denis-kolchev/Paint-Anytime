@@ -1,22 +1,22 @@
 import Foundation
 import simd
 
-struct PointerSample: Codable, Equatable {
+nonisolated struct PointerSample: Codable, Equatable {
     var position: SIMD2<Float>
     var pressure: Float
     var timestamp: TimeInterval
 }
 
-enum DrawingInstrument: Int, CaseIterable, Codable {
+nonisolated enum DrawingInstrument: Int, CaseIterable, Codable {
     // Preserve the raw values of the original monoline and fountain pen.
     case monoline = 0, fountainPen = 1, pen, marker, pencil, crayon, reed, watercolor, eraser
 
-    static var displayOrder: [Self] {
+    @MainActor static var displayOrder: [Self] {
         let order: [Self] = [.monoline, .pen, .marker, .pencil, .crayon, .fountainPen, .reed, .watercolor, .eraser]
         return order.filter { AppReleaseFeatures.current.allows($0) }
     }
 
-    var title: String {
+    @MainActor var title: String {
         switch self {
         case .monoline: L10n.text("Monoline")
         case .pen: L10n.text("Pen")
@@ -45,12 +45,12 @@ enum DrawingInstrument: Int, CaseIterable, Codable {
 
 }
 
-enum EraserMode: Int, Codable, CaseIterable {
+nonisolated enum EraserMode: Int, Codable, CaseIterable {
     case pixels, objects
-    var title: String { self == .pixels ? L10n.text("Pixel eraser") : L10n.text("Object eraser") }
+    @MainActor var title: String { self == .pixels ? L10n.text("Pixel eraser") : L10n.text("Object eraser") }
 }
 
-struct PencilStyle: Codable, Equatable {
+nonisolated struct PencilStyle: Codable, Equatable {
     var instrument: DrawingInstrument = .monoline
     var color = SIMD4<Float>(0, 0, 0, 1)
     var width: Float = 4
@@ -83,11 +83,36 @@ struct PencilStyle: Codable, Equatable {
     }
 }
 
-struct Stroke: Codable, Equatable {
-    var points: [PointerSample]
+nonisolated struct Stroke: Codable, Equatable, Identifiable {
+    let id: UUID
+    // A copied stroke can still be edited; invalidate geometry without comparing points.
+    private(set) var geometryRevision: UUID = UUID()
+    var points: [PointerSample] {
+        didSet { geometryRevision = UUID() }
+    }
     let style: PencilStyle
+
+    init(points: [PointerSample], style: PencilStyle) {
+        id = UUID()
+        self.points = points
+        self.style = style
+    }
+
+    private enum CodingKeys: String, CodingKey { case id, points, style }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        // Older drawings have no IDs. Assign once, then persist on the next save.
+        id = try values.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        points = try values.decode([PointerSample].self, forKey: .points)
+        style = try values.decode(PencilStyle.self, forKey: .style)
+    }
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id && lhs.points == rhs.points && lhs.style == rhs.style
+    }
 }
 
-struct CanvasDocument: Codable, Equatable {
+nonisolated struct CanvasDocument: Codable, Equatable {
     var strokes: [Stroke] = []
 }

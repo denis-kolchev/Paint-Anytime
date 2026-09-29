@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Geometry is generated once by the brushes and consumed by both rendering paths.
-struct WatchDrawingCommand {
+nonisolated struct WatchDrawingCommand {
     enum Shape {
         case fill(Path)
         case stroke(Path, StrokeStyle)
@@ -13,7 +13,7 @@ struct WatchDrawingCommand {
     let usesOpacityLayer: Bool
 }
 
-struct WatchDrawingContext {
+nonisolated struct WatchDrawingContext {
     enum Shading {
         case color(SIMD4<Float>)
     }
@@ -42,7 +42,7 @@ struct WatchDrawingContext {
     }
 }
 
-enum WatchBitmapRenderer {
+nonisolated enum WatchBitmapRenderer {
     /// A transparent, floating-point ink snapshot preserves multiply and pixel erasing.
     private struct InkSnapshot {
         let image: CGImage
@@ -55,9 +55,48 @@ enum WatchBitmapRenderer {
         let scale: CGFloat
     }
 
+    /// Screen-only policy; export keeps its explicitly requested resolution.
+    static let maximumRasterScale: CGFloat = 4
+    static func rasterScale(displayScale: CGFloat, zoom: Double) -> CGFloat {
+        min(maximumRasterScale, displayScale * CGFloat(max(1, zoom)))
+    }
+
+    struct StrokeGeometry {
+        let revision: UUID
+        let commands: [WatchDrawingCommand]
+        let coverage: WatchStrokeCoverage.Geometry?
+        let bounds: CGRect
+
+        init(_ stroke: Stroke) throws {
+            revision = stroke.geometryRevision
+            if stroke.style.instrument == .marker || stroke.style.instrument == .watercolor {
+                let geometry = try WatchStrokeCoverage.geometry(for: stroke)
+                coverage = geometry
+                commands = []
+                bounds = geometry.bounds
+            } else {
+                coverage = nil
+                commands = WatchStrokeDrawing.commands(for: stroke)
+                bounds = commands.reduce(CGRect.null) { bounds, command in
+                    let shapeBounds: CGRect
+                    switch command.shape {
+                    case let .fill(path): shapeBounds = path.boundingRect
+                    case let .stroke(path, style):
+                        shapeBounds = path.cgPath.copy(strokingWithWidth: style.lineWidth,
+                            lineCap: style.lineCap, lineJoin: style.lineJoin,
+                            miterLimit: style.miterLimit).boundingBoxOfPath
+                    }
+                    return bounds.union(shapeBounds)
+                }
+            }
+        }
+    }
+
     /// Owned by one canvas view. Only committed changes or resolution changes rebuild it.
     final class Cache {
         private var key: CacheKey?
+        private(set) var geometry: [UUID: StrokeGeometry] = [:]
+        private(set) var geometryBuildCount = 0
         private var committedInk: InkSnapshot?
         private var committedImage: CGImage?
         private(set) var rebuildCount = 0
@@ -76,8 +115,18 @@ enum WatchBitmapRenderer {
         func render(strokes: [Stroke], activeStroke: Stroke?, key nextKey: CacheKey,
                     activeStrokeID: UInt64? = nil) -> CGImage? {
             if key != nextKey {
+                if key?.documentID != nextKey.documentID { geometry.removeAll() }
+                // Bound ownership to current artwork; undo can regenerate removed entries.
+                let ids = Set(strokes.map(\.id))
+                geometry = geometry.filter { ids.contains($0.key) }
+                for stroke in strokes where geometry[stroke.id]?.revision != stroke.geometryRevision {
+                    guard !Task.isCancelled else { return nil }
+                    guard let entry = try? StrokeGeometry(stroke) else { return nil }
+                    geometry[stroke.id] = entry
+                    geometryBuildCount += 1
+                }
                 guard let ink = WatchBitmapRenderer.renderInk(strokes: strokes, size: nextKey.size,
-                                                             scale: nextKey.scale),
+                                                             scale: nextKey.scale, geometry: geometry),
                       let image = WatchBitmapRenderer.flatten(ink, paperWhite: 1) else { return nil }
                 committedInk = ink
                 committedImage = image
@@ -143,7 +192,7 @@ enum WatchBitmapRenderer {
     }
 
     private static func renderInk(strokes: [Stroke], size: CGSize, scale: CGFloat,
-                                  base: InkSnapshot? = nil) -> InkSnapshot? {
+                                  base: InkSnapshot? = nil, geometry: [UUID: StrokeGeometry] = [:]) -> InkSnapshot? {
         guard size.width.isFinite, size.height.isFinite, scale.isFinite,
               size.width > 0, size.height > 0, scale > 0 else { return nil }
         let width = ceil(size.width * scale)
@@ -158,13 +207,25 @@ enum WatchBitmapRenderer {
         context.translateBy(x: 0, y: height)
         context.scaleBy(x: scale, y: -scale)
         for stroke in strokes {
+            guard !Task.isCancelled else { return nil }
+            // Also tolerate separately edited copies with a shared ID.
+            let cached = geometry[stroke.id].flatMap {
+                $0.revision == stroke.geometryRevision ? $0 : nil
+            }
             if stroke.style.instrument == .marker || stroke.style.instrument == .watercolor {
                 let coverage = WatchStrokeCoverage(style: stroke.style, width: Int(width),
                                                    height: Int(height), scale: scale)
-                guard let dirty = try? coverage.append(stroke) else { return nil }
+                let dirty: CGRect
+                do {
+                    if let shapes = cached?.coverage {
+                        dirty = try coverage.replay(shapes)
+                    } else {
+                        dirty = try coverage.append(stroke)
+                    }
+                } catch { return nil }
                 coverage.composite(dirty: dirty, over: context, into: context)
             } else {
-                for command in WatchStrokeDrawing.commands(for: stroke) {
+                for command in cached?.commands ?? WatchStrokeDrawing.commands(for: stroke) {
                     draw(command, in: context, space: space)
                 }
             }
@@ -230,4 +291,19 @@ enum WatchBitmapRenderer {
         context.restoreGState()
     }
 
+}
+
+/// Serial ownership keeps mutable bitmap contexts off the UI actor and prevents
+/// overlapping requests from modifying the same incremental cache.
+actor WatchArtworkRenderer {
+    private let cache = WatchBitmapRenderer.Cache()
+
+    func render(strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
+                activeStrokeID: UInt64) -> CGImage? {
+        assert(!Thread.isMainThread, "Bitmap rendering must stay off the main thread")
+        guard !Task.isCancelled, key.size.width > 0, key.size.height > 0 else { return nil }
+        let image = cache.render(strokes: strokes, activeStroke: activeStroke,
+                                 key: key, activeStrokeID: activeStrokeID)
+        return Task.isCancelled ? nil : image
+    }
 }

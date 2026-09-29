@@ -4,7 +4,37 @@ import simd
 
 /// Append-only coverage for one gesture. Pigment is composited against the original
 /// backdrop, never against the previous frame, so retracing does not darken a stroke.
-final class WatchStrokeCoverage {
+nonisolated final class WatchStrokeCoverage {
+    struct Geometry {
+        var primitives: [(path: Path, band: Int)] = []
+        var endCap: Path?
+        var bounds: CGRect {
+            primitives.reduce(endCap?.boundingRect ?? .null) { $0.union($1.path.boundingRect) }
+        }
+    }
+
+    // Recording uses the exact same primitive generator as live coverage, but no raster work.
+    private var recordedGeometry: Geometry?
+
+    static func geometry(for stroke: Stroke) throws -> Geometry {
+        let recorder = WatchStrokeCoverage(style: stroke.style, width: 1, height: 1, scale: 1)
+        recorder.recordedGeometry = Geometry()
+        _ = try recorder.append(stroke)
+        return recorder.recordedGeometry!
+    }
+
+    func replay(_ geometry: Geometry) throws -> CGRect {
+        var dirty = CGRect.null
+        for primitive in geometry.primitives {
+            dirty = dirty.union(try merge(primitive.path, band: primitive.band))
+        }
+        if let cap = geometry.endCap {
+            endCap = try patch(cap)
+            dirty = dirty.union(endCap?.rect ?? .null)
+        }
+        return dirty
+    }
+
     enum RenderError: Error { case allocation }
 
     let style: PencilStyle
@@ -150,6 +180,10 @@ final class WatchStrokeCoverage {
     private func point(_ p: SIMD2<Float>) -> CGPoint { CGPoint(x: CGFloat(p.x), y: CGFloat(p.y)) }
 
     private func patch(_ path: Path) throws -> Patch? {
+        if recordedGeometry != nil {
+            recordedGeometry?.endCap = path
+            return nil
+        }
         let transform = CGAffineTransform(a: scale, b: 0, c: 0, d: -scale, tx: 0, ty: CGFloat(height))
         let bounds = path.boundingRect.applying(transform).insetBy(dx: -1, dy: -1).integral
             .intersection(CGRect(x: 0, y: 0, width: width, height: height))
@@ -171,6 +205,10 @@ final class WatchStrokeCoverage {
     }
 
     private func merge(_ path: Path, band: Int) throws -> CGRect {
+        if recordedGeometry != nil {
+            recordedGeometry?.primitives.append((path, band))
+            return .null
+        }
         guard let patch = try patch(path) else { return .null }
         let rect = patch.rect
         for row in 0..<Int(rect.height) {

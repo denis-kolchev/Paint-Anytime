@@ -2,7 +2,7 @@ import SwiftUI
 
 // Procedural watchOS brushes. Apple Pencil pressure/tilt and PencilKit's
 // proprietary ink textures are not available to this finger-driven canvas.
-enum WatchStrokeDrawing {
+nonisolated enum WatchStrokeDrawing {
     static func commands(for stroke: Stroke) -> [WatchDrawingCommand] {
         var context = WatchDrawingContext()
         draw(stroke, in: &context)
