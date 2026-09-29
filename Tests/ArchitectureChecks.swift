@@ -55,6 +55,44 @@ struct ArchitectureChecks {
         precondition(canvas.document.strokes.isEmpty && canvas.canRedo)
         canvas.redo()
         precondition(canvas.document == document)
+        let revisions = CanvasController(defaults: defaults, persistsPreferences: false)
+        revisions.selectInstrument(.monoline)
+        let initialRevision = revisions.documentRevision
+        let initialActive = revisions.activeStrokeRevision
+        revisions.beginStroke(at: start)
+        revisions.continueStroke(at: end)
+        precondition(revisions.documentRevision == initialRevision,
+                     "Active drawing must not invalidate committed artwork")
+        precondition(revisions.activeStrokeRevision > initialActive)
+        revisions.endStroke(at: end)
+        precondition(revisions.documentRevision > initialRevision)
+        func checkDocumentRevision(_ action: () -> Void) {
+            let before = revisions.documentRevision
+            action()
+            precondition(revisions.documentRevision > before, "Committed mutation must invalidate cache")
+        }
+        checkDocumentRevision { revisions.undo() }
+        checkDocumentRevision { revisions.redo() }
+        let unchanged = revisions.documentRevision
+        revisions.markSaved()
+        revisions.pencilStyle.width = 20
+        revisions.beginStroke(at: start)
+        let activeBeforeCancel = revisions.activeStrokeRevision
+        revisions.cancelStroke()
+        precondition(revisions.documentRevision == unchanged)
+        precondition(revisions.activeStrokeRevision > activeBeforeCancel)
+        checkDocumentRevision { revisions.load(document) }
+        revisions.selectInstrument(.eraser)
+        revisions.pencilStyle.eraserMode = .objects
+        let far = PointerSample(position: SIMD2(500, 500), pressure: 1, timestamp: 2)
+        let beforeMiss = revisions.documentRevision
+        revisions.beginStroke(at: far)
+        revisions.continueStroke(at: far)
+        precondition(revisions.documentRevision == beforeMiss, "Object eraser misses must reuse the cache")
+        checkDocumentRevision { revisions.continueStroke(at: start) }
+        checkDocumentRevision { revisions.cancelStroke() }
+        precondition(revisions.document == document, "Cancel object erasing must restore the document")
+        checkDocumentRevision { revisions.clear() }
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: folder) }

@@ -43,8 +43,52 @@ struct WatchDrawingContext {
 }
 
 enum WatchBitmapRenderer {
-    /// An eagerly rendered bitmap: no Canvas, ImageRenderer or deferred image provider.
+    /// A transparent, floating-point ink snapshot preserves multiply and pixel erasing.
+    private struct InkSnapshot {
+        let image: CGImage
+    }
+
+    struct CacheKey: Equatable {
+        let documentID: ObjectIdentifier
+        let documentRevision: UInt64
+        let size: CGSize
+        let scale: CGFloat
+    }
+
+    /// Owned by one canvas view. Only committed changes or resolution changes rebuild it.
+    final class Cache {
+        private var key: CacheKey?
+        private var committedInk: InkSnapshot?
+        private var committedImage: CGImage?
+        private(set) var rebuildCount = 0
+
+        func render(strokes: [Stroke], activeStroke: Stroke?, key nextKey: CacheKey) -> CGImage? {
+            if key != nextKey {
+                guard let ink = WatchBitmapRenderer.renderInk(strokes: strokes, size: nextKey.size,
+                                                             scale: nextKey.scale),
+                      let image = WatchBitmapRenderer.flatten(ink, paperWhite: 1) else { return nil }
+                committedInk = ink
+                committedImage = image
+                key = nextKey
+                rebuildCount += 1
+            }
+            guard let committedInk else { return nil }
+            guard let activeStroke else { return committedImage }
+            guard let frame = WatchBitmapRenderer.renderInk(strokes: [activeStroke], size: nextKey.size,
+                                                            scale: nextKey.scale, base: committedInk)
+            else { return nil }
+            return WatchBitmapRenderer.flatten(frame, paperWhite: 1)
+        }
+    }
+
+    /// Full replay remains available for export and previews.
     static func render(strokes: [Stroke], size: CGSize, scale: CGFloat, paperWhite: CGFloat = 1) -> CGImage? {
+        guard let ink = renderInk(strokes: strokes, size: size, scale: scale) else { return nil }
+        return flatten(ink, paperWhite: paperWhite)
+    }
+
+    private static func renderInk(strokes: [Stroke], size: CGSize, scale: CGFloat,
+                                  base: InkSnapshot? = nil) -> InkSnapshot? {
         guard size.width.isFinite, size.height.isFinite, scale.isFinite,
               size.width > 0, size.height > 0, scale > 0 else { return nil }
         let width = ceil(size.width * scale)
@@ -55,12 +99,11 @@ enum WatchBitmapRenderer {
                                       bitsPerComponent: 32, bytesPerRow: 0, space: space,
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.floatComponents.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
         else { return nil }
+        if let base {
+            context.draw(base.image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        }
         context.translateBy(x: 0, y: height)
         context.scaleBy(x: scale, y: -scale)
-        context.setFillColor(CGColor(gray: paperWhite, alpha: 1))
-        context.fill(CGRect(origin: .zero, size: size))
-        // Pixel erasing must affect only ink, leaving the paper opaque.
-        context.beginTransparencyLayer(auxiliaryInfo: nil)
         for stroke in strokes {
             let commands = WatchStrokeDrawing.commands(for: stroke)
             if commands.contains(where: { $0.blendMode == .multiply }) {
@@ -118,14 +161,23 @@ enum WatchBitmapRenderer {
                 for command in commands { draw(command, in: context, space: space) }
             }
         }
-        context.endTransparencyLayer()
-        // Keep intermediate blends in floating point; quantize only the final bitmap.
-        guard let image = context.makeImage(),
-              let output = CGContext(data: nil, width: Int(width), height: Int(height),
+        guard let image = context.makeImage() else { return nil }
+        return InkSnapshot(image: image)
+    }
+
+    private static func flatten(_ ink: InkSnapshot, paperWhite: CGFloat) -> CGImage? {
+        // Paper is added only for display/export, so an eraser can still remove cached ink.
+        let width = ink.image.width
+        let height = ink.image.height
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let output = CGContext(data: nil, width: width, height: height,
                                      bitsPerComponent: 8, bytesPerRow: 0, space: space,
                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
         else { return nil }
-        output.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+        output.setFillColor(CGColor(gray: paperWhite, alpha: 1))
+        output.fill(bounds)
+        output.draw(ink.image, in: bounds)
         return output.makeImage()
     }
 

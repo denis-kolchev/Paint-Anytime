@@ -35,7 +35,10 @@ struct WatchCanvasView: View {
             ZStack {
                 Color(white: 0.16)
                 if rendersArtwork {
-                    WatchRasterArtwork(strokes: controller.document.strokes + [controller.activeStroke].compactMap { $0 }, zoom: zoom)
+                    WatchRasterArtwork(strokes: controller.document.strokes,
+                        activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
+                        documentRevision: controller.documentRevision,
+                        activeStrokeRevision: controller.activeStrokeRevision, zoom: zoom)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .clipped()
                         .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }

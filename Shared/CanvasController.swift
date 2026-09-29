@@ -15,7 +15,12 @@ final class CanvasController: ObservableObject {
     func setSynchronizeColor(_ enabled: Bool) { tools.setSynchronizeColor(enabled) }
     func flushStylePreferences() { tools.flushStylePreferences() }
 
-    private(set) var document = CanvasDocument()
+    // Revisions make raster invalidation independent of the number of saved points.
+    private(set) var documentRevision: UInt64 = 0
+    private(set) var activeStrokeRevision: UInt64 = 0
+    private(set) var document = CanvasDocument() {
+        didSet { documentRevision &+= 1 }
+    }
     private var savedDocument = CanvasDocument()
     var hasUnsavedChanges: Bool { document != savedDocument }
     var needsDiscardConfirmation: Bool { !document.strokes.isEmpty && hasUnsavedChanges }
@@ -45,6 +50,7 @@ final class CanvasController: ObservableObject {
             documentBeforeErasing = document
         }
         pencil.begin(at: sample, style: pencilStyle)
+        activeStrokeRevision &+= 1
         eraseObjects(from: sample.position, to: sample.position)
         onNeedsDisplay?()
     }
@@ -53,6 +59,7 @@ final class CanvasController: ObservableObject {
         objectWillChange.send()
         let previous = pencil.activeStroke?.points.last?.position ?? sample.position
         pencil.update(with: sample)
+        activeStrokeRevision &+= 1
         eraseObjects(from: previous, to: sample.position)
         onNeedsDisplay?()
     }
@@ -61,6 +68,7 @@ final class CanvasController: ObservableObject {
         objectWillChange.send()
         let previous = pencil.activeStroke?.points.last?.position ?? sample.position
         eraseObjects(from: previous, to: sample.position)
+        activeStrokeRevision &+= 1
         guard let stroke = pencil.end(at: sample) else {
             if let original = documentBeforeErasing { document = original }
             documentBeforeErasing = nil
@@ -83,6 +91,7 @@ final class CanvasController: ObservableObject {
     func cancelStroke() {
         objectWillChange.send()
         pencil.cancel()
+        activeStrokeRevision &+= 1
         if let original = documentBeforeErasing { document = original }
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
@@ -92,6 +101,7 @@ final class CanvasController: ObservableObject {
     func load(_ savedDocument: CanvasDocument) {
         objectWillChange.send()
         pencil.cancel()
+        activeStrokeRevision &+= 1
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
         undoStack.removeAll()
@@ -110,6 +120,7 @@ final class CanvasController: ObservableObject {
         guard !document.strokes.isEmpty else { return }
         objectWillChange.send()
         pencil.cancel()
+        activeStrokeRevision &+= 1
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
         recordUndo(document)
@@ -122,6 +133,7 @@ final class CanvasController: ObservableObject {
         objectWillChange.send()
         let previous = undoStack.removeLast()
         pencil.cancel()
+        activeStrokeRevision &+= 1
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
         redoStack.append(document)
@@ -134,6 +146,7 @@ final class CanvasController: ObservableObject {
         objectWillChange.send()
         let next = redoStack.removeLast()
         pencil.cancel()
+        activeStrokeRevision &+= 1
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
         undoStack.append(document)
@@ -150,8 +163,9 @@ final class CanvasController: ObservableObject {
     private func eraseObjects(from a: SIMD2<Float>, to b: SIMD2<Float>) {
         guard let style = pencil.activeStroke?.style,
               style.instrument == .eraser, style.eraserMode == .objects else { return }
-        document.strokes.removeAll { stroke in
-            stroke.style.instrument != .eraser && BrushGeometry.touches(stroke, from: a, to: b, radius: style.width / 2)
+        let remaining = document.strokes.filter { stroke in
+            !(stroke.style.instrument != .eraser && BrushGeometry.touches(stroke, from: a, to: b, radius: style.width / 2))
         }
+        if remaining.count != document.strokes.count { document.strokes = remaining }
     }
 }

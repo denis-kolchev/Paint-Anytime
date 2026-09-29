@@ -138,6 +138,56 @@ struct RenderCheck {
             let separate = pixel(render([background, short, short]), 100, 80)
             precondition(separate != reference, "Separate marker gestures must still build coverage")
         }
+        // A cached ink snapshot must render exactly like a full replay, including erasing.
+        let cache = WatchBitmapRenderer.Cache()
+        let cacheID = ObjectIdentifier(cache)
+        func key(_ revision: UInt64, scale: CGFloat = 2, size: CGSize = CGSize(width: 100, height: 100)) -> WatchBitmapRenderer.CacheKey {
+            .init(documentID: cacheID, documentRevision: revision, size: size, scale: scale)
+        }
+        func assertSame(_ cached: CGImage?, _ full: CGImage?, _ message: String) {
+            guard let cached, let full else { fatalError("Missing image: \(message)") }
+            precondition(cached.width == full.width && cached.height == full.height)
+            let lhs = cached.dataProvider!.data! as Data
+            let rhs = full.dataProvider!.data! as Data
+            precondition(lhs.count == rhs.count)
+            precondition(zip(lhs, rhs).allSatisfy { abs(Int($0) - Int($1)) <= 1 }, message)
+        }
+        var history = [background, marker]
+        for tool in DrawingInstrument.allCases {
+            var brush = PencilStyle.initial(for: tool)
+            brush.width = 18
+            brush.color = SIMD4(0.2, 0.65, 0.9, 0.8)
+            brush.eraserMode = .pixels
+            let active = Stroke(points: [sample(25, 40), sample(60, 40)], style: brush)
+            assertSame(cache.render(strokes: history, activeStroke: active, key: key(1)),
+                       render(history + [active]), "Cached active stroke differs: \(tool)")
+            precondition(cache.rebuildCount == 1, "Active updates must reuse committed ink")
+        }
+        assertSame(cache.render(strokes: history, activeStroke: nil, key: key(1)),
+                   render(history), "Cancelling a stroke must restore the cached drawing")
+        precondition(cache.rebuildCount == 1)
+        history.append(marker)
+        for (revision, strokes) in [(UInt64(2), history), (3, Array(history.dropLast())),
+                                    (4, history), (5, [background]), (6, [])] {
+            assertSame(cache.render(strokes: strokes, activeStroke: nil, key: key(revision)),
+                       render(strokes), "Commit/undo/redo/object deletion/clear must rebuild")
+        }
+        precondition(cache.rebuildCount == 6)
+        for scale: CGFloat in [1, 3] {
+            assertSame(cache.render(strokes: history, activeStroke: marker, key: key(7, scale: scale)),
+                       WatchBitmapRenderer.render(strokes: history + [marker], size: CGSize(width: 100, height: 100), scale: scale),
+                       "Zoom must rebuild at the new resolution")
+        }
+        let resized = CGSize(width: 120, height: 90)
+        assertSame(cache.render(strokes: history, activeStroke: nil, key: key(7, size: resized)),
+                   WatchBitmapRenderer.render(strokes: history, size: resized, scale: 2), "Resize must rebuild")
+        let otherCache = WatchBitmapRenderer.Cache()
+        let otherKey = WatchBitmapRenderer.CacheKey(documentID: ObjectIdentifier(otherCache),
+                                                    documentRevision: 7, size: resized, scale: 2)
+        assertSame(cache.render(strokes: [background], activeStroke: nil, key: otherKey),
+                   WatchBitmapRenderer.render(strokes: [background], size: resized, scale: 2),
+                   "Switching documents with equal revisions must invalidate")
+        print("PASS: cached/full replay parity, active cache reuse, cancel, history changes, zoom, resize, document identity")
         print("PASS: all brush dots and lines, orientation, opacity overlap, white pigment coverage, long marker opacity, eraser modes, empty canvas, invalid sizes, 2x resolution")
     }
 }
