@@ -94,6 +94,31 @@ struct RenderCheck {
                 }
             }
         }
+        // Verify the archive formula against rendered pixels, including repeated colors,
+        // white pigment, and source alpha. Allow for 8-bit intermediate rounding.
+        for tool in [DrawingInstrument.marker, .watercolor] {
+            for color in [SIMD4<Float>(254.0/255, 208.0/255, 48.0/255, 1),
+                          SIMD4<Float>(1.0/255, 199.0/255, 251.0/255, 1),
+                          SIMD4<Float>(1, 1, 1, 1), SIMD4<Float>(0.2, 0.7, 0.35, 0.5)] {
+                var brush = PencilStyle.initial(for: tool)
+                brush.width = 20
+                brush.color = color
+                let stroke = Stroke(points: [point], style: brush)
+                for count in [1, 2, 10] {
+                    let actual = pixel(render([background] + Array(repeating: stroke, count: count)), 80, 80)
+                    for channel in 0..<3 {
+                        var expected = Double(beforeWhite[channel]) / 255
+                        let source = Double(color[channel])
+                        let alpha = 0.7 * Double(color.w)
+                        for _ in 0..<count {
+                            expected = (1-alpha)*expected + alpha*(0.8*expected*source + 0.2*source)
+                        }
+                        precondition(abs(Double(actual[channel]) - expected*255) <= 4,
+                                     "Hybrid formula mismatch: \(tool), \(color), \(count), \(actual), expected \(expected*255)")
+                    }
+                }
+            }
+        }
         // Long marker paths are internally batched by Core Graphics. A single gesture
         // must keep the same opacity across those batches; separate gestures build ink.
         for color in [SIMD4<Float>(0.2, 0.7, 0.35, 1), SIMD4<Float>(1, 1, 1, 1),

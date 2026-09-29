@@ -9,22 +9,6 @@ enum WatchStrokeDrawing {
         return context.storage.commands
     }
 
-    // Used by the short settings preview; live artwork and export use WatchBitmapRenderer.
-    static func draw(_ stroke: Stroke, in context: inout GraphicsContext) {
-        for command in commands(for: stroke) {
-            var paint = context
-            paint.opacity *= command.opacity
-            if command.blendMode != .normal { paint.blendMode = command.blendMode }
-            let c = command.rgba
-            let color = Color(.sRGB, red: Double(c.x), green: Double(c.y),
-                              blue: Double(c.z), opacity: Double(c.w))
-            switch command.shape {
-            case let .fill(path): paint.fill(path, with: .color(color))
-            case let .stroke(path, style): paint.stroke(path, with: .color(color), style: style)
-            }
-        }
-    }
-
     private static func draw(_ stroke: Stroke, in context: inout WatchDrawingContext) {
         guard !stroke.points.isEmpty else { return }
         let ink = stroke.style.color
@@ -41,8 +25,8 @@ enum WatchStrokeDrawing {
         case .marker:
             // Composite marker coverage once, even when a long path is drawn in batches.
             paint.usesOpacityLayer = true
-            paint.opacity *= 0.38
-            paint.blendMode = translucentBlendMode(for: ink)
+            paint.opacity *= 0.7
+            paint.blendMode = .multiply
             if stroke.points.count == 1, let point = stroke.points.first {
                 let width = CGFloat(stroke.style.width)
                 paint.fill(Path(CGRect(x: CGFloat(point.position.x) - width / 2,
@@ -64,12 +48,6 @@ enum WatchStrokeDrawing {
                 lineWidth: CGFloat(stroke.style.width), lineCap: .round, lineJoin: .round))
             drawDotIfNeeded(stroke, ink: SIMD4<Float>(0, 0, 0, 1), in: &paint)
         }
-    }
-
-    private static func translucentBlendMode(for ink: SIMD4<Float>) -> GraphicsContext.BlendMode {
-        // Multiply leaves the destination unchanged for white. Composite white pigment
-        // normally while retaining the brush opacity; colored ink keeps its darkening behavior.
-        ink.x == 1 && ink.y == 1 && ink.z == 1 ? .normal : .multiply
     }
 
     private static func centerline(_ stroke: Stroke) -> Path {
@@ -143,8 +121,8 @@ enum WatchStrokeDrawing {
                                            width: r * 2, height: r * 2))
             }
             var layer = context
-            layer.blendMode = translucentBlendMode(for: ink)
-            layer.opacity *= 0.055
+            layer.blendMode = .multiply
+            layer.opacity *= 1 - pow(1 - 0.7, 1.0 / 6)
             layer.fill(wash, with: .color(ink))
         }
     }
