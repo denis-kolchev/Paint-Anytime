@@ -25,8 +25,8 @@ enum TutorialLesson {
         "Well done! Your own canvas and gallery will return. To repeat the tour, tap the three dots and choose Tutorial."
     ]
 
-    static func description(for step: Int) -> String {
-        guard descriptions.indices.contains(step - 1) else { return "" }
-        return L10n.text(descriptions[step - 1])
+    static func description(for step: TutorialStep) -> String {
+        guard descriptions.indices.contains(step.rawValue - 1) else { return "" }
+        return L10n.text(descriptions[step.rawValue - 1])
     }
 }

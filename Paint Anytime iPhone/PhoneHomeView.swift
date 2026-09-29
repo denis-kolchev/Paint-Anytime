@@ -1,4 +1,3 @@
-import Photos
 import SwiftUI
 
 struct PhoneHomeView: View {
@@ -15,7 +14,7 @@ struct PhoneHomeView: View {
 
             if photoInbox.needsPhotoPermission {
                 Button("Разрешить сохранение в Фото") {
-                    if [.denied, .restricted].contains(PHPhotoLibrary.authorizationStatus(for: .addOnly)) {
+                    if photoInbox.photoPermissionRequiresSettings {
                         if let settings = URL(string: UIApplication.openSettingsURLString) {
                             UIApplication.shared.open(settings)
                         }

@@ -3,19 +3,21 @@ import SwiftUI
 struct TutorialPlayerView: View {
     let folder: URL
     let onFinish: () -> Void
-    @StateObject private var tutorial = TutorialSession()
-    @StateObject private var controller = CanvasController(persistsPreferences: false)
-    @State private var page: Page = .canvas
+    @StateObject private var player: TutorialPlayerController
+    private var tutorial: TutorialSession { player.tutorial }
+    private var controller: CanvasController { player.canvas }
+    private var page: TutorialPlayerController.Page { player.page }
     @State private var isMovingCanvas = false
     @State private var canvasSize = CGSize.zero
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
-    @State private var savedDrawing: CanvasExport?
-    @State private var confirmsClear = false
-    @State private var didConfirmClear = false
-    @State private var saveError: String?
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
-    private enum Page { case canvas, tools, saved, menu, gallery }
+
+    init(folder: URL, onFinish: @escaping () -> Void) {
+        self.folder = folder
+        self.onFinish = onFinish
+        _player = StateObject(wrappedValue: TutorialPlayerController(folder: folder))
+    }
 
     var body: some View {
         let _ = TutorialDebug.trace("player.body", "page=\(page) \(tutorial.debugState)")
@@ -38,8 +40,7 @@ struct TutorialPlayerView: View {
                             }
                             if page == .gallery {
                                 SavedDrawingsView(tutorial: tutorial, galleryFolder: folder, onClose: {
-                                    page = .canvas
-                                    tutorial.record(.returnedToCanvas)
+                                    player.closeGallery()
                                 }, onEditDrawing: { _ in })
                             }
                         }
@@ -49,7 +50,7 @@ struct TutorialPlayerView: View {
                     }
                     .ignoresSafeArea()
 
-                    if page == .saved, let savedDrawing {
+                    if page == .saved, let savedDrawing = player.savedDrawing {
                         SavedDrawingView(drawing: savedDrawing, photoTransferStatus: "", canRetryPhotoTransfer: false,
                                          tutorial: tutorial)
                             .background(.black)
@@ -58,8 +59,7 @@ struct TutorialPlayerView: View {
                     if page == .menu {
                         List {
                             Button {
-                                page = .gallery
-                                tutorial.record(.openedGallery)
+                                player.openGallery()
                             } label: {
                                 Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
                             }
@@ -68,12 +68,11 @@ struct TutorialPlayerView: View {
                     }
                 }
                 .toolbar {
-                    if page == .canvas && tutorial.permits([2]) {
+                    if page == .canvas && tutorial.permits([.openTools]) {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 TutorialDebug.trace("tools.tap", tutorial.debugState)
-                                page = .tools
-                                tutorial.record(.openedTools)
+                                player.openTools()
                             } label: {
                                 ToolIcon(instrument: controller.pencilStyle.instrument).frame(width: 18, height: 18)
                             }
@@ -83,12 +82,11 @@ struct TutorialPlayerView: View {
                             .trackCanvasControl(.tools, frames: $controls)
                         }
                     }
-                    if (page == .tools && tutorial.permits([9])) || (page == .canvas && tutorial.permits([11])) {
+                    if (page == .tools && tutorial.permits([.reedStrokes])) || (page == .canvas && tutorial.permits([.panCanvas])) {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 if page == .tools {
-                                    page = .canvas
-                                    tutorial.record(.closedTools)
+                                    player.closeTools()
                                 } else {
                                     isMovingCanvas = false
                                     tutorial.record(.finishedCamera)
@@ -103,7 +101,7 @@ struct TutorialPlayerView: View {
                             .trackCanvasControl(.tools, frames: $controls)
                         }
                     }
-                    if page == .canvas && tutorial.permits([12]) {
+                    if page == .canvas && tutorial.permits([.history]) {
                         ToolbarItemGroup(placement: .bottomBar) {
                             // Keep the same four slots as the regular canvas toolbar.
                             Button {} label: { BroomIcon() }
@@ -114,8 +112,7 @@ struct TutorialPlayerView: View {
                                 .accessibilityHidden(true)
                             Spacer(minLength: 0)
                             Button {
-                                controller.undo()
-                                tutorial.record(.history)
+                                player.undo()
                             } label: { Image(systemName: "arrow.uturn.backward") }
                             .disabled(!controller.canUndo)
                             .watchToolbarButtonStyle()
@@ -123,8 +120,7 @@ struct TutorialPlayerView: View {
                             .trackCanvasControl(.undo, frames: $controls)
                             Spacer(minLength: 0)
                             Button {
-                                controller.redo()
-                                tutorial.record(.history)
+                                player.redo()
                             } label: { Image(systemName: "arrow.uturn.forward") }
                             .disabled(!controller.canRedo)
                             .watchToolbarButtonStyle()
@@ -139,41 +135,39 @@ struct TutorialPlayerView: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                    if page == .canvas && tutorial.permits([13]) {
+                    if page == .canvas && tutorial.permits([.saveDrawing]) {
                         ToolbarItem(placement: .bottomBar) {
                             HStack {
                                 Spacer()
-                                Button(action: save) { Image(systemName: "square.and.arrow.down") }
+                                Button { player.save(size: canvasSize, scale: displayScale) } label: { Image(systemName: "square.and.arrow.down") }
                                     .watchToolbarButtonStyle()
                                     .accessibilityLabel(L10n.text("Save drawing"))
                                     .trackCanvasControl(.save, frames: $controls)
                             }
                         }
                     }
-                    if page == .saved && tutorial.permits([14]) {
+                    if page == .saved && tutorial.permits([.shareDrawing]) {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
-                                page = .canvas
-                                tutorial.record(.closedSave)
+                                player.closeSavedDrawing()
                             } label: { Image(systemName: "xmark") }
                             .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Back"))
                         }
                     }
-                    if page == .canvas && tutorial.permits([15]) {
+                    if page == .canvas && tutorial.permits([.openGallery]) {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button { page = .menu; tutorial.activity() } label: { Image(systemName: "ellipsis") }
+                            Button { player.openMenu() } label: { Image(systemName: "ellipsis") }
                                 .watchToolbarButtonStyle()
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
                         }
                     }
-                    if page == .canvas && tutorial.permits([19]) {
+                    if page == .canvas && tutorial.permits([.clearCanvas]) {
                         ToolbarItem(placement: .bottomBar) {
                             HStack {
                                 Button {
-                                    tutorial.pauseReminders()
-                                    confirmsClear = true
+                                    player.requestClear()
                                 } label: { BroomIcon() }
                                 .watchToolbarButtonStyle()
                                 .accessibilityLabel(L10n.text("Clear canvas"))
@@ -195,13 +189,7 @@ struct TutorialPlayerView: View {
         .background(Color.black.ignoresSafeArea())
         .tutorialToolbarBackground(hidden: tutorial.showsInstruction)
         .onAppear {
-            if !tutorial.isActive {
-                // Carry the color and width taught earlier into the new brush, without changing user preferences.
-                controller.setSynchronizeWidth(true)
-                controller.setSynchronizeColor(true)
-                tutorial.start()
-            }
-            else { tutorial.resumeReminders() }
+            player.startOrResume()
         }
         .onChange(of: tutorial.step) { _, _ in
             controls = [:]
@@ -212,46 +200,25 @@ struct TutorialPlayerView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             TutorialDebug.trace("player.scenePhase", "phase=\(phase)")
-            if phase == .active { tutorial.resumeReminders() }
-            else { tutorial.pauseReminders(); controller.cancelStroke() }
+            player.setActive(phase == .active)
         }
         .onDisappear {
             tutorial.pauseReminders()
         }
-        .fullScreenCover(isPresented: $confirmsClear, onDismiss: {
-            tutorial.resumeReminders()
-            if didConfirmClear {
-                didConfirmClear = false
-                controller.clear()
-                tutorial.record(.cleared)
-            }
+        .fullScreenCover(isPresented: $player.confirmsClear, onDismiss: {
+            player.didDismissClearConfirmation()
         }) {
             DestructiveConfirmationView(title: L10n.text("Clear the canvas?"), confirmTitle: L10n.text("Clear")) {
-                confirmsClear = false
+                player.confirmsClear = false
             } onConfirm: {
-                didConfirmClear = true
-                confirmsClear = false
+                player.confirmClear()
             }
         }
         .alert(L10n.text("Could not save"), isPresented: Binding(
-            get: { saveError != nil }, set: { if !$0 { saveError = nil; tutorial.resumeReminders() } }
+            get: { player.saveError != nil }, set: { if !$0 { player.dismissSaveError() } }
         )) {
-            Button(L10n.text("OK"), role: .cancel) { saveError = nil; tutorial.resumeReminders() }
-        } message: { Text(saveError ?? "") }
-    }
-
-    private func save() {
-        do {
-            savedDrawing = try CanvasExportStore.save(strokes: controller.document.strokes,
-                                                      size: canvasSize, scale: displayScale, in: folder)
-            controller.markSaved()
-            // Training never queues files to the real iPhone photo library.
-            page = .saved
-            tutorial.record(.saved)
-        } catch {
-            tutorial.pauseReminders()
-            saveError = error.localizedDescription
-        }
+            Button(L10n.text("OK"), role: .cancel) { player.dismissSaveError() }
+        } message: { Text(player.saveError ?? "") }
     }
 }
 
