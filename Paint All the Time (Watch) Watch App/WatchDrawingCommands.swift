@@ -10,6 +10,7 @@ struct WatchDrawingCommand {
     let rgba: SIMD4<Float>
     let opacity: Double
     let blendMode: GraphicsContext.BlendMode
+    let usesOpacityLayer: Bool
 }
 
 struct WatchDrawingContext {
@@ -22,6 +23,7 @@ struct WatchDrawingContext {
     let storage = Storage()
     var opacity = 1.0
     var blendMode: GraphicsContext.BlendMode = .normal
+    var usesOpacityLayer = false
 
     func fill(_ path: Path, with shading: Shading) {
         append(.fill(path), shading)
@@ -34,7 +36,8 @@ struct WatchDrawingContext {
     private func append(_ shape: WatchDrawingCommand.Shape, _ shading: Shading) {
         if case let .color(rgba) = shading {
             storage.commands.append(WatchDrawingCommand(shape: shape, rgba: rgba,
-                                                        opacity: opacity, blendMode: blendMode))
+                                                        opacity: opacity, blendMode: blendMode,
+                                                        usesOpacityLayer: usesOpacityLayer))
         }
     }
 }
@@ -63,12 +66,18 @@ enum WatchBitmapRenderer {
                 context.saveGState()
                 let c = command.rgba
                 let color = CGColor(colorSpace: space, components: [
-                    CGFloat(c.x), CGFloat(c.y), CGFloat(c.z), CGFloat(c.w)])!
+                    CGFloat(c.x), CGFloat(c.y), CGFloat(c.z), command.usesOpacityLayer ? 1 : CGFloat(c.w)])!
                 context.setFillColor(color)
                 context.setStrokeColor(color)
                 context.setAlpha(command.opacity)
                 if command.blendMode == .multiply { context.setBlendMode(.multiply) }
                 else if command.blendMode == .destinationOut { context.setBlendMode(.destinationOut) }
+                if command.usesOpacityLayer {
+                    // Core Graphics may split long stroked paths into overlapping batches.
+                    // Draw those batches opaquely, then composite their combined coverage once.
+                    context.setAlpha(command.opacity * Double(c.w))
+                    context.beginTransparencyLayer(auxiliaryInfo: nil)
+                }
                 switch command.shape {
                 case let .fill(path):
                     context.addPath(path.cgPath)
@@ -81,6 +90,7 @@ enum WatchBitmapRenderer {
                     context.addPath(path.cgPath)
                     context.strokePath()
                 }
+                if command.usesOpacityLayer { context.endTransparencyLayer() }
                 context.restoreGState()
             }
         }

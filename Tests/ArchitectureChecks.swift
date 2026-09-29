@@ -4,12 +4,31 @@ import Foundation
 @main
 struct ArchitectureChecks {
     @MainActor static func main() throws {
+        let white = SIMD4<Float>(1, 1, 1, 1)
+        var whiteStyle = PencilStyle()
+        whiteStyle.color = white
+        for version in ["1.0", "1.1.0", "2.0"] {
+            precondition(AppReleaseFeatures(version: version).availableStyle(whiteStyle).color == white,
+                         "White must remain selectable regardless of tool release restrictions")
+        }
+        for (version, enabled) in [("1", false), ("1.0", false), ("1.0.9", false),
+                                   ("1.1", true), ("1.1.0", true), ("1.2", true),
+                                   ("1.10", true), ("2.0", true), ("0.9", false)] {
+            let features = AppReleaseFeatures(version: version)
+            precondition(features.showsPhotoTransferControls == enabled, "Photo transfer threshold: \(version)")
+            for tool in [DrawingInstrument.pencil, .crayon, .watercolor] {
+                precondition(features.allows(tool) == enabled, "Tool threshold: \(version), \(tool)")
+            }
+            precondition(features.allows(.monoline) && features.allows(.eraser))
+        }
         let suite = "PaintArchitectureChecks.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let canvas = CanvasController(defaults: defaults)
         var notifications = 0
         let subscription = canvas.objectWillChange.sink { notifications += 1 }
+        canvas.pencilStyle.color = white
+        canvas.setSynchronizeColor(true)
         canvas.pencilStyle.width = 17
         canvas.setSynchronizeWidth(true)
         canvas.selectInstrument(.eraser)
@@ -24,11 +43,13 @@ struct ArchitectureChecks {
         tutorial.flushStylePreferences()
         precondition(CanvasController(defaults: defaults).pencilStyle == canvas.pencilStyle)
         canvas.selectInstrument(.monoline)
+        precondition(canvas.pencilStyle.color == white, "White must survive tool switching and synchronization")
         let start = PointerSample(position: SIMD2(10, 10), pressure: 1, timestamp: 0)
         let end = PointerSample(position: SIMD2(30, 30), pressure: 1, timestamp: 1)
         canvas.beginStroke(at: start)
         canvas.endStroke(at: end)
         precondition(canvas.document.strokes.count == 1 && canvas.canUndo)
+        precondition(canvas.document.strokes.first?.style.color == white)
         let document = canvas.document
         canvas.undo()
         precondition(canvas.document.strokes.isEmpty && canvas.canRedo)

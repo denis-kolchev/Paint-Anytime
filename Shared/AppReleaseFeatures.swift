@@ -6,28 +6,23 @@ struct AppReleaseFeatures {
         version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
     )
 
-    let includesSecondReleaseTools: Bool
+    let includesVersion11Tools: Bool
     let showsPhotoTransferControls: Bool
 
     init(version: String) {
-        let majorVersion = Int(version.split(separator: ".").first ?? "") ?? 1
-        includesSecondReleaseTools = majorVersion >= 2
-        showsPhotoTransferControls = majorVersion >= 2
+        let components = version.split(separator: ".", omittingEmptySubsequences: false)
+        let majorVersion = components.first.flatMap { Int($0) } ?? 1
+        let minorVersion = components.count > 1 ? Int(components[1]) ?? 0 : 0
+        let isVersion11OrLater = majorVersion > 1 || (majorVersion == 1 && minorVersion >= 1)
+        includesVersion11Tools = isVersion11OrLater
+        showsPhotoTransferControls = isVersion11OrLater
     }
 
     func allows(_ instrument: DrawingInstrument) -> Bool {
         switch instrument {
-        case .pencil, .crayon, .watercolor: includesSecondReleaseTools
+        case .pencil, .crayon, .watercolor: includesVersion11Tools
         default: true
         }
-    }
-
-    func allowsColor(_ color: SIMD4<Float>) -> Bool {
-        includesSecondReleaseTools || !(color.x == 1 && color.y == 1 && color.z == 1)
-    }
-
-    func availableColor(_ color: SIMD4<Float>) -> SIMD4<Float> {
-        allowsColor(color) ? color : SIMD4(0, 0, 0, color.w)
     }
 
     /// Apply only to the active tool; existing drawing strokes retain their appearance.
@@ -37,7 +32,6 @@ struct AppReleaseFeatures {
             result.instrument = .monoline
             result.width = min(result.instrument.maximumWidth, max(1, result.width))
         }
-        result.color = availableColor(result.color)
         return result
     }
 }

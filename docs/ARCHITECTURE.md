@@ -40,3 +40,7 @@ Run `bash Tests/check-architecture.sh` for preference round trips, observation f
 Run `bash Tests/check-tutorial.sh` for the full lesson sequence, exercise prerequisites, delayed-transition cancellation and resumption, workspace isolation, repeated tours, preparation failures, and onboarding persistence.
 
 Run `bash Tests/check-photo-inbox.sh` for incoming file ownership, serial processing, permission handling, retries, and reception, read, and cleanup failures. It uses a temporary inbox and a fake photo-library writer.
+
+## Marker compositing
+
+Live artwork and PNG export both use `WatchBitmapRenderer`. Marker commands isolate coverage in a transparency layer before applying brush opacity and blending, preventing Core Graphics path batches from darkening overlaps within a single long gesture. Separate strokes still build color. The SwiftUI drawing helper is used only for the short settings preview.

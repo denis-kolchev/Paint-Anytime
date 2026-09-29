@@ -68,6 +68,51 @@ struct RenderCheck {
             let result = render([stroke])
             precondition(pixel(result, 100, 60)[0] < 250, "Missing line for \(tool)")
         }
-        print("PASS: all brush dots and lines, orientation, opacity overlap, eraser modes, empty canvas, invalid sizes, 2x resolution")
+        // White must paint pigment over existing ink, including translucent brushes.
+        var backgroundStyle = PencilStyle()
+        backgroundStyle.width = 40
+        backgroundStyle.color = SIMD4(0.1, 0.2, 0.3, 1)
+        let background = Stroke(points: [sample(20, 40), sample(80, 40)], style: backgroundStyle)
+        let beforeWhite = pixel(render([background]), 80, 80)
+        for tool in DrawingInstrument.allCases where tool != .eraser {
+            var whiteStyle = PencilStyle.initial(for: tool)
+            whiteStyle.width = 12
+            whiteStyle.color = SIMD4(1, 1, 1, 1)
+            for points in [[sample(40, 40)], [sample(20, 40), sample(80, 40)]] {
+                let whiteStroke = Stroke(points: points, style: whiteStyle)
+                let result = pixel(render([background, whiteStroke]), 80, 80)
+                precondition((0..<3).allSatisfy { result[$0] > beforeWhite[$0] + 5 },
+                             "White must lighten existing ink: \(tool), \(points.count) points, \(result)")
+                precondition(result[3] == 255, "White paint must not erase alpha")
+                if [.monoline, .pen, .fountainPen, .reed].contains(tool) {
+                    precondition(result.prefix(3).allSatisfy { $0 == 255 }, "Opaque white must cover ink")
+                }
+                if [.marker, .watercolor].contains(tool) {
+                    precondition(result[0] < 255, "White translucent brushes must retain their opacity")
+                    let twice = pixel(render([background, whiteStroke, whiteStroke]), 80, 80)
+                    precondition(twice[0] > result[0], "Repeated white strokes must build coverage")
+                }
+            }
+        }
+        // Long marker paths are internally batched by Core Graphics. A single gesture
+        // must keep the same opacity across those batches; separate gestures build ink.
+        for color in [SIMD4<Float>(0.2, 0.7, 0.35, 1), SIMD4<Float>(1, 1, 1, 1),
+                      SIMD4<Float>(0.2, 0.7, 0.35, 0.5)] {
+            var markerStyle = PencilStyle.initial(for: .marker)
+            markerStyle.width = 20
+            markerStyle.color = color
+            let short = Stroke(points: [sample(20, 40), sample(80, 40)], style: markerStyle)
+            let reference = pixel(render([background, short]), 100, 80)
+            for count in [100, 500, 1000, 2000] {
+                let points = (0..<count).map { sample($0 % 2 == 0 ? 20 : 80, 40) }
+                let long = Stroke(points: points, style: markerStyle)
+                let actual = pixel(render([background, long]), 100, 80)
+                precondition(zip(reference, actual).allSatisfy { abs(Int($0) - Int($1)) <= 1 },
+                             "One marker gesture must not accumulate opacity: \(count), \(reference) -> \(actual)")
+            }
+            let separate = pixel(render([background, short, short]), 100, 80)
+            precondition(separate != reference, "Separate marker gestures must still build coverage")
+        }
+        print("PASS: all brush dots and lines, orientation, opacity overlap, white pigment coverage, long marker opacity, eraser modes, empty canvas, invalid sizes, 2x resolution")
     }
 }

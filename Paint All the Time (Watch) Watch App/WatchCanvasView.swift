@@ -193,18 +193,3 @@ struct WatchCanvasView: View {
                       pressure: 1, timestamp: time.timeIntervalSinceReferenceDate)
     }
 }
-
-// Shared by the live canvas and export; never includes controls or system chrome.
-struct WatchCanvasArtwork: View {
-    let strokes: [Stroke]
-
-    var body: some View {
-        Canvas { context, size in
-            // Isolate ink from the paper: destinationOut must erase only ink.
-            context.drawLayer { layer in
-                for stroke in strokes { WatchStrokeDrawing.draw(stroke, in: &layer) }
-            }
-        }
-        .background(.white)
-    }
-}

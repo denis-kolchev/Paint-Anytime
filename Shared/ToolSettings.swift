@@ -89,8 +89,7 @@ final class ToolSettings: ObservableObject {
         }
         let decoded = preferences.styles
         savedStyles = decoded
-        var restoredSynchronization = preferences.synchronization
-        restoredSynchronization.sharedColor = AppReleaseFeatures.current.availableColor(restoredSynchronization.sharedColor)
+        let restoredSynchronization = preferences.synchronization
         let savedInstrument = preferences.instrument
         let instrument = AppReleaseFeatures.current.allows(savedInstrument) ? savedInstrument : .monoline
         var restored = decoded[instrument.rawValue] ?? .initial(for: instrument)

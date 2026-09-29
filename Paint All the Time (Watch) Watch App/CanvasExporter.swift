@@ -7,11 +7,9 @@ enum CanvasExporter {
     @MainActor
     static func save(strokes: [Stroke], size: CGSize, scale: CGFloat, in folder: URL? = nil) throws -> CanvasExport {
         guard size.width > 0, size.height > 0 else { throw ExportError.render }
-        let renderer = ImageRenderer(content: WatchCanvasArtwork(strokes: strokes)
-            .frame(width: size.width, height: size.height))
-        renderer.scale = scale
-        renderer.isOpaque = true
-        guard let image = renderer.cgImage else { throw ExportError.render }
+        // Export exactly the same compositing as the live canvas, including long marker paths.
+        guard let image = WatchBitmapRenderer.render(strokes: strokes, size: size, scale: scale)
+        else { throw ExportError.render }
         let now = Date()
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
