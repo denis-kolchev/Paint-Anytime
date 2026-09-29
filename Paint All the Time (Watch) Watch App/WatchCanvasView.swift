@@ -115,9 +115,14 @@ struct WatchCanvasView: View {
                 guard tutorial.allowsCanvasZoom else { return }
                 guard acceptsInput && !isDragging && controller.activeStroke == nil else { return }
                 guard value != crownZoom else { return }
-                let wasSnapped = zoom == 1
+                let previousZoom = zoom
+                let wasSnapped = previousZoom == 1
                 isMovingCanvas = true
                 crownZoom = value
+                // Keep the canvas point at the viewport center fixed, including
+                // when entering or leaving the 100% zoom snap range.
+                let ratio = zoom / previousZoom
+                offset = CGSize(width: offset.width * ratio, height: offset.height * ratio)
                 tutorial.changedZoom()
                 if zoom == 1 && !wasSnapped { WKInterfaceDevice.current().play(.click) }
             }
