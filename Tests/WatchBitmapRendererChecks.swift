@@ -187,6 +187,84 @@ struct RenderCheck {
         assertSame(cache.render(strokes: [background], activeStroke: nil, key: otherKey),
                    WatchBitmapRenderer.render(strokes: [background], size: resized, scale: 2),
                    "Switching documents with equal revisions must invalidate")
+        // Feed a single gesture in uneven batches, including a tap becoming a line,
+        // sharp turns, crossings, retracing, and travel outside the canvas.
+        for tool in [DrawingInstrument.marker, .watercolor] {
+            for resolution: CGFloat in [1, 2, 3] {
+                var brush = PencilStyle.initial(for: tool)
+                brush.width = 13
+                brush.color = SIMD4(0.25, 0.7, 0.9, 0.65)
+                let gestureCache = WatchBitmapRenderer.Cache()
+                let gestureKey = WatchBitmapRenderer.CacheKey(documentID: ObjectIdentifier(gestureCache),
+                    documentRevision: 1, size: CGSize(width: 100, height: 100), scale: resolution)
+                let points = [sample(20, 20), sample(50, 20), sample(50, 60), sample(20, 20),
+                              sample(70, 70), sample(20, 20), sample(-15, 35), sample(120, 75),
+                              sample(40, 40), sample(40, 40), sample(80, 20)]
+                for length in [1, 2, 3, 5, 8, 10, 11] {
+                    let gesture = Stroke(points: Array(points.prefix(length)), style: brush)
+                    let actual = gestureCache.render(strokes: history, activeStroke: gesture,
+                                                     key: gestureKey, activeStrokeID: 1)
+                    let expected = WatchBitmapRenderer.render(strokes: history + [gesture],
+                                                              size: gestureKey.size, scale: resolution)
+                    assertSame(actual, expected, "Incremental/full parity: \(tool), \(length), \(resolution)x")
+                    precondition(gestureCache.activeCoverageBuildCount == 1, "Appending must reuse coverage")
+                }
+                let gesture = Stroke(points: points, style: brush)
+                let countBefore = gestureCache.activeRasterizedPrimitiveCount
+                _ = gestureCache.render(strokes: history, activeStroke: gesture, key: gestureKey, activeStrokeID: 1)
+                precondition(gestureCache.activeRasterizedPrimitiveCount == countBefore,
+                             "An unchanged gesture must not rasterize again")
+                // A new gesture can arrive without SwiftUI displaying the intervening nil.
+                let replacement = Stroke(points: [points[0], points[1], sample(30, 65)], style: brush)
+                assertSame(gestureCache.render(strokes: history, activeStroke: replacement,
+                                               key: gestureKey, activeStrokeID: 2),
+                           WatchBitmapRenderer.render(strokes: history + [replacement], size: gestureKey.size, scale: resolution),
+                           "New gesture identity must reset coverage")
+                precondition(gestureCache.activeCoverageBuildCount == 2)
+                assertSame(gestureCache.render(strokes: history, activeStroke: nil, key: gestureKey),
+                           WatchBitmapRenderer.render(strokes: history, size: gestureKey.size, scale: resolution),
+                           "Cancel must discard active coverage")
+            }
+        }
+        // A long gesture must process only new samples, not its existing prefix.
+        for tool in [DrawingInstrument.marker, .watercolor] {
+            var brush = PencilStyle.initial(for: tool)
+            brush.width = 16
+            func curve(_ index: Int) -> PointerSample {
+                let t = Float(index) * 0.025
+                return sample(50 + 30 * cos(t), 50 + 30 * sin(t))
+            }
+            var gesture = Stroke(points: (0..<1000).map(curve), style: brush)
+            let longCache = WatchBitmapRenderer.Cache()
+            let longKey = WatchBitmapRenderer.CacheKey(documentID: ObjectIdentifier(longCache),
+                documentRevision: 1, size: CGSize(width: 100, height: 100), scale: 2)
+            precondition(longCache.render(strokes: [], activeStroke: gesture, key: longKey, activeStrokeID: 1) != nil)
+            let before = longCache.activeRasterizedPrimitiveCount
+            for index in 1000..<1020 {
+                gesture.points.append(curve(index))
+                precondition(longCache.render(strokes: [], activeStroke: gesture, key: longKey, activeStrokeID: 1) != nil)
+            }
+            precondition(longCache.activeCoverageBuildCount == 1)
+            precondition(longCache.activeRasterizedPrimitiveCount - before <= 120,
+                         "A long gesture must not rasterize its old geometry again")
+            assertSame(longCache.render(strokes: [], activeStroke: gesture, key: longKey, activeStrokeID: 1),
+                       render([gesture]), "Long incremental gesture must match export")
+        }
+        // The endpoint overlaps the segment's antialiasing instead of leaving a seam.
+        var diagonalStyle = PencilStyle.initial(for: .marker)
+        diagonalStyle.width = 14
+        diagonalStyle.color = SIMD4(0, 0, 0, 1)
+        let a = SIMD2<Float>(20.25, 40.5)
+        let b = SIMD2<Float>(72.3, 65.7)
+        let diagonal = Stroke(points: [sample(a.x, a.y), sample(b.x, b.y)], style: diagonalStyle)
+        let diagonalImage = render([diagonal])
+        let direction = (b - a) / sqrt((b.x-a.x)*(b.x-a.x) + (b.y-a.y)*(b.y-a.y))
+        for step in -10...10 {
+            let p = b + direction * Float(step) * 0.5
+            let value = pixel(diagonalImage, Int(p.x * 2), Int(p.y * 2))[0]
+            precondition(abs(Int(value) - 77) <= 1, "Moving square cap must not have an internal seam")
+        }
+        print("PASS: incremental coverage, self-crossings, moving caps, batched samples, clipping, gesture identity")
         print("PASS: cached/full replay parity, active cache reuse, cancel, history changes, zoom, resize, document identity")
         print("PASS: all brush dots and lines, orientation, opacity overlap, white pigment coverage, long marker opacity, eraser modes, empty canvas, invalid sizes, 2x resolution")
     }

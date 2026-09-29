@@ -8,6 +8,7 @@ struct WatchRasterArtwork: View {
     let documentID: ObjectIdentifier
     let documentRevision: UInt64
     let activeStrokeRevision: UInt64
+    let activeStrokeID: UInt64
     let zoom: Double
     @Environment(\.displayScale) private var displayScale
 
@@ -16,7 +17,7 @@ struct WatchRasterArtwork: View {
         GeometryReader { geometry in
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
             RasterFrame(strokes: strokes, activeStroke: activeStroke,
-                        activeStrokeRevision: activeStrokeRevision,
+                        activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
                             scale: displayScale * max(1, zoom)))
@@ -27,6 +28,7 @@ struct WatchRasterArtwork: View {
         let strokes: [Stroke]
         let activeStroke: Stroke?
         let activeStrokeRevision: UInt64
+        let activeStrokeID: UInt64
         let key: WatchBitmapRenderer.CacheKey
 
         @State private var image: CGImage?
@@ -72,7 +74,7 @@ struct WatchRasterArtwork: View {
             TutorialDebug.trace("bitmap.render.enter", "strokes=\(strokes.count) size=\(key.size)")
             defer { TutorialDebug.trace("bitmap.render.exit") }
             let image = TutorialDebug.measure("bitmap.renderer") {
-                cache.render(strokes: strokes, activeStroke: activeStroke, key: key)
+                cache.render(strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
             }
             return image
         }

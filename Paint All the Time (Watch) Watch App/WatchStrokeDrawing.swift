@@ -108,15 +108,13 @@ enum WatchStrokeDrawing {
     }
 
     private static func watercolor(_ stroke: Stroke, ink: SIMD4<Float>, in context: inout WatchDrawingContext) {
-        let radius = Double(stroke.style.width) / 2
         let points = BrushGeometry.spacedPoints(for: stroke, spacing: max(0.5, stroke.style.width * 0.12))
         // Nested translucent washes produce a soft edge. Each wash is filled once;
         // separate strokes build color, without dark joints between input samples.
         for band in 0..<6 {
             var wash = Path()
-            let scale = 1 - Double(band) * 0.105
             for (index, position) in points.enumerated() {
-                let r = radius * scale * (0.92 + noise(index * 13) * 0.08)
+                let r = watercolorRadius(width: stroke.style.width, band: band, index: index)
                 wash.addEllipse(in: CGRect(x: Double(position.x) - r, y: Double(position.y) - r,
                                            width: r * 2, height: r * 2))
             }
@@ -125,6 +123,10 @@ enum WatchStrokeDrawing {
             layer.opacity *= 1 - pow(1 - 0.7, 1.0 / 6)
             layer.fill(wash, with: .color(ink))
         }
+    }
+
+    static func watercolorRadius(width: Float, band: Int, index: Int) -> Double {
+        Double(width) / 2 * (1 - Double(band) * 0.105) * (0.92 + noise(index * 13) * 0.08)
     }
 
     private static func noise(_ seed: Int) -> Double {

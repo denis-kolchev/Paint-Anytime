@@ -8,5 +8,6 @@ xcrun swiftc -parse-as-library \
   Shared/BrushGeometry.swift Shared/FountainPenGeometry.swift \
   "Paint All the Time (Watch) Watch App/WatchStrokeDrawing.swift" \
   "Paint All the Time (Watch) Watch App/WatchDrawingCommands.swift" \
+  "Paint All the Time (Watch) Watch App/WatchStrokeCoverage.swift" \
   Tests/WatchBitmapRendererChecks.swift -o "$check_dir/check"
 "$check_dir/check"

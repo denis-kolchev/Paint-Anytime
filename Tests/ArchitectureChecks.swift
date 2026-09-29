@@ -59,8 +59,12 @@ struct ArchitectureChecks {
         revisions.selectInstrument(.monoline)
         let initialRevision = revisions.documentRevision
         let initialActive = revisions.activeStrokeRevision
+        let initialGesture = revisions.activeStrokeID
         revisions.beginStroke(at: start)
+        let firstGesture = revisions.activeStrokeID
         revisions.continueStroke(at: end)
+        precondition(firstGesture != initialGesture && revisions.activeStrokeID == firstGesture,
+                     "Gesture identity must remain stable while appending")
         precondition(revisions.documentRevision == initialRevision,
                      "Active drawing must not invalidate committed artwork")
         precondition(revisions.activeStrokeRevision > initialActive)
@@ -77,6 +81,7 @@ struct ArchitectureChecks {
         revisions.markSaved()
         revisions.pencilStyle.width = 20
         revisions.beginStroke(at: start)
+        precondition(revisions.activeStrokeID != firstGesture, "A new gesture needs a new coverage cache")
         let activeBeforeCancel = revisions.activeStrokeRevision
         revisions.cancelStroke()
         precondition(revisions.documentRevision == unchanged)

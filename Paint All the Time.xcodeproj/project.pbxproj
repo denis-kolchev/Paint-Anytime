@@ -256,11 +256,6 @@
 			files = (
 			);
 		};
-		A10000060000000000000006 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */

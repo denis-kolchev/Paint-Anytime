@@ -18,6 +18,7 @@ final class CanvasController: ObservableObject {
     // Revisions make raster invalidation independent of the number of saved points.
     private(set) var documentRevision: UInt64 = 0
     private(set) var activeStrokeRevision: UInt64 = 0
+    private(set) var activeStrokeID: UInt64 = 0
     private(set) var document = CanvasDocument() {
         didSet { documentRevision &+= 1 }
     }
@@ -49,6 +50,7 @@ final class CanvasController: ObservableObject {
         if pencilStyle.instrument == .eraser && pencilStyle.eraserMode == .objects {
             documentBeforeErasing = document
         }
+        activeStrokeID &+= 1
         pencil.begin(at: sample, style: pencilStyle)
         activeStrokeRevision &+= 1
         eraseObjects(from: sample.position, to: sample.position)
