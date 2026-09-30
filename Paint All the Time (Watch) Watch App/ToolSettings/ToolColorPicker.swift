@@ -8,6 +8,9 @@ struct ToolColorPicker: View {
     let isEnabled: Bool
     let onSelect: (Int) -> Void
 
+    private var rowHeight: CGFloat { 30 }
+    private var swatchSize: CGFloat { 22 }
+
     var body: some View {
         VStack(spacing: 2) {
             Image(systemName: "chevron.up")
@@ -26,13 +29,13 @@ struct ToolColorPicker: View {
                             } label: {
                                 Circle()
                                     .fill(InkPreset.all[index].color)
-                                    .frame(width: 22, height: 22)
+                                    .frame(width: swatchSize, height: swatchSize)
                                     .overlay { Circle().strokeBorder(.gray.opacity(0.5), lineWidth: 1) }
                                     .padding(3)
                                     .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
                                                  : colorIndex == index ? 1 : 0.72)
                                     .animation(choiceAnimation, value: colorIndex)
-                                    .frame(width: 40, height: 30)
+                                    .frame(width: 40, height: rowHeight)
                                     .contentShape(Rectangle())
                             }
                             .buttonStyle(.borderless)
@@ -42,7 +45,7 @@ struct ToolColorPicker: View {
                             .id(index)
                         }
                     }
-                    .padding(.vertical, max(0, (geometry.size.height - 30) / 2))
+                    .padding(.vertical, max(0, (geometry.size.height - rowHeight) / 2))
                 }
                 .scrollIndicators(.hidden)
                 .scrollDisabled(true)
@@ -50,7 +53,7 @@ struct ToolColorPicker: View {
                     // The selection window stays fixed while swatches move beneath it.
                     Circle()
                         .strokeBorder(.white, lineWidth: 2)
-                        .frame(width: 28, height: 28)
+                        .frame(width: swatchSize + 6, height: swatchSize + 6)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }

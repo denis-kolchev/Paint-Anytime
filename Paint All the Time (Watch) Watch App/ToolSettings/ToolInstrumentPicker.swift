@@ -9,6 +9,8 @@ struct ToolInstrumentPicker: View {
     let isEnabled: Bool
     let onSelect: (DrawingInstrument) -> Void
 
+    private var rowHeight: CGFloat { 36 }
+
     var body: some View {
         VStack(spacing: 2) {
             Image(systemName: "chevron.up")
@@ -28,7 +30,7 @@ struct ToolInstrumentPicker: View {
                                         .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
                                                      : instrumentIndex == index ? 1 : 0.72)
                                         .animation(choiceAnimation, value: instrumentIndex)
-                                        .frame(width: 40, height: 36)
+                                        .frame(width: 40, height: rowHeight)
                                         .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.borderless)
@@ -38,14 +40,14 @@ struct ToolInstrumentPicker: View {
                                 .id(index)
                             }
                         }
-                        .padding(.vertical, max(0, (geometry.size.height - 36) / 2))
+                        .padding(.vertical, max(0, (geometry.size.height - rowHeight) / 2))
                     }
                     .scrollIndicators(.hidden)
                     .scrollDisabled(true)
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)
                             .strokeBorder(.white, lineWidth: 1.5)
-                            .frame(width: 36, height: 36)
+                            .frame(width: rowHeight, height: rowHeight)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }

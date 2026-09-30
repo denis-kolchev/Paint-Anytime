@@ -33,7 +33,7 @@ struct ToolSettingCarousel: View {
                                     .foregroundStyle(selection == setting ? .primary : .secondary)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.65)
-                                    .frame(width: 90, height: tutorial.isActive ? 26 : 30)
+                                    .frame(width: 90, height: 30)
                                     .contentShape(Rectangle())
                                     .tutorialHint(tutorial, steps: hintSteps(for: setting))
                             }

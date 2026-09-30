@@ -40,6 +40,8 @@ struct WatchWelcomeView: View {
             // A colorScheme environment override on a button only affects its
             // content; declare the scheme for the system bars here as well.
             .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
+            .toolbarBackground(onboarding.tutorialFolder != nil ? .hidden : .automatic,
+                               for: .navigationBar)
         }
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)

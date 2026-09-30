@@ -12,7 +12,7 @@ struct TutorialLessonView: View {
     var body: some View {
         TutorialHintLayout(maximumHeight: screenHeight * 0.32) {
             Text("\(completedLessons)/20")
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 8, weight: .medium))
                 .monospacedDigit()
                 .foregroundStyle(.white.opacity(0.65))
 
@@ -35,7 +35,7 @@ struct TutorialLessonView: View {
 
             // Measure the full copy independently of the scroll viewport.
             Text(TutorialLesson.compactInstruction(for: tutorial.step))
-                .font(.system(size: 12, weight: .medium))
+                .font(.system(size: 10, weight: .medium))
                 .fixedSize(horizontal: false, vertical: true)
                 .hidden()
                 .accessibilityHidden(true)
@@ -160,7 +160,7 @@ private struct TutorialInstructionText: View {
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
                     Text(text)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)

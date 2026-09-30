@@ -62,17 +62,29 @@ struct TutorialPlayerView: View {
                     }
 
                     if page == .menu {
-                        List {
-                            Button {
-                                player.openGallery()
-                            } label: {
-                                Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
-                                    .tutorialHint(tutorial, steps: [.openGallery])
+                        // This player fills the screen, so position menu content explicitly
+                        // below the clock instead of relying on List's navigation insets.
+                        VStack(spacing: 8) {
+                            Text(L10n.text("More"))
+                                .font(.headline)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                                .accessibilityAddTraits(.isHeader)
+                            ScrollView {
+                                Button {
+                                    player.openGallery()
+                                } label: {
+                                    Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
+                                        .frame(maxWidth: .infinity, minHeight: 44)
+                                        .tutorialHint(tutorial, steps: [.openGallery])
+                                }
+                                .watchActionButtonStyle()
                             }
                         }
+                        .padding(.horizontal, 10)
+                        .padding(.top, 34)
                         .padding(.bottom, hintReservedHeight)
-                        .navigationTitle(L10n.text("More"))
-                        .toolbarTitleDisplayMode(.inline)
+                        .navigationTitle("")
                     }
                 }
                 .overlay(alignment: .bottom) {

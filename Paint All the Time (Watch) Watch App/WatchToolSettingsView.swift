@@ -138,8 +138,7 @@ struct WatchToolSettingsView: View {
                             .accessibilityHidden(selection != .color)
 
                         ToolEraserModePicker(selectedMode: controller.pencilStyle.eraserMode,
-                                            isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue),
-                                            isCompact: tutorial.isActive) { mode in
+                                            isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue)) { mode in
                             guard tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue) else { return }
                             controller.pencilStyle.eraserMode = mode
                             crownFocused = true
@@ -152,8 +151,7 @@ struct WatchToolSettingsView: View {
 
                         ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
                                              isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
-                                             onAdjust: { adjustDirection(by: $0) },
-                                             isCompact: tutorial.isActive)
+                                             onAdjust: { adjustDirection(by: $0) })
                             .frame(width: 40)
                             .opacity(selection == .direction ? 1 : 0)
                             .scaleEffect(reduceMotion || selection == .direction ? 1 : 0.35)
@@ -172,7 +170,7 @@ struct WatchToolSettingsView: View {
             ToolSettingCarousel(availableSettings: availableSettings, selection: selection,
                                 isEnabled: { tutorial.allowsToolPage($0.rawValue) }, onSelect: select,
                                 tutorial: tutorial)
-                .frame(height: tutorial.isActive ? 26 : 30)
+                .frame(height: 30)
         }
         .padding(.horizontal, 10)
         // Let tutorial controls use the upper safe area instead of reserving the full toolbar height.
