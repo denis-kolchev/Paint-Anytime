@@ -10,20 +10,17 @@ struct TutorialLessonView: View {
     @State private var didConfirmFinish = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("\(completedLessons)/20")
-                    .font(.system(size: 10, weight: .medium))
-                    .monospacedDigit()
-                    .foregroundStyle(.white.opacity(0.65))
+        TutorialHintLayout(maximumHeight: screenHeight * 0.32) {
+            Text("\(completedLessons)/20")
+                .font(.system(size: 10, weight: .medium))
+                .monospacedDigit()
+                .foregroundStyle(.white.opacity(0.65))
 
-                TutorialInstructionText(
-                    text: TutorialLesson.compactInstruction(for: tutorial.step),
-                    isPaused: confirmsFinish
-                )
-                .id(tutorial.step)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            TutorialInstructionText(
+                text: TutorialLesson.compactInstruction(for: tutorial.step),
+                isPaused: confirmsFinish
+            )
+            .id(tutorial.step)
 
             Button(role: .destructive) {
                 tutorial.pauseReminders()
@@ -35,11 +32,14 @@ struct TutorialLessonView: View {
             }
             .watchToolbarButtonStyle()
             .accessibilityLabel("Finish tutorial")
+
+            // Measure the full copy independently of the scroll viewport.
+            Text(TutorialLesson.compactInstruction(for: tutorial.step))
+                .font(.system(size: 12, weight: .medium))
+                .fixedSize(horizontal: false, vertical: true)
+                .hidden()
+                .accessibilityHidden(true)
         }
-        .padding(.leading, 18)
-        .padding(.trailing, 8)
-        .padding(.vertical, 10)
-        .frame(height: screenHeight * 0.32)
         .background(.regularMaterial, in: cardShape)
         .overlay {
             cardShape.stroke(.white.opacity(0.16), lineWidth: 0.5)
@@ -75,9 +75,63 @@ struct TutorialLessonView: View {
 
     private let edgeGap: CGFloat = 10
 
-    // Reserve the same share of the display for every lesson, including on SE.
-    private var cardShape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: screenWidth * 0.09, style: .continuous)
+    private var cardShape: TutorialHintShape {
+        TutorialHintShape(expandedRadius: screenWidth * 0.09)
+    }
+}
+
+private struct TutorialHintShape: Shape {
+    let expandedRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        // Progress and one instruction line use the original notification capsule.
+        let radius = rect.height <= 52 ? rect.height / 2 : expandedRadius
+        return RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect)
+    }
+}
+
+/// Shrink to the actual text; only overflowing lessons use the full height budget.
+private struct TutorialHintLayout: Layout {
+    let maximumHeight: CGFloat
+    private let leadingInset: CGFloat = 18
+    private let trailingInset: CGFloat = 8
+    private let verticalInset: CGFloat = 10
+    private let buttonDiameter: CGFloat = 32
+    private let buttonSpacing: CGFloat = 8
+    private let textSpacing: CGFloat = 3
+
+    private func textWidth(_ width: CGFloat) -> CGFloat {
+        max(1, width - leadingInset - trailingInset - buttonDiameter - buttonSpacing)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 180
+        guard subviews.count == 4 else { return CGSize(width: width, height: 0) }
+        let textProposal = ProposedViewSize(width: textWidth(width), height: nil)
+        let textHeight = subviews[0].sizeThatFits(textProposal).height + textSpacing
+            + subviews[3].sizeThatFits(textProposal).height
+        let naturalHeight = max(buttonDiameter + trailingInset * 2,
+                                textHeight + verticalInset * 2)
+        return CGSize(width: width, height: min(naturalHeight, maximumHeight))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 4 else { return }
+        let width = textWidth(bounds.width)
+        let textProposal = ProposedViewSize(width: width, height: nil)
+        let progressHeight = subviews[0].sizeThatFits(textProposal).height
+        let instructionHeight = min(subviews[3].sizeThatFits(textProposal).height,
+                                    max(1, bounds.height - verticalInset * 2 - progressHeight - textSpacing))
+        let top = bounds.midY - (progressHeight + textSpacing + instructionHeight) / 2
+        subviews[0].place(at: CGPoint(x: bounds.minX + leadingInset, y: top),
+                          anchor: .topLeading, proposal: textProposal)
+        subviews[1].place(at: CGPoint(x: bounds.minX + leadingInset, y: top + progressHeight + textSpacing),
+                          anchor: .topLeading,
+                          proposal: ProposedViewSize(width: width, height: instructionHeight))
+        subviews[2].place(at: CGPoint(x: bounds.maxX - trailingInset - buttonDiameter / 2, y: bounds.midY),
+                          anchor: .center,
+                          proposal: ProposedViewSize(width: buttonDiameter, height: buttonDiameter))
+        subviews[3].place(at: bounds.origin, anchor: .topLeading, proposal: textProposal)
     }
 }
 
