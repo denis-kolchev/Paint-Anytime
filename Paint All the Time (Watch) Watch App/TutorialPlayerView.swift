@@ -184,7 +184,8 @@ struct TutorialPlayerView: View {
             if tutorial.isActive {
                 GeometryReader { geometry in
                     TutorialLessonView(tutorial: tutorial, onFinish: onFinish,
-                                       screenWidth: geometry.size.width)
+                                       screenWidth: geometry.size.width,
+                                       screenHeight: geometry.size.height)
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: instructionAlignment)
                 }
                 .ignoresSafeArea(.container, edges: .vertical)
