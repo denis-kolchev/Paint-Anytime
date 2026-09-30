@@ -38,6 +38,7 @@ struct WatchAppSettingsView: View {
             }
             .labelStyle(CenteredMenuLabelStyle())
             .navigationTitle(L10n.text("More"))
+            .toolbarTitleDisplayMode(.inline)
         }
     }
 

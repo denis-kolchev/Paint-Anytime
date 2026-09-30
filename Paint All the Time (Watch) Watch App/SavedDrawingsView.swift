@@ -2,6 +2,7 @@ import SwiftUI
 import WatchKit
 
 struct SavedDrawingsView: View {
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @ObservedObject var tutorial = TutorialSession.inactive
     var galleryFolder: URL? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
@@ -45,6 +46,7 @@ struct SavedDrawingsView: View {
                         galleryGrid(spacing: spacing, width: width, thumbnailPixels: thumbnailPixels)
                             .reportLegacyScrollPosition()
                     }
+                    .padding(.bottom, tutorialHintReservedHeight)
                     .contentMargins(.top, navigationHeight + 4, for: .scrollContent)
                     .scrollIndicators(.hidden)
                     // Observe native scrolling without competing with its swipe gesture.
@@ -137,7 +139,7 @@ struct SavedDrawingsView: View {
                 prepareImageTransition(size: geometry.size, topInset: navigationHeight)
             }
         }
-        .ignoresSafeArea()
+        .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
         .toolbar {
             if tutorial.allowsGalleryBack {
                 ToolbarItem(placement: .topBarLeading) {
@@ -160,7 +162,7 @@ struct SavedDrawingsView: View {
                         .accessibilityLabel(L10n.text("Edit drawing"))
                     }
                 }
-                if tutorial.allowsGalleryDelete {
+                if !tutorial.isActive && tutorial.allowsGalleryDelete {
                     ToolbarItemGroup(placement: .bottomBar) {
                         Button(role: .destructive) {
                             crownFocused = false
@@ -185,6 +187,26 @@ struct SavedDrawingsView: View {
                         }
                     }
                 }
+            }
+        }
+        .overlay(alignment: .bottom) {
+            if tutorial.isActive && showsFullscreen && !isTransitioning,
+               tutorial.allowsGalleryDelete, let selectedDrawing {
+                HStack {
+                    Button(role: .destructive) {
+                        crownFocused = false
+                        tutorial.pauseReminders()
+                        pendingDeletion = selectedDrawing
+                    } label: {
+                        Image(systemName: "trash")
+                            .tutorialHint(tutorial, steps: [.deleteDrawing])
+                    }
+                    .watchToolbarButtonStyle()
+                    .accessibilityLabel(L10n.text("Delete drawing"))
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+                .padding(.bottom, tutorialHintReservedHeight)
             }
         }
         .focusable(pendingDeletion == nil && tutorial.allowsGalleryZoom)
@@ -388,12 +410,13 @@ struct SavedDrawingsView: View {
                                       displayScale: displayScale,
                                       isNearby: abs(index - selectedIndex) <= 1 && !isTransitioning,
                                       loadsOriginal: abs(index - selectedIndex) <= 1 && !isTransitioning,
-                                      fallback: transitionBitmap?.url == drawing.url ? transitionBitmap : nil)
+                                      fallback: transitionBitmap?.url == drawing.url ? transitionBitmap : nil,
+                                      respectsSafeArea: tutorial.isActive)
                     .tag(Optional(drawing.id))
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .ignoresSafeArea(.container, edges: .all)
+        .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .position(x: size.width / 2, y: size.height / 2)
         .task(id: isTransitioning ? nil : selectedDrawing?.id) {

@@ -9,6 +9,7 @@ struct TutorialPlayerView: View {
     private var page: TutorialPlayerController.Page { player.page }
     @State private var isMovingCanvas = false
     @State private var canvasSize = CGSize.zero
+    @State private var hintHeight: CGFloat = 0
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
@@ -21,8 +22,12 @@ struct TutorialPlayerView: View {
 
     var body: some View {
         let _ = TutorialDebug.trace("player.body", "page=\(page) \(tutorial.debugState)")
-        ZStack {
-            Group {
+        GeometryReader { screen in
+            // The card measures itself independently of the controls it moves.
+            let measuredHintHeight = hintHeight > 0 ? hintHeight : screen.size.height * 0.32 + 20
+            // Measurement includes 10 pt of clear padding above the card; keep only a 2 pt gap.
+            let hintReservedHeight = max(0, measuredHintHeight - 8)
+            ZStack(alignment: .bottom) {
                 ZStack {
                     GeometryReader { geometry in
                         ZStack {
@@ -36,6 +41,7 @@ struct TutorialPlayerView: View {
 
                             if page == .tools {
                                 WatchToolSettingsView(controller: controller, tutorial: tutorial)
+                                    .ignoresSafeArea(.container, edges: [.top, .horizontal])
                                     .background(.black)
                             }
                             if page == .gallery {
@@ -48,7 +54,6 @@ struct TutorialPlayerView: View {
                         .onAppear { canvasSize = geometry.size }
                         .onChange(of: geometry.size) { _, size in canvasSize = size }
                     }
-                    .ignoresSafeArea()
 
                     if page == .saved, let savedDrawing = player.savedDrawing {
                         SavedDrawingView(drawing: savedDrawing, photoTransferStatus: "", canRetryPhotoTransfer: false,
@@ -65,8 +70,15 @@ struct TutorialPlayerView: View {
                                     .tutorialHint(tutorial, steps: [.openGallery])
                             }
                         }
+                        .padding(.bottom, hintReservedHeight)
                         .navigationTitle(L10n.text("More"))
+                        .toolbarTitleDisplayMode(.inline)
                     }
+                }
+                .overlay(alignment: .bottom) {
+                    tutorialBottomControls
+                        .padding(.horizontal, 8)
+                        .padding(.bottom, hintReservedHeight)
                 }
                 .toolbar {
                     if page == .canvas && tutorial.permits([.openTools]) {
@@ -104,51 +116,6 @@ struct TutorialPlayerView: View {
                             .trackCanvasControl(.tools, frames: $controls)
                         }
                     }
-                    if page == .canvas && tutorial.permits([.history]) {
-                        ToolbarItemGroup(placement: .bottomBar) {
-                            // Keep the same four slots as the regular canvas toolbar.
-                            Button {} label: { BroomIcon() }
-                                .watchToolbarButtonStyle()
-                                .hidden()
-                                .disabled(true)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
-                            Spacer(minLength: 0)
-                            Button {
-                                player.undo()
-                            } label: { Image(systemName: "arrow.uturn.backward").tutorialHint(tutorial, steps: [.history]) }
-                            .disabled(!controller.canUndo)
-                            .watchToolbarButtonStyle()
-                            .accessibilityLabel(L10n.text("Undo"))
-                            .trackCanvasControl(.undo, frames: $controls)
-                            Spacer(minLength: 0)
-                            Button {
-                                player.redo()
-                            } label: { Image(systemName: "arrow.uturn.forward").tutorialHint(tutorial, steps: [.history]) }
-                            .disabled(!controller.canRedo)
-                            .watchToolbarButtonStyle()
-                            .accessibilityLabel(L10n.text("Redo"))
-                            .trackCanvasControl(.redo, frames: $controls)
-                            Spacer(minLength: 0)
-                            Button {} label: { Image(systemName: "square.and.arrow.down") }
-                                .watchToolbarButtonStyle()
-                                .hidden()
-                                .disabled(true)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
-                        }
-                    }
-                    if page == .canvas && tutorial.permits([.saveDrawing]) {
-                        ToolbarItem(placement: .bottomBar) {
-                            HStack {
-                                Spacer()
-                                Button { player.save(size: canvasSize, scale: displayScale) } label: { Image(systemName: "square.and.arrow.down").tutorialHint(tutorial, steps: [.saveDrawing]) }
-                                    .watchToolbarButtonStyle()
-                                    .accessibilityLabel(L10n.text("Save drawing"))
-                                    .trackCanvasControl(.save, frames: $controls)
-                            }
-                        }
-                    }
                     if page == .saved && tutorial.permits([.shareDrawing]) {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
@@ -166,34 +133,28 @@ struct TutorialPlayerView: View {
                                 .trackCanvasControl(.more, frames: $controls)
                         }
                     }
-                    if page == .canvas && tutorial.permits([.clearCanvas]) {
-                        ToolbarItem(placement: .bottomBar) {
-                            HStack {
-                                Button {
-                                    player.requestClear()
-                                } label: { BroomIcon().tutorialHint(tutorial, steps: [.clearCanvas]) }
-                                .watchToolbarButtonStyle()
-                                .accessibilityLabel(L10n.text("Clear canvas"))
-                                .trackCanvasControl(.clear, frames: $controls)
-                                Spacer()
-                            }
+                }
+                .frame(width: screen.size.width, height: screen.size.height)
+                .environment(\.tutorialHintReservedHeight, hintReservedHeight)
+
+                TutorialLessonView(tutorial: tutorial, onFinish: onFinish,
+                                   screenWidth: screen.size.width,
+                                   screenHeight: screen.size.height)
+                    .frame(width: screen.size.width)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .background {
+                        GeometryReader { hintGeometry in
+                            Color.clear.preference(key: TutorialHintHeightKey.self,
+                                                   value: hintGeometry.size.height)
                         }
                     }
-                }
             }
         }
-        .background(Color.black.ignoresSafeArea())
-        .overlay(alignment: instructionAlignment) {
-            if tutorial.isActive {
-                GeometryReader { geometry in
-                    TutorialLessonView(tutorial: tutorial, onFinish: onFinish,
-                                       screenWidth: geometry.size.width,
-                                       screenHeight: geometry.size.height)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: instructionAlignment)
-                }
-                .ignoresSafeArea(.container, edges: .vertical)
-            }
+        .onPreferenceChange(TutorialHintHeightKey.self) { height in
+            if height > 0 { hintHeight = height }
         }
+        .ignoresSafeArea(.container)
+        .background(Color.black)
         .onAppear {
             player.startOrResume()
         }
@@ -223,18 +184,72 @@ struct TutorialPlayerView: View {
         } message: { Text(player.saveError ?? "") }
     }
 
-    /// Keep bottom actions free; place the card below screens with top actions.
-    /// Overlay placement never changes the canvas or tool settings dimensions.
-    private var instructionAlignment: Alignment {
-        if page == .tools {
-            return tutorial.step == .readToolInfo || tutorial.step == .reedStrokes ? .bottom : .top
+    @ViewBuilder private var tutorialBottomControls: some View {
+        if page == .canvas && tutorial.permits([.history]) {
+            HStack {
+                // Keep the same four slots as the regular canvas toolbar.
+                Button {} label: { BroomIcon() }
+                    .watchToolbarButtonStyle()
+                    .hidden()
+                    .disabled(true)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                Spacer(minLength: 0)
+                Button {
+                    player.undo()
+                } label: { Image(systemName: "arrow.uturn.backward").tutorialHint(tutorial, steps: [.history]) }
+                .disabled(!controller.canUndo)
+                .watchToolbarButtonStyle()
+                .accessibilityLabel(L10n.text("Undo"))
+                .trackCanvasControl(.undo, frames: $controls)
+                Spacer(minLength: 0)
+                Button {
+                    player.redo()
+                } label: { Image(systemName: "arrow.uturn.forward").tutorialHint(tutorial, steps: [.history]) }
+                .disabled(!controller.canRedo)
+                .watchToolbarButtonStyle()
+                .accessibilityLabel(L10n.text("Redo"))
+                .trackCanvasControl(.redo, frames: $controls)
+                Spacer(minLength: 0)
+                Button {} label: { Image(systemName: "square.and.arrow.down") }
+                    .watchToolbarButtonStyle()
+                    .hidden()
+                    .disabled(true)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
         }
-        switch tutorial.step {
-        case .openTools, .panCanvas, .shareDrawing, .openGallery, .returnToCanvas:
-            return .bottom
-        default:
-            return .top
+        if page == .canvas && tutorial.permits([.saveDrawing]) {
+            Group {
+                HStack {
+                    Spacer()
+                    Button { player.save(size: canvasSize, scale: displayScale) } label: { Image(systemName: "square.and.arrow.down").tutorialHint(tutorial, steps: [.saveDrawing]) }
+                        .watchToolbarButtonStyle()
+                        .accessibilityLabel(L10n.text("Save drawing"))
+                        .trackCanvasControl(.save, frames: $controls)
+                }
+            }
+        }
+        if page == .canvas && tutorial.permits([.clearCanvas]) {
+            Group {
+                HStack {
+                    Button {
+                        player.requestClear()
+                    } label: { BroomIcon().tutorialHint(tutorial, steps: [.clearCanvas]) }
+                    .watchToolbarButtonStyle()
+                    .accessibilityLabel(L10n.text("Clear canvas"))
+                    .trackCanvasControl(.clear, frames: $controls)
+                    Spacer()
+                }
+            }
         }
     }
+}
 
+private struct TutorialHintHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
 }

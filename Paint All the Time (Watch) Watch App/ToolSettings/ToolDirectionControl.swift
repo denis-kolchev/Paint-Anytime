@@ -6,14 +6,15 @@ struct ToolDirectionControl: View {
     let angle: Float
     let isEnabled: Bool
     let onAdjust: (Float) -> Void
+    var isCompact = false
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: isCompact ? 2 : 8) {
             Button {
                 onAdjust(5)
             } label: {
                 Image(systemName: "rotate.right")
-                    .frame(width: 40, height: 30)
+                    .frame(width: 40, height: isCompact ? 22 : 30)
                     .contentShape(Rectangle())
             }
             .disabled(angle >= 90 || !isEnabled)
@@ -21,7 +22,7 @@ struct ToolDirectionControl: View {
 
             Circle()
                 .strokeBorder(.secondary, lineWidth: 1)
-                .frame(width: 36, height: 36)
+                .frame(width: isCompact ? 24 : 36, height: isCompact ? 24 : 36)
                 .overlay {
                     Capsule()
                         .fill(.primary)
@@ -43,7 +44,7 @@ struct ToolDirectionControl: View {
                 onAdjust(-5)
             } label: {
                 Image(systemName: "rotate.left")
-                    .frame(width: 40, height: 30)
+                    .frame(width: 40, height: isCompact ? 22 : 30)
                     .contentShape(Rectangle())
             }
             .disabled(angle <= -90 || !isEnabled)

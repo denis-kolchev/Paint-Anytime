@@ -4,6 +4,7 @@ struct WatchToolSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
     @ObservedObject var tutorial = TutorialSession.inactive
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @State private var showsInformation = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var crownFocused: Bool
@@ -98,7 +99,7 @@ struct WatchToolSettingsView: View {
     }
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: tutorial.isActive ? 0 : 4) {
             HStack(spacing: selection == .width ? 0 : 8) {
                 VStack(spacing: 6) {
                     ToolStrokePreview(style: controller.pencilStyle)
@@ -109,52 +110,57 @@ struct WatchToolSettingsView: View {
                         .minimumScaleFactor(0.7)
                 }
                 // Keep both panels alive: animate their space and contents together.
-                ZStack {
-                    ToolInstrumentPicker(instruments: instruments, instrumentIndex: instrumentIndex,
-                                         isActive: selection == .instrument,
-                                         isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue)) { instrument in
-                        guard tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue) else { return }
-                        tutorial.activity()
-                        controller.selectInstrument(instrument)
-                        crownFocused = true
-                    }
-                    .frame(width: 40)
-                    .opacity(selection == .instrument ? 1 : 0)
-                    .allowsHitTesting(selection == .instrument)
-                    .accessibilityHidden(selection != .instrument)
-
-                    ToolColorPicker(colorIndex: colorIndex, isActive: selection == .color,
-                                    isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue)) { index in
-                        guard tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue) else { return }
-                        tutorial.activity()
-                        controller.pencilStyle.color = InkPreset.all[index].rgba
-                        crownFocused = true
-                    }
+                GeometryReader { pickerGeometry in
+                    ZStack {
+                        ToolInstrumentPicker(instruments: instruments, instrumentIndex: instrumentIndex,
+                                             isActive: selection == .instrument,
+                                             isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue)) { instrument in
+                            guard tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue) else { return }
+                            tutorial.activity()
+                            controller.selectInstrument(instrument)
+                            crownFocused = true
+                        }
                         .frame(width: 40)
-                        .opacity(selection == .color ? 1 : 0)
-                        .allowsHitTesting(selection == .color)
-                        .accessibilityHidden(selection != .color)
+                        .opacity(selection == .instrument ? 1 : 0)
+                        .allowsHitTesting(selection == .instrument)
+                        .accessibilityHidden(selection != .instrument)
 
-                    ToolEraserModePicker(selectedMode: controller.pencilStyle.eraserMode,
-                                        isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue)) { mode in
-                        guard tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue) else { return }
-                        controller.pencilStyle.eraserMode = mode
-                        crownFocused = true
+                        ToolColorPicker(colorIndex: colorIndex, isActive: selection == .color,
+                                        isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue)) { index in
+                            guard tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue) else { return }
+                            tutorial.activity()
+                            controller.pencilStyle.color = InkPreset.all[index].rgba
+                            crownFocused = true
+                        }
+                            .frame(width: 40)
+                            .opacity(selection == .color ? 1 : 0)
+                            .allowsHitTesting(selection == .color)
+                            .accessibilityHidden(selection != .color)
+
+                        ToolEraserModePicker(selectedMode: controller.pencilStyle.eraserMode,
+                                            isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue),
+                                            isCompact: tutorial.isActive) { mode in
+                            guard tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue) else { return }
+                            controller.pencilStyle.eraserMode = mode
+                            crownFocused = true
+                        }
+                            .frame(width: 40)
+                            .opacity(selection == .mode ? 1 : 0)
+                            .scaleEffect(reduceMotion || selection == .mode ? 1 : 0.35)
+                            .allowsHitTesting(selection == .mode)
+                            .accessibilityHidden(selection != .mode)
+
+                        ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
+                                             isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
+                                             onAdjust: { adjustDirection(by: $0) },
+                                             isCompact: tutorial.isActive)
+                            .frame(width: 40)
+                            .opacity(selection == .direction ? 1 : 0)
+                            .scaleEffect(reduceMotion || selection == .direction ? 1 : 0.35)
+                            .allowsHitTesting(selection == .direction)
+                            .accessibilityHidden(selection != .direction)
                     }
-                        .frame(width: 40)
-                        .opacity(selection == .mode ? 1 : 0)
-                        .scaleEffect(reduceMotion || selection == .mode ? 1 : 0.35)
-                        .allowsHitTesting(selection == .mode)
-                        .accessibilityHidden(selection != .mode)
-
-                    ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
-                                         isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
-                                         onAdjust: { adjustDirection(by: $0) })
-                        .frame(width: 40)
-                        .opacity(selection == .direction ? 1 : 0)
-                        .scaleEffect(reduceMotion || selection == .direction ? 1 : 0.35)
-                        .allowsHitTesting(selection == .direction)
-                        .accessibilityHidden(selection != .direction)
+                    .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
                 }
                 .frame(width: selection == .width ? 0 : 40)
                 .opacity(selection == .width ? 0 : 1)
@@ -166,11 +172,12 @@ struct WatchToolSettingsView: View {
             ToolSettingCarousel(availableSettings: availableSettings, selection: selection,
                                 isEnabled: { tutorial.allowsToolPage($0.rawValue) }, onSelect: select,
                                 tutorial: tutorial)
-                .frame(height: 30)
+                .frame(height: tutorial.isActive ? 26 : 30)
         }
         .padding(.horizontal, 10)
-        .padding(.top, 40)
-        .padding(.bottom, 8)
+        // Let tutorial controls use the upper safe area instead of reserving the full toolbar height.
+        .padding(.top, tutorial.isActive ? 12 : 40)
+        .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.colorScheme, .dark)
         .contentShape(Rectangle())

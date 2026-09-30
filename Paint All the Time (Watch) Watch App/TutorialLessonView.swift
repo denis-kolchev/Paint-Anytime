@@ -225,3 +225,15 @@ private struct TutorialInstructionHeight: PreferenceKey {
         value = max(value, nextValue())
     }
 }
+
+// Reserve space for controls without resizing the canvas or its artwork.
+private struct TutorialHintReservedHeightKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues {
+    var tutorialHintReservedHeight: CGFloat {
+        get { self[TutorialHintReservedHeightKey.self] }
+        set { self[TutorialHintReservedHeightKey.self] = newValue }
+    }
+}

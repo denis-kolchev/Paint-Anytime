@@ -5,6 +5,7 @@ struct SavedDrawingView: View {
     let drawing: CanvasExport
     @State var photoTransferStatus: String
     @State var canRetryPhotoTransfer: Bool
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @ObservedObject var tutorial = TutorialSession.inactive
     var body: some View {
         ScrollView {
@@ -40,6 +41,7 @@ struct SavedDrawingView: View {
             .padding(.horizontal)
             .reportLegacyScrollPosition()
         }
+        .padding(.bottom, tutorialHintReservedHeight)
         .scrollDisabled(tutorial.isActive && !tutorial.permits([.shareDrawing]))
         .onTutorialScrollActivity { tutorial.activity() }
         .navigationTitle(L10n.text("Saved"))

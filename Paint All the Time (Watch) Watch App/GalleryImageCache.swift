@@ -141,6 +141,7 @@ struct GalleryFullscreenPage: View {
     let isNearby: Bool
     let loadsOriginal: Bool
     let fallback: GalleryBitmap?
+    var respectsSafeArea = false
     @State private var preview: GalleryBitmap?
     @State private var original: GalleryBitmap?
 
@@ -166,7 +167,7 @@ struct GalleryFullscreenPage: View {
             .offset(y: canvasOriginY - pageGeometry.frame(in: .global).minY)
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
-        .ignoresSafeArea(.container, edges: .all)
+        .ignoresSafeArea(.container, edges: respectsSafeArea ? [] : .all)
         .task(id: previewRequest) {
             guard let previewRequest else { preview = nil; return }
             let loaded = await GalleryImageCache.shared.load(previewRequest)
