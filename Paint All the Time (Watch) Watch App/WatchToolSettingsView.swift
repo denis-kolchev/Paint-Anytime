@@ -102,7 +102,8 @@ struct WatchToolSettingsView: View {
     var body: some View {
         VStack(spacing: tutorial.isActive ? 0 : 4) {
             GeometryReader { settingsGeometry in
-                let angleScale = min(1, max(0, settingsGeometry.size.height) / ToolDirectionControl.idealSize.height)
+                let angleHeight = settingsGeometry.size.height + (tutorial.isActive ? 40 : 0)
+                let angleScale = min(1, max(0, angleHeight) / ToolDirectionControl.idealSize.height)
                 let panelWidth = selection == .width ? 0 : selection == .direction
                     ? ToolDirectionControl.idealSize.width * angleScale : 40
                 let panelSpacing = selection == .width ? 0 : selection == .direction ? 8 * angleScale : 8
@@ -169,18 +170,7 @@ struct WatchToolSettingsView: View {
                                 .allowsHitTesting(selection == .mode)
                                 .accessibilityHidden(selection != .mode)
 
-                            ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
-                                                 isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
-                                                 onAdjust: { adjustDirection(by: $0) })
-                                .frame(width: ToolDirectionControl.idealSize.width,
-                                       height: ToolDirectionControl.idealSize.height)
-                                .scaleEffect(angleScale)
-                                .frame(width: ToolDirectionControl.idealSize.width * angleScale,
-                                       height: ToolDirectionControl.idealSize.height * angleScale)
-                                .opacity(selection == .direction ? 1 : 0)
-                                .scaleEffect(reduceMotion || selection == .direction ? 1 : 0.35)
-                                .allowsHitTesting(selection == .direction)
-                                .accessibilityHidden(selection != .direction)
+
                         }
                         .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
                     }
@@ -196,6 +186,31 @@ struct WatchToolSettingsView: View {
                                 isEnabled: { tutorial.allowsToolPage($0.rawValue) }, onSelect: select,
                                 tutorial: tutorial)
                 .frame(height: 30)
+                .padding(.trailing, tutorial.isActive && selection == .direction ? 48 : 0)
+        }
+        .overlay(alignment: .trailing) {
+            // Extend 8 pt to the bottom of the clock area and 2 pt to the card.
+            // The control shares the remaining height among four equal gaps.
+            GeometryReader { geometry in
+                let height = tutorial.isActive ? geometry.size.height + 10
+                    : max(0, geometry.size.height - 34)
+                let scale = min(1, max(0, height) / ToolDirectionControl.idealSize.height)
+                ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
+                                     isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
+                                     onAdjust: { adjustDirection(by: $0) },
+                                     includesOuterSpacing: tutorial.isActive)
+                    .frame(width: ToolDirectionControl.idealSize.width,
+                           height: max(ToolDirectionControl.idealSize.height,
+                                       height / max(scale, 0.001)))
+                    .scaleEffect(scale)
+                    .frame(width: ToolDirectionControl.idealSize.width * scale,
+                           height: height)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                    .offset(y: tutorial.isActive ? -8 : 0)
+            }
+            .opacity(selection == .direction ? 1 : 0)
+            .allowsHitTesting(selection == .direction)
+            .accessibilityHidden(selection != .direction)
         }
         .padding(.horizontal, 10)
         // Keep the preview and pickers below the toolbar in both editor and tutorial.

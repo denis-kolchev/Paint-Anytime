@@ -39,7 +39,7 @@ struct TutorialLessonView: View {
 
             // Measure the full copy independently of the scroll viewport.
             Text(TutorialLesson.compactInstruction(for: tutorial.step))
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 11, weight: .medium))
                 .fixedSize(horizontal: false, vertical: true)
                 .hidden()
                 .accessibilityHidden(true)
@@ -177,7 +177,7 @@ private struct TutorialInstructionText: View {
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
                     Text(text)
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)

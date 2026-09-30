@@ -8,9 +8,12 @@ struct ToolDirectionControl: View {
     let angle: Float
     let isEnabled: Bool
     let onAdjust: (Float) -> Void
+    var includesOuterSpacing = false
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 0) {
+            if includesOuterSpacing { Spacer(minLength: 0) }
+
             Button {
                 onAdjust(5)
             } label: {
@@ -20,6 +23,8 @@ struct ToolDirectionControl: View {
             }
             .disabled(angle >= 90 || !isEnabled)
             .accessibilityLabel(L10n.text("Rotate tip clockwise"))
+
+            Spacer(minLength: includesOuterSpacing ? 0 : 8)
 
             Circle()
                 .strokeBorder(.secondary, lineWidth: 1)
@@ -41,6 +46,8 @@ struct ToolDirectionControl: View {
                     }
                 }
 
+            Spacer(minLength: includesOuterSpacing ? 0 : 8)
+
             Button {
                 onAdjust(-5)
             } label: {
@@ -50,6 +57,8 @@ struct ToolDirectionControl: View {
             }
             .disabled(angle <= -90 || !isEnabled)
             .accessibilityLabel(L10n.text("Rotate tip counterclockwise"))
+
+            if includesOuterSpacing { Spacer(minLength: 0) }
         }
         .buttonStyle(.borderless)
     }
