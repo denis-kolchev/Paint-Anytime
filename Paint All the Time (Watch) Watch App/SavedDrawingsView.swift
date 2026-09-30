@@ -143,6 +143,7 @@ struct SavedDrawingsView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: goBack) {
                         Image(systemName: "chevron.left")
+                            .tutorialHint(tutorial, steps: [.returnToCanvas])
                     }
                     .disabled(isTransitioning)
                     .watchToolbarButtonStyle()
@@ -167,6 +168,7 @@ struct SavedDrawingsView: View {
                             pendingDeletion = selectedDrawing
                         } label: {
                             Image(systemName: "trash")
+                            .tutorialHint(tutorial, steps: [.deleteDrawing])
                         }
                         .disabled(isTransitioning)
                         .watchToolbarButtonStyle()

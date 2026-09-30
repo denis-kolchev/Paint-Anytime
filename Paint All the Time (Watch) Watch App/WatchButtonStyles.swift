@@ -62,3 +62,33 @@ private struct WatchToolbarButtonModifier: ViewModifier {
             .contentShape(Circle())
     }
 }
+
+extension View {
+    /// Apply to the label so native button chrome and hit targets stay unchanged.
+    func tutorialHint(_ tutorial: TutorialSession, steps: Set<TutorialStep>) -> some View {
+        modifier(TutorialButtonHint(tutorial: tutorial, steps: steps))
+    }
+}
+
+private struct TutorialButtonHint: ViewModifier {
+    @ObservedObject var tutorial: TutorialSession
+    let steps: Set<TutorialStep>
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.isEnabled) private var isEnabled
+
+    private var isActive: Bool {
+        tutorial.isActive && tutorial.permits(steps) && !tutorial.remindersPaused
+            && isEnabled && !reduceMotion && scenePhase == .active
+    }
+
+    func body(content: Content) -> some View {
+        content.phaseAnimator(isActive ? [false, true] : [false]) { label, emphasized in
+            label
+                .scaleEffect(emphasized ? 1.2 : 1)
+                .brightness(emphasized ? 0.2 : 0)
+        } animation: { emphasized in
+            .easeInOut(duration: 0.35).delay(emphasized ? 0.7 : 0)
+        }
+    }
+}

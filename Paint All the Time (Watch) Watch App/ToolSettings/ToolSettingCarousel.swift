@@ -6,7 +6,18 @@ struct ToolSettingCarousel: View {
     let selection: ToolSetting
     let isEnabled: (ToolSetting) -> Bool
     let onSelect: (ToolSetting) -> Void
+    var tutorial: TutorialSession = .inactive
     private var pageAnimation: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.3) }
+
+    private func hintSteps(for setting: ToolSetting) -> Set<TutorialStep> {
+        guard setting != selection else { return [] }
+        switch setting {
+        case .width: return [.openWidth]
+        case .instrument: return [.selectReed]
+        case .direction: return [.setAngle]
+        default: return []
+        }
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -24,6 +35,7 @@ struct ToolSettingCarousel: View {
                                     .minimumScaleFactor(0.65)
                                     .frame(width: 90, height: 30)
                                     .contentShape(Rectangle())
+                                    .tutorialHint(tutorial, steps: hintSteps(for: setting))
                             }
                             .buttonStyle(.borderless)
                             .disabled(!isEnabled(setting))

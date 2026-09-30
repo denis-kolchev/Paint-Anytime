@@ -62,6 +62,7 @@ struct TutorialPlayerView: View {
                                 player.openGallery()
                             } label: {
                                 Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
+                                    .tutorialHint(tutorial, steps: [.openGallery])
                             }
                         }
                         .navigationTitle(L10n.text("More"))
@@ -75,6 +76,7 @@ struct TutorialPlayerView: View {
                                 player.openTools()
                             } label: {
                                 ToolIcon(instrument: controller.pencilStyle.instrument).frame(width: 18, height: 18)
+                                    .tutorialHint(tutorial, steps: [.openTools])
                             }
                             .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Tool settings"))
@@ -93,6 +95,7 @@ struct TutorialPlayerView: View {
                                 }
                             } label: {
                                 Image(systemName: "checkmark").foregroundStyle(.green)
+                                    .tutorialHint(tutorial, steps: [.reedStrokes, .panCanvas])
                             }
                             .disabled(page == .canvas && !tutorial.canFinishCamera)
                             .watchToolbarButtonStyle()
@@ -113,7 +116,7 @@ struct TutorialPlayerView: View {
                             Spacer(minLength: 0)
                             Button {
                                 player.undo()
-                            } label: { Image(systemName: "arrow.uturn.backward") }
+                            } label: { Image(systemName: "arrow.uturn.backward").tutorialHint(tutorial, steps: [.history]) }
                             .disabled(!controller.canUndo)
                             .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Undo"))
@@ -121,7 +124,7 @@ struct TutorialPlayerView: View {
                             Spacer(minLength: 0)
                             Button {
                                 player.redo()
-                            } label: { Image(systemName: "arrow.uturn.forward") }
+                            } label: { Image(systemName: "arrow.uturn.forward").tutorialHint(tutorial, steps: [.history]) }
                             .disabled(!controller.canRedo)
                             .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Redo"))
@@ -139,7 +142,7 @@ struct TutorialPlayerView: View {
                         ToolbarItem(placement: .bottomBar) {
                             HStack {
                                 Spacer()
-                                Button { player.save(size: canvasSize, scale: displayScale) } label: { Image(systemName: "square.and.arrow.down") }
+                                Button { player.save(size: canvasSize, scale: displayScale) } label: { Image(systemName: "square.and.arrow.down").tutorialHint(tutorial, steps: [.saveDrawing]) }
                                     .watchToolbarButtonStyle()
                                     .accessibilityLabel(L10n.text("Save drawing"))
                                     .trackCanvasControl(.save, frames: $controls)
@@ -150,14 +153,14 @@ struct TutorialPlayerView: View {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
                                 player.closeSavedDrawing()
-                            } label: { Image(systemName: "xmark") }
+                            } label: { Image(systemName: "xmark").tutorialHint(tutorial, steps: [.shareDrawing]) }
                             .watchToolbarButtonStyle()
                             .accessibilityLabel(L10n.text("Back"))
                         }
                     }
                     if page == .canvas && tutorial.permits([.openGallery]) {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button { player.openMenu() } label: { Image(systemName: "ellipsis") }
+                            Button { player.openMenu() } label: { Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openGallery]) }
                                 .watchToolbarButtonStyle()
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
@@ -168,7 +171,7 @@ struct TutorialPlayerView: View {
                             HStack {
                                 Button {
                                     player.requestClear()
-                                } label: { BroomIcon() }
+                                } label: { BroomIcon().tutorialHint(tutorial, steps: [.clearCanvas]) }
                                 .watchToolbarButtonStyle()
                                 .accessibilityLabel(L10n.text("Clear canvas"))
                                 .trackCanvasControl(.clear, frames: $controls)

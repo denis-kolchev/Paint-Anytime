@@ -164,7 +164,8 @@ struct WatchToolSettingsView: View {
             .animation(pageAnimation, value: selection)
 
             ToolSettingCarousel(availableSettings: availableSettings, selection: selection,
-                                isEnabled: { tutorial.allowsToolPage($0.rawValue) }, onSelect: select)
+                                isEnabled: { tutorial.allowsToolPage($0.rawValue) }, onSelect: select,
+                                tutorial: tutorial)
                 .frame(height: 30)
         }
         .padding(.horizontal, 10)
@@ -207,6 +208,7 @@ struct WatchToolSettingsView: View {
                         showsInformation = true
                     } label: {
                         Image(systemName: "info")
+                            .tutorialHint(tutorial, steps: [.readToolInfo])
                     }
                     .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Information"))
