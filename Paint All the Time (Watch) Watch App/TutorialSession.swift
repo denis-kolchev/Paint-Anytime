@@ -10,7 +10,6 @@ final class TutorialSession: ObservableObject {
     @Published var showsInstruction = false
     @Published private(set) var remindersPaused = false
     private var lastActivity = Date()
-    private var reminderTask: Task<Void, Never>?
     private var zoomIdleTask: Task<Void, Never>?
     private var advanceTask: Task<Void, Never>?
     private var pendingAdvanceStep: TutorialStep?
@@ -49,22 +48,11 @@ final class TutorialSession: ObservableObject {
         progress.start()
         remindersPaused = false
         zoomIdleTask?.cancel()
-        showsInstruction = true
+        showsInstruction = false
         lastActivity = Date()
-        reminderTask?.cancel()
-        reminderTask = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                do { try await Task.sleep(for: .seconds(1)) } catch { return }
-                guard let self, self.isActive else { return }
-                if !self.showsInstruction && !self.remindersPaused && self.pendingAdvanceStep == nil && Date().timeIntervalSince(self.lastActivity) >= 5 {
-                    TutorialDebug.trace("reminder.showCard", self.debugState)
-                    self.showsInstruction = true
-                }
-            }
-        }
     }
 
-    /// Next dismisses a lesson card. It never skips an unfinished exercise.
+    /// Retained for callers that explicitly resume an exercise; never skips a step.
     func beginExercise() {
         TutorialDebug.trace("beginExercise.beforeHide", debugState)
         showsInstruction = false
@@ -165,15 +153,13 @@ final class TutorialSession: ObservableObject {
         cancelPendingAdvance()
         zoomIdleTask?.cancel()
         progress.advance()
-        showsInstruction = true
+        showsInstruction = false
         activity()
     }
 
     func stop() {
         cancelPendingAdvance()
-        reminderTask?.cancel()
         zoomIdleTask?.cancel()
-        reminderTask = nil
         zoomIdleTask = nil
         progress.stop()
         showsInstruction = false

@@ -209,6 +209,7 @@ struct DestructiveConfirmationView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     let title: String
     let confirmTitle: String
+    var cancelTitle: String = L10n.text("No")
     var onCancel: () -> Void
     var onConfirm: () -> Void
 
@@ -222,7 +223,7 @@ struct DestructiveConfirmationView: View {
 
                 HStack(spacing: 8) {
                     Button(action: onCancel) {
-                        Text(L10n.text("No"))
+                        Text(cancelTitle)
                             .frame(maxWidth: .infinity, minHeight: 32)
                     }
                     .watchActionButtonStyle()

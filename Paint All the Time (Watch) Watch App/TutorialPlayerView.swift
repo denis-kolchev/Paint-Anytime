@@ -32,7 +32,7 @@ struct TutorialPlayerView: View {
                                             protectedControls: controls, isMovingCanvas: $isMovingCanvas)
                                 .opacity(page == .canvas ? 1 : 0)
                                 .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
-                                .accessibilityHidden(page != .canvas || tutorial.showsInstruction)
+                                .accessibilityHidden(page != .canvas)
 
                             if page == .tools {
                                 WatchToolSettingsView(controller: controller, tutorial: tutorial)
@@ -178,25 +178,23 @@ struct TutorialPlayerView: View {
                     }
                 }
             }
-            .opacity(tutorial.isActive && !tutorial.showsInstruction ? 1 : 0)
-            .allowsHitTesting(!tutorial.showsInstruction)
-            .accessibilityHidden(tutorial.showsInstruction)
-
-            if tutorial.showsInstruction {
-                TutorialLessonView(tutorial: tutorial, onFinish: onFinish)
-            }
         }
         .background(Color.black.ignoresSafeArea())
-        .tutorialToolbarBackground(hidden: tutorial.showsInstruction)
+        .overlay(alignment: instructionAlignment) {
+            if tutorial.isActive {
+                GeometryReader { geometry in
+                    TutorialLessonView(tutorial: tutorial, onFinish: onFinish,
+                                       screenWidth: geometry.size.width)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: instructionAlignment)
+                }
+                .ignoresSafeArea(.container, edges: .vertical)
+            }
+        }
         .onAppear {
             player.startOrResume()
         }
         .onChange(of: tutorial.step) { _, _ in
             controls = [:]
-        }
-        .onChange(of: tutorial.showsInstruction) { _, showing in
-            TutorialDebug.trace("player.instruction", "showing=\(showing) page=\(page) \(tutorial.debugState)")
-            if showing { controller.cancelStroke() }
         }
         .onChange(of: scenePhase) { _, phase in
             TutorialDebug.trace("player.scenePhase", "phase=\(phase)")
@@ -220,15 +218,19 @@ struct TutorialPlayerView: View {
             Button(L10n.text("OK"), role: .cancel) { player.dismissSaveError() }
         } message: { Text(player.saveError ?? "") }
     }
-}
 
-private extension View {
-    @ViewBuilder
-    func tutorialToolbarBackground(hidden: Bool) -> some View {
-        if #available(watchOS 11.0, *) {
-            toolbarBackgroundVisibility(hidden ? .hidden : .automatic, for: .navigationBar)
-        } else {
-            toolbarBackground(hidden ? .hidden : .automatic, for: .navigationBar)
+    /// Keep bottom actions free; place the card below screens with top actions.
+    /// Overlay placement never changes the canvas or tool settings dimensions.
+    private var instructionAlignment: Alignment {
+        if page == .tools {
+            return tutorial.step == .readToolInfo || tutorial.step == .reedStrokes ? .bottom : .top
+        }
+        switch tutorial.step {
+        case .openTools, .panCanvas, .shareDrawing, .openGallery, .returnToCanvas:
+            return .bottom
+        default:
+            return .top
         }
     }
+
 }

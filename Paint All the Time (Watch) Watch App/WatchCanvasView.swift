@@ -138,6 +138,9 @@ struct WatchCanvasView: View {
             defer { TutorialDebug.trace("canvas.showing.exit", "focused=\(crownFocused)") }
             crownFocused = !showing && acceptsInput && tutorial.allowsCanvasZoom
         }
+        .onChange(of: tutorial.allowsCanvasZoom) { _, allowed in
+            crownFocused = acceptsInput && allowed
+        }
         .onChange(of: isDragging) { _, dragging in
             if !dragging {
                 panOrigin = nil

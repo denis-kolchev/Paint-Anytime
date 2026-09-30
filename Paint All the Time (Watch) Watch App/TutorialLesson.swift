@@ -3,7 +3,7 @@ import Foundation
 /// Stable source keys let each lesson use the same localization path as the editor.
 enum TutorialLesson {
     private static let descriptions: [String] = [
-        "Welcome to Paint Anytime! Draw two separate strokes in the center of the canvas. Your own drawings are safe during this tutorial.",
+        "Welcome to Paint Anytime! Draw two separate strokes in the center of the canvas.",
         "Let's try another brush. Tap the tool button in the upper-right corner.",
         "Turn the Digital Crown or tap a neighboring color to select green.",
         "Swipe left or tap Width at the bottom to open the width setting.",
@@ -24,6 +24,33 @@ enum TutorialLesson {
         "Tap the broom in the lower-left corner and confirm to clear the practice canvas.",
         "Well done! Your own canvas and gallery will return. To repeat the tour, tap the three dots and choose Tutorial."
     ]
+
+    /// English-only copy for the compact tutorial design preview.
+    static func compactInstruction(for step: TutorialStep) -> String {
+        switch step {
+        case .inactive: return ""
+        case .firstStrokes: return "Draw two strokes."
+        case .openTools: return "Tap the brush at the top right."
+        case .selectGreen: return "Turn the Crown to choose green."
+        case .openWidth: return "Tap Width below."
+        case .setWidth: return "Turn the Crown to set 10 pt."
+        case .selectReed: return "Open Tool. Choose Reed pen."
+        case .readToolInfo: return "Tap ⓘ. Read, then close with ×."
+        case .setAngle: return "Open Angle. Set 20° with the Crown."
+        case .reedStrokes: return "Tap ✓, then draw two strokes."
+        case .zoomCanvas: return "Turn the Crown to zoom, then stop."
+        case .panCanvas: return "Drag the canvas, then tap ✓."
+        case .history: return "Tap Undo or Redo twice in total."
+        case .saveDrawing: return "Tap Save at the bottom right."
+        case .shareDrawing: return "Try Share if you like. Tap × to continue."
+        case .openGallery: return "Tap •••, then Gallery."
+        case .galleryFullscreen: return "Turn the Crown to open a picture full size."
+        case .deleteDrawing: return "Swipe to a picture. Tap Trash and confirm."
+        case .returnToCanvas: return "Tap Back until you reach the canvas."
+        case .clearCanvas: return "Tap the broom, then confirm Clear."
+        case .finished: return "All done! Finish to return to your drawings."
+        }
+    }
 
     static func description(for step: TutorialStep) -> String {
         guard descriptions.indices.contains(step.rawValue - 1) else { return "" }

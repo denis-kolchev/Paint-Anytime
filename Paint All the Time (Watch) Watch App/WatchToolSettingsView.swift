@@ -238,6 +238,9 @@ struct WatchToolSettingsView: View {
         .onChange(of: tutorial.showsInstruction) { _, showing in
             crownFocused = !showing && tutorial.allowsToolAdjustment(page: selection.rawValue)
         }
+        .onChange(of: tutorial.allowsToolAdjustment(page: selection.rawValue)) { _, allowed in
+            crownFocused = !showsInformation && allowed
+        }
         .onChange(of: selectedPage) { _, page in
             if !tutorial.isActive { savedPage = page }
             tutorial.changedPage(page)
