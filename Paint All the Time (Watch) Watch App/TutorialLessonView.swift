@@ -119,6 +119,8 @@ private struct TutorialInstructionText: View {
                         .id("instruction")
                 }
                 .scrollBounceBehavior(.basedOnSize)
+                .modifier(TutorialScrollEdgeModifier())
+                .clipped()
                 .focusable(false)
                 .onPreferenceChange(TutorialInstructionHeight.self) { contentHeight = $0 }
                 .simultaneousGesture(DragGesture(minimumDistance: 3).onChanged { _ in
@@ -134,7 +136,7 @@ private struct TutorialInstructionText: View {
                             withAnimation(.linear(duration: duration)) {
                                 proxy.scrollTo("instruction", anchor: .bottom)
                             }
-                            try await Task.sleep(for: .seconds(duration + 1.5))
+                            try await Task.sleep(for: .seconds(duration))
                             var transaction = Transaction()
                             transaction.disablesAnimations = true
                             withTransaction(transaction) {
@@ -146,6 +148,18 @@ private struct TutorialInstructionText: View {
                     }
                 }
             }
+        }
+    }
+}
+
+/// The instruction viewport supplies its own boundary inside the material card.
+private struct TutorialScrollEdgeModifier: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(watchOS 26, *) {
+            content.scrollEdgeEffectHidden(true, for: .all)
+        } else {
+            content
         }
     }
 }
