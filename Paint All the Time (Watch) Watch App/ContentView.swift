@@ -92,7 +92,7 @@ struct ContentView: View {
                 }
             }
 
-            if isActive && !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
+            if isActive && !showsGallery && !showsToolSettings {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         controller.cancelStroke()
@@ -103,9 +103,12 @@ struct ContentView: View {
                     .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("More"))
                     .trackCanvasControl(.more, frames: $canvasControlFrames)
+                    .opacity(isMovingCanvas || controller.activeStroke != nil ? 0 : 1)
+                    .allowsHitTesting(!isMovingCanvas && controller.activeStroke == nil)
+                    .accessibilityHidden(isMovingCanvas || controller.activeStroke != nil)
                 }
             }
-            if isActive && !showsGallery && (showsToolSettings || controller.activeStroke == nil) {
+            if isActive && !showsGallery {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     controller.cancelStroke()
@@ -125,6 +128,11 @@ struct ContentView: View {
                 .watchToolbarButtonStyle()
                 .accessibilityLabel(showsToolSettings || isMovingCanvas ? L10n.text("Done") : L10n.text("Tool settings"))
                 .trackCanvasControl(.tools, frames: $canvasControlFrames)
+                // Keep the toolbar slot installed so the system clock does not
+                // move when drawing temporarily hides the button.
+                .opacity(!showsToolSettings && controller.activeStroke != nil ? 0 : 1)
+                .allowsHitTesting(showsToolSettings || controller.activeStroke == nil)
+                .accessibilityHidden(!showsToolSettings && controller.activeStroke != nil)
             }
             }
         }
