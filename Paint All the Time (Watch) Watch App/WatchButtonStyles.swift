@@ -13,8 +13,8 @@ extension View {
     }
 
     /// All toolbar icons, including Information, use one explicit circle size.
-    func watchToolbarButtonStyle() -> some View {
-        modifier(WatchToolbarButtonModifier())
+    func watchToolbarButtonStyle(diameter: CGFloat = 32) -> some View {
+        modifier(WatchToolbarButtonModifier(diameter: diameter))
     }
 }
 
@@ -25,7 +25,7 @@ private struct WatchToolbarButtonModifier: ViewModifier {
     // not its oversized initial presentation. Keep every canvas button at this
     // same compact diameter. Do not rely on controlSize: toolbar hosts can
     // resolve it differently when a conditional item is first inserted.
-    private let diameter: CGFloat = 32
+    let diameter: CGFloat
 
     func body(content: Content) -> some View {
         if #available(watchOS 27, *) {
