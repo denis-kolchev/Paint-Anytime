@@ -41,7 +41,6 @@ struct TutorialPlayerView: View {
 
                             if page == .tools {
                                 WatchToolSettingsView(controller: controller, tutorial: tutorial)
-                                    .ignoresSafeArea(.container, edges: [.top, .horizontal])
                                     .background(.black)
                             }
                             if page == .gallery {

@@ -173,8 +173,8 @@ struct WatchToolSettingsView: View {
                 .frame(height: 30)
         }
         .padding(.horizontal, 10)
-        // Let tutorial controls use the upper safe area instead of reserving the full toolbar height.
-        .padding(.top, tutorial.isActive ? 12 : 40)
+        // Keep the preview and pickers below the toolbar in both editor and tutorial.
+        .padding(.top, 40)
         .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .environment(\.colorScheme, .dark)
