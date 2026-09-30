@@ -6,6 +6,8 @@ struct ToolColorPicker: View {
     let colorIndex: Int
     let isActive: Bool
     let isEnabled: Bool
+    var extendsBeyondViewport = false
+    var showsNavigationHints = true
     let onSelect: (Int) -> Void
 
     private var rowHeight: CGFloat { 30 }
@@ -13,12 +15,13 @@ struct ToolColorPicker: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            Image(systemName: "chevron.up")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.secondary)
-                .opacity(colorIndex > 0 ? 1 : 0.25)
-                .accessibilityHidden(true)
-
+            if showsNavigationHints {
+                Image(systemName: "chevron.up")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .opacity(colorIndex > 0 ? 1 : 0.25)
+                    .accessibilityHidden(true)
+            }
             GeometryReader { geometry in
                 ScrollViewReader { proxy in
                 ScrollView(.vertical) {
@@ -48,6 +51,7 @@ struct ToolColorPicker: View {
                     .padding(.vertical, max(0, (geometry.size.height - rowHeight) / 2))
                 }
                 .scrollIndicators(.hidden)
+                    .scrollClipDisabled(extendsBeyondViewport)
                 .scrollDisabled(true)
                 .overlay(alignment: .center) {
                     // The selection window stays fixed while swatches move beneath it.
@@ -69,16 +73,18 @@ struct ToolColorPicker: View {
                 }
             }
 
-            Image(systemName: "chevron.down")
-                .font(.system(size: 9, weight: .bold))
-                .foregroundStyle(.secondary)
-                .opacity(colorIndex < InkPreset.all.count - 1 ? 1 : 0.25)
-                .accessibilityHidden(true)
+            if showsNavigationHints {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .opacity(colorIndex < InkPreset.all.count - 1 ? 1 : 0.25)
+                    .accessibilityHidden(true)
 
-            Text("\(colorIndex + 1)/\(InkPreset.all.count)")
-                .font(.system(size: 9).monospacedDigit())
-                .foregroundStyle(.secondary)
-                .accessibilityLabel(L10n.format("Color %d of %d", colorIndex + 1, InkPreset.all.count))
+                Text("\(colorIndex + 1)/\(InkPreset.all.count)")
+                    .font(.system(size: 9).monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(L10n.format("Color %d of %d", colorIndex + 1, InkPreset.all.count))
+            }
         }
     }
 }

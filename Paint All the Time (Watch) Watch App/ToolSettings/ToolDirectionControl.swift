@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ToolDirectionControl: View {
+    // Two 30 pt buttons, the 36 pt angle indicator, and two 8 pt gaps.
+    static let idealSize = CGSize(width: 40, height: 112)
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var choiceAnimation: Animation? { reduceMotion ? nil : .easeOut(duration: 0.18) }
     let angle: Float

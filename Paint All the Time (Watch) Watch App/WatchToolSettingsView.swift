@@ -6,6 +6,7 @@ struct WatchToolSettingsView: View {
     @ObservedObject var tutorial = TutorialSession.inactive
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @State private var showsInformation = false
+    @State private var strokePreviewHeight: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var crownFocused: Bool
     @AppStorage("watch.settings.lastPage") private var savedPage = 1
@@ -100,71 +101,95 @@ struct WatchToolSettingsView: View {
 
     var body: some View {
         VStack(spacing: tutorial.isActive ? 0 : 4) {
-            HStack(spacing: selection == .width ? 0 : 8) {
-                VStack(spacing: 6) {
-                    ToolStrokePreview(style: controller.pencilStyle)
-                    Text(valueTitle)
-                        .font(.caption2)
-                        .monospacedDigit()
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                }
-                // Keep both panels alive: animate their space and contents together.
-                GeometryReader { pickerGeometry in
-                    ZStack {
-                        ToolInstrumentPicker(instruments: instruments, instrumentIndex: instrumentIndex,
-                                             isActive: selection == .instrument,
-                                             isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue)) { instrument in
-                            guard tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue) else { return }
-                            tutorial.activity()
-                            controller.selectInstrument(instrument)
-                            crownFocused = true
-                        }
-                        .frame(width: 40)
-                        .opacity(selection == .instrument ? 1 : 0)
-                        .allowsHitTesting(selection == .instrument)
-                        .accessibilityHidden(selection != .instrument)
-
-                        ToolColorPicker(colorIndex: colorIndex, isActive: selection == .color,
-                                        isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue)) { index in
-                            guard tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue) else { return }
-                            tutorial.activity()
-                            controller.pencilStyle.color = InkPreset.all[index].rgba
-                            crownFocused = true
-                        }
-                            .frame(width: 40)
-                            .opacity(selection == .color ? 1 : 0)
-                            .allowsHitTesting(selection == .color)
-                            .accessibilityHidden(selection != .color)
-
-                        ToolEraserModePicker(selectedMode: controller.pencilStyle.eraserMode,
-                                            isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue)) { mode in
-                            guard tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue) else { return }
-                            controller.pencilStyle.eraserMode = mode
-                            crownFocused = true
-                        }
-                            .frame(width: 40)
-                            .opacity(selection == .mode ? 1 : 0)
-                            .scaleEffect(reduceMotion || selection == .mode ? 1 : 0.35)
-                            .allowsHitTesting(selection == .mode)
-                            .accessibilityHidden(selection != .mode)
-
-                        ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
-                                             isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
-                                             onAdjust: { adjustDirection(by: $0) })
-                            .frame(width: 40)
-                            .opacity(selection == .direction ? 1 : 0)
-                            .scaleEffect(reduceMotion || selection == .direction ? 1 : 0.35)
-                            .allowsHitTesting(selection == .direction)
-                            .accessibilityHidden(selection != .direction)
+            GeometryReader { settingsGeometry in
+                let angleScale = min(1, max(0, settingsGeometry.size.height) / ToolDirectionControl.idealSize.height)
+                let panelWidth = selection == .width ? 0 : selection == .direction
+                    ? ToolDirectionControl.idealSize.width * angleScale : 40
+                let panelSpacing = selection == .width ? 0 : selection == .direction ? 8 * angleScale : 8
+                HStack(spacing: panelSpacing) {
+                    VStack(spacing: 6) {
+                        ToolStrokePreview(style: controller.pencilStyle)
+                            .background {
+                                GeometryReader { previewGeometry in
+                                    Color.clear.preference(key: StrokePreviewHeightKey.self,
+                                                           value: previewGeometry.size.height)
+                                }
+                            }
+                        Text(valueTitle)
+                            .font(.caption2)
+                            .monospacedDigit()
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
                     }
-                    .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
+                    // Keep both panels alive: animate their space and contents together.
+                    GeometryReader { pickerGeometry in
+                        let selectionOffset = tutorial.isActive && strokePreviewHeight > 0
+                            ? (strokePreviewHeight - pickerGeometry.size.height) / 2 : 0
+                        ZStack {
+                            ToolInstrumentPicker(instruments: instruments, instrumentIndex: instrumentIndex,
+                                                 isActive: selection == .instrument,
+                                                 isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue),
+                                                 extendsBeyondViewport: tutorial.isActive,
+                                                 showsNavigationHints: !tutorial.isActive) { instrument in
+                                guard tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue) else { return }
+                                tutorial.activity()
+                                controller.selectInstrument(instrument)
+                                crownFocused = true
+                            }
+                            .frame(width: 40)
+                            .offset(y: selectionOffset)
+                            .opacity(selection == .instrument ? 1 : 0)
+                            .allowsHitTesting(selection == .instrument)
+                            .accessibilityHidden(selection != .instrument)
+
+                            ToolColorPicker(colorIndex: colorIndex, isActive: selection == .color,
+                                            isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue),
+                                            extendsBeyondViewport: tutorial.isActive,
+                                                 showsNavigationHints: !tutorial.isActive) { index in
+                                guard tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue) else { return }
+                                tutorial.activity()
+                                controller.pencilStyle.color = InkPreset.all[index].rgba
+                                crownFocused = true
+                            }
+                                .frame(width: 40)
+                                .offset(y: selectionOffset)
+                                .opacity(selection == .color ? 1 : 0)
+                                .allowsHitTesting(selection == .color)
+                                .accessibilityHidden(selection != .color)
+
+                            ToolEraserModePicker(selectedMode: controller.pencilStyle.eraserMode,
+                                                isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue)) { mode in
+                                guard tutorial.allowsToolAdjustment(page: ToolSetting.mode.rawValue) else { return }
+                                controller.pencilStyle.eraserMode = mode
+                                crownFocused = true
+                            }
+                                .frame(width: 40)
+                                .opacity(selection == .mode ? 1 : 0)
+                                .scaleEffect(reduceMotion || selection == .mode ? 1 : 0.35)
+                                .allowsHitTesting(selection == .mode)
+                                .accessibilityHidden(selection != .mode)
+
+                            ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
+                                                 isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
+                                                 onAdjust: { adjustDirection(by: $0) })
+                                .frame(width: ToolDirectionControl.idealSize.width,
+                                       height: ToolDirectionControl.idealSize.height)
+                                .scaleEffect(angleScale)
+                                .frame(width: ToolDirectionControl.idealSize.width * angleScale,
+                                       height: ToolDirectionControl.idealSize.height * angleScale)
+                                .opacity(selection == .direction ? 1 : 0)
+                                .scaleEffect(reduceMotion || selection == .direction ? 1 : 0.35)
+                                .allowsHitTesting(selection == .direction)
+                                .accessibilityHidden(selection != .direction)
+                        }
+                        .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
+                    }
+                    .frame(width: panelWidth)
+                    .opacity(selection == .width ? 0 : 1)
+                    .modifier(ToolPickerViewportClip(isEnabled: !tutorial.isActive))
                 }
-                .frame(width: selection == .width ? 0 : 40)
-                .opacity(selection == .width ? 0 : 1)
-                .clipped()
+                .frame(width: settingsGeometry.size.width, height: settingsGeometry.size.height)
             }
-            .frame(maxHeight: .infinity)
             .animation(pageAnimation, value: selection)
 
             ToolSettingCarousel(availableSettings: availableSettings, selection: selection,
@@ -177,6 +202,7 @@ struct WatchToolSettingsView: View {
         .padding(.top, 40)
         .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onPreferenceChange(StrokePreviewHeightKey.self) { strokePreviewHeight = $0 }
         .environment(\.colorScheme, .dark)
         .contentShape(Rectangle())
         .focusable(!showsInformation && tutorial.allowsToolAdjustment(page: selection.rawValue))
@@ -274,4 +300,29 @@ struct WatchToolSettingsView: View {
         crownFocused = true
     }
 
+}
+
+private struct ToolPickerViewportClip: ViewModifier {
+    let isEnabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content.clipped()
+        } else {
+            // Continue above the viewport, but stop before the horizontal settings carousel.
+            content.mask {
+                Rectangle()
+                    .padding(.top, -40)
+            }
+        }
+    }
+}
+
+private struct StrokePreviewHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
 }

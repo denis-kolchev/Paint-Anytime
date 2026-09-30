@@ -161,11 +161,11 @@ struct TutorialPlayerView: View {
                     }
             }
         }
+        .ignoresSafeArea(.container)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
             if height > 0 { hintHeight = height }
         }
-        .ignoresSafeArea(.container)
-        .background(Color.black)
+        .background(Color.black.ignoresSafeArea())
         .onAppear {
             player.startOrResume()
         }
