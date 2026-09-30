@@ -7,33 +7,37 @@ struct WatchAppSettingsView: View {
     @ObservedObject var controller: CanvasController
     var onOpenDrawings: () -> Void
     var onStartTutorial: () -> Void
+    @ObservedObject var tutorial = TutorialSession.inactive
 
     var body: some View {
         NavigationStack {
             List {
                 Button(action: onOpenDrawings) {
                     Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
+                        .tutorialHint(tutorial, steps: [.openGallery])
                 }
-                NavigationLink {
-                    AppLanguageSelectionView()
-                } label: {
-                    Label(L10n.text("Language"), systemImage: "globe")
-                }
-                NavigationLink {
-                    ToolSynchronizationView(controller: controller)
-                } label: {
-                    Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
-                }
-                Button(action: onStartTutorial) {
-                    Label(L10n.text("Tutorial"), systemImage: "graduationcap")
-                }
-                NavigationLink {
-                    WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
-                } label: {
-                    Label(L10n.text("Privacy Policy"), systemImage: "hand.raised")
-                }
-                Button(action: reportBug) {
-                    Label(L10n.text("Report a bug"), systemImage: "envelope")
+                if !tutorial.isActive {
+                    NavigationLink {
+                        AppLanguageSelectionView()
+                    } label: {
+                        Label(L10n.text("Language"), systemImage: "globe")
+                    }
+                    NavigationLink {
+                        ToolSynchronizationView(controller: controller)
+                    } label: {
+                        Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    Button(action: onStartTutorial) {
+                        Label(L10n.text("Tutorial"), systemImage: "graduationcap")
+                    }
+                    NavigationLink {
+                        WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
+                    } label: {
+                        Label(L10n.text("Privacy Policy"), systemImage: "hand.raised")
+                    }
+                    Button(action: reportBug) {
+                        Label(L10n.text("Report a bug"), systemImage: "envelope")
+                    }
                 }
             }
             .labelStyle(CenteredMenuLabelStyle())

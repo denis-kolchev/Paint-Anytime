@@ -46,7 +46,9 @@ struct SavedDrawingsView: View {
                         galleryGrid(spacing: spacing, width: width, thumbnailPixels: thumbnailPixels)
                             .reportLegacyScrollPosition()
                     }
-                    .padding(.bottom, tutorialHintReservedHeight)
+                    // Let photos scroll behind the tutorial card while allowing
+                    // the final row to scroll fully above it.
+                    .contentMargins(.bottom, tutorialHintReservedHeight, for: .scrollContent)
                     .contentMargins(.top, navigationHeight + 4, for: .scrollContent)
                     .scrollIndicators(.hidden)
                     // Observe native scrolling without competing with its swipe gesture.

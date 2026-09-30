@@ -13,8 +13,8 @@ extension View {
     }
 
     /// All toolbar icons, including Information, use one explicit circle size.
-    func watchToolbarButtonStyle(diameter: CGFloat = 32) -> some View {
-        modifier(WatchToolbarButtonModifier(diameter: diameter))
+    func watchToolbarButtonStyle(diameter: CGFloat = 32, usesCanvasMaterial: Bool = false) -> some View {
+        modifier(WatchToolbarButtonModifier(diameter: diameter, usesCanvasMaterial: usesCanvasMaterial))
     }
 }
 
@@ -26,9 +26,10 @@ private struct WatchToolbarButtonModifier: ViewModifier {
     // same compact diameter. Do not rely on controlSize: toolbar hosts can
     // resolve it differently when a conditional item is first inserted.
     let diameter: CGFloat
+    let usesCanvasMaterial: Bool
 
     func body(content: Content) -> some View {
-        if #available(watchOS 27, *) {
+        if #available(watchOS 27, *), !usesCanvasMaterial {
             // Match native toolbar chrome (including the sheet's close button).
             // Do not layer a standalone glassEffect over the system button:
             // the toolbar owns the material, edge treatment and shadow here.

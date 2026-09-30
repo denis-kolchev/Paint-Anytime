@@ -61,29 +61,10 @@ struct TutorialPlayerView: View {
                     }
 
                     if page == .menu {
-                        // This player fills the screen, so position menu content explicitly
-                        // below the clock instead of relying on List's navigation insets.
-                        VStack(spacing: 8) {
-                            Text(L10n.text("More"))
-                                .font(.headline)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
-                                .accessibilityAddTraits(.isHeader)
-                            ScrollView {
-                                Button {
-                                    player.openGallery()
-                                } label: {
-                                    Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
-                                        .frame(maxWidth: .infinity, minHeight: 44)
-                                        .tutorialHint(tutorial, steps: [.openGallery])
-                                }
-                                .watchActionButtonStyle()
-                            }
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.top, 34)
-                        .padding(.bottom, hintReservedHeight)
-                        .navigationTitle("")
+                        WatchAppSettingsView(controller: controller,
+                                             onOpenDrawings: { player.openGallery() },
+                                             onStartTutorial: {},
+                                             tutorial: tutorial)
                     }
                 }
                 .overlay(alignment: .bottom) {
@@ -101,7 +82,7 @@ struct TutorialPlayerView: View {
                                 ToolIcon(instrument: controller.pencilStyle.instrument).frame(width: 18, height: 18)
                                     .tutorialHint(tutorial, steps: [.openTools])
                             }
-                            .watchToolbarButtonStyle()
+                            .watchToolbarButtonStyle(usesCanvasMaterial: true)
                             .accessibilityLabel(L10n.text("Tool settings"))
                             .onAppear { TutorialDebug.trace("tools.button.appear", tutorial.debugState) }
                             .trackCanvasControl(.tools, frames: $controls)
@@ -121,7 +102,7 @@ struct TutorialPlayerView: View {
                                     .tutorialHint(tutorial, steps: [.reedStrokes, .panCanvas])
                             }
                             .disabled(page == .canvas && !tutorial.canFinishCamera)
-                            .watchToolbarButtonStyle()
+                            .watchToolbarButtonStyle(usesCanvasMaterial: true)
                             .accessibilityLabel(L10n.text("Done"))
                             .onAppear { TutorialDebug.trace("tools.button.appear", tutorial.debugState) }
                             .trackCanvasControl(.tools, frames: $controls)
@@ -132,14 +113,14 @@ struct TutorialPlayerView: View {
                             Button {
                                 player.closeSavedDrawing()
                             } label: { Image(systemName: "xmark").tutorialHint(tutorial, steps: [.shareDrawing]) }
-                            .watchToolbarButtonStyle()
+                            .watchToolbarButtonStyle(usesCanvasMaterial: true)
                             .accessibilityLabel(L10n.text("Back"))
                         }
                     }
                     if page == .canvas && tutorial.permits([.openGallery]) {
                         ToolbarItem(placement: .topBarLeading) {
                             Button { player.openMenu() } label: { Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openGallery]) }
-                                .watchToolbarButtonStyle()
+                                .watchToolbarButtonStyle(usesCanvasMaterial: true)
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
                         }
@@ -161,7 +142,9 @@ struct TutorialPlayerView: View {
                     }
             }
         }
-        .ignoresSafeArea(.container)
+        // The native menu needs the top safe area to place its first row below
+        // the navigation title. Its bottom still extends behind the hint card.
+        .ignoresSafeArea(.container, edges: page == .menu ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
             if height > 0 { hintHeight = height }
         }
@@ -200,7 +183,7 @@ struct TutorialPlayerView: View {
             HStack {
                 // Keep the same four slots as the regular canvas toolbar.
                 Button {} label: { BroomIcon() }
-                    .watchToolbarButtonStyle()
+                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
                     .hidden()
                     .disabled(true)
                     .allowsHitTesting(false)
@@ -210,7 +193,7 @@ struct TutorialPlayerView: View {
                     player.undo()
                 } label: { Image(systemName: "arrow.uturn.backward").tutorialHint(tutorial, steps: [.history]) }
                 .disabled(!controller.canUndo)
-                .watchToolbarButtonStyle()
+                .watchToolbarButtonStyle(usesCanvasMaterial: true)
                 .accessibilityLabel(L10n.text("Undo"))
                 .trackCanvasControl(.undo, frames: $controls)
                 Spacer(minLength: 0)
@@ -218,12 +201,12 @@ struct TutorialPlayerView: View {
                     player.redo()
                 } label: { Image(systemName: "arrow.uturn.forward").tutorialHint(tutorial, steps: [.history]) }
                 .disabled(!controller.canRedo)
-                .watchToolbarButtonStyle()
+                .watchToolbarButtonStyle(usesCanvasMaterial: true)
                 .accessibilityLabel(L10n.text("Redo"))
                 .trackCanvasControl(.redo, frames: $controls)
                 Spacer(minLength: 0)
                 Button {} label: { Image(systemName: "square.and.arrow.down") }
-                    .watchToolbarButtonStyle()
+                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
                     .hidden()
                     .disabled(true)
                     .allowsHitTesting(false)
@@ -235,7 +218,7 @@ struct TutorialPlayerView: View {
                 HStack {
                     Spacer()
                     Button { player.save(size: canvasSize, scale: displayScale) } label: { Image(systemName: "square.and.arrow.down").tutorialHint(tutorial, steps: [.saveDrawing]) }
-                        .watchToolbarButtonStyle()
+                        .watchToolbarButtonStyle(usesCanvasMaterial: true)
                         .accessibilityLabel(L10n.text("Save drawing"))
                         .trackCanvasControl(.save, frames: $controls)
                 }
@@ -247,7 +230,7 @@ struct TutorialPlayerView: View {
                     Button {
                         player.requestClear()
                     } label: { BroomIcon().tutorialHint(tutorial, steps: [.clearCanvas]) }
-                    .watchToolbarButtonStyle()
+                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
                     .accessibilityLabel(L10n.text("Clear canvas"))
                     .trackCanvasControl(.clear, frames: $controls)
                     Spacer()
