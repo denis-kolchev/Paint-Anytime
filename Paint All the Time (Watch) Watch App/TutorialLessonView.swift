@@ -16,28 +16,33 @@ struct TutorialLessonView: View {
     var body: some View {
         TutorialHintLayout(maximumHeight: screenHeight * 0.32) {
             TutorialInstructionText(
-                text: TutorialLesson.compactInstruction(for: tutorial.step),
+                text: tutorial.instruction,
                 isPaused: confirmsFinish
             )
             .id(tutorial.step)
 
-            Button(role: .destructive) {
-                tutorial.pauseReminders()
-                confirmsFinish = true
+            Button(role: showsCompletionCheckmark ? nil : .destructive) {
+                if showsCompletionCheckmark {
+                    onFinish()
+                } else {
+                    tutorial.pauseReminders()
+                    confirmsFinish = true
+                }
             } label: {
                 ZStack {
                     Image(systemName: "xmark")
                         .foregroundStyle(.red)
                         .opacity(showsCompletionCheckmark ? 0 : 1)
                         .scaleEffect(showsCompletionCheckmark && !reduceMotion ? 0.6 : 1)
-                    // Use the same SF Symbol and green as the free camera's Done button.
+                    // Completion uses the neutral tint of the other toolbar controls.
                     Image(systemName: "checkmark")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.white)
                         .opacity(showsCompletionCheckmark ? 1 : 0)
                         .scaleEffect(showsCompletionCheckmark || reduceMotion ? 1 : 0.6)
                 }
                 .font(.system(size: 11, weight: .semibold))
             }
+            .tint(showsCompletionCheckmark ? .white : .red)
             .watchToolbarButtonStyle(diameter: 24)
             .frame(width: 32, height: 32)
             .contentShape(Circle())
@@ -48,10 +53,10 @@ struct TutorialLessonView: View {
                     .accessibilityHidden(true)
             }
             .accessibilityLabel("Finish tutorial")
-            .accessibilityValue("\(completedLessons) of 20 lessons completed")
+            .accessibilityValue("\(completedLessons) of \(TutorialStep.lessonCount) lessons completed")
 
             // Measure the full copy independently of the scroll viewport.
-            Text(TutorialLesson.compactInstruction(for: tutorial.step))
+            Text(tutorial.instruction)
                 .font(.system(size: 11, weight: .medium))
                 .fixedSize(horizontal: false, vertical: true)
                 .hidden()
@@ -75,7 +80,6 @@ struct TutorialLessonView: View {
         .fullScreenCover(isPresented: $confirmsFinish, onDismiss: {
             if didConfirmFinish {
                 didConfirmFinish = false
-                tutorial.stop()
                 onFinish()
             } else {
                 tutorial.resumeReminders()
@@ -103,14 +107,14 @@ struct TutorialLessonView: View {
         }
         guard !showsCompletionCheckmark else { return }
         if reduceMotion {
-            greenDotCount = 20
+            greenDotCount = TutorialStep.lessonCount
             showsCompletionCheckmark = true
             return
         }
         do {
             // Start at twelve o'clock and sweep clockwise in about 0.7 seconds.
             // Retain progress if the view's task is interrupted and resumed.
-            while greenDotCount < 20 {
+            while greenDotCount < TutorialStep.lessonCount {
                 try await Task.sleep(for: .milliseconds(35))
                 try Task.checkCancellation()
                 greenDotCount += 1
@@ -127,7 +131,7 @@ struct TutorialLessonView: View {
     }
 
     private var completedLessons: Int {
-        tutorial.step == .finished ? 20 : max(0, tutorial.step.rawValue - 1)
+        tutorial.step == .finished ? TutorialStep.lessonCount : max(0, tutorial.step.rawValue - 1)
     }
 
     private let edgeGap: CGFloat = 10
@@ -147,8 +151,8 @@ private struct TutorialProgressDots: View {
             let size = geometry.size
             let radius = min(size.width, size.height) / 2 - 2
             ZStack {
-                ForEach(0..<20) { index in
-                    let angle = Double(index) * .pi * 2 / 20 - .pi / 2
+                ForEach(0..<TutorialStep.lessonCount) { index in
+                    let angle = Double(index) * .pi * 2 / Double(TutorialStep.lessonCount) - .pi / 2
                     Circle()
                         .fill(Color(white: index < completedLessons ? 0.8 : 0.3))
                         .overlay {

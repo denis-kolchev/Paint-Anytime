@@ -66,20 +66,21 @@ private struct WatchToolbarButtonModifier: ViewModifier {
 
 extension View {
     /// Apply to the label so native button chrome and hit targets stay unchanged.
-    func tutorialHint(_ tutorial: TutorialSession, steps: Set<TutorialStep>) -> some View {
-        modifier(TutorialButtonHint(tutorial: tutorial, steps: steps))
+    func tutorialHint(_ tutorial: TutorialSession, steps: Set<TutorialStep>, isSuggested: Bool = true) -> some View {
+        modifier(TutorialButtonHint(tutorial: tutorial, steps: steps, isSuggested: isSuggested))
     }
 }
 
 private struct TutorialButtonHint: ViewModifier {
     @ObservedObject var tutorial: TutorialSession
     let steps: Set<TutorialStep>
+    let isSuggested: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.isEnabled) private var isEnabled
 
     private var isActive: Bool {
-        tutorial.isActive && tutorial.permits(steps) && !tutorial.remindersPaused
+        isSuggested && tutorial.isActive && tutorial.permits(steps) && !tutorial.remindersPaused
             && isEnabled && !reduceMotion && scenePhase == .active
     }
 
@@ -88,6 +89,8 @@ private struct TutorialButtonHint: ViewModifier {
             label
                 .scaleEffect(emphasized ? 1.2 : 1)
                 .brightness(emphasized ? 0.2 : 0)
+                .opacity(isActive && !emphasized ? 0.65 : 1)
+                .offset(y: emphasized ? -2 : 0)
         } animation: { emphasized in
             .easeInOut(duration: 0.35).delay(emphasized ? 0.7 : 0)
         }

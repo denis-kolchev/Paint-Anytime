@@ -74,7 +74,9 @@ struct WatchCanvasView: View {
                             // A wider release radius prevents repeated clicks near the boundary.
                             let radius: CGFloat = wasCentered ? 12 : 8
                             let isCentered = hypot(proposed.width, proposed.height) <= radius
-                            offset = isCentered ? .zero : proposed
+                            let nextOffset: CGSize = isCentered ? .zero : proposed
+                            if nextOffset != offset { tutorial.record(.panned) }
+                            offset = nextOffset
                             if isCentered && !wasCentered {
                                 WKInterfaceDevice.current().play(.click)
                             }
@@ -94,7 +96,6 @@ struct WatchCanvasView: View {
                         defer { acceptsCurrentGesture = nil; panOrigin = nil }
                         guard acceptsInput && acceptsCurrentGesture == true else { return }
                         if isMovingCanvas {
-                            if abs(value.translation.width) + abs(value.translation.height) > 2 { tutorial.record(.panned) }
                             panOrigin = nil
                             return
                         }

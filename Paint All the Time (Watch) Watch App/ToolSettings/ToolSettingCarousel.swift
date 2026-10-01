@@ -15,8 +15,8 @@ struct ToolSettingCarousel: View {
         guard setting != selection else { return [] }
         switch setting {
         case .width: return [.openWidth]
-        case .instrument: return [.selectReed]
-        case .direction: return [.setAngle]
+        case .instrument: return [.openTool, .selectReed]
+        case .direction: return [.openAngle]
         default: return []
         }
     }

@@ -11,6 +11,10 @@ struct TutorialPlayerView: View {
     @State private var canvasSize = CGSize.zero
     @State private var hintHeight: CGFloat = 0
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var panGuideOffset = CGSize.zero
+    @State private var panGuideVisible = false
+    @State private var historyEmphasizesRedo = false
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
 
@@ -38,6 +42,40 @@ struct TutorialPlayerView: View {
                                 .opacity(page == .canvas ? 1 : 0)
                                 .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
                                 .accessibilityHidden(page != .canvas)
+
+                            if page == .canvas && tutorial.showsPanGuide {
+                                Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+                                    .font(.title2.bold())
+                                    .foregroundStyle(.white)
+                                    .padding(10)
+                                    .background(.regularMaterial, in: Circle())
+                                    .offset(panGuideOffset)
+                                    .opacity(panGuideVisible ? 1 : 0)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                                    .task {
+                                        let offsets: [CGSize] = [
+                                            CGSize(width: -24, height: 0), .zero,
+                                            CGSize(width: 24, height: 0), .zero,
+                                            CGSize(width: 0, height: -24), .zero,
+                                            CGSize(width: 0, height: 24), .zero
+                                        ]
+                                        panGuideVisible = false
+                                        panGuideOffset = .zero
+                                        do {
+                                            try await Task.sleep(for: .seconds(1))
+                                            try Task.checkCancellation()
+                                            panGuideVisible = true
+                                            guard !reduceMotion else { return }
+                                            while !Task.isCancelled {
+                                                for offset in offsets {
+                                                    withAnimation(.easeInOut(duration: 0.45)) { panGuideOffset = offset }
+                                                    try await Task.sleep(for: .milliseconds(500))
+                                                }
+                                            }
+                                        } catch { panGuideVisible = false; panGuideOffset = .zero }
+                                    }
+                            }
 
                             if page == .tools {
                                 WatchToolSettingsView(controller: controller, tutorial: tutorial)
@@ -73,7 +111,7 @@ struct TutorialPlayerView: View {
                         .padding(.bottom, hintReservedHeight)
                 }
                 .toolbar {
-                    if page == .canvas && tutorial.permits([.openTools]) {
+                    if page == .canvas && !isMovingCanvas && tutorial.permits([.openTools]) {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 TutorialDebug.trace("tools.tap", tutorial.debugState)
@@ -88,7 +126,7 @@ struct TutorialPlayerView: View {
                             .trackCanvasControl(.tools, frames: $controls)
                         }
                     }
-                    if (page == .tools && tutorial.permits([.reedStrokes])) || (page == .canvas && tutorial.permits([.panCanvas])) {
+                    if (page == .tools && tutorial.permits([.closeTools])) || (page == .canvas && isMovingCanvas && tutorial.canFinishCamera) {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 if page == .tools {
@@ -99,7 +137,7 @@ struct TutorialPlayerView: View {
                                 }
                             } label: {
                                 Image(systemName: "checkmark").foregroundStyle(.green)
-                                    .tutorialHint(tutorial, steps: [.reedStrokes, .panCanvas])
+                                    .tutorialHint(tutorial, steps: [.closeTools, .finishCamera])
                             }
                             .disabled(page == .canvas && !tutorial.canFinishCamera)
                             .watchToolbarButtonStyle(usesCanvasMaterial: true)
@@ -117,9 +155,9 @@ struct TutorialPlayerView: View {
                             .accessibilityLabel(L10n.text("Back"))
                         }
                     }
-                    if page == .canvas && tutorial.permits([.openGallery]) {
+                    if page == .canvas && tutorial.permits([.openMenu]) {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button { player.openMenu() } label: { Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openGallery]) }
+                            Button { player.openMenu() } label: { Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openMenu]) }
                                 .watchToolbarButtonStyle(usesCanvasMaterial: true)
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
@@ -129,7 +167,9 @@ struct TutorialPlayerView: View {
                 .frame(width: screen.size.width, height: screen.size.height)
                 .environment(\.tutorialHintReservedHeight, hintReservedHeight)
 
-                TutorialLessonView(tutorial: tutorial, onFinish: onFinish,
+                TutorialLessonView(tutorial: tutorial, onFinish: {
+                    if player.preserveDrawing() { onFinish() }
+                },
                                    screenWidth: screen.size.width,
                                    screenHeight: screen.size.height)
                     .frame(width: screen.size.width)
@@ -155,6 +195,19 @@ struct TutorialPlayerView: View {
         .onChange(of: tutorial.step) { _, _ in
             controls = [:]
         }
+        .task(id: tutorial.step) {
+            guard tutorial.step == .history else { return }
+            historyEmphasizesRedo = false
+            do {
+                while !Task.isCancelled {
+                    try await Task.sleep(for: .milliseconds(1400))
+                    historyEmphasizesRedo.toggle()
+                }
+            } catch {}
+        }
+        .onChange(of: controller.canRedo) { _, canRedo in
+            if canRedo { historyEmphasizesRedo = true }
+        }
         .onChange(of: scenePhase) { _, phase in
             TutorialDebug.trace("player.scenePhase", "phase=\(phase)")
             player.setActive(phase == .active)
@@ -179,7 +232,7 @@ struct TutorialPlayerView: View {
     }
 
     @ViewBuilder private var tutorialBottomControls: some View {
-        if page == .canvas && tutorial.permits([.history]) {
+        if page == .canvas && tutorial.permits([.history, .saveDrawing]) {
             HStack {
                 // Keep the same four slots as the regular canvas toolbar.
                 Button {} label: { BroomIcon() }
@@ -191,46 +244,43 @@ struct TutorialPlayerView: View {
                 Spacer(minLength: 0)
                 Button {
                     player.undo()
-                } label: { Image(systemName: "arrow.uturn.backward").tutorialHint(tutorial, steps: [.history]) }
-                .disabled(!controller.canUndo)
+                } label: { Image(systemName: "arrow.uturn.backward").tutorialHint(tutorial, steps: [.history], isSuggested: !historyEmphasizesRedo || !controller.canRedo) }
+                .disabled(!controller.canUndo || tutorial.step != .history)
                 .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                .opacity(tutorial.step == .history ? 1 : 0)
+                .accessibilityHidden(tutorial.step != .history)
                 .accessibilityLabel(L10n.text("Undo"))
                 .trackCanvasControl(.undo, frames: $controls)
                 Spacer(minLength: 0)
                 Button {
                     player.redo()
-                } label: { Image(systemName: "arrow.uturn.forward").tutorialHint(tutorial, steps: [.history]) }
-                .disabled(!controller.canRedo)
+                } label: { Image(systemName: "arrow.uturn.forward").tutorialHint(tutorial, steps: [.history], isSuggested: historyEmphasizesRedo || !controller.canUndo) }
+                .disabled(!controller.canRedo || tutorial.step != .history)
                 .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                .opacity(tutorial.step == .history ? 1 : 0)
+                .accessibilityHidden(tutorial.step != .history)
                 .accessibilityLabel(L10n.text("Redo"))
                 .trackCanvasControl(.redo, frames: $controls)
                 Spacer(minLength: 0)
-                Button {} label: { Image(systemName: "square.and.arrow.down") }
-                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
-                    .hidden()
-                    .disabled(true)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-            }
-        }
-        if page == .canvas && tutorial.permits([.saveDrawing]) {
-            Group {
-                HStack {
-                    Spacer()
-                    Button { player.save(size: canvasSize, scale: displayScale) } label: { Image(systemName: "square.and.arrow.down").tutorialHint(tutorial, steps: [.saveDrawing]) }
-                        .watchToolbarButtonStyle(usesCanvasMaterial: true)
-                        .accessibilityLabel(L10n.text("Save drawing"))
-                        .trackCanvasControl(.save, frames: $controls)
+                Button { player.save(size: canvasSize, scale: displayScale) } label: {
+                    Image(systemName: "square.and.arrow.down").tutorialHint(tutorial, steps: [.saveDrawing])
                 }
+                .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                .opacity(tutorial.step == .saveDrawing ? 1 : 0)
+                .disabled(tutorial.step != .saveDrawing)
+                .accessibilityHidden(tutorial.step != .saveDrawing)
+                .accessibilityLabel(L10n.text("Save drawing"))
+                .trackCanvasControl(.save, frames: $controls)
             }
         }
-        if page == .canvas && tutorial.permits([.clearCanvas]) {
+        if page == .canvas && (tutorial.step == .clearCanvas || tutorial.step == .finished) {
             Group {
                 HStack {
                     Button {
                         player.requestClear()
                     } label: { BroomIcon().tutorialHint(tutorial, steps: [.clearCanvas]) }
                     .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                    .disabled(!tutorial.permits([.clearCanvas]))
                     .accessibilityLabel(L10n.text("Clear canvas"))
                     .trackCanvasControl(.clear, frames: $controls)
                     Spacer()

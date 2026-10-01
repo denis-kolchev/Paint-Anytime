@@ -6,6 +6,7 @@ struct SavedDrawingView: View {
     @State var photoTransferStatus: String
     @State var canRetryPhotoTransfer: Bool
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
+    @FocusState private var scrollFocused: Bool
     @ObservedObject var tutorial = TutorialSession.inactive
     var body: some View {
         ScrollView {
@@ -43,6 +44,14 @@ struct SavedDrawingView: View {
         }
         .padding(.bottom, tutorialHintReservedHeight)
         .scrollDisabled(tutorial.isActive && !tutorial.permits([.shareDrawing]))
+        // Give the visible page Crown focus after the canvas releases it.
+        .focusable()
+        .focused($scrollFocused)
+        .task {
+            await Task.yield()
+            scrollFocused = true
+        }
+        .onDisappear { scrollFocused = false }
         .onTutorialScrollActivity { tutorial.activity() }
         .navigationTitle(L10n.text("Saved"))
     }

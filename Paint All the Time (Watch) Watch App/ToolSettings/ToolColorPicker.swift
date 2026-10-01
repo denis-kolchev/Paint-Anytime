@@ -3,6 +3,7 @@ import SwiftUI
 struct ToolColorPicker: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var choiceAnimation: Animation? { reduceMotion ? nil : .easeOut(duration: 0.18) }
+    var presets: [InkPreset] = InkPreset.all
     let colorIndex: Int
     let isActive: Bool
     let isEnabled: Bool
@@ -26,12 +27,12 @@ struct ToolColorPicker: View {
                 ScrollViewReader { proxy in
                 ScrollView(.vertical) {
                     VStack(spacing: 3) {
-                        ForEach(InkPreset.all.indices, id: \.self) { index in
+                        ForEach(presets.indices, id: \.self) { index in
                             Button {
                                 onSelect(index)
                             } label: {
                                 Circle()
-                                    .fill(InkPreset.all[index].color)
+                                    .fill(presets[index].color)
                                     .frame(width: swatchSize, height: swatchSize)
                                     .overlay { Circle().strokeBorder(.gray.opacity(0.5), lineWidth: 1) }
                                     .padding(3)
@@ -43,7 +44,7 @@ struct ToolColorPicker: View {
                             }
                             .buttonStyle(.borderless)
                             .disabled(!isEnabled)
-                            .accessibilityLabel(InkPreset.all[index].name)
+                            .accessibilityLabel(presets[index].name)
                             .accessibilityAddTraits(colorIndex == index ? [.isSelected] : [])
                             .id(index)
                         }
@@ -77,13 +78,13 @@ struct ToolColorPicker: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.secondary)
-                    .opacity(colorIndex < InkPreset.all.count - 1 ? 1 : 0.25)
+                    .opacity(colorIndex < presets.count - 1 ? 1 : 0.25)
                     .accessibilityHidden(true)
 
-                Text("\(colorIndex + 1)/\(InkPreset.all.count)")
+                Text("\(colorIndex + 1)/\(presets.count)")
                     .font(.system(size: 9).monospacedDigit())
                     .foregroundStyle(.secondary)
-                    .accessibilityLabel(L10n.format("Color %d of %d", colorIndex + 1, InkPreset.all.count))
+                    .accessibilityLabel(L10n.format("Color %d of %d", colorIndex + 1, presets.count))
             }
         }
     }

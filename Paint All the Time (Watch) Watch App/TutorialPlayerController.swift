@@ -41,9 +41,18 @@ final class TutorialPlayerController: ObservableObject {
 
     func openTools() { page = .tools; tutorial.record(.openedTools) }
     func closeTools() { page = .canvas; tutorial.record(.closedTools) }
-    func openMenu() { page = .menu; tutorial.activity() }
-    func openGallery() { page = .gallery; tutorial.record(.openedGallery) }
-    func closeGallery() { page = .canvas; tutorial.record(.returnedToCanvas) }
+    func openMenu() { page = .menu; tutorial.record(.openedMenu) }
+    func openGallery() { page = .gallery; tutorial.galleryIsOpen = true; tutorial.record(.openedGallery) }
+    func closeGallery() {
+        tutorial.galleryIsOpen = false
+        tutorial.galleryIsFullscreen = false
+        if tutorial.step == .returnToCanvas {
+            page = .canvas
+            tutorial.record(.returnedToCanvas)
+        } else {
+            page = .menu
+        }
+    }
     func closeSavedDrawing() { page = .canvas; tutorial.record(.closedSave) }
     func undo() { canvas.undo(); tutorial.record(.history) }
     func redo() { canvas.redo(); tutorial.record(.history) }
@@ -62,6 +71,7 @@ final class TutorialPlayerController: ObservableObject {
         tutorial.resumeReminders()
         guard didConfirmClear else { return }
         didConfirmClear = false
+        guard preserveDrawing() else { return }
         canvas.clear()
         tutorial.record(.cleared)
     }
@@ -77,6 +87,24 @@ final class TutorialPlayerController: ObservableObject {
         } catch {
             tutorial.pauseReminders()
             saveError = error.localizedDescription
+        }
+    }
+
+    /// Keep only the user's saved artwork; deleted work and bundled practice pictures stay out.
+    @discardableResult
+    func preserveDrawing() -> Bool {
+        guard let drawing = savedDrawing,
+              FileManager.default.fileExists(atPath: drawing.url.path) else { return true }
+        do {
+            let document = try CanvasExportStore.loadDocument(for: drawing)
+            let image = try Data(contentsOf: drawing.url)
+            _ = try CanvasExportStore.save(document: document, imageData: image,
+                                           name: drawing.url.deletingPathExtension().lastPathComponent)
+            return true
+        } catch {
+            tutorial.pauseReminders()
+            saveError = error.localizedDescription
+            return false
         }
     }
 

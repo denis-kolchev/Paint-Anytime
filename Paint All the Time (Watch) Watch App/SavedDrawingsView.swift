@@ -253,6 +253,9 @@ struct SavedDrawingsView: View {
             crownFocused = !showing && tutorial.allowsGalleryZoom && pendingDeletion == nil
             if !showing && showsFullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
         }
+        .onChange(of: showsFullscreen) { _, fullscreen in
+            tutorial.galleryIsFullscreen = fullscreen
+        }
         .onChange(of: isTransitioning) { _, transitioning in
             if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
         }

@@ -21,6 +21,8 @@ struct WatchToolSettingsView: View {
         nonmutating set { selectedPage = newValue.rawValue }
     }
 
+    private var colors: [InkPreset] { tutorial.isActive ? InkPreset.all.filter { $0.nameKey != "White" } : InkPreset.all }
+
     private var isEraser: Bool { controller.pencilStyle.instrument == .eraser }
     private var instruments: [DrawingInstrument] { DrawingInstrument.displayOrder }
     private var instrumentIndex: Int { instruments.firstIndex(of: controller.pencilStyle.instrument) ?? 0 }
@@ -30,13 +32,13 @@ struct WatchToolSettingsView: View {
         if isEraser { pages = [.width, .instrument, .mode] }
         else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .instrument, .direction] }
         else { pages = [.color, .width, .instrument] }
-        return tutorial.isActive ? pages.filter { tutorial.visibleToolPages.contains($0.rawValue) } : pages
+        return pages
     }
 
     private var valueTitle: String {
         switch selection {
         case .width: L10n.format("%d pt", Int(controller.pencilStyle.width))
-        case .color: InkPreset.all[colorIndex].name
+        case .color: colors[colorIndex].name
         case .instrument: controller.pencilStyle.instrument.title
         case .mode: controller.pencilStyle.eraserMode.title
         case .direction: "\(Int(controller.pencilStyle.reedAngle))°"
@@ -46,7 +48,7 @@ struct WatchToolSettingsView: View {
     private var crownMaximum: Double {
         switch selection {
         case .width: Double(controller.maximumWidth)
-        case .color: Double(InkPreset.all.count - 1)
+        case .color: Double(colors.count - 1)
         case .instrument: Double(instruments.count - 1)
         case .mode: 1
         case .direction: 90
@@ -54,7 +56,7 @@ struct WatchToolSettingsView: View {
     }
 
     private var colorIndex: Int {
-        InkPreset.all.firstIndex { $0.rgba == controller.pencilStyle.color } ?? 0
+        colors.firstIndex { $0.rgba == controller.pencilStyle.color } ?? 0
     }
 
     // One focused Crown target; changing the page changes what it edits.
@@ -84,8 +86,8 @@ struct WatchToolSettingsView: View {
             case .direction:
                 style.reedAngle = Float(min(90, max(-90, (value / 5).rounded() * 5)))
             case .color:
-                let index = min(InkPreset.all.count - 1, max(0, Int(value.rounded())))
-                style.color = InkPreset.all[index].rgba
+                let index = min(colors.count - 1, max(0, Int(value.rounded())))
+                style.color = colors[index].rgba
             case .instrument:
                 break
             }
@@ -143,13 +145,13 @@ struct WatchToolSettingsView: View {
                             .allowsHitTesting(selection == .instrument)
                             .accessibilityHidden(selection != .instrument)
 
-                            ToolColorPicker(colorIndex: colorIndex, isActive: selection == .color,
+                            ToolColorPicker(presets: colors, colorIndex: colorIndex, isActive: selection == .color,
                                             isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue),
                                             extendsBeyondViewport: tutorial.isActive,
                                                  showsNavigationHints: !tutorial.isActive) { index in
                                 guard tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue) else { return }
                                 tutorial.activity()
-                                controller.pencilStyle.color = InkPreset.all[index].rgba
+                                controller.pencilStyle.color = colors[index].rgba
                                 crownFocused = true
                             }
                                 .frame(width: 40)
@@ -263,6 +265,7 @@ struct WatchToolSettingsView: View {
         }
         .fullScreenCover(isPresented: $showsInformation, onDismiss: {
             tutorial.record(.closedInfo)
+            tutorial.changedStyle(from: controller.pencilStyle, to: controller.pencilStyle, page: selection.rawValue)
             crownFocused = tutorial.allowsToolAdjustment(page: selection.rawValue)
         }) {
             ToolInformationView(
@@ -292,8 +295,11 @@ struct WatchToolSettingsView: View {
         .onChange(of: selectedPage) { _, page in
             if !tutorial.isActive { savedPage = page }
             tutorial.changedPage(page)
+            tutorial.changedStyle(from: controller.pencilStyle, to: controller.pencilStyle, page: page)
         }
-        .onChange(of: controller.pencilStyle) { _, style in tutorial.changedStyle(style) }
+        .onChange(of: controller.pencilStyle) { old, style in
+            tutorial.changedStyle(from: old, to: style, page: selection.rawValue)
+        }
         .onChange(of: controller.pencilStyle.instrument) { _, _ in
             withAnimation(pageAnimation) { selectedPage = selection.rawValue }
         }

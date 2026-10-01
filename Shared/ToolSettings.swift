@@ -113,8 +113,8 @@ final class ToolSettings: ObservableObject {
 }
 
 struct ToolSynchronization: Codable, Equatable {
-    var width = false
-    var color = false
+    var width = true
+    var color = true
     var sharedWidth: Float = 4
     var sharedColor = SIMD4<Float>(0, 0, 0, 1)
 }

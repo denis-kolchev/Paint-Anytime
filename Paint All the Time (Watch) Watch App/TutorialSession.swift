@@ -7,23 +7,41 @@ final class TutorialSession: ObservableObject {
     static let inactive = TutorialSession()
     @Published private var progress = TutorialProgress()
     var step: TutorialStep { progress.step }
+    @Published private(set) var toolPage = 1
+    @Published var galleryIsOpen = false
+    @Published var galleryIsFullscreen = false
+    var instruction: String {
+        switch step {
+        case .selectColor where toolPage != 1: return "Open Color, then turn the Crown."
+        case .openWidth where toolPage != 1: return "Open Width."
+        case .setWidth where toolPage != 0: return "Open Width, then turn the Crown."
+        case .openTool where toolPage != 0: return "Open Tool."
+        case .readToolInfo where toolPage != 2 && toolPage != 3: return "Open Tool, then tap ⓘ."
+        case .selectReed where toolPage != 2: return "Open Tool and choose Reed pen."
+        case .openAngle where toolPage != 2: return "Open Angle."
+        case .setAngle where toolPage != 4: return "Open Angle, then turn the Crown."
+        case .galleryFullscreen where !galleryIsOpen, .deleteDrawing where !galleryIsOpen: return "Tap Gallery to see your pictures."
+        case .deleteDrawing where !galleryIsFullscreen:
+            return "Turn the Crown or double-tap a picture."
+        default: return TutorialLesson.compactInstruction(for: step)
+        }
+    }
     @Published var showsInstruction = false
     @Published private(set) var remindersPaused = false
     private var lastActivity = Date()
-    private var zoomIdleTask: Task<Void, Never>?
     private var advanceTask: Task<Void, Never>?
     private var pendingAdvanceStep: TutorialStep?
     @Published private(set) var showsResult = false
     var isActive: Bool { step != .inactive }
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
-    var allowsDrawing: Bool { permits([.firstStrokes, .reedStrokes]) }
-    var allowsCanvasZoom: Bool { permits([.zoomCanvas]) }
-    var allowsCanvasPan: Bool { permits([.panCanvas]) }
-    var allowsGalleryZoom: Bool { permits([.galleryFullscreen]) }
-    var allowsGalleryPaging: Bool { permits([.deleteDrawing]) }
-    var allowsGalleryDelete: Bool { permits([.deleteDrawing]) }
-    var allowsGalleryBack: Bool { permits([.returnToCanvas]) }
-    var allowsToolInfo: Bool { permits([.readToolInfo]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
+    var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
+    var allowsCanvasPan: Bool { allowsCanvasZoom }
+    var allowsGalleryZoom: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsGalleryPaging: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsGalleryDelete: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsGalleryBack: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsToolInfo: Bool { acceptsActions }
 
     var visibleToolPages: Set<Int> { progress.visibleToolPages }
 
@@ -46,8 +64,10 @@ final class TutorialSession: ObservableObject {
     func start() {
         cancelPendingAdvance()
         progress.start()
+        toolPage = 1
+        galleryIsOpen = false
+        galleryIsFullscreen = false
         remindersPaused = false
-        zoomIdleTask?.cancel()
         showsInstruction = false
         lastActivity = Date()
     }
@@ -66,7 +86,6 @@ final class TutorialSession: ObservableObject {
     func pauseReminders() {
         guard isActive else { return }
         remindersPaused = true
-        zoomIdleTask?.cancel()
         advanceTask?.cancel()
     }
 
@@ -95,33 +114,26 @@ final class TutorialSession: ObservableObject {
         }
     }
 
-    var canFinishCamera: Bool { !isActive || progress.hasPanned }
+    var canFinishCamera: Bool { !isActive || (step != .zoomCanvas && step != .panCanvas) }
+    var showsPanGuide: Bool { step == .panCanvas && !progress.hasPanned }
 
     func changedPage(_ page: Int) {
         guard isActive, acceptsActions else { return }
         activity()
-        if progress.completesPageChange(page) { advanceAfterResult(lockInput: true) }
+        toolPage = page
+        if progress.completesPageChange(page) { advance() }
     }
 
-    func changedStyle(_ style: PencilStyle) {
+    func changedStyle(from old: PencilStyle, to style: PencilStyle, page: Int) {
         guard isActive, acceptsActions else { return }
         activity()
-        guard let matches = progress.matchesStyle(style) else { return }
-        // A brief pass over the target does not finish the lesson. The user
-        // can keep adjusting; a different value cancels the pending transition.
-        if matches { advanceAfterResult(lockInput: false) }
-        else { cancelPendingAdvance() }
+        if progress.changedStyle(from: old, to: style, page: page) { advance() }
     }
 
     func changedZoom() {
         guard isActive, allowsCanvasZoom else { return }
         activity()
-        zoomIdleTask?.cancel()
-        zoomIdleTask = Task { @MainActor [weak self] in
-            do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
-            guard let self, self.step == .zoomCanvas, !self.showsInstruction, !self.remindersPaused else { return }
-            self.advance()
-        }
+        if step == .zoomCanvas { advance() }
     }
 
     /// Leave the result visible long enough for animations and visual feedback.
@@ -151,7 +163,6 @@ final class TutorialSession: ObservableObject {
     private func advance() {
         guard step != .inactive, step != .finished else { return }
         cancelPendingAdvance()
-        zoomIdleTask?.cancel()
         progress.advance()
         showsInstruction = false
         activity()
@@ -159,8 +170,6 @@ final class TutorialSession: ObservableObject {
 
     func stop() {
         cancelPendingAdvance()
-        zoomIdleTask?.cancel()
-        zoomIdleTask = nil
         progress.stop()
         showsInstruction = false
     }
