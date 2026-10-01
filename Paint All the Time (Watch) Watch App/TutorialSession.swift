@@ -12,17 +12,17 @@ final class TutorialSession: ObservableObject {
     @Published var galleryIsFullscreen = false
     var instruction: String {
         switch step {
-        case .selectColor where toolPage != 1: return "Open Color, then turn the Crown."
-        case .openWidth where toolPage != 1: return "Open Width."
-        case .setWidth where toolPage != 0: return "Open Width, then turn the Crown."
-        case .openTool where toolPage != 0: return "Open Tool."
-        case .readToolInfo where toolPage != 2 && toolPage != 3: return "Open Tool, then tap ⓘ."
-        case .selectReed where toolPage != 2: return "Open Tool and choose Reed pen."
-        case .openAngle where toolPage != 2: return "Open Angle."
-        case .setAngle where toolPage != 4: return "Open Angle, then turn the Crown."
-        case .galleryFullscreen where !galleryIsOpen, .deleteDrawing where !galleryIsOpen: return "Tap Gallery to see your pictures."
+        case .selectColor where toolPage != 1: return L10n.text("Open Color, then turn the Crown.")
+        case .openWidth where toolPage != 1: return L10n.text("Open Width.")
+        case .setWidth where toolPage != 0: return L10n.text("Open Width, then turn the Crown.")
+        case .openTool where toolPage != 0: return L10n.text("Open Tool.")
+        case .readToolInfo where toolPage != 2 && toolPage != 3: return L10n.text("Open Tool, then tap ⓘ.")
+        case .selectReed where toolPage != 2: return L10n.text("Open Tool and choose Reed pen.")
+        case .openAngle where toolPage != 2: return L10n.text("Open Angle.")
+        case .setAngle where toolPage != 4: return L10n.text("Open Angle, then turn the Crown.")
+        case .galleryFullscreen where !galleryIsOpen, .deleteDrawing where !galleryIsOpen: return L10n.text("Tap Gallery to see your pictures.")
         case .deleteDrawing where !galleryIsFullscreen:
-            return "Turn the Crown or double-tap a picture."
+            return L10n.text("Turn the Crown or double-tap a picture.")
         default: return TutorialLesson.compactInstruction(for: step)
         }
     }

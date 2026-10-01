@@ -3,6 +3,7 @@ import WatchKit
 
 /// A floating coach card that leaves the exercise's layout unchanged.
 struct TutorialLessonView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var tutorial: TutorialSession
     let onFinish: () -> Void
     let screenWidth: CGFloat
@@ -19,7 +20,7 @@ struct TutorialLessonView: View {
                 text: tutorial.instruction,
                 isPaused: confirmsFinish
             )
-            .id(tutorial.step)
+            .id(tutorial.instruction)
 
             Button(role: showsCompletionCheckmark ? nil : .destructive) {
                 if showsCompletionCheckmark {
@@ -52,8 +53,8 @@ struct TutorialLessonView: View {
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
-            .accessibilityLabel("Finish tutorial")
-            .accessibilityValue("\(completedLessons) of \(TutorialStep.lessonCount) lessons completed")
+            .accessibilityLabel(L10n.text("Finish tutorial"))
+            .accessibilityValue(L10n.format("%d of %d lessons completed", completedLessons, TutorialStep.lessonCount))
 
             // Measure the full copy independently of the scroll viewport.
             Text(tutorial.instruction)
@@ -86,9 +87,9 @@ struct TutorialLessonView: View {
             }
         }) {
             DestructiveConfirmationView(
-                title: "Finish the tutorial?",
-                confirmTitle: "Yes",
-                cancelTitle: "No"
+                title: L10n.text("Finish the tutorial?"),
+                confirmTitle: L10n.text("Yes"),
+                cancelTitle: L10n.text("No")
             ) {
                 confirmsFinish = false
             } onConfirm: {

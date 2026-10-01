@@ -7,6 +7,7 @@ struct WatchToolSettingsView: View {
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @State private var showsInformation = false
     @State private var strokePreviewHeight: CGFloat = 0
+    @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var crownFocused: Bool
     @AppStorage("watch.settings.lastPage") private var savedPage = 1
@@ -240,7 +241,10 @@ struct WatchToolSettingsView: View {
                     guard !showsInformation else { return }
                     guard abs(value.translation.width) > abs(value.translation.height) else { return }
                     guard let current = availableSettings.firstIndex(of: selection) else { return }
-                    let next = current + (value.translation.width < 0 ? 1 : -1)
+                    // Match the carousel’s mirrored order in Arabic and Hebrew.
+                    let movesForward = layoutDirection == .rightToLeft
+                        ? value.translation.width > 0 : value.translation.width < 0
+                    let next = current + (movesForward ? 1 : -1)
                     if availableSettings.indices.contains(next) { select(availableSettings[next]) }
                 }
         )
