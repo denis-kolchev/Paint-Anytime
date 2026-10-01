@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 /// A floating coach card that leaves the exercise's layout unchanged.
 struct TutorialLessonView: View {
@@ -8,6 +9,9 @@ struct TutorialLessonView: View {
     let screenHeight: CGFloat
     @State private var confirmsFinish = false
     @State private var didConfirmFinish = false
+    @State private var greenDotCount = 0
+    @State private var showsCompletionCheckmark = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         TutorialHintLayout(maximumHeight: screenHeight * 0.32) {
@@ -21,15 +25,24 @@ struct TutorialLessonView: View {
                 tutorial.pauseReminders()
                 confirmsFinish = true
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.red)
+                ZStack {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(.red)
+                        .opacity(showsCompletionCheckmark ? 0 : 1)
+                        .scaleEffect(showsCompletionCheckmark && !reduceMotion ? 0.6 : 1)
+                    // Use the same SF Symbol and green as the free camera's Done button.
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.green)
+                        .opacity(showsCompletionCheckmark ? 1 : 0)
+                        .scaleEffect(showsCompletionCheckmark || reduceMotion ? 1 : 0.6)
+                }
+                .font(.system(size: 11, weight: .semibold))
             }
             .watchToolbarButtonStyle(diameter: 24)
             .frame(width: 32, height: 32)
             .contentShape(Circle())
             .overlay {
-                TutorialProgressDots(completedLessons: completedLessons)
+                TutorialProgressDots(completedLessons: completedLessons, greenDotCount: greenDotCount)
                     .frame(width: 32, height: 32)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
@@ -51,6 +64,14 @@ struct TutorialLessonView: View {
         }
         .environment(\.colorScheme, .dark)
         .padding(edgeGap)
+        .task(id: tutorial.step) {
+            await animateCompletion()
+        }
+        .onChange(of: showsCompletionCheckmark) { _, isShowing in
+            if isShowing {
+                WKInterfaceDevice.current().play(.success)
+            }
+        }
         .fullScreenCover(isPresented: $confirmsFinish, onDismiss: {
             if didConfirmFinish {
                 didConfirmFinish = false
@@ -73,6 +94,38 @@ struct TutorialLessonView: View {
         }
     }
 
+    @MainActor
+    private func animateCompletion() async {
+        guard tutorial.step == .finished else {
+            greenDotCount = 0
+            showsCompletionCheckmark = false
+            return
+        }
+        guard !showsCompletionCheckmark else { return }
+        if reduceMotion {
+            greenDotCount = 20
+            showsCompletionCheckmark = true
+            return
+        }
+        do {
+            // Start at twelve o'clock and sweep clockwise in about 0.7 seconds.
+            // Retain progress if the view's task is interrupted and resumed.
+            while greenDotCount < 20 {
+                try await Task.sleep(for: .milliseconds(35))
+                try Task.checkCancellation()
+                greenDotCount += 1
+            }
+            // Let the last dot finish lighting before replacing the cross.
+            try await Task.sleep(for: .milliseconds(100))
+            try Task.checkCancellation()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showsCompletionCheckmark = true
+            }
+        } catch {
+            // Leaving the card or changing lessons cancels the sequence.
+        }
+    }
+
     private var completedLessons: Int {
         tutorial.step == .finished ? 20 : max(0, tutorial.step.rawValue - 1)
     }
@@ -86,17 +139,29 @@ struct TutorialLessonView: View {
 
 private struct TutorialProgressDots: View {
     let completedLessons: Int
+    let greenDotCount: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        Canvas { context, size in
+        GeometryReader { geometry in
+            let size = geometry.size
             let radius = min(size.width, size.height) / 2 - 2
-            for index in 0..<20 {
-                let angle = Double(index) * .pi * 2 / 20 - .pi / 2
-                let center = CGPoint(x: size.width / 2 + CGFloat(cos(angle)) * radius,
-                                     y: size.height / 2 + CGFloat(sin(angle)) * radius)
-                let dot = Path(ellipseIn: CGRect(x: center.x - 1.25, y: center.y - 1.25,
-                                                width: 2.5, height: 2.5))
-                context.fill(dot, with: .color(Color(white: index < completedLessons ? 0.8 : 0.3)))
+            ZStack {
+                ForEach(0..<20) { index in
+                    let angle = Double(index) * .pi * 2 / 20 - .pi / 2
+                    Circle()
+                        .fill(Color(white: index < completedLessons ? 0.8 : 0.3))
+                        .overlay {
+                            Circle()
+                                .fill(.green)
+                                .opacity(index < greenDotCount ? 1 : 0)
+                                .animation(reduceMotion ? nil : .easeInOut(duration: 0.1),
+                                           value: index < greenDotCount)
+                        }
+                        .frame(width: 2.5, height: 2.5)
+                        .position(x: size.width / 2 + CGFloat(cos(angle)) * radius,
+                                  y: size.height / 2 + CGFloat(sin(angle)) * radius)
+                }
             }
         }
     }
