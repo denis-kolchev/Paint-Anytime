@@ -13,7 +13,6 @@ enum TutorialLesson {
         case .openWidth: return L10n.text("Swipe left to Width.")
         case .setWidth: return L10n.text("Turn the Crown to change width.")
         case .openTool: return L10n.text("Swipe left to Tool.")
-        case .readToolInfo: return L10n.text("Tap ⓘ to learn about any tool.")
         case .selectReed: return L10n.text("Choose Reed pen to set the angle.")
         case .openAngle: return L10n.text("Swipe left to Angle.")
         case .setAngle: return L10n.text("Turn the Crown to change the nib angle.")

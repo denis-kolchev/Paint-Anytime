@@ -16,7 +16,6 @@ final class TutorialSession: ObservableObject {
         case .openWidth where toolPage != 1: return L10n.text("Open Width.")
         case .setWidth where toolPage != 0: return L10n.text("Open Width, then turn the Crown.")
         case .openTool where toolPage != 0: return L10n.text("Open Tool.")
-        case .readToolInfo where toolPage != 2 && toolPage != 3: return L10n.text("Open Tool, then tap ⓘ.")
         case .selectReed where toolPage != 2: return L10n.text("Open Tool and choose Reed pen.")
         case .openAngle where toolPage != 2: return L10n.text("Open Angle.")
         case .setAngle where toolPage != 4: return L10n.text("Open Angle, then turn the Crown.")

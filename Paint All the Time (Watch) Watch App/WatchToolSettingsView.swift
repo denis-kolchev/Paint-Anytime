@@ -292,7 +292,6 @@ struct WatchToolSettingsView: View {
                         showsInformation = true
                     } label: {
                         Image(systemName: "info")
-                            .tutorialHint(tutorial, steps: [.readToolInfo])
                     }
                     .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Information"))
