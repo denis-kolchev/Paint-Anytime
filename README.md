@@ -1,6 +1,6 @@
 <p align="center">
   <img
-    src="images/icons/ChatGPT%20Image%20Sep%2022%2C%202026%2C%2008_54_17%20PM.png"
+    src="images/Paint-Anytime-watchOS-Default-1088@1x.png"
     width="220"
     alt="Paint Anytime app icon"
   >
