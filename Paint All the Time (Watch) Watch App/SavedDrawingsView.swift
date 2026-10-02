@@ -203,7 +203,9 @@ struct SavedDrawingsView: View {
                         Image(systemName: "trash")
                             .tutorialHint(tutorial, steps: [.deleteDrawing])
                     }
-                    .watchToolbarButtonStyle()
+                    // This button overlays the pager rather than living in a
+                    // native toolbar. Give its label a complete touch target.
+                    .buttonStyle(TutorialOverlayButtonStyle())
                     .accessibilityLabel(L10n.text("Delete drawing"))
                     Spacer()
                 }

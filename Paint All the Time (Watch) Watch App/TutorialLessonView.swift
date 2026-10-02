@@ -44,9 +44,7 @@ struct TutorialLessonView: View {
                 .font(.system(size: 11, weight: .semibold))
             }
             .tint(showsCompletionCheckmark ? .white : .red)
-            .watchToolbarButtonStyle(diameter: 24)
-            .frame(width: 32, height: 32)
-            .contentShape(Circle())
+            .buttonStyle(TutorialOverlayButtonStyle(diameter: 24, hitDiameter: 32))
             .overlay {
                 TutorialProgressDots(completedLessons: completedLessons, greenDotCount: greenDotCount)
                     .frame(width: 32, height: 32)
@@ -61,6 +59,7 @@ struct TutorialLessonView: View {
                 .font(.system(size: 11, weight: .medium))
                 .fixedSize(horizontal: false, vertical: true)
                 .hidden()
+                .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
         .background(.regularMaterial, in: cardShape)
@@ -222,7 +221,10 @@ private struct TutorialHintLayout: Layout {
     }
 }
 
-/// Scroll overflowing copy at reading speed without taking Crown focus.
+/// Scroll the copy with offsets, not a native ScrollView. On watchOS 10 a
+/// newly inserted ScrollView can become a Crown target even with focusable(false).
+/// The lesson card is recreated for every instruction, so it must never compete
+/// with the canvas or the tool editor for Crown input.
 private struct TutorialInstructionText: View {
     let text: String
     let isPaused: Bool
@@ -231,6 +233,9 @@ private struct TutorialInstructionText: View {
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
     @State private var contentHeight: CGFloat = 0
     @State private var isManualScrolling = false
+    @State private var scrollOffset: CGFloat = 0
+    @State private var dragOrigin: CGFloat?
+    @GestureState private var isDragging = false
 
     private struct Playback: Equatable {
         let overflow: CGFloat
@@ -239,68 +244,61 @@ private struct TutorialInstructionText: View {
 
     var body: some View {
         GeometryReader { viewport in
+            let overflow = max(0, contentHeight - viewport.size.height)
             let playback = Playback(
-                overflow: max(0, contentHeight - viewport.size.height),
+                overflow: overflow,
                 isEnabled: !isPaused && scenePhase == .active && !reduceMotion
                     && !voiceOverEnabled && !isManualScrolling
             )
-            ScrollViewReader { proxy in
-                ScrollView(.vertical) {
-                    Text(text)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background {
-                            GeometryReader { content in
-                                Color.clear.preference(key: TutorialInstructionHeight.self,
-                                                       value: content.size.height)
-                            }
-                        }
-                        .id("instruction")
+            Text(text)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background {
+                    GeometryReader { content in
+                        Color.clear.preference(key: TutorialInstructionHeight.self,
+                                               value: content.size.height)
+                    }
                 }
-                .scrollBounceBehavior(.basedOnSize)
-                .modifier(TutorialScrollEdgeModifier())
+                .offset(y: -min(overflow, max(0, scrollOffset)))
+                .frame(width: viewport.size.width, height: viewport.size.height, alignment: .topLeading)
                 .clipped()
-                .focusable(false)
+                .contentShape(Rectangle())
                 .onPreferenceChange(TutorialInstructionHeight.self) { contentHeight = $0 }
-                .simultaneousGesture(DragGesture(minimumDistance: 3).onChanged { _ in
-                    // Let the reader control this lesson after a manual swipe.
-                    isManualScrolling = true
-                })
+                .gesture(DragGesture(minimumDistance: 3)
+                    .updating($isDragging) { _, dragging, _ in dragging = true }
+                    .onChanged { value in
+                        isManualScrolling = true
+                        if dragOrigin == nil { dragOrigin = scrollOffset }
+                        scrollOffset = min(overflow, max(0, (dragOrigin ?? 0) - value.translation.height))
+                    }
+                    .onEnded { _ in dragOrigin = nil })
+                .onChange(of: isDragging) { _, dragging in
+                    if !dragging { dragOrigin = nil }
+                }
                 .task(id: playback) {
                     guard playback.isEnabled, playback.overflow > 1 else { return }
-                    let duration = max(3, Double(playback.overflow) / 8)
                     do {
                         while !Task.isCancelled {
                             try await Task.sleep(for: .seconds(1.5))
-                            withAnimation(.linear(duration: duration)) {
-                                proxy.scrollTo("instruction", anchor: .bottom)
+                            // Small offset updates keep manual dragging aligned
+                            // with the visible text if it interrupts playback.
+                            while scrollOffset < playback.overflow {
+                                try await Task.sleep(for: .milliseconds(50))
+                                try Task.checkCancellation()
+                                guard !isManualScrolling else { return }
+                                scrollOffset = min(playback.overflow, scrollOffset + 0.4)
                             }
-                            try await Task.sleep(for: .seconds(duration))
-                            var transaction = Transaction()
-                            transaction.disablesAnimations = true
-                            withTransaction(transaction) {
-                                proxy.scrollTo("instruction", anchor: .top)
-                            }
+                            try await Task.sleep(for: .seconds(1.5))
+                            try Task.checkCancellation()
+                            guard !isManualScrolling else { return }
+                            scrollOffset = 0
                         }
                     } catch {
                         // Disappearance, a new lesson or manual scrolling cancels playback.
                     }
                 }
-            }
-        }
-    }
-}
-
-/// The instruction viewport supplies its own boundary inside the material card.
-private struct TutorialScrollEdgeModifier: ViewModifier {
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if #available(watchOS 26, *) {
-            content.scrollEdgeEffectHidden(true, for: .all)
-        } else {
-            content
         }
     }
 }

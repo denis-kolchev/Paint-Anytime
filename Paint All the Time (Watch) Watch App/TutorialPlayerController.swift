@@ -39,9 +39,23 @@ final class TutorialPlayerController: ObservableObject {
         else { tutorial.pauseReminders(); canvas.cancelStroke() }
     }
 
-    func openTools() { page = .tools; tutorial.record(.openedTools) }
-    func closeTools() { page = .canvas; tutorial.record(.closedTools) }
-    func openMenu() { page = .menu; tutorial.record(.openedMenu) }
+    func openTools() {
+        guard page == .canvas, tutorial.permits([.openTools]) else { return }
+        canvas.cancelStroke()
+        page = .tools
+        tutorial.record(.openedTools)
+    }
+    func closeTools() {
+        guard page == .tools, tutorial.permits([.closeTools]) else { return }
+        page = .canvas
+        tutorial.record(.closedTools)
+    }
+    func openMenu() {
+        guard page == .canvas, tutorial.permits([.openMenu]) else { return }
+        canvas.cancelStroke()
+        page = .menu
+        tutorial.record(.openedMenu)
+    }
     func openGallery() { page = .gallery; tutorial.galleryIsOpen = true; tutorial.record(.openedGallery) }
     func closeGallery() {
         tutorial.galleryIsOpen = false
@@ -53,11 +67,24 @@ final class TutorialPlayerController: ObservableObject {
             page = .menu
         }
     }
-    func closeSavedDrawing() { page = .canvas; tutorial.record(.closedSave) }
-    func undo() { canvas.undo(); tutorial.record(.history) }
-    func redo() { canvas.redo(); tutorial.record(.history) }
+    func closeSavedDrawing() {
+        guard page == .saved, tutorial.permits([.shareDrawing]) else { return }
+        page = .canvas
+        tutorial.record(.closedSave)
+    }
+    func undo() {
+        guard page == .canvas, tutorial.permits([.history]), canvas.canUndo else { return }
+        canvas.undo()
+        tutorial.record(.history)
+    }
+    func redo() {
+        guard page == .canvas, tutorial.permits([.history]), canvas.canRedo else { return }
+        canvas.redo()
+        tutorial.record(.history)
+    }
 
     func requestClear() {
+        guard page == .canvas, tutorial.permits([.clearCanvas]) else { return }
         tutorial.pauseReminders()
         confirmsClear = true
     }
@@ -77,6 +104,7 @@ final class TutorialPlayerController: ObservableObject {
     }
 
     func save(size: CGSize, scale: CGFloat) {
+        guard page == .canvas, tutorial.permits([.saveDrawing]) else { return }
         do {
             savedDrawing = try CanvasExporter.save(strokes: canvas.document.strokes,
                                                   size: size, scale: scale, in: folder)

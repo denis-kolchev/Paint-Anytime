@@ -9,10 +9,24 @@ struct WatchToolSettingsView: View {
     @State private var strokePreviewHeight: CGFloat = 0
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @FocusState private var crownFocused: Bool
     @AppStorage("watch.settings.lastPage") private var savedPage = 1
     @State private var selectedPage = 1
     @State private var didRestorePage = false
+
+    private struct TutorialCrownFocusRequest: Equatable {
+        let enabled: Bool
+        let step: TutorialStep
+        let page: Int
+    }
+
+    private var tutorialCrownFocusRequest: TutorialCrownFocusRequest {
+        TutorialCrownFocusRequest(
+            enabled: scenePhase == .active && !showsInformation
+                && tutorial.allowsToolAdjustment(page: selection.rawValue),
+            step: tutorial.step, page: selection.rawValue)
+    }
 
     private var selection: ToolSetting {
         get {
@@ -240,6 +254,19 @@ struct WatchToolSettingsView: View {
             isContinuous: false,
             isHapticFeedbackEnabled: true
         )
+        .task(id: tutorialCrownFocusRequest) {
+            // Keep the regular editor's focus behavior. In the tutorial, both
+            // a lesson change and a picker-page change can replace focus peers
+            // even though allowsToolAdjustment remains true.
+            guard tutorial.isActive else { return }
+            crownFocused = false
+            guard tutorialCrownFocusRequest.enabled else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+                try Task.checkCancellation()
+                crownFocused = true
+            } catch {}
+        }
         .simultaneousGesture(
             DragGesture(minimumDistance: 20)
                 .onEnded { value in
@@ -275,7 +302,7 @@ struct WatchToolSettingsView: View {
         .fullScreenCover(isPresented: $showsInformation, onDismiss: {
             tutorial.record(.closedInfo)
             tutorial.changedStyle(from: controller.pencilStyle, to: controller.pencilStyle, page: selection.rawValue)
-            crownFocused = tutorial.allowsToolAdjustment(page: selection.rawValue)
+            if !tutorial.isActive { crownFocused = true }
         }) {
             ToolInformationView(
                 title: selection == .mode ? controller.pencilStyle.eraserMode.title : controller.pencilStyle.instrument.title,
@@ -292,14 +319,16 @@ struct WatchToolSettingsView: View {
             // Migrate the old eraser page, previously stored in the color slot.
             if isEraser && selectedPage == ToolSetting.color.rawValue { selectedPage = ToolSetting.mode.rawValue }
             else { selectedPage = selection.rawValue }
-            crownFocused = tutorial.allowsToolAdjustment(page: selection.rawValue)
+            if !tutorial.isActive { crownFocused = true }
         }
         .onDisappear { controller.flushStylePreferences() }
         .onChange(of: tutorial.showsInstruction) { _, showing in
-            crownFocused = !showing && tutorial.allowsToolAdjustment(page: selection.rawValue)
+            if !tutorial.isActive {
+                crownFocused = !showing && tutorial.allowsToolAdjustment(page: selection.rawValue)
+            }
         }
         .onChange(of: tutorial.allowsToolAdjustment(page: selection.rawValue)) { _, allowed in
-            crownFocused = !showsInformation && allowed
+            if !tutorial.isActive { crownFocused = !showsInformation && allowed }
         }
         .onChange(of: selectedPage) { _, page in
             if !tutorial.isActive { savedPage = page }

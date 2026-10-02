@@ -45,7 +45,7 @@
       shouldAutocreateTestPlan = "YES">
    </TestAction>
    <LaunchAction
-      buildConfiguration = "Release"
+      buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
@@ -61,7 +61,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "257D4056305EA358002072CB"
             BuildableName = "Paint All the Time (Watch) Watch App.app"
-            BlueprintName = "Paint All the Time (Watch) Watch App"
             ReferencedContainer = "container:Paint All the Time.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -78,7 +77,6 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "257D4056305EA358002072CB"
             BuildableName = "Paint All the Time (Watch) Watch App.app"
-            BlueprintName = "Paint All the Time (Watch) Watch App"
             ReferencedContainer = "container:Paint All the Time.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

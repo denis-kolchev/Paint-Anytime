@@ -25,9 +25,17 @@ struct WatchCanvasView: View {
     @State private var panOrigin: CGSize?
     @State private var acceptsCurrentGesture: Bool?
     @GestureState private var isDragging = false
+    @Environment(\.scenePhase) private var scenePhase
 
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
     @FocusState private var crownFocused: Bool
+    private var shouldFocusCrown: Bool {
+        scenePhase == .active && acceptsInput && tutorial.allowsCanvasZoom
+    }
+    private struct CrownFocusRequest: Equatable {
+        let enabled: Bool
+        let step: TutorialStep
+    }
 
     var body: some View {
         let _ = TutorialDebug.trace("canvas.body", "input=\(acceptsInput) controls=\(protectedControls.count) \(tutorial.debugState)")
@@ -107,7 +115,9 @@ struct WatchCanvasView: View {
                 including: acceptsInput && tutorial.acceptsActions ? .all : .none
             )
         }
-        .focusable(acceptsInput && tutorial.acceptsActions && (!tutorial.isActive || tutorial.allowsCanvasZoom))
+        // Keep the Crown target registered throughout the canvas exercise. The
+        // binding below still rejects zoom until the lesson permits it.
+        .focusable(acceptsInput)
         .focused($crownFocused)
         .digitalCrownRotation(Binding(
             get: { crownZoom },
@@ -130,16 +140,19 @@ struct WatchCanvasView: View {
            isContinuous: false, isHapticFeedbackEnabled: false)
         .accessibilityLabel(isMovingCanvas ? L10n.text("Moving canvas") : L10n.text("Finger drawing canvas"))
         .accessibilityValue(L10n.format("Zoom %d percent", Int(zoom * 100)))
-        .onAppear {
-            crownFocused = acceptsInput && tutorial.allowsCanvasZoom
-        }
-        .onChange(of: tutorial.showsInstruction) { _, showing in
-            TutorialDebug.trace("canvas.showing.enter", "value=\(showing)")
-            defer { TutorialDebug.trace("canvas.showing.exit", "focused=\(crownFocused)") }
-            crownFocused = !showing && acceptsInput && tutorial.allowsCanvasZoom
-        }
-        .onChange(of: tutorial.allowsCanvasZoom) { _, allowed in
-            crownFocused = acceptsInput && allowed
+        .task(id: CrownFocusRequest(enabled: shouldFocusCrown, step: tutorial.step)) {
+            crownFocused = false
+            guard shouldFocusCrown else { return }
+            // Zoom -> pan keeps zoom enabled, but replaces the lesson UI.
+            // Reacquire focus after that transition too, not just false -> true.
+            // watchOS 10 can discard focus requested in the same update that
+            // enables a target. Wait for it to be installed in the focus tree.
+            // Cancellation prevents a hidden canvas stealing focus from tools.
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+                try Task.checkCancellation()
+                crownFocused = true
+            } catch {}
         }
         .onChange(of: isDragging) { _, dragging in
             if !dragging {
@@ -150,12 +163,10 @@ struct WatchCanvasView: View {
         .onChange(of: isMovingCanvas) { _, moving in
             panOrigin = nil
             if !moving && zoom == 1 { crownZoom = 1 }
-            crownFocused = acceptsInput && tutorial.allowsCanvasZoom
         }
         .onChange(of: acceptsInput) { _, enabled in
             TutorialDebug.trace("canvas.enabled.enter", "value=\(enabled)")
             defer { TutorialDebug.trace("canvas.enabled.exit", "focused=\(crownFocused)") }
-            crownFocused = enabled && tutorial.allowsCanvasZoom
             if !enabled { controller.cancelStroke() }
         }
         .onDisappear {

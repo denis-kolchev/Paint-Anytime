@@ -38,7 +38,7 @@ struct TutorialPlayerView: View {
                             WatchCanvasView(controller: controller, tutorial: tutorial,
                                             rendersArtwork: page == .canvas,
                                             acceptsInput: page == .canvas && tutorial.acceptsActions,
-                                            protectedControls: controls, isMovingCanvas: $isMovingCanvas)
+                                            protectedControls: canvasProtectedControls, isMovingCanvas: $isMovingCanvas)
                                 .opacity(page == .canvas ? 1 : 0)
                                 .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
                                 .accessibilityHidden(page != .canvas)
@@ -106,43 +106,40 @@ struct TutorialPlayerView: View {
                     }
                 }
                 .overlay(alignment: .bottom) {
-                    tutorialBottomControls
+                    tutorialBottomControls(hitDiameter: min(44, (screen.size.width - 16) / 4))
                         .padding(.horizontal, 8)
                         .padding(.bottom, hintReservedHeight)
                 }
                 .toolbar {
-                    if page == .canvas && !isMovingCanvas && tutorial.permits([.openTools]) {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                TutorialDebug.trace("tools.tap", tutorial.debugState)
-                                player.openTools()
-                            } label: {
-                                ToolIcon(instrument: controller.pencilStyle.instrument).frame(width: 18, height: 18)
-                                    .tutorialHint(tutorial, steps: [.openTools])
-                            }
-                            .watchToolbarButtonStyle(usesCanvasMaterial: true)
-                            .accessibilityLabel(L10n.text("Tool settings"))
-                            .onAppear { TutorialDebug.trace("tools.button.appear", tutorial.debugState) }
-                            .trackCanvasControl(.tools, frames: $controls)
-                        }
-                    }
-                    if (page == .tools && tutorial.permits([.closeTools])) || (page == .canvas && isMovingCanvas && tutorial.canFinishCamera) {
+                    // Keep one native toolbar item and Button alive when Done
+                    // becomes Tool settings; replacing animated toolbar hosts
+                    // during their own action is fragile on watchOS 10.
+                    if showsPrimaryControl {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 if page == .tools {
                                     player.closeTools()
-                                } else {
+                                } else if isMovingCanvas {
                                     isMovingCanvas = false
                                     tutorial.record(.finishedCamera)
+                                } else {
+                                    player.openTools()
                                 }
                             } label: {
-                                Image(systemName: "checkmark").foregroundStyle(.green)
-                                    .tutorialHint(tutorial, steps: [.closeTools, .finishCamera])
+                                ZStack {
+                                    ToolIcon(instrument: controller.pencilStyle.instrument)
+                                        .frame(width: 18, height: 18)
+                                        .opacity(primaryControlIsDone ? 0 : 1)
+                                    Image(systemName: "checkmark")
+                                        .foregroundStyle(.green)
+                                        .opacity(primaryControlIsDone ? 1 : 0)
+                                }
+                                .tutorialHint(tutorial, steps: [.openTools, .closeTools, .finishCamera])
+                                .frame(width: 32, height: 32)
+                                .contentShape(Circle())
                             }
-                            .disabled(page == .canvas && !tutorial.canFinishCamera)
                             .watchToolbarButtonStyle(usesCanvasMaterial: true)
-                            .accessibilityLabel(L10n.text("Done"))
-                            .onAppear { TutorialDebug.trace("tools.button.appear", tutorial.debugState) }
+                            .accessibilityLabel(L10n.text(primaryControlIsDone ? "Done" : "Tool settings"))
                             .trackCanvasControl(.tools, frames: $controls)
                         }
                     }
@@ -150,14 +147,22 @@ struct TutorialPlayerView: View {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
                                 player.closeSavedDrawing()
-                            } label: { Image(systemName: "xmark").tutorialHint(tutorial, steps: [.shareDrawing]) }
+                            } label: {
+                                Image(systemName: "xmark").tutorialHint(tutorial, steps: [.shareDrawing])
+                                    .frame(width: 32, height: 32)
+                                    .contentShape(Circle())
+                            }
                             .watchToolbarButtonStyle(usesCanvasMaterial: true)
                             .accessibilityLabel(L10n.text("Back"))
                         }
                     }
                     if page == .canvas && tutorial.permits([.openMenu]) {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button { player.openMenu() } label: { Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openMenu]) }
+                            Button { player.openMenu() } label: {
+                                Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openMenu])
+                                    .frame(width: 32, height: 32)
+                                    .contentShape(Circle())
+                            }
                                 .watchToolbarButtonStyle(usesCanvasMaterial: true)
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
@@ -191,9 +196,6 @@ struct TutorialPlayerView: View {
         .background(Color.black.ignoresSafeArea())
         .onAppear {
             player.startOrResume()
-        }
-        .onChange(of: tutorial.step) { _, _ in
-            controls = [:]
         }
         .task(id: tutorial.step) {
             guard tutorial.step == .history else { return }
@@ -231,12 +233,37 @@ struct TutorialPlayerView: View {
         } message: { Text(player.saveError ?? "") }
     }
 
-    @ViewBuilder private var tutorialBottomControls: some View {
+    private var primaryControlIsDone: Bool { page == .tools || isMovingCanvas }
+
+    private var showsPrimaryControl: Bool {
+        (page == .tools && tutorial.permits([.closeTools])) ||
+        (page == .canvas && (isMovingCanvas
+            ? tutorial.acceptsActions && tutorial.canFinishCamera
+            : tutorial.permits([.openTools])))
+    }
+
+    private var canvasProtectedControls: [CanvasToolbarControl: CGRect] {
+        guard page == .canvas else { return [:] }
+        // Retain measurements for stable toolbar items across lessons. A frame
+        // may not be reported again when only the button's label changes.
+        return controls.filter { control, _ in
+            switch control {
+            case .tools: return showsPrimaryControl
+            case .more: return tutorial.permits([.openMenu])
+            case .undo, .redo: return tutorial.permits([.history])
+            case .save: return tutorial.permits([.saveDrawing])
+            case .clear: return tutorial.permits([.clearCanvas])
+            }
+        }
+    }
+
+    // Four targets must also fit the narrower 40 mm watches without overlap.
+    @ViewBuilder private func tutorialBottomControls(hitDiameter: CGFloat) -> some View {
         if page == .canvas && tutorial.permits([.history, .saveDrawing]) {
             HStack {
                 // Keep the same four slots as the regular canvas toolbar.
                 Button {} label: { BroomIcon() }
-                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                    .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
                     .hidden()
                     .disabled(true)
                     .allowsHitTesting(false)
@@ -246,8 +273,9 @@ struct TutorialPlayerView: View {
                     player.undo()
                 } label: { Image(systemName: "arrow.uturn.backward").tutorialHint(tutorial, steps: [.history], isSuggested: !historyEmphasizesRedo || !controller.canRedo) }
                 .disabled(!controller.canUndo || tutorial.step != .history)
-                .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
                 .opacity(tutorial.step == .history ? 1 : 0)
+                .allowsHitTesting(tutorial.step == .history)
                 .accessibilityHidden(tutorial.step != .history)
                 .accessibilityLabel(L10n.text("Undo"))
                 .trackCanvasControl(.undo, frames: $controls)
@@ -256,8 +284,9 @@ struct TutorialPlayerView: View {
                     player.redo()
                 } label: { Image(systemName: "arrow.uturn.forward").tutorialHint(tutorial, steps: [.history], isSuggested: historyEmphasizesRedo || !controller.canUndo) }
                 .disabled(!controller.canRedo || tutorial.step != .history)
-                .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
                 .opacity(tutorial.step == .history ? 1 : 0)
+                .allowsHitTesting(tutorial.step == .history)
                 .accessibilityHidden(tutorial.step != .history)
                 .accessibilityLabel(L10n.text("Redo"))
                 .trackCanvasControl(.redo, frames: $controls)
@@ -265,8 +294,9 @@ struct TutorialPlayerView: View {
                 Button { player.save(size: canvasSize, scale: displayScale) } label: {
                     Image(systemName: "square.and.arrow.down").tutorialHint(tutorial, steps: [.saveDrawing])
                 }
-                .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
                 .opacity(tutorial.step == .saveDrawing ? 1 : 0)
+                .allowsHitTesting(tutorial.step == .saveDrawing)
                 .disabled(tutorial.step != .saveDrawing)
                 .accessibilityHidden(tutorial.step != .saveDrawing)
                 .accessibilityLabel(L10n.text("Save drawing"))
@@ -279,7 +309,7 @@ struct TutorialPlayerView: View {
                     Button {
                         player.requestClear()
                     } label: { BroomIcon().tutorialHint(tutorial, steps: [.clearCanvas]) }
-                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                    .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
                     .disabled(!tutorial.permits([.clearCanvas]))
                     .accessibilityLabel(L10n.text("Clear canvas"))
                     .trackCanvasControl(.clear, frames: $controls)

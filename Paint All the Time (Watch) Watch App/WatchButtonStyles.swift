@@ -1,5 +1,35 @@
 import SwiftUI
 
+/// Tutorial overlays do not have a native toolbar host to supply a hit target.
+/// Size the label inside ButtonStyle so the whole circle activates the Button;
+/// an outer frame around a borderless Button only sizes its layout container.
+struct TutorialOverlayButtonStyle: ButtonStyle {
+    var diameter: CGFloat = 32
+    var hitDiameter: CGFloat = 44
+    @Environment(\.isEnabled) private var isEnabled
+
+    func makeBody(configuration: Configuration) -> some View {
+        decoratedLabel(configuration.label)
+            .frame(width: hitDiameter, height: hitDiameter)
+            .contentShape(Circle())
+            .opacity(!isEnabled ? 0.35 : configuration.isPressed ? 0.6 : 1)
+    }
+
+    @ViewBuilder private func decoratedLabel(_ label: Configuration.Label) -> some View {
+        if #available(watchOS 26, *) {
+            label
+                .frame(width: diameter, height: diameter)
+                .glassEffect(.regular, in: Circle())
+                .environment(\.colorScheme, .dark)
+        } else {
+            label
+                .frame(width: diameter, height: diameter)
+                .foregroundStyle(.white)
+                .background(.ultraThinMaterial, in: Circle())
+        }
+    }
+}
+
 extension View {
     /// Apply the native primitive style directly so toolbar hosts can recognize it.
     /// Leave sizing, press feedback and material composition to the system.
@@ -85,14 +115,20 @@ private struct TutorialButtonHint: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        content.phaseAnimator(isActive ? [false, true] : [false]) { label, emphasized in
-            label
-                .scaleEffect(emphasized ? 1.2 : 1)
-                .brightness(emphasized ? 0.2 : 0)
-                .opacity(isActive && !emphasized ? 0.65 : 1)
-                .offset(y: emphasized ? -2 : 0)
-        } animation: { emphasized in
-            .easeInOut(duration: 0.35).delay(emphasized ? 0.7 : 0)
+        if #available(watchOS 11, *) {
+            content.phaseAnimator(isActive ? [false, true] : [false]) { label, emphasized in
+                label
+                    .scaleEffect(emphasized ? 1.2 : 1)
+                    .brightness(emphasized ? 0.2 : 0)
+                    .opacity(isActive && !emphasized ? 0.65 : 1)
+                    .offset(y: emphasized ? -2 : 0)
+            } animation: { emphasized in
+                .easeInOut(duration: 0.35).delay(emphasized ? 0.7 : 0)
+            }
+        } else {
+            // A static emphasis avoids a repeating phase animator inside the
+            // watchOS 10 toolbar while its action changes the tutorial lesson.
+            content.brightness(isActive ? 0.2 : 0)
         }
     }
 }
