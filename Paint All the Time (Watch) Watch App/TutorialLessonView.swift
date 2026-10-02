@@ -16,11 +16,16 @@ struct TutorialLessonView: View {
 
     var body: some View {
         TutorialHintLayout(maximumHeight: screenHeight * 0.32) {
-            TutorialInstructionText(
-                text: tutorial.instruction,
-                isPaused: confirmsFinish
-            )
-            .id(tutorial.instruction)
+            // Keep one layout child while the old and new copy crossfade.
+            // The independent measurement below sizes the card for the new copy.
+            ZStack {
+                TutorialInstructionText(
+                    text: tutorial.instruction,
+                    isPaused: confirmsFinish
+                )
+                .id(tutorial.instruction)
+                .transition(.opacity)
+            }
 
             Button(role: showsCompletionCheckmark ? nil : .destructive) {
                 if showsCompletionCheckmark {
@@ -68,6 +73,7 @@ struct TutorialLessonView: View {
                 .allowsHitTesting(false)
         }
         .environment(\.colorScheme, .dark)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: tutorial.instruction)
         .padding(edgeGap)
         .task(id: tutorial.step) {
             await animateCompletion()
@@ -175,8 +181,10 @@ private struct TutorialHintShape: Shape {
     let expandedRadius: CGFloat
 
     func path(in rect: CGRect) -> Path {
-        // Short instructions use the original notification capsule.
-        let radius = rect.height <= 52 ? rect.height / 2 : expandedRadius
+        // Blend out of the capsule as the card grows, without a corner jump
+        // when an animated height crosses the compact-card threshold.
+        let expansion = min(1, max(0, (rect.height - 52) / 20))
+        let radius = (rect.height / 2) * (1 - expansion) + expandedRadius * expansion
         return RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect)
     }
 }
