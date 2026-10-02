@@ -47,6 +47,11 @@ struct RenderCheck {
         }
         style.instrument = .monoline
         style.width = 8
+        let crossing = render([Stroke(points: [sample(-20, 50), sample(120, 50)], style: style)])
+        precondition(pixel(crossing, 0, 100)[0] == 0, "Off-canvas stroke must enter at the left edge")
+        precondition(pixel(crossing, 199, 100)[0] == 0, "Off-canvas stroke must reach the right edge")
+        let outside = render([Stroke(points: [sample(-20, 20), sample(-20, 80)], style: style)])
+        precondition(pixel(outside, 0, 100)[0] == 255, "Outside ink must not be clamped onto the canvas")
         let line = Stroke(points: [sample(20, 30), sample(80, 30)], style: style)
         let lineImage = render([line])
         precondition(pixel(lineImage, 100, 60)[0] == 0, "Line position or orientation")

@@ -83,9 +83,8 @@ struct WatchCanvasView: View {
                             return
                         }
                         let start = canvasPoint(value.startLocation, size: geometry.size)
-                        guard CGRect(origin: .zero, size: geometry.size).contains(start) else {
-                            return
-                        }
+                        // Preserve off-canvas samples so a stroke can enter the paper naturally.
+                        // The artwork view and exported bitmap clip ink to the canvas bounds.
                         if controller.activeStroke == nil {
                             controller.beginStroke(at: sample(at: start, time: value.time))
                         }
