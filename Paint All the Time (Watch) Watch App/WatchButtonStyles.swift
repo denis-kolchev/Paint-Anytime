@@ -43,8 +43,8 @@ extension View {
     }
 
     /// All toolbar icons, including Information, use one explicit circle size.
-    func watchToolbarButtonStyle(diameter: CGFloat = 32, usesCanvasMaterial: Bool = false) -> some View {
-        modifier(WatchToolbarButtonModifier(diameter: diameter, usesCanvasMaterial: usesCanvasMaterial))
+    func watchToolbarButtonStyle(diameter: CGFloat = 32, usesCanvasMaterial: Bool = false, hidesNativeChrome: Bool = false) -> some View {
+        modifier(WatchToolbarButtonModifier(diameter: diameter, usesCanvasMaterial: usesCanvasMaterial, hidesNativeChrome: hidesNativeChrome))
     }
 }
 
@@ -57,18 +57,26 @@ private struct WatchToolbarButtonModifier: ViewModifier {
     // resolve it differently when a conditional item is first inserted.
     let diameter: CGFloat
     let usesCanvasMaterial: Bool
+    let hidesNativeChrome: Bool
 
     func body(content: Content) -> some View {
         if #available(watchOS 27, *), !usesCanvasMaterial {
-            // Match native toolbar chrome (including the sheet's close button).
-            // Do not layer a standalone glassEffect over the system button:
-            // the toolbar owns the material, edge treatment and shadow here.
-            content
-                .buttonStyle(.automatic)
-                .buttonBorderShape(.circle)
-                .controlSize(.small)
-                .frame(width: diameter, height: diameter)
-                .contentShape(Circle())
+            if hidesNativeChrome {
+                // Opacity alone leaves the toolbar-owned background visible.
+                // Keep the same slot size for the clock, without native chrome;
+                // the caller hides content and disables interaction separately.
+                sizedButton(content)
+            } else {
+                // Match native toolbar chrome (including the sheet's close button).
+                // Do not layer a standalone glassEffect over the system button:
+                // the toolbar owns the material, edge treatment and shadow here.
+                content
+                    .buttonStyle(.automatic)
+                    .buttonBorderShape(.circle)
+                    .controlSize(.small)
+                    .frame(width: diameter, height: diameter)
+                    .contentShape(Circle())
+            }
         } else if #available(watchOS 26, *) {
             sizedButton(content)
                 // Apply material AFTER the fixed frame: no GlassButtonStyle

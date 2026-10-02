@@ -100,7 +100,7 @@ struct ContentView: View {
                     } label: {
                         Image(systemName: "ellipsis")
                     }
-                    .watchToolbarButtonStyle()
+                    .watchToolbarButtonStyle(hidesNativeChrome: isMovingCanvas || controller.activeStroke != nil)
                     .accessibilityLabel(L10n.text("More"))
                     .trackCanvasControl(.more, frames: $canvasControlFrames)
                     .opacity(isMovingCanvas || controller.activeStroke != nil ? 0 : 1)
@@ -125,7 +125,7 @@ struct ContentView: View {
                         }
                     }
                 }
-                .watchToolbarButtonStyle()
+                .watchToolbarButtonStyle(hidesNativeChrome: !showsToolSettings && controller.activeStroke != nil)
                 .accessibilityLabel(showsToolSettings || isMovingCanvas ? L10n.text("Done") : L10n.text("Tool settings"))
                 .trackCanvasControl(.tools, frames: $canvasControlFrames)
                 // Keep the toolbar slot installed so the system clock does not
