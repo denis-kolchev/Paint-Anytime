@@ -187,9 +187,9 @@ struct WatchToolSettingsView: View {
 
             ToolSettingCarousel(availableSettings: availableSettings, selection: selection,
                                 isEnabled: { tutorial.allowsToolPage($0.rawValue) }, onSelect: select,
-                                tutorial: tutorial)
+                                tutorial: tutorial,
+                                trailingInset: tutorial.isActive && selection == .direction ? 48 : 0)
                 .frame(height: 30)
-                .padding(.trailing, tutorial.isActive && selection == .direction ? 48 : 0)
         }
         .overlay(alignment: .trailing) {
             // Extend 8 pt to the bottom of the clock area and 2 pt to the card.

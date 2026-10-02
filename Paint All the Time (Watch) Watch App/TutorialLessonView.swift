@@ -152,7 +152,7 @@ private struct TutorialProgressDots: View {
             let size = geometry.size
             let radius = min(size.width, size.height) / 2 - 2
             ZStack {
-                ForEach(0..<TutorialStep.lessonCount) { index in
+                ForEach(0..<TutorialStep.lessonCount, id: \.self) { index in
                     let angle = Double(index) * .pi * 2 / Double(TutorialStep.lessonCount) - .pi / 2
                     Circle()
                         .fill(Color(white: index < completedLessons ? 0.8 : 0.3))

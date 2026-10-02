@@ -9,6 +9,7 @@ struct ToolSettingCarousel: View {
     let isEnabled: (ToolSetting) -> Bool
     let onSelect: (ToolSetting) -> Void
     var tutorial: TutorialSession = .inactive
+    var trailingInset: CGFloat = 0
     private var pageAnimation: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.3) }
 
     private func hintSteps(for setting: ToolSetting) -> Set<TutorialStep> {
@@ -58,7 +59,9 @@ struct ToolSettingCarousel: View {
             // Scale the entire set equally; per-label minimumScaleFactor makes
             // long translations smaller than their neighbors and may overflow.
             let titleScale = min(1, titleWidth / max(1, measuredTitleWidth))
-            let sideInset = max(0, (geometry.size.width - width) / 2)
+            // Reserve space for angle controls without resizing the titles.
+            let viewportWidth = max(0, geometry.size.width - trailingInset)
+            let sideInset = max(0, (viewportWidth - width) / 2)
             ScrollViewReader { proxy in
                 ScrollView(.horizontal) {
                     HStack(spacing: 0) {
@@ -95,7 +98,7 @@ struct ToolSettingCarousel: View {
                 .onChange(of: width) { _, _ in
                     proxy.scrollTo(selection, anchor: .center)
                 }
-                .onChange(of: geometry.size.width) { _, _ in
+                .onChange(of: viewportWidth) { _, _ in
                     proxy.scrollTo(selection, anchor: .center)
                 }
                 .onChange(of: selection) { _, setting in
@@ -109,6 +112,7 @@ struct ToolSettingCarousel: View {
                     }
                 }
             }
+            .padding(.trailing, trailingInset)
         }
         .background { titleMeasurements.id(languageCode) }
         .onPreferenceChange(ToolSettingTitleWidthKey.self) { measuredTitleWidth = $0 }
