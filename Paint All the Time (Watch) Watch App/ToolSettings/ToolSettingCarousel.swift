@@ -99,7 +99,9 @@ struct ToolSettingCarousel: View {
                     proxy.scrollTo(selection, anchor: .center)
                 }
                 .onChange(of: viewportWidth) { _, _ in
-                    proxy.scrollTo(selection, anchor: .center)
+                    withAnimation(tutorial.isActive ? pageAnimation : nil) {
+                        proxy.scrollTo(selection, anchor: .center)
+                    }
                 }
                 .onChange(of: selection) { _, setting in
                     withAnimation(pageAnimation) {

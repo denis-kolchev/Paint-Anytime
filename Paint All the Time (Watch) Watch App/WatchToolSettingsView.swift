@@ -220,6 +220,11 @@ struct WatchToolSettingsView: View {
         .padding(.top, 40)
         .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // A new lesson changes the card height after measurement. Animate the
+        // entire settings layout, including the carousel and angle overlay.
+        .animation(tutorial.isActive ? pageAnimation : nil, value: tutorialHintReservedHeight)
+        // Picker alignment follows the preview's measured height on a later update.
+        .animation(tutorial.isActive ? pageAnimation : nil, value: strokePreviewHeight)
         .onPreferenceChange(StrokePreviewHeightKey.self) { strokePreviewHeight = $0 }
         .environment(\.colorScheme, .dark)
         .contentShape(Rectangle())
