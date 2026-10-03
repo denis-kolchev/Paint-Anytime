@@ -1,6 +1,5618 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+  "The first stroke colors empty canvas. Blending changes how later strokes overlap existing paint. The white canvas backing is not white paint.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "The first stroke colors empty canvas. Blending changes how later strokes overlap existing paint. The white canvas backing is not white paint."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Первый мазок окрашивает пустой холст. Режим смешивания определяет, как следующие мазки взаимодействуют с уже нанесённой краской. Белая подложка холста — не белая краска."
+        }
+      }
+    }
+  },
+    "Soft inversion" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Soft inversion"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Мягкая инверсия"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inversion douce"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sanfte Umkehrung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inversión suave"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inversione delicata"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "やわらかく反転"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "부드러운 반전"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "柔和反相"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "柔和反相"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inversão suave"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inversão suave"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "عكس ناعم"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "היפוך עדין"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Łagodne odwracanie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zacht omkeren"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mjuk invertering"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Blød invertering"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Myk invertering"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pehmeä kääntö"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "М’яка інверсія"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Jemná inverze"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lágy megfordítás"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Απαλή αντιστροφή"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pembalikan lembut"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Đảo màu nhẹ"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "กลับสีอย่างนุ่มนวล"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Yumuşak ters çevirme"
+          }
+        }
+      }
+    },
+    "Color inversion" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Color inversion"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Инверсия цвета"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inverser les couleurs"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Farben umkehren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Invertir colores"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Invertire i colori"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "色を反転"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "색 반전"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "色彩反相"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "色彩反相"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inverter cores"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inverter cores"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "عكس الألوان"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "היפוך צבעים"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Odwracanie kolorów"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kleuren omkeren"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Invertera färger"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Invertér farver"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inverter farger"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Käännä värit"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Інверсія кольору"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Inverze barev"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Színek megfordítása"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Αντιστροφή χρωμάτων"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Membalik warna"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Đảo màu"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "กลับสี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Renkleri ters çevir"
+          }
+        }
+      }
+    },
+    "Add light" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Add light"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Добавление света"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ajouter de la lumière"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Licht hinzufügen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Añadir luz"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aggiungere luce"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "光を加える"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "빛 더하기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "添加光线"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "添加光線"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Adicionar luz"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Adicionar luz"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "إضافة ضوء"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "הוספת אור"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dodawanie światła"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Licht toevoegen"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lägg till ljus"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tilføj lys"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Legg til lys"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lisää valoa"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Додавання світла"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Přidání světla"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Fény hozzáadása"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Προσθήκη φωτός"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Menambah cahaya"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Thêm ánh sáng"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "เพิ่มแสง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Işık ekle"
+          }
+        }
+      }
+    },
+    "Rich shadows" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Rich shadows"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Насыщенные тени"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ombres intenses"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kräftige Schatten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sombras intensas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ombre intense"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "濃厚な影"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "진한 그림자"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "浓郁阴影"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "濃郁陰影"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sombras intensas"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sombras intensas"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ظلال غنية"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "צללים עשירים"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Nasycone cienie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Diepe schaduwen"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Fylliga skuggor"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Fyldige skygger"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Fyldige skygger"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Täyteläiset varjot"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Насичені тіні"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Syté stíny"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Gazdag árnyékok"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Πλούσιες σκιές"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Bayangan pekat"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Vùng tối đậm"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "เงาสีเข้ม"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zengin gölgeler"
+          }
+        }
+      }
+    },
+    "Intense glow" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Intense glow"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Яркое свечение"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Éclat intense"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Intensives Leuchten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Resplandor intenso"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Bagliore intenso"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "強い輝き"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "강렬한 광채"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "强烈辉光"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "強烈輝光"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Brilho intenso"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Brilho intenso"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "توهج قوي"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "זוהר עז"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Intensywna poświata"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Intense gloed"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Intensivt sken"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Intens glød"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Intens glød"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Voimakas hehku"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Яскраве сяйво"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Intenzivní záře"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Erős ragyogás"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Έντονη λάμψη"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pendar kuat"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ánh rực mạnh"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "เรืองแสงเข้ม"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Yoğun parıltı"
+          }
+        }
+      }
+    },
+    "Keep lighter tones" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Keep lighter tones"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Только осветление"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Garder les tons clairs"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Helle Töne behalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Conservar tonos claros"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mantenere i toni chiari"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "明るい色を残す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "밝은 색 유지"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "保留亮色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "保留亮色"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Manter tons claros"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Manter tons claros"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "إبقاء الدرجات الفاتحة"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "שמירת גוונים בהירים"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zachowanie jasnych tonów"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lichte tinten behouden"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Behåll ljusa toner"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Behold lyse toner"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Behold lyse toner"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Säilytä vaaleat sävyt"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Лише освітлення"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zachovat světlé tóny"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Világos tónusok megtartása"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Διατήρηση ανοιχτών τόνων"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pertahankan warna terang"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Giữ tông sáng"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "เก็บโทนสว่าง"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Açık tonları koru"
+          }
+        }
+      }
+    },
+    "Keep darker tones" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Keep darker tones"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Только затемнение"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Garder les tons foncés"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dunkle Töne behalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Conservar tonos oscuros"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mantenere i toni scuri"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "暗い色を残す"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "어두운 색 유지"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "保留暗色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "保留暗色"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Manter tons escuros"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Manter tons escuros"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "إبقاء الدرجات الداكنة"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "שמירת גוונים כהים"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zachowanie ciemnych tonów"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Donkere tinten behouden"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Behåll mörka toner"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Behold mørke toner"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Behold mørke toner"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Säilytä tummat sävyt"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Лише затемнення"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zachovat tmavé tóny"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sötét tónusok megtartása"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Διατήρηση σκούρων τόνων"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pertahankan warna gelap"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Giữ tông tối"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "เก็บโทนมืด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Koyu tonları koru"
+          }
+        }
+      }
+    },
+    "Dramatic lighting" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dramatic lighting"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Выразительный свет"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Éclairage intense"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dramatisches Licht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luz dramática"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luce intensa"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "強いライティング"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "강렬한 조명"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "强烈光照"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "強烈光照"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luz dramática"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luz dramática"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "إضاءة درامية"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "תאורה דרמטית"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Wyraziste światło"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dramatisch licht"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dramatiskt ljus"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dramatisk lys"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dramatisk lys"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Voimakas valaistus"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Виразне світло"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Výrazné osvětlení"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Drámai megvilágítás"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Έντονος φωτισμός"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pencahayaan dramatis"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ánh sáng mạnh"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "แสงเข้มจัด"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dramatik ışık"
+          }
+        }
+      }
+    },
+    "Gentle tinting" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Gentle tinting"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Мягкая тонировка"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Teinter en douceur"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sanft tönen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Teñir suavemente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tonalizzare delicatamente"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "やさしく色づけ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "은은하게 색 입히기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "柔和调色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "柔和調色"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tingir suavemente"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tingir suavemente"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تلوين لطيف"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "גוון עדין"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Delikatne tonowanie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Subtiel tinten"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tona försiktigt"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ton forsigtigt"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ton forsiktig"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sävytä kevyesti"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "М’яке тонування"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Jemné tónování"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Finom színezés"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Απαλός χρωματισμός"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Memberi rona lembut"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Phủ màu nhẹ"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ย้อมสีอย่างนุ่มนวล"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Hafif renklendirme"
+          }
+        }
+      }
+    },
+    "Boost contrast" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Boost contrast"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Усиление контраста"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Renforcer le contraste"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kontrast verstärken"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aumentar contraste"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aumentare il contrasto"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "コントラストを強調"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "대비 높이기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "增强对比"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "增強對比"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aumentar contraste"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aumentar o contraste"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تعزيز التباين"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "חיזוק הניגודיות"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Wzmocnienie kontrastu"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Contrast versterken"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Öka kontrasten"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Øg kontrasten"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Øk kontrasten"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lisää kontrastia"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Посилення контрасту"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zvýšení kontrastu"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kontraszt növelése"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ενίσχυση αντίθεσης"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Meningkatkan kontras"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tăng tương phản"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "เพิ่มคอนทราสต์"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kontrastı artır"
+          }
+        }
+      }
+    },
+    "Soft brightening" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Soft brightening"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Мягкое осветление"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Éclaircir en douceur"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sanft aufhellen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aclarar suavemente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Schiarire delicatamente"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "やさしく明るく"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "부드럽게 밝히기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "柔和提亮"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "柔和提亮"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Clarear suavemente"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Clarear suavemente"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تفتيح ناعم"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "הבהרה עדינה"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Łagodne rozjaśnianie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zacht oplichten"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mjuka upp med ljus"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lysn blidt"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lysne forsiktig"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Vaalenna pehmeästi"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "М’яке освітлення"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Jemné zesvětlení"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Finom világosítás"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Απαλό φώτισμα"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mencerahkan lembut"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Làm sáng nhẹ"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "เพิ่มความสว่างอย่างนุ่มนวล"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Yumuşak aydınlatma"
+          }
+        }
+      }
+    },
+    "Paint over" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Paint over"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Закрашивание"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Recouvrir"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Übermalen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pintar encima"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dipingere sopra"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "塗り重ねる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "덧칠하기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "覆盖涂色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "覆蓋塗色"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pintar por cima"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pintar por cima"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "الطلاء فوق اللون"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "צביעה מעל"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zamalowanie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Overschilderen"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Måla över"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mal over"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mal over"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Maalaa päälle"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Зафарбовування"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Přemalování"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Átfestés"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Επικάλυψη με χρώμα"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Melukis di atas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tô đè"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ระบายทับ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Üzerini boya"
+          }
+        }
+      }
+    },
+    "Deepen shadows" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Deepen shadows"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Углубление теней"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Renforcer les ombres"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Schatten vertiefen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Profundizar sombras"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Intensificare le ombre"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "影を深める"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "그림자 깊게"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "加深阴影"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "加深陰影"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aprofundar sombras"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aprofundar sombras"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تعميق الظلال"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "העמקת צללים"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pogłębianie cieni"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Schaduwen verdiepen"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Fördjupa skuggor"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Gør skygger dybere"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Gjør skygger dypere"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Syvennä varjoja"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Поглиблення тіней"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Prohloubení stínů"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Árnyékok mélyítése"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Βάθυνση σκιών"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Memperdalam bayangan"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tăng độ sâu vùng tối"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "เพิ่มความลึกของเงา"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Gölgeleri derinleştir"
+          }
+        }
+      }
+    },
+    "Color buildup" : {
+      "extractionState": "manual",
+      "comment": "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Color buildup"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Наслоение цвета"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Accumuler la couleur"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Farbe aufbauen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Acumular color"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Stratificare il colore"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "色を重ねる"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "색 쌓기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "叠加色彩"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "疊加色彩"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Acumular cor"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Acumular cor"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تراكم اللون"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "צבירת צבע"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Nakładanie koloru"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kleur opbouwen"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Bygg upp färg"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Opbyg farve"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Bygg opp farge"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kerrostuva väri"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Нашарування кольору"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Vrstvení barvy"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Szín rétegezése"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Συσσώρευση χρώματος"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Menumpuk warna"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Chồng màu"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "สะสมสี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Rengi katmanla"
+          }
+        }
+      }
+    },
+    "Exclusion" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Exclusion"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Исключение"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Exclusion"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ausschluss"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Exclusión"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Esclusione"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "除外"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "제외"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "排除"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "排除"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Exclusão"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Exclusão"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "استبعاد"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "החרגה"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Wykluczenie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Uitsluiting"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Uteslutning"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Udelukkelse"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Utelukkelse"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Poissulkeva"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Виключення"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Vyloučit"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kizárás"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Αποκλεισμός"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pengecualian"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Loại trừ"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Dışlama"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ยกเว้น"
+          }
+        }
+      }
+    },
+    "Difference" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Difference"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Разница"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Différence"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Differenz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Diferencia"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Differenza"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "差の絶対値"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "차이"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "差值"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "差異化"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Diferença"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Diferença"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "فرق"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "הפרש"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Różnica"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Verschil"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Differens"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Forskel"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Differanse"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Erotus"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Різниця"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Rozdíl"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Különbség"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Διαφορά"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Selisih"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Chênh lệch"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Fark"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ผลต่าง"
+          }
+        }
+      }
+    },
+    "Add" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Add"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Линейный осветлитель"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Densité linéaire −"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Linear abwedeln"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sobreexposición lineal"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Scherma lineare"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "覆い焼き（リニア）- 加算"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "선형 닷지(추가)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "线性减淡（添加）"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "線性加亮（增加）"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Subexposição linear"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Subexposição linear"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "إضافة"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "הוספה"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Rozjaśnianie liniowe"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lineair tegenhouden"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Linjär skugga"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lineær udtoning"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lineær lysning"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lineaarinen varjostus"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Додавання"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lineárně zesvětlit"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lineáris fakítás"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Πρόσθεση"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tambah"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Cộng"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Doğrusal Soldurma"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "บวก"
+          }
+        }
+      }
+    },
+    "Color Burn" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Color Burn"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Затемнение основы"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Densité couleur +"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Farbig nachbelichten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Subexponer color"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Colore brucia"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "焼き込みカラー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "색상 번"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "颜色加深"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "加深顏色"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Superexposição de cores"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Superexposição de cores"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تغميق اللون"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "הכהיית צבע"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ściemnianie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kleur doordrukken"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Färgbränning"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Farvebrænding"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mørkne farge"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Värilisävalotus"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Затемнення кольору"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ztmavit barvy"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Színégetés"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Κάψιμο χρώματος"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Color Burn"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Đốt màu"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Renk Yanması"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "เผาสี"
+          }
+        }
+      }
+    },
+    "Color Dodge" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Color Dodge"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Осветление основы"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Densité couleur −"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Farbig abwedeln"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sobreexponer color"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Colore scherma"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "覆い焼きカラー"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "색상 닷지"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "颜色减淡"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "加亮顏色"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Subexposição de cores"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Subexposição de cores"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تفتيح اللون"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "הבהרת צבע"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Rozjaśnianie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kleur tegenhouden"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Färgskugga"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Farveudtoning"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lysne farge"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Värivarjostus"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Освітлення кольору"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zesvětlit barvy"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Színfakítás"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Φωτισμός χρώματος"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Color Dodge"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Né màu"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Renk Soldurma"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "หลบสี"
+          }
+        }
+      }
+    },
+    "Lighten" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lighten"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Замена светлым"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Éclaircir"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aufhellen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Aclarar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Schiarisci"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "比較（明）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "밝게 하기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "变亮"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "變亮"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Clarear"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Clarear"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تفتيح"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "הבהרה"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Jaśniej"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lichter"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ljusare"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lysere"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lysere"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Vaalentava"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Освітлення"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zesvětlit"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Világosítás"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Φωτισμός"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Terangkan"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Làm sáng"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Açıklaştır"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ทำให้สว่าง"
+          }
+        }
+      }
+    },
+    "Darken" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Darken"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Замена тёмным"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Obscurcir"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Abdunkeln"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Oscurecer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Scurisci"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "比較（暗）"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "어둡게 하기"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "变暗"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "變暗"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Escurecer"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Escurecer"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تغميق"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "הכהיה"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ciemniej"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Donkerder"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mörkare"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mørkere"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mørkere"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tummentava"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Затемнення"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ztmavit"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sötétítés"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Σκούρυνση"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Gelapkan"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Làm tối"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Koyulaştır"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ทำให้มืด"
+          }
+        }
+      }
+    },
+    "Hard Light" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Hard Light"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Жёсткий свет"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lumière crue"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Hartes Licht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luz fuerte"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luce intensa"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ハードライト"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "하드 라이트"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "强光"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "實光"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luz direta"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luz forte"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ضوء حاد"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "אור קשה"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ostre światło"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Fel licht"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Skarpt ljus"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Hårdt lys"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Hardt lys"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kova valo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Жорстке світло"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Tvrdé světlo"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kemény fény"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Σκληρό φως"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Cahaya keras"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ánh sáng gắt"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sert Işık"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "แสงแข็ง"
+          }
+        }
+      }
+    },
+    "Soft Light" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Soft Light"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Мягкий свет"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lumière tamisée"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Weiches Licht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luz suave"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luce soffusa"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ソフトライト"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "소프트 라이트"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "柔光"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "柔光"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luz indireta"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Luz suave"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ضوء ناعم"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "אור רך"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Łagodne światło"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Zwak licht"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mjukt ljus"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Blødt lys"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mykt lys"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Pehmeä valo"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "М’яке світло"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Měkké světlo"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Lágy fény"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Απαλό φως"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Cahaya lembut"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ánh sáng mềm"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Yumuşak Işık"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "แสงนุ่ม"
+          }
+        }
+      }
+    },
+    "Overlay" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Overlay"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Перекрытие"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Incrustation"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ineinanderkopieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Superponer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sovrapponi"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "オーバーレイ"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "오버레이"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "叠加"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "覆蓋"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sobreposição"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sobreposição"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "تراكب"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "כיסוי"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Nakładka"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Bedekken"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Täcka över"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Overlejring"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Overlegg"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Sulauttava"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Перекриття"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Překrýt"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Átfedés"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Επικάλυψη"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Hamparan"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Phủ chồng"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Kaplama"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "ซ้อนทับ"
+          }
+        }
+      }
+    },
+    "Screen" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Screen"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Экран"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Superposition"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Negativ multiplizieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Trama"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Scolora"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "スクリーン"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "스크린"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "滤色"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "濾色"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Divisão"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Divisão"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "شاشة"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "סינון"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Mnożenie odwrotności"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Bleken"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Raster"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Skærm"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Skjerm"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Rasteri"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Екран"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Závoj"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Szendvicsnegatív"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Οθόνη"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Layar"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Screen"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "Ekran"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value" : "สกรีน"
+          }
+        }
+      }
+    },
+  "Build up color for painterly shading. Like Multiply, repeated strokes deepen shadows, but retain more of the brush color instead of quickly turning black. The default for marker and watercolor.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Build up color for painterly shading. Like Multiply, repeated strokes deepen shadows, but retain more of the brush color instead of quickly turning black. The default for marker and watercolor."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Наслаивайте цвет для живописных теней. Как и при умножении, повторные мазки затемняют рисунок, но лучше сохраняют цвет кисти и медленнее уходят в чёрный. Режим по умолчанию для маркера и акварели."
+        }
+      }
+    }
+  },
+  "Paint colored shadows, deepen folds, or tint a sketch while keeping dark lines visible. Each pass darkens the underlying colors. White has no effect; many passes can make shadows muddy.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Paint colored shadows, deepen folds, or tint a sketch while keeping dark lines visible. Each pass darkens the underlying colors. White has no effect; many passes can make shadows muddy."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Рисуйте цветные тени, углубляйте складки и тонируйте скетч, сохраняя тёмные линии. Каждый проход затемняет нижние цвета. Белый не меняет рисунок; слишком много проходов могут сделать тени грязными."
+        }
+      }
+    }
+  },
+  "Block in flat colors, paint over mistakes, and add crisp details. Opaque strokes replace the color below. Lower opacity lets you build transitions gradually without extra darkening.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Block in flat colors, paint over mistakes, and add crisp details. Opaque strokes replace the color below. Lower opacity lets you build transitions gradually without extra darkening."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Заливайте основные цвета, перекрывайте ошибки и добавляйте чёткие детали. Непрозрачный мазок заменяет нижний цвет. При меньшей непрозрачности можно плавно набирать цвет без дополнительного затемнения."
+        }
+      }
+    }
+  },
+  "Build soft highlights, haze, and reflected light over darker paint. Repeated passes brighten the image. Black has no effect, and Screen cannot add visible color over white.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Build soft highlights, haze, and reflected light over darker paint. Repeated passes brighten the image. Black has no effect, and Screen cannot add visible color over opaque white paint."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Добавляйте мягкие блики, дымку и рефлексы поверх тёмного рисунка. Повторные проходы осветляют его. Чёрный не влияет на результат, а поверх непрозрачной белой краски эффект не виден."
+        }
+      }
+    }
+  },
+  "Tint existing shading while boosting contrast: shadows deepen and light areas brighten. Useful for color accents on a modeled form. Pure black and white stay unchanged; start over midtones.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Tint existing shading while boosting contrast: shadows deepen and light areas brighten. Useful for color accents on a modeled form. Opaque black and white paint stay unchanged; start over midtones."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Тонируйте готовую светотень с усилением контраста: тени темнеют, светлые участки светлеют. Подходит для цветовых акцентов на объёмной форме. Непрозрачные чёрная и белая краски не меняются — работайте по полутонам."
+        }
+      }
+    }
+  },
+  "Gently warm or cool existing paint and adjust its lighting. Softer than Overlay, useful for subtle shading and atmosphere. Neutral 50% gray has no effect; work over midtones.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Gently warm or cool existing paint and adjust its lighting. Softer than Overlay, useful for subtle shading and atmosphere. Neutral 50% gray has no effect; work over midtones."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Мягко меняйте теплоту цвета и освещение готового рисунка. Деликатнее, чем перекрытие: подходит для лёгкой светотени и атмосферы. Нейтральный серый 50% не меняет рисунок; работайте по полутонам."
+        }
+      }
+    }
+  },
+  "Paint dramatic light and strong colored shadows. Light brush colors brighten; dark brush colors deepen the image. Useful for bold lighting accents; lower opacity for more control.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Paint dramatic light and strong colored shadows. Light brush colors brighten; dark brush colors deepen the image. Useful for bold lighting accents; lower opacity for more control."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Рисуйте выразительный свет и насыщенные цветные тени. Светлые цвета кисти осветляют рисунок, тёмные — затемняют. Подходит для резких световых акцентов; меньшая непрозрачность даёт больше контроля."
+        }
+      }
+    }
+  },
+  "Add darker accents without lightening existing dark details. Each RGB channel keeps the darker value. Useful for reinforcing linework or shading; repeated identical opaque passes stop changing the result.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Add darker accents without lightening existing dark details. Each RGB channel keeps the darker value. Useful for reinforcing linework or shading; repeated identical opaque passes stop changing the result."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Добавляйте тёмные акценты, не осветляя уже тёмные детали. В каждом канале RGB остаётся меньшее значение. Подходит для усиления линий и теней; повторные одинаковые непрозрачные мазки перестают менять результат."
+        }
+      }
+    }
+  },
+  "Add light accents while protecting brighter details. Each RGB channel keeps the lighter value. Useful for highlights on dark paint; it cannot leave a visible mark over white.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Add light accents while protecting brighter details. Each RGB channel keeps the lighter value. Useful for highlights on dark paint; it cannot leave a visible mark over opaque white paint."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Добавляйте светлые акценты, сохраняя более яркие детали. В каждом канале RGB остаётся большее значение. Подходит для бликов на тёмном рисунке; поверх непрозрачной белой краски след не виден."
+        }
+      }
+    }
+  },
+  "Create intense glow, hot highlights, and luminous edges over existing color. Bright brush colors quickly push highlights toward white. Use low opacity; the effect is invisible over white.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Create intense glow, hot highlights, and luminous edges over existing color. Bright brush colors quickly push highlights toward white. Use low opacity; the effect is invisible over opaque white paint."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Создавайте яркое свечение, горячие блики и светящиеся края поверх цвета. Светлая кисть быстро выбеливает блики. Используйте небольшую непрозрачность; поверх непрозрачной белой краски эффект не виден."
+        }
+      }
+    }
+  },
+  "Deepen rich colored shadows and add gritty contrast. Dark brush colors can quickly crush detail to black. Use low opacity over existing paint; pure white stays white.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Deepen rich colored shadows and add gritty contrast. Dark brush colors can quickly crush detail to black. Use low opacity over existing paint; opaque white paint stays white."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Углубляйте насыщенные цветные тени и добавляйте жёсткий контраст. Тёмная кисть быстро уводит детали в чёрный. Работайте с небольшой непрозрачностью по готовому цвету; непрозрачная белая краска остаётся белой."
+        }
+      }
+    }
+  },
+  "Add light for sparks, neon, and bright glow. RGB values add together and clip at white, so highlights can lose detail quickly. Best over dark paint with low opacity.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Add light for sparks, neon, and bright glow. RGB values add together and clip at white, so highlights can lose detail quickly. Best over dark paint with low opacity."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Добавляйте свет для искр, неона и яркого свечения. Значения RGB складываются до белого, поэтому блики быстро теряют детали. Лучше работает по тёмному рисунку с небольшой непрозрачностью."
+        }
+      }
+    }
+  },
+  "Explore inverted colors and graphic effects. Similar colors turn dark; white inverts the underlying color, while black leaves it unchanged. Useful for experimental palettes rather than natural shading.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Explore inverted colors and graphic effects. Similar colors turn dark; white inverts the underlying color, while black leaves it unchanged. Useful for experimental palettes rather than natural shading."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Пробуйте инверсию цвета и графические эффекты. Близкие цвета дают тёмный результат, белый инвертирует нижний цвет, чёрный его не меняет. Подходит для экспериментальных палитр."
+        }
+      }
+    }
+  },
+  "Create softer inverted colors and muted graphic effects. Similar to Difference with gentler contrast. Black has no effect; white inverts the image. Try it for stylized color shifts.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Create softer inverted colors and muted graphic effects. Similar to Difference with gentler contrast. Black has no effect; white inverts the image. Try it for stylized color shifts."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Создавайте мягкую инверсию и приглушённые графические эффекты. Похож на разницу, но с меньшим контрастом. Чёрный не влияет на результат, белый инвертирует рисунок. Подходит для стилизованных цветовых сдвигов."
+        }
+      }
+    }
+  },
+  "Gray background": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Gray background"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Серый фон"
+        }
+      }
+    }
+  },
+  "Blend chart: yellow passes increase to the right; blue passes increase downward.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Blend chart: yellow passes increase to the right; blue passes increase downward."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Таблица смешивания: число жёлтых мазков растёт вправо, синих — вниз."
+        }
+      }
+    }
+  },
+  "Yellow → · Blue ↓\n0–10 passes, 80% opacity. Yellow first, then blue. Watercolor example; marker builds up more gently.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Yellow → · Blue ↓\n0–10 passes, 80% opacity. Yellow first, then blue. Watercolor example; marker builds up more gently."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Жёлтый → · Синий ↓\n0–10 проходов, непрозрачность 80%. Сначала жёлтый, затем синий. Пример для акварели; маркер набирает цвет мягче."
+        }
+      }
+    }
+  },
+  "About color blending": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "About color blending"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "О смешивании цветов"
+        }
+      }
+    }
+  },
+  "Each example shows blue watercolor over yellow at full opacity.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Each example shows blue watercolor over yellow at full opacity."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "На каждом примере синяя акварель нанесена поверх жёлтой с полной непрозрачностью."
+        }
+      }
+    }
+  },
+  "Blue over yellow": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Blue over yellow"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Синий поверх жёлтого"
+        }
+      }
+    }
+  },
+  "Combines darkening with the new color. Overlaps keep more of the new color than Multiply. A balanced choice for layered strokes.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Combines darkening with the new color. Overlaps keep more of the new color than Multiply. A balanced choice for layered strokes."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Сочетает затемнение с добавлением нового цвета. В пересечениях новый цвет заметнее, чем при умножении. Универсальный вариант для рисования слоями."
+        }
+      }
+    }
+  },
+  "Multiplies the new color with the color underneath. Overlaps become darker: blue over yellow turns green. Useful for shadows and glazing.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Multiplies the new color with the color underneath. Overlaps become darker: blue over yellow turns green. Useful for shadows and glazing."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Умножает новый цвет на цвет под ним. Пересечения темнеют: синий поверх жёлтого даёт зелёный. Подходит для теней и лессировки."
+        }
+      }
+    }
+  },
+  "Places the new color over the old one without extra darkening. Opaque watercolor covers the color underneath; translucent strokes let it show through.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Places the new color over the old one without extra darkening. Opaque watercolor covers the color underneath; translucent strokes let it show through."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value" : "Накладывает новый цвет поверх прежнего без дополнительного затемнения. Непрозрачная акварель перекрывает нижний цвет, а полупрозрачные мазки позволяют ему просвечивать."
+        }
+      }
+    }
+  },
+    "Color blending" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Color blending"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смешивание цветов"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مزج الألوان"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mélange des couleurs"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farbmischung"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fusione dei colori"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "色の合成"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "색상 혼합"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mistura de cores"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mistura de cores"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "颜色混合"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mezcla de colores"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renk karıştırma"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "色彩混合"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mieszanie kolorów"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kleuren mengen"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Färgblandning"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Farveblanding"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fargeblanding"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Värien sekoitus"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pencampuran warna"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hòa trộn màu"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "การผสมสี"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Змішування кольорів"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Míchání barev"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Színkeverés"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ανάμειξη χρωμάτων"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ערבוב צבעים"
+          }
+        }
+      }
+    },
+    "Hybrid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybrid"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Смешанный"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مختلط"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybride"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybrid"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ibrida"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ハイブリッド"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "혼합형"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Híbrido"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Híbrido"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "混合模式"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Híbrido"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karma"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "混合模式"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybrydowe"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybride"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybrid"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybrid"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybrid"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybridi"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hibrida"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kết hợp"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แบบผสม"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Змішаний"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hybridní"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hibrid"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Υβριδική"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "משולב"
+          }
+        }
+      }
+    },
+    "Multiply" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiply"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Умножение"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ضرب"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Produit"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiplizieren"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moltiplica"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "乗算"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "곱하기"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiplicar"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiplicar"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正片叠底"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiplicar"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çarp"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "色彩增值"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mnożenie"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vermenigvuldigen"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiplicera"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multiplicer"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Multipliser"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kerro"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalikan"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhân"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "คูณ"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Множення"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Násobení"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szorzás"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πολλαπλασιασμός"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הכפלה"
+          }
+        }
+      }
+    },
+    "Normal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обычный"
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "عادي"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normale"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "通常"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "일반"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正常"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正常"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zwykłe"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normaal"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normaali"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normal"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bình thường"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ปกติ"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Звичайний"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normální"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normál"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Κανονική"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "רגיל"
+          }
+        }
+      }
+    },
+    "Applies to new marker and watercolor strokes. Hybrid is the default." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applies to new marker and watercolor strokes. Hybrid is the default."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для новых штрихов маркера и акварели. По умолчанию — смешанный режим."
+          }
+        },
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يُطبّق على ضربات قلم التحديد والألوان المائية الجديدة. الوضع المختلط هو الافتراضي."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pour les nouveaux traits de marqueur et d’aquarelle. Hybride est le mode par défaut."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gilt für neue Marker- und Aquarellstriche. Hybrid ist die Standardeinstellung."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Si applica ai nuovi tratti di pennarello e acquerello. Ibrida è la modalità predefinita."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しいマーカーと水彩のストロークに適用されます。初期設定はハイブリッドです。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "새 마커 및 수채화 획에 적용됩니다. 기본값은 혼합형입니다."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplica-se a novos traços de marcador e aguarela. Híbrido é o modo predefinido."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplica-se a novos traços de marcador e aquarela. Híbrido é o modo padrão."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "适用于新的马克笔和水彩笔画。默认为混合模式。"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se aplica a los nuevos trazos de rotulador y acuarela. Híbrido es el modo predeterminado."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni keçeli kalem ve sulu boya çizgilerine uygulanır. Varsayılan mod Karma’dır."
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "適用於新的麥克筆和水彩筆畫。預設為混合模式。"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dotyczy nowych pociągnięć markera i akwareli. Domyślny tryb to Hybrydowe."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geldt voor nieuwe marker- en aquarelstreken. Hybride is de standaard."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gäller nya tusch- och akvarelldrag. Hybrid är standard."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gælder nye tusch- og akvarelstrøg. Hybrid er standard."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gjelder nye tusj- og akvarellstrøk. Hybrid er standard."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koskee uusia tussi- ja vesivärivetoja. Hybridi on oletusasetus."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berlaku untuk goresan spidol dan cat air baru. Hibrida adalah mode default."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Áp dụng cho nét bút dạ và màu nước mới. Kết hợp là chế độ mặc định."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใช้กับเส้นปากกามาร์กเกอร์และสีน้ำใหม่ โดยมีแบบผสมเป็นค่าเริ่มต้น"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для нових штрихів маркера й акварелі. Типово використовується змішаний режим."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Platí pro nové tahy fixem a akvarelem. Výchozí režim je Hybridní."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Az új filctoll- és akvarellvonásokra érvényes. Az alapértelmezett mód a Hibrid."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ισχύει για νέες πινελιές μαρκαδόρου και ακουαρέλας. Προεπιλογή είναι η Υβριδική."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "חל על משיכות חדשות של טוש וצבעי מים. ברירת המחדל היא מצב משולב."
+          }
+        }
+      }
+    },
     "- GitHub Privacy Statement (https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)\n- Apple Privacy Policy (https://www.apple.com/legal/privacy/)\n- Google Privacy Policy (https://policies.google.com/privacy)" : {
       "comment" : "Privacy policy, paragraph 19 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",

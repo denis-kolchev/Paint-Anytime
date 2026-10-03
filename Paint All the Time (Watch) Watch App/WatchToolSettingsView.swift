@@ -314,7 +314,7 @@ struct WatchToolSettingsView: View {
                         tutorial.record(.openedInfo)
                         showsInformation = true
                     } label: {
-                        Image(systemName: "info")
+                        Image(systemName: "info.circle")
                     }
                     .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Information"))

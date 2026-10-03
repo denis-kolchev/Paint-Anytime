@@ -145,6 +145,94 @@ struct RenderCheck {
                 }
             }
         }
+        // Independent reference values for base=0.2, source=0.7 (straight RGB).
+        let blendFixtures: [(ColorBlendingMode, Float)] = [
+            (.normal, 0.7), (.multiply, 0.14), (.hybrid, 0.224),
+            (.screen, 0.76), (.overlay, 0.28), (.softLight, 0.2992),
+            (.hardLight, 0.52), (.darken, 0.2), (.lighten, 0.7),
+            (.colorDodge, 2.0 / 3), (.colorBurn, 0), (.add, 0.9),
+            (.difference, 0.5), (.exclusion, 0.62)
+        ]
+        precondition(blendFixtures.count == ColorBlendingMode.allCases.count)
+        for (mode, expected) in blendFixtures {
+            precondition(abs(mode.blend(base: 0.2, source: 0.7, instrument: .watercolor) - expected) < 0.00001,
+                         "Reference formula mismatch: \(mode)")
+            let clearResult = mode.composite(base: .zero, source: SIMD4(0.7, 0.4, 0.2, 0.5), instrument: .watercolor)
+            precondition(clearResult == SIMD4(0.35, 0.2, 0.1, 0.5), "Clear backdrop must not tint source")
+            let partial = mode.composite(base: SIMD4(0.05, 0.05, 0.05, 0.25),
+                                         source: SIMD4(0.7, 0.7, 0.7, 0.5), instrument: .watercolor)
+            precondition(abs(partial.x - (0.2875 + 0.125 * expected)) < 0.00001 && partial.w == 0.625,
+                         "Premultiplied alpha mismatch: \(mode)")
+            for d: Float in [0, 0.25, 0.5, 1] {
+                for source: Float in [0, 0.5, 1] {
+                    let value = mode.blend(base: d, source: source, instrument: .watercolor)
+                    precondition(value.isFinite && (0...1).contains(value), "Invalid blend endpoint")
+                }
+            }
+            var savedStyle = PencilStyle.initial(for: .watercolor)
+            savedStyle.blendingMode = mode
+            let restored = try! JSONDecoder().decode(PencilStyle.self, from: JSONEncoder().encode(savedStyle))
+            precondition(restored == savedStyle, "Blend mode must survive saving")
+        }
+        // Pixel integration: coverage and opacity must agree with the blend model.
+        for mode in ColorBlendingMode.allCases {
+            for tool in [DrawingInstrument.marker, .watercolor] {
+                var style = PencilStyle.initial(for: tool)
+                style.width = 20
+                style.color = SIMD4(0.3, 0.6, 0.8, 0.5)
+                style.blendingMode = mode
+                let dot = Stroke(points: [point], style: style)
+                let actual = pixel(render([background, dot, dot]), 80, 80)
+                for channel in 0..<3 {
+                    var expected = Double(beforeWhite[channel]) / 255
+                    let a: Double = tool == .watercolor ? 0.5 : 0.35
+                    let source = Double(style.color[channel])
+                    for _ in 0..<2 {
+                        let mixed = mode.blend(base: Float(expected), source: Float(source), instrument: tool)
+                        expected = (1-a)*expected + a*Double(mixed)
+                    }
+                    precondition(abs(Double(actual[channel]) - expected*255) <= 3, "Blend mode pixel mismatch: \(mode)")
+                }
+            }
+        }
+        // Help grids must match actual strokes on EMPTY canvas, not opaque paper.
+        for mode in ColorBlendingMode.allCases where !mode.usesMultiplyFastPath {
+            var yellowStyle = PencilStyle.initial(for: .watercolor)
+            yellowStyle.width = 20
+            yellowStyle.blendingMode = mode
+            yellowStyle.color = SIMD4(1, 0.78, 0.04, 0.8)
+            var blueStyle = yellowStyle
+            blueStyle.color = SIMD4(0.04, 0.48, 0.9, 0.8)
+            for yellowCount in [0, 1, 2, 5, 10] {
+                for blueCount in [0, 1, 2, 5, 10] {
+                    let strokes = Array(repeating: Stroke(points: [point], style: yellowStyle), count: yellowCount)
+                        + Array(repeating: Stroke(points: [point], style: blueStyle), count: blueCount)
+                    let actual = pixel(render(strokes), 80, 80)
+                    let chart = mode.referenceSwatch(yellowPasses: yellowCount, bluePasses: blueCount)
+                    for channel in 0..<3 {
+                        precondition(abs(Float(actual[channel]) - chart[channel] * 255) <= 2,
+                                     "Help/canvas mismatch: \(mode), \(yellowCount), \(blueCount)")
+                    }
+                }
+            }
+        }
+        // Preserve the first three reference charts, including repeated overlaps.
+        for mode in [ColorBlendingMode.hybrid, .multiply, .normal] {
+            for yellowCount in 0...10 {
+                for blueCount in 0...10 {
+                    var expected = SIMD4<Float>(1, 1, 1, 1)
+                    for _ in 0..<yellowCount {
+                        expected = mode.composite(base: expected, source: SIMD4(1, 0.78, 0.04, 0.8), instrument: .watercolor)
+                    }
+                    for _ in 0..<blueCount {
+                        expected = mode.composite(base: expected, source: SIMD4(0.04, 0.48, 0.9, 0.8), instrument: .watercolor)
+                    }
+                    precondition(mode.referenceSwatch(yellowPasses: yellowCount, bluePasses: blueCount)
+                                 == SIMD3(expected.x, expected.y, expected.z))
+                }
+            }
+        }
+        print("PASS: help charts match empty-canvas rendering for all 11 additional modes; first three unchanged")
         // Long marker paths are internally batched by Core Graphics. A single gesture
         // must keep the same opacity across those batches; separate gestures build ink.
         for color in [SIMD4<Float>(0.2, 0.7, 0.35, 1), SIMD4<Float>(1, 1, 1, 1),

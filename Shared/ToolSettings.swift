@@ -14,6 +14,16 @@ final class ToolSettings: ObservableObject {
     }
     @Published private(set) var synchronization = ToolSynchronization()
 
+    @Published private(set) var blendingMode: ColorBlendingMode = .hybrid
+    private static let blendingKey = "drawing.blending.v1"
+
+    func setBlendingMode(_ mode: ColorBlendingMode) {
+        guard mode != blendingMode else { return }
+        blendingMode = mode
+        pencilStyle.blendingMode = mode
+        if persistsPreferences { preferences.defaults.set(mode.rawValue, forKey: Self.blendingKey) }
+    }
+
     var maximumWidth: Float { pencilStyle.instrument.maximumWidth }
 
     func setSynchronizeWidth(_ enabled: Bool) {
@@ -87,12 +97,15 @@ final class ToolSettings: ObservableObject {
             pencilStyle = .initial(for: .monoline)
             return
         }
+        let restoredBlendingMode = defaults.string(forKey: Self.blendingKey).flatMap(ColorBlendingMode.init(rawValue:)) ?? .hybrid
+        blendingMode = restoredBlendingMode
         let decoded = preferences.styles
         savedStyles = decoded
         let restoredSynchronization = preferences.synchronization
         let savedInstrument = preferences.instrument
         let instrument = AppReleaseFeatures.current.allows(savedInstrument) ? savedInstrument : .monoline
         var restored = decoded[instrument.rawValue] ?? .initial(for: instrument)
+        restored.blendingMode = restoredBlendingMode
         if !restored.width.isFinite { restored.width = instrument.defaultWidth }
         restored.width = min(instrument.maximumWidth, max(1, restored.width))
         if restoredSynchronization.width { restored.width = restoredSynchronization.sharedWidth }
@@ -107,6 +120,7 @@ final class ToolSettings: ObservableObject {
         if synchronization.width { style.width = synchronization.sharedWidth }
         else { style.width = min(instrument.maximumWidth, max(1, style.width)) }
         if synchronization.color && instrument != .eraser { style.color = synchronization.sharedColor }
+        style.blendingMode = blendingMode
         pencilStyle = AppReleaseFeatures.current.availableStyle(style)
     }
 

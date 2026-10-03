@@ -122,6 +122,28 @@ struct ArchitectureChecks {
         try CanvasExportStore.delete(drawing, in: folder)
         let remaining = try FileManager.default.contentsOfDirectory(atPath: folder.path)
         precondition(remaining.isEmpty)
+        let blendSuite = "BlendChecks.\(UUID().uuidString)"
+        let blendDefaults = UserDefaults(suiteName: blendSuite)!
+        defer { blendDefaults.removePersistentDomain(forName: blendSuite) }
+        let blending = CanvasController(defaults: blendDefaults)
+        precondition(blending.blendingMode == .hybrid)
+        blending.selectInstrument(.marker)
+        blending.beginStroke(at: start)
+        blending.endStroke(at: end)
+        blending.setBlendingMode(.multiply)
+        precondition(blending.document.strokes[0].style.blendingMode == .hybrid)
+        blending.beginStroke(at: start)
+        blending.endStroke(at: end)
+        precondition(blending.document.strokes[1].style.blendingMode == .multiply)
+        blending.selectInstrument(.watercolor)
+        precondition(blending.pencilStyle.blendingMode == .multiply)
+        precondition(CanvasController(defaults: blendDefaults).blendingMode == .multiply)
+        precondition(CanvasController(defaults: blendDefaults, persistsPreferences: false).blendingMode == .hybrid)
+        let blendData = try JSONEncoder().encode(blending.document)
+        let blendRoundTrip = try JSONDecoder().decode(CanvasDocument.self, from: blendData)
+        precondition(blendRoundTrip == blending.document)
+        let legacyStyle = try JSONDecoder().decode(PencilStyle.self, from: Data("{}".utf8))
+        precondition(legacyStyle.blendingMode == .hybrid)
         withExtendedLifetime(subscription) {}
         print("Architecture checks passed: observation, preferences, tutorial isolation, undo/redo, document storage.")
     }

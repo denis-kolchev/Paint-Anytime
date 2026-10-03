@@ -238,7 +238,7 @@ nonisolated final class WatchStrokeCoverage {
         var minusOne: Float = -1
         // watercolor-blend.md: C = (1-a)D + aS[(1-k) + kD].
         // Full watercolor coverage uses a=1; marker keeps its previous parameters.
-        let k: Float = style.instrument == .watercolor ? 0.85 : 0.8
+        let k = style.blendingMode.multiplyWeight(for: style.instrument)
         var minusK = -k
         for y in Int(rect.minY)..<Int(rect.maxY) {
             let x = Int(rect.minX)
@@ -269,6 +269,19 @@ nonisolated final class WatchStrokeCoverage {
             vDSP_vsmul(alpha, 1, &inkAlpha, alpha, 1, n)
             let backdrop = basePixels + y * baseStride + x * 4
             let destination = outputPixels + y * outputStride + x * 4
+            if !style.blendingMode.usesMultiplyFastPath {
+                for pixel in 0..<count {
+                    let offset = pixel * 4
+                    let baseColor = SIMD4<Float>(backdrop[offset], backdrop[offset + 1],
+                                                 backdrop[offset + 2], backdrop[offset + 3])
+                    var sourceColor = style.color
+                    sourceColor.w = alpha[pixel]
+                    let result = style.blendingMode.composite(base: baseColor, source: sourceColor,
+                                                              instrument: style.instrument)
+                    for channel in 0..<4 { destination[offset + channel] = result[channel] }
+                }
+                continue
+            }
             // For premultiplied D with alpha Ad:
             // C = D(1-a+akS) + aS(1-kAd); Ac = Ad + a(1-Ad).
             vDSP_vsmsa(backdrop + 3, 4, &minusK, &one, sourceFactor, 1, n)
