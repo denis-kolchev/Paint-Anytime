@@ -179,9 +179,9 @@ struct SavedDrawingsView: View {
                         .accessibilityLabel(L10n.text("Delete drawing"))
                         Spacer()
                         if !tutorial.isActive {
-                            ShareLink(item: selectedDrawing.url,
+                            ShareLink(item: DrawingShareItem(url: selectedDrawing.url),
                                       preview: SharePreview(Text(verbatim: selectedDrawing.url.lastPathComponent),
-                                                            image: Image(systemName: "photo"))) {
+                                                            image: DrawingShareItem(url: selectedDrawing.url))) {
                                 Image(systemName: "square.and.arrow.up")
                             }
                             .watchToolbarButtonStyle()

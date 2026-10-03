@@ -14,7 +14,8 @@ struct SavedDrawingView: View {
                 if let image = UIImage(contentsOfFile: drawing.url.path) {
                     Image(uiImage: image).resizable().scaledToFit()
                 }
-                ShareLink(item: drawing.url, preview: SharePreview("Paint All the Time", image: Image(systemName: "photo"))) {
+                ShareLink(item: DrawingShareItem(url: drawing.url),
+                          preview: SharePreview("Paint All the Time", image: DrawingShareItem(url: drawing.url))) {
                     Label(L10n.text("Share"), systemImage: "square.and.arrow.up")
                 }
                 .simultaneousGesture(TapGesture().onEnded { tutorial.activity() })
