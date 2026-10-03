@@ -184,11 +184,11 @@ struct TutorialCrownHint: ViewModifier {
                             .padding(.horizontal, 3)
                             .padding(.vertical, 4)
                             .background(.black.opacity(0.8), in: Capsule())
-                            .position(
-                                x: WKInterfaceDevice.current().crownOrientation == .left
-                                    ? 15 : screen.size.width - 15,
-                                y: screen.size.height * 0.36
-                            )
+                            .position(TutorialCrownPlacement.position(
+                                screenBounds: WKInterfaceDevice.current().screenBounds,
+                                overlayFrame: screen.frame(in: .global),
+                                crownOnLeft: WKInterfaceDevice.current().crownOrientation == .left
+                            ))
                     }
                 }
                 .ignoresSafeArea()

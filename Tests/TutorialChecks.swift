@@ -1,13 +1,34 @@
 import Foundation
+import CoreGraphics
 import Combine
 
 @main
 struct TutorialChecks {
     @MainActor static func main() async throws {
+        checkCrownPlacement()
         checkProgress()
         try await checkSession()
         try await checkWorkspaceAndOnboarding()
         print("PASS: tutorial rules, exploration, observation, workspace isolation, onboarding persistence")
+    }
+
+    static func checkCrownPlacement() {
+        let screens: [(CGFloat, CGFloat, CGFloat)] = [
+            (162, 197, 49), (184, 224, 57), (176, 215, 56), (198, 242, 66),
+            (187, 223, 56), (208, 248, 66), (205, 251, 83.5), (211, 257, 85.5)
+        ]
+        for (width, height, expectedY) in screens {
+            let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+            let right = TutorialCrownPlacement.position(screenBounds: bounds, overlayFrame: bounds, crownOnLeft: false)
+            let left = TutorialCrownPlacement.position(screenBounds: bounds, overlayFrame: bounds, crownOnLeft: true)
+            precondition(right == CGPoint(x: width - 15, y: expectedY))
+            precondition(left == CGPoint(x: 15, y: height - expectedY))
+            let insetFrame = CGRect(x: 6, y: 28, width: width - 12, height: height - 44)
+            let inset = TutorialCrownPlacement.position(screenBounds: bounds, overlayFrame: insetFrame, crownOnLeft: false)
+            precondition(inset.x + insetFrame.minX == right.x && inset.y + insetFrame.minY == right.y,
+                         "Safe areas must not shift the Crown hint away from the physical Crown")
+        }
+        precondition(TutorialCrownPlacement.rightCrownY(screenSize: CGSize(width: 220, height: 280)) == 72.8)
     }
 
     static func checkProgress() {
