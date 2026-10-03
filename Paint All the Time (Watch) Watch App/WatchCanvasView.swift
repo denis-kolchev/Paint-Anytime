@@ -119,8 +119,7 @@ struct WatchCanvasView: View {
         // binding below still rejects zoom until the lesson permits it.
         .focusable(acceptsInput)
         .focused($crownFocused)
-        .modifier(TutorialCrownAccessory(tutorial: tutorial, isSuggested: acceptsInput))
-        .digitalCrownRotation(Binding(
+        .digitalCrownRotation(detent: Binding(
             get: { crownZoom },
             set: { value in
                 guard tutorial.allowsCanvasZoom else { return }
@@ -138,7 +137,10 @@ struct WatchCanvasView: View {
                 if zoom == 1 && !wasSnapped { WKInterfaceDevice.current().play(.click) }
             }
         ), from: 0.25, through: 4, by: 0.05, sensitivity: .low,
-           isContinuous: false, isHapticFeedbackEnabled: false)
+           isContinuous: false, isHapticFeedbackEnabled: false,
+           onChange: { [step = tutorial.step] event in
+                tutorial.usedCrown(in: step, velocity: event.velocity)
+            })
         .accessibilityLabel(isMovingCanvas ? L10n.text("Moving canvas") : L10n.text("Finger drawing canvas"))
         .accessibilityValue(L10n.format("Zoom %d percent", Int(zoom * 100)))
         .task(id: CrownFocusRequest(enabled: shouldFocusCrown, step: tutorial.step)) {

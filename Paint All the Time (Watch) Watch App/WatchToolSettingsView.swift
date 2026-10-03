@@ -264,16 +264,18 @@ struct WatchToolSettingsView: View {
         .contentShape(Rectangle())
         .focusable(!showsInformation && tutorial.allowsToolAdjustment(page: selection.rawValue))
         .focused($crownFocused)
-        .modifier(TutorialCrownAccessory(tutorial: tutorial, isSuggested: !showsInformation))
         .digitalCrownRotation(
-            crownValue,
+            detent: crownValue,
             from: selection == .width ? 1 : selection == .direction ? -90 : 0,
             through: crownMaximum,
             // Reduce angular travel by another half; displayed values still snap to 5°.
             by: selection == .direction ? 1.25 : 1,
             sensitivity: selection == .direction ? .high : .low,
             isContinuous: false,
-            isHapticFeedbackEnabled: true
+            isHapticFeedbackEnabled: true,
+            onChange: { [step = tutorial.step] event in
+                tutorial.usedCrown(in: step, velocity: event.velocity)
+            }
         )
         .task(id: tutorialCrownFocusRequest) {
             // Keep the regular editor's focus behavior. In the tutorial, both

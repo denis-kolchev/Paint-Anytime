@@ -214,15 +214,17 @@ struct SavedDrawingsView: View {
             }
         }
         .focusable(pendingDeletion == nil && tutorial.allowsGalleryZoom)
-        .modifier(TutorialCrownAccessory(tutorial: tutorial, isSuggested: pendingDeletion == nil))
         .focused($crownFocused)
-        .digitalCrownRotation(Binding(get: { crownPosition }, set: { value in
+        .digitalCrownRotation(detent: Binding(get: { crownPosition }, set: { value in
             guard tutorial.allowsGalleryZoom else { return }
             tutorial.activity()
             crownPosition = value
         }), from: 0, through: 2, by: 1,
                               sensitivity: .low, isContinuous: false,
-                              isHapticFeedbackEnabled: false)
+                              isHapticFeedbackEnabled: false,
+                              onChange: { [step = tutorial.step] event in
+                tutorial.usedCrown(in: step, velocity: event.velocity)
+            })
         .onChange(of: crownPosition) { _, position in
             guard pendingDeletion == nil, !isTransitioning, tutorial.allowsGalleryZoom else { return }
             let next = min(2, max(0, Int(position.rounded())))

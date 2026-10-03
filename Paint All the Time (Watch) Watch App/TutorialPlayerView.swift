@@ -195,6 +195,7 @@ struct TutorialPlayerView: View {
             if height > 0 { hintHeight = height }
         }
         .background(Color.black.ignoresSafeArea())
+        .modifier(TutorialCrownHint(tutorial: tutorial))
         .onAppear {
             player.startOrResume()
         }

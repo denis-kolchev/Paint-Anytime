@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 /// Tutorial overlays do not have a native toolbar host to supply a hit target.
 /// Size the label inside ButtonStyle so the whole circle activates the Button;
@@ -157,29 +158,102 @@ struct TutorialAttentionMotion: ViewModifier {
     }
 }
 
-/// The system places this beside the physical Crown, respecting watch orientation.
-struct TutorialCrownAccessory: ViewModifier {
+/// A tutorial-owned overlay remains visible independently of the system Crown indicator.
+struct TutorialCrownHint: ViewModifier {
     @ObservedObject var tutorial: TutorialSession
-    var isSuggested = true
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @State private var revealed = false
 
-    private var isVisible: Bool {
-        isSuggested && tutorial.suggestsCrownRotation && !tutorial.remindersPaused
+    private var eligible: Bool {
+        tutorial.showsCrownHint && !tutorial.remindersPaused
             && scenePhase == .active
+    }
+
+    private struct Request: Equatable {
+        var eligible: Bool
+        var step: TutorialStep
     }
 
     func body(content: Content) -> some View {
         content
-            .digitalCrownAccessory {
-                if isVisible {
-                    Image(systemName: "digitalcrown.horizontal.arrow.clockwise")
-                        .font(.system(size: 16, weight: .medium))
-                        .modifier(TutorialAttentionMotion(isActive: !reduceMotion, rotates: true))
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
+            .overlay {
+                GeometryReader { screen in
+                    if eligible && revealed {
+                        TutorialCrownMotion(subtle: tutorial.crownHintIsSubtle)
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 3)
+                            .padding(.vertical, 4)
+                            .background(.black.opacity(0.8), in: Capsule())
+                            .position(
+                                x: WKInterfaceDevice.current().crownOrientation == .left
+                                    ? 15 : screen.size.width - 15,
+                                y: screen.size.height * 0.36
+                            )
+                    }
                 }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
             }
-            .digitalCrownAccessory(isVisible ? .visible : .automatic)
+            .task(id: Request(eligible: eligible, step: tutorial.step)) {
+                revealed = false
+                guard eligible else { return }
+                do {
+                    try await Task.sleep(for: .milliseconds(550))
+                    try Task.checkCancellation()
+                    revealed = true
+                } catch {}
+            }
+    }
+}
+
+private struct TutorialCrownMotion: View {
+    var subtle: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var startedAt = Date()
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
+            let cycle = subtle ? 3.5 : 2.8
+            let time = max(0, timeline.date.timeIntervalSince(startedAt))
+                .truncatingRemainder(dividingBy: cycle)
+            let turningUp = !reduceMotion && time < 0.85
+            let turningDown = !reduceMotion && time >= 1 && time < 1.85
+            let travel = reduceMotion ? 0 : time < 0.85 ? time / 0.85
+                : time < 1 ? 1 : time < 1.85 ? 1 - (time - 1) / 0.85 : 0
+
+            VStack(spacing: 2) {
+                Image(systemName: "chevron.up")
+                    .opacity(reduceMotion || turningUp ? 1 : 0.3)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(LinearGradient(colors: [.white.opacity(0.15), .white.opacity(0.45), .white.opacity(0.15)],
+                                             startPoint: .top, endPoint: .bottom))
+                    // Project ribs around a cylinder. They emerge at one edge,
+                    // cross its face, and disappear around the other edge.
+                    Canvas { context, size in
+                        for rib in 0..<10 {
+                            let angle = Double(rib) * .pi / 5 - travel * .pi * 1.2
+                            let depth = cos(angle)
+                            guard depth > 0 else { continue }
+                            let y = size.height / 2 + sin(angle) * (size.height / 2 - 1)
+                            var line = Path()
+                            line.move(to: CGPoint(x: 2, y: y))
+                            line.addLine(to: CGPoint(x: size.width - 2, y: y))
+                            context.stroke(line, with: .color(.white.opacity(0.3 + 0.7 * depth)),
+                                           lineWidth: 0.7 + 0.5 * depth)
+                        }
+                    }
+                    RoundedRectangle(cornerRadius: 3)
+                        .strokeBorder(.white.opacity(0.85), lineWidth: 1)
+                }
+                .frame(width: 13, height: 18)
+                Image(systemName: "chevron.down")
+                    .opacity(reduceMotion || turningDown ? 1 : 0.3)
+            }
+            .font(.system(size: 8, weight: .bold))
+        }
+        .frame(width: 20, height: 38)
+        .opacity(subtle ? 0.75 : 1)
     }
 }

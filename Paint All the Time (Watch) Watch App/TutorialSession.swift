@@ -42,6 +42,18 @@ final class TutorialSession: ObservableObject {
     var allowsGalleryBack: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
     var allowsToolInfo: Bool { acceptsActions }
 
+    @Published private(set) var crownPracticedSteps: Set<TutorialStep> = []
+    var crownHintIsSubtle: Bool { !crownPracticedSteps.isEmpty }
+    var showsCrownHint: Bool {
+        suggestsCrownRotation && !crownPracticedSteps.contains(step) && crownPracticedSteps.count < 3
+    }
+
+    func usedCrown(in expectedStep: TutorialStep, velocity: Double) {
+        guard velocity.isFinite, velocity != 0, step == expectedStep, suggestsCrownRotation else { return }
+        if !crownPracticedSteps.contains(step) { crownPracticedSteps.insert(step) }
+        activity()
+    }
+
     var suggestsCrownRotation: Bool {
         guard acceptsActions else { return false }
         switch step {
@@ -76,6 +88,7 @@ final class TutorialSession: ObservableObject {
     func start() {
         cancelPendingAdvance()
         progress.start()
+        crownPracticedSteps = []
         toolPage = 1
         galleryIsOpen = false
         galleryIsFullscreen = false
