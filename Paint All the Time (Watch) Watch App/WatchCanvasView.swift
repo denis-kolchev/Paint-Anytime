@@ -119,6 +119,7 @@ struct WatchCanvasView: View {
         // binding below still rejects zoom until the lesson permits it.
         .focusable(acceptsInput)
         .focused($crownFocused)
+        .modifier(TutorialCrownAccessory(tutorial: tutorial, isSuggested: acceptsInput))
         .digitalCrownRotation(Binding(
             get: { crownZoom },
             set: { value in

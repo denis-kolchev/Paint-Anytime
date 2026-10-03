@@ -169,6 +169,7 @@ struct TutorialPlayerView: View {
                         }
                     }
                 }
+                .toolbarBackground(page == .tools ? .hidden : .automatic, for: .navigationBar)
                 .frame(width: screen.size.width, height: screen.size.height)
                 .environment(\.tutorialHintReservedHeight, hintReservedHeight)
 

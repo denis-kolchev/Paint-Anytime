@@ -112,6 +112,8 @@ struct WatchToolSettingsView: View {
         }
     }
 
+    private let topChromeHeight: CGFloat = 40
+
     private var pageAnimation: Animation? {
         reduceMotion ? nil : .easeInOut(duration: 0.3)
     }
@@ -231,9 +233,27 @@ struct WatchToolSettingsView: View {
         }
         .padding(.horizontal, 10)
         // Keep the preview and pickers below the toolbar in both editor and tutorial.
-        .padding(.top, 40)
+        .padding(.top, topChromeHeight)
         .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .overlay(alignment: .top) {
+            if tutorial.isActive {
+                Rectangle()
+                    .fill(.regularMaterial)
+                    .mask {
+                        LinearGradient(stops: [
+                            .init(color: .black, location: 0),
+                            .init(color: .black, location: 0.65),
+                            .init(color: .clear, location: 1)
+                        ], startPoint: .top, endPoint: .bottom)
+                    }
+                    // End above the preview, independent of the system toolbar's fade.
+                    .frame(height: topChromeHeight - 2)
+                    .clipped()
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
         // A new lesson changes the card height after measurement. Animate the
         // entire settings layout, including the carousel and angle overlay.
         .animation(tutorial.isActive ? pageAnimation : nil, value: tutorialHintReservedHeight)
@@ -244,6 +264,7 @@ struct WatchToolSettingsView: View {
         .contentShape(Rectangle())
         .focusable(!showsInformation && tutorial.allowsToolAdjustment(page: selection.rawValue))
         .focused($crownFocused)
+        .modifier(TutorialCrownAccessory(tutorial: tutorial, isSuggested: !showsInformation))
         .digitalCrownRotation(
             crownValue,
             from: selection == .width ? 1 : selection == .direction ? -90 : 0,

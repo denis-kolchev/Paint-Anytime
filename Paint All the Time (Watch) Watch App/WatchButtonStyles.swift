@@ -123,20 +123,63 @@ private struct TutorialButtonHint: ViewModifier {
     }
 
     func body(content: Content) -> some View {
-        if #available(watchOS 11, *) {
-            content.phaseAnimator(isActive ? [false, true] : [false]) { label, emphasized in
-                label
-                    .scaleEffect(emphasized ? 1.2 : 1)
-                    .brightness(emphasized ? 0.2 : 0)
-                    .opacity(isActive && !emphasized ? 0.65 : 1)
-                    .offset(y: emphasized ? -2 : 0)
-            } animation: { emphasized in
-                .easeInOut(duration: 0.35).delay(emphasized ? 0.7 : 0)
+        content.modifier(TutorialAttentionMotion(isActive: isActive))
+    }
+}
+
+/// Keep the label and its toolbar host alive on watchOS 10 as well.
+struct TutorialAttentionMotion: ViewModifier {
+    let isActive: Bool
+    var rotates = false
+    @State private var emphasized = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isActive && emphasized ? 1.15 : 1)
+            .offset(y: isActive && emphasized && !rotates ? -3 : 0)
+            .rotationEffect(.degrees(isActive && emphasized && rotates ? 30 : 0))
+            .task(id: isActive) {
+                emphasized = false
+                guard isActive else { return }
+                do {
+                    while !Task.isCancelled {
+                        try await Task.sleep(for: .milliseconds(900))
+                        try Task.checkCancellation()
+                        withAnimation(.easeOut(duration: 0.25)) { emphasized = true }
+                        try await Task.sleep(for: .milliseconds(250))
+                        try Task.checkCancellation()
+                        withAnimation(.easeInOut(duration: 0.3)) { emphasized = false }
+                    }
+                } catch {
+                    emphasized = false
+                }
             }
-        } else {
-            // A static emphasis avoids a repeating phase animator inside the
-            // watchOS 10 toolbar while its action changes the tutorial lesson.
-            content.brightness(isActive ? 0.2 : 0)
-        }
+    }
+}
+
+/// The system places this beside the physical Crown, respecting watch orientation.
+struct TutorialCrownAccessory: ViewModifier {
+    @ObservedObject var tutorial: TutorialSession
+    var isSuggested = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+
+    private var isVisible: Bool {
+        isSuggested && tutorial.suggestsCrownRotation && !tutorial.remindersPaused
+            && scenePhase == .active
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .digitalCrownAccessory {
+                if isVisible {
+                    Image(systemName: "digitalcrown.horizontal.arrow.clockwise")
+                        .font(.system(size: 16, weight: .medium))
+                        .modifier(TutorialAttentionMotion(isActive: !reduceMotion, rotates: true))
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .digitalCrownAccessory(isVisible ? .visible : .automatic)
     }
 }

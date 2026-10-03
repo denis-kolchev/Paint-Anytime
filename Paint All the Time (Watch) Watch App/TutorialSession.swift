@@ -33,7 +33,7 @@ final class TutorialSession: ObservableObject {
     @Published private(set) var showsResult = false
     var isActive: Bool { step != .inactive }
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
-    var allowsDrawing: Bool { permits([.firstStrokes, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .zoomCanvas, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
     var allowsGalleryZoom: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
@@ -41,6 +41,19 @@ final class TutorialSession: ObservableObject {
     var allowsGalleryDelete: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
     var allowsGalleryBack: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
     var allowsToolInfo: Bool { acceptsActions }
+
+    var suggestsCrownRotation: Bool {
+        guard acceptsActions else { return false }
+        switch step {
+        case .zoomCanvas: return true
+        case .selectColor: return toolPage == 1
+        case .setWidth: return toolPage == 0
+        case .selectReed: return toolPage == 2
+        case .setAngle: return toolPage == 4
+        case .galleryFullscreen, .deleteDrawing: return galleryIsOpen && !galleryIsFullscreen
+        default: return false
+        }
+    }
 
     var visibleToolPages: Set<Int> { progress.visibleToolPages }
 

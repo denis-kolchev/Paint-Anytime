@@ -214,6 +214,7 @@ struct SavedDrawingsView: View {
             }
         }
         .focusable(pendingDeletion == nil && tutorial.allowsGalleryZoom)
+        .modifier(TutorialCrownAccessory(tutorial: tutorial, isSuggested: pendingDeletion == nil))
         .focused($crownFocused)
         .digitalCrownRotation(Binding(get: { crownPosition }, set: { value in
             guard tutorial.allowsGalleryZoom else { return }

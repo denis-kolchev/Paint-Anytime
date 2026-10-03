@@ -45,6 +45,7 @@ struct TutorialLessonView: View {
                         .foregroundStyle(.white)
                         .opacity(showsCompletionCheckmark ? 1 : 0)
                         .scaleEffect(showsCompletionCheckmark || reduceMotion ? 1 : 0.6)
+                        .tutorialHint(tutorial, steps: [.finished], isSuggested: showsCompletionCheckmark)
                 }
                 .font(.system(size: 11, weight: .semibold))
             }

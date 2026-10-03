@@ -40,8 +40,8 @@ struct WatchWelcomeView: View {
             // A colorScheme environment override on a button only affects its
             // content; declare the scheme for the system bars here as well.
             .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
-            .toolbarBackground(onboarding.tutorialFolder != nil ? .visible : .automatic,
-                               for: .navigationBar)
+            // Each tutorial page owns its top background; forcing a native
+            // background here overrides the settings preview’s bounded material.
         }
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
@@ -65,7 +65,7 @@ struct WatchWelcomeView: View {
                 welcomePage = .chooseLanguage
             }
         case .chooseLanguage:
-            AppLanguageSelectionView(onSelection: { welcomePage = .offer })
+            AppLanguageSelectionView(onSelection: { welcomePage = .language })
         case .offer:
             WelcomeQuestion(text: L10n.text("Would you like a guided tour?")) {
                 onboarding.requestTutorial()
