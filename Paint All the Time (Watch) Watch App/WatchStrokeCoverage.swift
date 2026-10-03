@@ -232,25 +232,25 @@ nonisolated final class WatchStrokeCoverage {
         let count = Int(rect.width)
         let n = vDSP_Length(count)
         let alpha = scratch
-        let temporary = scratch + width
         let sourceFactor = scratch + width * 2
         let coefficient = scratch + width * 3
-        let transmission = scratch + width * 4
         var one: Float = 1
         var minusOne: Float = -1
-        var minusK: Float = -0.8
-        let bandOpacity = Float(1 - pow(1 - 0.7, 1.0 / 6))
+        // watercolor-blend.md: C = (1-a)D + aS[(1-k) + kD].
+        // Full watercolor coverage uses a=1; marker keeps its previous parameters.
+        let k: Float = style.instrument == .watercolor ? 0.85 : 0.8
+        var minusK = -k
         for y in Int(rect.minY)..<Int(rect.maxY) {
             let x = Int(rect.minX)
             let offset = y * width + x
             if style.instrument == .watercolor {
-                vDSP_vfill(&one, transmission, 1, n)
-                var negativeOpacity = -bandOpacity
+                // Average nested coverage masks for an opaque center and soft edges.
+                vDSP_vclr(alpha, 1, n)
                 for mask in masks {
-                    vDSP_vsmsa(mask + offset, 1, &negativeOpacity, &one, temporary, 1, n)
-                    vDSP_vmul(transmission, 1, temporary, 1, transmission, 1, n)
+                    vDSP_vadd(alpha, 1, mask + offset, 1, alpha, 1, n)
                 }
-                vDSP_vsmsa(transmission, 1, &minusOne, &one, alpha, 1, n)
+                var bandWeight = Float(1) / Float(masks.count)
+                vDSP_vsmul(alpha, 1, &bandWeight, alpha, 1, n)
             } else {
                 alpha.update(from: masks[0] + offset, count: count)
                 if let cap = endCap, y >= Int(cap.rect.minY), y < Int(cap.rect.maxY) {
@@ -275,7 +275,7 @@ nonisolated final class WatchStrokeCoverage {
             vDSP_vmul(alpha, 1, sourceFactor, 1, sourceFactor, 1, n)
             for channel in 0..<3 {
                 var source = style.color[channel]
-                var factor = 0.8 * source - 1
+                var factor = k * source - 1
                 vDSP_vsmsa(alpha, 1, &factor, &one, coefficient, 1, n)
                 vDSP_vmul(backdrop + channel, 4, coefficient, 1, destination + channel, 4, n)
                 vDSP_vsma(sourceFactor, 1, &source, destination + channel, 4, destination + channel, 4, n)

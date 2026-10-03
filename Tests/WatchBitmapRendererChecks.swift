@@ -114,13 +114,34 @@ struct RenderCheck {
                     for channel in 0..<3 {
                         var expected = Double(beforeWhite[channel]) / 255
                         let source = Double(color[channel])
-                        let alpha = 0.7 * Double(color.w)
+                        let alpha = (tool == .watercolor ? 1.0 : 0.7) * Double(color.w)
+                        let k = tool == .watercolor ? 0.85 : 0.8
                         for _ in 0..<count {
-                            expected = (1-alpha)*expected + alpha*(0.8*expected*source + 0.2*source)
+                            expected = (1-alpha)*expected + alpha*(k*expected*source + (1-k)*source)
                         }
                         precondition(abs(Double(actual[channel]) - expected*255) <= 4,
                                      "Hybrid formula mismatch: \(tool), \(color), \(count), \(actual), expected \(expected*255)")
                     }
+                }
+            }
+        }
+        // Reference document: all 121 combinations of yellow then blue layers.
+        var yellow = PencilStyle.initial(for: .watercolor)
+        yellow.width = 20
+        yellow.color = SIMD4<Float>(1, 204.0/255, 26.0/255, 1)
+        var blue = yellow
+        blue.color = SIMD4<Float>(38.0/255, 179.0/255, 230.0/255, 1)
+        for n in 0...10 {
+            for m in 0...10 {
+                let strokes = Array(repeating: Stroke(points: [point], style: yellow), count: n)
+                    + Array(repeating: Stroke(points: [point], style: blue), count: m)
+                let actual = pixel(render(strokes), 80, 80)
+                for channel in 0..<3 {
+                    var expected = 1.0
+                    for _ in 0..<n { expected = Double(yellow.color[channel]) * (0.15 + 0.85 * expected) }
+                    for _ in 0..<m { expected = Double(blue.color[channel]) * (0.15 + 0.85 * expected) }
+                    precondition(abs(Double(actual[channel]) - expected * 255) <= 2,
+                                 "Watercolor reference grid mismatch at \(n):\(m): \(actual)")
                 }
             }
         }
