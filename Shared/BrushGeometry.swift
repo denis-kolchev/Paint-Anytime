@@ -79,6 +79,52 @@ nonisolated enum BrushGeometry {
         }
     }
 
+    // A pencil follows the local tangent: constant width through turns, flat
+    // terminal cuts, and round joins only inside the stroke (never round caps).
+    static func pencilPolygons(for stroke: Stroke) -> [[SIMD2<Float>]] {
+        guard let first = stroke.points.first else { return [] }
+        var points = [first.position]
+        for sample in stroke.points.dropFirst() {
+            if simd_distance(points[points.count - 1], sample.position) > 0.001 {
+                points.append(sample.position)
+            }
+        }
+        guard points.count > 1 else {
+            let r = min(3, max(0.1, stroke.style.width)) / 2
+            let p = first.position
+            return [[p + SIMD2(-r, -r), p + SIMD2(r, -r),
+                     p + SIMD2(r, r), p + SIMD2(-r, r)]]
+        }
+        let radius = max(0.1, stroke.style.width) / 2
+        var polygons: [[SIMD2<Float>]] = []
+        for (a, b) in zip(points, points.dropFirst()) {
+            let tangent = simd_normalize(b - a)
+            let normal = SIMD2(-tangent.y, tangent.x) * radius
+            polygons.append([a + normal, a - normal, b - normal, b + normal])
+        }
+        for index in 1..<(points.count - 1) {
+            let center = points[index]
+            let incoming = simd_normalize(center - points[index - 1])
+            let outgoing = simd_normalize(points[index + 1] - center)
+            let cross = incoming.x * outgoing.y - incoming.y * outgoing.x
+            let turn = atan2(cross, simd_dot(incoming, outgoing))
+            guard abs(turn) > 0.0001 else { continue }
+            let side: Float = turn > 0 ? -1 : 1
+            let normal = SIMD2(-incoming.y, incoming.x) * side
+            let startAngle = atan2(normal.y, normal.x)
+            let steps = max(1, Int(ceil(abs(turn) / (.pi / 10))))
+            // Fill only the outside corner. Full disks at nearby input samples
+            // would protrude beyond the terminal cuts and round the ends again.
+            var join = [center]
+            for step in 0...steps {
+                let angle = startAngle + turn * Float(step) / Float(steps)
+                join.append(center + SIMD2(cos(angle), sin(angle)) * radius)
+            }
+            polygons.append(join)
+        }
+        return polygons
+    }
+
     static func radii(for stroke: Stroke) -> [Float] {
         let base = max(0.1, stroke.style.width) / 2
         guard stroke.style.instrument == .pen else {

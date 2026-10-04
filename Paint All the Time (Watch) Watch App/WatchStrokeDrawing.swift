@@ -28,7 +28,9 @@ nonisolated enum WatchStrokeDrawing {
             paint.opacity *= 0.7
             paint.blendMode = .multiply
             paint.fill(shape(BrushGeometry.markerPolygons(for: stroke)), with: .color(ink))
-        case .pencil, .crayon:
+        case .pencil:
+            pencil(stroke, ink: ink, in: &paint)
+        case .crayon:
             texture(stroke, ink: ink, in: &paint)
         case .watercolor:
             watercolor(stroke, ink: ink, in: &paint)
@@ -67,6 +69,90 @@ nonisolated enum WatchStrokeDrawing {
             path.closeSubpath()
         }
         return path
+    }
+
+    // Paper-space grain: increasing the nib width exposes more grains instead
+    // of spreading a fixed number over a larger footprint. One cell is deposited
+    // only once per gesture, including joins and retraced sections.
+    private static func pencil(_ stroke: Stroke, ink: SIMD4<Float>,
+                               in context: inout WatchDrawingContext) {
+        let polygons = BrushGeometry.pencilPolygons(for: stroke)
+        // UUID bytes are stable across redraws, saves and exports. Every new
+        // gesture deposits a different pattern, so repeated passes fill old gaps.
+        let strokeSeed = stroke.id.uuidString.utf8.reduce(0) { ($0 &* 31) &+ Int($1) }
+        let cellSize = 0.48
+        // Give every polygon the same winding before testing the union; joins
+        // must not cut holes in the rectangular segment coverage.
+        let footprintUnion = shape(polygons.map { polygon in
+            let area = zip(polygon, polygon.dropFirst() + polygon.prefix(1)).reduce(Float(0)) {
+                $0 + $1.0.x * $1.1.y - $1.1.x * $1.0.y
+            }
+            return area < 0 ? Array(polygon.reversed()) : polygon
+        })
+        let feather = Double(max(0.35, min(2.4, stroke.style.width * 0.20)))
+        let probes = (0..<8).map { index in
+            let angle = Double(index) * Double.pi / 4
+            return CGPoint(x: cos(angle) * feather, y: sin(angle) * feather)
+        }
+        var deposited = Set<SIMD2<Int>>()
+        var bands = Array(repeating: Path(), count: 9)
+        for polygon in polygons {
+            let footprint = shape([polygon])
+            let bounds = footprint.boundingRect
+            guard !bounds.isNull, !bounds.isEmpty else { continue }
+            let minX = Int(floor(bounds.minX / cellSize))
+            let maxX = Int(floor(bounds.maxX / cellSize))
+            let minY = Int(floor(bounds.minY / cellSize))
+            let maxY = Int(floor(bounds.maxY / cellSize))
+            for y in minY...maxY {
+                for x in minX...maxX {
+                    let cell = SIMD2<Int>(x, y)
+                    guard !deposited.contains(cell) else { continue }
+                    let seed = (x &* 73856093) ^ (y &* 19349663) ^ strokeSeed
+                    let center = CGPoint(
+                        x: (Double(x) + noise(seed)) * cellSize,
+                        y: (Double(y) + noise(seed &+ 1)) * cellSize)
+                    guard footprint.contains(center) else { continue }
+                    deposited.insert(cell)
+                    // Density and opacity fall near the boundary of the complete
+                    // stroke, not at individual event segments. Broken edge grains
+                    // retain the flat cap without a hard rectangular silhouette.
+                    let inside = probes.reduce(0) { count, offset in
+                        count + (footprintUnion.contains(CGPoint(
+                            x: center.x + offset.x, y: center.y + offset.y)) ? 1 : 0)
+                    }
+                    let coverage = Double(inside) / Double(probes.count)
+                    let edgeDensity = 0.12 + 0.88 * pow(coverage, 3)
+                    guard noise(seed &+ 11) < edgeDensity else { continue }
+                    let edgeBand = coverage > 0.87 ? 2 : (coverage > 0.62 ? 1 : 0)
+                    // Overlapping irregular grains form dense graphite clusters.
+                    // Coarser paper tooth modulates them independently of nib width.
+                    let toothX = Int(floor(Double(center.x) / 1.8))
+                    let toothY = Int(floor(Double(center.y) / 1.8))
+                    let tooth = noise((toothX &* 83492791) ^ (toothY &* 2971215073) ^ strokeSeed)
+                    guard noise(seed &+ 2) > (tooth < 0.22 ? 0.30 : 0.025) else { continue }
+                    let band = edgeBand * 3 + min(2, Int(noise(seed &+ 3) * 3))
+                    let grainScale: Float = tooth < 0.22 ? 0.75 : 1
+                    let halfWidth = Float(0.30 + noise(seed &+ 4) * 0.34) * grainScale
+                    let halfLength = Float(0.24 + noise(seed &+ 5) * 0.32) * grainScale
+                    let angle = Float(noise(seed &+ 6)) * 2 * Float.pi
+                    let along = SIMD2<Float>(cos(angle), sin(angle))
+                    let across = SIMD2<Float>(-along.y, along.x)
+                    let p = SIMD2<Float>(Float(center.x), Float(center.y))
+                    let u = across * halfWidth
+                    let v = along * halfLength
+                    // Uneven facets soften the boundary while retaining a flat nib.
+                    let vertices = [p - u - v * 0.7, p + u * 0.6 - v,
+                                    p + u + v * 0.5, p - u * 0.7 + v]
+                    bands[band].addPath(shape([vertices]))
+                }
+            }
+        }
+        for band in bands.indices {
+            var layer = context
+            layer.opacity *= [0.56, 0.76, 0.94][band % 3] * [0.30, 0.65, 1.0][band / 3]
+            layer.fill(bands[band], with: .color(ink))
+        }
     }
 
     private static func texture(_ stroke: Stroke, ink: SIMD4<Float>, in context: inout WatchDrawingContext) {
