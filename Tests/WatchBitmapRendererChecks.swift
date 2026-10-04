@@ -45,6 +45,63 @@ struct RenderCheck {
         func sample(_ x: Float, _ y: Float) -> PointerSample {
             PointerSample(position: SIMD2<Float>(x, y), pressure: 1, timestamp: 0)
         }
+        // Flat nib: a tap is horizontal; first movement rotates the whole footprint.
+        var flatMarker = PencilStyle.initial(for: .marker)
+        flatMarker.width = 20
+        flatMarker.color = SIMD4(0, 0, 0, 1)
+        let tap = render([Stroke(points: [sample(40, 40)], style: flatMarker)])
+        precondition(pixel(tap, 94, 80)[0] < 250 && pixel(tap, 80, 90)[0] == 255,
+                     "Marker tap must be a thin horizontal rectangle")
+        let horizontal = render([Stroke(points: [sample(40, 40), sample(70, 40)], style: flatMarker)])
+        precondition(pixel(horizontal, 80, 94)[0] < 250 && pixel(horizontal, 66, 80)[0] == 255,
+                     "First movement must rotate the initial nib without leaving the old footprint")
+        for endpoint in [sample(75, 60), sample(75, 35), sample(75, 85)] {
+            let bent = Stroke(points: [sample(30, 20), sample(30, 60), endpoint], style: flatMarker)
+            let geometry = try! WatchStrokeCoverage.geometry(for: bent)
+            precondition(geometry.primitives.count == 2 && geometry.endCap == nil)
+            let direction = BrushGeometry.markerDirection(for: bent)!
+            precondition(direction == SIMD2<Float>(0, 1), "Bends must preserve the initial nib angle")
+            let cache = WatchBitmapRenderer.Cache()
+            let key = WatchBitmapRenderer.CacheKey(documentID: ObjectIdentifier(cache),
+                documentRevision: 1, size: CGSize(width: 100, height: 100), scale: 2)
+            for count in 1...bent.points.count {
+                let prefix = Stroke(points: Array(bent.points.prefix(count)), style: flatMarker)
+                let live = cache.render(strokes: [], activeStroke: prefix, key: key, activeStrokeID: 1)!
+                let exported = render([prefix])
+                precondition(CFEqual(live.dataProvider!.data, exported.dataProvider!.data),
+                             "Rotating the nib and bending must match export at every event")
+            }
+        }
+        // A misleading first event must not lock a diagonal stroke to an axis.
+        let settlingPoints = [sample(30, 30), sample(30.6, 30), sample(31, 31),
+                              sample(32, 32), sample(34, 34), sample(40, 40),
+                              sample(50, 50), sample(70, 30)]
+        let settlingCache = WatchBitmapRenderer.Cache()
+        let settlingKey = WatchBitmapRenderer.CacheKey(documentID: ObjectIdentifier(settlingCache),
+            documentRevision: 1, size: CGSize(width: 100, height: 100), scale: 2)
+        for count in 1...settlingPoints.count {
+            let prefix = Stroke(points: Array(settlingPoints.prefix(count)), style: flatMarker)
+            let live = settlingCache.render(strokes: [], activeStroke: prefix,
+                key: settlingKey, activeStrokeID: 1)!
+            let exported = render([prefix])
+            precondition(CFEqual(live.dataProvider!.data, exported.dataProvider!.data),
+                         "Refining the angle must replace old ink and match full replay")
+        }
+        let tinyMove = Stroke(points: Array(settlingPoints.prefix(2)), style: flatMarker)
+        let earlyDirection = BrushGeometry.markerDirection(for: tinyMove)!
+        precondition(earlyDirection.y > 0.9, "Initial footprint must rotate gradually")
+        let diagonalPrefix = Stroke(points: Array(settlingPoints.prefix(7)), style: flatMarker)
+        let settled = BrushGeometry.markerOrientation(for: diagonalPrefix)
+        precondition(settled.settled && abs(settled.direction!.x - settled.direction!.y) < 0.03,
+                     "Opening direction must follow the developing diagonal, not the first event")
+        let finalDirection = BrushGeometry.markerDirection(
+            for: Stroke(points: settlingPoints, style: flatMarker))!
+        precondition(finalDirection == settled.direction!, "Later bends must preserve the settled nib")
+        precondition(settlingCache.activeCoverageBuildCount == 1,
+                     "Refining the nib must reuse the active coverage")
+        let rightAngle = render([Stroke(points: [sample(30, 20), sample(30, 60), sample(75, 60)], style: flatMarker)])
+        precondition(pixel(rightAngle, 120, 120)[0] < 250 && pixel(rightAngle, 120, 130)[0] == 255,
+                     "A right-angle turn must travel on the thin edge of the nib")
         style.instrument = .monoline
         style.width = 8
         let crossing = render([Stroke(points: [sample(-20, 50), sample(120, 50)], style: style)])
@@ -373,10 +430,10 @@ struct RenderCheck {
         let diagonal = Stroke(points: [sample(a.x, a.y), sample(b.x, b.y)], style: diagonalStyle)
         let diagonalImage = render([diagonal])
         let direction = (b - a) / sqrt((b.x-a.x)*(b.x-a.x) + (b.y-a.y)*(b.y-a.y))
-        for step in -10...10 {
+        for step in -10...0 {
             let p = b + direction * Float(step) * 0.5
             let value = pixel(diagonalImage, Int(p.x * 2), Int(p.y * 2))[0]
-            precondition(abs(Int(value) - 77) <= 1, "Moving square cap must not have an internal seam")
+            precondition(abs(Int(value) - 77) <= 1, "Flat marker endpoint must not have an internal seam")
         }
         // Commit transparent strokes in rapid batches; only the unseen suffix is rasterized.
         let appendCache = WatchBitmapRenderer.Cache()

@@ -3,6 +3,82 @@ import simd
 
 // Input-dependent geometry shared independently of the display technology.
 nonisolated enum BrushGeometry {
+    // Refine the nib over a short opening distance, independent of event frequency.
+    // Later turns keep this orientation, so the nib can still travel on its edge.
+    static func markerOrientation(for stroke: Stroke) -> (direction: SIMD2<Float>?, settled: Bool) {
+        guard let first = stroke.points.first else { return (nil, false) }
+        let window = max(8, min(24, stroke.style.width * 1.25))
+        var traveled: Float = 0
+        var endpoint = first.position
+        for (a, b) in zip(stroke.points, stroke.points.dropFirst()) {
+            let delta = b.position - a.position
+            let length = simd_length(delta)
+            guard length > 0.000001 else { continue }
+            let remaining = window - traveled
+            endpoint = a.position + delta * min(1, remaining / length)
+            traveled += min(remaining, length)
+            if traveled >= window { break }
+        }
+        let delta = endpoint - first.position
+        guard simd_length(delta) >= 0.5 else { return (nil, false) }
+        // Rectangle orientation is periodic over pi; take the shortest rotation
+        // from the horizontal resting footprint, easing in over the first 4 pt.
+        var angle = atan2(delta.y, delta.x) - Float.pi / 2
+        if angle > .pi / 2 { angle -= .pi }
+        if angle < -.pi / 2 { angle += .pi }
+        let progress = min(1, traveled / 4)
+        let eased = progress * progress * (3 - 2 * progress)
+        let rotation = Float.pi / 2 + angle * eased
+        let direction = progress >= 1 ? simd_normalize(delta) : SIMD2(cos(rotation), sin(rotation))
+        return (direction, traveled >= window)
+    }
+
+    static func markerDirection(for stroke: Stroke) -> SIMD2<Float>? {
+        markerOrientation(for: stroke).direction
+    }
+
+    static func markerNib(at center: SIMD2<Float>, width: Float,
+                          direction: SIMD2<Float>) -> [SIMD2<Float>] {
+        let halfWidth = max(0.1, width) / 2
+        let across = SIMD2(-direction.y, direction.x) * halfWidth
+        let along = direction * halfWidth * 0.2
+        return [center + across + along, center - across + along,
+                center - across - along, center + across - along]
+    }
+
+    // Convex hull of the two nib footprints is the exact swept rectangle.
+    static func markerSegment(from a: SIMD2<Float>, to b: SIMD2<Float>, width: Float,
+                              direction: SIMD2<Float>) -> [SIMD2<Float>] {
+        let points = (markerNib(at: a, width: width, direction: direction)
+                    + markerNib(at: b, width: width, direction: direction)).sorted {
+            $0.x == $1.x ? $0.y < $1.y : $0.x < $1.x
+        }
+        func half(_ points: [SIMD2<Float>]) -> [SIMD2<Float>] {
+            var hull: [SIMD2<Float>] = []
+            for p in points {
+                while hull.count >= 2 {
+                    let u = hull[hull.count - 1] - hull[hull.count - 2]
+                    let v = p - hull[hull.count - 1]
+                    if u.x * v.y - u.y * v.x > 0 { break }
+                    hull.removeLast()
+                }
+                hull.append(p)
+            }
+            return hull
+        }
+        return Array(half(points).dropLast()) + Array(half(points.reversed()).dropLast())
+    }
+
+    static func markerPolygons(for stroke: Stroke) -> [[SIMD2<Float>]] {
+        guard let first = stroke.points.first else { return [] }
+        guard let direction = markerDirection(for: stroke) else {
+            return [markerNib(at: first.position, width: stroke.style.width, direction: SIMD2(0, 1))]
+        }
+        return zip(stroke.points, stroke.points.dropFirst()).map {
+            markerSegment(from: $0.position, to: $1.position, width: stroke.style.width, direction: direction)
+        }
+    }
+
     static func radii(for stroke: Stroke) -> [Float] {
         let base = max(0.1, stroke.style.width) / 2
         guard stroke.style.instrument == .pen else {

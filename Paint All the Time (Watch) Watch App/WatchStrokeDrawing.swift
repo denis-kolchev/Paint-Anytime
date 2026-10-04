@@ -27,15 +27,7 @@ nonisolated enum WatchStrokeDrawing {
             paint.usesOpacityLayer = true
             paint.opacity *= 0.7
             paint.blendMode = .multiply
-            if stroke.points.count == 1, let point = stroke.points.first {
-                let width = CGFloat(stroke.style.width)
-                paint.fill(Path(CGRect(x: CGFloat(point.position.x) - width / 2,
-                                       y: CGFloat(point.position.y) - width / 2,
-                                       width: width, height: width)), with: .color(ink))
-            } else {
-                paint.stroke(centerline(stroke), with: .color(ink), style: StrokeStyle(
-                    lineWidth: CGFloat(stroke.style.width), lineCap: .square, lineJoin: .round))
-            }
+            paint.fill(shape(BrushGeometry.markerPolygons(for: stroke)), with: .color(ink))
         case .pencil, .crayon:
             texture(stroke, ink: ink, in: &paint)
         case .watercolor:

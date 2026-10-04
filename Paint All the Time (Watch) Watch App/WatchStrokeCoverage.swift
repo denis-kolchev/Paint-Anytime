@@ -2,8 +2,8 @@ import Accelerate
 import SwiftUI
 import simd
 
-/// Append-only coverage for one gesture. Pigment is composited against the original
-/// backdrop, never against the previous frame, so retracing does not darken a stroke.
+/// Coverage for one gesture; append-only once the marker opening angle settles.
+/// Pigment uses the original backdrop so retracing does not darken a stroke.
 nonisolated final class WatchStrokeCoverage {
     struct Geometry {
         var primitives: [(path: Path, band: Int)] = []
@@ -48,7 +48,9 @@ nonisolated final class WatchStrokeCoverage {
     private(set) var processedPointCount = 0
     private(set) var lastProcessedPoint: PointerSample?
     private var firstPoint: PointerSample?
-    private var markerHasSegment = false
+    private var markerDirection: SIMD2<Float>?
+    private var markerOrientationSettled = false
+    private var markerBounds = CGRect.null
     private var endCap: Patch?
     private(set) var rasterizedPrimitiveCount = 0
 
@@ -109,38 +111,35 @@ nonisolated final class WatchStrokeCoverage {
                 distanceToNext = distance - length
             }
         } else {
-            // A square endpoint moves as the gesture grows. Keep it separate from
-            // permanent coverage so yesterday's cap never becomes a bulge at a bend.
+            // While the opening direction settles, replace its old coverage so
+            // rotating the beginning leaves no ghost of the previous footprint.
             dirty = dirty.union(endCap?.rect ?? .null)
-            for index in max(1, processedPointCount)..<stroke.points.count {
-                let a = stroke.points[index - 1].position
-                let b = stroke.points[index].position
-                let delta = b - a
-                guard simd_length(delta) > 0.001 else { continue }
-                let direction = simd_normalize(delta)
-                let radius = style.width / 2
-                let normal = SIMD2(-direction.y, direction.x) * radius
-                let start = markerHasSegment ? a : a - direction * radius
-                var segment = Path()
-                segment.move(to: point(start + normal))
-                segment.addLine(to: point(start - normal))
-                segment.addLine(to: point(b - normal))
-                segment.addLine(to: point(b + normal))
-                segment.closeSubpath()
-                if markerHasSegment {
-                    let joint = Path(ellipseIn: CGRect(x: CGFloat(a.x - radius), y: CGFloat(a.y - radius),
-                                                       width: CGFloat(radius * 2), height: CGFloat(radius * 2)))
-                    dirty = dirty.union(try merge(joint, band: 0))
+            var startIndex = max(1, processedPointCount)
+            if !markerOrientationSettled {
+                let orientation = BrushGeometry.markerOrientation(for: stroke)
+                markerOrientationSettled = orientation.settled
+                if markerDirection != orientation.direction {
+                    markerDirection = orientation.direction
+                    startIndex = 1
+                    dirty = dirty.union(markerBounds)
+                    masks[0].update(repeating: 0, count: width * height)
+                    markerBounds = .null
+                    endCap = nil
+                    recordedGeometry = recordedGeometry.map { _ in Geometry() }
                 }
-                dirty = dirty.union(try merge(segment, band: 0))
-                markerHasSegment = true
-                endCap = try patch(cap(at: b, direction: direction))
             }
-            if !markerHasSegment, let first = stroke.points.first {
-                let radius = CGFloat(style.width) / 2
-                endCap = try patch(Path(CGRect(x: CGFloat(first.position.x) - radius,
-                                              y: CGFloat(first.position.y) - radius,
-                                              width: radius * 2, height: radius * 2)))
+            if let direction = markerDirection {
+                for index in startIndex..<stroke.points.count {
+                    let polygon = BrushGeometry.markerSegment(
+                        from: stroke.points[index - 1].position, to: stroke.points[index].position,
+                        width: style.width, direction: direction)
+                    let bounds = try merge(markerPath(polygon), band: 0)
+                    markerBounds = markerBounds.union(bounds)
+                    dirty = dirty.union(bounds)
+                }
+            } else if let first = stroke.points.first {
+                endCap = try patch(markerPath(BrushGeometry.markerNib(
+                    at: first.position, width: style.width, direction: SIMD2(0, 1))))
             }
             dirty = dirty.union(endCap?.rect ?? .null)
         }
@@ -161,18 +160,11 @@ nonisolated final class WatchStrokeCoverage {
         return dirty
     }
 
-    private func cap(at p: SIMD2<Float>, direction: SIMD2<Float>) -> Path {
-        let radius = style.width / 2
-        let normal = SIMD2(-direction.y, direction.x) * radius
-        let start = p - direction * radius
-        let end = p + direction * radius
+    private func markerPath(_ polygon: [SIMD2<Float>]) -> Path {
         var path = Path()
-        // Overlap the segment by half a width; abutting antialiased masks would
-        // otherwise leave a faint seam at the moving endpoint.
-        path.move(to: point(start + normal))
-        path.addLine(to: point(start - normal))
-        path.addLine(to: point(end - normal))
-        path.addLine(to: point(end + normal))
+        guard let first = polygon.first else { return path }
+        path.move(to: point(first))
+        for vertex in polygon.dropFirst() { path.addLine(to: point(vertex)) }
         path.closeSubpath()
         return path
     }

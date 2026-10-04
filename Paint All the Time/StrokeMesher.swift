@@ -19,8 +19,10 @@ enum StrokeMesher {
             return []
         }
 
-        if stroke.style.instrument == .fountainPen {
-            return FountainPenGeometry.polygons(for: stroke).flatMap { polygon in
+        if stroke.style.instrument == .fountainPen || stroke.style.instrument == .marker {
+            let polygons = stroke.style.instrument == .marker
+                ? BrushGeometry.markerPolygons(for: stroke) : FountainPenGeometry.polygons(for: stroke)
+            return polygons.flatMap { polygon in
                 guard polygon.count >= 3 else { return [StrokeVertex]() }
                 return (1..<(polygon.count - 1)).flatMap { index in
                     [polygon[0], polygon[index], polygon[index + 1]].map {
