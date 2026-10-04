@@ -35,9 +35,8 @@ watch preference does not change the iPhone companion app's language.
   legacy `pt` selection is resolved using the device's Portuguese preferences,
   falling back to `pt-PT`.
 - Norwegian uses Bokmål (`nb`), labelled “Norsk”.
-- Layout direction follows the selected language through
-  `Locale.Language.characterDirection`, including right-to-left layout for Arabic
-  and Hebrew.
+- Interface layout stays left-to-right for every language, including Arabic and
+  Hebrew. Changing the language updates localization without mirroring controls.
 
 Native language names are displayed verbatim so users can recover from an
 accidental selection.
@@ -55,7 +54,7 @@ accidental selection.
    Translation presence alone does not establish linguistic quality.
 5. Build and review the onboarding, menus, tools, gallery, confirmations, and
    VoiceOver on a watch simulator or device. Check long translations and
-   right-to-left layouts, including directional controls and canvas interaction.
+   Arabic and Hebrew text, including directional controls and canvas interaction.
    Seek native-speaker review for new or substantially revised translations.
 
 ## Using localized strings in code

@@ -14,12 +14,12 @@ struct Paint_All_the_Time__Watch__Watch_AppApp: App {
     init() { WatchPhotoTransfer.shared.start() }
 
     var body: some Scene {
-        WindowGroup {
+        // Observe the selection so the locale refreshes when the language changes.
+        let code = AppLanguage.resolvedSavedCode(languageCode, preferences: Locale.preferredLanguages)
+        return WindowGroup {
             WatchWelcomeView()
-                .environment(\.locale, Locale(identifier: AppLanguage.currentCode))
-                .environment(\.layoutDirection,
-                             Locale.Language(identifier: AppLanguage.currentCode).characterDirection == .rightToLeft
-                             ? .rightToLeft : .leftToRight)
+                .environment(\.locale, Locale(identifier: code))
+                .environment(\.layoutDirection, .leftToRight)
         }
     }
 }
