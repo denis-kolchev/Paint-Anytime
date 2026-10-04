@@ -11,7 +11,7 @@ struct ToolDirectionControl: View {
     var includesOuterSpacing = false
 
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: includesOuterSpacing ? 0 : 8) {
             if includesOuterSpacing { Spacer(minLength: 0) }
 
             Button {
@@ -24,7 +24,7 @@ struct ToolDirectionControl: View {
             .disabled(angle >= 90 || !isEnabled)
             .accessibilityLabel(L10n.text("Rotate tip clockwise"))
 
-            Spacer(minLength: includesOuterSpacing ? 0 : 8)
+            if includesOuterSpacing { Spacer(minLength: 0) }
 
             Circle()
                 .strokeBorder(.secondary, lineWidth: 1)
@@ -46,7 +46,7 @@ struct ToolDirectionControl: View {
                     }
                 }
 
-            Spacer(minLength: includesOuterSpacing ? 0 : 8)
+            if includesOuterSpacing { Spacer(minLength: 0) }
 
             Button {
                 onAdjust(-5)

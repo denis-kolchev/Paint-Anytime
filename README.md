@@ -90,15 +90,56 @@
 
 ## Features
 
-- 5 brush presets with unique drawing behaviors;
-- Custom colors, stroke width, and angle;
-- Canvas zoom for more precise drawing;
-- Regular eraser and object eraser;
-- Undo and Redo;
-- Clear the entire canvas with one tap;
-- Save drawings to your personal gallery;
-- Continue editing saved drawings later;
+### Brushes and color
+
+- 6 brushes with distinct drawing behaviors: Monoline, Pen, Fountain Pen, Reed Pen, Marker, and Watercolor.
+- 12 starting colors, including white. Mix and layer them on the canvas to create many more colors and shades.
+- 14 color blending modes to control how new strokes interact with existing paint.
+- Adjustable stroke width and opacity for every brush, plus a tip angle setting for Reed Pen.
+
+### Canvas and editing
+
+- Zoom and move the canvas for more precise drawing.
+- Start strokes outside the canvas and paint inward for easier work along the edges.
+- Pixel and object erasers, Undo and Redo, and one-tap canvas clearing.
+
+### Learning
+
+- A compact, interactive tutorial with hints at the bottom of the screen.
+- Animated guidance for using the Digital Crown.
+
+### Save and share
+
+- Save drawings to your personal gallery and continue editing them later.
 - Share your drawings through iMessage or email.
+
+## What's New in 1.1
+
+### Brushes, colors, and blending
+
+- **New Watercolor brush**, bringing the total to 6 brushes.
+- **Opacity controls for every brush**, making it easier to build up color gradually.
+- **White joins the palette**, bringing it to 12 starting colors that can be mixed into many more shades.
+- **14 color blending modes** for different ways to layer paint.
+- **Improved default color blending**, combining the strengths of Multiply and Normal for richer color buildup.
+- **Improved Marker strokes**, with more natural line direction and better corners.
+
+### Smoother drawing and canvas navigation
+
+- Optimized canvas rendering to keep new strokes, zooming, and panning responsive as drawings accumulate more strokes.
+- Strokes can now begin outside the canvas, making it easier to reach details along its edges.
+- The system clock stays centered at the top of the screen while drawing, reducing distracting movement.
+
+### Faster, simpler learning
+
+- A redesigned tutorial lives in a small panel at the bottom of the screen and progresses without a **Next** button.
+- Completing the tutorial takes about two-thirds of the previous time, with more freedom to explore instead of following rigid instructions.
+- A new animation shows when to turn the Digital Crown.
+
+### Compatibility and reliability
+
+- Optimized for watchOS 10.
+- Fixed a crash when saving a photo.
 
 ## Requirements
 
