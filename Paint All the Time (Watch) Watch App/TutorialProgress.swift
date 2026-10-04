@@ -3,7 +3,7 @@ import Foundation
 enum TutorialStep: Int, CaseIterable {
     case inactive = 0
     case firstStrokes, zoomCanvas, panCanvas, finishCamera, openTools
-    case selectColor, openWidth, setWidth, openTool
+    case selectColor, openWidth, setWidth, openOpacity, setOpacity, openTool
     case selectReed, openAngle, setAngle, closeTools, reedStrokes
     case history, saveDrawing, shareDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas, finished
@@ -56,12 +56,12 @@ struct TutorialProgress {
         }
         return .none
     }
-    var visibleToolPages: Set<Int> { [0, 1, 2, 3, 4] }
+    var visibleToolPages: Set<Int> { [0, 1, 2, 3, 4, 5] }
     func allowsToolAdjustment(page: Int) -> Bool { visibleToolPages.contains(page) }
     func allowsToolPage(_ page: Int) -> Bool { visibleToolPages.contains(page) }
     func completesPageChange(_ page: Int) -> Bool {
         (step == .openWidth && page == 0) || (step == .openTool && page == 2)
-            || (step == .openAngle && page == 4)
+            || (step == .openAngle && page == 4) || (step == .openOpacity && page == 5)
     }
     mutating func changedStyle(from old: PencilStyle, to style: PencilStyle, page: Int) -> Bool {
         if [.openAngle, .setAngle, .closeTools].contains(step), style.instrument != .reed {
@@ -70,6 +70,7 @@ struct TutorialProgress {
         }
         switch step {
         case .selectColor: return page == 1 && old.color != style.color
+        case .setOpacity: return page == 5 && style.instrument != .eraser && old.opacity != style.opacity
         case .setWidth: return page == 0 && old.width != style.width
         case .selectReed: return style.instrument == .reed
         case .setAngle: return page == 4 && style.instrument == .reed && old.reedAngle != style.reedAngle

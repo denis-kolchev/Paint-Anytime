@@ -1,6 +1,1390 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Opacity" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacity"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прозрачность"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "العتامة"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacité"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deckkraft"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacità"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透明度"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "투명도"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacidade"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacidade"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透明度"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacidad"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opaklık"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透明度"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krycie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dekking"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacitet"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacitet"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opasitet"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peittävyys"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opasitas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ mờ đục"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ความทึบ"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прозорість"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krytí"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fedettség"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Διαφάνεια"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "אטימות"
+          }
+        }
+      }
+    },
+    "Shared opacity" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shared opacity"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Общая прозрачность"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عتامة مشتركة"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacité commune"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemeinsame Deckkraft"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacità condivisa"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透明度を共有"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "공통 투명도"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacidade partilhada"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacidade compartilhada"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共用透明度"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opacidad compartida"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ortak opaklık"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "共用透明度"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wspólne krycie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gedeelde dekking"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gemensam opacitet"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fælles opacitet"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Felles opasitet"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yhteinen peittävyys"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opasitas bersama"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Độ mờ đục chung"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ความทึบร่วมกัน"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Спільна прозорість"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Společné krytí"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Közös fedettség"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κοινή διαφάνεια"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "אטימות משותפת"
+          }
+        }
+      }
+    },
+    "Share width, opacity, and color across tools. Color and opacity do not apply to the eraser." : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share width, opacity, and color across tools. Color and opacity do not apply to the eraser."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Используйте общую толщину, прозрачность и цвет для всех инструментов. Цвет и прозрачность не применяются к стиралке."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استخدم سُمكًا وعتامة ولونًا مشتركًا بين الأدوات. لا ينطبق اللون والعتامة على الممحاة."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partagez l’épaisseur, l’opacité et la couleur entre les outils. La couleur et l’opacité ne s’appliquent pas à la gomme."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teile Breite, Deckkraft und Farbe zwischen den Werkzeugen. Farbe und Deckkraft gelten nicht für den Radierer."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi spessore, opacità e colore tra gli strumenti. Il colore e l’opacità non si applicano alla gomma."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ツール間で太さ、透明度、色を共有します。色と透明度は消しゴムには適用されません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "도구 간에 두께, 투명도, 색상을 공유합니다. 색상과 투명도는 지우개에 적용되지 않습니다."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partilhe a espessura, a opacidade e a cor entre ferramentas. A cor e a opacidade não se aplicam à borracha."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartilhe a espessura, a opacidade e a cor entre as ferramentas. A cor e a opacidade não se aplicam à borracha."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在工具间共用粗细、透明度和颜色。颜色和透明度不适用于橡皮擦。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparte el grosor, la opacidad y el color entre herramientas. El color y la opacidad no se aplican a la goma."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Araçlar arasında kalınlık, opaklık ve rengi paylaş. Renk ve opaklık silgi için geçerli değildir."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在工具間共用粗細、透明度和顏色。顏色和透明度不適用於橡皮擦。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Używaj wspólnej grubości, krycia i koloru we wszystkich narzędziach. Kolor i krycie nie dotyczą gumki."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel dikte, dekking en kleur tussen gereedschappen. Kleur en dekking gelden niet voor de gum."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dela tjocklek, opacitet och färg mellan verktygen. Färg och opacitet gäller inte för suddgummit."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Del tykkelse, opacitet og farve mellem værktøjerne. Farve og opacitet gælder ikke for viskelæderet."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Del tykkelse, opasitet og farge mellom verktøyene. Farge og opasitet gjelder ikke for viskelæret."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jaa paksuus, peittävyys ja väri työkalujen kesken. Väri ja peittävyys eivät koske pyyhekumia."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gunakan ketebalan, opasitas, dan warna yang sama untuk semua alat. Warna dan opasitas tidak berlaku untuk penghapus."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dùng chung độ dày, độ mờ đục và màu giữa các công cụ. Màu và độ mờ đục không áp dụng cho tẩy."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ใช้ความหนา ความทึบ และสีร่วมกันระหว่างเครื่องมือ สีและความทึบไม่ใช้กับยางลบ"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Використовуйте спільну товщину, прозорість і колір для всіх інструментів. Колір і прозорість не застосовуються до гумки."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sdílejte tloušťku, krytí a barvu mezi nástroji. Barva a krytí se nevztahují na gumu."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Használj közös vastagságot, fedettséget és színt az eszközöknél. A szín és a fedettség nem vonatkozik a radírra."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Χρησιμοποιήστε κοινό πάχος, διαφάνεια και χρώμα στα εργαλεία. Το χρώμα και η διαφάνεια δεν ισχύουν για τη γόμα."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "השתמשו בעובי, באטימות ובצבע משותפים לכלים. צבע ואטימות אינם חלים על המחק."
+          }
+        }
+      }
+    },
+    "Swipe left to Opacity." : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe left to Opacity."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Смахните влево к «Прозрачность»."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب يمينًا إلى «العتامة»."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balayez à gauche vers « Opacité »."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wische nach links zu „Deckkraft“."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scorri a sinistra fino a «Opacità»."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "左にスワイプして「透明度」へ。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "왼쪽으로 쓸어 ‘투명도’로 이동하세요."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deslize para a esquerda até «Opacidade»."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deslize para a esquerda até “Opacidade”."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向左轻扫至“透明度”。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desliza a la izquierda hasta «Opacidad»."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Opaklık” için sola kaydır."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "向左滑動至「透明度」。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń w lewo do „Krycie”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veeg naar links naar ‘Dekking’."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svep åt vänster till ”Opacitet”."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skub til venstre til ”Opacitet”."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sveip til venstre til «Opasitet»."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pyyhkäise vasemmalle kohtaan ”Peittävyys”."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gesek ke kiri ke “Opasitas”."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuốt sang trái đến “Độ mờ đục”."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ปัดซ้ายไปที่ “ความทึบ”"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Змахніть ліворуч до «Прозорість»."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přejeďte doleva na „Krytí“."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lapozz balra a „Fedettség” elemhez."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σαρώστε αριστερά στη «Διαφάνεια»."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "החליקו ימינה אל ״אטימות״."
+          }
+        }
+      }
+    },
+    "Turn the Crown to change opacity" : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn the Crown to change opacity"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вращайте Crown, чтобы изменить прозрачность"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدر Crown لتغيير العتامة"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tournez la Crown pour régler l’opacité"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drehe die Crown, um die Deckkraft zu ändern"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota la Crown per cambiare l’opacità"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crownを回して透明度を変えます"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crown을 돌려 투명도를 바꾸세요"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rode a Crown para alterar a opacidade"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gire a Crown para mudar a opacidade"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转动 Crown 来调整透明度"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gira la Crown para cambiar la opacidad"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opaklığı değiştirmek için Crown’u çevir"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉動 Crown 來調整透明度"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obróć Crown, aby zmienić krycie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draai aan de Crown om de dekking te wijzigen"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrid på Crown för att ändra opaciteten"
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drej på Crown for at ændre opaciteten"
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vri på Crown for å endre opasiteten"
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muuta peittävyyttä kääntämällä Crownia"
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Putar Crown untuk mengubah opasitas"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoay Crown để đổi độ mờ đục"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หมุน Crown เพื่อเปลี่ยนความทึบ"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обертайте Crown, щоб змінити прозорість"
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otáčením Crown změňte krytí"
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgasd a Crownt a fedettség módosításához"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Στρέψτε το Crown για να αλλάξετε τη διαφάνεια"
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "סובבו את ה-Crown לשינוי האטימות"
+          }
+        }
+      }
+    },
+    "Open Opacity." : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Opacity."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Откройте «Прозрачность»."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح «العتامة»."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrez « Opacité »."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne „Deckkraft“."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri «Opacità»."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「透明度」を開きます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘투명도’를 여세요."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra «Opacidade»."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra “Opacidade”."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开“透明度”。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre «Opacidad»."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Opaklık” ayarını aç."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「透明度」。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz „Krycie”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open ‘Dekking’."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öppna ”Opacitet”."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åbn ”Opacitet”."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åpne «Opasitet»."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avaa ”Peittävyys”."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buka “Opasitas”."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở “Độ mờ đục”."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิด “ความทึบ”"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відкрийте «Прозорість»."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otevřete „Krytí“."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nyisd meg a „Fedettség” elemet."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ανοίξτε τη «Διαφάνεια»."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "פתחו את ״אטימות״."
+          }
+        }
+      }
+    },
+    "Open Opacity, then turn the Crown." : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Opacity, then turn the Crown."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Откройте «Прозрачность» и вращайте Crown."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افتح «العتامة»، ثم أدر Crown."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrez « Opacité », puis tournez la Crown."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne „Deckkraft“ und drehe dann die Crown."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri «Opacità», poi ruota la Crown."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「透明度」を開いて、Crownを回します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "‘투명도’를 열고 Crown을 돌리세요."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra «Opacidade» e rode a Crown."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abra “Opacidade” e gire a Crown."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开“透明度”，然后转动 Crown。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre «Opacidad» y gira la Crown."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "“Opaklık” ayarını aç, ardından Crown’u çevir."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "開啟「透明度」，然後轉動 Crown。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz „Krycie”, a następnie obróć Crown."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open ‘Dekking’ en draai aan de Crown."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öppna ”Opacitet” och vrid sedan på Crown."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åbn ”Opacitet”, og drej på Crown."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åpne «Opasitet», og vri på Crown."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avaa ”Peittävyys” ja käännä Crownia."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buka “Opasitas”, lalu putar Crown."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở “Độ mờ đục”, rồi xoay Crown."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิด “ความทึบ” แล้วหมุน Crown"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відкрийте «Прозорість» і обертайте Crown."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otevřete „Krytí“ a otočte Crown."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nyisd meg a „Fedettség” elemet, majd forgasd a Crownt."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ανοίξτε τη «Διαφάνεια» και στρέψτε το Crown."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "פתחו את ״אטימות״ ואז סובבו את ה-Crown."
+          }
+        }
+      }
+    },
+    "Choose a drawing tool to change opacity." : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a drawing tool to change opacity."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите инструмент рисования, чтобы изменить прозрачность."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر أداة رسم لتغيير العتامة."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez un outil de dessin pour régler l’opacité."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle ein Zeichenwerkzeug, um die Deckkraft zu ändern."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli uno strumento di disegno per cambiare l’opacità."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透明度を変えるには描画ツールを選んでください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "투명도를 바꾸려면 그리기 도구를 선택하세요."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha uma ferramenta de desenho para alterar a opacidade."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escolha uma ferramenta de desenho para mudar a opacidade."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择绘画工具以调整透明度。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige una herramienta de dibujo para cambiar la opacidad."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opaklığı değiştirmek için bir çizim aracı seç."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇繪圖工具以調整透明度。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz narzędzie do rysowania, aby zmienić krycie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies een tekengereedschap om de dekking te wijzigen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Välj ett ritverktyg för att ändra opaciteten."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vælg et tegneværktøj for at ændre opaciteten."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Velg et tegneverktøy for å endre opasiteten."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Valitse piirtotyökalu peittävyyden muuttamiseksi."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pilih alat gambar untuk mengubah opasitas."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chọn công cụ vẽ để đổi độ mờ đục."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เลือกเครื่องมือวาดเพื่อเปลี่ยนความทึบ"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть інструмент малювання, щоб змінити прозорість."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vyberte kreslicí nástroj a změňte krytí."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Válassz rajzeszközt a fedettség módosításához."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Επιλέξτε ένα εργαλείο σχεδίασης για να αλλάξετε τη διαφάνεια."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "בחרו כלי ציור לשינוי האטימות."
+          }
+        }
+      }
+    },
   "The first stroke colors empty canvas. Blending changes how later strokes overlap existing paint. The white canvas backing is not white paint.": {
     "extractionState": "manual",
     "localizations": {
@@ -4403,7 +5787,7 @@
       "ru": {
         "stringUnit": {
           "state": "translated",
-          "value" : "Заливайте основные цвета, перекрывайте ошибки и добавляйте чёткие детали. Непрозрачный мазок заменяет нижний цвет. При меньшей непрозрачности можно плавно набирать цвет без дополнительного затемнения."
+          "value" : "Заливайте основные цвета, перекрывайте ошибки и добавляйте чёткие детали. Непрозрачный мазок заменяет нижний цвет. При меньшей прозрачности можно плавно набирать цвет без дополнительного затемнения."
         }
       }
     }
@@ -4471,7 +5855,7 @@
       "ru": {
         "stringUnit": {
           "state": "translated",
-          "value" : "Рисуйте выразительный свет и насыщенные цветные тени. Светлые цвета кисти осветляют рисунок, тёмные — затемняют. Подходит для резких световых акцентов; меньшая непрозрачность даёт больше контроля."
+          "value" : "Рисуйте выразительный свет и насыщенные цветные тени. Светлые цвета кисти осветляют рисунок, тёмные — затемняют. Подходит для резких световых акцентов; меньшая прозрачность даёт больше контроля."
         }
       }
     }
@@ -4522,7 +5906,7 @@
       "ru": {
         "stringUnit": {
           "state": "translated",
-          "value" : "Создавайте яркое свечение, горячие блики и светящиеся края поверх цвета. Светлая кисть быстро выбеливает блики. Используйте небольшую непрозрачность; поверх непрозрачной белой краски эффект не виден."
+          "value" : "Создавайте яркое свечение, горячие блики и светящиеся края поверх цвета. Светлая кисть быстро выбеливает блики. Используйте небольшую прозрачность; поверх непрозрачной белой краски эффект не виден."
         }
       }
     }
@@ -4539,7 +5923,7 @@
       "ru": {
         "stringUnit": {
           "state": "translated",
-          "value" : "Углубляйте насыщенные цветные тени и добавляйте жёсткий контраст. Тёмная кисть быстро уводит детали в чёрный. Работайте с небольшой непрозрачностью по готовому цвету; непрозрачная белая краска остаётся белой."
+          "value" : "Углубляйте насыщенные цветные тени и добавляйте жёсткий контраст. Тёмная кисть быстро уводит детали в чёрный. Работайте с небольшой прозрачностью по готовому цвету; непрозрачная белая краска остаётся белой."
         }
       }
     }
@@ -4556,7 +5940,7 @@
       "ru": {
         "stringUnit": {
           "state": "translated",
-          "value" : "Добавляйте свет для искр, неона и яркого свечения. Значения RGB складываются до белого, поэтому блики быстро теряют детали. Лучше работает по тёмному рисунку с небольшой непрозрачностью."
+          "value" : "Добавляйте свет для искр, неона и яркого свечения. Значения RGB складываются до белого, поэтому блики быстро теряют детали. Лучше работает по тёмному рисунку с небольшой прозрачностью."
         }
       }
     }
@@ -4641,7 +6025,7 @@
       "ru": {
         "stringUnit": {
           "state": "translated",
-          "value" : "Жёлтый → · Синий ↓\n0–10 проходов, непрозрачность 80%. Сначала жёлтый, затем синий. Пример для акварели; маркер набирает цвет мягче."
+          "value" : "Жёлтый → · Синий ↓\n0–10 проходов, прозрачность 80%. Сначала жёлтый, затем синий. Пример для акварели; маркер набирает цвет мягче."
         }
       }
     }
@@ -4675,7 +6059,7 @@
       "ru": {
         "stringUnit": {
           "state": "translated",
-          "value" : "На каждом примере синяя акварель нанесена поверх жёлтой с полной непрозрачностью."
+          "value" : "На каждом примере синяя акварель нанесена поверх жёлтой с полной прозрачностью."
         }
       }
     }

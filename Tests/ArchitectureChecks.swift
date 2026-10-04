@@ -4,6 +4,7 @@ import Foundation
 @main
 struct ArchitectureChecks {
     @MainActor static func main() throws {
+        try checkOpacity()
         let white = SIMD4<Float>(1, 1, 1, 1)
         var whiteStyle = PencilStyle()
         whiteStyle.color = white
@@ -147,4 +148,65 @@ struct ArchitectureChecks {
         withExtendedLifetime(subscription) {}
         print("Architecture checks passed: observation, preferences, tutorial isolation, undo/redo, document storage.")
     }
+    @MainActor static func checkOpacity() throws {
+        let suite = "OpacityChecks.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let tools = CanvasController(defaults: defaults)
+        precondition(tools.synchronization.opacity && tools.pencilStyle.opacity == 1)
+        tools.pencilStyle.opacity = 0.35
+        tools.selectInstrument(.marker)
+        precondition(tools.pencilStyle.opacity == 0.35)
+        tools.pencilStyle.color = SIMD4(1, 0, 0, 1)
+        precondition(tools.pencilStyle.opacity == 0.35, "Color changes must preserve opacity")
+        tools.selectInstrument(.eraser)
+        precondition(tools.pencilStyle.effectiveOpacity == 1)
+        tools.pencilStyle.width = 16
+        tools.selectInstrument(.pen)
+        precondition(tools.pencilStyle.opacity == 0.35, "Eraser must not overwrite shared opacity")
+        tools.setSynchronizeOpacity(false)
+        tools.pencilStyle.opacity = 0.8
+        tools.selectInstrument(.marker)
+        precondition(tools.pencilStyle.opacity == 0.35)
+        tools.pencilStyle.opacity = 0.2
+        tools.selectInstrument(.pen)
+        precondition(tools.pencilStyle.opacity == 0.8, "Each tool must retain its own opacity")
+        tools.flushStylePreferences()
+        let restored = CanvasController(defaults: defaults)
+        precondition(!restored.synchronization.opacity && restored.pencilStyle.opacity == 0.8)
+        restored.selectInstrument(.marker)
+        precondition(restored.pencilStyle.opacity == 0.2)
+        restored.setSynchronizeOpacity(true)
+        restored.selectInstrument(.pen)
+        precondition(restored.pencilStyle.opacity == 0.2)
+        restored.flushStylePreferences()
+        precondition(CanvasController(defaults: defaults).synchronization.sharedOpacity == 0.2)
+        let tutorial = CanvasController(defaults: defaults, persistsPreferences: false)
+        tutorial.pencilStyle.opacity = 0.7
+        tutorial.flushStylePreferences()
+        precondition(CanvasController(defaults: defaults).pencilStyle.opacity == 0.2)
+        let point = PointerSample(position: SIMD2(20, 20), pressure: 1, timestamp: 0)
+        restored.beginStroke(at: point)
+        restored.endStroke(at: point)
+        restored.pencilStyle.opacity = 0.9
+        precondition(restored.document.strokes[0].style.opacity == 0.2)
+        let data = try JSONEncoder().encode(restored.document)
+        let document = try JSONDecoder().decode(CanvasDocument.self, from: data)
+        precondition(document == restored.document)
+        let legacyStyle = try JSONDecoder().decode(PencilStyle.self, from: Data("{}".utf8))
+        precondition(legacyStyle.opacity == 1)
+        let legacyJSON = #"{"width":false,"color":false,"sharedWidth":17,"sharedColor":[1,0,0,1]}"#
+        defaults.set(Data(legacyJSON.utf8), forKey: "drawing.synchronization.v1")
+        let migrated = CanvasController(defaults: defaults).synchronization
+        precondition(!migrated.width && !migrated.color && migrated.sharedWidth == 17)
+        precondition(migrated.sharedColor == SIMD4(1, 0, 0, 1))
+        precondition(migrated.opacity && migrated.sharedOpacity == 1,
+                     "New opacity preference must not reset existing width/color preferences")
+        for (raw, expected): (Float, Float) in [(-1, 0), (2, 1), (0.5, 0.5)] {
+            let decoded = try JSONDecoder().decode(PencilStyle.self,
+                from: Data("{\"opacity\":\(raw)}".utf8))
+            precondition(decoded.opacity == expected)
+        }
+    }
+
 }

@@ -89,12 +89,16 @@ private struct ToolSynchronizationView: View {
                     get: { controller.synchronization.width },
                     set: { controller.setSynchronizeWidth($0) }
                 ))
+                Toggle(L10n.text("Shared opacity"), isOn: Binding(
+                    get: { controller.synchronization.opacity },
+                    set: { controller.setSynchronizeOpacity($0) }
+                ))
                 Toggle(L10n.text("Shared color"), isOn: Binding(
                     get: { controller.synchronization.color },
                     set: { controller.setSynchronizeColor($0) }
                 ))
             } footer: {
-                Text(L10n.text("Selected settings are shared across tools. Color does not apply to the eraser."))
+                Text(L10n.text("Share width, opacity, and color across tools. Color and opacity do not apply to the eraser."))
             }
         }
         .navigationTitle(L10n.text("Synchronization"))

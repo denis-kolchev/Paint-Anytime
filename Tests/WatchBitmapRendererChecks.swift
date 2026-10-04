@@ -102,6 +102,40 @@ struct RenderCheck {
         let rightAngle = render([Stroke(points: [sample(30, 20), sample(30, 60), sample(75, 60)], style: flatMarker)])
         precondition(pixel(rightAngle, 120, 120)[0] < 250 && pixel(rightAngle, 120, 130)[0] == 255,
                      "A right-angle turn must travel on the thin edge of the nib")
+        // Opacity fades the whole brush, including texture, with no effect on erasing.
+        func darkness(_ image: CGImage) -> Int {
+            let data = image.dataProvider!.data!
+            let bytes = CFDataGetBytePtr(data)!
+            var total = 0
+            for y in 0..<image.height {
+                for x in 0..<image.width {
+                    total += 255 - Int(bytes[y * image.bytesPerRow + x * 4])
+                }
+            }
+            return total
+        }
+        for instrument in DrawingInstrument.allCases where instrument != .eraser {
+            var brush = PencilStyle.initial(for: instrument)
+            brush.color = SIMD4(0, 0, 0, 1)
+            brush.width = 20
+            let points = [sample(25, 30), sample(65, 65), sample(25, 30)]
+            let full = darkness(render([Stroke(points: points, style: brush)]))
+            brush.opacity = 0.5
+            let half = darkness(render([Stroke(points: points, style: brush)]))
+            precondition(full > 0 && abs(Double(half) / Double(full) - 0.5) < 0.025,
+                         "Opacity must fade the complete brush consistently: \(instrument)")
+            brush.opacity = 0
+            precondition(darkness(render([Stroke(points: points, style: brush)])) == 0,
+                         "Zero opacity must leave the canvas untouched: \(instrument)")
+        }
+        var solid = PencilStyle()
+        solid.width = 20
+        let solidStroke = Stroke(points: [sample(40, 40)], style: solid)
+        var transparentEraser = PencilStyle.initial(for: .eraser)
+        transparentEraser.width = 30
+        transparentEraser.opacity = 0
+        precondition(pixel(render([solidStroke, Stroke(points: [sample(40, 40)], style: transparentEraser)]),
+                           80, 80)[0] == 255, "Opacity must never weaken the eraser")
         style.instrument = .monoline
         style.width = 8
         let crossing = render([Stroke(points: [sample(-20, 50), sample(120, 50)], style: style)])
@@ -328,6 +362,7 @@ struct RenderCheck {
             var brush = PencilStyle.initial(for: tool)
             brush.width = 18
             brush.color = SIMD4(0.2, 0.65, 0.9, 0.8)
+            brush.opacity = 0.45
             brush.eraserMode = .pixels
             let active = Stroke(points: [sample(25, 40), sample(60, 40)], style: brush)
             assertSame(cache.render(strokes: history, activeStroke: active, key: key(1)),
@@ -365,6 +400,7 @@ struct RenderCheck {
                 var brush = PencilStyle.initial(for: tool)
                 brush.width = 13
                 brush.color = SIMD4(0.25, 0.7, 0.9, 0.65)
+                brush.opacity = 0.6
                 let gestureCache = WatchBitmapRenderer.Cache()
                 let gestureKey = WatchBitmapRenderer.CacheKey(documentID: ObjectIdentifier(gestureCache),
                     documentRevision: 1, size: CGSize(width: 100, height: 100), scale: resolution)

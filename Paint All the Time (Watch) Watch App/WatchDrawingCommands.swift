@@ -253,8 +253,20 @@ nonisolated enum WatchBitmapRenderer {
                 } catch { return nil }
                 coverage.composite(dirty: dirty, over: context, into: context)
             } else {
+                // Fade the complete stroke once, preserving texture and avoiding
+                // darker overlaps within a single translucent gesture.
+                let opacity = stroke.style.effectiveOpacity
+                if opacity < 1 {
+                    context.saveGState()
+                    context.setAlpha(CGFloat(opacity))
+                    context.beginTransparencyLayer(auxiliaryInfo: nil)
+                }
                 for command in cached?.commands ?? WatchStrokeDrawing.commands(for: stroke) {
                     draw(command, in: context, space: space)
+                }
+                if opacity < 1 {
+                    context.endTransparencyLayer()
+                    context.restoreGState()
                 }
             }
         }

@@ -34,9 +34,9 @@ struct TutorialChecks {
     static func checkProgress() {
         var progress = TutorialProgress()
         progress.start()
-        precondition(TutorialStep.lessonCount == 23)
-        precondition(TutorialStep.clearCanvas.rawValue == 23)
-        precondition(TutorialStep.finished.rawValue == 24)
+        precondition(TutorialStep.lessonCount == 25)
+        precondition(TutorialStep.clearCanvas.rawValue == 25)
+        precondition(TutorialStep.finished.rawValue == 26)
         precondition(progress.record(.stroke) == .none)
         precondition(progress.record(.stroke) == .advance)
         progress.advance()
@@ -56,13 +56,26 @@ struct TutorialChecks {
         precondition(!progress.changedStyle(from: original, to: original, page: 1))
         precondition(!progress.changedStyle(from: original, to: style, page: 0))
         precondition(progress.changedStyle(from: original, to: style, page: 1))
-        precondition(progress.visibleToolPages == [0, 1, 2, 3, 4])
+        precondition(progress.visibleToolPages == [0, 1, 2, 3, 4, 5])
         precondition(progress.allowsToolAdjustment(page: 0) && progress.allowsToolPage(2))
         progress.advance()
         precondition(progress.completesPageChange(0))
         progress.advance()
         style.width = 7
         precondition(progress.changedStyle(from: original, to: style, page: 0))
+        progress.advance()
+        precondition(progress.step == .openOpacity && progress.completesPageChange(5))
+        precondition(!progress.completesPageChange(2))
+        progress.advance()
+        precondition(progress.step == .setOpacity)
+        precondition(!progress.changedStyle(from: style, to: style, page: 5))
+        let beforeOpacity = style
+        style.opacity = 0.5
+        precondition(!progress.changedStyle(from: beforeOpacity, to: style, page: 0))
+        precondition(progress.changedStyle(from: beforeOpacity, to: style, page: 5))
+        var eraser = style
+        eraser.instrument = .eraser
+        precondition(!progress.changedStyle(from: beforeOpacity, to: eraser, page: 5))
         progress.advance()
         precondition(progress.completesPageChange(2))
         progress.advance()
@@ -152,6 +165,13 @@ struct TutorialChecks {
         var wider = style
         wider.width += 2
         session.changedStyle(from: style, to: wider, page: 0)
+        precondition(session.step == .openOpacity)
+        session.changedPage(5)
+        precondition(session.step == .setOpacity && session.suggestsCrownRotation)
+        var faded = wider
+        faded.opacity = 0.5
+        session.changedStyle(from: wider, to: faded, page: 5)
+        precondition(session.step == .openTool)
         session.changedPage(2)
         precondition(session.suggestsCrownRotation && !session.showsCrownHint)
 
@@ -189,7 +209,7 @@ struct TutorialChecks {
         precondition(!FileManager.default.fileExists(atPath: first.path))
         precondition(FileManager.default.fileExists(atPath: second.path))
         try workspace.remove(second)
-        precondition(ToolSynchronization().width && ToolSynchronization().color)
+        precondition(ToolSynchronization().width && ToolSynchronization().color && ToolSynchronization().opacity)
         let suite = "TutorialChecks.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }

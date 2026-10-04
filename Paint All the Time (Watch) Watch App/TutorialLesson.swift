@@ -12,6 +12,8 @@ enum TutorialLesson {
         case .selectColor: return L10n.text("Turn the Crown to choose a color.")
         case .openWidth: return L10n.text("Swipe left to Width.")
         case .setWidth: return L10n.text("Turn the Crown to change width.")
+        case .openOpacity: return L10n.text("Swipe left to Opacity.")
+        case .setOpacity: return L10n.text("Turn the Crown to change opacity")
         case .openTool: return L10n.text("Swipe left to Tool.")
         case .selectReed: return L10n.text("Choose Reed pen to set the angle.")
         case .openAngle: return L10n.text("Swipe left to Angle.")

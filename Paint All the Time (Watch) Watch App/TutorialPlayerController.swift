@@ -27,9 +27,10 @@ final class TutorialPlayerController: ObservableObject {
 
     func startOrResume() {
         if !tutorial.isActive {
-            // Carry the taught color and width into the new brush without changing user preferences.
+            // Carry the taught color, width, and opacity into the new brush without changing user preferences.
             canvas.setSynchronizeWidth(true)
             canvas.setSynchronizeColor(true)
+            canvas.setSynchronizeOpacity(true)
             tutorial.start()
         } else { tutorial.resumeReminders() }
     }

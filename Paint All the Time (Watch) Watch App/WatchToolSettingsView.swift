@@ -45,13 +45,14 @@ struct WatchToolSettingsView: View {
     private var availableSettings: [ToolSetting] {
         let pages: [ToolSetting]
         if isEraser { pages = [.width, .instrument, .mode] }
-        else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .instrument, .direction] }
-        else { pages = [.color, .width, .instrument] }
+        else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .opacity, .instrument, .direction] }
+        else { pages = [.color, .width, .opacity, .instrument] }
         return pages
     }
 
     private var valueTitle: String {
         switch selection {
+        case .opacity: "\(Int((controller.pencilStyle.effectiveOpacity * 100).rounded()))%"
         case .width: L10n.format("%d pt", Int(controller.pencilStyle.width))
         case .color: colors[colorIndex].name
         case .instrument: controller.pencilStyle.instrument.title
@@ -62,6 +63,7 @@ struct WatchToolSettingsView: View {
 
     private var crownMaximum: Double {
         switch selection {
+        case .opacity: 100
         case .width: Double(controller.maximumWidth)
         case .color: Double(colors.count - 1)
         case .instrument: Double(instruments.count - 1)
@@ -78,6 +80,7 @@ struct WatchToolSettingsView: View {
     private var crownValue: Binding<Double> {
         Binding {
             switch selection {
+            case .opacity: Double((controller.pencilStyle.effectiveOpacity * 100).rounded())
             case .width: Double(controller.pencilStyle.width)
             case .color: Double(colorIndex)
             case .instrument: Double(instrumentIndex)
@@ -94,6 +97,8 @@ struct WatchToolSettingsView: View {
             }
             var style = controller.pencilStyle
             switch selection {
+            case .opacity:
+                style.opacity = Float(min(100, max(0, value.rounded()))) / 100
             case .width:
                 style.width = Float(min(crownMaximum, max(1, value.rounded())))
             case .mode:
@@ -123,9 +128,9 @@ struct WatchToolSettingsView: View {
             GeometryReader { settingsGeometry in
                 let angleHeight = settingsGeometry.size.height + (tutorial.isActive ? 40 : 0)
                 let angleScale = min(1, max(0, angleHeight) / ToolDirectionControl.idealSize.height)
-                let panelWidth = selection == .width ? 0 : selection == .direction
+                let panelWidth = (selection == .width || selection == .opacity) ? 0 : selection == .direction
                     ? ToolDirectionControl.idealSize.width * angleScale : 40
-                let panelSpacing = selection == .width ? 0 : selection == .direction ? 8 * angleScale : 8
+                let panelSpacing = (selection == .width || selection == .opacity) ? 0 : selection == .direction ? 8 * angleScale : 8
                 HStack(spacing: panelSpacing) {
                     VStack(spacing: 6) {
                         ToolStrokePreview(style: controller.pencilStyle)
@@ -194,7 +199,7 @@ struct WatchToolSettingsView: View {
                         .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
                     }
                     .frame(width: panelWidth)
-                    .opacity(selection == .width ? 0 : 1)
+                    .opacity((selection == .width || selection == .opacity) ? 0 : 1)
                     .modifier(ToolPickerViewportClip(isEnabled: !tutorial.isActive))
                 }
                 .frame(width: settingsGeometry.size.width, height: settingsGeometry.size.height)

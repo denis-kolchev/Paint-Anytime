@@ -15,6 +15,7 @@ final class CanvasController: ObservableObject {
     func selectInstrument(_ instrument: DrawingInstrument) { tools.selectInstrument(instrument) }
     func setSynchronizeWidth(_ enabled: Bool) { tools.setSynchronizeWidth(enabled) }
     func setSynchronizeColor(_ enabled: Bool) { tools.setSynchronizeColor(enabled) }
+    func setSynchronizeOpacity(_ enabled: Bool) { tools.setSynchronizeOpacity(enabled) }
     func flushStylePreferences() { tools.flushStylePreferences() }
 
     // Revisions make raster invalidation independent of the number of saved points.

@@ -8,6 +8,7 @@ final class TutorialSession: ObservableObject {
     @Published private var progress = TutorialProgress()
     var step: TutorialStep { progress.step }
     @Published private(set) var toolPage = 1
+    @Published private var toolIsEraser = false
     @Published var galleryIsOpen = false
     @Published var galleryIsFullscreen = false
     var instruction: String {
@@ -15,7 +16,11 @@ final class TutorialSession: ObservableObject {
         case .selectColor where toolPage != 1: return L10n.text("Open Color, then turn the Crown.")
         case .openWidth where toolPage != 1: return L10n.text("Open Width.")
         case .setWidth where toolPage != 0: return L10n.text("Open Width, then turn the Crown.")
-        case .openTool where toolPage != 0: return L10n.text("Open Tool.")
+        case .openOpacity where toolIsEraser, .setOpacity where toolIsEraser:
+            return L10n.text("Choose a drawing tool to change opacity.")
+        case .openOpacity where toolPage != 0: return L10n.text("Open Opacity.")
+        case .setOpacity where toolPage != 5: return L10n.text("Open Opacity, then turn the Crown.")
+        case .openTool where toolPage != 5: return L10n.text("Open Tool.")
         case .selectReed where toolPage != 2: return L10n.text("Open Tool and choose Reed pen.")
         case .openAngle where toolPage != 2: return L10n.text("Open Angle.")
         case .setAngle where toolPage != 4: return L10n.text("Open Angle, then turn the Crown.")
@@ -60,6 +65,7 @@ final class TutorialSession: ObservableObject {
         case .zoomCanvas: return true
         case .selectColor: return toolPage == 1
         case .setWidth: return toolPage == 0
+        case .setOpacity: return toolPage == 5 && !toolIsEraser
         case .selectReed: return toolPage == 2
         case .setAngle: return toolPage == 4
         case .galleryFullscreen, .deleteDrawing: return galleryIsOpen && !galleryIsFullscreen
@@ -90,6 +96,7 @@ final class TutorialSession: ObservableObject {
         progress.start()
         crownPracticedSteps = []
         toolPage = 1
+        toolIsEraser = false
         galleryIsOpen = false
         galleryIsFullscreen = false
         remindersPaused = false
@@ -152,6 +159,7 @@ final class TutorialSession: ObservableObject {
     func changedStyle(from old: PencilStyle, to style: PencilStyle, page: Int) {
         guard isActive, acceptsActions else { return }
         activity()
+        toolIsEraser = style.instrument == .eraser
         if progress.changedStyle(from: old, to: style, page: page) { advance() }
     }
 

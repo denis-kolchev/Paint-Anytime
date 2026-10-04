@@ -181,6 +181,11 @@ nonisolated struct PencilStyle: Codable, Equatable {
     var instrument: DrawingInstrument = .monoline
     var color = SIMD4<Float>(0, 0, 0, 1)
     var width: Float = 4
+    var opacity: Float = 1
+
+    var effectiveOpacity: Float {
+        instrument == .eraser ? 1 : (opacity.isFinite ? min(1, max(0, opacity)) : 1)
+    }
     var eraserMode: EraserMode = .pixels
     var blendingMode: ColorBlendingMode = .hybrid
     // Degrees in canvas coordinates; the default preserves the previous nib angle.
@@ -189,7 +194,7 @@ nonisolated struct PencilStyle: Codable, Equatable {
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case instrument, color, width, eraserMode, reedAngle, blendingMode
+        case instrument, color, width, opacity, eraserMode, reedAngle, blendingMode
     }
 
     init(from decoder: Decoder) throws {
@@ -197,6 +202,8 @@ nonisolated struct PencilStyle: Codable, Equatable {
         instrument = try values.decodeIfPresent(DrawingInstrument.self, forKey: .instrument) ?? .monoline
         color = try values.decodeIfPresent(SIMD4<Float>.self, forKey: .color) ?? SIMD4(0, 0, 0, 1)
         width = try values.decodeIfPresent(Float.self, forKey: .width) ?? instrument.defaultWidth
+        let decodedOpacity = try values.decodeIfPresent(Float.self, forKey: .opacity) ?? 1
+        opacity = decodedOpacity.isFinite ? min(1, max(0, decodedOpacity)) : 1
         eraserMode = try values.decodeIfPresent(EraserMode.self, forKey: .eraserMode) ?? .pixels
         blendingMode = (try values.decodeIfPresent(String.self, forKey: .blendingMode))
             .flatMap(ColorBlendingMode.init(rawValue:)) ?? .hybrid

@@ -257,7 +257,7 @@ nonisolated final class WatchStrokeCoverage {
                 var opacity: Float = 0.7
                 vDSP_vsmul(alpha, 1, &opacity, alpha, 1, n)
             }
-            var inkAlpha = style.color.w
+            var inkAlpha = style.color.w * style.effectiveOpacity
             vDSP_vsmul(alpha, 1, &inkAlpha, alpha, 1, n)
             let backdrop = basePixels + y * baseStride + x * 4
             let destination = outputPixels + y * outputStride + x * 4

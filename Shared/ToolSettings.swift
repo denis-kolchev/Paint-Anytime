@@ -38,6 +38,12 @@ final class ToolSettings: ObservableObject {
         synchronizationChanged()
     }
 
+    func setSynchronizeOpacity(_ enabled: Bool) {
+        guard synchronization.opacity != enabled else { return }
+        synchronization.opacity = enabled
+        synchronizationChanged()
+    }
+
     private func synchronizationChanged() {
         // Enabling synchronization uses the current tool as the starting value.
         propagateSynchronizedStyle()
@@ -45,11 +51,14 @@ final class ToolSettings: ObservableObject {
     }
 
     private func propagateSynchronizedStyle() {
-        guard synchronization.width || synchronization.color else { return }
+        guard synchronization.width || synchronization.color || synchronization.opacity else { return }
         var updated = synchronization
         if updated.width { updated.sharedWidth = pencilStyle.width }
         if updated.color && pencilStyle.instrument != .eraser {
             updated.sharedColor = pencilStyle.color
+        }
+        if updated.opacity && pencilStyle.instrument != .eraser {
+            updated.sharedOpacity = pencilStyle.effectiveOpacity
         }
         // Publish once, and only if shared values actually changed.
         if updated != synchronization { synchronization = updated }
@@ -57,6 +66,7 @@ final class ToolSettings: ObservableObject {
             var style = savedStyles[instrument.rawValue] ?? .initial(for: instrument)
             if synchronization.width { style.width = synchronization.sharedWidth }
             if synchronization.color && instrument != .eraser { style.color = synchronization.sharedColor }
+            if synchronization.opacity && instrument != .eraser { style.opacity = synchronization.sharedOpacity }
             savedStyles[instrument.rawValue] = style
         }
     }
@@ -110,6 +120,7 @@ final class ToolSettings: ObservableObject {
         restored.width = min(instrument.maximumWidth, max(1, restored.width))
         if restoredSynchronization.width { restored.width = restoredSynchronization.sharedWidth }
         if restoredSynchronization.color && instrument != .eraser { restored.color = restoredSynchronization.sharedColor }
+        if restoredSynchronization.opacity && instrument != .eraser { restored.opacity = restoredSynchronization.sharedOpacity }
         synchronization = restoredSynchronization
         pencilStyle = AppReleaseFeatures.current.availableStyle(restored)
     }
@@ -120,6 +131,7 @@ final class ToolSettings: ObservableObject {
         if synchronization.width { style.width = synchronization.sharedWidth }
         else { style.width = min(instrument.maximumWidth, max(1, style.width)) }
         if synchronization.color && instrument != .eraser { style.color = synchronization.sharedColor }
+        if synchronization.opacity && instrument != .eraser { style.opacity = synchronization.sharedOpacity }
         style.blendingMode = blendingMode
         pencilStyle = AppReleaseFeatures.current.availableStyle(style)
     }
@@ -129,6 +141,25 @@ final class ToolSettings: ObservableObject {
 struct ToolSynchronization: Codable, Equatable {
     var width = true
     var color = true
+    var opacity = true
+    var sharedOpacity: Float = 1
     var sharedWidth: Float = 4
     var sharedColor = SIMD4<Float>(0, 0, 0, 1)
+
+    init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case width, color, opacity, sharedWidth, sharedColor, sharedOpacity
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        width = try values.decodeIfPresent(Bool.self, forKey: .width) ?? true
+        color = try values.decodeIfPresent(Bool.self, forKey: .color) ?? true
+        opacity = try values.decodeIfPresent(Bool.self, forKey: .opacity) ?? true
+        sharedWidth = try values.decodeIfPresent(Float.self, forKey: .sharedWidth) ?? 4
+        sharedColor = try values.decodeIfPresent(SIMD4<Float>.self, forKey: .sharedColor) ?? SIMD4(0, 0, 0, 1)
+        let decoded = try values.decodeIfPresent(Float.self, forKey: .sharedOpacity) ?? 1
+        sharedOpacity = decoded.isFinite ? min(1, max(0, decoded)) : 1
+    }
 }
