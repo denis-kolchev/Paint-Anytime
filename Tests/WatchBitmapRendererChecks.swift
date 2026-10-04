@@ -45,6 +45,70 @@ struct RenderCheck {
         func sample(_ x: Float, _ y: Float) -> PointerSample {
             PointerSample(position: SIMD2<Float>(x, y), pressure: 1, timestamp: 0)
         }
+        // Spatial coverage must match exhaustive vector coverage, including
+        // tile boundaries, negative coordinates, turns and overlapping paths.
+        var dryStyle = PencilStyle.initial(for: .pencil)
+        dryStyle.width = 12
+        let dryPoints = [sample(-12, -8), sample(24, 24), sample(48, 8),
+                         sample(24, 24), sample(24, 56), sample(64, 56)]
+        let dryPolygons = BrushGeometry.pencilPolygons(for: Stroke(points: dryPoints, style: dryStyle))
+        let footprintIndex = WatchStrokeDrawing.DryFootprintIndex(polygons: dryPolygons)
+        let growingGeometry = WatchStrokeDrawing.DryGeometry()
+        let geometryID = UUID()
+        for count in 1...dryPoints.count {
+            let prefix = Stroke(points: Array(dryPoints.prefix(count)), style: dryStyle, id: geometryID)
+            growingGeometry.append(prefix)
+            let reference = WatchStrokeDrawing.DryFootprintIndex(polygons: BrushGeometry.pencilPolygons(for: prefix))
+            for y in stride(from: -16, through: 64, by: 2) {
+                for x in stride(from: -24, through: 72, by: 2) {
+                    let p = CGPoint(x: Double(x) + 0.31, y: Double(y) + 0.27)
+                    precondition(growingGeometry.index.contains(p) == reference.contains(p),
+                                 "Appending dry geometry must preserve full-replay coverage")
+                }
+            }
+        }
+        for y in -24...72 {
+            for x in -24...72 {
+                for offset: CGFloat in [0, 0.37] {
+                    let probe = CGPoint(x: CGFloat(x) + offset, y: CGFloat(y) + offset)
+                    let exhaustive = footprintIndex.paths.contains { $0.contains(probe) }
+                    precondition(footprintIndex.contains(probe) == exhaustive,
+                                 "Spatial lookup must preserve exact dry-brush coverage")
+                }
+            }
+        }
+        for instrument in [DrawingInstrument.pencil, .crayon] {
+            dryStyle.instrument = instrument
+            let stroke = Stroke(points: dryPoints, style: dryStyle)
+            let firstRender = render([stroke])
+            let repeatedRender = render([stroke])
+            precondition(CFEqual(firstRender.dataProvider!.data, repeatedRender.dataProvider!.data),
+                         "Dry-brush redraw must keep grain stationary")
+        }
+        for instrument in [DrawingInstrument.pencil, .crayon] {
+            var brush = PencilStyle.initial(for: instrument)
+            brush.width = 36
+            let stroke = Stroke(points: [sample(10, 40), sample(90, 40)], style: brush)
+            let memo = WatchStrokeDrawing.DryGeometry()
+            let firstCommands = WatchStrokeDrawing.commands(for: stroke, dryGeometry: memo)
+            let builds = memo.grainBuildCount
+            let probes = memo.coverageProbeCount
+            let repeatedCommands = WatchStrokeDrawing.commands(for: stroke, dryGeometry: memo)
+            precondition(builds > 0 && memo.grainBuildCount == builds,
+                         "Redrawing a cached dry region must not regenerate grain")
+            precondition(memo.coverageProbeCount == probes && memo.grainCacheHits > 0,
+                         "Unchanged coverage must reuse cached feather results")
+            precondition(firstCommands.count == repeatedCommands.count)
+            for (a, b) in zip(firstCommands, repeatedCommands) {
+                guard case let .fill(lhs) = a.shape, case let .fill(rhs) = b.shape else {
+                    fatalError("Expected dry texture fill bands")
+                }
+                precondition(CFEqual(lhs.cgPath, rhs.cgPath) && a.opacity == b.opacity,
+                             "Grain caching must preserve exact texture paths and opacity")
+            }
+        }
+        print("PASS: indexed dry-brush coverage and deterministic redraw")
+
         // Flat nib: a tap is horizontal; first movement rotates the whole footprint.
         var flatMarker = PencilStyle.initial(for: .marker)
         flatMarker.width = 20
@@ -357,6 +421,48 @@ struct RenderCheck {
             precondition(lhs.count == rhs.count)
             precondition(zip(lhs, rhs).allSatisfy { abs(Int($0) - Int($1)) <= 1 }, message)
         }
+        // Same gesture ID across prefixes exercises the partial-update path.
+        // Include contact ramp, turns, a retrace, a crossing and off-paper input.
+        for tool in [DrawingInstrument.pencil, .crayon] {
+            for scale: CGFloat in [1, 2, 4] {
+                var brush = PencilStyle.initial(for: tool)
+                brush.width = 14
+                brush.opacity = 0.55
+                let points = [sample(20, 20), sample(20.2, 20), sample(22, 20),
+                              sample(40, 20), sample(40, 55), sample(20, 20),
+                              sample(-15, 60), sample(70, 60), sample(72, 60)]
+                let id = UUID()
+                let incremental = WatchBitmapRenderer.Cache()
+                let frameKey = key(900, scale: scale)
+                for count in 1...points.count {
+                    let active = Stroke(points: Array(points.prefix(count)), style: brush, id: id)
+                    assertSame(incremental.render(strokes: [background], activeStroke: active,
+                                                  key: frameKey, activeStrokeID: 42),
+                               WatchBitmapRenderer.render(strokes: [background, active],
+                                                          size: frameKey.size, scale: scale),
+                               "Dry partial update differs from replay: \(tool), prefix \(count)")
+                }
+                precondition(incremental.activeDryBuildCount == 1,
+                             "Appending dry ink must retain the working bitmap")
+                precondition(incremental.lastDryDirtyArea < 100 * 100 * scale * scale,
+                             "A short extension must not rasterize the entire canvas")
+                let cachedGeometryCount = incremental.geometryBuildCount
+                let completed = Stroke(points: points, style: brush, id: id)
+                assertSame(incremental.render(strokes: [background, completed], activeStroke: nil,
+                                              key: key(901, scale: scale)),
+                           WatchBitmapRenderer.render(strokes: [background, completed],
+                                                      size: frameKey.size, scale: scale),
+                           "Finishing dry ink must agree with export")
+                precondition(incremental.geometryBuildCount == cachedGeometryCount,
+                             "Finishing live dry ink must promote its bitmap without rebuilding geometry")
+                assertSame(incremental.render(strokes: [background], activeStroke: nil,
+                                              key: key(902, scale: scale)),
+                           WatchBitmapRenderer.render(strokes: [background], size: frameKey.size, scale: scale),
+                           "Undo must discard dry ink buffers")
+            }
+        }
+        print("PASS: dry partial rendering, crossings, contact ramp, buffer reuse, finish and undo")
+
         var history = [background, marker]
         for tool in DrawingInstrument.allCases {
             var brush = PencilStyle.initial(for: tool)

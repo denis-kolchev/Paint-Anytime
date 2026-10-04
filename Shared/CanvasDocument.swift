@@ -229,8 +229,8 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
     }
     let style: PencilStyle
 
-    init(points: [PointerSample], style: PencilStyle) {
-        id = UUID()
+    init(points: [PointerSample], style: PencilStyle, id: UUID = UUID()) {
+        self.id = id
         self.points = points
         self.style = style
     }
