@@ -79,6 +79,16 @@ nonisolated enum WatchStrokeDrawing {
         let geometry = geometry ?? DryGeometry()
         geometry.append(stroke)
         let travel = geometry.travel
+        let contact = pastel ? 0.09 + 0.91 * min(1, Double(travel) / 4) : 1
+        if let region, let paths = geometry.unchangedContours(in: region, contact: contact) {
+            for band in paths.indices {
+                var layer = context
+                let pigment = pastel ? [0.48, 0.72, 0.93] : [0.56, 0.76, 0.94]
+                layer.opacity *= pigment[band % 3] * [0.30, 0.65, 1.0][band / 3] * contact
+                layer.fill(paths[band], with: .color(ink))
+            }
+            return
+        }
         let strokeSeed = stroke.id.uuidString.utf8.reduce(0) { ($0 &* 31) &+ Int($1) }
         let cellSize = 0.48
         let footprints = geometry.index
@@ -88,7 +98,7 @@ nonisolated enum WatchStrokeDrawing {
             return CGPoint(x: cos(angle) * feather, y: sin(angle) * feather)
         }
         var deposited = Set<SIMD2<Int>>()
-        let bands = (0..<9).map { _ in CGMutablePath() }
+        var visibleGrains: [DryGeometry.Grain] = []
         let candidates = region.map { footprints.candidates(in: $0.insetBy(dx: -2, dy: -2)) }
             ?? Array(geometry.polygons.indices)
         // Segments always own grains before corner fans, as in full replay.
@@ -107,7 +117,6 @@ nonisolated enum WatchStrokeDrawing {
             let frame = geometry.frames[polygonIndex]
             let tangent = frame?.tangent ?? (simd_length(delta) > 0.001 ? simd_normalize(delta) : SIMD2<Float>(0, 1))
             let normal = SIMD2<Float>(-tangent.y, tangent.x)
-            let footprint = footprints.paths[polygonIndex]
             let bounds = searchBounds
             guard !bounds.isNull, !bounds.isEmpty else { continue }
             let minX = Int(floor(bounds.minX / cellSize))
@@ -120,14 +129,16 @@ nonisolated enum WatchStrokeDrawing {
                     let cell = SIMD2<Int>(x, y)
                     guard !deposited.contains(cell) else { continue }
                     let seed = (x &* 73856093) ^ (y &* 19349663) ^ strokeSeed
-                    let center = CGPoint(
+                    let cached = geometry.grainCache[cell]
+                    let center = cached?.center ?? CGPoint(
                         x: (Double(x) + noise(seed)) * cellSize,
                         y: (Double(y) + noise(seed &+ 1)) * cellSize)
-                    guard footprint.contains(center) else { continue }
+                    guard cached?.owner == polygonIndex || footprints.contains(center, in: polygonIndex) else { continue }
                     deposited.insert(cell)
-                    let cached = geometry.grainCache[cell]
+                    let localRevision = footprints.revision(in: CGRect(x: center.x, y: center.y, width: 0, height: 0)
+                        .insetBy(dx: -feather, dy: -feather))
                     let reusable = cached.map {
-                        $0.owner == polygonIndex && ($0.fullCoverage || $0.revision == geometry.polygons.count)
+                        $0.owner == polygonIndex && ($0.fullCoverage || $0.revision == localRevision)
                     } ?? false
                     let grain: DryGeometry.Grain?
                     if reusable {
@@ -213,50 +224,161 @@ nonisolated enum WatchStrokeDrawing {
                         geometry.grainBuildCount += 1
                         // Bounded per-gesture memory, including cached empty cells.
                         // Eviction affects speed only, never pigment or random seeds.
-                        if geometry.grainCache.count >= 32768, let victim = geometry.grainCache.keys.first {
-                            geometry.grainCache.removeValue(forKey: victim)
-                        }
                         geometry.grainCache[cell] = DryGeometry.CachedGrain(owner: polygonIndex,
-                            revision: geometry.polygons.count, fullCoverage: fullCoverage, grain: grain)
+                            revision: localRevision, center: center, fullCoverage: fullCoverage, grain: grain)
                     }
-                    if let grain {
-                        let path = bands[grain.band]
-                        path.move(to: point(grain.a))
-                        path.addLine(to: point(grain.b))
-                        path.addLine(to: point(grain.c))
-                        path.addLine(to: point(grain.d))
-                        path.closeSubpath()
-                    }
+                    if let grain { visibleGrains.append(grain) }
                 }
             }
         }
+        guard !Task.isCancelled else { return }
+        let bands = geometry.contours(for: visibleGrains, region: region, contact: contact)
         for band in bands.indices {
             var layer = context
             let pigment = pastel ? [0.48, 0.72, 0.93] : [0.56, 0.76, 0.94]
             // Contact builds over a short travel distance, independent of the
             // number of touch events. A circular rub quickly becomes saturated.
-            let contact = pastel ? 0.09 + 0.91 * min(1, Double(travel) / 4) : 1
             layer.opacity *= pigment[band % 3] * [0.30, 0.65, 1.0][band / 3] * contact
-            layer.fill(Path(bands[band]), with: .color(ink))
+            layer.fill(bands[band], with: .color(ink))
         }
+    }
+
+    /// Bounded least-recently-used storage. Hits and eviction are constant time.
+    final class RecentCache<Key: Hashable, Value> {
+        private final class Node {
+            let key: Key
+            var value: Value
+            weak var previous: Node?
+            var next: Node?
+            init(_ key: Key, _ value: Value) { self.key = key; self.value = value }
+        }
+        private let capacity: Int
+        private var entries: [Key: Node] = [:]
+        private var first: Node?
+        private var last: Node?
+        init(capacity: Int) { self.capacity = capacity }
+        private func touch(_ node: Node) {
+            if last === node { return }
+            if let previous = node.previous { previous.next = node.next }
+            else if first === node { first = node.next }
+            node.next?.previous = node.previous
+            node.previous = last; node.next = nil
+            last?.next = node
+            last = node
+            if first == nil { first = node }
+        }
+        subscript(key: Key) -> Value? {
+            get {
+                guard let node = entries[key] else { return nil }
+                touch(node)
+                return node.value
+            }
+            set {
+                guard let value = newValue else { return }
+                if let node = entries[key] { node.value = value; touch(node); return }
+                let node = Node(key, value)
+                entries[key] = node
+                touch(node)
+                if entries.count > capacity, let victim = first {
+                    first = victim.next; first?.previous = nil
+                    victim.next = nil
+                    entries.removeValue(forKey: victim.key)
+                }
+            }
+        }
+        func removeAll(keepingCapacity: Bool = false) {
+            // Detach iteratively, avoiding recursive destruction of a long chain.
+            while let node = first { first = node.next; node.next = nil }
+            last = nil
+            entries.removeAll(keepingCapacity: keepingCapacity)
+        }
+        deinit { removeAll() }
     }
 
     /// Append-only geometry and spatial index owned by one active gesture.
     final class DryGeometry {
-        struct Grain {
+        struct Grain: Equatable {
             let a: SIMD2<Float>
             let b: SIMD2<Float>
             let c: SIMD2<Float>
             let d: SIMD2<Float>
             let band: Int
         }
+        private struct Contours {
+            let grains: [Grain]
+            let paths: [Path]
+            let contact: Double
+            let revision: UInt64
+            var coverageRevision: Int
+        }
+        private let contourCache = RecentCache<SIMD4<Double>, Contours>(capacity: 64)
+        private var nextContourRevision: UInt64 = 0
+        private(set) var contourBuildCount = 0
+        private(set) var contourCacheHits = 0
+
+        private func regionKey(_ rect: CGRect) -> SIMD4<Double> {
+            SIMD4(Double(rect.minX), Double(rect.minY), Double(rect.width), Double(rect.height))
+        }
+
+        func unchangedContours(in region: CGRect, contact: Double) -> [Path]? {
+            guard let entry = contourCache[regionKey(region)], entry.contact == contact,
+                  entry.coverageRevision == index.revision(in: region.insetBy(dx: -5, dy: -5)) else { return nil }
+            contourCacheHits += 1
+            return entry.paths
+        }
+
+        func contourRevision(in region: CGRect) -> UInt64? {
+            contourCache[regionKey(region)]?.revision
+        }
+
+        func contours(for grains: [Grain], region: CGRect?, contact: Double) -> [Path] {
+            let key = region.map(regionKey)
+            let previous = key.flatMap { contourCache[$0] }
+            let sameGrains = previous.map { $0.grains == grains } ?? false
+            if sameGrains, let previous, previous.contact == contact {
+                contourCacheHits += 1
+                if let key, let region {
+                    var validated = previous
+                    validated.coverageRevision = index.revision(in: region.insetBy(dx: -5, dy: -5))
+                    contourCache[key] = validated
+                }
+                return previous.paths
+            }
+            let paths: [Path]
+            if sameGrains, let previous {
+                // Opening pressure changes opacity without changing the contours.
+                paths = previous.paths
+                contourCacheHits += 1
+            } else {
+                let bands = (0..<9).map { _ in CGMutablePath() }
+                for grain in grains {
+                    let path = bands[grain.band]
+                    path.move(to: point(grain.a))
+                    path.addLine(to: point(grain.b))
+                    path.addLine(to: point(grain.c))
+                    path.addLine(to: point(grain.d))
+                    path.closeSubpath()
+                }
+                paths = bands.map { Path($0) }
+                contourBuildCount += 1
+            }
+            if let key {
+                nextContourRevision &+= 1
+                contourCache[key] = Contours(grains: grains, paths: paths, contact: contact,
+                                             revision: nextContourRevision,
+                    coverageRevision: region.map { index.revision(in: $0.insetBy(dx: -5, dy: -5)) } ?? 0)
+            }
+            return paths
+        }
+
         struct CachedGrain {
             let owner: Int
             let revision: Int
+            let center: CGPoint
             let fullCoverage: Bool
             let grain: Grain?
         }
-        var grainCache: [SIMD2<Int>: CachedGrain] = [:]
+        let grainCache = RecentCache<SIMD2<Int>, CachedGrain>(capacity: 32768)
         var grainBuildCount = 0
         var grainCacheHits = 0
         var coverageProbeCount = 0
@@ -282,6 +404,7 @@ nonisolated enum WatchStrokeDrawing {
             if travel < 0.5 {
                 polygons.removeAll(); frames.removeAll(); isJoin.removeAll()
                 grainCache.removeAll(keepingCapacity: true)
+                contourCache.removeAll(keepingCapacity: true)
                 index = DryFootprintIndex(polygons: [])
                 firstFrames.removeAll(); points.removeAll()
                 count = 0; distance = 0; travel = 0
@@ -290,6 +413,13 @@ nonisolated enum WatchStrokeDrawing {
                 let p = stroke.points[i].position
                 if i > 0 { travel += simd_distance(stroke.points[i - 1].position, p) }
                 guard let previous = points.last else { points.append(p); continue }
+                // Coalesce only exactly collinear forward samples within this
+                // batch. Original document points and all turns are retained.
+                if i + 1 < stroke.points.count {
+                    let a = p - previous
+                    let b = stroke.points[i + 1].position - p
+                    if a.x * b.y - a.y * b.x == 0 && simd_dot(a, b) > 0 { continue }
+                }
                 let length = simd_distance(previous, p)
                 guard length > 0.001 else { continue }
                 let frame = Frame(origin: previous, tangent: (p - previous) / length,
@@ -310,6 +440,7 @@ nonisolated enum WatchStrokeDrawing {
             if points.count == 1 || (stroke.style.instrument == .crayon && travel < 0.5), let p = points.first {
                 polygons.removeAll(); frames.removeAll(); isJoin.removeAll()
                 grainCache.removeAll(keepingCapacity: true)
+                contourCache.removeAll(keepingCapacity: true)
                 index = DryFootprintIndex(polygons: [])
                 let r = stroke.style.instrument == .crayon
                     ? max(0.1, stroke.style.width) * 0.38 : min(3, max(0.1, stroke.style.width)) / 2
@@ -329,8 +460,17 @@ nonisolated enum WatchStrokeDrawing {
     struct DryFootprintIndex {
         private(set) var paths: [CGPath] = []
         private(set) var bounds: [CGRect] = []
+        private struct Rectangle {
+            let origin: SIMD2<Double>
+            let u: SIMD2<Double>
+            let v: SIMD2<Double>
+            let u2: Double
+            let v2: Double
+        }
+        private var rectangles: [Rectangle?] = []
         private var tiles: [SIMD2<Int>: [Int]] = [:]
         private let tileSize: CGFloat = 8
+        private var tileRevisions: [SIMD2<Int>: Int] = [:]
 
         init(polygons: [[SIMD2<Float>]]) {
             for polygon in polygons { append(polygon) }
@@ -341,12 +481,35 @@ nonisolated enum WatchStrokeDrawing {
             let rect = path.boundingBoxOfPath
             let index = paths.count
             paths.append(path); bounds.append(rect)
+            var rectangle: Rectangle?
+            if polygon.count == 4 {
+                let p = polygon.map { SIMD2<Double>(Double($0.x), Double($0.y)) }
+                let u = p[1] - p[0], v = p[3] - p[0]
+                let u2 = simd_length_squared(u), v2 = simd_length_squared(v)
+                if u2 > 0, v2 > 0, abs(simd_dot(u, v)) < 1e-8 * sqrt(u2 * v2),
+                   simd_length(p[2] - (p[0] + u + v)) < 0.000001 {
+                    rectangle = Rectangle(origin: p[0], u: u, v: v, u2: u2, v2: v2)
+                }
+            }
+            rectangles.append(rectangle)
             guard !rect.isNull, !rect.isEmpty else { return }
             for y in Int(floor(rect.minY / tileSize))...Int(floor(rect.maxY / tileSize)) {
                 for x in Int(floor(rect.minX / tileSize))...Int(floor(rect.maxX / tileSize)) {
                     tiles[SIMD2(x, y), default: []].append(index)
+                    tileRevisions[SIMD2(x, y)] = paths.count
                 }
             }
+        }
+
+        func revision(in rect: CGRect) -> Int {
+            guard !rect.isNull else { return 0 }
+            var result = 0
+            for y in Int(floor(rect.minY / tileSize))...Int(floor(rect.maxY / tileSize)) {
+                for x in Int(floor(rect.minX / tileSize))...Int(floor(rect.maxX / tileSize)) {
+                    result = max(result, tileRevisions[SIMD2(x, y)] ?? 0)
+                }
+            }
+            return result
         }
 
         func candidates(in rect: CGRect) -> [Int] {
@@ -360,6 +523,18 @@ nonisolated enum WatchStrokeDrawing {
             return Array(result)
         }
 
+        func contains(_ point: CGPoint, in index: Int) -> Bool {
+            if let r = rectangles[index] {
+                let d = SIMD2<Double>(Double(point.x), Double(point.y)) - r.origin
+                let u = simd_dot(d, r.u) / r.u2, v = simd_dot(d, r.v) / r.v2
+                let epsilon = 0.00001
+                if u > epsilon && u < 1 - epsilon && v > epsilon && v < 1 - epsilon { return true }
+                if u < -epsilon || u > 1 + epsilon || v < -epsilon || v > 1 + epsilon { return false }
+            }
+            // Keep Core Graphics' edge conventions at boundaries and corner fans.
+            return paths[index].contains(point)
+        }
+
         func contains(_ point: CGPoint) -> Bool {
             let tile = SIMD2(Int(floor(point.x / tileSize)), Int(floor(point.y / tileSize)))
             guard let candidates = tiles[tile] else { return false }
@@ -367,7 +542,7 @@ nonisolated enum WatchStrokeDrawing {
                 let rect = bounds[index]
                 guard point.x >= rect.minX, point.x <= rect.maxX,
                       point.y >= rect.minY, point.y <= rect.maxY else { continue }
-                if paths[index].contains(point) { return true }
+                if contains(point, in: index) { return true }
             }
             return false
         }

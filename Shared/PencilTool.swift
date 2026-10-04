@@ -18,6 +18,7 @@ final class PencilTool {
             points: [sample],
             style: style
         )
+        activeStroke?.beginInputStream()
     }
 
     func update(with sample: PointerSample) {
@@ -29,7 +30,7 @@ final class PencilTool {
             return
         }
 
-        activeStroke?.points.append(sample)
+        activeStroke?.appendInputSample(sample)
     }
 
     func end(at sample: PointerSample) -> Stroke? {

@@ -49,6 +49,16 @@ nonisolated enum WatchBitmapRenderer {
         let image: CGImage
     }
 
+    struct ScreenTile: Identifiable {
+        let id: SIMD2<Int>
+        let rect: CGRect // Canvas points, top-left origin.
+        let image: CGImage
+    }
+    struct ScreenFrame {
+        let background: CGImage
+        let tiles: [ScreenTile]
+    }
+
     struct CacheKey: Equatable {
         let documentID: ObjectIdentifier
         let documentRevision: UInt64
@@ -95,6 +105,22 @@ nonisolated enum WatchBitmapRenderer {
 
     /// Owned by one canvas view. Appends extend the ink; history edits rebuild it.
     final class Cache {
+        private var usesScreenTiles = false
+
+        func screenFrame(strokes: [Stroke], activeStroke: Stroke?, key: CacheKey,
+                         activeStrokeID: UInt64) -> ScreenFrame? {
+            usesScreenTiles = true
+            defer { usesScreenTiles = false }
+            guard let image = render(strokes: strokes, activeStroke: activeStroke,
+                                     key: key, activeStrokeID: activeStrokeID) else { return nil }
+            if activeStroke != nil, let dry = activeDry, let background = committedImage {
+                return ScreenFrame(background: background, tiles: dry.screenTiles.values.sorted {
+                    $0.id.y == $1.id.y ? $0.id.x < $1.id.x : $0.id.y < $1.id.y
+                })
+            }
+            return ScreenFrame(background: image, tiles: [])
+        }
+
         private var key: CacheKey?
         private(set) var geometry: [UUID: StrokeGeometry] = [:]
         private(set) var geometryBuildCount = 0
@@ -129,13 +155,14 @@ nonisolated enum WatchBitmapRenderer {
             let display: CGContext
             let geometry: WatchStrokeDrawing.DryGeometry
             var travel: Float = 0
+            var renderedContours: [SIMD2<Int>: UInt64] = [:]
+            var screenTiles: [SIMD2<Int>: ScreenTile] = [:]
         }
 
         private func renderDry(_ stroke: Stroke, base: InkSnapshot, key: CacheKey) -> CGImage? {
             let previous = activeDry?.stroke
             let extends = previous.map {
-                $0.id == stroke.id && $0.style == stroke.style &&
-                stroke.points.starts(with: $0.points)
+                stroke.extends($0)
             } ?? false
             if !extends {
                 guard let frame = WatchBitmapRenderer.makeFloatContext(width: base.image.width,
@@ -148,9 +175,12 @@ nonisolated enum WatchBitmapRenderer {
                 activeDry = ActiveDry(stroke: stroke, base: base.image, frame: frame, display: display,
                                       geometry: WatchStrokeDrawing.DryGeometry())
                 activeDryBuildCount += 1
+                activeImage = nil
             }
             guard var dry = activeDry else { return nil }
-            if extends && previous?.geometryRevision == stroke.geometryRevision { return activeImage }
+            if extends && previous?.geometryRevision == stroke.geometryRevision {
+                return usesScreenTiles ? committedImage : dry.display.makeImage()
+            }
             // New segments can change old feather probes at crossings. Include
             // the nib radius, feather distance, grain overhang and the last join.
             var start = extends ? max(0, (previous?.points.count ?? 0) - 2) : 0
@@ -174,25 +204,53 @@ nonisolated enum WatchBitmapRenderer {
                 guard !rect.isNull, !rect.isEmpty else { continue }
                 for y in Int(floor(rect.minY / tileSize))...Int(floor((rect.maxY - 0.001) / tileSize)) {
                     for x in Int(floor(rect.minX / tileSize))...Int(floor((rect.maxX - 0.001) / tileSize)) {
+                        // Reject tiles outside the oriented swept nib envelope,
+                        // rather than visiting every corner of its bounding box.
+                        let delta = p - q
+                        let length = simd_length(delta)
+                        if length > 0.001 {
+                            let tangent = delta / length
+                            let normal = SIMD2<Float>(-tangent.y, tangent.x)
+                            let half = Float(tileSize / (2 * key.scale))
+                            let center = SIMD2<Float>(Float((CGFloat(x) + 0.5) * tileSize / key.scale),
+                                                      Float((CGFloat(y) + 0.5) * tileSize / key.scale)) - q
+                            let along = simd_dot(center, tangent)
+                            let across = abs(simd_dot(center, normal))
+                            let alongReach = half * (abs(tangent.x) + abs(tangent.y)) + Float(padding)
+                            let acrossReach = half * (abs(normal.x) + abs(normal.y)) + Float(padding)
+                            if along < -alongReach || along > length + alongReach || across > acrossReach { continue }
+                        }
                         tiles.insert(SIMD2(x, y))
                     }
                 }
             }
             lastDryDirtyArea = 0
+            var changedTiles: [SIMD2<Int>] = []
+            var batches: [(tile: SIMD2<Int>, rect: CGRect, commands: [WatchDrawingCommand], revision: UInt64?)] = []
             for tile in tiles {
                 let dirty = CGRect(x: CGFloat(tile.x) * tileSize, y: CGFloat(tile.y) * tileSize,
                                    width: tileSize, height: tileSize).intersection(canvas)
-                lastDryDirtyArea += dirty.width * dirty.height
                 let region = dirty.applying(CGAffineTransform(scaleX: 1 / key.scale, y: 1 / key.scale))
                 let commands = WatchStrokeDrawing.commands(for: stroke, region: region, dryGeometry: dry.geometry)
-                guard !Task.isCancelled, let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+                guard !Task.isCancelled else { return nil }
+                let revision = dry.geometry.contourRevision(in: region)
+                if let revision, dry.renderedContours[tile] == revision { continue }
+                changedTiles.append(tile)
+                lastDryDirtyArea += dirty.width * dirty.height
+                batches.append((tile, dirty, commands, revision))
+            }
+            if !batches.isEmpty {
+                guard let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
                 let frame = dry.frame
+                let union = CGMutablePath()
+                for batch in batches {
+                    union.addRect(CGRect(x: batch.rect.minX, y: CGFloat(frame.height) - batch.rect.maxY,
+                                         width: batch.rect.width, height: batch.rect.height))
+                }
                 frame.saveGState()
-                let pixelRect = CGRect(x: dirty.minX, y: CGFloat(frame.height) - dirty.maxY,
-                                       width: dirty.width, height: dirty.height)
-                frame.clip(to: pixelRect)
-                frame.clear(pixelRect)
-                frame.draw(dry.base, in: CGRect(x: 0, y: 0, width: frame.width, height: frame.height))
+                frame.addPath(union); frame.clip()
+                frame.clear(canvas)
+                frame.draw(dry.base, in: canvas)
                 frame.translateBy(x: 0, y: CGFloat(frame.height))
                 frame.scaleBy(x: key.scale, y: -key.scale)
                 let opacity = stroke.style.effectiveOpacity
@@ -200,27 +258,40 @@ nonisolated enum WatchBitmapRenderer {
                     frame.setAlpha(CGFloat(opacity))
                     frame.beginTransparencyLayer(auxiliaryInfo: nil)
                 }
-                for command in commands { WatchBitmapRenderer.draw(command, in: frame, space: space) }
+                for batch in batches {
+                    frame.saveGState()
+                    frame.clip(to: batch.rect.applying(CGAffineTransform(scaleX: 1 / key.scale, y: 1 / key.scale)))
+                    for command in batch.commands { WatchBitmapRenderer.draw(command, in: frame, space: space) }
+                    frame.restoreGState()
+                    dry.renderedContours[batch.tile] = batch.revision
+                }
                 if opacity < 1 { frame.endTransparencyLayer() }
                 frame.restoreGState()
             }
-            // Snapshot once, then convert only modified tiles into the retained
-            // 8-bit display buffer instead of flattening the complete canvas.
-            guard let snapshot = dry.frame.makeImage() else { return nil }
-            for tile in tiles {
+            if changedTiles.isEmpty {
+                dry.stroke = stroke
+                dry.travel = dry.geometry.travel
+                activeDry = dry
+                activeImage = usesScreenTiles ? committedImage : dry.display.makeImage()
+                return activeImage
+            }
+            // Copy only changed rows into small snapshots. No full-canvas
+            // CGImage snapshot is needed while a dry gesture is on screen.
+            for tile in changedTiles {
                 let dirty = CGRect(x: CGFloat(tile.x) * tileSize, y: CGFloat(tile.y) * tileSize,
                                    width: tileSize, height: tileSize).intersection(canvas)
-                guard let patch = snapshot.cropping(to: dirty) else { return nil }
+                guard let patch = WatchBitmapRenderer.snapshot(dry.frame, rect: dirty, floating: true),
+                      let flat = WatchBitmapRenderer.flatten(InkSnapshot(image: patch), paperWhite: 1) else { return nil }
                 let destination = CGRect(x: dirty.minX, y: CGFloat(dry.frame.height) - dirty.maxY,
                                          width: dirty.width, height: dirty.height)
-                dry.display.setFillColor(CGColor(gray: 1, alpha: 1))
-                dry.display.fill(destination)
-                dry.display.draw(patch, in: destination)
+                dry.display.draw(flat, in: destination)
+                dry.screenTiles[tile] = ScreenTile(id: tile,
+                    rect: dirty.applying(CGAffineTransform(scaleX: 1 / key.scale, y: 1 / key.scale)), image: flat)
             }
             dry.stroke = stroke
             dry.travel = dry.geometry.travel
             activeDry = dry
-            activeImage = dry.display.makeImage()
+            activeImage = usesScreenTiles ? committedImage : dry.display.makeImage()
             return activeImage
         }
 
@@ -240,11 +311,11 @@ nonisolated enum WatchBitmapRenderer {
                    versions.count == committedStrokes.count + 1,
                    versions.starts(with: committedStrokes), let final = strokes.last,
                    let dry = activeDry, dry.stroke.id == final.id, dry.stroke.style == final.style,
-                   final.points.starts(with: dry.stroke.points), let base = committedInk,
+                   final.extends(dry.stroke), let base = committedInk,
                    let display = renderDry(final, base: base, key: nextKey),
                    let ink = activeDry?.frame.makeImage(), !Task.isCancelled {
                     committedInk = InkSnapshot(image: ink)
-                    committedImage = display
+                    committedImage = usesScreenTiles ? activeDry?.display.makeImage() : display
                     committedStrokes = versions
                     key = nextKey
                     appendCount += 1
@@ -419,6 +490,21 @@ nonisolated enum WatchBitmapRenderer {
                             CGBitmapInfo.floatComponents.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
     }
 
+    private static func snapshot(_ source: CGContext, rect: CGRect, floating: Bool) -> CGImage? {
+        guard let input = source.data else { return nil }
+        let width = Int(rect.width), height = Int(rect.height)
+        guard width > 0, height > 0,
+              let target = floating ? makeFloatContext(width: width, height: height)
+                  : makeDisplayContext(width: width, height: height), let output = target.data else { return nil }
+        let bytesPerPixel = floating ? 16 : 4
+        for row in 0..<height {
+            let sourceOffset = (Int(rect.minY) + row) * source.bytesPerRow + Int(rect.minX) * bytesPerPixel
+            output.advanced(by: row * target.bytesPerRow)
+                .copyMemory(from: input.advanced(by: sourceOffset), byteCount: width * bytesPerPixel)
+        }
+        return target.makeImage()
+    }
+
     private static func makeDisplayContext(width: Int, height: Int) -> CGContext? {
         guard let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
         return CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
@@ -481,6 +567,14 @@ nonisolated enum WatchBitmapRenderer {
 /// overlapping requests from modifying the same incremental cache.
 actor WatchArtworkRenderer {
     private let cache = WatchBitmapRenderer.Cache()
+
+    func screenFrame(strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
+                     activeStrokeID: UInt64) -> WatchBitmapRenderer.ScreenFrame? {
+        guard !Task.isCancelled else { return nil }
+        let frame = cache.screenFrame(strokes: strokes, activeStroke: activeStroke,
+                                      key: key, activeStrokeID: activeStrokeID)
+        return Task.isCancelled ? nil : frame
+    }
 
     func render(strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
                 activeStrokeID: UInt64) -> CGImage? {

@@ -107,7 +107,66 @@ struct RenderCheck {
                              "Grain caching must preserve exact texture paths and opacity")
             }
         }
+        for instrument in [DrawingInstrument.pencil, .crayon] {
+            var brush = PencilStyle.initial(for: instrument)
+            brush.width = 24
+            var stroke = Stroke(points: [sample(10, 40), sample(85, 40)], style: brush)
+            let memo = WatchStrokeDrawing.DryGeometry()
+            let region = CGRect(x: 12, y: 32, width: 16, height: 16)
+            _ = WatchStrokeDrawing.commands(for: stroke, region: region, dryGeometry: memo)
+            let builds = memo.contourBuildCount
+            let revision = memo.contourRevision(in: region)
+            stroke.points.append(sample(95, 40))
+            _ = WatchStrokeDrawing.commands(for: stroke, region: region, dryGeometry: memo)
+            precondition(memo.contourBuildCount == builds && memo.contourRevision(in: region) == revision,
+                         "A distant extension must reuse unchanged region contours")
+            let contactPaths = memo.contours(for: [], region: region, contact: 0.2)
+            let contactRevision = memo.contourRevision(in: region)
+            let contactBuilds = memo.contourBuildCount
+            let strongerPaths = memo.contours(for: [], region: region, contact: 0.8)
+            precondition(memo.contourBuildCount == contactBuilds && contactPaths.count == strongerPaths.count,
+                         "Opacity-only changes must reuse paths")
+            precondition(memo.contourRevision(in: region) != contactRevision,
+                         "Opacity-only changes must still invalidate rendered pixels")
+        }
         print("PASS: indexed dry-brush coverage and deterministic redraw")
+
+        // LRU must retain recently read entries, including negative/empty results.
+        let recent = WatchStrokeDrawing.RecentCache<Int, Int>(capacity: 2)
+        recent[1] = 10; recent[2] = 20
+        precondition(recent[1] == 10)
+        recent[3] = 30
+        precondition(recent[2] == nil && recent[1] == 10 && recent[3] == 30)
+        recent.removeAll()
+        precondition(recent[1] == nil && recent[3] == nil)
+
+        let streamTool = PencilTool()
+        streamTool.begin(at: sample(10, 10), style: dryStyle)
+        let prefix = streamTool.activeStroke!
+        streamTool.update(with: sample(20, 20))
+        let extended = streamTool.activeStroke!
+        precondition(extended.extends(prefix), "Sequential input must retain its stream")
+        var edited = extended
+        edited.points[0] = sample(50, 50)
+        precondition(edited.inputStream == nil && !edited.extends(prefix),
+                     "Editing an earlier point must invalidate the input fast path")
+
+        var wide = PencilStyle.initial(for: .crayon)
+        wide.width = 24
+        var growing = Stroke(points: [sample(10, 40), sample(85, 40)], style: wide)
+        let memo = WatchStrokeDrawing.DryGeometry()
+        let farRegion = CGRect(x: 12, y: 32, width: 16, height: 16)
+        _ = WatchStrokeDrawing.commands(for: growing, region: farRegion, dryGeometry: memo)
+        let cachedHits = memo.grainCacheHits
+        let cachedBuilds = memo.grainBuildCount
+        growing.points.append(sample(95, 40))
+        _ = WatchStrokeDrawing.commands(for: growing, region: farRegion, dryGeometry: memo)
+        precondition(memo.grainCacheHits == cachedHits && memo.grainBuildCount == cachedBuilds,
+                     "Distant geometry changes must skip the entire grain traversal")
+        growing.points.append(sample(15, 40))
+        memo.append(growing)
+        precondition(memo.unchangedContours(in: farRegion, contact: 1) == nil,
+                     "A crossing must invalidate nearby contour coverage")
 
         // Flat nib: a tap is horizontal; first movement rotates the whole footprint.
         var flatMarker = PencilStyle.initial(for: .marker)
@@ -462,6 +521,68 @@ struct RenderCheck {
             }
         }
         print("PASS: dry partial rendering, crossings, contact ramp, buffer reuse, finish and undo")
+
+        for instrument in [DrawingInstrument.pencil, .crayon] {
+            var brush = PencilStyle.initial(for: instrument)
+            brush.width = 20
+            let cache = WatchBitmapRenderer.Cache()
+            var active = Stroke(points: [sample(15, 40), sample(70, 40)], style: brush)
+            let first = cache.render(strokes: [], activeStroke: active, key: key(950), activeStrokeID: 5)
+            active.points.append(sample(70, 40))
+            let unchanged = cache.render(strokes: [], activeStroke: active, key: key(950), activeStrokeID: 5)
+            assertSame(first, unchanged, "Stationary dry ink must preserve the displayed frame")
+            precondition(cache.lastDryDirtyArea == 0,
+                         "Identical contours must not clear or rasterize any tiles")
+        }
+
+        // Composite the UI's independent images into a reference bitmap. This
+        // catches row-order errors, tile seams, opacity and completion regressions.
+        func assemble(_ frame: WatchBitmapRenderer.ScreenFrame, scale: CGFloat) -> CGImage {
+            let width = frame.background.width, height = frame.background.height
+            let context = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                                    bytesPerRow: 0, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            context.draw(frame.background, in: CGRect(x: 0, y: 0, width: width, height: height))
+            for tile in frame.tiles {
+                let rect = tile.rect.applying(CGAffineTransform(scaleX: scale, y: scale))
+                context.draw(tile.image, in: CGRect(x: rect.minX, y: CGFloat(height) - rect.maxY,
+                                                   width: rect.width, height: rect.height))
+            }
+            return context.makeImage()!
+        }
+        for instrument in [DrawingInstrument.pencil, .crayon] {
+            for scale: CGFloat in [1, 2, 4] {
+                var brush = PencilStyle.initial(for: instrument)
+                brush.width = 28
+                brush.opacity = 0.55
+                let samples = [sample(-5, 15), sample(15, 15), sample(30, 15), sample(55, 15),
+                               sample(80, 70), sample(20, 40), sample(75, 10)]
+                let cache = WatchBitmapRenderer.Cache()
+                let id = UUID()
+                let request = key(980, scale: scale)
+                for count in 1...samples.count {
+                    let stroke = Stroke(points: Array(samples.prefix(count)), style: brush, id: id)
+                    let tiles = cache.screenFrame(strokes: [background], activeStroke: stroke,
+                                                  key: request, activeStrokeID: 77)!
+                    assertSame(assemble(tiles, scale: scale),
+                               WatchBitmapRenderer.render(strokes: [background, stroke], size: request.size, scale: scale),
+                               "Tiled dry presentation must match full replay at each prefix")
+                }
+                let final = Stroke(points: samples, style: brush, id: id)
+                let completed = cache.screenFrame(strokes: [background, final], activeStroke: nil,
+                                                  key: key(981, scale: scale), activeStrokeID: 77)!
+                precondition(completed.tiles.isEmpty)
+                assertSame(assemble(completed, scale: scale),
+                           WatchBitmapRenderer.render(strokes: [background, final], size: request.size, scale: scale),
+                           "Tiled completion must promote the actual artwork, not its backdrop")
+                let undone = cache.screenFrame(strokes: [background], activeStroke: nil,
+                                               key: key(982, scale: scale), activeStrokeID: 78)!
+                precondition(undone.tiles.isEmpty)
+                assertSame(assemble(undone, scale: scale),
+                           WatchBitmapRenderer.render(strokes: [background], size: request.size, scale: scale),
+                           "Undo must remove all active tile images")
+            }
+        }
 
         var history = [background, marker]
         for tool in DrawingInstrument.allCases {

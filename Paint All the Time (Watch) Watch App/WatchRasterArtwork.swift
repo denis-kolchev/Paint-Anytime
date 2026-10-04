@@ -52,12 +52,22 @@ struct WatchRasterArtwork: View {
         }
 
         var body: some View {
-            let _ = TutorialDebug.trace("raster.frame.body", "strokes=\(strokes.count) imageReady=\(frames.image != nil)")
+            let _ = TutorialDebug.trace("raster.frame.body", "strokes=\(strokes.count) imageReady=\(frames.frame != nil)")
             Group {
-                if let image = frames.image {
-                    Image(decorative: image, scale: key.scale)
-                        .resizable()
-                        .frame(width: key.size.width, height: key.size.height)
+                if let frame = frames.frame {
+                    ZStack(alignment: .topLeading) {
+                        Image(decorative: frame.background, scale: key.scale)
+                            .resizable()
+                            .frame(width: key.size.width, height: key.size.height)
+                        ForEach(frame.tiles) { tile in
+                            Image(decorative: tile.image, scale: key.scale)
+                                .resizable()
+                                .frame(width: tile.rect.width, height: tile.rect.height)
+                                .offset(x: tile.rect.minX, y: tile.rect.minY)
+                        }
+                    }
+                    .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+                    .clipped()
                 } else {
                     Color.white
                 }
@@ -76,7 +86,7 @@ struct WatchRasterArtwork: View {
 /// input therefore cannot starve publication by cancelling every render.
 @MainActor
 private final class CanvasFrameQueue: ObservableObject {
-    @Published private(set) var image: CGImage?
+    @Published private(set) var frame: WatchBitmapRenderer.ScreenFrame?
     private let renderer = WatchArtworkRenderer()
     private struct Job {
         let strokes: [Stroke]
@@ -100,7 +110,7 @@ private final class CanvasFrameQueue: ObservableObject {
             guard let self else { return }
             while let job = self.pending, !Task.isCancelled {
                 self.pending = nil
-                let next = await self.renderer.render(strokes: job.strokes, activeStroke: job.activeStroke,
+                let next = await self.renderer.screenFrame(strokes: job.strokes, activeStroke: job.activeStroke,
                                                      key: job.key, activeStrokeID: job.activeStrokeID)
                 guard !Task.isCancelled, self.generation == token else { return }
                 // An older prefix of this gesture is useful. An old document,
@@ -108,7 +118,7 @@ private final class CanvasFrameQueue: ObservableObject {
                 if let latest = self.latest, latest.key == job.key,
                    latest.activeStrokeID == job.activeStrokeID,
                    latest.activeStroke?.id == job.activeStroke?.id, let next {
-                    self.image = next
+                    self.frame = next
                 }
             }
             if self.generation == token { self.worker = nil }

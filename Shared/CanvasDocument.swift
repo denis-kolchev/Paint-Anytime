@@ -224,8 +224,25 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
     let id: UUID
     // A copied stroke can still be edited; invalidate geometry without comparing points.
     private(set) var geometryRevision: UUID = UUID()
+    private(set) var inputStream: UUID?
     var points: [PointerSample] {
-        didSet { geometryRevision = UUID() }
+        didSet { geometryRevision = UUID(); inputStream = nil }
+    }
+
+    mutating func beginInputStream() { inputStream = UUID() }
+
+    mutating func appendInputSample(_ sample: PointerSample) {
+        let stream = inputStream
+        points.append(sample)
+        inputStream = stream
+    }
+
+    func extends(_ previous: Stroke) -> Bool {
+        guard id == previous.id, style == previous.style, points.count >= previous.points.count else { return false }
+        if let inputStream, inputStream == previous.inputStream {
+            return previous.points.last == (previous.points.isEmpty ? nil : points[previous.points.count - 1])
+        }
+        return points.starts(with: previous.points)
     }
     let style: PencilStyle
 
