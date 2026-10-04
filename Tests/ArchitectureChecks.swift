@@ -13,12 +13,18 @@ struct ArchitectureChecks {
                          "White must remain selectable regardless of tool release restrictions")
         }
         for (version, enabled) in [("1", false), ("1.0", false), ("1.0.9", false),
-                                   ("1.1", true), ("1.1.0", true), ("1.2", true),
+                                   ("1.1", true), ("1.1.0", true), ("1.1.9", true), ("1.2", true),
+                                   ("1.2.0", true),
                                    ("1.10", true), ("2.0", true), ("0.9", false)] {
             let features = AppReleaseFeatures(version: version)
             precondition(features.showsPhotoTransferControls == enabled, "Photo transfer threshold: \(version)")
-            for tool in [DrawingInstrument.pencil, .crayon, .watercolor] {
-                precondition(features.allows(tool) == enabled, "Tool threshold: \(version), \(tool)")
+            precondition(features.allows(.watercolor) == enabled, "Watercolor threshold: \(version)")
+            let dryToolsEnabled = ["1.2", "1.2.0", "1.10", "2.0"].contains(version)
+            for tool in [DrawingInstrument.pencil, .crayon] {
+                precondition(features.allows(tool) == dryToolsEnabled, "Tool threshold: \(version), \(tool)")
+                let restored = features.availableStyle(PencilStyle.initial(for: tool))
+                precondition(restored.instrument == (dryToolsEnabled ? tool : .monoline),
+                             "Saved tool must respect release availability: \(version), \(tool)")
             }
             precondition(features.allows(.monoline) && features.allows(.eraser))
         }

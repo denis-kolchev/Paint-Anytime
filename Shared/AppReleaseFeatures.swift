@@ -7,6 +7,7 @@ struct AppReleaseFeatures {
     )
 
     let includesVersion11Tools: Bool
+    let includesVersion12Tools: Bool
     let showsPhotoTransferControls: Bool
 
     init(version: String) {
@@ -15,12 +16,14 @@ struct AppReleaseFeatures {
         let minorVersion = components.count > 1 ? Int(components[1]) ?? 0 : 0
         let isVersion11OrLater = majorVersion > 1 || (majorVersion == 1 && minorVersion >= 1)
         includesVersion11Tools = isVersion11OrLater
+        includesVersion12Tools = majorVersion > 1 || (majorVersion == 1 && minorVersion >= 2)
         showsPhotoTransferControls = isVersion11OrLater
     }
 
     func allows(_ instrument: DrawingInstrument) -> Bool {
         switch instrument {
-        case .pencil, .crayon, .watercolor: includesVersion11Tools
+        case .pencil, .crayon: includesVersion12Tools
+        case .watercolor: includesVersion11Tools
         default: true
         }
     }

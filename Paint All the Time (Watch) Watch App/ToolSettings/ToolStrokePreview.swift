@@ -7,6 +7,26 @@ struct ToolStrokePreview: View {
     @State private var renderer = ToolPreviewRenderer()
 
     var body: some View {
+        Group {
+            if style.instrument == .pencil || style.instrument == .crayon {
+                deferredPreview
+            } else {
+                Canvas { context, size in
+                    let strokes = ToolPreviewStroke.make(style: style, size: size)
+                    if let image = WatchBitmapRenderer.render(strokes: strokes, size: size,
+                                                             scale: displayScale, paperWhite: 0.88) {
+                        context.draw(Image(decorative: image, scale: displayScale),
+                                     in: CGRect(origin: .zero, size: size))
+                    }
+                }
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .background(Color(white: 0.88), in: RoundedRectangle(cornerRadius: 16))
+        .accessibilityLabel(L10n.text("Stroke preview"))
+    }
+
+    private var deferredPreview: some View {
         GeometryReader { geometry in
             let request = ToolPreviewRequest(style: style,
                 size: CGSize(width: max(1, geometry.size.width.rounded()),
@@ -34,9 +54,6 @@ struct ToolStrokePreview: View {
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .background(Color(white: 0.88), in: RoundedRectangle(cornerRadius: 16))
-        .accessibilityLabel(L10n.text("Stroke preview"))
     }
 }
 
@@ -46,7 +63,7 @@ nonisolated struct ToolPreviewRequest: Equatable {
     let scale: CGFloat
 }
 
-/// Preview rendering never executes inside SwiftUI's layout/drawing callbacks.
+/// Textured pencil and crayon previews render outside layout/drawing callbacks.
 /// A small cache also makes returning to a recent settings layout inexpensive.
 actor ToolPreviewRenderer {
     private let strokeID = UUID()
@@ -60,8 +77,19 @@ actor ToolPreviewRenderer {
             cache.append(entry)
             return entry.image
         }
-        let style = request.style
         let size = request.size
+        let strokes = ToolPreviewStroke.make(style: request.style, size: size, id: strokeID)
+        guard !Task.isCancelled,
+              let image = WatchBitmapRenderer.render(strokes: strokes, size: size,
+                  scale: request.scale, paperWhite: 0.88), !Task.isCancelled else { return nil }
+        cache.append((request, image))
+        if cache.count > 4 { cache.removeFirst() }
+        return image
+    }
+}
+
+nonisolated private enum ToolPreviewStroke {
+    static func make(style: PencilStyle, size: CGSize, id: UUID = UUID()) -> [Stroke] {
         let a = SIMD2<Float>(Float(size.width * 0.15), Float(size.height * 0.7))
         let b = SIMD2<Float>(Float(size.width * 0.35), Float(size.height * 0.05))
         let c = SIMD2<Float>(Float(size.width * 0.65), Float(size.height * 0.95))
@@ -85,12 +113,7 @@ actor ToolPreviewRenderer {
                 strokes.append(Stroke(points: line, style: demoStyle))
             }
         }
-        strokes.append(Stroke(points: samples, style: style, id: strokeID))
-        guard !Task.isCancelled,
-              let image = WatchBitmapRenderer.render(strokes: strokes, size: size,
-                  scale: request.scale, paperWhite: 0.88), !Task.isCancelled else { return nil }
-        cache.append((request, image))
-        if cache.count > 4 { cache.removeFirst() }
-        return image
+        strokes.append(Stroke(points: samples, style: style, id: id))
+        return strokes
     }
 }
