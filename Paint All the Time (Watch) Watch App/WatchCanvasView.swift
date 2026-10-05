@@ -25,6 +25,8 @@ struct WatchCanvasView: View {
     @State private var panOrigin: CGSize?
     @State private var acceptsCurrentGesture: Bool?
     @GestureState private var isDragging = false
+    @State private var shapeHoldTask: Task<Void, Never>?
+    @State private var shapeHoldAnchor: CGPoint?
     @Environment(\.scenePhase) private var scenePhase
 
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
@@ -73,6 +75,7 @@ struct WatchCanvasView: View {
                         // Keep the initial decision even when controls hide or the finger moves away.
                         guard acceptsCurrentGesture == true else { return }
                         if isMovingCanvas {
+                            cancelShapeHold()
                             if panOrigin == nil { panOrigin = offset }
                             let origin = panOrigin ?? offset
                             let proposed = CGSize(width: origin.width + value.translation.width,
@@ -98,8 +101,10 @@ struct WatchCanvasView: View {
                         }
                         controller.continueStroke(at: sample(
                             at: canvasPoint(value.location, size: geometry.size), time: value.time))
+                        scheduleShapeHold(at: value.location)
                     }
                     .onEnded { value in
+                        cancelShapeHold()
                         defer { acceptsCurrentGesture = nil; panOrigin = nil }
                         guard acceptsInput && acceptsCurrentGesture == true else { return }
                         if isMovingCanvas {
@@ -159,21 +164,59 @@ struct WatchCanvasView: View {
         }
         .onChange(of: isDragging) { _, dragging in
             if !dragging {
+                cancelShapeHold()
+                // A normal onEnded already commits and clears the stroke.
+                // A cancelled gesture has no onEnded and must not remain live.
+                if controller.activeStroke != nil { controller.cancelStroke() }
                 panOrigin = nil
                 acceptsCurrentGesture = nil
             }
         }
         .onChange(of: isMovingCanvas) { _, moving in
+            cancelShapeHold()
+            if moving { controller.cancelStroke() }
             panOrigin = nil
             if !moving && zoom == 1 { crownZoom = 1 }
         }
         .onChange(of: acceptsInput) { _, enabled in
             TutorialDebug.trace("canvas.enabled.enter", "value=\(enabled)")
             defer { TutorialDebug.trace("canvas.enabled.exit", "focused=\(crownFocused)") }
-            if !enabled { controller.cancelStroke() }
+            if !enabled { cancelShapeHold(); controller.cancelStroke() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase != .active { cancelShapeHold(); controller.cancelStroke() }
         }
         .onDisappear {
+            cancelShapeHold()
             controller.cancelStroke()
+        }
+    }
+
+    private func cancelShapeHold() {
+        shapeHoldTask?.cancel()
+        shapeHoldTask = nil
+        shapeHoldAnchor = nil
+    }
+
+    private func scheduleShapeHold(at location: CGPoint) {
+        guard let stroke = controller.activeStroke, stroke.style.instrument != .eraser,
+              !controller.isShapeSnapped else { cancelShapeHold(); return }
+        // Measure jitter on screen, keeping hold sensitivity stable under zoom.
+        if let anchor = shapeHoldAnchor, hypot(location.x - anchor.x, location.y - anchor.y) < 2 { return }
+        shapeHoldTask?.cancel()
+        shapeHoldAnchor = location
+        let gestureID = stroke.id
+        let tolerance = Float(2 / zoom)
+        shapeHoldTask = Task { @MainActor in
+            do {
+                try await Task.sleep(for: .milliseconds(500))
+                try Task.checkCancellation()
+                guard controller.activeStroke?.id == gestureID, !isMovingCanvas,
+                      tutorial.acceptsActions, tutorial.allowsDrawing else { return }
+                if controller.recognizeActiveShape(adjustmentTolerance: tolerance) {
+                    WKInterfaceDevice.current().play(.click)
+                }
+            } catch { }
         }
     }
 

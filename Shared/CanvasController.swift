@@ -46,6 +46,17 @@ final class CanvasController: ObservableObject {
     }
 
     var activeStroke: Stroke? { pencil.activeStroke }
+    var isShapeSnapped: Bool { pencil.shapeState != .drawing }
+
+    @discardableResult
+    func recognizeActiveShape(adjustmentTolerance: Float = 2) -> Bool {
+        guard pencil.activeStroke != nil, !isShapeSnapped else { return false }
+        objectWillChange.send()
+        guard pencil.recognizeShape(adjustmentTolerance: adjustmentTolerance) else { return false }
+        activeStrokeRevision &+= 1
+        onNeedsDisplay?()
+        return true
+    }
 
     func beginStroke(at sample: PointerSample) {
         objectWillChange.send()

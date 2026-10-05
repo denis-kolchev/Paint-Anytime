@@ -5,6 +5,7 @@ import Foundation
 struct ArchitectureChecks {
     @MainActor static func main() throws {
         try checkOpacity()
+        try checkShapeHistory()
         let white = SIMD4<Float>(1, 1, 1, 1)
         var whiteStyle = PencilStyle()
         whiteStyle.color = white
@@ -213,6 +214,39 @@ struct ArchitectureChecks {
                 from: Data("{\"opacity\":\(raw)}".utf8))
             precondition(decoded.opacity == expected)
         }
+    }
+
+    @MainActor private static func checkShapeHistory() throws {
+        let suite = "PaintShapeHistoryChecks.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let canvas = CanvasController(defaults: defaults, persistsPreferences: false)
+        canvas.selectInstrument(.monoline)
+        let points = (0...30).map { index in
+            PointerSample(position: SIMD2<Float>(10 + Float(index) * 2, 40 + Float(index % 2) * 0.4),
+                          pressure: 1, timestamp: Double(index) / 60)
+        }
+        canvas.beginStroke(at: points[0])
+        points.dropFirst().forEach { canvas.continueStroke(at: $0) }
+        let oldRevision = canvas.activeStrokeRevision
+        precondition(canvas.recognizeActiveShape())
+        precondition(canvas.isShapeSnapped && canvas.activeStrokeRevision > oldRevision)
+        precondition(canvas.document.strokes.isEmpty, "Recognition must not commit the gesture early")
+        canvas.endStroke(at: points.last!)
+        let completed = canvas.document
+        precondition(completed.strokes.count == 1 && canvas.canUndo)
+        let encoded = try JSONEncoder().encode(completed)
+        let decoded = try JSONDecoder().decode(CanvasDocument.self, from: encoded)
+        precondition(decoded == completed)
+        canvas.undo()
+        precondition(canvas.document.strokes.isEmpty && !canvas.canUndo)
+        canvas.redo()
+        precondition(canvas.document == completed)
+        canvas.beginStroke(at: points[0])
+        points.dropFirst().forEach { canvas.continueStroke(at: $0) }
+        precondition(canvas.recognizeActiveShape())
+        canvas.cancelStroke()
+        precondition(canvas.document == completed && !canvas.isShapeSnapped)
     }
 
 }
