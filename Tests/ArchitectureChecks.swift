@@ -228,6 +228,7 @@ struct ArchitectureChecks {
         }
         canvas.beginStroke(at: points[0])
         points.dropFirst().forEach { canvas.continueStroke(at: $0) }
+        let original = canvas.activeStroke!
         let oldRevision = canvas.activeStrokeRevision
         precondition(canvas.recognizeActiveShape())
         precondition(canvas.isShapeSnapped && canvas.activeStrokeRevision > oldRevision)
@@ -239,14 +240,27 @@ struct ArchitectureChecks {
         let decoded = try JSONDecoder().decode(CanvasDocument.self, from: encoded)
         precondition(decoded == completed)
         canvas.undo()
+        precondition(canvas.document.strokes == [original] && canvas.canUndo,
+                     "First undo must restore the exact freehand stroke")
+        canvas.undo()
         precondition(canvas.document.strokes.isEmpty && !canvas.canUndo)
         canvas.redo()
-        precondition(canvas.document == completed)
+        precondition(canvas.document.strokes == [original], "First redo restores freehand")
+        canvas.redo()
+        precondition(canvas.document == completed, "Second redo restores the corrected shape")
         canvas.beginStroke(at: points[0])
         points.dropFirst().forEach { canvas.continueStroke(at: $0) }
         precondition(canvas.recognizeActiveShape())
         canvas.cancelStroke()
         precondition(canvas.document == completed && !canvas.isShapeSnapped)
+        canvas.undo()
+        precondition(canvas.document.strokes == [original], "Cancelled recognition must not add history")
+        canvas.redo()
+        canvas.beginStroke(at: points[0])
+        points.dropFirst().forEach { canvas.continueStroke(at: $0) }
+        canvas.endStroke(at: points.last!)
+        canvas.undo()
+        precondition(canvas.document == completed, "Ordinary strokes still need only one undo")
     }
 
 }

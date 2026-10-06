@@ -31,6 +31,7 @@ final class CanvasController: ObservableObject {
     private let pencil = PencilTool()
     private var documentBeforeErasing: CanvasDocument?
     private var documentAtStrokeStart: CanvasDocument?
+    private var strokeBeforeRecognition: Stroke?
     private var undoStack: [CanvasDocument] = []
     private var redoStack: [CanvasDocument] = []
     private let historyLimit = 30
@@ -51,9 +52,10 @@ final class CanvasController: ObservableObject {
 
     @discardableResult
     func recognizeActiveShape(adjustmentTolerance: Float = 2) -> Bool {
-        guard pencil.activeStroke != nil, !isShapeSnapped else { return false }
+        guard let original = pencil.activeStroke, !isShapeSnapped else { return false }
         objectWillChange.send()
         guard pencil.recognizeShape(adjustmentTolerance: adjustmentTolerance) else { return false }
+        strokeBeforeRecognition = original
         activeStrokeRevision &+= 1
         onNeedsDisplay?()
         return true
@@ -61,6 +63,7 @@ final class CanvasController: ObservableObject {
 
     func beginStroke(at sample: PointerSample) {
         objectWillChange.send()
+        strokeBeforeRecognition = nil
         documentAtStrokeStart = document
         if pencilStyle.instrument == .eraser && pencilStyle.eraserMode == .objects {
             documentBeforeErasing = document
@@ -90,6 +93,7 @@ final class CanvasController: ObservableObject {
             if let original = documentBeforeErasing { document = original }
             documentBeforeErasing = nil
             documentAtStrokeStart = nil
+            strokeBeforeRecognition = nil
             onNeedsDisplay?()
             return
         }
@@ -100,8 +104,15 @@ final class CanvasController: ObservableObject {
         if let before = documentAtStrokeStart,
            before.strokes.count != document.strokes.count {
             recordUndo(before)
+            if let original = strokeBeforeRecognition {
+                // Drawing and shape correction are separate committed edits.
+                var freehand = before
+                freehand.strokes.append(original)
+                recordUndo(freehand)
+            }
         }
         documentAtStrokeStart = nil
+        strokeBeforeRecognition = nil
         onNeedsDisplay?()
     }
 
@@ -112,6 +123,7 @@ final class CanvasController: ObservableObject {
         if let original = documentBeforeErasing { document = original }
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
+        strokeBeforeRecognition = nil
         onNeedsDisplay?()
     }
 
@@ -121,6 +133,7 @@ final class CanvasController: ObservableObject {
         activeStrokeRevision &+= 1
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
+        strokeBeforeRecognition = nil
         undoStack.removeAll()
         redoStack.removeAll()
         document = savedDocument
@@ -140,6 +153,7 @@ final class CanvasController: ObservableObject {
         activeStrokeRevision &+= 1
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
+        strokeBeforeRecognition = nil
         recordUndo(document)
         document.strokes.removeAll()
         onNeedsDisplay?()
@@ -153,6 +167,7 @@ final class CanvasController: ObservableObject {
         activeStrokeRevision &+= 1
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
+        strokeBeforeRecognition = nil
         redoStack.append(document)
         document = previous
         onNeedsDisplay?()
@@ -166,6 +181,7 @@ final class CanvasController: ObservableObject {
         activeStrokeRevision &+= 1
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
+        strokeBeforeRecognition = nil
         undoStack.append(document)
         document = next
         onNeedsDisplay?()
