@@ -1266,22 +1266,178 @@
       }
     },
     "Add colors" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add colors"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить цвета"
-          }
-        }
+  "extractionState": "manual",
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Add colors"
       }
     },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Добавить цвета"
+      }
+    },
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "إضافة ألوان"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Ajouter des couleurs"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Farben hinzufügen"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Aggiungi colori"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "色を追加"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "색상 추가"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Adicionar cores"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Adicionar cores"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "添加颜色"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Añadir colores"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Renk ekle"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "加入顏色"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Dodaj kolory"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Kleuren toevoegen"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Lägg till färger"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tilføj farver"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Legg til farger"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Lisää värejä"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tambah warna"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Thêm màu"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "เพิ่มสี"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Додати кольори"
+      }
+    },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Přidat barvy"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Színek hozzáadása"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Προσθήκη χρωμάτων"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "הוספת צבעים"
+      }
+    }
+  }
+},
     "Add darker accents without lightening existing dark details. Each RGB channel keeps the darker value. Useful for reinforcing linework or shading; repeated identical opaque passes stop changing the result." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -21608,22 +21764,178 @@
       }
     },
     "Palette" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Palette"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Палитра"
-          }
-        }
+  "extractionState": "manual",
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Palette"
       }
     },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Палитра"
+      }
+    },
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "لوحة الألوان"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Palette"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Palette"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tavolozza"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "パレット"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "팔레트"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paleta"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paleta"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "调色板"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paleta"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Palet"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "調色盤"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paleta"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Palet"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Palett"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Palet"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Palett"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paletti"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Palet"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Bảng màu"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "จานสี"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Палітра"
+      }
+    },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paleta"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paletta"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Παλέτα"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "פלטת צבעים"
+      }
+    }
+  }
+},
     "Pen" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -31542,22 +31854,178 @@
       }
     },
     "Tap to add more colors" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap to add more colors"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нажмите, чтобы добавить цвета"
-          }
-        }
+  "extractionState": "manual",
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tap to add more colors"
       }
     },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Нажмите, чтобы добавить цвета"
+      }
+    },
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "اضغط لإضافة المزيد من الألوان"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Touchez pour ajouter des couleurs"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tippen, um weitere Farben hinzuzufügen"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tocca per aggiungere altri colori"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "タップして色を追加"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "탭하여 색상 더 추가"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Toque para adicionar mais cores"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Toque para adicionar mais cores"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "轻点以添加更多颜色"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Toca para añadir más colores"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Daha fazla renk eklemek için dokunun"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "點一下以加入更多顏色"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Stuknij, aby dodać więcej kolorów"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tik om meer kleuren toe te voegen"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tryck för att lägga till fler färger"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tryk for at tilføje flere farver"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Trykk for å legge til flere farger"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Lisää värejä napauttamalla"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Ketuk untuk menambahkan warna lainnya"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Chạm để thêm màu"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "แตะเพื่อเพิ่มสีเพิ่มเติม"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Торкніться, щоб додати більше кольорів"
+      }
+    },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Klepnutím přidáte další barvy"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Koppintson további színek hozzáadásához"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Αγγίξτε για να προσθέσετε περισσότερα χρώματα"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "יש להקיש כדי להוסיף צבעים נוספים"
+      }
+    }
+  }
+},
     "The app contains no advertising, third-party analytics, or tracking SDKs, and does not send usage analytics to the developer. Apple may separately process App Store, purchase, or diagnostic information under its own privacy settings and policies." : {
       "comment" : "Privacy policy, paragraph 6 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",

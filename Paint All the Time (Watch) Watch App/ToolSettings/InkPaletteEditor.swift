@@ -4,10 +4,35 @@ struct InkPalette: Codable {
     var customColors: [InkPreset] = []
     var selectedIDs: [String] = InkPreset.all.map(\.id)
 
-    var allColors: [InkPreset] { InkPreset.all + customColors }
+    // Optional fields keep palettes saved before editing was introduced readable.
+    var orderedIDs: [String]?
+    var deletedIDs: [String]?
+
+    var allColors: [InkPreset] {
+        let available = (InkPreset.all + customColors).filter { !(deletedIDs ?? []).contains($0.id) }
+        let ordered = (orderedIDs ?? []).compactMap { id in available.first { $0.id == id } }
+        return ordered + available.filter { !(orderedIDs ?? []).contains($0.id) }
+    }
+
+    mutating func delete(_ id: String) {
+        guard allColors.count > 1 else { return }
+        deletedIDs = (deletedIDs ?? []) + [id]
+        customColors.removeAll { $0.id == id }
+        orderedIDs?.removeAll { $0 == id }
+        selectedIDs.removeAll { $0 == id }
+        if selectedIDs.isEmpty, let first = allColors.first { selectedIDs = [first.id] }
+    }
+
+    mutating func move(_ id: String, to target: String) {
+        var ids = allColors.map(\.id)
+        guard let from = ids.firstIndex(of: id), let to = ids.firstIndex(of: target), from != to else { return }
+        ids.remove(at: from)
+        ids.insert(id, at: to)
+        orderedIDs = ids
+    }
     var selectedColors: [InkPreset] {
         let selected = allColors.filter { selectedIDs.contains($0.id) }
-        return selected.isEmpty ? [InkPreset.all[0]] : selected
+        return selected.isEmpty ? [allColors.first ?? InkPreset.all[0]] : selected
     }
 
     static func decode(_ data: Data) -> InkPalette {
@@ -28,6 +53,11 @@ struct InkPaletteEditor: View {
     @State var palette: InkPalette
     let onSave: (InkPalette) -> Void
     @State private var showsColorEditor = false
+    @State private var isEditing = false
+    @State private var draggedID: String?
+    @State private var dragOffset = CGSize.zero
+    @State private var swatchFrames: [String: CGRect] = [:]
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         NavigationStack {
@@ -38,6 +68,7 @@ struct InkPaletteEditor: View {
                         ForEach(palette.allColors) { preset in
                             let selected = palette.selectedIDs.contains(preset.id)
                             Button {
+                                guard !isEditing else { return }
                                 if selected {
                                     palette.selectedIDs.removeAll { $0 == preset.id }
                                 } else {
@@ -60,7 +91,37 @@ struct InkPaletteEditor: View {
                                     .contentShape(Circle())
                             }
                             .buttonStyle(.plain)
-                            .disabled(selected && palette.selectedIDs.count == 1)
+                            .disabled(!isEditing && selected && palette.selectedIDs.count == 1)
+                            .overlay(alignment: .topLeading) {
+                                if isEditing {
+                                    Button {
+                                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                                            palette.delete(preset.id)
+                                        }
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .symbolRenderingMode(.palette)
+                                            .foregroundStyle(.black, .gray)
+                                            .frame(width: 28, height: 28)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                    .offset(x: -5, y: -5)
+                                    .disabled(palette.allColors.count == 1)
+                                    .accessibilityLabel(L10n.text("Delete") + " " + preset.name)
+                                }
+                            }
+                            .background {
+                                GeometryReader { geometry in
+                                    Color.clear.preference(key: PaletteSwatchFramesKey.self,
+                                        value: [preset.id: geometry.frame(in: .named("paletteGrid"))])
+                                }
+                            }
+                            .offset(draggedID == preset.id ? dragOffset : .zero)
+                            .scaleEffect(draggedID == preset.id && !reduceMotion ? 1.08 : 1)
+                            .zIndex(draggedID == preset.id ? 1 : 0)
+                            .highPriorityGesture(swatchDrag(preset.id), including: isEditing ? .all : .none)
                             .accessibilityLabel(preset.name)
                             .accessibilityValue(L10n.text(selected ? "Selected" : "Not selected"))
                             .accessibilityAddTraits(selected ? [.isSelected] : [])
@@ -78,14 +139,23 @@ struct InkPaletteEditor: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.bottom, 12)
+                .coordinateSpace(name: "paletteGrid")
+                .onPreferenceChange(PaletteSwatchFramesKey.self) { swatchFrames = $0 }
+                .contentShape(Rectangle())
+                .onLongPressGesture(minimumDuration: 0.5) { isEditing = true }
+                .accessibilityAction(named: Text(L10n.text("Edit"))) { isEditing = true }
             }
+            .scrollDisabled(draggedID != nil)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: { Image(systemName: "xmark") }
                         .accessibilityLabel(L10n.text("Cancel"))
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button { onSave(palette); dismiss() } label: { Image(systemName: "checkmark") }
+                    Button {
+                        if isEditing { isEditing = false }
+                        else { onSave(palette); dismiss() }
+                    } label: { Image(systemName: "checkmark") }
                         .accessibilityLabel(L10n.text("Done"))
                 }
             }
@@ -100,6 +170,29 @@ struct InkPaletteEditor: View {
                 }
             }
         }
+    }
+    private func swatchDrag(_ id: String) -> some Gesture {
+        DragGesture(minimumDistance: 8, coordinateSpace: .named("paletteGrid"))
+            .onChanged { value in
+                guard isEditing else { return }
+                draggedID = id
+                dragOffset = value.translation
+            }
+            .onEnded { value in
+                defer { draggedID = nil; dragOffset = .zero }
+                guard isEditing,
+                      let target = swatchFrames.first(where: { $0.value.contains(value.location) })?.key else { return }
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                    palette.move(id, to: target)
+                }
+            }
+    }
+}
+
+private struct PaletteSwatchFramesKey: PreferenceKey {
+    static let defaultValue: [String: CGRect] = [:]
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, new in new })
     }
 }
 
