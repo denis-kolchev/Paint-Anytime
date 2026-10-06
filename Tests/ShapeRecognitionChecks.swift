@@ -41,9 +41,54 @@ struct ShapeRecognitionChecks {
         expect(polyline([SIMD2(20, 75), SIMD2(50, 15), SIMD2(80, 75), SIMD2(20, 75)]), .triangle)
         let arrow = polyline([SIMD2(10, 50), SIMD2(90, 50), SIMD2(70, 35), SIMD2(90, 50), SIMD2(70, 65)])
         expect(arrow, .arrow)
+        expect(Array(circle.prefix(50)), .arc)
+        expect(polyline([SIMD2(10,20), SIMD2(90,30), SIMD2(70,80), SIMD2(30,70), SIMD2(10,20)]), .quadrilateral)
+        func loop(_ p: [SIMD2<Float>]) -> [SIMD2<Float>] { polyline(p + [p[0]]) }
+        var additions: [(ShapeRecognizer.Kind, [SIMD2<Float>])] = []
+        for n in 5...12 {
+            let vertices = (0..<n).map { i -> SIMD2<Float> in
+                let t = Float(i) * 2 * .pi / Float(n)
+                return SIMD2(60 + 40*cos(t), 60 + 40*sin(t))
+            }
+            additions.append((n == 5 ? .pentagon : n == 6 ? .hexagon : .regularPolygon, loop(vertices)))
+        }
+        let star = (0..<10).map { i -> SIMD2<Float> in
+            let t = Float(i) * .pi / 5
+            let r: Float = i.isMultiple(of: 2) ? 40 : 20
+            return SIMD2(60 + r*cos(t), 60 + r*sin(t))
+        }
+        additions.append((.star, loop(star)))
+        let heart = (0...100).map { i -> SIMD2<Float> in
+            let t = Float(i) * 2 * .pi / 100
+            return SIMD2(60 + 40 * pow(sin(t), 3), 60 - 2.5 * (13*cos(t)-5*cos(2*t)-2*cos(3*t)-cos(4*t)))
+        }
+        additions.append((.heart, heart))
+        let cloud = (0...120).map { i -> SIMD2<Float> in
+            let t = Float(i) * 2 * .pi / 120
+            let r: Float = 30 * (1 + 0.14*cos(6*t))
+            return SIMD2(60 + 1.4*r*cos(t), 60 + r*sin(t))
+        }
+        additions.append((.cloud, cloud))
+        additions.append((.blockArrow, loop([SIMD2(10,40), SIMD2(70,40), SIMD2(70,20), SIMD2(110,55), SIMD2(70,90), SIMD2(70,70), SIMD2(10,70)])))
+        additions.append((.speechBubble, loop([SIMD2(10,10), SIMD2(110,10), SIMD2(110,70), SIMD2(70,70), SIMD2(35,95), SIMD2(40,70), SIMD2(10,70)])))
+        let shaft = (0...60).map { i -> SIMD2<Float> in
+            let t = Float(i) * .pi / 2 / 60
+            return SIMD2(20 + 60*sin(t), 20 + 60*(1-cos(t)))
+        }
+        let curved = shaft + polyline([SIMD2(80,80), SIMD2(65,60), SIMD2(80,80), SIMD2(95,60)]).dropFirst()
+        additions.append((.curvedArrow, Array(curved)))
+        for (kind, points) in additions {
+            expect(points, kind)
+            if kind != .curvedArrow { expect(Array(points.reversed()), kind) }
+            let transformed = points.enumerated().map { i, p -> SIMD2<Float> in
+                let noise = sin(Float(i)*1.7) * 0.25
+                return SIMD2(120 + 0.9*p.x - 0.6*p.y + noise, 40 + 0.6*p.x + 0.9*p.y - noise)
+            }
+            expect(transformed, kind)
+        }
         let rejected = [
             [SIMD2<Float>(10, 10), SIMD2(10.2, 10), SIMD2(10.1, 10.1)],
-            Array(circle.prefix(50)),
+
             polyline([SIMD2(10, 10), SIMD2(80, 80), SIMD2(10, 80), SIMD2(80, 10), SIMD2(10, 10)]),
             polyline([SIMD2(10, 10), SIMD2(80, 10), SIMD2(10, 10), SIMD2(80, 10)]),
             [SIMD2<Float>(0, 0), SIMD2(.nan, 20), SIMD2(50, 50)]

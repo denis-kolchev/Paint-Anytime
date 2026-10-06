@@ -3,7 +3,8 @@ import simd
 
 /// Geometry-only recognition; does not depend on brush width, color or rendering.
 nonisolated enum ShapeRecognizer {
-    enum Kind: String { case line, circle, ellipse, rectangle, square, triangle, arrow }
+    enum Kind: String { case line, arc, circle, ellipse, rectangle, square, triangle, quadrilateral
+        case pentagon, hexagon, regularPolygon, arrow, curvedArrow, blockArrow, cloud, star, heart, speechBubble }
     struct Result {
         let kind: Kind
         let confidence: Float
@@ -42,6 +43,8 @@ nonisolated enum ShapeRecognizer {
                     candidates.append(Candidate(kind: .line, error: error, points: [start, end], anchor: start))
                 }
             }
+            if let arc = arc(points, diagonal: diagonal) { candidates.append(arc) }
+            if let curved = curvedArrow(raw, diagonal: diagonal) { candidates.append(curved) }
             if let arrow = arrow(raw.count > 256 ? resample(raw, count: 256) : raw, diagonal: diagonal) { candidates.append(arrow) }
         } else {
             // Explicit closure removes a small hand-drawn seam for polygon fitting.
@@ -49,11 +52,13 @@ nonisolated enum ShapeRecognizer {
             ring[ring.count - 1] = ring[0]
             if let polygon = polygon(ring, diagonal: diagonal) { candidates.append(polygon) }
             if let ellipse = ellipse(points, diagonal: diagonal) { candidates.append(ellipse) }
+            candidates += templateCandidates(raw + (raw.last! == raw[0] ? [] : [raw[0]]), diagonal: diagonal)
         }
         let sorted = candidates.sorted { $0.error < $1.error }
         guard let best = sorted.first, best.error < 0.045 else { return nil }
         // Ambiguous curves are preferable to an incorrect snap.
-        if sorted.count > 1, sorted[1].error - best.error < 0.008 { return nil }
+        if let other = sorted.dropFirst().first(where: { $0.kind != best.kind }),
+           other.error - best.error < 0.002 { return nil }
         return Result(kind: best.kind, confidence: max(0, 1 - best.error * 4),
                       points: best.points, anchor: best.anchor)
     }
@@ -128,11 +133,12 @@ nonisolated enum ShapeRecognizer {
         let center = corners.reduce(SIMD2<Float>.zero, +) / Float(corners.count)
         var kind: Kind = .triangle
         if corners.count == 4 {
-            for i in corners.indices {
+            let rectangular = corners.indices.allSatisfy { i in
                 let a = simd_normalize(corners[(i + 1) % 4] - corners[i])
                 let b = simd_normalize(corners[(i + 2) % 4] - corners[(i + 1) % 4])
-                guard abs(simd_dot(a, b)) < 0.3 else { return nil }
+                return abs(simd_dot(a, b)) < 0.3
             }
+            if rectangular {
             let axis = simd_normalize((corners[1] - corners[0]) + (corners[2] - corners[3]))
             let normal = SIMD2<Float>(-axis.y, axis.x)
             let local = corners.map { SIMD2(simd_dot($0 - center, axis), simd_dot($0 - center, normal)) }
@@ -143,6 +149,7 @@ nonisolated enum ShapeRecognizer {
             corners = local.map { center + axis * ($0.x >= 0 ? radius.x : -radius.x)
                                         + normal * ($0.y >= 0 ? radius.y : -radius.y) }
             kind = square ? .square : .rectangle
+            } else { kind = .quadrilateral }
         }
         let ideal = corners + [corners[0]]
         let error = fitError(ring, polyline: ideal)
@@ -178,6 +185,150 @@ nonisolated enum ShapeRecognizer {
         guard error.maximum < diagonal * 0.09 else { return nil }
         return Candidate(kind: .arrow, error: error.rms / diagonal, points: ideal, anchor: start)
     }
+
+
+    /// Fit an open circular arc, preserving direction and rejecting reversals.
+    private static func arc(_ p: [SIMD2<Float>], diagonal: Float) -> Candidate? {
+        let a = p[0], b = p[p.count / 2], c = p[p.count - 1]
+        let u = b - a, v = c - a
+        let determinant = 2 * (u.x * v.y - u.y * v.x)
+        guard abs(determinant) > diagonal * diagonal * 0.04 else { return nil }
+        let uu = simd_length_squared(u), vv = simd_length_squared(v)
+        let center = a + SIMD2((v.y * uu - u.y * vv) / determinant,
+                              (u.x * vv - v.x * uu) / determinant)
+        let radius = simd_distance(a, center)
+        let errors = p.map { abs(simd_distance($0, center) - radius) }
+        var sweep: Float = 0, total: Float = 0
+        for (a, b) in zip(p, p.dropFirst()) {
+            let x = a - center, y = b - center
+            let turn = atan2(x.x * y.y - x.y * y.x, simd_dot(x, y))
+            sweep += turn; total += abs(turn)
+        }
+        guard abs(sweep) > 0.45, abs(sweep) < 5.5, total < abs(sweep) + 0.2,
+              (errors.max() ?? 0) < diagonal * 0.065,
+              rms(errors) < diagonal * 0.025 else { return nil }
+        let initial = atan2(a.y - center.y, a.x - center.x)
+        let ideal = (0...80).map { i -> SIMD2<Float> in
+            let t = initial + sweep * Float(i) / 80
+            return center + SIMD2(cos(t), sin(t)) * radius
+        }
+        return Candidate(kind: .arc, error: rms(errors) / diagonal, points: ideal, anchor: a)
+    }
+
+    private static func curvedArrow(_ p: [SIMD2<Float>], diagonal: Float) -> Candidate? {
+        let vertices = simplify(p, tolerance: max(1, diagonal * 0.025))
+        guard vertices.count >= 6 else { return nil }
+        let tip = vertices[vertices.count - 4]
+        guard let index = p.indices.first(where: { simd_distance(p[$0], tip) < 0.01 }), index >= 3,
+              let shaft = arc(resample(Array(p[...index]), count: 80), diagonal: diagonal) else { return nil }
+        let tangent = simd_normalize(shaft.points.last! - shaft.points[shaft.points.count - 3])
+        let length = pathLength(shaft.points)
+        let fakeStart = tip - tangent * length
+        let head = [fakeStart] + Array(vertices.suffix(4))
+        guard let fitted = arrow(head, diagonal: length) else { return nil }
+        let ideal = shaft.points + fitted.points.dropFirst(2)
+        let error = fitError(p, polyline: Array(ideal))
+        guard error.maximum < diagonal * 0.075 else { return nil }
+        return Candidate(kind: .curvedArrow, error: error.rms / diagonal,
+                         points: Array(ideal), anchor: p[0])
+    }
+
+    /// Closed outlines are matched in stroke order, in both directions and at
+    /// every seam. A similarity fit allows translation, rotation and uniform scale.
+    /// Ordered distance prevents a scribble crossing a template from snapping.
+    private static func templateCandidates(_ ring: [SIMD2<Float>], diagonal: Float) -> [Candidate] {
+        let count = 64
+        let input = Array(resample(ring, count: count + 1).dropLast())
+        let center = input.reduce(.zero, +) / Float(count)
+        let centered = input.map { $0 - center }
+        var results: [Candidate] = []
+        let split = ring.indices.max { simd_distance(ring[$0], ring[0]) < simd_distance(ring[$1], ring[0]) } ?? 0
+        var vertices = Array(simplify(Array(ring[...split]), tolerance: diagonal * 0.009).dropLast())
+            + Array(simplify(Array(ring[split...]), tolerance: diagonal * 0.009).dropLast())
+        var removed = true
+        while removed && vertices.count > 3 {
+            removed = false
+            for i in vertices.indices {
+                let previous = vertices[(i + vertices.count - 1) % vertices.count]
+                let next = vertices[(i + 1) % vertices.count]
+                if distance(vertices[i], previous, next) < diagonal * 0.009 {
+                    vertices.remove(at: i)
+                    removed = true
+                    break
+                }
+            }
+        }
+        for (kind, outline) in outlines {
+            if [.pentagon, .hexagon, .regularPolygon].contains(kind), vertices.count != outline.count - 1 { continue }
+            let template = Array(resample(outline, count: count + 1).dropLast())
+            let mean = template.reduce(SIMD2<Float>.zero, +) / Float(count)
+            let base = template.map { $0 - mean }
+            let energy = base.reduce(Float(0)) { $0 + simd_length_squared($1) }
+            var best: Candidate?
+            for direction in [-1, 1] {
+                for offset in 0..<count {
+                    let ordered = (0..<count).map { base[(offset + direction * $0 + count) % count] }
+                    var dot: Float = 0, cross: Float = 0
+                    for (a, b) in zip(ordered, centered) {
+                        dot += simd_dot(a, b); cross += a.x * b.y - a.y * b.x
+                    }
+                    let x = dot / energy, y = cross / energy
+                    var ideal = ordered.map { center + SIMD2(x * $0.x - y * $0.y, y * $0.x + x * $0.y) }
+                    let errors = zip(input, ideal).map { simd_distance($0, $1) }
+                    let error = rms(errors) / diagonal
+                    guard error < 0.035, (errors.max() ?? 0) < diagonal * 0.085,
+                          best == nil || error < best!.error else { continue }
+                    ideal.append(ideal[0])
+                    best = Candidate(kind: kind, error: error, points: ideal, anchor: center)
+                }
+            }
+            if let best { results.append(best) }
+        }
+        return results
+    }
+
+    private static let outlines: [(Kind, [SIMD2<Float>])] = {
+        var result: [(Kind, [SIMD2<Float>])] = []
+        func closed(_ kind: Kind, _ p: [SIMD2<Float>]) { result.append((kind, p + [p[0]])) }
+        // Beyond twelve sides small watch strokes are indistinguishable from circles.
+        for n in 5...12 {
+            let p = (0..<n).map { i -> SIMD2<Float> in
+                let t = Float(i) * 2 * .pi / Float(n)
+                return SIMD2(cos(t), sin(t))
+            }
+            closed(n == 5 ? .pentagon : n == 6 ? .hexagon : .regularPolygon, p)
+        }
+        for inner: Float in [0.4, 0.5, 0.6] {
+            closed(.star, (0..<10).map { i in
+                let t = Float(i) * .pi / 5 - .pi / 2
+                return SIMD2(cos(t), sin(t)) * (i.isMultiple(of: 2) ? 1 : inner)
+            })
+        }
+        closed(.heart, (0..<128).map { i in
+            let t = Float(i) * 2 * .pi / 128
+            let x = 16 * pow(sin(t), 3)
+            let y = -(13 * cos(t) - 5 * cos(2*t) - 2 * cos(3*t) - cos(4*t))
+            return SIMD2(x / 16, y / 16)
+        })
+        for lobes in [5, 6, 7, 8] {
+            closed(.cloud, (0..<160).map { i in
+                let t = Float(i) * 2 * .pi / 160
+                let r: Float = 1 + 0.14 * cos(Float(lobes) * t)
+                return SIMD2(cos(t) * r * 1.4, sin(t) * r)
+            })
+        }
+        closed(.blockArrow, [SIMD2(-1,-0.3), SIMD2(0.2,-0.3), SIMD2(0.2,-0.7),
+                             SIMD2(1,0), SIMD2(0.2,0.7), SIMD2(0.2,0.3), SIMD2(-1,0.3)])
+        closed(.speechBubble, [SIMD2(-1,-0.7), SIMD2(1,-0.7), SIMD2(1,0.5),
+                               SIMD2(0.2,0.5), SIMD2(-0.5,1), SIMD2(-0.4,0.5), SIMD2(-1,0.5)])
+        var bubble = (0...100).map { i -> SIMD2<Float> in
+            let t = Float(i) * (2 * .pi - 0.4) / 100 + 1.1
+            return SIMD2(cos(t) * 1.4, sin(t))
+        }
+        bubble.append(SIMD2(0.1,1.65))
+        closed(.speechBubble, bubble)
+        return result
+    }()
 
     private static func fitError(_ p: [SIMD2<Float>], polyline: [SIMD2<Float>]) -> (rms: Float, maximum: Float) {
         let errors = p.map { point in
