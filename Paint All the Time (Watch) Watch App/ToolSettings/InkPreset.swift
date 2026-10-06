@@ -4,7 +4,17 @@ struct InkPreset: Codable, Identifiable {
     var id: String { customID ?? nameKey }
     var customID: String? = nil
     let nameKey: String
-    var name: String { L10n.text(nameKey) }
+    var name: String { L10n.text(resolvedNameKey) }
+
+    // Legacy custom colors stored their HEX as the name. Built-in names stay intact.
+    var resolvedNameKey: String {
+        guard customID != nil else { return nameKey }
+        return NamedInkColors.name(forHex: nameKey) ?? nameKey
+    }
+
+    var resolvingColorName: InkPreset {
+        InkPreset(customID: customID, nameKey: resolvedNameKey, rgba: rgba)
+    }
     let rgba: SIMD4<Float>
 
     var color: Color {

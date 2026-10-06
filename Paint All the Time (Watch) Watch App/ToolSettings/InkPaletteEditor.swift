@@ -43,6 +43,7 @@ struct InkPalette: Codable {
             return values.allSatisfy { $0.isFinite && (0...1).contains($0) }
                 && knownIDs.insert(preset.id).inserted
         }
+        palette.customColors = palette.customColors.map(\.resolvingColorName)
         palette.selectedIDs = palette.selectedColors.map(\.id)
         return palette
     }
@@ -213,6 +214,7 @@ private struct CustomInkEditor: View {
     private var hex: String {
         String(format: "#%02X%02X%02X", Int(values[0]), Int(values[1]), Int(values[2]))
     }
+    private var colorName: String { NamedInkColors.name(forHex: hex) ?? hex }
     private var channelValue: Binding<Double> {
         Binding { values[selectedChannel] } set: { value in
             values[selectedChannel] = min(255, max(0, value.rounded()))
@@ -252,7 +254,7 @@ private struct CustomInkEditor: View {
                 }
                 .frame(maxHeight: .infinity)
             }
-            Text(hex)
+            Text(colorName)
                 .font(.caption.monospaced())
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
@@ -272,7 +274,7 @@ private struct CustomInkEditor: View {
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
-                    onSave(InkPreset(customID: UUID().uuidString, nameKey: hex,
+                    onSave(InkPreset(customID: UUID().uuidString, nameKey: colorName,
                                      rgba: SIMD4(Float(values[0] / 255), Float(values[1] / 255),
                                                  Float(values[2] / 255), 1)))
                     dismiss()
