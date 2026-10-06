@@ -9,6 +9,8 @@ struct ToolColorPicker: View {
     let isEnabled: Bool
     var extendsBeyondViewport = false
     var showsNavigationHints = true
+    var includesAddButton = false
+    private var itemCount: Int { presets.count + (includesAddButton ? 1 : 0) }
     let onSelect: (Int) -> Void
 
     private var rowHeight: CGFloat { 30 }
@@ -27,12 +29,17 @@ struct ToolColorPicker: View {
                 ScrollViewReader { proxy in
                 ScrollView(.vertical) {
                     VStack(spacing: 3) {
-                        ForEach(presets.indices, id: \.self) { index in
+                        ForEach(0..<itemCount, id: \.self) { index in
                             Button {
                                 onSelect(index)
                             } label: {
                                 Circle()
-                                    .fill(presets[index].color)
+                                    .fill(index < presets.count ? presets[index].color : .gray)
+                                    .overlay {
+                                        if index == presets.count {
+                                            Image(systemName: "plus").font(.system(size: 14, weight: .bold)).foregroundStyle(.black)
+                                        }
+                                    }
                                     .frame(width: swatchSize, height: swatchSize)
                                     .overlay { Circle().strokeBorder(.gray.opacity(0.5), lineWidth: 1) }
                                     .padding(3)
@@ -44,7 +51,7 @@ struct ToolColorPicker: View {
                             }
                             .buttonStyle(.borderless)
                             .disabled(!isEnabled)
-                            .accessibilityLabel(presets[index].name)
+                            .accessibilityLabel(index < presets.count ? presets[index].name : L10n.text("Add colors"))
                             .accessibilityAddTraits(colorIndex == index ? [.isSelected] : [])
                             .id(index)
                         }
@@ -78,13 +85,13 @@ struct ToolColorPicker: View {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.secondary)
-                    .opacity(colorIndex < presets.count - 1 ? 1 : 0.25)
+                    .opacity(colorIndex < itemCount - 1 ? 1 : 0.25)
                     .accessibilityHidden(true)
 
-                Text("\(colorIndex + 1)/\(presets.count)")
+                Text("\(colorIndex + 1)/\(itemCount)")
                     .font(.system(size: 9).monospacedDigit())
                     .foregroundStyle(.secondary)
-                    .accessibilityLabel(L10n.format("Color %d of %d", colorIndex + 1, presets.count))
+                    .accessibilityLabel(L10n.format("Color %d of %d", colorIndex + 1, itemCount))
             }
         }
     }

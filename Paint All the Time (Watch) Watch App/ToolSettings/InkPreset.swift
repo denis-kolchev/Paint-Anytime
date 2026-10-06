@@ -1,6 +1,8 @@
 import SwiftUI
 
-struct InkPreset {
+struct InkPreset: Codable, Identifiable {
+    var id: String { customID ?? nameKey }
+    var customID: String? = nil
     let nameKey: String
     var name: String { L10n.text(nameKey) }
     let rgba: SIMD4<Float>

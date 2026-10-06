@@ -6,6 +6,21 @@ struct WatchToolSettingsView: View {
     @ObservedObject var tutorial = TutorialSession.inactive
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @State private var showsInformation = false
+    @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
+    @State private var showsPalette = false
+    @State private var selectsAddColor = false
+
+    private var palette: InkPalette { InkPalette.decode(paletteData) }
+    private var isAddingColor: Bool { !tutorial.isActive && selectsAddColor }
+
+    private func selectColor(_ index: Int) {
+        if !tutorial.isActive && index == colors.count {
+            selectsAddColor = true
+        } else if colors.indices.contains(index) {
+            selectsAddColor = false
+            controller.pencilStyle.color = colors[index].rgba
+        }
+    }
     @State private var strokePreviewHeight: CGFloat = 0
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -36,7 +51,7 @@ struct WatchToolSettingsView: View {
         nonmutating set { selectedPage = newValue.rawValue }
     }
 
-    private var colors: [InkPreset] { tutorial.isActive ? InkPreset.all.filter { $0.nameKey != "White" } : InkPreset.all }
+    private var colors: [InkPreset] { tutorial.isActive ? InkPreset.all.filter { $0.nameKey != "White" } : palette.selectedColors }
 
     private var isEraser: Bool { controller.pencilStyle.instrument == .eraser }
     private var instruments: [DrawingInstrument] { DrawingInstrument.displayOrder }
@@ -54,7 +69,7 @@ struct WatchToolSettingsView: View {
         switch selection {
         case .opacity: "\(Int((controller.pencilStyle.effectiveOpacity * 100).rounded()))%"
         case .width: L10n.format("%d pt", Int(controller.pencilStyle.width))
-        case .color: colors[colorIndex].name
+        case .color: isAddingColor ? L10n.text("Add colors") : colors[colorIndex].name
         case .instrument: controller.pencilStyle.instrument.title
         case .mode: controller.pencilStyle.eraserMode.title
         case .direction: "\(Int(controller.pencilStyle.reedAngle))°"
@@ -65,7 +80,7 @@ struct WatchToolSettingsView: View {
         switch selection {
         case .opacity: 100
         case .width: Double(controller.maximumWidth)
-        case .color: Double(colors.count - 1)
+        case .color: Double(colors.count - (tutorial.isActive ? 1 : 0))
         case .instrument: Double(instruments.count - 1)
         case .mode: 1
         case .direction: 90
@@ -73,7 +88,8 @@ struct WatchToolSettingsView: View {
     }
 
     private var colorIndex: Int {
-        colors.firstIndex { $0.rgba == controller.pencilStyle.color } ?? 0
+        if isAddingColor { return colors.count }
+        return colors.firstIndex { $0.rgba == controller.pencilStyle.color } ?? 0
     }
 
     // One focused Crown target; changing the page changes what it edits.
@@ -88,7 +104,7 @@ struct WatchToolSettingsView: View {
             case .direction: Double(controller.pencilStyle.reedAngle)
             }
         } set: { value in
-            guard !showsInformation, tutorial.allowsToolAdjustment(page: selection.rawValue) else { return }
+            guard !showsInformation, !showsPalette, tutorial.allowsToolAdjustment(page: selection.rawValue) else { return }
             tutorial.activity()
             if selection == .instrument {
                 let index = min(instruments.count - 1, max(0, Int(value.rounded())))
@@ -106,8 +122,8 @@ struct WatchToolSettingsView: View {
             case .direction:
                 style.reedAngle = Float(min(90, max(-90, (value / 5).rounded() * 5)))
             case .color:
-                let index = min(colors.count - 1, max(0, Int(value.rounded())))
-                style.color = colors[index].rgba
+                selectColor(min(Int(crownMaximum), max(0, Int(value.rounded()))))
+                return
             case .instrument:
                 break
             }
@@ -135,6 +151,30 @@ struct WatchToolSettingsView: View {
                 HStack(spacing: panelSpacing) {
                     VStack(spacing: 6) {
                         ToolStrokePreview(style: controller.pencilStyle)
+                            .overlay {
+                                if selection == .color && isAddingColor {
+                                    Button {
+                                        crownFocused = false
+                                        showsPalette = true
+                                    } label: {
+                                        VStack(spacing: 8) {
+                                            Image(systemName: "plus.circle.fill")
+                                                .font(.system(size: 30))
+                                            Text(L10n.text("Tap to add more colors"))
+                                                .font(.headline)
+                                                .multilineTextAlignment(.center)
+                                        }
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                        .background(.black.opacity(0.85))
+
+                                    }
+                                    .buttonStyle(.plain)
+                                    .transition(.opacity)
+                                }
+                            }
+                            .clipShape(ToolStrokePreview.viewportShape)
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.25),
+                                       value: selection == .color && isAddingColor)
                             .background {
                                 GeometryReader { previewGeometry in
                                     Color.clear.preference(key: StrokePreviewHeightKey.self,
@@ -171,10 +211,11 @@ struct WatchToolSettingsView: View {
                             ToolColorPicker(presets: colors, colorIndex: colorIndex, isActive: selection == .color,
                                             isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue),
                                             extendsBeyondViewport: tutorial.isActive,
-                                                 showsNavigationHints: !tutorial.isActive) { index in
+                                            showsNavigationHints: !tutorial.isActive,
+                                            includesAddButton: !tutorial.isActive) { index in
                                 guard tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue) else { return }
                                 tutorial.activity()
-                                controller.pencilStyle.color = colors[index].rgba
+                                selectColor(index)
                                 crownFocused = true
                             }
                                 .frame(width: 40)
@@ -279,7 +320,7 @@ struct WatchToolSettingsView: View {
         .onPreferenceChange(StrokePreviewHeightKey.self) { strokePreviewHeight = $0 }
         .environment(\.colorScheme, .dark)
         .contentShape(Rectangle())
-        .focusable(!showsInformation && tutorial.allowsToolAdjustment(page: selection.rawValue))
+        .focusable(!showsInformation && !showsPalette && tutorial.allowsToolAdjustment(page: selection.rawValue))
         .focused($crownFocused)
         .digitalCrownRotation(
             detent: crownValue,
@@ -310,7 +351,7 @@ struct WatchToolSettingsView: View {
         .simultaneousGesture(
             DragGesture(minimumDistance: 20)
                 .onEnded { value in
-                    guard !showsInformation else { return }
+                    guard !showsInformation, !showsPalette else { return }
                     guard abs(value.translation.width) > abs(value.translation.height) else { return }
                     guard let current = availableSettings.firstIndex(of: selection) else { return }
                     // Match the carousel’s mirrored order in Arabic and Hebrew.
@@ -337,6 +378,17 @@ struct WatchToolSettingsView: View {
                     .accessibilityLabel(L10n.text("Information"))
                 }
             }
+        }
+        .fullScreenCover(isPresented: $showsPalette, onDismiss: { crownFocused = true }) {
+            InkPaletteEditor(palette: palette) { updated in
+                if let data = try? JSONEncoder().encode(updated) { paletteData = data }
+                if !updated.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
+                   let first = updated.selectedColors.first {
+                    controller.pencilStyle.color = first.rgba
+                }
+                selectsAddColor = false
+            }
+            .environment(\.colorScheme, .dark)
         }
         .fullScreenCover(isPresented: $showsInformation, onDismiss: {
             tutorial.record(.closedInfo)

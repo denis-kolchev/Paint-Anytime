@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ToolStrokePreview: View {
+    static let viewportShape = RoundedRectangle(cornerRadius: 16)
+
     let style: PencilStyle
     @Environment(\.displayScale) private var displayScale
     @State private var bitmap: CGImage?
@@ -21,8 +23,8 @@ struct ToolStrokePreview: View {
                 }
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .background(Color(white: 0.88), in: RoundedRectangle(cornerRadius: 16))
+        .clipShape(Self.viewportShape)
+        .background(Color(white: 0.88), in: Self.viewportShape)
         .accessibilityLabel(L10n.text("Stroke preview"))
     }
 
