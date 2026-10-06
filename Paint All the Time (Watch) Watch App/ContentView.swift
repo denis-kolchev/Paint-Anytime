@@ -35,10 +35,10 @@ struct ContentView: View {
                 if usesMorphToolbar && isActive && !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
                     let canvasFrame = geometry.frame(in: .global)
                     let buttonFrame = canvasControlFrames[.tools]
-                    let diameter: CGFloat = 40
+                    let diameter: CGFloat = 36
                     let top = (buttonFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY - diameter / 2
                     let centerX = (buttonFrame?.midX ?? (canvasFrame.maxX - 30)) - canvasFrame.minX
-                    let rowHeight = min(40, max(24, (geometry.size.height - top - 16) / 5))
+                    let rowHeight = min(diameter, max(24, (geometry.size.height - top - 16) / 5))
                     let panelHeight = showsMorphToolbar ? rowHeight * 5 : diameter
                     morphToolbar(diameter: diameter, rowHeight: rowHeight)
                         .position(x: centerX, y: top + panelHeight / 2)
