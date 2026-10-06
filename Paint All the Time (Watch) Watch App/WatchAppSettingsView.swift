@@ -22,23 +22,13 @@ struct WatchAppSettingsView: View {
                     } label: {
                         Label(L10n.text("Language"), systemImage: "globe")
                     }
-                    NavigationLink {
-                        ToolSynchronizationView(controller: controller)
-                    } label: {
-                        Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
-                    }
-                    NavigationLink {
-                        DrawingSpaceSettingsView()
-                    } label: {
-                        Label(L10n.text("More room to draw"), systemImage: "arrow.up.left.and.arrow.down.right")
-                    }
                     Button(action: onStartTutorial) {
                         Label(L10n.text("Tutorial"), systemImage: "graduationcap")
                     }
                     NavigationLink {
-                        ColorBlendingSelectionView(controller: controller)
+                        DrawingSettingsView(controller: controller)
                     } label: {
-                        Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
+                        Label(L10n.text("Drawing"), systemImage: "paintpalette")
                     }
                     NavigationLink {
                         WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
@@ -80,6 +70,34 @@ private struct CenteredMenuLabelStyle: LabelStyle {
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+}
+
+private struct DrawingSettingsView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @ObservedObject var controller: CanvasController
+
+    var body: some View {
+        List {
+            NavigationLink {
+                ToolSynchronizationView(controller: controller)
+            } label: {
+                Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
+            }
+            NavigationLink {
+                DrawingSpaceSettingsView()
+            } label: {
+                Label(L10n.text("More room to draw"), systemImage: "arrow.up.left.and.arrow.down.right")
+            }
+            NavigationLink {
+                ColorBlendingSelectionView(controller: controller)
+            } label: {
+                Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
+            }
+        }
+        .labelStyle(CenteredMenuLabelStyle())
+        .navigationTitle(L10n.text("Drawing"))
+        .toolbarTitleDisplayMode(.inline)
     }
 }
 

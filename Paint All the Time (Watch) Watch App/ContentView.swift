@@ -168,13 +168,13 @@ struct ContentView: View {
                                 .foregroundStyle(.green)
                         } else if usesMorphToolbar {
                             Image(systemName: "chevron.up")
-                                .frame(width: 18, height: 18, alignment: .center)
-
                         } else {
                             ToolIcon(instrument: controller.pencilStyle.instrument)
-                                .frame(width: 18, height: 18)
                         }
                     }
+                    // Keep the label bounds identical when switching to Done,
+                    // so the toolbar centers the checkmark like the tool icon.
+                    .frame(width: 18, height: 18, alignment: .center)
                     .opacity(morphOwnsTrailingControl ? 0 : 1)
                     .contentShape(Rectangle())
                 }
