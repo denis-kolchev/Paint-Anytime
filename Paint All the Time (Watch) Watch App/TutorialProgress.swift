@@ -17,6 +17,7 @@ struct TutorialProgress {
     private(set) var step: TutorialStep = .inactive
     private(set) var count = 0
     private(set) var hasPanned = false
+    private var unlockedToolPages: Set<Int> = [1]
 
     enum Event {
         case stroke, openedTools, closedTools, openedInfo, closedInfo
@@ -34,6 +35,13 @@ struct TutorialProgress {
               let next = TutorialStep(rawValue: step.rawValue + 1) else { return }
         count = 0
         step = next
+        switch next {
+        case .openWidth: unlockedToolPages.insert(0)
+        case .openOpacity: unlockedToolPages.insert(5)
+        case .openTool: unlockedToolPages.formUnion([2, 3])
+        case .openAngle: unlockedToolPages.insert(4)
+        default: break
+        }
     }
     mutating func record(_ event: Event) -> Effect {
         switch (step, event) {
@@ -58,7 +66,9 @@ struct TutorialProgress {
     }
     var visibleToolPages: Set<Int> { [0, 1, 2, 3, 4, 5] }
     func allowsToolAdjustment(page: Int) -> Bool { visibleToolPages.contains(page) }
-    func allowsToolPage(_ page: Int) -> Bool { visibleToolPages.contains(page) }
+    func allowsToolPage(_ page: Int) -> Bool {
+        step == .inactive ? visibleToolPages.contains(page) : unlockedToolPages.contains(page)
+    }
     func completesPageChange(_ page: Int) -> Bool {
         (step == .openWidth && page == 0) || (step == .openTool && page == 2)
             || (step == .openAngle && page == 4) || (step == .openOpacity && page == 5)

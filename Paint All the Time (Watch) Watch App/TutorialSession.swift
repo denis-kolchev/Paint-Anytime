@@ -150,7 +150,7 @@ final class TutorialSession: ObservableObject {
     var showsPanGuide: Bool { step == .panCanvas && !progress.hasPanned }
 
     func changedPage(_ page: Int) {
-        guard isActive, acceptsActions else { return }
+        guard isActive, allowsToolPage(page) else { return }
         activity()
         toolPage = page
         if progress.completesPageChange(page) { advance() }

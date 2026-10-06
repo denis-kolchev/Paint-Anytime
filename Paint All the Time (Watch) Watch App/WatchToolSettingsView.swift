@@ -65,6 +65,26 @@ struct WatchToolSettingsView: View {
         return pages
     }
 
+    private var tutorialSwipeTarget: ToolSetting? {
+        guard tutorial.acceptsActions, !showsInformation, !showsPalette else { return nil }
+        switch tutorial.step {
+        case .openWidth: return .width
+        case .openOpacity: return .opacity
+        case .openTool: return .instrument
+        case .openAngle: return .direction
+        default: return nil
+        }
+    }
+
+    private var tutorialSwipeDirection: CGFloat? {
+        guard let target = tutorialSwipeTarget,
+              let currentIndex = availableSettings.firstIndex(of: selection),
+              let targetIndex = availableSettings.firstIndex(of: target),
+              currentIndex != targetIndex else { return nil }
+        let forward = targetIndex > currentIndex
+        return forward == (layoutDirection == .leftToRight) ? -1 : 1
+    }
+
     private var valueTitle: String {
         switch selection {
         case .opacity: "\(Int((controller.pencilStyle.effectiveOpacity * 100).rounded()))%"
@@ -172,6 +192,12 @@ struct WatchToolSettingsView: View {
                                     }
                                     .buttonStyle(StaticPalettePromptButtonStyle())
                                     .transition(.opacity)
+                                }
+                            }
+                            .overlay {
+                                if let direction = tutorialSwipeDirection {
+                                    TutorialToolSwipeGuide(direction: direction)
+                                        .id(direction)
                                 }
                             }
                             // Composite before clipping so the paper cannot leave
@@ -486,5 +512,48 @@ private struct StrokePreviewHeightKey: PreferenceKey {
 private struct StaticPalettePromptButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
+    }
+}
+
+/// Match the camera guide while demonstrating only the required horizontal swipe.
+private struct TutorialToolSwipeGuide: View {
+    let direction: CGFloat
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var offset: CGFloat = 0
+    @State private var visible = false
+
+    var body: some View {
+        Image(systemName: direction < 0 ? "arrow.left" : "arrow.right")
+            .font(.title2.bold())
+            .foregroundStyle(.white)
+            .padding(10)
+            .background(.regularMaterial, in: Circle())
+            .offset(x: offset)
+            .opacity(visible ? 1 : 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task(id: reduceMotion) {
+                visible = false
+                offset = 0
+                do {
+                    try await Task.sleep(for: .seconds(1))
+                    try Task.checkCancellation()
+                    visible = true
+                    guard !reduceMotion else { return }
+                    while !Task.isCancelled {
+                        offset = -direction * 20
+                        withAnimation(.easeInOut(duration: 0.7)) { offset = direction * 20 }
+                        try await Task.sleep(for: .milliseconds(800))
+                        withAnimation(.easeOut(duration: 0.2)) { visible = false }
+                        try await Task.sleep(for: .milliseconds(250))
+                        offset = -direction * 20
+                        withAnimation(.easeIn(duration: 0.2)) { visible = true }
+                        try await Task.sleep(for: .milliseconds(250))
+                    }
+                } catch {
+                    visible = false
+                    offset = 0
+                }
+            }
     }
 }
