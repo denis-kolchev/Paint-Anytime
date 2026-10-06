@@ -1,53 +1,53 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Special features" : {
+    "More room to draw" : {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Special features"
+            "value": "More room to draw"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Специальные функции"
+            "value": "Больше места для рисования"
           }
         }
       }
     },
-    "Morph toolbar" : {
+    "Keep buttons in a menu" : {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Morph toolbar"
+            "value": "Keep buttons in a menu"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Morph-панель"
+            "value": "Скрывать кнопки в меню"
           }
         }
       }
     },
-    "Experimental: gather drawing controls into one expandable panel." : {
+    "Keep drawing controls in one menu for fewer buttons on the canvas and more room to draw." : {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Experimental: gather drawing controls into one expandable panel."
+            "value": "Keep drawing controls in one menu for fewer buttons on the canvas and more room to draw."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Экспериментальная функция: все кнопки рисования в одной раскрывающейся панели."
+            "value": "Кнопки собраны в одном меню: они меньше закрывают холст и оставляют больше места для рисования."
           }
         }
       }

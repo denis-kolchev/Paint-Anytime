@@ -34,6 +34,7 @@ final class CanvasController: ObservableObject {
     private var undoStack: [CanvasDocument] = []
     private var redoStack: [CanvasDocument] = []
     private let historyLimit = 30
+    var canClear: Bool { !document.strokes.isEmpty }
     var canUndo: Bool { !undoStack.isEmpty }
     var canRedo: Bool { !redoStack.isEmpty }
     var onNeedsDisplay: (() -> Void)?
@@ -133,7 +134,7 @@ final class CanvasController: ObservableObject {
     }
 
     func clear() {
-        guard !document.strokes.isEmpty else { return }
+        guard canClear else { return }
         objectWillChange.send()
         pencil.cancel()
         activeStrokeRevision &+= 1

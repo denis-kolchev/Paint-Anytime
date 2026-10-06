@@ -28,9 +28,9 @@ struct WatchAppSettingsView: View {
                         Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
                     }
                     NavigationLink {
-                        ExperimentalFeaturesView()
+                        DrawingSpaceSettingsView()
                     } label: {
-                        Label(L10n.text("Special features"), systemImage: "flask")
+                        Label(L10n.text("More room to draw"), systemImage: "arrow.up.left.and.arrow.down.right")
                     }
                     Button(action: onStartTutorial) {
                         Label(L10n.text("Tutorial"), systemImage: "graduationcap")
@@ -336,18 +336,18 @@ private struct ColorBlendingIllustration: View {
     }
 }
 
-private struct ExperimentalFeaturesView: View {
+private struct DrawingSpaceSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = false
 
     var body: some View {
         List {
             Section {
-                Toggle(L10n.text("Morph toolbar"), isOn: $usesMorphToolbar)
+                Toggle(L10n.text("Keep buttons in a menu"), isOn: $usesMorphToolbar)
             } footer: {
-                Text(L10n.text("Experimental: gather drawing controls into one expandable panel."))
+                Text(L10n.text("Keep drawing controls in one menu for fewer buttons on the canvas and more room to draw."))
             }
         }
-        .navigationTitle(L10n.text("Special features"))
+        .navigationTitle(L10n.text("More room to draw"))
     }
 }

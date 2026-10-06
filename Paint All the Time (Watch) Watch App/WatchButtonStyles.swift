@@ -61,23 +61,20 @@ private struct WatchToolbarButtonModifier: ViewModifier {
     let hidesNativeChrome: Bool
 
     func body(content: Content) -> some View {
-        if #available(watchOS 27, *), !usesCanvasMaterial {
-            if hidesNativeChrome {
-                // Opacity alone leaves the toolbar-owned background visible.
-                // Keep the same slot size for the clock, without native chrome;
-                // the caller hides content and disables interaction separately.
-                sizedButton(content)
-            } else {
-                // Match native toolbar chrome (including the sheet's close button).
-                // Do not layer a standalone glassEffect over the system button:
-                // the toolbar owns the material, edge treatment and shadow here.
-                content
-                    .buttonStyle(.automatic)
-                    .buttonBorderShape(.circle)
-                    .controlSize(.small)
-                    .frame(width: diameter, height: diameter)
-                    .contentShape(Circle())
-            }
+        if hidesNativeChrome {
+            // Morph supplies the visible surface on the canvas. Keep only the
+            // toolbar hit target and layout slot on EVERY supported watchOS;
+            // another glass/material here covers the overlay's icons.
+            sizedButton(content)
+        } else if #available(watchOS 27, *), !usesCanvasMaterial {
+            // Match native toolbar chrome (including the sheet's close button).
+            // The toolbar owns the material, edge treatment and shadow here.
+            content
+                .buttonStyle(.automatic)
+                .buttonBorderShape(.circle)
+                .controlSize(.small)
+                .frame(width: diameter, height: diameter)
+                .contentShape(Circle())
         } else if #available(watchOS 26, *) {
             sizedButton(content)
                 // Apply material AFTER the fixed frame: no GlassButtonStyle

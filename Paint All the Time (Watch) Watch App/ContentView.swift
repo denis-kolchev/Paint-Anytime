@@ -49,7 +49,6 @@ struct ContentView: View {
                     let moreFrame = canvasControlFrames[.more]
                     morphButton("More", height: diameter) {
                         controller.cancelStroke()
-                        showsMorphToolbar = false
                         showsAppSettings = true
                     } label: {
                         Image(systemName: "ellipsis")
@@ -97,6 +96,7 @@ struct ContentView: View {
                         BroomIcon()
                     }
                     .watchToolbarButtonStyle()
+                    .disabled(!controller.canClear)
                     .accessibilityLabel(L10n.text("Clear canvas"))
                     .trackCanvasControl(.clear, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
@@ -131,7 +131,6 @@ struct ContentView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         controller.cancelStroke()
-                        showsMorphToolbar = false
                         showsAppSettings = true
                     } label: {
                         Image(systemName: "ellipsis")
@@ -204,12 +203,14 @@ struct ContentView: View {
                 startsTutorialAfterDismiss = true
                 showsAppSettings = false
             })
+            .task { await resetMorphBehindPresentation() }
         }
         .sheet(item: $session.savedDrawing) { drawing in
             NavigationStack {
                 SavedDrawingView(drawing: drawing, photoTransferStatus: session.photoTransferStatus,
                                  canRetryPhotoTransfer: session.photoTransferCanRetry)
             }
+            .task { await resetMorphBehindPresentation() }
         }
         .fullScreenCover(item: $session.pendingCanvasAction) { action in
             DestructiveConfirmationView(title: action.title, confirmTitle: L10n.text("Clear")) {
@@ -218,6 +219,7 @@ struct ContentView: View {
                 session.pendingCanvasAction = nil
                 session.performCanvasAction(action)
             }
+            .task { await resetMorphBehindPresentation() }
         }
         .alert(L10n.text("Could not save"), isPresented: Binding(
             get: { session.exportError != nil }, set: { if !$0 { session.exportError = nil } }
@@ -243,10 +245,31 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
-                showsMorphToolbar = false
+                if !showsAppSettings && session.savedDrawing == nil && session.pendingCanvasAction == nil {
+                    showsMorphToolbar = false
+                }
                 controller.cancelStroke()
                 controller.flushStylePreferences()
             }
+        }
+    }
+
+    @MainActor
+    private func resetMorphBehindPresentation() async {
+        guard showsMorphToolbar else { return }
+        // onAppear/task starts during the presentation transition, not after it.
+        // A view-owned task is cancelled if the user dismisses the window early.
+        do {
+            try await Task.sleep(for: .seconds(1))
+            try Task.checkCancellation()
+        } catch {
+            return
+        }
+        guard showsAppSettings || session.savedDrawing != nil || session.pendingCanvasAction != nil else { return }
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            showsMorphToolbar = false
         }
     }
 
@@ -266,9 +289,9 @@ struct ContentView: View {
                         .frame(width: 18, height: 18)
                 }
                 morphButton("Clear canvas", height: rowHeight) {
-                    showsMorphToolbar = false
                     session.requestCanvasAction(.clear)
                 } label: { BroomIcon() }
+                .disabled(!controller.canClear)
                 morphButton("Undo", height: rowHeight, action: { controller.undo() }) {
                     Image(systemName: "arrow.uturn.backward")
                 }
@@ -278,7 +301,6 @@ struct ContentView: View {
                 }
                 .disabled(!controller.canRedo)
                 morphButton("Save drawing", height: rowHeight) {
-                    showsMorphToolbar = false
                     session.saveDrawing(size: canvasSize, scale: displayScale)
                 } label: { Image(systemName: "square.and.arrow.down") }
             } else {
