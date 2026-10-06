@@ -93,8 +93,7 @@ struct TutorialPlayerView: View {
                     }
 
                     if page == .saved, let savedDrawing = player.savedDrawing {
-                        SavedDrawingView(drawing: savedDrawing, photoTransferStatus: "", canRetryPhotoTransfer: false,
-                                         tutorial: tutorial)
+                        SavedDrawingView(drawing: savedDrawing, tutorial: tutorial)
                             .background(.black)
                     }
 

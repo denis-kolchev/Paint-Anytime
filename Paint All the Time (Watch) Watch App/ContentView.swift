@@ -207,8 +207,7 @@ struct ContentView: View {
         }
         .sheet(item: $session.savedDrawing) { drawing in
             NavigationStack {
-                SavedDrawingView(drawing: drawing, photoTransferStatus: session.photoTransferStatus,
-                                 canRetryPhotoTransfer: session.photoTransferCanRetry)
+                SavedDrawingView(drawing: drawing)
             }
             .task { await resetMorphBehindPresentation() }
         }

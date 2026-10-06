@@ -3,9 +3,8 @@ import SwiftUI
 struct SavedDrawingView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     let drawing: CanvasExport
-    @State var photoTransferStatus: String
-    @State var canRetryPhotoTransfer: Bool
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
+    @Environment(\.scenePhase) private var scenePhase
     @FocusState private var scrollFocused: Bool
     @ObservedObject var tutorial = TutorialSession.inactive
     var body: some View {
@@ -19,24 +18,6 @@ struct SavedDrawingView: View {
                     Label(L10n.text("Share"), systemImage: "square.and.arrow.up")
                 }
                 .simultaneousGesture(TapGesture().onEnded { tutorial.activity() })
-                if AppReleaseFeatures.current.showsPhotoTransferControls && !tutorial.isActive {
-                    Text(photoTransferStatus).font(.caption2)
-                    if canRetryPhotoTransfer {
-                        Button(L10n.text("Retry sending to iPhone")) {
-                            let queued = WatchPhotoTransfer.shared.queue(drawing.url)
-                            canRetryPhotoTransfer = !queued
-                            photoTransferStatus = queued
-                            ? L10n.text("Your drawing is being sent to Photos on iPhone.")
-                            : L10n.text("The iPhone app is currently unavailable.")
-                        }
-                    }
-                } else {
-                    Text(L10n.text("Sharing options depend on watchOS. Saving directly to Photos on iPhone requires a companion iPhone app; it is not available with the watch app alone."))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
                 Text(drawing.url.lastPathComponent).font(.caption2)
             }
             .watchActionButtonStyle()
@@ -44,13 +25,18 @@ struct SavedDrawingView: View {
             .reportLegacyScrollPosition()
         }
         .padding(.bottom, tutorialHintReservedHeight)
-        .scrollDisabled(tutorial.isActive && !tutorial.permits([.shareDrawing]))
         // Give the visible page Crown focus after the canvas releases it.
         .focusable()
         .focused($scrollFocused)
-        .task {
-            await Task.yield()
-            scrollFocused = true
+        .task(id: scenePhase) {
+            scrollFocused = false
+            guard scenePhase == .active else { return }
+            // Wait until the scroll view is installed in the watchOS focus tree.
+            do {
+                try await Task.sleep(for: .milliseconds(100))
+                try Task.checkCancellation()
+                scrollFocused = true
+            } catch {}
         }
         .onDisappear { scrollFocused = false }
         .onTutorialScrollActivity { tutorial.activity() }
