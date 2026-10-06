@@ -199,7 +199,6 @@ private struct PaletteSwatchFramesKey: PreferenceKey {
 private struct CustomInkEditor: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.layoutDirection) private var layoutDirection
     @FocusState private var crownFocused: Bool
     @State private var values: [Double] = [128, 128, 128]
     @State private var selectedChannel = 0
@@ -222,44 +221,48 @@ private struct CustomInkEditor: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            GeometryReader { geometry in
-                let previewSize = max(1, min(geometry.size.width - 58, geometry.size.height - 46))
-                HStack(spacing: 6) {
-                    VStack(spacing: 8) {
-                        Circle().fill(color)
-                            .overlay { Circle().strokeBorder(.gray, lineWidth: 1) }
-                            .frame(width: previewSize, height: previewSize)
-                            .accessibilityLabel(L10n.text("Create color"))
-                        Text(hex)
-                            .font(.caption.monospaced())
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+            ForEach(channels.indices, id: \.self) { index in
+                VStack(spacing: 2) {
+                    Button { selectChannel(index) } label: {
+                        HStack {
+                            Text(L10n.text(channels[index]))
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                            Spacer(minLength: 4)
+                            Text("\(Int(values[index]))").monospacedDigit()
+                        }
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(selectedChannel == index ? Color.white.opacity(0.16) : .clear,
+                                    in: Capsule())
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                    .simultaneousGesture(channelSwipe)
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(selectedChannel == index ? [.isSelected] : [])
 
-                    VStack(spacing: 2) {
-                        adjustmentButton("plus", amount: 1).frame(height: 30)
-                        channelSlider
-                        adjustmentButton("minus", amount: -1).frame(height: 30)
-                        Text("\(Int(values[selectedChannel]))")
-                            .font(.caption.monospacedDigit())
-                            .contentTransition(.numericText())
-                            .accessibilityHidden(true)
+                    HStack(spacing: 4) {
+                        adjustmentButton("minus", amount: -1, channel: index).frame(width: 28)
+                        channelSlider(index)
+                        adjustmentButton("plus", amount: 1, channel: index).frame(width: 28)
                     }
-                    .frame(width: 44, height: geometry.size.height)
+                    // Keep the numeric scale increasing from left to right in every language.
+                    .environment(\.layoutDirection, .leftToRight)
+                    .frame(maxHeight: .infinity)
                 }
+                .frame(maxHeight: .infinity)
             }
-            channelCarousel.frame(height: 30)
-                .contentShape(Rectangle())
-                .simultaneousGesture(channelSwipe)
+            Text(hex)
+                .font(.caption.monospaced())
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.top, 2)
         }
         .padding(.horizontal, 8)
-        .padding(.top, 42)
-        .padding(.bottom, 12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .ignoresSafeArea(.container)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        // Respect the system toolbar above; include the bottom safe area in layout.
+        .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
         .contentShape(Rectangle())
         .focusable()
         .focused($crownFocused)
@@ -279,51 +282,45 @@ private struct CustomInkEditor: View {
         }
     }
 
-    private var channelSwipe: some Gesture {
-        DragGesture(minimumDistance: 20).onEnded { value in
-            guard abs(value.translation.width) > abs(value.translation.height) else { return }
-            let forward = layoutDirection == .rightToLeft
-                ? value.translation.width > 0 : value.translation.width < 0
-            selectChannel(min(2, max(0, selectedChannel + (forward ? 1 : -1))))
-        }
-    }
-
-    private func endpointColor(_ value: Double) -> Color {
+    private func endpointColor(_ value: Double, channel: Int) -> Color {
         var components = values
-        components[selectedChannel] = value
+        components[channel] = value
         return Color(.sRGB, red: components[0] / 255, green: components[1] / 255,
                      blue: components[2] / 255, opacity: 1)
     }
 
-    private var channelSlider: some View {
+    private func channelSlider(_ index: Int) -> some View {
         GeometryReader { geometry in
-            let diameter: CGFloat = min(24, geometry.size.height)
-            let travel = max(1, geometry.size.height - diameter)
-            let thumbY = diameter / 2 + travel * (1 - values[selectedChannel] / 255)
-            ZStack(alignment: .top) {
+            let diameter: CGFloat = max(1, min(28, min(geometry.size.height, geometry.size.width)))
+            let travel = max(1, geometry.size.width - diameter)
+            let thumbX = diameter / 2 + travel * values[index] / 255
+            ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(LinearGradient(colors: [endpointColor(255), endpointColor(0)],
-                                         startPoint: .top, endPoint: .bottom))
-                    .frame(width: diameter)
+                    .fill(LinearGradient(colors: [endpointColor(0, channel: index), endpointColor(255, channel: index)],
+                                         startPoint: .leading, endPoint: .trailing))
+                    .frame(height: diameter)
                     .overlay { Capsule().strokeBorder(.white.opacity(0.2), lineWidth: 1) }
                 Circle()
                     .fill(color)
                     .overlay { Circle().strokeBorder(.white, lineWidth: 2) }
                     .frame(width: diameter, height: diameter)
-                    .offset(y: thumbY - diameter / 2)
+                    .offset(x: thumbX - diameter / 2)
                     .allowsHitTesting(false)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onChanged { value in
-                channelValue.wrappedValue = (1 - (value.location.y - diameter / 2) / travel) * 255
+                selectedChannel = index
+                channelValue.wrappedValue = ((value.location.x - diameter / 2) / travel) * 255
                 crownFocused = true
             })
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L10n.text(channels[selectedChannel]))
-        .accessibilityValue("\(Int(values[selectedChannel]))")
+        .accessibilityLabel(L10n.text(channels[index]))
+        .accessibilityValue("\(Int(values[index]))")
         .accessibilityAdjustableAction { direction in
+            selectedChannel = index
+            crownFocused = true
             switch direction {
             case .increment: channelValue.wrappedValue += 1
             case .decrement: channelValue.wrappedValue -= 1
@@ -332,8 +329,9 @@ private struct CustomInkEditor: View {
         }
     }
 
-    private func adjustmentButton(_ symbol: String, amount: Double) -> some View {
+    private func adjustmentButton(_ symbol: String, amount: Double, channel index: Int) -> some View {
         Button {
+            selectedChannel = index
             channelValue.wrappedValue += amount
             crownFocused = true
         } label: {
@@ -343,8 +341,8 @@ private struct CustomInkEditor: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(amount > 0 ? values[selectedChannel] >= 255 : values[selectedChannel] <= 0)
-        .accessibilityLabel(L10n.text(channels[selectedChannel]) + (amount > 0 ? " +1" : " −1"))
+        .disabled(amount > 0 ? values[index] >= 255 : values[index] <= 0)
+        .accessibilityLabel(L10n.text(channels[index]) + (amount > 0 ? " +1" : " −1"))
     }
 
     private func selectChannel(_ index: Int) {
@@ -352,39 +350,4 @@ private struct CustomInkEditor: View {
         crownFocused = true
     }
 
-    private var channelCarousel: some View {
-        GeometryReader { geometry in
-            let width = max(44, geometry.size.width / 2 - 8)
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal) {
-                    HStack(spacing: 0) {
-                        ForEach(channels.indices, id: \.self) { index in
-                            Button { selectChannel(index) } label: {
-                                Text(L10n.text(channels[index]))
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(selectedChannel == index ? .primary : .secondary)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.6)
-                                    .frame(width: width, height: 30)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.borderless)
-                            .accessibilityAddTraits(selectedChannel == index ? [.isSelected] : [])
-                            .id(index)
-                        }
-                    }
-                    .padding(.horizontal, max(0, (geometry.size.width - width) / 2))
-                }
-                .scrollIndicators(.hidden)
-                .scrollDisabled(true)
-                .onAppear { proxy.scrollTo(selectedChannel, anchor: .center) }
-                .onChange(of: geometry.size.width) { _, _ in
-                    proxy.scrollTo(selectedChannel, anchor: .center)
-                }
-                .onChange(of: selectedChannel) { _, index in
-                    withAnimation(channelAnimation) { proxy.scrollTo(index, anchor: .center) }
-                }
-            }
-        }
-    }
 }

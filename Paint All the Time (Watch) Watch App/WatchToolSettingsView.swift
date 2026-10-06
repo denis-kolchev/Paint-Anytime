@@ -163,15 +163,20 @@ struct WatchToolSettingsView: View {
                                             Text(L10n.text("Tap to add more colors"))
                                                 .font(.headline)
                                                 .multilineTextAlignment(.center)
+                                                .minimumScaleFactor(0.75)
                                         }
+                                        .padding(12)
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                         .background(.black.opacity(0.85))
-
+                                        .contentShape(Rectangle())
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(StaticPalettePromptButtonStyle())
                                     .transition(.opacity)
                                 }
                             }
+                            // Composite before clipping so the paper cannot leave
+                            // a separately antialiased bright edge under the overlay.
+                            .compositingGroup()
                             .clipShape(ToolStrokePreview.viewportShape)
                             .animation(reduceMotion ? nil : .easeInOut(duration: 0.25),
                                        value: selection == .color && isAddingColor)
@@ -474,5 +479,12 @@ private struct StrokePreviewHeightKey: PreferenceKey {
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+/// Keep the viewport stationary and fully dimmed while the button is held.
+private struct StaticPalettePromptButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
     }
 }

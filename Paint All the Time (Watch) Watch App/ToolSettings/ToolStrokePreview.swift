@@ -23,8 +23,8 @@ struct ToolStrokePreview: View {
                 }
             }
         }
-        .clipShape(Self.viewportShape)
-        .background(Color(white: 0.88), in: Self.viewportShape)
+        // The settings viewport clips the paper, stroke and overlay together.
+        .background(Color(white: 0.88))
         .accessibilityLabel(L10n.text("Stroke preview"))
     }
 
