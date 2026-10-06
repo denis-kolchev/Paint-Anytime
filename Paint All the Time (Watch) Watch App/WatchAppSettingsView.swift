@@ -27,6 +27,11 @@ struct WatchAppSettingsView: View {
                     } label: {
                         Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
                     }
+                    NavigationLink {
+                        ExperimentalFeaturesView()
+                    } label: {
+                        Label(L10n.text("Special features"), systemImage: "flask")
+                    }
                     Button(action: onStartTutorial) {
                         Label(L10n.text("Tutorial"), systemImage: "graduationcap")
                     }
@@ -328,5 +333,21 @@ private struct ColorBlendingIllustration: View {
             }
         }
         .accessibilityElement(children: .ignore)
+    }
+}
+
+private struct ExperimentalFeaturesView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = false
+
+    var body: some View {
+        List {
+            Section {
+                Toggle(L10n.text("Morph toolbar"), isOn: $usesMorphToolbar)
+            } footer: {
+                Text(L10n.text("Experimental: gather drawing controls into one expandable panel."))
+            }
+        }
+        .navigationTitle(L10n.text("Special features"))
     }
 }

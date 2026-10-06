@@ -250,6 +250,7 @@ struct TutorialPlayerView: View {
         // may not be reported again when only the button's label changes.
         return controls.filter { control, _ in
             switch control {
+            case .morph: return false
             case .tools: return showsPrimaryControl
             case .more: return tutorial.permits([.openMenu])
             case .undo, .redo: return tutorial.permits([.history])

@@ -9,7 +9,7 @@ import SwiftUI
 import WatchKit
 
 enum CanvasToolbarControl: Hashable {
-    case more, tools, clear, undo, redo, save
+    case more, tools, clear, undo, redo, save, morph
 }
 
 struct WatchCanvasView: View {
@@ -20,6 +20,7 @@ struct WatchCanvasView: View {
     var acceptsInput = true
     var protectedControls: [CanvasToolbarControl: CGRect] = [:]
     @Binding var isMovingCanvas: Bool
+    var onCanvasInteraction: () -> Void = {}
     @State private var crownZoom = 1.0
     @State private var offset = CGSize.zero
     @State private var panOrigin: CGSize?
@@ -71,6 +72,7 @@ struct WatchCanvasView: View {
                         if acceptsCurrentGesture == nil {
                             acceptsCurrentGesture = !isProtectedStart(value.startLocation,
                                 canvasFrame: geometry.frame(in: .global))
+                            if acceptsCurrentGesture == true { onCanvasInteraction() }
                         }
                         // Keep the initial decision even when controls hide or the finger moves away.
                         guard acceptsCurrentGesture == true else { return }
@@ -236,6 +238,9 @@ struct WatchCanvasView: View {
             let dx: CGFloat
             let dy: CGFloat
             switch control {
+            case .morph:
+                if frame.contains(screenPoint) { return true }
+                continue
             case .more, .tools:
                 dx = outwardSideDistance
                 dy = max(0, screenPoint.y - frame.midY)
