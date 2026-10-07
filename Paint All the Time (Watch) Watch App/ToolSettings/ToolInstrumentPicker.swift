@@ -9,6 +9,7 @@ struct ToolInstrumentPicker: View {
     let isEnabled: Bool
     var extendsBeyondViewport = false
     var showsNavigationHints = true
+    var tutorial: TutorialSession = .inactive
     let onSelect: (DrawingInstrument) -> Void
 
     private var rowHeight: CGFloat { 36 }
@@ -34,6 +35,8 @@ struct ToolInstrumentPicker: View {
                                         .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
                                                      : instrumentIndex == index ? 1 : 0.72)
                                         .animation(choiceAnimation, value: instrumentIndex)
+                                        .tutorialHint(tutorial, steps: [.selectReed],
+                                                      isSuggested: isActive && instrument == .reed)
                                         .frame(width: 40, height: rowHeight)
                                         .contentShape(Rectangle())
                                 }

@@ -227,7 +227,8 @@ struct WatchToolSettingsView: View {
                                                  isActive: selection == .instrument,
                                                  isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue),
                                                  extendsBeyondViewport: tutorial.isActive,
-                                                 showsNavigationHints: !tutorial.isActive) { instrument in
+                                                 showsNavigationHints: !tutorial.isActive,
+                                                 tutorial: tutorial) { instrument in
                                 guard tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue) else { return }
                                 tutorial.activity()
                                 controller.selectInstrument(instrument)
