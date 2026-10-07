@@ -198,31 +198,181 @@ private struct PaletteSwatchFramesKey: PreferenceKey {
 }
 
 private struct CustomInkEditor: View {
+    @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @FocusState private var crownFocused: Bool
-    @State private var values: [Double] = [128, 128, 128]
-    @State private var selectedChannel = 0
+    @State private var rgb = [128.0, 128.0, 128.0]
+    @State private var hsb = [0.0, 0.0, 128.0 / 255 * 100]
+    @State private var page = 0
     let onSave: (InkPreset) -> Void
 
-    private let channels = ["Red", "Green", "Blue"]
-    private var channelAnimation: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.3) }
-    private var color: Color {
-        Color(.sRGB, red: values[0] / 255, green: values[1] / 255,
-              blue: values[2] / 255, opacity: 1)
-    }
     private var hex: String {
-        String(format: "#%02X%02X%02X", Int(values[0]), Int(values[1]), Int(values[2]))
+        String(format: "#%02X%02X%02X", Int(rgb[0].rounded()), Int(rgb[1].rounded()), Int(rgb[2].rounded()))
     }
     private var colorName: String { NamedInkColors.name(forHex: hex) ?? hex }
-    private var channelValue: Binding<Double> {
-        Binding { values[selectedChannel] } set: { value in
-            values[selectedChannel] = min(255, max(0, value.rounded()))
+
+    private var rgbBinding: Binding<[Double]> {
+        Binding { rgb } set: { values in
+            rgb = values
+            let r = values[0] / 255, g = values[1] / 255, b = values[2] / 255
+            let high = max(r, g, b), low = min(r, g, b), delta = high - low
+            // Retain hue for gray and hue/saturation for black so they can be restored.
+            if delta > 0 {
+                let sector = high == r ? (g - b) / delta : high == g ? (b - r) / delta + 2 : (r - g) / delta + 4
+                hsb[0] = (sector * 60 + 360).truncatingRemainder(dividingBy: 360)
+            }
+            if high > 0 { hsb[1] = delta / high * 100 }
+            hsb[2] = high * 100
+        }
+    }
+    private var hsbBinding: Binding<[Double]> {
+        Binding { hsb } set: { values in
+            hsb = values
+            let h = values[0] / 60, s = values[1] / 100, v = values[2] / 100
+            let c = v * s, x = c * (1 - abs(h.truncatingRemainder(dividingBy: 2) - 1)), m = v - c
+            let components: [Double]
+            switch Int(h) % 6 {
+            case 0: components = [c, x, 0]
+            case 1: components = [x, c, 0]
+            case 2: components = [0, c, x]
+            case 3: components = [0, x, c]
+            case 4: components = [x, 0, c]
+            default: components = [c, 0, x]
+            }
+            rgb = components.map { min(255, max(0, ($0 + m) * 255)) }
         }
     }
 
     var body: some View {
         VStack(spacing: 4) {
+            GeometryReader { geometry in
+                // Keep both pages in this exact viewport. A watchOS page-style
+                // TabView adds its own safe-area layout and can crop the last row.
+                HStack(spacing: 0) {
+                    InkComponentsEditor(values: hsbBinding, isHue: true, isActive: page == 0)
+                        .environment(\.layoutDirection, layoutDirection)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .accessibilityHidden(page != 0)
+                    InkComponentsEditor(values: rgbBinding, isHue: false, isActive: page == 1)
+                        .environment(\.layoutDirection, layoutDirection)
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .accessibilityHidden(page != 1)
+                }
+                .environment(\.layoutDirection, .leftToRight)
+                .offset(x: -CGFloat(page) * geometry.size.width)
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .leading)
+                .clipped()
+                .contentShape(Rectangle())
+
+            }
+            Text(colorName)
+                .font(.caption2.monospaced())
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .padding(.horizontal, 8)
+            schemeCarousel
+                .frame(height: 24)
+        }
+        .padding(.bottom, 8)
+        .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button {
+                    onSave(InkPreset(customID: UUID().uuidString, nameKey: colorName,
+                                     rgba: SIMD4(Float(rgb[0] / 255), Float(rgb[1] / 255), Float(rgb[2] / 255), 1)))
+                    dismiss()
+                } label: { Image(systemName: "checkmark") }
+                .accessibilityLabel(L10n.text("Add color"))
+            }
+        }
+    }
+
+    private var schemeCarousel: some View {
+        GeometryReader { geometry in
+            let itemWidth: CGFloat = 60
+            ScrollViewReader { proxy in
+                ScrollView(.horizontal) {
+                    HStack(spacing: 0) {
+                        schemeButton("Hue", page: 0)
+                        schemeButton("RGB", page: 1)
+                    }
+                    .padding(.horizontal, max(0, (geometry.size.width - itemWidth) / 2))
+                }
+                .scrollIndicators(.hidden)
+                .scrollDisabled(true)
+                .onAppear { proxy.scrollTo(page, anchor: .center) }
+                .onChange(of: geometry.size.width) { _, _ in
+                    proxy.scrollTo(page, anchor: .center)
+                }
+                .onChange(of: page) { _, target in
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
+                        proxy.scrollTo(target, anchor: .center)
+                    }
+                }
+            }
+        }
+        .contentShape(Rectangle())
+        .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
+            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+            let forward = layoutDirection == .rightToLeft
+                ? value.translation.width > 0 : value.translation.width < 0
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) {
+                page = min(1, max(0, page + (forward ? 1 : -1)))
+            }
+        })
+    }
+
+    private func schemeButton(_ title: String, page target: Int) -> some View {
+        Button {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { page = target }
+        } label: {
+            Text(title == "Hue" ? L10n.text("Hue") : title)
+                .font(.caption2.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+                .foregroundStyle(page == target ? .primary : .secondary)
+                .frame(width: 60, height: 24)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .accessibilityAddTraits(page == target ? [.isSelected] : [])
+        .id(target)
+    }
+
+}
+
+private struct InkComponentsEditor: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @FocusState private var crownFocused: Bool
+    @Binding var values: [Double]
+    let isHue: Bool
+    let isActive: Bool
+    @State private var selectedChannel = 0
+
+    private var channels: [String] { isHue ? ["Hue", "Saturation", "Brightness"] : ["Red", "Green", "Blue"] }
+    private var channelAnimation: Animation? { reduceMotion ? nil : .easeInOut(duration: 0.3) }
+    private func maximum(_ index: Int) -> Double { isHue ? (index == 0 ? 360 : 100) : 255 }
+    private var color: Color { componentColor(values) }
+    private func componentColor(_ components: [Double]) -> Color {
+        if isHue {
+            return Color(hue: components[0] / 360, saturation: components[1] / 100,
+                         brightness: components[2] / 100)
+        }
+        return Color(.sRGB, red: components[0] / 255, green: components[1] / 255,
+                     blue: components[2] / 255, opacity: 1)
+    }
+    private func valueLabel(_ index: Int) -> String {
+        "\(Int(values[index].rounded()))" + (isHue ? (index == 0 ? "°" : "%") : "")
+    }
+    private var channelValue: Binding<Double> {
+        Binding { values[selectedChannel] } set: { value in
+            guard isActive else { return }
+            values[selectedChannel] = min(maximum(selectedChannel), max(0, value.rounded()))
+        }
+    }
+
+    private var channelRows: some View {
+        VStack(spacing: 6) {
             ForEach(channels.indices, id: \.self) { index in
                 VStack(spacing: 2) {
                     Button { selectChannel(index) } label: {
@@ -231,12 +381,12 @@ private struct CustomInkEditor: View {
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.7)
                             Spacer(minLength: 4)
-                            Text("\(Int(values[index]))").monospacedDigit()
+                            Text(valueLabel(index)).monospacedDigit()
                         }
-                        .font(.caption2.weight(.semibold))
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
+                        .frame(height: 16)
                         .background(selectedChannel == index ? Color.white.opacity(0.16) : .clear,
                                     in: Capsule())
                     }
@@ -250,55 +400,57 @@ private struct CustomInkEditor: View {
                     }
                     // Keep the numeric scale increasing from left to right in every language.
                     .environment(\.layoutDirection, .leftToRight)
-                    .frame(maxHeight: .infinity)
+                    .frame(height: 18)
                 }
-                .frame(maxHeight: .infinity)
+                .frame(height: 36)
             }
-            Text(colorName)
-                .font(.caption.monospaced())
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .padding(.top, 2)
+
+        }
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            // Three 36 pt rows and two 6 pt gaps. Scale the whole block only
+            // when necessary, so labels and controls always fit together.
+            let scale = min(1, max(0.01, geometry.size.height / 120))
+            channelRows
+                .frame(width: geometry.size.width / scale, height: 120)
+                .scaleEffect(scale, anchor: .topLeading)
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topLeading)
         }
         .padding(.horizontal, 8)
-        .padding(.vertical, 12)
+        .padding(.vertical, 2)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        // Respect the system toolbar above; include the bottom safe area in layout.
-        .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
         .contentShape(Rectangle())
-        .focusable()
+        .focusable(isActive)
         .focused($crownFocused)
-        .digitalCrownRotation(detent: channelValue, from: 0, through: 255, by: 1,
+        .digitalCrownRotation(detent: channelValue, from: 0, through: maximum(selectedChannel), by: 1,
                               sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-        .onAppear { crownFocused = true }
-        .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button {
-                    onSave(InkPreset(customID: UUID().uuidString, nameKey: colorName,
-                                     rgba: SIMD4(Float(values[0] / 255), Float(values[1] / 255),
-                                                 Float(values[2] / 255), 1)))
-                    dismiss()
-                } label: { Image(systemName: "checkmark") }
-                .accessibilityLabel(L10n.text("Add color"))
-            }
-        }
+        .onAppear { crownFocused = isActive }
+        .onChange(of: isActive) { _, active in crownFocused = active }
     }
 
     private func endpointColor(_ value: Double, channel: Int) -> Color {
         var components = values
         components[channel] = value
-        return Color(.sRGB, red: components[0] / 255, green: components[1] / 255,
-                     blue: components[2] / 255, opacity: 1)
+        return componentColor(components)
+    }
+
+    private func gradientColors(_ index: Int) -> [Color] {
+        if isHue && index == 0 {
+            return (0...12).map { Color(hue: Double($0) / 12, saturation: 1, brightness: 1) }
+        }
+        return [endpointColor(0, channel: index), endpointColor(maximum(index), channel: index)]
     }
 
     private func channelSlider(_ index: Int) -> some View {
         GeometryReader { geometry in
-            let diameter: CGFloat = max(1, min(28, min(geometry.size.height, geometry.size.width)))
+            let diameter: CGFloat = max(1, min(18, min(geometry.size.height, geometry.size.width)))
             let travel = max(1, geometry.size.width - diameter)
-            let thumbX = diameter / 2 + travel * values[index] / 255
+            let thumbX = diameter / 2 + travel * values[index] / maximum(index)
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(LinearGradient(colors: [endpointColor(0, channel: index), endpointColor(255, channel: index)],
+                    .fill(LinearGradient(colors: gradientColors(index),
                                          startPoint: .leading, endPoint: .trailing))
                     .frame(height: diameter)
                     .overlay { Capsule().strokeBorder(.white.opacity(0.2), lineWidth: 1) }
@@ -313,13 +465,13 @@ private struct CustomInkEditor: View {
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                 selectedChannel = index
-                channelValue.wrappedValue = ((value.location.x - diameter / 2) / travel) * 255
+                channelValue.wrappedValue = ((value.location.x - diameter / 2) / travel) * maximum(index)
                 crownFocused = true
             })
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.text(channels[index]))
-        .accessibilityValue("\(Int(values[index]))")
+        .accessibilityValue(valueLabel(index))
         .accessibilityAdjustableAction { direction in
             selectedChannel = index
             crownFocused = true
@@ -338,12 +490,12 @@ private struct CustomInkEditor: View {
             crownFocused = true
         } label: {
             Image(systemName: symbol)
-                .font(.system(size: 20, weight: .medium))
+                .font(.system(size: 14, weight: .medium))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(amount > 0 ? values[index] >= 255 : values[index] <= 0)
+        .disabled(amount > 0 ? values[index] >= maximum(index) : values[index] <= 0)
         .accessibilityLabel(L10n.text(channels[index]) + (amount > 0 ? " +1" : " −1"))
     }
 
