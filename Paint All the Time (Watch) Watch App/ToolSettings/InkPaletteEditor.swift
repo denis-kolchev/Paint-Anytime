@@ -56,8 +56,6 @@ struct InkPaletteEditor: View {
     @ObservedObject var controller: CanvasController
     let onBrowse: () -> Void
     @Binding var isEditing: Bool
-    let paletteID: String
-    let transitionNamespace: Namespace.ID
     @State private var showsEyedropper = false
     @Binding var sampledColor: SIMD4<Float>?
     @Binding var showsColorEditor: Bool
@@ -128,8 +126,6 @@ struct InkPaletteEditor: View {
                                         value: [preset.id: geometry.frame(in: .named("paletteGrid"))])
                                 }
                             }
-                            .modifier(PaletteSwatchTransition(paletteID: paletteID, colorID: preset.id,
-                                namespace: transitionNamespace, enabled: !reduceMotion))
                             .modifier(PaletteEditingWiggle(
                                 enabled: isEditing && !showsColorEditor && draggedID != preset.id,
                                 viewportSize: viewport.size))

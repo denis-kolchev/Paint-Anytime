@@ -72,8 +72,8 @@ struct InkPaletteBrowser: View {
     @State private var editing = false
     @State private var showsColorEditor = false
     @State private var sampledColor: SIMD4<Float>?
-    @Namespace private var paletteTransition
-    @GestureState private var pageTranslation: CGFloat = 0
+    @State private var pendingDeletionID: String?
+    @GestureState private var carouselTranslation = CGSize.zero
     private let addID = "add-palette"
 
     init(library: InkPaletteLibrary, controller: CanvasController,
@@ -94,7 +94,6 @@ struct InkPaletteBrowser: View {
                 if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
                     InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller,
                         onBrowse: { setBrowsing(true) }, isEditing: $editing,
-                        paletteID: currentID, transitionNamespace: paletteTransition,
                         sampledColor: $sampledColor, showsColorEditor: $showsColorEditor)
                         .id(currentID)
                         .transition(.opacity)
@@ -125,7 +124,7 @@ struct InkPaletteBrowser: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
-                        .disabled(!canConfirm && !editing)
+                        .disabled(pendingDeletionID != nil || (!canConfirm && !editing))
                         .accessibilityLabel(L10n.text("Done"))
                 }
             }
@@ -133,7 +132,7 @@ struct InkPaletteBrowser: View {
     }
 
     private func setBrowsing(_ value: Bool) {
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.38)) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
             browsing = value
         }
     }
@@ -163,42 +162,48 @@ struct InkPaletteBrowser: View {
                 let cardShape = paletteShape(width: cardWidth, height: cardHeight)
 
                 VStack(spacing: verticalGap) {
-                    Text(L10n.text(currentTitle))
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.6)
-                        .frame(width: width * 0.85, height: titleHeight)
-
-                    HStack(spacing: gap) {
+                    HStack(spacing: 0) {
                         ForEach(library.palettes) { entry in
-                            paletteCard(entry, width: cardWidth, height: cardHeight)
+                            VStack(spacing: verticalGap) {
+                                carouselTitle(entry.palette.title ?? "Palette", width: stride - 6, height: titleHeight)
+                                paletteSlot(entry, width: cardWidth, height: cardHeight)
+                            }
+                            .frame(width: stride)
+                            .accessibilityHidden(currentID != entry.id)
                         }
-                        Button(action: addPalette) {
-                            Image(systemName: "plus")
-                                .font(.largeTitle)
-                                .frame(width: cardWidth, height: cardHeight)
-                                .background(.white.opacity(0.08), in: cardShape)
-                                .overlay {
-                                    cardShape
-                                        .strokeBorder(.gray.opacity(0.6), lineWidth: 2)
-                                }
+                        VStack(spacing: verticalGap) {
+                            carouselTitle("New palette", width: stride - 6, height: titleHeight)
+                            Button(action: addPalette) {
+                                Image(systemName: "plus")
+                                    .font(.largeTitle)
+                                    .frame(width: cardWidth, height: cardHeight)
+                                    .background(.white.opacity(0.08), in: cardShape)
+                                    .overlay {
+                                        cardShape
+                                            .strokeBorder(.gray.opacity(0.6), lineWidth: 2)
+                                    }
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(pendingDeletionID != nil)
+                            .accessibilityLabel(L10n.text("New palette"))
+                            .accessibilityAdjustableAction { adjustPage($0) }
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(L10n.text("New palette"))
+                        .frame(width: stride)
                         .accessibilityHidden(currentID != addID)
-                        .accessibilityAdjustableAction { adjustPage($0) }
                     }
                     .environment(\.layoutDirection, .leftToRight)
-                    .offset(x: (width - cardWidth) / 2 - CGFloat(pageIndex) * stride + pageTranslation)
-                    .frame(width: width, height: cardHeight, alignment: .leading)
+                    .offset(x: (width - stride) / 2 - CGFloat(pageIndex) * stride + carouselTranslation.width)
+                    .frame(width: width, height: titleHeight + verticalGap + cardHeight, alignment: .leading)
                     .contentShape(Rectangle())
                     .clipped()
-                    .simultaneousGesture(pageGesture(stride: stride))
-                    .animation(pageAnimation, value: pageTranslation)
+                    // A recognized swipe must cancel the card's button press.
+                    .highPriorityGesture(pageGesture(stride: stride))
+                    .animation(pageAnimation, value: carouselTranslation)
 
-                    Button(L10n.text(currentID == addID ? "New palette" : "Edit")) {
-                        if currentID == addID { addPalette() }
+                    Button(L10n.text(pendingDeletionID != nil ? "Cancel" : currentID == addID ? "New palette" : "Edit")) {
+                        if pendingDeletionID != nil {
+                            withAnimation(pageAnimation) { pendingDeletionID = nil }
+                        } else if currentID == addID { addPalette() }
                         else { editing = true; setBrowsing(false) }
                     }
                     .buttonStyle(.plain)
@@ -220,6 +225,48 @@ struct InkPaletteBrowser: View {
             .ignoresSafeArea(.container, edges: .bottom)
     }
 
+    private func carouselTitle(_ title: String, width: CGFloat, height: CGFloat) -> some View {
+        Text(L10n.text(title))
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(width: width, height: height)
+            .environment(\.layoutDirection, layoutDirection)
+    }
+
+    private func paletteSlot(_ entry: SavedInkPalette, width: CGFloat, height: CGFloat) -> some View {
+        let awaitingDeletion = pendingDeletionID == entry.id
+        let lift = entry.id == currentID ? carouselTranslation.height : 0
+        return ZStack {
+            if awaitingDeletion || lift < 0 {
+                Button(role: .destructive) { delete(entry.id) } label: {
+                    VStack(spacing: 8) {
+                        Image(systemName: "trash.fill")
+                            .font(.system(size: min(34, width * 0.35)))
+                        Text(L10n.text("Delete"))
+                            .font(.headline)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                    }
+                    .foregroundStyle(.red)
+                    .frame(width: width, height: height)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .allowsHitTesting(awaitingDeletion)
+                .accessibilityHidden(!awaitingDeletion)
+            }
+            paletteCard(entry, width: width, height: height)
+                .offset(y: awaitingDeletion ? -height - 12 : lift)
+                .opacity(awaitingDeletion ? 0 : 1)
+                .allowsHitTesting(pendingDeletionID == nil)
+                .accessibilityHidden(awaitingDeletion || entry.id != currentID)
+        }
+        .frame(width: width, height: height)
+        .clipped()
+    }
+
     private func paletteCard(_ entry: SavedInkPalette, width: CGFloat, height: CGFloat) -> some View {
         let cardShape = paletteShape(width: width, height: height)
         let horizontalInset = width * 0.09
@@ -228,6 +275,7 @@ struct InkPaletteBrowser: View {
         let swatchSize = max(1, min((width - horizontalInset * 2 - spacing * 2) / 3,
                                    (height - verticalInset * 2 - spacing * 4) / 5))
         return Button {
+            guard pendingDeletionID == nil else { return }
             if currentID == entry.id {
                 editing = false
                 setBrowsing(false)
@@ -240,8 +288,6 @@ struct InkPaletteBrowser: View {
                     Circle().fill(color.color)
                         .overlay { Circle().strokeBorder(.white.opacity(0.25), lineWidth: 1) }
                         .frame(width: swatchSize, height: swatchSize)
-                        .modifier(PaletteSwatchTransition(paletteID: entry.id, colorID: color.id,
-                            namespace: paletteTransition, enabled: !reduceMotion && entry.id == currentID))
                 }
                 if entry.palette.allColors.isEmpty {
                     Image(systemName: "plus").foregroundStyle(.gray)
@@ -283,15 +329,12 @@ struct InkPaletteBrowser: View {
 
     private var pageIDs: [String] { library.palettes.map(\.id) + [addID] }
     private var pageIndex: Int { pageIDs.firstIndex(of: currentID) ?? 0 }
-    private var currentTitle: String {
-        library.palettes.first { $0.id == currentID }?.palette.title
-            ?? (currentID == addID ? "New palette" : "Palette")
-    }
     private var pageAnimation: Animation? {
         reduceMotion ? nil : .easeOut(duration: 0.22)
     }
 
     private func selectPage(by step: Int) {
+        guard pendingDeletionID == nil else { return }
         let target = min(pageIDs.count - 1, max(0, pageIndex + step))
         withAnimation(pageAnimation) { currentID = pageIDs[target] }
     }
@@ -306,15 +349,25 @@ struct InkPaletteBrowser: View {
 
     private func pageGesture(stride: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 10)
-            .updating($pageTranslation) { value, translation, transaction in
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+            .updating($carouselTranslation) { value, translation, transaction in
+                guard pendingDeletionID == nil else { return }
                 transaction.animation = nil
+                if abs(value.translation.height) > abs(value.translation.width) {
+                    if currentID != addID { translation.height = min(0, value.translation.height) }
+                    return
+                }
                 let atEdge = (pageIndex == 0 && value.translation.width > 0)
                     || (pageIndex == pageIDs.count - 1 && value.translation.width < 0)
-                translation = value.translation.width * (atEdge ? 0.2 : 1)
+                translation.width = value.translation.width * (atEdge ? 0.2 : 1)
             }
             .onEnded { value in
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                guard pendingDeletionID == nil else { return }
+                if abs(value.translation.height) > abs(value.translation.width) {
+                    if currentID != addID && value.translation.height < -30 {
+                        withAnimation(pageAnimation) { pendingDeletionID = currentID }
+                    }
+                    return
+                }
                 let travel = value.predictedEndTranslation.width
                 guard abs(travel) > stride * 0.2 else { return }
                 selectPage(by: travel < 0 ? 1 : -1)
@@ -344,6 +397,7 @@ struct InkPaletteBrowser: View {
     private func delete(_ id: String) {
         guard let index = library.palettes.firstIndex(where: { $0.id == id }) else { return }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+            pendingDeletionID = nil
             library.palettes.remove(at: index)
             currentID = library.palettes.isEmpty ? addID : library.palettes[min(index, library.palettes.count - 1)].id
         }
@@ -360,27 +414,4 @@ struct InkPaletteBrowser: View {
         }
     }
 
-}
-
-/// Match each color independently; navigation and safe-area layout stay stationary.
-struct PaletteSwatchTransition: ViewModifier {
-    let paletteID: String
-    let colorID: String
-    let namespace: Namespace.ID
-    let enabled: Bool
-
-    private struct SwatchID: Hashable {
-        let palette: String
-        let color: String
-    }
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if enabled {
-            content.matchedGeometryEffect(id: SwatchID(palette: paletteID, color: colorID),
-                                          in: namespace)
-        } else {
-            content
-        }
-    }
 }
