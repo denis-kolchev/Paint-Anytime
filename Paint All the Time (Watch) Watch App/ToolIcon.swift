@@ -85,6 +85,11 @@ struct ToolIcon: View {
                 c.stroke(brush, with: ink, lineWidth: 1.6)
                 outline([CGPoint(x: 8, y: 17), CGPoint(x: 10, y: 26), CGPoint(x: 14, y: 26), CGPoint(x: 16, y: 17)])
                 line(9, 20, 15, 20)
+            case .fill:
+                outline([CGPoint(x: 3, y: 13), CGPoint(x: 12, y: 4), CGPoint(x: 21, y: 13), CGPoint(x: 12, y: 22)], closed: true)
+                line(3, 13, 21, 13)
+                line(8, 2, 14, 8)
+                c.fill(Path(ellipseIn: CGRect(x: 19, y: 19, width: 4, height: 6)), with: ink)
             case .eraser:
                 outline([CGPoint(x: 3, y: 18), CGPoint(x: 11, y: 4), CGPoint(x: 21, y: 10), CGPoint(x: 13, y: 24), CGPoint(x: 8, y: 24)], closed: true)
                 line(6, 13, 16, 19)

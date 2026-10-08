@@ -15,6 +15,13 @@ nonisolated enum WatchStrokeDrawing {
         let ink = stroke.style.color
         var paint = context
         switch stroke.style.instrument {
+        case .fill:
+            var path = Path()
+            for rect in stroke.fillRects ?? [] {
+                path.addRect(CGRect(x: CGFloat(rect.x), y: CGFloat(rect.y),
+                                    width: CGFloat(rect.z), height: CGFloat(rect.w)))
+            }
+            paint.fill(path, with: .color(ink))
         case .monoline:
             paint.stroke(centerline(stroke), with: .color(ink), style: StrokeStyle(
                 lineWidth: CGFloat(stroke.style.width), lineCap: .round, lineJoin: .round))
@@ -171,7 +178,7 @@ nonisolated enum WatchStrokeDrawing {
                             // Coarser paper tooth modulates them independently of nib width.
                             let toothX = Int(floor(Double(center.x) / 1.8))
                             let toothY = Int(floor(Double(center.y) / 1.8))
-                            let tooth = noise((toothX &* 83492791) ^ (toothY &* 2971215073) ^ strokeSeed)
+                            let tooth = noise((toothX &* 83492791) ^ (toothY &* Int(truncatingIfNeeded: UInt32(2971215073))) ^ strokeSeed)
                             let centerVector = SIMD2<Float>(Float(center.x), Float(center.y))
                             // Long correlated grooves come from the nib, while paper
                             // tooth supplies smaller chips. The grains themselves are

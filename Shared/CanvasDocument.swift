@@ -9,10 +9,10 @@ nonisolated struct PointerSample: Codable, Equatable {
 
 nonisolated enum DrawingInstrument: Int, CaseIterable, Codable {
     // Preserve the raw values of the original monoline and fountain pen.
-    case monoline = 0, fountainPen = 1, pen, marker, pencil, crayon, reed, watercolor, eraser
+    case monoline = 0, fountainPen = 1, pen, marker, pencil, crayon, reed, watercolor, eraser, fill
 
     @MainActor static var displayOrder: [Self] {
-        let order: [Self] = [.monoline, .pen, .marker, .pencil, .crayon, .fountainPen, .reed, .watercolor, .eraser]
+        let order: [Self] = [.monoline, .pen, .marker, .pencil, .crayon, .fountainPen, .reed, .watercolor, .fill, .eraser]
         return order.filter { AppReleaseFeatures.current.allows($0) }
     }
 
@@ -26,13 +26,14 @@ nonisolated enum DrawingInstrument: Int, CaseIterable, Codable {
         case .fountainPen: L10n.text("Fountain pen")
         case .reed: L10n.text("Reed pen")
         case .watercolor: L10n.text("Watercolor")
+        case .fill: L10n.text("Fill")
         case .eraser: L10n.text("Eraser")
         }
     }
 
     var defaultWidth: Float {
         switch self {
-        case .monoline, .pen: 4
+        case .monoline, .pen, .fill: 4
         case .fountainPen: 6
         case .pencil: 3
         case .marker, .eraser: 12
@@ -246,6 +247,10 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
     }
     let style: PencilStyle
     var locksTransparency = false
+    // Horizontal filled rectangles in canvas coordinates; independent of brush width.
+    var fillRects: [SIMD4<Float>]? {
+        didSet { geometryRevision = UUID() }
+    }
 
     init(points: [PointerSample], style: PencilStyle, id: UUID = UUID()) {
         self.id = id
@@ -253,19 +258,20 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         self.style = style
     }
 
-    private enum CodingKeys: String, CodingKey { case id, points, style, locksTransparency }
+    private enum CodingKeys: String, CodingKey { case id, points, style, locksTransparency, fillRects }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         // Older drawings have no IDs. Assign once, then persist on the next save.
         id = try values.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        fillRects = try values.decodeIfPresent([SIMD4<Float>].self, forKey: .fillRects)
         points = try values.decode([PointerSample].self, forKey: .points)
         style = try values.decode(PencilStyle.self, forKey: .style)
         locksTransparency = try values.decodeIfPresent(Bool.self, forKey: .locksTransparency) ?? false
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.id == rhs.id && lhs.points == rhs.points && lhs.style == rhs.style && lhs.locksTransparency == rhs.locksTransparency
+        lhs.fillRects == rhs.fillRects && lhs.id == rhs.id && lhs.points == rhs.points && lhs.style == rhs.style && lhs.locksTransparency == rhs.locksTransparency
     }
 }
 

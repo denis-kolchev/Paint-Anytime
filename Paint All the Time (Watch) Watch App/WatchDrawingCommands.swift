@@ -671,3 +671,59 @@ actor WatchArtworkRenderer {
         return Task.isCancelled ? nil : image
     }
 }
+
+// Resolve connectivity once at tap time and persist compact horizontal spans.
+// Replaying a saved fill never re-evaluates boundaries after later layer edits.
+extension WatchBitmapRenderer {
+    static func floodFill(document: CanvasDocument, size: CGSize, point: CGPoint,
+                          style: PencilStyle) -> Stroke? {
+        let scale: CGFloat = 2
+        guard point.x.isFinite, point.y.isFinite, point.x >= 0, point.y >= 0,
+              point.x < size.width, point.y < size.height, style.effectiveOpacity > 0,
+              let image = render(document: document, size: size, scale: scale) else { return nil }
+        let width = image.width, height = image.height
+        guard let context = CGContext(data: nil, width: width, height: height,
+            bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue),
+              let data = context.data else { return nil }
+        // Copy the renderer's already top-down bitmap rows without flipping them again.
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let pixels = data.assumingMemoryBound(to: UInt8.self)
+        let seed = Int(point.y * scale) * width + Int(point.x * scale)
+        let target = (0..<4).map { Int(pixels[seed * 4 + $0]) }
+        var visited = [Bool](repeating: false, count: width * height)
+        func matches(_ index: Int) -> Bool {
+            !visited[index] && (0..<4).allSatisfy {
+                abs(Int(pixels[index * 4 + $0]) - target[$0]) <= 16
+            }
+        }
+        var pending = [seed]
+        var rectangles: [SIMD4<Float>] = []
+        while let index = pending.popLast() {
+            guard matches(index) else { continue }
+            let y = index / width
+            var left = index % width, right = left
+            while left > 0 && matches(y * width + left - 1) { left -= 1 }
+            while right + 1 < width && matches(y * width + right + 1) { right += 1 }
+            for x in left...right { visited[y * width + x] = true }
+            rectangles.append(SIMD4(Float(left) / Float(scale), Float(y) / Float(scale),
+                                    Float(right - left + 1) / Float(scale), 1 / Float(scale)))
+            for nextY in [y - 1, y + 1] where nextY >= 0 && nextY < height {
+                var insideRun = false
+                for x in left...right {
+                    let next = nextY * width + x
+                    let match = matches(next)
+                    if match && !insideRun { pending.append(next) }
+                    insideRun = match
+                }
+            }
+        }
+        var fillStyle = style
+        fillStyle.instrument = .fill
+        fillStyle.blendingMode = .normal
+        var stroke = Stroke(points: [PointerSample(position: SIMD2(Float(point.x), Float(point.y)),
+                                                   pressure: 1, timestamp: 0)], style: fillStyle)
+        stroke.fillRects = rectangles
+        return stroke
+    }
+}

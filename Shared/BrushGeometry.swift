@@ -193,6 +193,17 @@ nonisolated enum BrushGeometry {
     }
 
     static func touches(_ stroke: Stroke, from a: SIMD2<Float>, to b: SIMD2<Float>, radius: Float) -> Bool {
+        if stroke.style.instrument == .fill {
+            return (stroke.fillRects ?? []).contains { rect in
+                let lo = SIMD2(rect.x, rect.y), hi = lo + SIMD2(rect.z, rect.w)
+                if a.x >= lo.x && a.x <= hi.x && a.y >= lo.y && a.y <= hi.y { return true }
+                if b.x >= lo.x && b.x <= hi.x && b.y >= lo.y && b.y <= hi.y { return true }
+                let corners = [lo, SIMD2(hi.x, lo.y), hi, SIMD2(lo.x, hi.y)]
+                return (0..<4).contains {
+                    segmentDistance(a, b, corners[$0], corners[($0 + 1) % 4]) <= radius
+                }
+            }
+        }
         guard let first = stroke.points.first else { return false }
         let reach = radius + stroke.style.width / 2
         if distance(first.position, toSegmentFrom: a, to: b) <= reach { return true }

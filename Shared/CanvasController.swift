@@ -115,7 +115,19 @@ final class CanvasController: ObservableObject {
         return true
     }
 
+    func commitFill(_ stroke: Stroke) {
+        guard stroke.style.instrument == .fill, !(stroke.fillRects ?? []).isEmpty,
+              selectedLayer.isVisible else { return }
+        cancelStroke()
+        recordUndo(document)
+        var fill = stroke
+        fill.locksTransparency = selectedLayer.locksTransparency
+        document.layers[selectedLayerIndex].strokes.append(fill)
+        onNeedsDisplay?()
+    }
+
     func beginStroke(at sample: PointerSample) {
+        guard pencilStyle.instrument != .fill else { return }
         guard selectedLayer.isVisible, !(selectedLayer.locksTransparency && pencilStyle.instrument == .eraser) else { return }
         objectWillChange.send()
         strokeBeforeRecognition = nil

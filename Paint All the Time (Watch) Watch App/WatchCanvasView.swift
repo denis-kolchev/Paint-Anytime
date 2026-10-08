@@ -102,6 +102,7 @@ struct WatchCanvasView: View {
                             }
                             return
                         }
+                        guard controller.pencilStyle.instrument != .fill else { return }
                         let start = canvasPoint(value.startLocation, size: geometry.size)
                         // Preserve off-canvas samples so a stroke can enter the paper naturally.
                         // The artwork view and exported bitmap clip ink to the canvas bounds.
@@ -118,6 +119,15 @@ struct WatchCanvasView: View {
                         guard acceptsInput && acceptsCurrentGesture == true else { return }
                         if isMovingCanvas {
                             panOrigin = nil
+                            return
+                        }
+                        if controller.pencilStyle.instrument == .fill {
+                            let point = canvasPoint(value.startLocation, size: geometry.size)
+                            if controller.selectedLayer.isVisible,
+                               let fill = WatchBitmapRenderer.floodFill(document: controller.document,
+                                   size: geometry.size, point: point, style: controller.pencilStyle) {
+                                controller.commitFill(fill)
+                            }
                             return
                         }
                         guard controller.activeStroke != nil else { return }

@@ -115,7 +115,12 @@ nonisolated private enum ToolPreviewStroke {
                 strokes.append(Stroke(points: line, style: demoStyle))
             }
         }
-        strokes.append(Stroke(points: samples, style: style, id: id))
+        var preview = Stroke(points: samples, style: style, id: id)
+        if style.instrument == .fill {
+            preview.fillRects = [SIMD4(Float(size.width) * 0.15, Float(size.height) * 0.2,
+                                       Float(size.width) * 0.7, Float(size.height) * 0.6)]
+        }
+        strokes.append(preview)
         return strokes
     }
 }

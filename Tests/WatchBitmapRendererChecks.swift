@@ -21,7 +21,7 @@ struct RenderCheck {
             let i = (y * image.width + x) * 4
             return Array(bytes[i..<i+4])
         }
-        for instrument in DrawingInstrument.allCases where instrument != .eraser {
+        for instrument in DrawingInstrument.allCases where instrument != .eraser && instrument != .fill {
             var style = PencilStyle()
             style.instrument = instrument
             style.width = 12
@@ -45,6 +45,38 @@ struct RenderCheck {
         func sample(_ x: Float, _ y: Float) -> PointerSample {
             PointerSample(position: SIMD2<Float>(x, y), pressure: 1, timestamp: 0)
         }
+        // An off-center enclosure catches row inversion as well as boundary leaks.
+        let fillSize = CGSize(width: 100, height: 100)
+        var borderStyle = PencilStyle()
+        borderStyle.width = 4
+        let border = Stroke(points: [sample(10, 10), sample(45, 10), sample(45, 35),
+                                     sample(10, 35), sample(10, 10)], style: borderStyle)
+        var fillStyle = PencilStyle.initial(for: .fill)
+        fillStyle.color = SIMD4(1, 0, 0, 1)
+        let enclosed = WatchBitmapRenderer.floodFill(document: CanvasDocument(strokes: [border]),
+            size: fillSize, point: CGPoint(x: 20, y: 20), style: fillStyle)!
+        func contains(_ stroke: Stroke, _ x: Float, _ y: Float) -> Bool {
+            (stroke.fillRects ?? []).contains { x >= $0.x && x < $0.x + $0.z && y >= $0.y && y < $0.y + $0.w }
+        }
+        precondition(contains(enclosed, 20, 20) && !contains(enclosed, 70, 70),
+                     "Fill must remain within the tapped enclosure")
+        let filledImage = render([border, enclosed])
+        precondition(pixel(filledImage, 40, 40)[1] < 10, "Enclosed area must render red")
+        precondition(pixel(filledImage, 140, 140)[1] == 255, "Outside must stay white")
+        let onMark = WatchBitmapRenderer.floodFill(document: CanvasDocument(strokes: [border]),
+            size: fillSize, point: CGPoint(x: 10, y: 20), style: fillStyle)!
+        precondition(contains(onMark, 10, 20) && !contains(onMark, 20, 20),
+                     "Tapping a mark fills the mark, not its interior")
+        fillStyle.opacity = 0.5
+        let whole = WatchBitmapRenderer.floodFill(document: CanvasDocument(), size: fillSize,
+            point: CGPoint(x: 5, y: 5), style: fillStyle)!
+        precondition(contains(whole, 0, 0) && contains(whole, 99, 99), "Empty canvas fills completely")
+        let translucent = pixel(render([whole]), 100, 100)
+        precondition(translucent[0] == 255 && abs(Int(translucent[1]) - 128) <= 2, "Fill respects opacity")
+        precondition(WatchBitmapRenderer.floodFill(document: CanvasDocument(), size: fillSize,
+            point: CGPoint(x: -1, y: 0), style: fillStyle) == nil, "Off-canvas taps do nothing")
+        let restoredFill = try! JSONDecoder().decode(Stroke.self, from: JSONEncoder().encode(enclosed))
+        precondition(restoredFill == enclosed, "Fill geometry survives saving")
         // Spatial coverage must match exhaustive vector coverage, including
         // tile boundaries, negative coordinates, turns and overlapping paths.
         var dryStyle = PencilStyle.initial(for: .pencil)
@@ -146,9 +178,9 @@ struct RenderCheck {
         streamTool.update(with: sample(20, 20))
         let extended = streamTool.activeStroke!
         precondition(extended.extends(prefix), "Sequential input must retain its stream")
-        var edited = extended
-        edited.points[0] = sample(50, 50)
-        precondition(edited.inputStream == nil && !edited.extends(prefix),
+        var editedStream = extended
+        editedStream.points[0] = sample(50, 50)
+        precondition(editedStream.inputStream == nil && !editedStream.extends(prefix),
                      "Editing an earlier point must invalidate the input fast path")
 
         var wide = PencilStyle.initial(for: .crayon)
@@ -237,7 +269,7 @@ struct RenderCheck {
             }
             return total
         }
-        for instrument in DrawingInstrument.allCases where instrument != .eraser {
+        for instrument in DrawingInstrument.allCases where instrument != .eraser && instrument != .fill {
             var brush = PencilStyle.initial(for: instrument)
             brush.color = SIMD4(0, 0, 0, 1)
             brush.width = 20
@@ -281,7 +313,7 @@ struct RenderCheck {
         precondition(pixel(objectErase, 100, 60)[0] == 0, "Object eraser is handled by controller")
         precondition(WatchBitmapRenderer.render(strokes: [], size: .zero, scale: 2) == nil)
         precondition(WatchBitmapRenderer.render(strokes: [], size: CGSize(width: 100, height: 100), scale: 0) == nil)
-        for tool in DrawingInstrument.allCases where tool != .eraser {
+        for tool in DrawingInstrument.allCases where tool != .eraser && tool != .fill {
             style.instrument = tool
             let stroke = Stroke(points: [sample(20, 30), sample(50, 30), sample(80, 30)], style: style)
             let result = render([stroke])
@@ -293,7 +325,7 @@ struct RenderCheck {
         backgroundStyle.color = SIMD4(0.1, 0.2, 0.3, 1)
         let background = Stroke(points: [sample(20, 40), sample(80, 40)], style: backgroundStyle)
         let beforeWhite = pixel(render([background]), 80, 80)
-        for tool in DrawingInstrument.allCases where tool != .eraser {
+        for tool in DrawingInstrument.allCases where tool != .eraser && tool != .fill {
             var whiteStyle = PencilStyle.initial(for: tool)
             whiteStyle.width = 12
             whiteStyle.color = SIMD4(1, 1, 1, 1)

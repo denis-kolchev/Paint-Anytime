@@ -1,6 +1,38 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Fill": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fill"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Заливка"
+          }
+        }
+      }
+    },
+    "Tap to fill a connected area with the selected color and opacity.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap to fill a connected area with the selected color and opacity."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Коснитесь связной области, чтобы залить её выбранным цветом с заданной непрозрачностью."
+          }
+        }
+      }
+    },
     "Layers" : {
       "extractionState" : "manual",
       "localizations" : {

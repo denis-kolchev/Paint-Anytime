@@ -4,6 +4,21 @@ import Foundation
 @main
 struct ArchitectureChecks {
     @MainActor static func main() throws {
+        let fillCanvas = CanvasController(persistsPreferences: false)
+        var fill = Stroke(points: [PointerSample(position: SIMD2(10, 10), pressure: 1, timestamp: 0)],
+                          style: .initial(for: .fill))
+        fill.fillRects = [SIMD4(0, 0, 50, 50)]
+        fillCanvas.commitFill(fill)
+        precondition(fillCanvas.document.strokes.count == 1 && fillCanvas.canUndo)
+        fillCanvas.undo()
+        precondition(fillCanvas.document.strokes.isEmpty)
+        fillCanvas.redo()
+        precondition(fillCanvas.document.strokes == [fill])
+        precondition(BrushGeometry.touches(fill, from: SIMD2(40, 40), to: SIMD2(42, 42), radius: 1))
+        precondition(!BrushGeometry.touches(fill, from: SIMD2(70, 70), to: SIMD2(80, 80), radius: 1))
+        let order = DrawingInstrument.displayOrder
+        precondition(order.firstIndex(of: .fill)! + 1 == order.firstIndex(of: .eraser)!)
+        precondition(DrawingInstrument.eraser.rawValue == 8)
         try checkOpacity()
         try checkShapeHistory()
         let white = SIMD4<Float>(1, 1, 1, 1)
