@@ -9,6 +9,7 @@ struct WatchLayersView: View {
     @GestureState private var isReordering = false
     @State private var draggedLayer: UUID?
     @State private var selectionBlockedUntil = Date.distantPast
+    @State private var reorderTarget: UUID?
     @State private var dragOffset: CGFloat = 0
     @State private var rowFrames: [UUID: CGRect] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -21,14 +22,19 @@ struct WatchLayersView: View {
                         ForEach(Array(controller.document.layers.reversed())) { layer in
                             layerRow(layer, proxy: proxy)
                                 .id(layer.id)
+                                .offset(y: rowOffset(layer.id))
+                                .animation(
+                                    layer.id == draggedLayer || reduceMotion ? nil : .easeInOut(duration: 0.18),
+                                    value: reorderTarget
+                                )
+                                .scaleEffect(draggedLayer == layer.id && !reduceMotion ? 1.04 : 1)
+                                // Measure the layout slot, outside the visual drag/preview transforms.
                                 .background {
                                     GeometryReader { geometry in
                                         Color.clear.preference(key: LayerRowFrames.self,
                                             value: [layer.id: geometry.frame(in: .named("layers"))])
                                     }
                                 }
-                                .offset(y: draggedLayer == layer.id ? dragOffset : 0)
-                                .scaleEffect(draggedLayer == layer.id && !reduceMotion ? 1.04 : 1)
                                 .zIndex(draggedLayer == layer.id ? 1 : 0)
                         }
                         Button { showsPaperEditor = true } label: {
@@ -57,6 +63,7 @@ struct WatchLayersView: View {
                         selectionBlockedUntil = Date().addingTimeInterval(0.2)
                     }
                     draggedLayer = nil
+                    reorderTarget = nil
                     dragOffset = 0
                 }
             }
@@ -152,15 +159,19 @@ struct WatchLayersView: View {
                 }
                 if let drag {
                     dragOffset = drag.translation.height
-                    // Follow the next row when the finger approaches the viewport edge.
-                    if let target = rowFrames.first(where: { $0.key != id && $0.value.contains(drag.location) }) {
-                        proxy.scrollTo(target.key, anchor: drag.translation.height < 0 ? .top : .bottom)
+                    let target = dropTarget(for: id, translation: drag.translation.height)
+                    if reorderTarget != target {
+                        reorderTarget = target
+                        if let target {
+                            proxy.scrollTo(target, anchor: drag.translation.height < 0 ? .top : .bottom)
+                        }
                     }
                 }
             }
             .onEnded { value in
                 defer {
                     draggedLayer = nil
+                    reorderTarget = nil
                     dragOffset = 0
                 }
                 if case .second(true, _) = value {
@@ -168,14 +179,41 @@ struct WatchLayersView: View {
                     selectionBlockedUntil = Date().addingTimeInterval(0.2)
                 }
                 guard case .second(true, let drag?) = value else { return }
-                let candidates = rowFrames.filter { $0.key != id }
-                guard let target = candidates.min(by: {
-                    abs($0.value.midY - drag.location.y) < abs($1.value.midY - drag.location.y)
-                }), let origin = rowFrames[id], abs(drag.location.y - origin.midY) > origin.height / 2 else { return }
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                    controller.moveLayer(id, to: target.key)
-                }
+                guard let target = dropTarget(for: id, translation: drag.translation.height) else { return }
+                controller.moveLayer(id, to: target)
             }
+    }
+
+    // Keep document order unchanged until release, so one drag produces one undo step.
+    // Neighbors preview their destination using offsets from stable layout slots.
+    private func rowOffset(_ id: UUID) -> CGFloat {
+        guard let draggedLayer else { return 0 }
+        if id == draggedLayer { return dragOffset }
+        let ids = controller.document.layers.reversed().map(\.id)
+        guard let reorderTarget,
+              let source = ids.firstIndex(of: draggedLayer),
+              let destination = ids.firstIndex(of: reorderTarget),
+              let index = ids.firstIndex(of: id),
+              let origin = rowFrames[draggedLayer] else { return 0 }
+        let distance = origin.height + 8
+        if destination < source, (destination..<source).contains(index) { return distance }
+        if destination > source, ((source + 1)...destination).contains(index) { return -distance }
+        return 0
+    }
+
+    private func dropTarget(for id: UUID, translation: CGFloat) -> UUID? {
+        guard let origin = rowFrames[id] else { return nil }
+        let center = origin.midY + translation
+        let neighbors = rowFrames.filter { $0.key != id }
+        if translation < 0 {
+            return neighbors.filter { $0.value.midY < origin.midY && center <= $0.value.midY }
+                .min { $0.value.midY < $1.value.midY }?.key
+        }
+        if translation > 0 {
+            return neighbors.filter { $0.value.midY > origin.midY && center >= $0.value.midY }
+                .max { $0.value.midY < $1.value.midY }?.key
+        }
+        return nil
     }
 
     private func move(_ id: UUID, up: Bool) {
