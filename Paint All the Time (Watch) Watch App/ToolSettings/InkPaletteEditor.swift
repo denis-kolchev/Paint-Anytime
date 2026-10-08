@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct InkPalette: Codable {
+    var baseColors: [InkPreset]?
+    var title: String?
     var customColors: [InkPreset] = []
     var selectedIDs: [String] = InkPreset.all.map(\.id)
 
@@ -9,13 +11,13 @@ struct InkPalette: Codable {
     var deletedIDs: [String]?
 
     var allColors: [InkPreset] {
-        let available = (InkPreset.all + customColors).filter { !(deletedIDs ?? []).contains($0.id) }
+        let available = ((baseColors ?? InkPaletteLibrary.basicColors) + customColors).filter { !(deletedIDs ?? []).contains($0.id) }
         let ordered = (orderedIDs ?? []).compactMap { id in available.first { $0.id == id } }
         return ordered + available.filter { !(orderedIDs ?? []).contains($0.id) }
     }
 
     mutating func delete(_ id: String) {
-        guard allColors.count > 1 else { return }
+        guard !allColors.isEmpty else { return }
         deletedIDs = (deletedIDs ?? []) + [id]
         customColors.removeAll { $0.id == id }
         orderedIDs?.removeAll { $0 == id }
@@ -32,12 +34,12 @@ struct InkPalette: Codable {
     }
     var selectedColors: [InkPreset] {
         let selected = allColors.filter { selectedIDs.contains($0.id) }
-        return selected.isEmpty ? [allColors.first ?? InkPreset.all[0]] : selected
+        return selected.isEmpty ? Array(allColors.prefix(1)) : selected
     }
 
     static func decode(_ data: Data) -> InkPalette {
         guard var palette = try? JSONDecoder().decode(Self.self, from: data) else { return Self() }
-        var knownIDs = Set(InkPreset.all.map(\.id))
+        var knownIDs = Set((palette.baseColors ?? InkPaletteLibrary.basicColors).map(\.id))
         palette.customColors = palette.customColors.filter { preset in
             let values = [preset.rgba.x, preset.rgba.y, preset.rgba.z, preset.rgba.w]
             return values.allSatisfy { $0.isFinite && (0...1).contains($0) }
@@ -50,10 +52,11 @@ struct InkPalette: Codable {
 }
 
 struct InkPaletteEditor: View {
-    @Environment(\.dismiss) private var dismiss
-    @State var palette: InkPalette
+    @Binding var palette: InkPalette
     @ObservedObject var controller: CanvasController
     let onSave: (InkPalette) -> Void
+    let onBrowse: () -> Void
+    var startsEditing = false
     @State private var showsEyedropper = false
     @State private var sampledColor: SIMD4<Float>?
     @State private var showsColorEditor = false
@@ -68,7 +71,7 @@ struct InkPaletteEditor: View {
             GeometryReader { viewport in
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(L10n.text("Palette")).font(.headline)
+                    Text(L10n.text(palette.title ?? "Basic colors")).font(.headline)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 16) {
                         ForEach(palette.allColors) { preset in
                             let selected = palette.selectedIDs.contains(preset.id)
@@ -113,7 +116,6 @@ struct InkPaletteEditor: View {
                                     }
                                     .buttonStyle(.plain)
                                     .offset(x: -5, y: -5)
-                                    .disabled(palette.allColors.count == 1)
                                     .accessibilityLabel(L10n.text("Delete") + " " + preset.name)
                                 }
                             }
@@ -131,14 +133,14 @@ struct InkPaletteEditor: View {
                             .zIndex(draggedID == preset.id ? 1 : 0)
                             .highPriorityGesture(swatchDrag(preset.id), including: isEditing ? .all : .none)
                             .highPriorityGesture(
-                                LongPressGesture(minimumDuration: 0.5).onEnded { _ in isEditing = true },
+                                LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() },
                                 including: isEditing ? .none : .all)
-                            .accessibilityAction(named: Text(L10n.text("Edit"))) { isEditing = true }
+                            .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
                             .accessibilityLabel(preset.name)
                             .accessibilityValue(L10n.text(selected ? "Selected" : "Not selected"))
                             .accessibilityAddTraits(selected ? [.isSelected] : [])
                         }
-                        Button { if !isEditing { sampledColor = nil; showsColorEditor = true } } label: {
+                        Button { sampledColor = nil; showsColorEditor = true } label: {
                             Image(systemName: "plus.circle.fill")
                                 .resizable()
                                 .scaledToFit()
@@ -147,7 +149,7 @@ struct InkPaletteEditor: View {
                         }
                         .buttonStyle(.plain)
                         .highPriorityGesture(
-                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in isEditing = true })
+                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() })
                         .accessibilityLabel(L10n.text("Create color"))
                     }
                 }
@@ -156,8 +158,8 @@ struct InkPaletteEditor: View {
                 .coordinateSpace(name: "paletteGrid")
                 .onPreferenceChange(PaletteSwatchFramesKey.self) { swatchFrames = $0 }
                 .contentShape(Rectangle())
-                .onLongPressGesture(minimumDuration: 0.5) { isEditing = true }
-                .accessibilityAction(named: Text(L10n.text("Edit"))) { isEditing = true }
+                .onLongPressGesture(minimumDuration: 0.5) { if !isEditing { onBrowse() } }
+                .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
             }
             .scrollDisabled(draggedID != nil)
             }
@@ -169,9 +171,9 @@ struct InkPaletteEditor: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
-                        if isEditing { isEditing = false }
-                        else { onSave(palette); dismiss() }
+                        onSave(palette)
                     } label: { Image(systemName: "checkmark") }
+                        .disabled(palette.selectedColors.isEmpty)
                         .accessibilityLabel(L10n.text("Done"))
                 }
             }
@@ -186,6 +188,7 @@ struct InkPaletteEditor: View {
                 }
             }
         }
+        .onAppear { isEditing = startsEditing }
         .fullScreenCover(isPresented: $showsEyedropper, onDismiss: {
             if sampledColor != nil { showsColorEditor = true }
         }) {

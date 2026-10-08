@@ -7,10 +7,12 @@ struct WatchToolSettingsView: View {
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @State private var showsInformation = false
     @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
+    @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
     @State private var showsPalette = false
     @State private var selectsAddColor = false
 
-    private var palette: InkPalette { InkPalette.decode(paletteData) }
+    private var paletteLibrary: InkPaletteLibrary { InkPaletteLibrary.decode(palettesData, legacy: paletteData) }
+    private var palette: InkPalette { paletteLibrary.activePalette }
     private var isAddingColor: Bool { !tutorial.isActive && selectsAddColor }
 
     private func selectColor(_ index: Int) {
@@ -413,8 +415,9 @@ struct WatchToolSettingsView: View {
             }
         }
         .fullScreenCover(isPresented: $showsPalette, onDismiss: { crownFocused = true }) {
-            InkPaletteEditor(palette: palette, controller: controller) { updated in
-                if let data = try? JSONEncoder().encode(updated) { paletteData = data }
+            InkPaletteBrowser(library: paletteLibrary, controller: controller) { library in
+                if let data = try? JSONEncoder().encode(library) { palettesData = data }
+                let updated = library.activePalette
                 if !updated.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
                    let first = updated.selectedColors.first {
                     controller.pencilStyle.color = first.rgba
