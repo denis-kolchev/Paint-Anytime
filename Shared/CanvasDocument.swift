@@ -245,6 +245,7 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         return points.starts(with: previous.points)
     }
     let style: PencilStyle
+    var locksTransparency = false
 
     init(points: [PointerSample], style: PencilStyle, id: UUID = UUID()) {
         self.id = id
@@ -252,7 +253,7 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         self.style = style
     }
 
-    private enum CodingKeys: String, CodingKey { case id, points, style }
+    private enum CodingKeys: String, CodingKey { case id, points, style, locksTransparency }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -260,13 +261,51 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         id = try values.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         points = try values.decode([PointerSample].self, forKey: .points)
         style = try values.decode(PencilStyle.self, forKey: .style)
+        locksTransparency = try values.decodeIfPresent(Bool.self, forKey: .locksTransparency) ?? false
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.id == rhs.id && lhs.points == rhs.points && lhs.style == rhs.style
+        lhs.id == rhs.id && lhs.points == rhs.points && lhs.style == rhs.style && lhs.locksTransparency == rhs.locksTransparency
     }
 }
 
-nonisolated struct CanvasDocument: Codable, Equatable {
+nonisolated struct CanvasLayer: Codable, Equatable, Identifiable {
+    var id = UUID()
+    var name = "Layer 1"
     var strokes: [Stroke] = []
+    var isVisible = true
+    var opacity: Float = 1
+    var locksTransparency = false
+}
+
+nonisolated struct CanvasDocument: Codable, Equatable {
+    // Stored bottom to top. The paper is always below every drawing layer.
+    var layers: [CanvasLayer]
+    var backgroundColor = SIMD4<Float>(1, 1, 1, 1)
+    var strokes: [Stroke] {
+        get { layers.flatMap(\.strokes) }
+        set {
+            if layers.count == 1 { layers[0].strokes = newValue }
+            else { layers = [CanvasLayer(strokes: newValue)] }
+        }
+    }
+
+    init(strokes: [Stroke] = []) { layers = [CanvasLayer(strokes: strokes)] }
+
+    private enum CodingKeys: String, CodingKey { case layers, backgroundColor, strokes }
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        if let decoded = try values.decodeIfPresent([CanvasLayer].self, forKey: .layers) {
+            layers = decoded
+        } else {
+            layers = [CanvasLayer(strokes: try values.decodeIfPresent([Stroke].self, forKey: .strokes) ?? [])]
+        }
+        if layers.isEmpty { layers = [CanvasLayer()] }
+        backgroundColor = try values.decodeIfPresent(SIMD4<Float>.self, forKey: .backgroundColor) ?? SIMD4(1, 1, 1, 1)
+    }
+    func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(layers, forKey: .layers)
+        try values.encode(backgroundColor, forKey: .backgroundColor)
+    }
 }

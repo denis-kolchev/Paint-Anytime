@@ -45,7 +45,7 @@ nonisolated struct WatchDrawingContext {
 
 nonisolated enum WatchBitmapRenderer {
     /// A transparent, floating-point ink snapshot preserves multiply and pixel erasing.
-    private struct InkSnapshot {
+    fileprivate struct InkSnapshot {
         let image: CGImage
     }
 
@@ -424,6 +424,57 @@ nonisolated enum WatchBitmapRenderer {
         return flatten(ink, paperWhite: paperWhite)
     }
 
+    static func layerThumbnail(strokes: [Stroke], size: CGSize, scale: CGFloat) -> CGImage? {
+        renderInk(strokes: strokes, size: size, scale: scale)?.image
+    }
+
+    /// Layers are isolated so erasers never punch through neighbouring artwork.
+    final class LayerCache {
+        var size: CGSize = .zero
+        var scale: CGFloat = 0
+        fileprivate var inks: [UUID: (revisions: [UUID], ink: InkSnapshot)] = [:]
+    }
+
+    static func render(document: CanvasDocument, size: CGSize, scale: CGFloat,
+                       activeStroke: Stroke? = nil, selectedLayerID: UUID? = nil,
+                       cache: LayerCache? = nil) -> CGImage? {
+        guard size.width > 0, size.height > 0, scale > 0,
+              size.width * scale <= 8192, size.height * scale <= 8192,
+              let output = makeDisplayContext(width: Int(ceil(size.width * scale)),
+                                              height: Int(ceil(size.height * scale))) else { return nil }
+        let bounds = CGRect(x: 0, y: 0, width: output.width, height: output.height)
+        let c = document.backgroundColor
+        output.setFillColor(CGColor(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: 1))
+        output.fill(bounds)
+        if let cache {
+            if cache.size != size || cache.scale != scale { cache.inks.removeAll() }
+            cache.size = size
+            cache.scale = scale
+            cache.inks = cache.inks.filter { id, _ in document.layers.contains { $0.id == id } }
+        }
+        for layer in document.layers where layer.isVisible && layer.opacity > 0 {
+            let revisions = layer.strokes.map(\.geometryRevision)
+            let committed: InkSnapshot
+            if let entry = cache?.inks[layer.id], entry.revisions == revisions {
+                committed = entry.ink
+            } else {
+                guard let ink = renderInk(strokes: layer.strokes, size: size, scale: scale) else { return nil }
+                committed = ink
+                cache?.inks[layer.id] = (revisions, ink)
+            }
+            var ink = committed
+            if layer.id == selectedLayerID, let activeStroke {
+                guard let live = renderInk(strokes: [activeStroke], size: size, scale: scale, base: committed) else { return nil }
+                ink = live
+            }
+            output.saveGState()
+            output.setAlpha(CGFloat(layer.opacity))
+            output.draw(ink.image, in: bounds)
+            output.restoreGState()
+        }
+        return output.makeImage()
+    }
+
     private static func renderInk(strokes: [Stroke], size: CGSize, scale: CGFloat,
                                   base: InkSnapshot? = nil, geometry: [UUID: StrokeGeometry] = [:]) -> InkSnapshot? {
         guard size.width.isFinite, size.height.isFinite, scale.isFinite,
@@ -441,6 +492,22 @@ nonisolated enum WatchBitmapRenderer {
         context.scaleBy(x: scale, y: -scale)
         for stroke in strokes {
             guard !Task.isCancelled else { return nil }
+            // Paint on opaque straight RGB, then restore the original alpha mask.
+            // This preserves even partially transparent edges across repeated strokes.
+            var lockedAlpha: [Float] = []
+            if stroke.locksTransparency, let data = context.data {
+                if stroke.style.instrument == .eraser { continue }
+                let pixels = data.assumingMemoryBound(to: Float.self)
+                let stride = context.bytesPerRow / MemoryLayout<Float>.size
+                lockedAlpha.reserveCapacity(context.width * context.height)
+                for y in 0..<context.height { for x in 0..<context.width {
+                    let i = y * stride + x * 4
+                    let alpha = pixels[i + 3]
+                    lockedAlpha.append(alpha)
+                    for c in 0..<3 { pixels[i + c] = alpha > 0 ? pixels[i + c] / alpha : 0 }
+                    pixels[i + 3] = 1
+                } }
+            }
             // Also tolerate separately edited copies with a shared ID.
             let cached = geometry[stroke.id].flatMap {
                 $0.revision == stroke.geometryRevision ? $0 : nil
@@ -476,6 +543,16 @@ nonisolated enum WatchBitmapRenderer {
                     context.endTransparencyLayer()
                     context.restoreGState()
                 }
+            }
+            if !lockedAlpha.isEmpty, let data = context.data {
+                let pixels = data.assumingMemoryBound(to: Float.self)
+                let stride = context.bytesPerRow / MemoryLayout<Float>.size
+                for y in 0..<context.height { for x in 0..<context.width {
+                    let i = y * stride + x * 4
+                    let alpha = lockedAlpha[y * context.width + x]
+                    for c in 0..<3 { pixels[i + c] *= alpha }
+                    pixels[i + 3] = alpha
+                } }
             }
         }
         guard let image = context.makeImage() else { return nil }
@@ -567,6 +644,15 @@ nonisolated enum WatchBitmapRenderer {
 /// overlapping requests from modifying the same incremental cache.
 actor WatchArtworkRenderer {
     private let cache = WatchBitmapRenderer.Cache()
+    private let layers = WatchBitmapRenderer.LayerCache()
+
+    func layeredFrame(document: CanvasDocument, activeStroke: Stroke?, selectedLayerID: UUID?,
+                      key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
+        guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: key.scale,
+            activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers) else { return nil }
+        return WatchBitmapRenderer.ScreenFrame(background: image, tiles: [])
+    }
+
 
     func screenFrame(strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
                      activeStrokeID: UInt64) -> WatchBitmapRenderer.ScreenFrame? {

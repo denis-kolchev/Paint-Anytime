@@ -4,6 +4,8 @@ import Combine
 /// Present a fully materialized Core Graphics bitmap, using the same brush
 /// geometry as export without SwiftUI's Canvas/ImageRenderer preparation path.
 struct WatchRasterArtwork: View {
+    var document: CanvasDocument? = nil
+    var selectedLayerID: UUID? = nil
     let strokes: [Stroke]
     let activeStroke: Stroke?
     let documentID: ObjectIdentifier
@@ -18,7 +20,7 @@ struct WatchRasterArtwork: View {
         let _ = TutorialDebug.trace("raster.body")
         GeometryReader { geometry in
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
-            RasterFrame(strokes: strokes, activeStroke: activeStroke,
+            RasterFrame(document: document, selectedLayerID: selectedLayerID, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
@@ -37,6 +39,8 @@ struct WatchRasterArtwork: View {
     }
 
     private struct RasterFrame: View {
+        let document: CanvasDocument?
+        let selectedLayerID: UUID?
         let strokes: [Stroke]
         let activeStroke: Stroke?
         let activeStrokeRevision: UInt64
@@ -73,7 +77,7 @@ struct WatchRasterArtwork: View {
                 }
             }
             .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision)) { @MainActor in
-                frames.submit(strokes: strokes, activeStroke: activeStroke,
+                frames.submit(document: document, selectedLayerID: selectedLayerID, strokes: strokes, activeStroke: activeStroke,
                               key: key, activeStrokeID: activeStrokeID)
             }
             .onDisappear { frames.stop() }
@@ -89,6 +93,8 @@ private final class CanvasFrameQueue: ObservableObject {
     @Published private(set) var frame: WatchBitmapRenderer.ScreenFrame?
     private let renderer = WatchArtworkRenderer()
     private struct Job {
+        let document: CanvasDocument?
+        let selectedLayerID: UUID?
         let strokes: [Stroke]
         let activeStroke: Stroke?
         let key: WatchBitmapRenderer.CacheKey
@@ -99,9 +105,9 @@ private final class CanvasFrameQueue: ObservableObject {
     private var worker: Task<Void, Never>?
     private var generation: UInt64 = 0
 
-    func submit(strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
+    func submit(document: CanvasDocument?, selectedLayerID: UUID?, strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
                 activeStrokeID: UInt64) {
-        let job = Job(strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
+        let job = Job(document: document, selectedLayerID: selectedLayerID, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
         pending = job
         latest = job
         guard worker == nil else { return }
@@ -110,8 +116,14 @@ private final class CanvasFrameQueue: ObservableObject {
             guard let self else { return }
             while let job = self.pending, !Task.isCancelled {
                 self.pending = nil
-                let next = await self.renderer.screenFrame(strokes: job.strokes, activeStroke: job.activeStroke,
+                let next: WatchBitmapRenderer.ScreenFrame?
+                if let document = job.document {
+                    next = await self.renderer.layeredFrame(document: document, activeStroke: job.activeStroke,
+                        selectedLayerID: job.selectedLayerID, key: job.key)
+                } else {
+                    next = await self.renderer.screenFrame(strokes: job.strokes, activeStroke: job.activeStroke,
                                                      key: job.key, activeStrokeID: job.activeStrokeID)
+                }
                 guard !Task.isCancelled, self.generation == token else { return }
                 // An older prefix of this gesture is useful. An old document,
                 // cancelled gesture or viewport must never replace the new one.

@@ -27,7 +27,7 @@ final class CanvasController: ObservableObject {
     }
     private var savedDocument = CanvasDocument()
     var hasUnsavedChanges: Bool { document != savedDocument }
-    var needsDiscardConfirmation: Bool { !document.strokes.isEmpty && hasUnsavedChanges }
+    var needsDiscardConfirmation: Bool { hasUnsavedChanges }
     private let pencil = PencilTool()
     private var documentBeforeErasing: CanvasDocument?
     private var documentAtStrokeStart: CanvasDocument?
@@ -41,13 +41,67 @@ final class CanvasController: ObservableObject {
     var onNeedsDisplay: (() -> Void)?
 
     init(defaults: UserDefaults = .standard, persistsPreferences: Bool = true) {
+        savedDocument = document
         tools = ToolSettings(defaults: defaults, persistsPreferences: persistsPreferences)
         toolChanges = tools.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }
     }
 
-    var activeStroke: Stroke? { pencil.activeStroke }
+    private(set) var selectedLayerID: UUID?
+    var selectedLayerIndex: Int { document.layers.firstIndex { $0.id == selectedLayerID } ?? 0 }
+    var selectedLayer: CanvasLayer { document.layers[selectedLayerIndex] }
+    var activeStroke: Stroke? {
+        guard var stroke = pencil.activeStroke else { return nil }
+        stroke.locksTransparency = selectedLayer.locksTransparency
+        return stroke
+    }
+
+    func selectLayer(_ id: UUID) {
+        cancelStroke()
+        selectedLayerID = id
+    }
+
+    private func editLayers(_ edit: (inout CanvasDocument) -> Void) {
+        cancelStroke()
+        recordUndo(document)
+        edit(&document)
+        onNeedsDisplay?()
+    }
+
+    func addLayer() {
+        let usedNumbers = document.layers.compactMap { Int($0.name.replacingOccurrences(of: "Layer ", with: "")) }
+        let layer = CanvasLayer(name: "Layer \((usedNumbers.max() ?? 0) + 1)")
+        let index = selectedLayerIndex + 1
+        editLayers { $0.layers.insert(layer, at: index) }
+        selectedLayerID = layer.id
+    }
+
+    func deleteLayer(_ id: UUID) {
+        editLayers {
+            $0.layers.removeAll { $0.id == id }
+            if $0.layers.isEmpty { $0.layers = [CanvasLayer()] }
+        }
+        if selectedLayerID == id { selectedLayerID = document.layers.last?.id }
+    }
+
+    func moveLayer(_ id: UUID, to target: UUID) {
+        guard let from = document.layers.firstIndex(where: { $0.id == id }),
+              let to = document.layers.firstIndex(where: { $0.id == target }), from != to else { return }
+        editLayers {
+            let layer = $0.layers.remove(at: from)
+            $0.layers.insert(layer, at: to)
+        }
+    }
+
+    func updateLayer(_ id: UUID, _ edit: (inout CanvasLayer) -> Void) {
+        guard let index = document.layers.firstIndex(where: { $0.id == id }) else { return }
+        editLayers { edit(&$0.layers[index]) }
+    }
+
+    func setBackgroundColor(_ color: SIMD4<Float>) {
+        editLayers { $0.backgroundColor = color }
+    }
     var isShapeSnapped: Bool { pencil.shapeState != .drawing }
 
     @discardableResult
@@ -62,6 +116,7 @@ final class CanvasController: ObservableObject {
     }
 
     func beginStroke(at sample: PointerSample) {
+        guard selectedLayer.isVisible, !(selectedLayer.locksTransparency && pencilStyle.instrument == .eraser) else { return }
         objectWillChange.send()
         strokeBeforeRecognition = nil
         documentAtStrokeStart = document
@@ -89,7 +144,7 @@ final class CanvasController: ObservableObject {
         let previous = pencil.activeStroke?.points.last?.position ?? sample.position
         eraseObjects(from: previous, to: sample.position)
         activeStrokeRevision &+= 1
-        guard let stroke = pencil.end(at: sample) else {
+        guard var stroke = pencil.end(at: sample) else {
             if let original = documentBeforeErasing { document = original }
             documentBeforeErasing = nil
             documentAtStrokeStart = nil
@@ -98,7 +153,8 @@ final class CanvasController: ObservableObject {
             return
         }
         if stroke.style.instrument != .eraser || stroke.style.eraserMode == .pixels {
-            document.strokes.append(stroke)
+            stroke.locksTransparency = selectedLayer.locksTransparency
+            document.layers[selectedLayerIndex].strokes.append(stroke)
         }
         documentBeforeErasing = nil
         if let before = documentAtStrokeStart,
@@ -107,7 +163,9 @@ final class CanvasController: ObservableObject {
             if let original = strokeBeforeRecognition {
                 // Drawing and shape correction are separate committed edits.
                 var freehand = before
-                freehand.strokes.append(original)
+                var original = original
+                original.locksTransparency = selectedLayer.locksTransparency
+                freehand.layers[selectedLayerIndex].strokes.append(original)
                 recordUndo(freehand)
             }
         }
@@ -137,6 +195,7 @@ final class CanvasController: ObservableObject {
         undoStack.removeAll()
         redoStack.removeAll()
         document = savedDocument
+        selectedLayerID = document.layers.last?.id
         self.savedDocument = savedDocument
         onNeedsDisplay?()
     }
@@ -155,7 +214,7 @@ final class CanvasController: ObservableObject {
         documentAtStrokeStart = nil
         strokeBeforeRecognition = nil
         recordUndo(document)
-        document.strokes.removeAll()
+        for index in document.layers.indices { document.layers[index].strokes.removeAll() }
         onNeedsDisplay?()
     }
 
@@ -196,9 +255,9 @@ final class CanvasController: ObservableObject {
     private func eraseObjects(from a: SIMD2<Float>, to b: SIMD2<Float>) {
         guard let style = pencil.activeStroke?.style,
               style.instrument == .eraser, style.eraserMode == .objects else { return }
-        let remaining = document.strokes.filter { stroke in
+        let remaining = selectedLayer.strokes.filter { stroke in
             !(stroke.style.instrument != .eraser && BrushGeometry.touches(stroke, from: a, to: b, radius: style.width / 2))
         }
-        if remaining.count != document.strokes.count { document.strokes = remaining }
+        if remaining.count != selectedLayer.strokes.count { document.layers[selectedLayerIndex].strokes = remaining }
     }
 }

@@ -22,7 +22,7 @@ final class DrawingSessionController: ObservableObject {
     func saveDrawing(size: CGSize, scale: CGFloat) {
         do {
             let drawing = try CanvasExporter.save(
-                strokes: canvas.document.strokes, size: size, scale: scale)
+                document: canvas.document, size: size, scale: scale)
             canvas.markSaved()
             let queued = WatchPhotoTransfer.shared.queue(drawing.url)
             photoTransferCanRetry = !queued

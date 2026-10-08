@@ -6,9 +6,15 @@ import WatchKit
 enum CanvasExporter {
     @MainActor
     static func save(strokes: [Stroke], size: CGSize, scale: CGFloat, in folder: URL? = nil) throws -> CanvasExport {
+        return try save(document: CanvasDocument(strokes: strokes), size: size, scale: scale, in: folder)
+    }
+
+    @MainActor
+    static func save(document: CanvasDocument, size: CGSize, scale: CGFloat, in folder: URL? = nil) throws -> CanvasExport {
+        let strokes = document.strokes
         guard size.width > 0, size.height > 0 else { throw ExportError.render }
         // Export exactly the same compositing as the live canvas, including long marker paths.
-        guard let image = WatchBitmapRenderer.render(strokes: strokes, size: size, scale: scale)
+        guard let image = WatchBitmapRenderer.render(document: document, size: size, scale: scale)
         else { throw ExportError.render }
         let now = Date()
         let formatter = DateFormatter()
@@ -44,7 +50,7 @@ enum CanvasExporter {
         else { throw ExportError.encoding }
         CGImageDestinationAddImage(destination, image, properties as CFDictionary)
         guard CGImageDestinationFinalize(destination) else { throw ExportError.encoding }
-        return try CanvasExportStore.save(document: CanvasDocument(strokes: strokes),
+        return try CanvasExportStore.save(document: document,
                                           imageData: data as Data, name: name, in: folder)
     }
 

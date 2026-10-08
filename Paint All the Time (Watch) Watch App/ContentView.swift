@@ -9,6 +9,8 @@ struct ContentView: View {
     private var controller: CanvasController { session.canvas }
     @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = false
     @State private var showsMorphToolbar = false
+    @State private var showsContentActions = false
+    @State private var showsLayers = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsToolSettings = false
     @State private var isMovingCanvas = false
@@ -38,8 +40,8 @@ struct ContentView: View {
                     let diameter: CGFloat = 36
                     let top = (buttonFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY - diameter / 2
                     let centerX = (buttonFrame?.midX ?? (canvasFrame.maxX - 30)) - canvasFrame.minX
-                    let rowHeight = min(diameter, max(24, (geometry.size.height - top - 16) / 5))
-                    let panelHeight = showsMorphToolbar ? rowHeight * 5 : diameter
+                    let rowHeight = min(diameter, max(24, (geometry.size.height - top - 16) / 6))
+                    let panelHeight = showsMorphToolbar ? rowHeight * 6 : diameter
                     morphToolbar(diameter: diameter, rowHeight: rowHeight)
                         .position(x: centerX, y: top + panelHeight / 2)
                         .zIndex(3)
@@ -61,6 +63,17 @@ struct ContentView: View {
                     .position(x: (moreFrame?.midX ?? (canvasFrame.minX + 30)) - canvasFrame.minX,
                               y: (moreFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY)
                     .zIndex(3)
+                }
+
+                if !usesMorphToolbar && isActive && !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
+                    let canvasFrame = geometry.frame(in: .global)
+                    let buttonFrame = canvasControlFrames[.clear]
+                    let diameter: CGFloat = 36
+                    let height = showsContentActions ? diameter * 2 : diameter
+                    contentActions(diameter: diameter)
+                        .position(x: (buttonFrame?.midX ?? (canvasFrame.minX + 30)) - canvasFrame.minX,
+                                  y: (buttonFrame?.midY ?? (canvasFrame.maxY - 26)) - canvasFrame.minY + diameter / 2 - height / 2)
+                        .zIndex(3)
                 }
 
                 if showsGallery {
@@ -92,12 +105,23 @@ struct ContentView: View {
         .toolbar {
             if !usesMorphToolbar && isActive && !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Button { session.requestCanvasAction(.clear) } label: {
-                        BroomIcon()
+                    Button {
+                        controller.cancelStroke()
+                        if showsContentActions {
+                            showsContentActions = false
+                            session.saveDrawing(size: canvasSize, scale: displayScale)
+                        } else {
+                            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                                showsContentActions = true
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "doc.badge.gearshape")
+                            .frame(width: 18, height: 18).opacity(0)
+                            .contentShape(Rectangle())
                     }
-                    .watchToolbarButtonStyle()
-                    .disabled(!controller.canClear)
-                    .accessibilityLabel(L10n.text("Clear canvas"))
+                    .watchToolbarButtonStyle(hidesNativeChrome: true)
+                    .accessibilityLabel(L10n.text(showsContentActions ? "Save drawing" : "Canvas actions"))
                     .trackCanvasControl(.clear, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
                     Button { controller.undo() } label: {
@@ -117,12 +141,14 @@ struct ContentView: View {
                     .trackCanvasControl(.redo, frames: $canvasControlFrames)
                     Spacer(minLength: 0)
                     Button {
-                        session.saveDrawing(size: canvasSize, scale: displayScale)
+                        controller.cancelStroke()
+                        showsContentActions = false
+                        showsLayers = true
                     } label: {
-                        Image(systemName: "square.and.arrow.down")
+                        Image(systemName: "square.3.layers.3d")
                     }
                     .watchToolbarButtonStyle()
-                    .accessibilityLabel(L10n.text("Save drawing"))
+                    .accessibilityLabel(L10n.text("Layers"))
                     .trackCanvasControl(.save, frames: $canvasControlFrames)
                 }
             }
@@ -190,6 +216,18 @@ struct ContentView: View {
             }
         }
         }
+        .sheet(isPresented: $showsLayers) {
+            WatchLayersView(controller: controller, canvasSize: canvasSize)
+        }
+        .onChange(of: showsLayers) { _, shows in
+            if shows { showsMorphToolbar = false; showsContentActions = false }
+        }
+        .onChange(of: showsToolSettings) { _, shows in
+            if shows { showsContentActions = false }
+        }
+        .onChange(of: showsAppSettings) { _, shows in
+            if shows { showsContentActions = false }
+        }
         .sheet(isPresented: $showsAppSettings, onDismiss: {
             if startsTutorialAfterDismiss {
                 startsTutorialAfterDismiss = false
@@ -228,15 +266,17 @@ struct ContentView: View {
             Text(session.exportError ?? "")
         }
         .onChange(of: usesMorphToolbar) { _, _ in
+            showsContentActions = false
             showsMorphToolbar = false
         }
         .onChange(of: isActive) { _, active in
-            if !active { showsMorphToolbar = false }
+            if !active { showsMorphToolbar = false; showsContentActions = false }
         }
         .onChange(of: isMovingCanvas) { _, moving in
-            if moving { showsMorphToolbar = false }
+            if moving { showsMorphToolbar = false; showsContentActions = false }
         }
         .onChange(of: session.canvasSessionID) { _, _ in
+            showsContentActions = false
             showsMorphToolbar = false
             isMovingCanvas = false
             showsToolSettings = false
@@ -244,6 +284,7 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
+                showsContentActions = false
                 if !showsAppSettings && session.savedDrawing == nil && session.pendingCanvasAction == nil {
                     showsMorphToolbar = false
                 }
@@ -276,6 +317,31 @@ struct ContentView: View {
         usesMorphToolbar && !showsToolSettings && !isMovingCanvas
     }
 
+    private func contentActions(diameter: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            if showsContentActions {
+                morphButton("Clear canvas", height: diameter) {
+                    showsContentActions = false
+                    session.requestCanvasAction(.clear)
+                } label: { BroomIcon() }
+                .disabled(!controller.canClear)
+                morphButton("Save drawing", height: diameter) {
+                    showsContentActions = false
+                    session.saveDrawing(size: canvasSize, scale: displayScale)
+                } label: { Image(systemName: "square.and.arrow.down") }
+            } else {
+                morphButton("Canvas actions", height: diameter, action: {}) {
+                    Image(systemName: "doc.badge.gearshape")
+                }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+        }
+        .frame(width: diameter)
+        .modifier(CanvasMorphGlass())
+        .trackCanvasControl(.contentMorph, frames: $canvasControlFrames)
+    }
+
     private func morphToolbar(diameter: CGFloat, rowHeight: CGFloat) -> some View {
         VStack(spacing: 0) {
             if showsMorphToolbar {
@@ -302,6 +368,10 @@ struct ContentView: View {
                 morphButton("Save drawing", height: rowHeight) {
                     session.saveDrawing(size: canvasSize, scale: displayScale)
                 } label: { Image(systemName: "square.and.arrow.down") }
+                morphButton("Layers", height: rowHeight) {
+                    controller.cancelStroke()
+                    showsLayers = true
+                } label: { Image(systemName: "square.3.layers.3d") }
             } else {
                 morphButton("Open drawing controls", height: diameter) {
                     controller.cancelStroke()
@@ -335,7 +405,10 @@ struct ContentView: View {
 
     private var drawingPage: some View {
         // Animate the whole page above, keeping the cached artwork fully visible inside it.
-        WatchCanvasView(controller: controller, acceptsInput: isActive && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, onCanvasInteraction: {
+        WatchCanvasView(controller: controller, acceptsInput: isActive && !showsLayers && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, onCanvasInteraction: {
+            if showsContentActions {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { showsContentActions = false }
+            }
             if showsMorphToolbar {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
                     showsMorphToolbar = false

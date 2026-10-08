@@ -256,7 +256,9 @@ private struct PaletteSwatchFramesKey: PreferenceKey {
     }
 }
 
-private struct CustomInkEditor: View {
+struct CustomInkEditor: View {
+    var initialColor: SIMD4<Float>? = nil
+    var saveTitle = "Add color"
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -332,6 +334,9 @@ private struct CustomInkEditor: View {
             schemeCarousel
                 .frame(height: 24)
         }
+        .onAppear {
+            if let c = initialColor { rgbBinding.wrappedValue = [Double(c.x) * 255, Double(c.y) * 255, Double(c.z) * 255] }
+        }
         .padding(.bottom, 8)
         .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
         .toolbar {
@@ -341,7 +346,7 @@ private struct CustomInkEditor: View {
                                      rgba: SIMD4(Float(rgb[0] / 255), Float(rgb[1] / 255), Float(rgb[2] / 255), 1)))
                     dismiss()
                 } label: { Image(systemName: "checkmark") }
-                .accessibilityLabel(L10n.text("Add color"))
+                .accessibilityLabel(L10n.text(saveTitle))
             }
         }
     }

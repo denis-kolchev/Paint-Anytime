@@ -9,7 +9,7 @@ import SwiftUI
 import WatchKit
 
 enum CanvasToolbarControl: Hashable {
-    case more, tools, clear, undo, redo, save, morph
+    case more, tools, clear, undo, redo, save, morph, contentMorph
 }
 
 struct WatchCanvasView: View {
@@ -30,6 +30,12 @@ struct WatchCanvasView: View {
     @State private var shapeHoldAnchor: CGPoint?
     @Environment(\.scenePhase) private var scenePhase
 
+    private var needsLayerRendering: Bool {
+        controller.document.layers.count != 1 || controller.document.backgroundColor != SIMD4(1, 1, 1, 1)
+        || !controller.selectedLayer.isVisible || controller.selectedLayer.opacity != 1
+        || controller.selectedLayer.locksTransparency || controller.document.strokes.contains { $0.locksTransparency }
+    }
+
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
     @FocusState private var crownFocused: Bool
     private var shouldFocusCrown: Bool {
@@ -47,7 +53,8 @@ struct WatchCanvasView: View {
                 Color(white: 0.16)
                 // Hiding settings/gallery must not destroy the raster view's image and cache.
                 // Keep its identity so returning to the canvas displays the last frame immediately.
-                WatchRasterArtwork(strokes: controller.document.strokes,
+                WatchRasterArtwork(document: needsLayerRendering ? controller.document : nil,
+                    selectedLayerID: controller.selectedLayer.id, strokes: controller.document.strokes,
                     activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
                     documentRevision: controller.documentRevision,
                     activeStrokeRevision: controller.activeStrokeRevision,
@@ -238,7 +245,7 @@ struct WatchCanvasView: View {
             let dx: CGFloat
             let dy: CGFloat
             switch control {
-            case .morph:
+            case .morph, .contentMorph:
                 if frame.contains(screenPoint) { return true }
                 continue
             case .more, .tools:
