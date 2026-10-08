@@ -6,9 +6,9 @@ struct WatchLayersView: View {
     let canvasSize: CGSize
     @State private var editingLayer: UUID?
     @State private var showsPaperEditor = false
-    @State private var revealedLayer: UUID?
     @GestureState private var isReordering = false
     @State private var draggedLayer: UUID?
+    @State private var selectionBlockedUntil = Date.distantPast
     @State private var dragOffset: CGFloat = 0
     @State private var rowFrames: [UUID: CGRect] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -19,7 +19,7 @@ struct WatchLayersView: View {
                 ScrollView {
                     VStack(spacing: 8) {
                         ForEach(Array(controller.document.layers.reversed())) { layer in
-                            layerRow(layer)
+                            layerRow(layer, proxy: proxy)
                                 .id(layer.id)
                                 .background {
                                     GeometryReader { geometry in
@@ -30,7 +30,6 @@ struct WatchLayersView: View {
                                 .offset(y: draggedLayer == layer.id ? dragOffset : 0)
                                 .scaleEffect(draggedLayer == layer.id && !reduceMotion ? 1.04 : 1)
                                 .zIndex(draggedLayer == layer.id ? 1 : 0)
-                                .simultaneousGesture(reorderGesture(layer.id, proxy: proxy))
                         }
                         Button { showsPaperEditor = true } label: {
                             HStack(spacing: 10) {
@@ -53,13 +52,18 @@ struct WatchLayersView: View {
                 .onPreferenceChange(LayerRowFrames.self) { rowFrames = $0 }
             }
             .onChange(of: isReordering) { _, active in
-                if !active { draggedLayer = nil; dragOffset = 0 }
+                if !active {
+                    if draggedLayer != nil {
+                        selectionBlockedUntil = Date().addingTimeInterval(0.2)
+                    }
+                    draggedLayer = nil
+                    dragOffset = 0
+                }
             }
             .navigationTitle(L10n.text("Layers"))
             .toolbar {
-                ToolbarItem(placement: .bottomBar) {
+                ToolbarItem(placement: .topBarTrailing) {
                     Button {
-                        revealedLayer = nil
                         controller.addLayer()
                     } label: { Image(systemName: "plus") }
                     .accessibilityLabel(L10n.text("Add layer"))
@@ -86,13 +90,12 @@ struct WatchLayersView: View {
         return Color(.sRGB, red: Double(c.x), green: Double(c.y), blue: Double(c.z))
     }
 
-    private func layerRow(_ layer: CanvasLayer) -> some View {
+    private func layerRow(_ layer: CanvasLayer, proxy: ScrollViewProxy) -> some View {
         HStack(spacing: 4) {
             Button {
-                guard draggedLayer == nil else { return }
-                if revealedLayer != nil { revealedLayer = nil; return }
+                guard draggedLayer == nil, !isReordering,
+                      Date() >= selectionBlockedUntil else { return }
                 controller.selectLayer(layer.id)
-                editingLayer = layer.id
             } label: {
                 HStack(spacing: 10) {
                     LayerThumbnail(layer: layer, canvasSize: canvasSize)
@@ -104,36 +107,34 @@ struct WatchLayersView: View {
                         .lineLimit(2)
                 }
                 .padding(6)
-                .background(.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 10)
-                        .strokeBorder(controller.selectedLayer.id == layer.id ? Color.accentColor : .clear, lineWidth: 2)
-                }
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            // Let the button recognize taps without waiting for the hold-and-drag sequence.
+            .simultaneousGesture(reorderGesture(layer.id, proxy: proxy))
+            .accessibilityLabel(layer.displayName)
             .accessibilityAddTraits(controller.selectedLayer.id == layer.id ? [.isSelected] : [])
             .accessibilityAction(named: Text(L10n.text("Move up"))) { move(layer.id, up: true) }
             .accessibilityAction(named: Text(L10n.text("Move down"))) { move(layer.id, up: false) }
             .accessibilityAction(named: Text(L10n.text("Delete"))) { controller.deleteLayer(layer.id) }
-            if revealedLayer == layer.id {
-                Button(role: .destructive) {
-                    controller.deleteLayer(layer.id)
-                    revealedLayer = nil
-                } label: {
-                    Image(systemName: "trash").frame(width: 38, height: 54)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.red)
-                .accessibilityLabel(L10n.text("Delete"))
+
+            Button {
+                guard draggedLayer == nil else { return }
+                editingLayer = layer.id
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .frame(width: 44, height: 54)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.text("Settings") + ": " + layer.displayName)
         }
-        .simultaneousGesture(DragGesture(minimumDistance: 24).onEnded { value in
-            guard draggedLayer == nil, abs(value.translation.width) > abs(value.translation.height) else { return }
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-                revealedLayer = value.translation.width < 0 ? layer.id : nil
-            }
-        })
+        .background(.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10)
+                .strokeBorder(controller.selectedLayer.id == layer.id ? Color.accentColor : .clear, lineWidth: 2)
+                .allowsHitTesting(false)
+        }
     }
 
     private func reorderGesture(_ id: UUID, proxy: ScrollViewProxy) -> some Gesture {
@@ -144,9 +145,9 @@ struct WatchLayersView: View {
             }
             .onChanged { value in
                 guard case .second(true, let drag) = value else { return }
+                selectionBlockedUntil = .distantFuture
                 if draggedLayer == nil {
                     draggedLayer = id
-                    revealedLayer = nil
                     WKInterfaceDevice.current().play(.click)
                 }
                 if let drag {
@@ -158,7 +159,14 @@ struct WatchLayersView: View {
                 }
             }
             .onEnded { value in
-                defer { draggedLayer = nil; dragOffset = 0 }
+                defer {
+                    draggedLayer = nil
+                    dragOffset = 0
+                }
+                if case .second(true, _) = value {
+                    // Button and gesture callbacks can finish in either order on release.
+                    selectionBlockedUntil = Date().addingTimeInterval(0.2)
+                }
                 guard case .second(true, let drag?) = value else { return }
                 let candidates = rowFrames.filter { $0.key != id }
                 guard let target = candidates.min(by: {
@@ -190,6 +198,7 @@ private struct LayerSettingsView: View {
     @ObservedObject var controller: CanvasController
     let layerID: UUID
     @State private var opacity: Double = 1
+    @Environment(\.dismiss) private var dismiss
     private var layer: CanvasLayer? { controller.document.layers.first { $0.id == layerID } }
 
     var body: some View {
@@ -209,9 +218,20 @@ private struct LayerSettingsView: View {
                 }
             }
             .navigationTitle(layer.displayName)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(role: .destructive) {
+                        controller.deleteLayer(layerID)
+                        dismiss()
+                    } label: {
+                        Image(systemName: "trash")
+                    }
+                    .accessibilityLabel(L10n.text("Delete"))
+                }
+            }
             .onAppear { opacity = Double(layer.opacity) }
             .onDisappear {
-                if Float(opacity) != self.layer?.opacity {
+                if let currentLayer = self.layer, Float(opacity) != currentLayer.opacity {
                     controller.updateLayer(layerID) { $0.opacity = Float(opacity) }
                 }
             }

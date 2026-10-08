@@ -49,7 +49,7 @@ final class CanvasController: ObservableObject {
         }
     }
 
-    private(set) var selectedLayerID: UUID?
+    @Published private(set) var selectedLayerID: UUID?
     var selectedLayerIndex: Int { document.layers.firstIndex { $0.id == selectedLayerID } ?? 0 }
     var selectedLayer: CanvasLayer { document.layers[selectedLayerIndex] }
     var activeStroke: Stroke? {
