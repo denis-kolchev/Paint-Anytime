@@ -1,446 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Basic colors": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Basic colors"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Базовые цвета"
-          }
-        }
-      }
-    },
-    "Reds": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reds"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Красные оттенки"
-          }
-        }
-      }
-    },
-    "Oranges": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Oranges"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оранжевые оттенки"
-          }
-        }
-      }
-    },
-    "Yellows": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Yellows"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Жёлтые оттенки"
-          }
-        }
-      }
-    },
-    "Greens": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Greens"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Зелёные оттенки"
-          }
-        }
-      }
-    },
-    "Light blues": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Light blues"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Голубые оттенки"
-          }
-        }
-      }
-    },
-    "Blues": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Blues"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Синие оттенки"
-          }
-        }
-      }
-    },
-    "Purples": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Purples"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Фиолетовые оттенки"
-          }
-        }
-      }
-    },
-    "Black & white": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Black & white"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Чёрно-белые оттенки"
-          }
-        }
-      }
-    },
-    "Browns": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Browns"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Коричневые оттенки"
-          }
-        }
-      }
-    },
-    "New palette": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "New palette"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Новая палитра"
-          }
-        }
-      }
-    },
-    "Palettes": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Palettes"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Палитры"
-          }
-        }
-      }
-    },
-    "Move left": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move left"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Переместить влево"
-          }
-        }
-      }
-    },
-    "Move right": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Move right"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Переместить вправо"
-          }
-        }
-      }
-    },
-    "Eyedropper" : {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eyedropper"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Пипетка"
-          }
-        }
-      }
-    },
-    "Fill": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fill"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Заливка"
-          }
-        }
-      }
-    },
-    "Tap to fill a connected area with the selected color and opacity.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tap to fill a connected area with the selected color and opacity."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Коснитесь связной области, чтобы залить её выбранным цветом с заданной непрозрачностью."
-          }
-        }
-      }
-    },
-    "Layers" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Layers"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Слои"
-          }
-        }
-      }
-    },
-    "Layer %d" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Layer %d"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Слой %d"
-          }
-        }
-      }
-    },
-    "Canvas color" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Canvas color"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Цвет холста"
-          }
-        }
-      }
-    },
-    "Canvas actions" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Canvas actions"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Действия с холстом"
-          }
-        }
-      }
-    },
-    "Add layer" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add layer"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить слой"
-          }
-        }
-      }
-    },
-    "Visible" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visible"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Видимость"
-          }
-        }
-      }
-    },
-    "Lock transparency" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lock transparency"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Блокировка прозрачности"
-          }
-        }
-      }
-    },
-    "Move up" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Move up"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переместить выше"
-          }
-        }
-      }
-    },
-    "Move down" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Move down"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Переместить ниже"
-          }
-        }
-      }
-    },
     "- GitHub Privacy Statement (https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)\n- Apple Privacy Policy (https://www.apple.com/legal/privacy/)\n- Google Privacy Policy (https://policies.google.com/privacy)" : {
       "comment" : "Privacy policy, paragraph 19 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",
@@ -611,6 +171,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "- GitHub 隱私權聲明 (https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)\n- Apple 隱私權政策 (https://www.apple.com/legal/privacy/)\n- Google 隱私權政策 (https://policies.google.com/privacy)"
+          }
+        }
+      }
+    },
+    "%@: %lld DPI" : {
+      "comment" : "A slider that lets the user adjust the drawing resolution in dots per inch (DPI). The value is shown as a label below the slider.",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld DPI"
+          }
+        }
+      }
+    },
+    "%@: %lld px" : {
+      "comment" : "A stepper that lets the user adjust the size of a cropped image. The first argument is the name of the size being adjusted. The second argument is the current size value.",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld px"
+          }
+        }
+      }
+    },
+    "%@: %lld%%" : {
+      "comment" : "A label that shows the percentage of the original canvas that should be kept after cropping",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld%%"
           }
         }
       }
@@ -1135,6 +731,18 @@
         }
       }
     },
+    "%lld × %lld px" : {
+      "comment" : "A label displaying the width and height of the canvas in pixels. The first argument is the width of the canvas in pixels. The second argument is the height of the canvas in pixels.",
+      "isCommentAutoGenerated" : true,
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld × %2$lld px"
+          }
+        }
+      }
+    },
     "%lld/%lld" : {
       "comment" : "A label displaying the current and total number of instruments. The first argument is the current instrument index, starting at 1. The second argument is the total number of instruments.",
       "isCommentAutoGenerated" : true,
@@ -1147,6 +755,26 @@
         }
       },
       "shouldTranslate" : false
+    },
+    "50%" : {
+      "comment" : "A button that reduces the size of the drawing to 50% of its original size.",
+      "isCommentAutoGenerated" : true
+    },
+    "90° ↺" : {
+      "comment" : "A label for rotating the drawing 90° counterclockwise.",
+      "isCommentAutoGenerated" : true
+    },
+    "90° ↻" : {
+      "comment" : "A clockwise 90-degree rotation.",
+      "isCommentAutoGenerated" : true
+    },
+    "100%" : {
+      "comment" : "A button that sets the width and height of the canvas to the original size.",
+      "isCommentAutoGenerated" : true
+    },
+    "180°" : {
+      "comment" : "A description of a 180-degree rotation.",
+      "isCommentAutoGenerated" : true
     },
     "A flat calligraphy nib creates sharp edges. Adjust its angle on the Angle page." : {
       "extractionState" : "manual",
@@ -1891,6 +1519,23 @@
         }
       }
     },
+    "Add layer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add layer"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить слой"
+          }
+        }
+      }
+    },
     "Add light" : {
       "comment" : "Short, plain-language effect label for brush blending. The established mode name is shown separately.",
       "extractionState" : "manual",
@@ -2095,6 +1740,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Добавляйте свет для искр, неона и яркого свечения. Значения RGB складываются до белого, поэтому блики быстро теряют детали. Лучше работает по тёмному рисунку с небольшой прозрачностью."
+          }
+        }
+      }
+    },
+    "Adjust size" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adjust size"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить размер"
           }
         }
       }
@@ -2445,6 +2107,23 @@
         }
       }
     },
+    "Apply" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apply"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Применить"
+          }
+        }
+      }
+    },
     "Are you sure you want to finish the tutorial?" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2791,6 +2470,23 @@
         }
       }
     },
+    "Basic colors" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Basic colors"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Базовые цвета"
+          }
+        }
+      }
+    },
     "Black" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2960,6 +2656,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "黑色"
+          }
+        }
+      }
+    },
+    "Black & white" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Black & white"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чёрно-белые оттенки"
           }
         }
       }
@@ -3184,6 +2897,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Синий поверх жёлтого"
+          }
+        }
+      }
+    },
+    "Blues" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blues"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синие оттенки"
           }
         }
       }
@@ -3708,6 +3438,23 @@
         }
       }
     },
+    "Browns" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browns"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коричневые оттенки"
+          }
+        }
+      }
+    },
     "Build soft highlights, haze, and reflected light over darker paint. Repeated passes brighten the image. Black has no effect, and Screen cannot add visible color over white." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3738,6 +3485,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Наслаивайте цвет для живописных теней. Как и при умножении, повторные мазки затемняют рисунок, но лучше сохраняют цвет кисти и медленнее уходят в чёрный. Режим по умолчанию для маркера и акварели."
+          }
+        }
+      }
+    },
+    "Canvas actions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canvas actions"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Действия с холстом"
+          }
+        }
+      }
+    },
+    "Canvas color" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canvas color"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цвет холста"
+          }
+        }
+      }
+    },
+    "Canvas size" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canvas size"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Размер холста"
           }
         }
       }
@@ -4258,6 +4056,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "選擇繪圖工具以調整透明度。"
+          }
+        }
+      }
+    },
+    "Choose dimensions from 1 to 1024 pixels." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose dimensions from 1 to 1024 pixels."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите размер от 1 до 1024 пикселей."
           }
         }
       }
@@ -8157,6 +7972,40 @@
         }
       }
     },
+    "Crop" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crop"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обрезка"
+          }
+        }
+      }
+    },
+    "Crop area" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crop area"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Область обрезки"
+          }
+        }
+      }
+    },
     "Darken" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -11673,6 +11522,39 @@
         }
       }
     },
+    "Eyedropper" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eyedropper"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пипетка"
+          }
+        }
+      }
+    },
+    "Fill" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fill"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Заливка"
+          }
+        }
+      }
+    },
     "Finger drawing canvas" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13441,6 +13323,23 @@
         }
       }
     },
+    "Greens" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Greens"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зелёные оттенки"
+          }
+        }
+      }
+    },
     "Hard Light" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -13610,6 +13509,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "實光"
+          }
+        }
+      }
+    },
+    "Height" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Height"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Высота"
+          }
+        }
+      }
+    },
+    "Horizontal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Horizontal"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По горизонтали"
           }
         }
       }
@@ -14827,6 +14760,23 @@
         }
       }
     },
+    "Keep" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оставить"
+          }
+        }
+      }
+    },
     "Keep buttons in a menu" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -15170,6 +15120,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "保留暗色"
+          }
+        }
+      }
+    },
+    "Keep drawing at original size" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keep drawing at original size"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранить исходный размер рисунка"
           }
         }
       }
@@ -15868,6 +15835,40 @@
         }
       }
     },
+    "Layer %d" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Layer %d"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слой %d"
+          }
+        }
+      }
+    },
+    "Layers" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Layers"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Слои"
+          }
+        }
+      }
+    },
     "Lesson %d of 20" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16387,6 +16388,23 @@
         }
       }
     },
+    "Light blues" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Light blues"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Голубые оттенки"
+          }
+        }
+      }
+    },
     "Lighten" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -16556,6 +16574,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "變亮"
+          }
+        }
+      }
+    },
+    "Lock transparency" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lock transparency"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировка прозрачности"
           }
         }
       }
@@ -17425,6 +17460,74 @@
         }
       }
     },
+    "Move down" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move down"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переместить ниже"
+          }
+        }
+      }
+    },
+    "Move left" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move left"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переместить влево"
+          }
+        }
+      }
+    },
+    "Move right" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move right"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переместить вправо"
+          }
+        }
+      }
+    },
+    "Move up" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Move up"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переместить выше"
+          }
+        }
+      }
+    },
     "Moving canvas" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -17784,6 +17887,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "色彩增值"
+          }
+        }
+      }
+    },
+    "New palette" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New palette"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новая палитра"
           }
         }
       }
@@ -21637,6 +21757,23 @@
         }
       }
     },
+    "Oranges" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oranges"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Оранжевые оттенки"
+          }
+        }
+      }
+    },
     "Overlay" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -22718,6 +22855,23 @@
         }
       }
     },
+    "Palettes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palettes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Палитры"
+          }
+        }
+      }
+    },
     "Pen" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -23773,6 +23927,23 @@
         }
       }
     },
+    "Purples" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Purples"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фиолетовые оттенки"
+          }
+        }
+      }
+    },
     "Red" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -24115,6 +24286,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "重做"
+          }
+        }
+      }
+    },
+    "Reds" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reds"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Красные оттенки"
           }
         }
       }
@@ -24811,6 +24999,40 @@
         }
       }
     },
+    "Resample image" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resample image"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Масштабировать изображение"
+          }
+        }
+      }
+    },
+    "Resolution" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resolution"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешение"
+          }
+        }
+      }
+    },
     "Retention and your choices" : {
       "comment" : "Privacy policy, paragraph 14 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",
@@ -25332,6 +25554,23 @@
         }
       }
     },
+    "Rotate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rotate"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Поворот"
+          }
+        }
+      }
+    },
     "Rotate tip clockwise" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -25674,6 +25913,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "逆時針旋轉筆尖"
+          }
+        }
+      }
+    },
+    "Rotation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rotation"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Угол поворота"
           }
         }
       }
@@ -26366,6 +26622,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已儲存"
+          }
+        }
+      }
+    },
+    "Scale drawing with canvas" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scale drawing with canvas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изменить размер рисунка вместе с холстом"
+          }
+        }
+      }
+    },
+    "Scale proportionally" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scale proportionally"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сохранять пропорции"
           }
         }
       }
@@ -32981,6 +33271,22 @@
         }
       }
     },
+    "Tap to fill a connected area with the selected color and opacity." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to fill a connected area with the selected color and opacity."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Коснитесь связной области, чтобы залить её выбранным цветом с заданной непрозрачностью."
+          }
+        }
+      }
+    },
     "The app contains no advertising, third-party analytics, or tracking SDKs, and does not send usage analytics to the developer. Apple may separately process App Store, purchase, or diagnostic information under its own privacy settings and policies." : {
       "comment" : "Privacy policy, paragraph 6 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",
@@ -34917,6 +35223,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "觸碰即可繪畫。"
+          }
+        }
+      }
+    },
+    "Trim canvas edges. Hidden strokes remain editable." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trim canvas edges. Hidden strokes remain editable."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обрезка краёв холста. Скрытые штрихи остаются доступными для редактирования."
           }
         }
       }
@@ -37523,6 +37846,40 @@
         }
       }
     },
+    "Vertical" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vertical"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По вертикали"
+          }
+        }
+      }
+    },
+    "Visible" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visible"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Видимость"
+          }
+        }
+      }
+    },
     "Watercolor" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -39442,6 +39799,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Жёлтый → · Синий ↓\n0–10 проходов, прозрачность 80%. Сначала жёлтый, затем синий. Пример для акварели; маркер набирает цвет мягче."
+          }
+        }
+      }
+    },
+    "Yellows" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yellows"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Жёлтые оттенки"
           }
         }
       }

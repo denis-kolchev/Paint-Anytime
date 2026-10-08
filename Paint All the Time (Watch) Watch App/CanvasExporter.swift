@@ -11,6 +11,7 @@ enum CanvasExporter {
 
     @MainActor
     static func save(document: CanvasDocument, size: CGSize, scale: CGFloat, in folder: URL? = nil) throws -> CanvasExport {
+        let size = document.size(fallback: size)
         let strokes = document.strokes
         guard size.width > 0, size.height > 0 else { throw ExportError.render }
         // Export exactly the same compositing as the live canvas, including long marker paths.
@@ -38,6 +39,8 @@ enum CanvasExporter {
         ]
         let metadata = try JSONSerialization.data(withJSONObject: details, options: [.sortedKeys])
         let properties: [CFString: Any] = [
+            kCGImagePropertyDPIWidth: document.resolution,
+            kCGImagePropertyDPIHeight: document.resolution,
             kCGImagePropertyPNGDictionary: [
                 kCGImagePropertyPNGTitle: name,
                 kCGImagePropertyPNGSoftware: "Paint All the Time",

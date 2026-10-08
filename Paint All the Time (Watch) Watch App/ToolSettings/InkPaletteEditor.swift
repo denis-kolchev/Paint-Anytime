@@ -54,9 +54,10 @@ struct InkPalette: Codable {
 struct InkPaletteEditor: View {
     @Binding var palette: InkPalette
     @ObservedObject var controller: CanvasController
-    let onSave: (InkPalette) -> Void
     let onBrowse: () -> Void
     var startsEditing = false
+    let paletteID: String
+    let transitionNamespace: Namespace.ID
     @State private var showsEyedropper = false
     @State private var sampledColor: SIMD4<Float>?
     @State private var showsColorEditor = false
@@ -67,7 +68,7 @@ struct InkPaletteEditor: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        NavigationStack {
+        Group {
             GeometryReader { viewport in
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
@@ -98,6 +99,8 @@ struct InkPaletteEditor: View {
                                     .overlay { Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1) }
                                     .aspectRatio(1, contentMode: .fit)
                                     .contentShape(Circle())
+                                    .modifier(PaletteSwatchTransition(paletteID: paletteID, colorID: preset.id,
+                                        namespace: transitionNamespace, enabled: !reduceMotion))
                             }
                             .buttonStyle(.plain)
                             .overlay(alignment: .topLeading) {
@@ -151,6 +154,17 @@ struct InkPaletteEditor: View {
                         .highPriorityGesture(
                             LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() })
                         .accessibilityLabel(L10n.text("Create color"))
+                        Button {
+                            sampledColor = nil
+                            showsEyedropper = true
+                        } label: {
+                            Image(systemName: "eyedropper")
+                                .font(.title2)
+                                .frame(maxWidth: .infinity)
+                                .aspectRatio(1, contentMode: .fit)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.text("Eyedropper"))
                     }
                 }
                 .padding(.horizontal, 10)
@@ -164,19 +178,6 @@ struct InkPaletteEditor: View {
             .scrollDisabled(draggedID != nil)
             }
             .coordinateSpace(name: "paletteViewport")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button { sampledColor = nil; showsEyedropper = true } label: { Image(systemName: "eyedropper") }
-                        .accessibilityLabel(L10n.text("Eyedropper"))
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        onSave(palette)
-                    } label: { Image(systemName: "checkmark") }
-                        .disabled(palette.selectedColors.isEmpty)
-                        .accessibilityLabel(L10n.text("Done"))
-                }
-            }
             .navigationDestination(isPresented: $showsColorEditor) {
                 CustomInkEditor(initialColor: sampledColor) { preset in
                     if let existing = palette.allColors.first(where: { $0.rgba == preset.rgba }) {

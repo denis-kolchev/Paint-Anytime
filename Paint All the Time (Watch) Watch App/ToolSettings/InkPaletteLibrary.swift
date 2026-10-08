@@ -70,9 +70,8 @@ struct InkPaletteBrowser: View {
     @State private var currentID: String
     @State private var browsing = false
     @State private var editing = false
-    @State private var dragging = false
-    @State private var dragOffset = CGSize.zero
-    @State private var pageOffset: CGFloat = 0
+    @Namespace private var paletteTransition
+    @GestureState private var pageTranslation: CGFloat = 0
     private let addID = "add-palette"
 
     init(library: InkPaletteLibrary, controller: CanvasController,
@@ -88,98 +87,26 @@ struct InkPaletteBrowser: View {
     }
 
     var body: some View {
-        Group {
-            if browsing {
-                carousel
-            } else if let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
-                InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller,
-                    onSave: { _ in confirm() }, onBrowse: { browsing = true }, startsEditing: editing)
-                    .id(currentID)
-            } else {
-                carousel
-            }
-        }
-    }
-
-    private var carousel: some View {
         NavigationStack {
-            GeometryReader { viewport in
-                let width = viewport.size.width
-                HStack(spacing: 0) {
-                    ForEach(library.palettes) { entry in
-                        VStack(spacing: 6) {
-                            Text(L10n.text(entry.palette.title ?? "Palette"))
-                                .font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.6)
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 5), spacing: 5) {
-                                ForEach(Array(entry.palette.allColors.prefix(15))) { color in
-                                    Circle().fill(color.color)
-                                        .overlay { Circle().strokeBorder(.white.opacity(0.25), lineWidth: 1) }
-                                        .aspectRatio(1, contentMode: .fit)
-                                }
-                                if entry.palette.allColors.isEmpty { Image(systemName: "plus").foregroundStyle(.gray) }
-                            }
-                        }
-                        .environment(\.layoutDirection, layoutDirection)
-                        .padding(12)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20))
-                        .overlay { RoundedRectangle(cornerRadius: 20).strokeBorder(dragging ? .white : .gray, lineWidth: 1) }
-                        .padding(.horizontal, 14)
-                        .scaleEffect(dragging && currentID == entry.id ? 0.92 : 1)
-                        .offset(currentID == entry.id ? dragOffset : .zero)
-                        .contentShape(Rectangle())
-                        .onTapGesture { currentID = entry.id; editing = false; browsing = false }
-                        .gesture(reorderGesture(entry.id).exclusively(before: pageGesture(width: width)))
-                        .accessibilityAction(named: Text(L10n.text("Delete"))) { delete(entry.id) }
-                        .accessibilityAction(named: Text(L10n.text("Move left"))) { move(entry.id, by: -1) }
-                        .accessibilityAction(named: Text(L10n.text("Move right"))) { move(entry.id, by: 1) }
-                        .frame(width: width)
-                        .accessibilityHidden(currentID != entry.id)
-                    }
-                    Button(action: addPalette) {
-                        Image(systemName: "plus").font(.largeTitle)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 20))
-                    }
-                    .buttonStyle(.plain).padding(.horizontal, 14)
-                    .accessibilityLabel(L10n.text("New palette"))
-                    .frame(width: width)
-                    .gesture(pageGesture(width: width))
-                    .accessibilityHidden(currentID != addID)
-                }
-                .environment(\.layoutDirection, .leftToRight)
-                .offset(x: -CGFloat(pageIndex) * width + pageOffset)
-                .frame(width: width, height: viewport.size.height, alignment: .leading)
-                .clipped()
-            }
-            .safeAreaInset(edge: .bottom, spacing: -38) {
-                Button(L10n.text(currentID == addID ? "New palette" : "Edit")) {
-                    if currentID == addID { addPalette() }
-                    else { editing = true; browsing = false }
-                }
-                .buttonStyle(.plain)
-                .font(.body.weight(.semibold))
-                .frame(maxWidth: .infinity)
-                .frame(height: 36)
-                .contentShape(Capsule())
-                .padding(.horizontal, 20)
-                .padding(.bottom, 2)
-                .background(alignment: .bottom) {
-                    Rectangle()
-                        .fill(.ultraThinMaterial)
-                        .frame(height: 76)
-                        .mask {
-                            LinearGradient(stops: [
-                                .init(color: .clear, location: 0),
-                                .init(color: .black.opacity(0.25), location: 0.3),
-                                .init(color: .black, location: 0.8)
-                            ], startPoint: .top, endPoint: .bottom)
-                        }
-                        .ignoresSafeArea(.container, edges: .bottom)
-                        .allowsHitTesting(false)
+            ZStack {
+                if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
+                    InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller,
+                        onBrowse: { setBrowsing(true) }, startsEditing: editing,
+                        paletteID: currentID, transitionNamespace: paletteTransition)
+                        .id(currentID)
+                        .transition(.opacity)
+                        .zIndex(1)
+                } else {
+                    carousel
+                        .transition(.opacity)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button { dismiss() } label: { Image(systemName: "xmark") }
+                        .accessibilityLabel(L10n.text("Cancel"))
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: confirm) { Image(systemName: "checkmark") }
                         .disabled(!canConfirm)
@@ -187,6 +114,185 @@ struct InkPaletteBrowser: View {
                 }
             }
         }
+    }
+
+    private func setBrowsing(_ value: Bool) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.38)) {
+            browsing = value
+        }
+    }
+
+    private var carousel: some View {
+            GeometryReader { viewport in
+                let width = viewport.size.width
+                let buttonHeight = min(36, viewport.size.height * 0.2)
+                let verticalGap = min(10, viewport.size.height * 0.05)
+                let bottomPadding: CGFloat = 3
+                let titleHeight: CGFloat = 20
+                let cardHeight = max(1, viewport.size.height - titleHeight - buttonHeight - verticalGap * 2 - bottomPadding)
+                // Keep the outline upright around the three-column palette.
+                let cardWidth = min(width * 0.68, cardHeight * 0.82)
+                let gap = max(4, (width - cardWidth) / 2 - width * 0.08)
+                let stride = cardWidth + gap
+                let cardShape = paletteShape(width: cardWidth, height: cardHeight)
+
+                VStack(spacing: verticalGap) {
+                    Text(L10n.text(currentTitle))
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .frame(width: width * 0.85, height: titleHeight)
+
+                    HStack(spacing: gap) {
+                        ForEach(library.palettes) { entry in
+                            paletteCard(entry, width: cardWidth, height: cardHeight)
+                        }
+                        Button(action: addPalette) {
+                            Image(systemName: "plus")
+                                .font(.largeTitle)
+                                .frame(width: cardWidth, height: cardHeight)
+                                .background(.white.opacity(0.08), in: cardShape)
+                                .overlay {
+                                    cardShape
+                                        .strokeBorder(.gray.opacity(0.6), lineWidth: 2)
+                                }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.text("New palette"))
+                        .accessibilityHidden(currentID != addID)
+                        .accessibilityAdjustableAction { adjustPage($0) }
+                    }
+                    .environment(\.layoutDirection, .leftToRight)
+                    .offset(x: (width - cardWidth) / 2 - CGFloat(pageIndex) * stride + pageTranslation)
+                    .frame(width: width, height: cardHeight, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .clipped()
+                    .simultaneousGesture(pageGesture(stride: stride))
+                    .animation(pageAnimation, value: pageTranslation)
+
+                    Button(L10n.text(currentID == addID ? "New palette" : "Edit")) {
+                        if currentID == addID { addPalette() }
+                        else { editing = true; setBrowsing(false) }
+                    }
+                    .buttonStyle(.plain)
+                    .font(.body.weight(.medium))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                    .frame(width: width * 0.46, height: buttonHeight)
+                    .background {
+                        Capsule().fill(LinearGradient(colors: [.white.opacity(0.14), .white.opacity(0.08)],
+                                                      startPoint: .top, endPoint: .bottom))
+                    }
+                    .overlay { Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 1) }
+                    .contentShape(Capsule())
+                }
+                .padding(.bottom, bottomPadding)
+                .frame(width: width, height: viewport.size.height)
+            }
+            // Use the lower safe area for Edit, leaving more height for the palette.
+            .ignoresSafeArea(.container, edges: .bottom)
+    }
+
+    private func paletteCard(_ entry: SavedInkPalette, width: CGFloat, height: CGFloat) -> some View {
+        let cardShape = paletteShape(width: width, height: height)
+        let horizontalInset = width * 0.09
+        let verticalInset = width * 0.06
+        let spacing = min(4, width * 0.03)
+        let swatchSize = max(1, min((width - horizontalInset * 2 - spacing * 2) / 3,
+                                   (height - verticalInset * 2 - spacing * 4) / 5))
+        return Button {
+            if currentID == entry.id {
+                editing = false
+                setBrowsing(false)
+            } else {
+                withAnimation(pageAnimation) { currentID = entry.id }
+            }
+        } label: {
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(swatchSize), spacing: spacing), count: 3), spacing: spacing) {
+                ForEach(Array(entry.palette.allColors.prefix(15))) { color in
+                    Circle().fill(color.color)
+                        .overlay { Circle().strokeBorder(.white.opacity(0.25), lineWidth: 1) }
+                        .frame(width: swatchSize, height: swatchSize)
+                        .modifier(PaletteSwatchTransition(paletteID: entry.id, colorID: color.id,
+                            namespace: paletteTransition, enabled: !reduceMotion && entry.id == currentID))
+                }
+                if entry.palette.allColors.isEmpty {
+                    Image(systemName: "plus").foregroundStyle(.gray)
+                }
+            }
+            .environment(\.layoutDirection, layoutDirection)
+            .frame(width: width, height: height)
+            .background(.white.opacity(0.08), in: cardShape)
+            .overlay {
+                cardShape
+                    .strokeBorder(.gray.opacity(0.6), lineWidth: 2)
+            }
+            .contentShape(cardShape)
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button { move(entry.id, by: -1) } label: {
+                Label(L10n.text("Move left"), systemImage: "arrow.left")
+            }.disabled(library.palettes.first?.id == entry.id)
+            Button { move(entry.id, by: 1) } label: {
+                Label(L10n.text("Move right"), systemImage: "arrow.right")
+            }.disabled(library.palettes.last?.id == entry.id)
+            Button(role: .destructive) { delete(entry.id) } label: {
+                Label(L10n.text("Delete"), systemImage: "trash")
+            }
+        }
+        .accessibilityLabel(L10n.text(entry.palette.title ?? "Palette"))
+        .accessibilityAddTraits(currentID == entry.id ? [.isSelected] : [])
+        .accessibilityAction(named: Text(L10n.text("Delete"))) { delete(entry.id) }
+        .accessibilityAction(named: Text(L10n.text("Move left"))) { move(entry.id, by: -1) }
+        .accessibilityAction(named: Text(L10n.text("Move right"))) { move(entry.id, by: 1) }
+        .accessibilityAdjustableAction { adjustPage($0) }
+        .accessibilityHidden(currentID != entry.id)
+    }
+
+    private func paletteShape(width: CGFloat, height: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: min(width, height) * 0.2, style: .continuous)
+    }
+
+    private var pageIDs: [String] { library.palettes.map(\.id) + [addID] }
+    private var pageIndex: Int { pageIDs.firstIndex(of: currentID) ?? 0 }
+    private var currentTitle: String {
+        library.palettes.first { $0.id == currentID }?.palette.title
+            ?? (currentID == addID ? "New palette" : "Palette")
+    }
+    private var pageAnimation: Animation? {
+        reduceMotion ? nil : .easeOut(duration: 0.22)
+    }
+
+    private func selectPage(by step: Int) {
+        let target = min(pageIDs.count - 1, max(0, pageIndex + step))
+        withAnimation(pageAnimation) { currentID = pageIDs[target] }
+    }
+
+    private func adjustPage(_ direction: AccessibilityAdjustmentDirection) {
+        switch direction {
+        case .increment: selectPage(by: 1)
+        case .decrement: selectPage(by: -1)
+        @unknown default: break
+        }
+    }
+
+    private func pageGesture(stride: CGFloat) -> some Gesture {
+        DragGesture(minimumDistance: 10)
+            .updating($pageTranslation) { value, translation, transaction in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                transaction.animation = nil
+                let atEdge = (pageIndex == 0 && value.translation.width > 0)
+                    || (pageIndex == pageIDs.count - 1 && value.translation.width < 0)
+                translation = value.translation.width * (atEdge ? 0.2 : 1)
+            }
+            .onEnded { value in
+                guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                let travel = value.predictedEndTranslation.width
+                guard abs(travel) > stride * 0.2 else { return }
+                selectPage(by: travel < 0 ? 1 : -1)
+            }
     }
 
     private var canConfirm: Bool {
@@ -228,53 +334,27 @@ struct InkPaletteBrowser: View {
         }
     }
 
-    private var pageIDs: [String] {
-        library.palettes.map(\.id) + [addID]
+}
+
+/// Match each color independently; navigation and safe-area layout stay stationary.
+struct PaletteSwatchTransition: ViewModifier {
+    let paletteID: String
+    let colorID: String
+    let namespace: Namespace.ID
+    let enabled: Bool
+
+    private struct SwatchID: Hashable {
+        let palette: String
+        let color: String
     }
 
-    private var pageIndex: Int { pageIDs.firstIndex(of: currentID) ?? 0 }
-
-    private func pageGesture(width: CGFloat) -> some Gesture {
-        DragGesture(minimumDistance: 10)
-            .onChanged { value in
-                guard abs(value.translation.width) > abs(value.translation.height) else { return }
-                let atEdge = (pageIndex == 0 && value.translation.width > 0)
-                    || (pageIndex == pageIDs.count - 1 && value.translation.width < 0)
-                pageOffset = value.translation.width * (atEdge ? 0.2 : 1)
-            }
-            .onEnded { value in
-                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.22)) {
-                    pageOffset = 0
-                    if abs(value.translation.width) > abs(value.translation.height) {
-                        let travel = value.predictedEndTranslation.width
-                        guard abs(travel) > min(40, width * 0.2) else { return }
-                        let target = min(pageIDs.count - 1, max(0, pageIndex + (travel < 0 ? 1 : -1)))
-                        currentID = pageIDs[target]
-                    } else if value.translation.height < -45 && currentID != addID {
-                        delete(currentID)
-                    }
-                }
-            }
-    }
-
-    private func reorderGesture(_ id: String) -> some Gesture {
-        LongPressGesture(minimumDuration: 0.5).sequenced(before: DragGesture(minimumDistance: 0))
-            .onChanged { value in
-                if case .second(true, let drag) = value {
-                    dragging = true
-                    dragOffset = drag?.translation ?? .zero
-                }
-            }
-            .onEnded { value in
-                defer { dragging = false; dragOffset = .zero }
-                guard case .second(true, let drag?) = value else { return }
-                if drag.translation.height < -45 && abs(drag.translation.height) > abs(drag.translation.width) {
-                    delete(id)
-                } else if abs(drag.translation.width) > 30 {
-                    let step = max(1, Int(abs(drag.translation.width) / 60))
-                    let forward = drag.translation.width > 0
-                    move(id, by: forward ? step : -step)
-                }
-            }
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if enabled {
+            content.matchedGeometryEffect(id: SwatchID(palette: paletteID, color: colorID),
+                                          in: namespace)
+        } else {
+            content
+        }
     }
 }

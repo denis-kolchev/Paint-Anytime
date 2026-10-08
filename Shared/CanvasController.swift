@@ -1,4 +1,5 @@
 import Combine
+import CoreGraphics
 import Foundation
 
 final class CanvasController: ObservableObject {
@@ -102,6 +103,50 @@ final class CanvasController: ObservableObject {
     func setBackgroundColor(_ color: SIMD4<Float>) {
         editLayers { $0.backgroundColor = color }
     }
+    /// Geometry stays editable; the complete document participates in history.
+    func adjustCanvas(from oldSize: CGSize, to newSize: CGSize, resample: Bool,
+                      origin: CGPoint = .zero, quarterTurns: Int = 0, resolution: Double? = nil) {
+        guard oldSize.width > 0, oldSize.height > 0,
+              newSize.width.isFinite, newSize.height.isFinite,
+              newSize.width > 0, newSize.height > 0, newSize.width <= 2048, newSize.height <= 2048,
+              resolution == nil || (resolution!.isFinite && resolution! > 0) else { return }
+        let turns = ((quarterTurns % 4) + 4) % 4
+        let sx = Float(resample ? newSize.width / oldSize.width : 1)
+        let sy = Float(resample ? newSize.height / oldSize.height : 1)
+        func transform(_ point: SIMD2<Float>) -> SIMD2<Float> {
+            let p = point - SIMD2(Float(origin.x), Float(origin.y))
+            switch turns {
+            case 1: return SIMD2(Float(oldSize.height) - p.y, p.x)
+            case 2: return SIMD2(Float(oldSize.width) - p.x, Float(oldSize.height) - p.y)
+            case 3: return SIMD2(p.y, Float(oldSize.width) - p.x)
+            default: return p * SIMD2(sx, sy)
+            }
+        }
+        editLayers { document in
+            document.canvasSize = newSize
+            if let resolution { document.resolution = resolution }
+            for layer in document.layers.indices {
+                document.layers[layer].strokes = document.layers[layer].strokes.map { original in
+                    var style = original.style
+                    style.width *= sqrt(sx * sy)
+                    style.reedAngle = (style.reedAngle + Float(turns * 90) + 270).truncatingRemainder(dividingBy: 180) - 90
+                    var stroke = Stroke(points: original.points.map { sample in
+                        var sample = sample
+                        sample.position = transform(sample.position)
+                        return sample
+                    }, style: style, id: original.id)
+                    stroke.locksTransparency = original.locksTransparency
+                    stroke.fillRects = original.fillRects?.map { rect in
+                        let a = transform(SIMD2(rect.x, rect.y))
+                        let b = transform(SIMD2(rect.x + rect.z, rect.y + rect.w))
+                        return SIMD4(min(a.x, b.x), min(a.y, b.y), abs(b.x - a.x), abs(b.y - a.y))
+                    }
+                    return stroke
+                }
+            }
+        }
+    }
+
     var isShapeSnapped: Bool { pencil.shapeState != .drawing }
 
     @discardableResult

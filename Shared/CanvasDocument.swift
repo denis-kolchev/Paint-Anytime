@@ -287,6 +287,10 @@ nonisolated struct CanvasLayer: Codable, Equatable, Identifiable {
 nonisolated struct CanvasDocument: Codable, Equatable {
     // Stored bottom to top. The paper is always below every drawing layer.
     var layers: [CanvasLayer]
+    var canvasSize: CGSize? = nil
+    var resolution: Double = 72
+
+    func size(fallback: CGSize) -> CGSize { canvasSize ?? fallback }
     var backgroundColor = SIMD4<Float>(1, 1, 1, 1)
     var strokes: [Stroke] {
         get { layers.flatMap(\.strokes) }
@@ -298,7 +302,7 @@ nonisolated struct CanvasDocument: Codable, Equatable {
 
     init(strokes: [Stroke] = []) { layers = [CanvasLayer(strokes: strokes)] }
 
-    private enum CodingKeys: String, CodingKey { case layers, backgroundColor, strokes }
+    private enum CodingKeys: String, CodingKey { case layers, backgroundColor, strokes, canvasSize, resolution }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         if let decoded = try values.decodeIfPresent([CanvasLayer].self, forKey: .layers) {
@@ -306,11 +310,17 @@ nonisolated struct CanvasDocument: Codable, Equatable {
         } else {
             layers = [CanvasLayer(strokes: try values.decodeIfPresent([Stroke].self, forKey: .strokes) ?? [])]
         }
+        canvasSize = try values.decodeIfPresent(CGSize.self, forKey: .canvasSize)
+        if let size = canvasSize, !size.width.isFinite || !size.height.isFinite || size.width <= 0 || size.height <= 0 || size.width > 2048 || size.height > 2048 { canvasSize = nil }
+        resolution = try values.decodeIfPresent(Double.self, forKey: .resolution) ?? 72
+        if !resolution.isFinite || resolution <= 0 { resolution = 72 }
         if layers.isEmpty { layers = [CanvasLayer()] }
         backgroundColor = try values.decodeIfPresent(SIMD4<Float>.self, forKey: .backgroundColor) ?? SIMD4(1, 1, 1, 1)
     }
     func encode(to encoder: Encoder) throws {
         var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encodeIfPresent(canvasSize, forKey: .canvasSize)
+        try values.encode(resolution, forKey: .resolution)
         try values.encode(layers, forKey: .layers)
         try values.encode(backgroundColor, forKey: .backgroundColor)
     }

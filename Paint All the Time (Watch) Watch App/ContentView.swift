@@ -10,6 +10,7 @@ struct ContentView: View {
     @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = false
     @State private var showsMorphToolbar = false
     @State private var showsContentActions = false
+    @State private var showsCanvasSize = false
     @State private var showsLayers = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsToolSettings = false
@@ -42,8 +43,8 @@ struct ContentView: View {
                     let diameter: CGFloat = 36
                     let top = (buttonFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY - diameter / 2
                     let centerX = (buttonFrame?.midX ?? (canvasFrame.maxX - 30)) - canvasFrame.minX
-                    let rowHeight = min(diameter, max(24, (geometry.size.height - top - 16) / 6))
-                    let panelHeight = showsMorphToolbar ? rowHeight * 6 : diameter
+                    let rowHeight = min(diameter, max(20, (geometry.size.height - top - 16) / 7))
+                    let panelHeight = showsMorphToolbar ? rowHeight * 7 : diameter
                     morphToolbar(diameter: diameter, rowHeight: rowHeight)
                         .position(x: centerX, y: top + panelHeight / 2)
                         .zIndex(3)
@@ -228,8 +229,11 @@ struct ContentView: View {
             }
         }
         }
+        .sheet(isPresented: $showsCanvasSize) {
+            WatchCanvasSizeView(controller: controller, viewportSize: canvasSize, displayScale: displayScale)
+        }
         .sheet(isPresented: $showsLayers) {
-            WatchLayersView(controller: controller, canvasSize: canvasSize)
+            WatchLayersView(controller: controller, canvasSize: controller.document.size(fallback: canvasSize))
         }
         .onChange(of: showsLayers) { _, shows in
             if shows { showsMorphToolbar = false; showsContentActions = false }
@@ -382,6 +386,11 @@ struct ContentView: View {
                 morphButton("Save drawing", height: rowHeight) {
                     session.saveDrawing(size: canvasSize, scale: displayScale)
                 } label: { Image(systemName: "square.and.arrow.down") }
+                morphButton("Canvas size", height: rowHeight) {
+                    controller.cancelStroke()
+                    showsMorphToolbar = false
+                    showsCanvasSize = true
+                } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
                 morphButton("Layers", height: rowHeight) {
                     controller.cancelStroke()
                     showsLayers = true
@@ -419,7 +428,7 @@ struct ContentView: View {
 
     private var drawingPage: some View {
         // Animate the whole page above, keeping the cached artwork fully visible inside it.
-        WatchCanvasView(controller: controller, acceptsInput: isActive && !showsLayers && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onCanvasInteraction: {
+        WatchCanvasView(controller: controller, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onCanvasInteraction: {
             if showsContentActions {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { showsContentActions = false }
             }

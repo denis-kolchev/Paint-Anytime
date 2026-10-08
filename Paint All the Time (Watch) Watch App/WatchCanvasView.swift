@@ -55,6 +55,8 @@ struct WatchCanvasView: View {
     var body: some View {
         let _ = TutorialDebug.trace("canvas.body", "input=\(acceptsInput) controls=\(protectedControls.count) \(tutorial.debugState)")
         GeometryReader { geometry in
+            let paperSize = controller.document.size(fallback: geometry.size)
+            let fit = canvasFit(geometry.size)
             ZStack {
                 Color(white: 0.16)
                 // Hiding settings/gallery must not destroy the raster view's image and cache.
@@ -65,10 +67,10 @@ struct WatchCanvasView: View {
                     documentRevision: controller.documentRevision,
                     activeStrokeRevision: controller.activeStrokeRevision,
                     activeStrokeID: controller.activeStrokeID, zoom: zoom)
-                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .frame(width: paperSize.width, height: paperSize.height)
                     .clipped()
                     .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
-                    .scaleEffect(zoom)
+                    .scaleEffect(zoom * fit)
                     .offset(offset)
                     .opacity(rendersArtwork ? 1 : 0)
             }
@@ -161,7 +163,7 @@ struct WatchCanvasView: View {
                             let point = canvasPoint(value.startLocation, size: geometry.size)
                             if controller.selectedLayer.isVisible,
                                let fill = WatchBitmapRenderer.floodFill(document: controller.document,
-                                   size: geometry.size, point: point, style: controller.pencilStyle) {
+                                   size: controller.document.size(fallback: geometry.size), point: point, style: controller.pencilStyle) {
                                 controller.commitFill(fill)
                             }
                             return
@@ -249,7 +251,7 @@ struct WatchCanvasView: View {
 
     private func prepareSampler(size: CGSize) {
         controller.cancelStroke()
-        samplingImage = WatchBitmapRenderer.render(document: controller.document, size: size, scale: displayScale)
+        samplingImage = WatchBitmapRenderer.render(document: controller.document, size: controller.document.size(fallback: size), scale: displayScale)
         updateSample(at: CGPoint(x: size.width / 2, y: size.height / 2), size: size)
     }
 
@@ -259,8 +261,10 @@ struct WatchCanvasView: View {
         let x = min(image.width - 1, max(0, Int(floor(point.x * displayScale))))
         let y = min(image.height - 1, max(0, Int(floor(point.y * displayScale))))
         // Place the lens over the actual pixel, including when dragging beyond the paper.
-        loupePoint = CGPoint(x: ((CGFloat(x) + 0.5) / displayScale - size.width / 2) * zoom + size.width / 2 + offset.width,
-                             y: ((CGFloat(y) + 0.5) / displayScale - size.height / 2) * zoom + size.height / 2 + offset.height)
+        let paper = controller.document.size(fallback: size)
+        let fit = canvasFit(size)
+        loupePoint = CGPoint(x: ((CGFloat(x) + 0.5) / displayScale - paper.width / 2) * zoom * fit + size.width / 2 + offset.width,
+                             y: ((CGFloat(y) + 0.5) / displayScale - paper.height / 2) * zoom * fit + size.height / 2 + offset.height)
         guard let pixel = image.cropping(to: CGRect(x: CGFloat(x), y: CGFloat(y), width: 1, height: 1)) else { return }
         var rgba = [UInt8](repeating: 0, count: 4)
         let sampled = rgba.withUnsafeMutableBytes { bytes -> Bool in
@@ -347,9 +351,16 @@ struct WatchCanvasView: View {
         return false
     }
 
+    private func canvasFit(_ size: CGSize) -> CGFloat {
+        let paper = controller.document.size(fallback: size)
+        return min(size.width / paper.width, size.height / paper.height)
+    }
+
     private func canvasPoint(_ point: CGPoint, size: CGSize) -> CGPoint {
-        CGPoint(x: (point.x - offset.width - size.width / 2) / zoom + size.width / 2,
-                y: (point.y - offset.height - size.height / 2) / zoom + size.height / 2)
+        let paper = controller.document.size(fallback: size)
+        let scale = zoom * canvasFit(size)
+        return CGPoint(x: (point.x - offset.width - size.width / 2) / scale + paper.width / 2,
+                       y: (point.y - offset.height - size.height / 2) / scale + paper.height / 2)
     }
 
     private func sample(at point: CGPoint, time: Date) -> PointerSample {
