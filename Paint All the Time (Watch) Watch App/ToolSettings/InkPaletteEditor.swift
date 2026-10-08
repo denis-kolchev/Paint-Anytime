@@ -62,6 +62,7 @@ struct InkPaletteEditor: View {
 
     var body: some View {
         NavigationStack {
+            GeometryReader { viewport in
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     Text(L10n.text("Palette")).font(.headline)
@@ -71,6 +72,7 @@ struct InkPaletteEditor: View {
                             Button {
                                 guard !isEditing else { return }
                                 if selected {
+                                    guard palette.selectedIDs.count > 1 else { return }
                                     palette.selectedIDs.removeAll { $0 == preset.id }
                                 } else {
                                     palette.selectedIDs.append(preset.id)
@@ -92,7 +94,6 @@ struct InkPaletteEditor: View {
                                     .contentShape(Circle())
                             }
                             .buttonStyle(.plain)
-                            .disabled(!isEditing && selected && palette.selectedIDs.count == 1)
                             .overlay(alignment: .topLeading) {
                                 if isEditing {
                                     Button {
@@ -119,15 +120,22 @@ struct InkPaletteEditor: View {
                                         value: [preset.id: geometry.frame(in: .named("paletteGrid"))])
                                 }
                             }
+                            .modifier(PaletteEditingWiggle(
+                                enabled: isEditing && !showsColorEditor && draggedID != preset.id,
+                                viewportSize: viewport.size))
                             .offset(draggedID == preset.id ? dragOffset : .zero)
                             .scaleEffect(draggedID == preset.id && !reduceMotion ? 1.08 : 1)
                             .zIndex(draggedID == preset.id ? 1 : 0)
                             .highPriorityGesture(swatchDrag(preset.id), including: isEditing ? .all : .none)
+                            .highPriorityGesture(
+                                LongPressGesture(minimumDuration: 0.5).onEnded { _ in isEditing = true },
+                                including: isEditing ? .none : .all)
+                            .accessibilityAction(named: Text(L10n.text("Edit"))) { isEditing = true }
                             .accessibilityLabel(preset.name)
                             .accessibilityValue(L10n.text(selected ? "Selected" : "Not selected"))
                             .accessibilityAddTraits(selected ? [.isSelected] : [])
                         }
-                        Button { showsColorEditor = true } label: {
+                        Button { if !isEditing { showsColorEditor = true } } label: {
                             Image(systemName: "plus.circle.fill")
                                 .resizable()
                                 .scaledToFit()
@@ -135,6 +143,8 @@ struct InkPaletteEditor: View {
                                 .aspectRatio(1, contentMode: .fit)
                         }
                         .buttonStyle(.plain)
+                        .highPriorityGesture(
+                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in isEditing = true })
                         .accessibilityLabel(L10n.text("Create color"))
                     }
                 }
@@ -147,6 +157,8 @@ struct InkPaletteEditor: View {
                 .accessibilityAction(named: Text(L10n.text("Edit"))) { isEditing = true }
             }
             .scrollDisabled(draggedID != nil)
+            }
+            .coordinateSpace(name: "paletteViewport")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: { Image(systemName: "xmark") }
@@ -186,6 +198,53 @@ struct InkPaletteEditor: View {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                     palette.move(id, to: target)
                 }
+            }
+    }
+}
+
+/// Visibility is measured before rotation, so animation never triggers layout updates.
+private struct PaletteEditingWiggle: ViewModifier {
+    let enabled: Bool
+    let viewportSize: CGSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var isVisible = false
+    @State private var wigglePhase = false
+
+    private var animates: Bool {
+        enabled && isVisible && !reduceMotion && scenePhase == .active
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                GeometryReader { geometry in
+                    let frame = geometry.frame(in: .named("paletteViewport"))
+                    let visible = frame.intersects(CGRect(origin: .zero, size: viewportSize))
+                    Color.clear
+                        .onAppear { isVisible = visible }
+                        .onChange(of: visible) { _, value in isVisible = value }
+                }
+            }
+            .rotationEffect(.degrees(animates ? (wigglePhase ? 2 : -2) : 0))
+            .offset(x: animates ? (wigglePhase ? 0.5 : -0.5) : 0)
+            .animation(animates
+                       ? .easeInOut(duration: 0.14).repeatForever(autoreverses: true)
+                       : nil, value: wigglePhase)
+            .task(id: animates) {
+                // Start a new state transition after SwiftUI installs the visible
+                // editing state, including when a cell scrolls back into view.
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { wigglePhase = false }
+                guard animates else { return }
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+                wigglePhase = true
+            }
+            .onDisappear {
+                isVisible = false
+                wigglePhase = false
             }
     }
 }
