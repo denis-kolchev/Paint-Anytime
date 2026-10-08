@@ -70,6 +70,8 @@ struct InkPaletteBrowser: View {
     @State private var currentID: String
     @State private var browsing = false
     @State private var editing = false
+    @State private var showsColorEditor = false
+    @State private var sampledColor: SIMD4<Float>?
     @Namespace private var paletteTransition
     @GestureState private var pageTranslation: CGFloat = 0
     private let addID = "add-palette"
@@ -91,8 +93,9 @@ struct InkPaletteBrowser: View {
             ZStack {
                 if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
                     InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller,
-                        onBrowse: { setBrowsing(true) }, startsEditing: editing,
-                        paletteID: currentID, transitionNamespace: paletteTransition)
+                        onBrowse: { setBrowsing(true) }, isEditing: $editing,
+                        paletteID: currentID, transitionNamespace: paletteTransition,
+                        sampledColor: $sampledColor, showsColorEditor: $showsColorEditor)
                         .id(currentID)
                         .transition(.opacity)
                         .zIndex(1)
@@ -102,14 +105,27 @@ struct InkPaletteBrowser: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .navigationDestination(isPresented: $showsColorEditor) {
+                CustomInkEditor(initialColor: sampledColor) { preset in
+                    guard let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
+                    if let existing = library.palettes[index].palette.allColors.first(where: { $0.rgba == preset.rgba }) {
+                        if !library.palettes[index].palette.selectedIDs.contains(existing.id) {
+                            library.palettes[index].palette.selectedIDs.append(existing.id)
+                        }
+                    } else {
+                        library.palettes[index].palette.customColors.append(preset)
+                        library.palettes[index].palette.selectedIDs.append(preset.id)
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button { dismiss() } label: { Image(systemName: "xmark") }
                         .accessibilityLabel(L10n.text("Cancel"))
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(action: confirm) { Image(systemName: "checkmark") }
-                        .disabled(!canConfirm)
+                    Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
+                        .disabled(!canConfirm && !editing)
                         .accessibilityLabel(L10n.text("Done"))
                 }
             }
@@ -119,6 +135,16 @@ struct InkPaletteBrowser: View {
     private func setBrowsing(_ value: Bool) {
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.38)) {
             browsing = value
+        }
+    }
+
+    private func finishEditingOrConfirm() {
+        if editing && !browsing {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                editing = false
+            }
+        } else {
+            confirm()
         }
     }
 

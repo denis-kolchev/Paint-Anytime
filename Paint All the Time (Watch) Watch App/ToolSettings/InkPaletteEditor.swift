@@ -55,13 +55,12 @@ struct InkPaletteEditor: View {
     @Binding var palette: InkPalette
     @ObservedObject var controller: CanvasController
     let onBrowse: () -> Void
-    var startsEditing = false
+    @Binding var isEditing: Bool
     let paletteID: String
     let transitionNamespace: Namespace.ID
     @State private var showsEyedropper = false
-    @State private var sampledColor: SIMD4<Float>?
-    @State private var showsColorEditor = false
-    @State private var isEditing = false
+    @Binding var sampledColor: SIMD4<Float>?
+    @Binding var showsColorEditor: Bool
     @State private var draggedID: String?
     @State private var dragOffset = CGSize.zero
     @State private var swatchFrames: [String: CGRect] = [:]
@@ -72,7 +71,10 @@ struct InkPaletteEditor: View {
             GeometryReader { viewport in
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(L10n.text(palette.title ?? "Basic colors")).font(.headline)
+                    Text(L10n.text(palette.title ?? "Basic colors"))
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 16) {
                         ForEach(palette.allColors) { preset in
                             let selected = palette.selectedIDs.contains(preset.id)
@@ -99,8 +101,6 @@ struct InkPaletteEditor: View {
                                     .overlay { Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1) }
                                     .aspectRatio(1, contentMode: .fit)
                                     .contentShape(Circle())
-                                    .modifier(PaletteSwatchTransition(paletteID: paletteID, colorID: preset.id,
-                                        namespace: transitionNamespace, enabled: !reduceMotion))
                             }
                             .buttonStyle(.plain)
                             .overlay(alignment: .topLeading) {
@@ -128,6 +128,8 @@ struct InkPaletteEditor: View {
                                         value: [preset.id: geometry.frame(in: .named("paletteGrid"))])
                                 }
                             }
+                            .modifier(PaletteSwatchTransition(paletteID: paletteID, colorID: preset.id,
+                                namespace: transitionNamespace, enabled: !reduceMotion))
                             .modifier(PaletteEditingWiggle(
                                 enabled: isEditing && !showsColorEditor && draggedID != preset.id,
                                 viewportSize: viewport.size))
@@ -151,8 +153,6 @@ struct InkPaletteEditor: View {
                                 .aspectRatio(1, contentMode: .fit)
                         }
                         .buttonStyle(.plain)
-                        .highPriorityGesture(
-                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() })
                         .accessibilityLabel(L10n.text("Create color"))
                         Button {
                             sampledColor = nil
@@ -178,18 +178,7 @@ struct InkPaletteEditor: View {
             .scrollDisabled(draggedID != nil)
             }
             .coordinateSpace(name: "paletteViewport")
-            .navigationDestination(isPresented: $showsColorEditor) {
-                CustomInkEditor(initialColor: sampledColor) { preset in
-                    if let existing = palette.allColors.first(where: { $0.rgba == preset.rgba }) {
-                        if !palette.selectedIDs.contains(existing.id) { palette.selectedIDs.append(existing.id) }
-                    } else {
-                        palette.customColors.append(preset)
-                        palette.selectedIDs.append(preset.id)
-                    }
-                }
-            }
         }
-        .onAppear { isEditing = startsEditing }
         .fullScreenCover(isPresented: $showsEyedropper, onDismiss: {
             if sampledColor != nil { showsColorEditor = true }
         }) {
