@@ -413,7 +413,7 @@ struct WatchToolSettingsView: View {
             }
         }
         .fullScreenCover(isPresented: $showsPalette, onDismiss: { crownFocused = true }) {
-            InkPaletteEditor(palette: palette) { updated in
+            InkPaletteEditor(palette: palette, controller: controller) { updated in
                 if let data = try? JSONEncoder().encode(updated) { paletteData = data }
                 if !updated.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
                    let first = updated.selectedColors.first {

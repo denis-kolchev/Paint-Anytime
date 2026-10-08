@@ -20,6 +20,12 @@ struct WatchCanvasView: View {
     var acceptsInput = true
     var protectedControls: [CanvasToolbarControl: CGRect] = [:]
     @Binding var isMovingCanvas: Bool
+    var isEyedropperActive = false
+    var onSampleColor: (SIMD4<Float>) -> Void = { _ in }
+    @Environment(\.displayScale) private var displayScale
+    @State private var samplingImage: CGImage?
+    @State private var loupePoint: CGPoint?
+    @State private var loupeImage: CGImage?
     var onCanvasInteraction: () -> Void = {}
     @State private var crownZoom = 1.0
     @State private var offset = CGSize.zero
@@ -68,6 +74,32 @@ struct WatchCanvasView: View {
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
+            .overlay {
+                if isEyedropperActive, let loupeImage, let loupePoint {
+                    Image(decorative: loupeImage, scale: 1)
+                        .resizable().interpolation(.none)
+                        .frame(width: 88, height: 88)
+                        .clipShape(Circle())
+                        .overlay { Circle().strokeBorder(.white, lineWidth: 3) }
+                        .overlay {
+                            Rectangle().stroke(.black, lineWidth: 3).frame(width: 8, height: 8)
+                                .overlay { Rectangle().stroke(.white, lineWidth: 1).frame(width: 8, height: 8) }
+                        }
+                        .position(loupePoint)
+                        .allowsHitTesting(false)
+                }
+            }
+            .onChange(of: isEyedropperActive) { _, active in
+                if active { prepareSampler(size: geometry.size) }
+                else { samplingImage = nil; loupeImage = nil }
+            }
+            .onAppear { if isEyedropperActive { prepareSampler(size: geometry.size) } }
+            .onChange(of: geometry.size) { _, size in
+                if isEyedropperActive { prepareSampler(size: size) }
+            }
+            .onChange(of: crownZoom) { _, _ in
+                if isEyedropperActive { updateSample(at: loupePoint ?? CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2), size: geometry.size) }
+            }
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -83,6 +115,10 @@ struct WatchCanvasView: View {
                         }
                         // Keep the initial decision even when controls hide or the finger moves away.
                         guard acceptsCurrentGesture == true else { return }
+                        if isMovingCanvas && isEyedropperActive {
+                            updateSample(at: value.location, size: geometry.size)
+                            return
+                        }
                         if isMovingCanvas {
                             cancelShapeHold()
                             if panOrigin == nil { panOrigin = offset }
@@ -208,6 +244,42 @@ struct WatchCanvasView: View {
         .onDisappear {
             cancelShapeHold()
             controller.cancelStroke()
+        }
+    }
+
+    private func prepareSampler(size: CGSize) {
+        controller.cancelStroke()
+        samplingImage = WatchBitmapRenderer.render(document: controller.document, size: size, scale: displayScale)
+        updateSample(at: CGPoint(x: size.width / 2, y: size.height / 2), size: size)
+    }
+
+    private func updateSample(at location: CGPoint, size: CGSize) {
+        guard let image = samplingImage else { return }
+        let point = canvasPoint(location, size: size)
+        let x = min(image.width - 1, max(0, Int(floor(point.x * displayScale))))
+        let y = min(image.height - 1, max(0, Int(floor(point.y * displayScale))))
+        // Place the lens over the actual pixel, including when dragging beyond the paper.
+        loupePoint = CGPoint(x: ((CGFloat(x) + 0.5) / displayScale - size.width / 2) * zoom + size.width / 2 + offset.width,
+                             y: ((CGFloat(y) + 0.5) / displayScale - size.height / 2) * zoom + size.height / 2 + offset.height)
+        guard let pixel = image.cropping(to: CGRect(x: CGFloat(x), y: CGFloat(y), width: 1, height: 1)) else { return }
+        var rgba = [UInt8](repeating: 0, count: 4)
+        let sampled = rgba.withUnsafeMutableBytes { bytes -> Bool in
+            guard let context = CGContext(data: bytes.baseAddress, width: 1, height: 1,
+                bitsPerComponent: 8, bytesPerRow: 4, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue) else { return false }
+            context.draw(pixel, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+            return true
+        }
+        if sampled { onSampleColor(SIMD4(Float(rgba[0]) / 255, Float(rgba[1]) / 255, Float(rgba[2]) / 255, 1)) }
+        // A fixed 11 × 11 crop keeps the selected pixel exactly in the lens center.
+        if let context = CGContext(data: nil, width: 11, height: 11, bitsPerComponent: 8,
+            bytesPerRow: 44, space: CGColorSpace(name: CGColorSpace.sRGB)!,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) {
+            context.setFillColor(CGColor(gray: 0.16, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: 11, height: 11))
+            context.interpolationQuality = .none
+            context.draw(image, in: CGRect(x: CGFloat(5 - x), y: CGFloat(5 - (image.height - 1 - y)), width: CGFloat(image.width), height: CGFloat(image.height)))
+            loupeImage = context.makeImage()
         }
     }
 

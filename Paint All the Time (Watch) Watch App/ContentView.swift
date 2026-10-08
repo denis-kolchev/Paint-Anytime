@@ -14,6 +14,8 @@ struct ContentView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsToolSettings = false
     @State private var isMovingCanvas = false
+    @State private var isEyedropperActive = false
+    @State private var hasEyedropperSession = false
     @State private var showsAppSettings = false
     @State private var showsGallery = false
     @State private var canvasSize: CGSize = .zero
@@ -157,26 +159,36 @@ struct ContentView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {
                         controller.cancelStroke()
-                        showsAppSettings = true
+                        if isMovingCanvas {
+                            isEyedropperActive.toggle()
+                            hasEyedropperSession = true
+                        } else { showsAppSettings = true }
                     } label: {
-                        Image(systemName: "ellipsis")
+                        Image(systemName: isMovingCanvas ? "eyedropper" : "ellipsis")
+                            .foregroundStyle(isEyedropperActive ? .green : .primary)
                             .frame(width: 18, height: 18, alignment: .center)
-                            .opacity(usesMorphToolbar ? 0 : 1)
+                            .opacity(usesMorphToolbar && !isMovingCanvas ? 0 : 1)
                             .contentShape(Rectangle())
                     }
-                    .watchToolbarButtonStyle(hidesNativeChrome: usesMorphToolbar || isMovingCanvas || controller.activeStroke != nil)
-                    .accessibilityLabel(L10n.text("More"))
+                    .watchToolbarButtonStyle(hidesNativeChrome: (usesMorphToolbar && !isMovingCanvas) || controller.activeStroke != nil)
+                    .accessibilityLabel(L10n.text(isMovingCanvas ? "Eyedropper" : "More"))
+                    .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
                     .trackCanvasControl(.more, frames: $canvasControlFrames)
-                    .opacity(isMovingCanvas || controller.activeStroke != nil ? 0 : 1)
-                    .allowsHitTesting(!isMovingCanvas && controller.activeStroke == nil)
-                    .accessibilityHidden(isMovingCanvas || controller.activeStroke != nil)
+                    .opacity(controller.activeStroke != nil ? 0 : 1)
+                    .allowsHitTesting(controller.activeStroke == nil)
+                    .accessibilityHidden(controller.activeStroke != nil)
                 }
             }
             if isActive && !showsGallery {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     controller.cancelStroke()
-                    if isMovingCanvas { isMovingCanvas = false }
+                    if isMovingCanvas {
+                        if hasEyedropperSession {
+                            isEyedropperActive = false
+                            hasEyedropperSession = false
+                        } else { isMovingCanvas = false }
+                    }
                     else if usesMorphToolbar && !showsToolSettings && showsMorphToolbar {
                         // In the expanded capsule this same screen position is
                         // occupied by the first action, Tool settings.
@@ -279,6 +291,8 @@ struct ContentView: View {
             showsContentActions = false
             showsMorphToolbar = false
             isMovingCanvas = false
+            isEyedropperActive = false
+            hasEyedropperSession = false
             showsToolSettings = false
             showsGallery = false
         }
@@ -405,7 +419,7 @@ struct ContentView: View {
 
     private var drawingPage: some View {
         // Animate the whole page above, keeping the cached artwork fully visible inside it.
-        WatchCanvasView(controller: controller, acceptsInput: isActive && !showsLayers && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, onCanvasInteraction: {
+        WatchCanvasView(controller: controller, acceptsInput: isActive && !showsLayers && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onCanvasInteraction: {
             if showsContentActions {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { showsContentActions = false }
             }
@@ -421,7 +435,7 @@ struct ContentView: View {
     private var protectedCanvasControls: [CanvasToolbarControl: CGRect] {
         guard !showsGallery && !showsToolSettings && controller.activeStroke == nil else { return [:] }
         return canvasControlFrames.filter { control, _ in
-            if isMovingCanvas { return control == .tools }
+            if isMovingCanvas { return control == .tools || control == .more }
             if usesMorphToolbar { return control == .more || control == .tools || control == .morph }
             return control != .morph
         }

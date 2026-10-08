@@ -52,7 +52,10 @@ struct InkPalette: Codable {
 struct InkPaletteEditor: View {
     @Environment(\.dismiss) private var dismiss
     @State var palette: InkPalette
+    @ObservedObject var controller: CanvasController
     let onSave: (InkPalette) -> Void
+    @State private var showsEyedropper = false
+    @State private var sampledColor: SIMD4<Float>?
     @State private var showsColorEditor = false
     @State private var isEditing = false
     @State private var draggedID: String?
@@ -135,7 +138,7 @@ struct InkPaletteEditor: View {
                             .accessibilityValue(L10n.text(selected ? "Selected" : "Not selected"))
                             .accessibilityAddTraits(selected ? [.isSelected] : [])
                         }
-                        Button { if !isEditing { showsColorEditor = true } } label: {
+                        Button { if !isEditing { sampledColor = nil; showsColorEditor = true } } label: {
                             Image(systemName: "plus.circle.fill")
                                 .resizable()
                                 .scaledToFit()
@@ -161,8 +164,8 @@ struct InkPaletteEditor: View {
             .coordinateSpace(name: "paletteViewport")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .accessibilityLabel(L10n.text("Cancel"))
+                    Button { sampledColor = nil; showsEyedropper = true } label: { Image(systemName: "eyedropper") }
+                        .accessibilityLabel(L10n.text("Eyedropper"))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -173,7 +176,7 @@ struct InkPaletteEditor: View {
                 }
             }
             .navigationDestination(isPresented: $showsColorEditor) {
-                CustomInkEditor { preset in
+                CustomInkEditor(initialColor: sampledColor) { preset in
                     if let existing = palette.allColors.first(where: { $0.rgba == preset.rgba }) {
                         if !palette.selectedIDs.contains(existing.id) { palette.selectedIDs.append(existing.id) }
                     } else {
@@ -183,7 +186,16 @@ struct InkPaletteEditor: View {
                 }
             }
         }
+        .fullScreenCover(isPresented: $showsEyedropper, onDismiss: {
+            if sampledColor != nil { showsColorEditor = true }
+        }) {
+            PaletteEyedropperView(controller: controller) { color in
+                sampledColor = color
+                showsEyedropper = false
+            }
+        }
     }
+
     private func swatchDrag(_ id: String) -> some Gesture {
         DragGesture(minimumDistance: 8, coordinateSpace: .named("paletteGrid"))
             .onChanged { value in
@@ -568,4 +580,44 @@ private struct InkComponentsEditor: View {
         crownFocused = true
     }
 
+}
+
+/// Keeps the palette draft alive while sampling the composited canvas.
+private struct PaletteEyedropperView: View {
+    @ObservedObject var controller: CanvasController
+    let onConfirm: (SIMD4<Float>) -> Void
+    @State private var isMoving = true
+    @State private var isSampling = true
+    @State private var color: SIMD4<Float>?
+    @State private var controls: [CanvasToolbarControl: CGRect] = [:]
+
+    var body: some View {
+        NavigationStack {
+            WatchCanvasView(controller: controller, protectedControls: controls,
+                isMovingCanvas: $isMoving, isEyedropperActive: isSampling,
+                onSampleColor: { color = $0 })
+                .ignoresSafeArea()
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button { isSampling.toggle() } label: {
+                            Image(systemName: "eyedropper")
+                                .foregroundStyle(isSampling ? .green : .primary)
+                        }
+                        .watchToolbarButtonStyle()
+                        .accessibilityLabel(L10n.text("Eyedropper"))
+                        .accessibilityAddTraits(isSampling ? [.isSelected] : [])
+                        .trackCanvasControl(.more, frames: $controls)
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { if let color { onConfirm(color) } } label: {
+                            Image(systemName: "checkmark").foregroundStyle(.green)
+                        }
+                        .disabled(color == nil)
+                        .watchToolbarButtonStyle()
+                        .accessibilityLabel(L10n.text("Done"))
+                        .trackCanvasControl(.tools, frames: $controls)
+                    }
+                }
+        }
+    }
 }
