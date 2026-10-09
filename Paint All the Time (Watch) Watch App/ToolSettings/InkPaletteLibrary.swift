@@ -218,7 +218,7 @@ struct InkPaletteBrowser: View {
                         ForEach(reorderPreviewPalettes) { entry in
                             VStack(spacing: verticalGap) {
                                 carouselTitle(entry.palette.displayTitle, width: slotStride - 6, height: titleHeight)
-                                    .opacity(movingID == nil ? 1 : 0)
+                                    .opacity(titleOpacity(for: entry.id, stride: stride))
                                 paletteSlot(entry,
                                             width: movingID == nil ? cardWidth : previewSize,
                                             height: movingID == nil ? cardHeight : previewSize,
@@ -234,6 +234,7 @@ struct InkPaletteBrowser: View {
                         }
                         VStack(spacing: verticalGap) {
                             carouselTitle(L10n.text("New palette"), width: stride - 6, height: titleHeight)
+                                .opacity(titleOpacity(for: addID, stride: stride))
                             Button {
                                 guard pendingDeletionID == nil, movingID == nil else { return }
                                 if currentID == addID {
@@ -340,6 +341,16 @@ struct InkPaletteBrowser: View {
             }
             // Use the lower safe area for Edit, leaving more height for the palette.
             .ignoresSafeArea(.container, edges: .bottom)
+    }
+
+    private func titleOpacity(for id: String, stride: CGFloat) -> Double {
+        guard movingID == nil, let index = pageIDs.firstIndex(of: id) else { return 0 }
+        // Use the same displacement as the cards, so only the current title
+        // and the title in the swipe direction participate in the crossfade.
+        // Clamping keeps the end title visible during edge resistance.
+        let position = min(CGFloat(pageIDs.count - 1),
+                           max(0, CGFloat(pageIndex) - carouselTranslation.width / stride))
+        return Double(max(0, 1 - abs(CGFloat(index) - position)))
     }
 
     private func carouselTitle(_ title: String, width: CGFloat, height: CGFloat) -> some View {
