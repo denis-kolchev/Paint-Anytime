@@ -3,12 +3,34 @@ import SwiftUI
 struct InkPalette: Codable {
     var baseColors: [InkPreset]?
     var title: String?
+    var generatedNameID: PaletteNameID?
+
+    var displayTitle: String {
+        if allColors.isEmpty { return L10n.text("New palette") }
+        if let generatedNameID {
+            return PaletteNameGenerator().displayName(generatedNameID)
+        }
+        return L10n.text(title ?? "Basic colors")
+    }
     var customColors: [InkPreset] = []
     var selectedIDs: [String] = InkPreset.all.map(\.id)
 
     // Optional fields keep palettes saved before editing was introduced readable.
     var orderedIDs: [String]?
     var deletedIDs: [String]?
+
+    init(baseColors: [InkPreset]? = nil, title: String? = nil,
+         generatedNameID: PaletteNameID? = nil, customColors: [InkPreset] = [],
+         selectedIDs: [String] = InkPreset.all.map(\.id),
+         orderedIDs: [String]? = nil, deletedIDs: [String]? = nil) {
+        self.baseColors = baseColors
+        self.title = title
+        self.generatedNameID = generatedNameID
+        self.customColors = customColors
+        self.selectedIDs = selectedIDs
+        self.orderedIDs = orderedIDs
+        self.deletedIDs = deletedIDs
+    }
 
     var allColors: [InkPreset] {
         let available = ((baseColors ?? InkPaletteLibrary.basicColors) + customColors).filter { !(deletedIDs ?? []).contains($0.id) }
@@ -69,7 +91,7 @@ struct InkPaletteEditor: View {
             GeometryReader { viewport in
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(L10n.text(palette.title ?? "Basic colors"))
+                    Text(palette.displayTitle)
                         .font(.headline)
                         .multilineTextAlignment(.center)
                         .frame(maxWidth: .infinity, alignment: .center)

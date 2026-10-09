@@ -130,6 +130,9 @@ struct InkPaletteBrowser: View {
                 }
             }
         }
+        .onChange(of: library.palettes.first { $0.id == currentID }?.palette.allColors.map(\.rgba)) { _, _ in
+            updateGeneratedName()
+        }
         .confirmationDialog(L10n.text("Palette"), isPresented: Binding(
             get: { actionPalette != nil },
             set: { if !$0 { actionPalette = nil } }
@@ -177,15 +180,22 @@ struct InkPaletteBrowser: View {
                     HStack(spacing: 0) {
                         ForEach(library.palettes) { entry in
                             VStack(spacing: verticalGap) {
-                                carouselTitle(entry.palette.title ?? "Palette", width: stride - 6, height: titleHeight)
+                                carouselTitle(entry.palette.displayTitle, width: stride - 6, height: titleHeight)
                                 paletteSlot(entry, width: cardWidth, height: cardHeight)
                             }
                             .frame(width: stride)
                             .accessibilityHidden(currentID != entry.id)
                         }
                         VStack(spacing: verticalGap) {
-                            carouselTitle("New palette", width: stride - 6, height: titleHeight)
-                            Button(action: addPalette) {
+                            carouselTitle(L10n.text("New palette"), width: stride - 6, height: titleHeight)
+                            Button {
+                                guard pendingDeletionID == nil else { return }
+                                if currentID == addID {
+                                    addPalette()
+                                } else {
+                                    withAnimation(pageAnimation) { currentID = addID }
+                                }
+                            } label: {
                                 Image(systemName: "plus")
                                     .font(.largeTitle)
                                     .frame(width: cardWidth, height: cardHeight)
@@ -212,11 +222,10 @@ struct InkPaletteBrowser: View {
                     .highPriorityGesture(pageGesture(stride: stride))
                     .animation(pageAnimation, value: carouselTranslation)
 
-                    Button(L10n.text(pendingDeletionID != nil ? "Cancel" : currentID == addID ? "New palette" : "Edit")) {
+                    Button(L10n.text(pendingDeletionID != nil ? "Cancel" : "Edit")) {
                         if pendingDeletionID != nil {
                             withAnimation(pageAnimation) { pendingDeletionID = nil }
-                        } else if currentID == addID { addPalette() }
-                        else { editing = true; setBrowsing(false) }
+                        } else if currentID != addID { editing = true; setBrowsing(false) }
                     }
                     .buttonStyle(.plain)
                     .font(.body.weight(.medium))
@@ -229,6 +238,10 @@ struct InkPaletteBrowser: View {
                     }
                     .overlay { Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 1) }
                     .contentShape(Capsule())
+                    .opacity(currentID == addID ? 0 : 1)
+                    .allowsHitTesting(currentID != addID)
+                    .accessibilityHidden(currentID == addID)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: currentID == addID)
                 }
                 .padding(.bottom, bottomPadding)
                 .frame(width: width, height: viewport.size.height)
@@ -238,7 +251,7 @@ struct InkPaletteBrowser: View {
     }
 
     private func carouselTitle(_ title: String, width: CGFloat, height: CGFloat) -> some View {
-        Text(L10n.text(title))
+        Text(title)
             .font(.caption.weight(.medium))
             .foregroundStyle(.secondary)
             .lineLimit(1)
@@ -318,7 +331,7 @@ struct InkPaletteBrowser: View {
         .onLongPressGesture {
             actionPalette = entry
         }
-        .accessibilityLabel(L10n.text(entry.palette.title ?? "Palette"))
+        .accessibilityLabel(entry.palette.displayTitle)
         .accessibilityAddTraits(currentID == entry.id ? [.isSelected] : [])
         .accessibilityAction(named: Text(L10n.text("Delete"))) { delete(entry.id) }
         .accessibilityAction(named: Text(L10n.text("Move left"))) { move(entry.id, by: -1) }
@@ -384,6 +397,7 @@ struct InkPaletteBrowser: View {
 
     private func confirm() {
         guard canConfirm else { return }
+        updateGeneratedName()
         library.activeID = currentID
         onSave(library)
         dismiss()
@@ -396,6 +410,29 @@ struct InkPaletteBrowser: View {
         currentID = id
         editing = false
         browsing = false
+    }
+
+    private func updateGeneratedName() {
+        guard let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
+        let palette = library.palettes[index].palette
+        guard palette.generatedNameID != nil || palette.title == "New palette" else { return }
+        guard !palette.allColors.isEmpty else {
+            library.palettes[index].palette.generatedNameID = nil
+            library.palettes[index].palette.title = "New palette"
+            return
+        }
+        let previous = palette.generatedNameID
+        let used = Set(library.palettes.filter { $0.id != currentID && !$0.palette.allColors.isEmpty }
+            .compactMap { $0.palette.generatedNameID })
+        // Name the complete palette, independent of swatch order or selection.
+        let hexColors = library.palettes[index].palette.allColors.map { preset in
+            let channels = [preset.rgba.x, preset.rgba.y, preset.rgba.z].map { value in
+                Int((min(1, max(0, value.isFinite ? value : 0)) * 255).rounded())
+            }
+            return String(format: "#%02X%02X%02X", channels[0], channels[1], channels[2])
+        }.sorted()
+        library.palettes[index].palette.generatedNameID = PaletteNameGenerator().generate(
+            hexColors: hexColors, usedByOtherPalettes: used, previous: previous)
     }
 
     private func delete(_ id: String) {
