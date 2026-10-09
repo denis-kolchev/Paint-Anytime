@@ -251,9 +251,16 @@ private struct LayerSettingsView: View {
                     set: { value in controller.updateLayer(layerID) { $0.locksTransparency = value } }
                 ))
                 VStack(alignment: .leading) {
-                    Text(L10n.text("Opacity") + " \(Int(opacity * 100))%")
+                    Text(L10n.text("Opacity") + " \(Int((opacity * 100).rounded()))%")
                     Slider(value: $opacity, in: 0...1, step: 0.01)
+                        .focusable(false)
                 }
+                .focusable()
+                .modifier(SteppedCrownModifier(
+                    value: Binding(
+                        get: { (opacity * 100).rounded() },
+                        set: { opacity = $0 / 100 }),
+                    range: 0...100))
             }
             .navigationTitle(layer.displayName)
             .toolbar {

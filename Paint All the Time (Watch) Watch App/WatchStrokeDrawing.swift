@@ -44,6 +44,8 @@ nonisolated enum WatchStrokeDrawing {
             guard stroke.style.eraserMode == .pixels else { return }
             // Erase alpha, never paint white over the drawing.
             paint.blendMode = .destinationOut
+            paint.opacity *= Double(stroke.style.effectiveOpacity)
+            paint.usesOpacityLayer = true
             paint.stroke(centerline(stroke), with: .color(SIMD4<Float>(0, 0, 0, 1)), style: StrokeStyle(
                 lineWidth: CGFloat(stroke.style.width), lineCap: .round, lineJoin: .round))
             drawDotIfNeeded(stroke, ink: SIMD4<Float>(0, 0, 0, 1), in: &paint)

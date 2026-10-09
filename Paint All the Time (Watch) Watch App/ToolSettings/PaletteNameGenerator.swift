@@ -114,7 +114,8 @@ nonisolated struct PaletteNameGenerator {
     /// Names are complete locale-specific phrases, not assembled at runtime.
     /// Language is the current user-selected AppLanguage; all 28 are bundled.
     @MainActor
-    func displayName(_ id: PaletteNameID, language: String = AppLanguage.currentCode) -> String {
+    func displayName(_ id: PaletteNameID, language: String? = nil) -> String {
+        let language = language ?? AppLanguage.currentCode
         guard (0..<20).contains(id.theme), (0..<25).contains(id.mood) else { return L10n.text("Palette") }
         let names = Self.translations[language] ?? Self.translations["en"]
         guard let names, names.indices.contains(id.theme), names[id.theme].indices.contains(id.mood)

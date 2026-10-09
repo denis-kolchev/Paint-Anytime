@@ -15,7 +15,7 @@ struct ToolDirectionControl: View {
             if includesOuterSpacing { Spacer(minLength: 0) }
 
             Button {
-                onAdjust(5)
+                onAdjust(1)
             } label: {
                 Image(systemName: "rotate.right")
                     .frame(width: 40, height: 30)
@@ -40,8 +40,8 @@ struct ToolDirectionControl: View {
                 .accessibilityValue(L10n.format("%d degrees", Int(angle)))
                 .accessibilityAdjustableAction { direction in
                     switch direction {
-                    case .increment: onAdjust(5)
-                    case .decrement: onAdjust(-5)
+                    case .increment: onAdjust(1)
+                    case .decrement: onAdjust(-1)
                     @unknown default: break
                     }
                 }
@@ -49,7 +49,7 @@ struct ToolDirectionControl: View {
             if includesOuterSpacing { Spacer(minLength: 0) }
 
             Button {
-                onAdjust(-5)
+                onAdjust(-1)
             } label: {
                 Image(systemName: "rotate.left")
                     .frame(width: 40, height: 30)

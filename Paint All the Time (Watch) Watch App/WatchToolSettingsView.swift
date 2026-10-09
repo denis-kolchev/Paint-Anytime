@@ -61,8 +61,9 @@ struct WatchToolSettingsView: View {
 
     private var availableSettings: [ToolSetting] {
         let pages: [ToolSetting]
-        if isEraser { pages = [.width, .instrument, .mode] }
-        else if controller.pencilStyle.instrument == .fill { pages = [.color, .opacity, .instrument] }
+        if isEraser { pages = controller.pencilStyle.eraserMode == .pixels
+            ? [.width, .opacity, .instrument, .mode] : [.width, .instrument, .mode] }
+        else if controller.pencilStyle.instrument == .fill { pages = [.color, .sensitivity, .opacity, .instrument] }
         else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .opacity, .instrument, .direction] }
         else { pages = [.color, .width, .opacity, .instrument] }
         return pages
@@ -90,6 +91,7 @@ struct WatchToolSettingsView: View {
 
     private var valueTitle: String {
         switch selection {
+        case .sensitivity: "\(Int((controller.pencilStyle.effectiveFillSensitivity * 100).rounded()))%"
         case .opacity: "\(Int((controller.pencilStyle.effectiveOpacity * 100).rounded()))%"
         case .width: L10n.format("%d pt", Int(controller.pencilStyle.width))
         case .color: isAddingColor ? L10n.text("Add colors") : colors[colorIndex].name
@@ -101,7 +103,7 @@ struct WatchToolSettingsView: View {
 
     private var crownMaximum: Double {
         switch selection {
-        case .opacity: 100
+        case .opacity, .sensitivity: 100
         case .width: Double(controller.maximumWidth)
         case .color: Double(colors.count - (tutorial.isActive ? 1 : 0))
         case .instrument: Double(instruments.count - 1)
@@ -119,6 +121,7 @@ struct WatchToolSettingsView: View {
     private var crownValue: Binding<Double> {
         Binding {
             switch selection {
+            case .sensitivity: Double((controller.pencilStyle.effectiveFillSensitivity * 100).rounded())
             case .opacity: Double((controller.pencilStyle.effectiveOpacity * 100).rounded())
             case .width: Double(controller.pencilStyle.width)
             case .color: Double(colorIndex)
@@ -136,6 +139,8 @@ struct WatchToolSettingsView: View {
             }
             var style = controller.pencilStyle
             switch selection {
+            case .sensitivity:
+                style.fillSensitivity = Float(min(100, max(0, value.rounded()))) / 100
             case .opacity:
                 style.opacity = Float(min(100, max(0, value.rounded()))) / 100
             case .width:
@@ -143,7 +148,7 @@ struct WatchToolSettingsView: View {
             case .mode:
                 style.eraserMode = value.rounded() < 1 ? .pixels : .objects
             case .direction:
-                style.reedAngle = Float(min(90, max(-90, (value / 5).rounded() * 5)))
+                style.reedAngle = Float(min(90, max(-90, value.rounded())))
             case .color:
                 selectColor(min(Int(crownMaximum), max(0, Int(value.rounded()))))
                 return
@@ -168,9 +173,9 @@ struct WatchToolSettingsView: View {
                 let angleHeight = settingsGeometry.size.height + (tutorial.isActive ? 40 : 0)
                 let angleScale = tutorial.isActive
                     ? min(1, max(0, angleHeight) / ToolDirectionControl.idealSize.height) : 1
-                let panelWidth = (selection == .width || selection == .opacity) ? 0 : selection == .direction
+                let panelWidth = (selection == .width || selection == .opacity || selection == .sensitivity) ? 0 : selection == .direction
                     ? ToolDirectionControl.idealSize.width * angleScale : 40
-                let panelSpacing = (selection == .width || selection == .opacity) ? 0 : selection == .direction ? 8 * angleScale : 8
+                let panelSpacing = (selection == .width || selection == .opacity || selection == .sensitivity) ? 0 : selection == .direction ? 8 * angleScale : 8
                 HStack(spacing: panelSpacing) {
                     VStack(spacing: 6) {
                         ToolStrokePreview(style: controller.pencilStyle)
@@ -286,7 +291,7 @@ struct WatchToolSettingsView: View {
                         .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
                     }
                     .frame(width: panelWidth)
-                    .opacity((selection == .width || selection == .opacity) ? 0 : 1)
+                    .opacity((selection == .width || selection == .opacity || selection == .sensitivity) ? 0 : 1)
                     .modifier(ToolPickerViewportClip(isEnabled: !tutorial.isActive))
                 }
                 .frame(width: settingsGeometry.size.width, height: settingsGeometry.size.height)
@@ -357,19 +362,16 @@ struct WatchToolSettingsView: View {
         .contentShape(Rectangle())
         .focusable(!showsInformation && !showsPalette && tutorial.allowsToolAdjustment(page: selection.rawValue))
         .focused($crownFocused)
-        .digitalCrownRotation(
-            detent: crownValue,
-            from: selection == .width ? 1 : selection == .direction ? -90 : 0,
-            through: crownMaximum,
-            // Reduce angular travel by another half; displayed values still snap to 5°.
-            by: selection == .direction ? 1.25 : 1,
-            sensitivity: selection == .direction ? .high : .low,
-            isContinuous: false,
-            isHapticFeedbackEnabled: true,
+        .modifier(SteppedCrownModifier(
+            value: crownValue,
+            range: (selection == .width ? 1 : selection == .direction ? -90 : 0)...crownMaximum,
+            sensitivity: selection == .opacity || selection == .sensitivity || selection == .direction ? .high : .low,
+            crownUnitsPerStep: selection == .opacity || selection == .sensitivity || selection == .direction ? 4 : 1,
+            context: selectedPage,
             onChange: { [step = tutorial.step] event in
                 tutorial.usedCrown(in: step, velocity: event.velocity)
             }
-        )
+        ))
         .task(id: tutorialCrownFocusRequest) {
             // Keep the regular editor's focus behavior. In the tutorial, both
             // a lesson change and a picker-page change can replace focus peers

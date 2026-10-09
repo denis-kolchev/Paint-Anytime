@@ -511,8 +511,9 @@ private struct InkComponentsEditor: View {
         .contentShape(Rectangle())
         .focusable(isActive)
         .focused($crownFocused)
-        .digitalCrownRotation(detent: channelValue, from: 0, through: maximum(selectedChannel), by: 1,
-                              sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+        .modifier(SteppedCrownModifier(
+            value: channelValue, range: 0...maximum(selectedChannel),
+            context: selectedChannel * 2 + (isActive ? 1 : 0)))
         .onAppear { crownFocused = isActive }
         .onChange(of: isActive) { _, active in crownFocused = active }
     }

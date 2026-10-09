@@ -253,7 +253,7 @@ nonisolated enum WatchBitmapRenderer {
                 frame.draw(dry.base, in: canvas)
                 frame.translateBy(x: 0, y: CGFloat(frame.height))
                 frame.scaleBy(x: key.scale, y: -key.scale)
-                let opacity = stroke.style.effectiveOpacity
+                let opacity = stroke.style.instrument == .eraser ? 1 : stroke.style.effectiveOpacity
                 if opacity < 1 {
                     frame.setAlpha(CGFloat(opacity))
                     frame.beginTransparencyLayer(auxiliaryInfo: nil)
@@ -527,7 +527,7 @@ nonisolated enum WatchBitmapRenderer {
             } else {
                 // Fade the complete stroke once, preserving texture and avoiding
                 // darker overlaps within a single translucent gesture.
-                let opacity = stroke.style.effectiveOpacity
+                let opacity = stroke.style.instrument == .eraser ? 1 : stroke.style.effectiveOpacity
                 if opacity < 1 {
                     context.saveGState()
                     context.setAlpha(CGFloat(opacity))
@@ -691,10 +691,11 @@ extension WatchBitmapRenderer {
         let pixels = data.assumingMemoryBound(to: UInt8.self)
         let seed = Int(point.y * scale) * width + Int(point.x * scale)
         let target = (0..<4).map { Int(pixels[seed * 4 + $0]) }
+        let tolerance = Int((style.effectiveFillSensitivity * 255).rounded())
         var visited = [Bool](repeating: false, count: width * height)
         func matches(_ index: Int) -> Bool {
             !visited[index] && (0..<4).allSatisfy {
-                abs(Int(pixels[index * 4 + $0]) - target[$0]) <= 16
+                abs(Int(pixels[index * 4 + $0]) - target[$0]) <= tolerance
             }
         }
         var pending = [seed]
