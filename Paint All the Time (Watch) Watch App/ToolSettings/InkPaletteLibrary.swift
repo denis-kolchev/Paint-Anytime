@@ -75,6 +75,11 @@ struct InkPaletteBrowser: View {
     @State private var pendingDeletionID: String?
     @State private var actionPalette: SavedInkPalette?
     @GestureState private var carouselTranslation = CGSize.zero
+    @State private var movingID: String?
+    @State private var insertionIndex = 0
+    @State private var movingTranslation = CGSize.zero
+    @State private var lastMoveX: CGFloat = 0
+    @GestureState private var moveGestureActive = false
     private let addID = "add-palette"
 
     init(library: InkPaletteLibrary, controller: CanvasController,
@@ -125,10 +130,13 @@ struct InkPaletteBrowser: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
-                        .disabled(pendingDeletionID != nil || (!canConfirm && !editing))
+                        .disabled(movingID != nil || pendingDeletionID != nil || (!canConfirm && !editing))
                         .accessibilityLabel(L10n.text("Done"))
                 }
             }
+        }
+        .onChange(of: moveGestureActive) { _, active in
+            if !active { cancelMove() }
         }
         .onChange(of: library.palettes.first { $0.id == currentID }?.palette.allColors.map(\.rgba)) { _, _ in
             updateGeneratedName()
@@ -169,27 +177,44 @@ struct InkPaletteBrowser: View {
                 let verticalGap = min(10, viewport.size.height * 0.05)
                 let bottomPadding: CGFloat = 3
                 let titleHeight: CGFloat = 20
-                let cardHeight = max(1, viewport.size.height - titleHeight - buttonHeight - verticalGap * 2 - bottomPadding)
-                // Keep the outline upright around the three-column palette.
-                let cardWidth = min(width * 0.68, cardHeight * 0.82)
+                let availableHeight = max(1, viewport.size.height - titleHeight - buttonHeight - verticalGap * 2 - bottomPadding)
+                let cardWidth = min(width * 0.68, availableHeight)
+                let cardHeight = cardWidth
                 let gap = max(4, (width - cardWidth) / 2 - width * 0.08)
                 let stride = cardWidth + gap
+                let previewSize = cardWidth * 0.65
+                let previewTop = titleHeight + verticalGap - 6
+                let previewGap: CGFloat = 8
+                let previewStride = previewSize + previewGap
+                let slotStride = movingID == nil ? stride : previewStride
+                let stripOffset = movingID == nil
+                    ? (width - stride) / 2 - CGFloat(pageIndex) * stride + carouselTranslation.width
+                    : width / 2 - CGFloat(insertionIndex) * previewStride + previewGap / 2
                 let cardShape = paletteShape(width: cardWidth, height: cardHeight)
 
                 VStack(spacing: verticalGap) {
-                    HStack(spacing: 0) {
-                        ForEach(library.palettes) { entry in
+                    HStack(alignment: .top, spacing: 0) {
+                        ForEach(reorderPreviewPalettes) { entry in
                             VStack(spacing: verticalGap) {
-                                carouselTitle(entry.palette.displayTitle, width: stride - 6, height: titleHeight)
-                                paletteSlot(entry, width: cardWidth, height: cardHeight)
+                                carouselTitle(entry.palette.displayTitle, width: slotStride - 6, height: titleHeight)
+                                    .opacity(movingID == nil ? 1 : 0)
+                                paletteSlot(entry,
+                                            width: movingID == nil ? cardWidth : previewSize,
+                                            height: movingID == nil ? cardHeight : previewSize)
+                                    .opacity(movingID == entry.id ? 0 : 1)
+                                    .offset(y: movingID == nil ? 0 : -6)
+                                    .highPriorityGesture(reorderGesture(entry, stride: stride))
                             }
-                            .frame(width: stride)
+                            // Collapse the held card's slot so the remaining cards
+                            // form one compact row with the insertion boundary at center.
+                            .frame(width: movingID == entry.id ? 0 : slotStride,
+                                   height: titleHeight + verticalGap + cardHeight, alignment: .top)
                             .accessibilityHidden(currentID != entry.id)
                         }
                         VStack(spacing: verticalGap) {
                             carouselTitle(L10n.text("New palette"), width: stride - 6, height: titleHeight)
                             Button {
-                                guard pendingDeletionID == nil else { return }
+                                guard pendingDeletionID == nil, movingID == nil else { return }
                                 if currentID == addID {
                                     addPalette()
                                 } else {
@@ -211,16 +236,59 @@ struct InkPaletteBrowser: View {
                             .accessibilityAdjustableAction { adjustPage($0) }
                         }
                         .frame(width: stride)
-                        .accessibilityHidden(currentID != addID)
+                        .accessibilityHidden(currentID != addID || movingID != nil)
+                        .opacity(movingID == nil ? 1 : 0)
+                        .allowsHitTesting(movingID == nil)
                     }
                     .environment(\.layoutDirection, .leftToRight)
-                    .offset(x: (width - stride) / 2 - CGFloat(pageIndex) * stride + carouselTranslation.width)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .offset(x: stripOffset)
                     .frame(width: width, height: titleHeight + verticalGap + cardHeight, alignment: .leading)
                     .contentShape(Rectangle())
                     .clipped()
                     // A recognized swipe must cancel the card's button press.
-                    .highPriorityGesture(pageGesture(stride: stride))
+                    .coordinateSpace(name: "paletteReordering")
+                    .simultaneousGesture(pageGesture(stride: stride))
                     .animation(pageAnimation, value: carouselTranslation)
+                    .overlay(alignment: .top) {
+                        if let movingID, let entry = library.palettes.first(where: { $0.id == movingID }) {
+                            ZStack(alignment: .top) {
+                                Rectangle().fill(.green)
+                                    .frame(width: 2, height: previewSize)
+                                    .overlay(alignment: .top) {
+                                        Text("\(insertionIndex + 1) / \(library.palettes.count)")
+                                            .font(.caption2.bold())
+                                            .foregroundStyle(.black)
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(.green, in: RoundedRectangle(cornerRadius: 4))
+                                            .fixedSize()
+                                            .alignmentGuide(.top) { dimensions in
+                                                dimensions[.bottom] + 4
+                                            }
+                                    }
+                                    .offset(y: previewTop)
+                                paletteCard(entry, width: cardWidth, height: cardHeight)
+                                    .opacity(0.5)
+                                    .offset(x: movingTranslation.width, y: titleHeight + previewSize * 0.35 + movingTranslation.height)
+                            }
+                            .frame(width: width, height: titleHeight + cardHeight, alignment: .top)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                        }
+                    }
+                    .task(id: moveEdgeDirection) {
+                        let direction = moveEdgeDirection
+                        guard direction != 0 else { return }
+                        while !Task.isCancelled {
+                            do { try await Task.sleep(for: .milliseconds(450)) }
+                            catch { return }
+                            guard movingID != nil else { return }
+                            withAnimation(pageAnimation) {
+                                insertionIndex = min(library.palettes.count - 1, max(0, insertionIndex + direction))
+                            }
+                        }
+                    }
 
                     Button(L10n.text(pendingDeletionID != nil ? "Cancel" : "Edit")) {
                         if pendingDeletionID != nil {
@@ -238,9 +306,9 @@ struct InkPaletteBrowser: View {
                     }
                     .overlay { Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 1) }
                     .contentShape(Capsule())
-                    .opacity(currentID == addID ? 0 : 1)
-                    .allowsHitTesting(currentID != addID)
-                    .accessibilityHidden(currentID == addID)
+                    .opacity(currentID == addID || movingID != nil ? 0 : 1)
+                    .allowsHitTesting(currentID != addID && movingID == nil)
+                    .accessibilityHidden(currentID == addID || movingID != nil)
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: currentID == addID)
                 }
                 .padding(.bottom, bottomPadding)
@@ -300,7 +368,7 @@ struct InkPaletteBrowser: View {
         let swatchSize = max(1, min((width - horizontalInset * 2 - spacing * 2) / 3,
                                    (height - verticalInset * 2 - spacing * 4) / 5))
         return Button {
-            guard pendingDeletionID == nil else { return }
+            guard pendingDeletionID == nil, movingID == nil else { return }
             if currentID == entry.id {
                 editing = false
                 setBrowsing(false)
@@ -328,9 +396,6 @@ struct InkPaletteBrowser: View {
             .contentShape(cardShape)
         }
         .buttonStyle(.plain)
-        .onLongPressGesture {
-            actionPalette = entry
-        }
         .accessibilityLabel(entry.palette.displayTitle)
         .accessibilityAddTraits(currentID == entry.id ? [.isSelected] : [])
         .accessibilityAction(named: Text(L10n.text("Delete"))) { delete(entry.id) }
@@ -338,6 +403,72 @@ struct InkPaletteBrowser: View {
         .accessibilityAction(named: Text(L10n.text("Move right"))) { move(entry.id, by: 1) }
         .accessibilityAdjustableAction { adjustPage($0) }
         .accessibilityHidden(currentID != entry.id)
+    }
+
+    private var reorderPreviewPalettes: [SavedInkPalette] {
+        guard let movingID, let source = library.palettes.firstIndex(where: { $0.id == movingID }) else {
+            return library.palettes
+        }
+        var preview = library.palettes
+        let entry = preview.remove(at: source)
+        preview.insert(entry, at: min(insertionIndex, preview.count))
+        return preview
+    }
+
+    private var moveEdgeDirection: Int {
+        guard movingID != nil else { return 0 }
+        return movingTranslation.width > 45 ? 1 : movingTranslation.width < -45 ? -1 : 0
+    }
+
+    private func reorderGesture(_ entry: SavedInkPalette, stride: CGFloat) -> some Gesture {
+        LongPressGesture(minimumDuration: 0.45, maximumDistance: 12)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named("paletteReordering")))
+            .updating($moveGestureActive) { value, active, _ in
+                if case .second(true, _) = value { active = true }
+            }
+            .onChanged { value in
+                guard pendingDeletionID == nil else { return }
+                guard case .second(true, let drag) = value else { return }
+                if movingID == nil {
+                    guard let index = library.palettes.firstIndex(where: { $0.id == entry.id }) else { return }
+                    withAnimation(pageAnimation) {
+                        movingID = entry.id
+                        insertionIndex = index
+                    }
+                    lastMoveX = 0
+                }
+                guard let drag else { return }
+                movingTranslation = drag.translation
+                let distance = drag.translation.width - lastMoveX
+                if abs(distance) > stride * 0.45 {
+                    let direction = distance > 0 ? 1 : -1
+                    withAnimation(pageAnimation) {
+                        insertionIndex = min(library.palettes.count - 1, max(0, insertionIndex + direction))
+                    }
+                    lastMoveX = drag.translation.width
+                }
+            }
+            .onEnded { value in
+                if case .second(true, _) = value,
+                   let movingID,
+                   let source = library.palettes.firstIndex(where: { $0.id == movingID }) {
+                    withAnimation(pageAnimation) {
+                        let entry = library.palettes.remove(at: source)
+                        library.palettes.insert(entry, at: min(insertionIndex, library.palettes.count))
+                        currentID = entry.id
+                    }
+                }
+                cancelMove()
+            }
+    }
+
+    private func cancelMove() {
+        guard movingID != nil else { return }
+        withAnimation(pageAnimation) {
+            movingID = nil
+            movingTranslation = .zero
+            lastMoveX = 0
+        }
     }
 
     private func paletteShape(width: CGFloat, height: CGFloat) -> RoundedRectangle {
@@ -351,7 +482,7 @@ struct InkPaletteBrowser: View {
     }
 
     private func selectPage(by step: Int) {
-        guard pendingDeletionID == nil else { return }
+        guard pendingDeletionID == nil, movingID == nil else { return }
         let target = min(pageIDs.count - 1, max(0, pageIndex + step))
         withAnimation(pageAnimation) { currentID = pageIDs[target] }
     }
@@ -367,7 +498,7 @@ struct InkPaletteBrowser: View {
     private func pageGesture(stride: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 10)
             .updating($carouselTranslation) { value, translation, transaction in
-                guard pendingDeletionID == nil else { return }
+                guard pendingDeletionID == nil, movingID == nil else { return }
                 transaction.animation = nil
                 if abs(value.translation.height) > abs(value.translation.width) {
                     if currentID != addID { translation.height = min(0, value.translation.height) }
@@ -378,7 +509,7 @@ struct InkPaletteBrowser: View {
                 translation.width = value.translation.width * (atEdge ? 0.2 : 1)
             }
             .onEnded { value in
-                guard pendingDeletionID == nil else { return }
+                guard pendingDeletionID == nil, movingID == nil else { return }
                 if abs(value.translation.height) > abs(value.translation.width) {
                     if currentID != addID && value.translation.height < -30 {
                         withAnimation(pageAnimation) { pendingDeletionID = currentID }
