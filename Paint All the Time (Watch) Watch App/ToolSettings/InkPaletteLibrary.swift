@@ -3,14 +3,32 @@ import SwiftUI
 struct SavedInkPalette: Codable, Identifiable {
     var id: String
     var palette: InkPalette
+    var isHidden: Bool?
+
+    var isVisible: Bool { id == "basic" || isHidden != true }
 }
 
 struct InkPaletteLibrary: Codable {
     var palettes: [SavedInkPalette]
     var activeID: String
 
+    var visiblePalettes: [SavedInkPalette] { palettes.filter(\.isVisible) }
+
     var activePalette: InkPalette {
-        palettes.first { $0.id == activeID }?.palette ?? InkPalette()
+        visiblePalettes.first { $0.id == activeID }?.palette
+            ?? visiblePalettes.first?.palette ?? InkPalette()
+    }
+
+    /// Merge the browser's visible draft without deleting hidden palettes.
+    func mergingVisiblePalettes(_ draft: Self) -> Self {
+        var remaining = draft.palettes.makeIterator()
+        var merged: [SavedInkPalette] = []
+        for entry in palettes {
+            if !entry.isVisible { merged.append(entry) }
+            else if let next = remaining.next() { merged.append(next) }
+        }
+        while let next = remaining.next() { merged.append(next) }
+        return Self(palettes: merged, activeID: draft.activeID)
     }
 
     static let basicColors = InkPreset.all + colors("basic", "78CBB0 CDB4DB E9CBA7")
@@ -40,7 +58,7 @@ struct InkPaletteLibrary: Codable {
         entries += families.map { id, title, hexes in
             let swatches = colors(id, hexes)
             return SavedInkPalette(id: id, palette: InkPalette(baseColors: swatches, title: title,
-                                                               selectedIDs: swatches.map(\.id)))
+                                                               selectedIDs: swatches.map(\.id)), isHidden: true)
         }
         return Self(palettes: entries, activeID: "basic")
     }
@@ -67,6 +85,7 @@ struct InkPaletteBrowser: View {
     @State var library: InkPaletteLibrary
     @ObservedObject var controller: CanvasController
     let onSave: (InkPaletteLibrary) -> Void
+    private let hiddenNameIDs: Set<PaletteNameID>
     @State private var currentID: String
     @State private var browsing = false
     @State private var editing = false
@@ -84,13 +103,15 @@ struct InkPaletteBrowser: View {
 
     init(library: InkPaletteLibrary, controller: CanvasController,
          onSave: @escaping (InkPaletteLibrary) -> Void) {
-        _library = State(initialValue: library)
+        let visibleLibrary = InkPaletteLibrary(palettes: library.visiblePalettes, activeID: library.activeID)
+        _library = State(initialValue: visibleLibrary)
         self.controller = controller
-        self.onSave = onSave
+        hiddenNameIDs = Set(library.palettes.filter { !$0.isVisible }.compactMap { $0.palette.generatedNameID })
+        self.onSave = { draft in onSave(library.mergingVisiblePalettes(draft)) }
         // Resolve the selection before the first render. An empty Group has no
         // child to appear, so onAppear cannot reliably initialize this state.
-        let initialID = library.palettes.first(where: { $0.id == library.activeID })?.id
-            ?? library.palettes.first?.id ?? "add-palette"
+        let initialID = visibleLibrary.palettes.first(where: { $0.id == library.activeID })?.id
+            ?? visibleLibrary.palettes.first?.id ?? "add-palette"
         _currentID = State(initialValue: initialID)
     }
 
@@ -554,7 +575,7 @@ struct InkPaletteBrowser: View {
         }
         let previous = palette.generatedNameID
         let used = Set(library.palettes.filter { $0.id != currentID && !$0.palette.allColors.isEmpty }
-            .compactMap { $0.palette.generatedNameID })
+            .compactMap { $0.palette.generatedNameID }).union(hiddenNameIDs)
         // Name the complete palette, independent of swatch order or selection.
         let hexColors = library.palettes[index].palette.allColors.map { preset in
             let channels = [preset.rgba.x, preset.rgba.y, preset.rgba.z].map { value in

@@ -80,14 +80,19 @@ private struct DrawingSettingsView: View {
     var body: some View {
         List {
             NavigationLink {
+                DrawingSpaceSettingsView()
+            } label: {
+                Label(L10n.text("More room to draw"), systemImage: "arrow.up.left.and.arrow.down.right")
+            }
+            NavigationLink {
                 ToolSynchronizationView(controller: controller)
             } label: {
                 Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
             }
             NavigationLink {
-                DrawingSpaceSettingsView()
+                PaletteVisibilitySettingsView(controller: controller)
             } label: {
-                Label(L10n.text("More room to draw"), systemImage: "arrow.up.left.and.arrow.down.right")
+                Label(L10n.text("Visible palettes"), systemImage: "paintpalette")
             }
             NavigationLink {
                 ColorBlendingSelectionView(controller: controller)
@@ -98,6 +103,54 @@ private struct DrawingSettingsView: View {
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Drawing"))
         .toolbarTitleDisplayMode(.inline)
+    }
+}
+
+private struct PaletteVisibilitySettingsView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
+    @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
+    @ObservedObject var controller: CanvasController
+
+    private var library: InkPaletteLibrary {
+        InkPaletteLibrary.decode(palettesData, legacy: paletteData)
+    }
+
+    var body: some View {
+        List(library.palettes) { entry in
+            Button {
+                setVisible(!entry.isVisible, id: entry.id)
+            } label: {
+                HStack {
+                    Text(entry.palette.displayTitle)
+                    Spacer()
+                    Image(systemName: entry.isVisible ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(entry.isVisible ? Color.green : Color.secondary)
+                }
+            }
+            .disabled(entry.id == "basic")
+            .accessibilityAddTraits(entry.isVisible ? .isSelected : [])
+        }
+        .navigationTitle(L10n.text("Visible palettes"))
+    }
+
+    private func setVisible(_ visible: Bool, id: String) {
+        var updated = library
+        let previousActiveID = updated.activeID
+        guard id != "basic", let index = updated.palettes.firstIndex(where: { $0.id == id }) else { return }
+        updated.palettes[index].isHidden = !visible
+        // Keep an available palette selected when hiding the active one.
+        if !visible && updated.activeID == id {
+            guard let fallback = updated.visiblePalettes.first(where: { !$0.palette.selectedColors.isEmpty }) else { return }
+            updated.activeID = fallback.id
+        }
+        guard let data = try? JSONEncoder().encode(updated) else { return }
+        palettesData = data
+        if updated.activeID != previousActiveID,
+           !updated.activePalette.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
+           let first = updated.activePalette.selectedColors.first {
+            controller.pencilStyle.color = first.rgba
+        }
     }
 }
 
