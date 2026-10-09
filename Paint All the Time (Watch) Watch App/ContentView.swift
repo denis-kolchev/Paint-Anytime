@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Binding var launchRequest: WatchLaunchRequest?
     var isActive = true
     var onStartTutorial: () -> Void = {}
     @State private var startsTutorialAfterDismiss = false
@@ -300,6 +301,10 @@ struct ContentView: View {
             showsToolSettings = false
             showsGallery = false
         }
+        .task(id: isActive ? launchRequest?.id : nil) {
+            guard isActive, let request = launchRequest else { return }
+            await openComplication(request)
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
                 showsContentActions = false
@@ -310,6 +315,43 @@ struct ContentView: View {
                 controller.flushStylePreferences()
             }
         }
+    }
+
+    @MainActor
+    private func openComplication(_ request: WatchLaunchRequest) async {
+        guard request.destination != .app else { return }
+        controller.cancelStroke()
+        startsTutorialAfterDismiss = false
+        let hasPresentation = showsCanvasSize || showsLayers || showsAppSettings
+            || session.savedDrawing != nil || session.pendingCanvasAction != nil || session.exportError != nil
+        showsCanvasSize = false
+        showsLayers = false
+        showsAppSettings = false
+        session.savedDrawing = nil
+        session.pendingCanvasAction = nil
+        session.exportError = nil
+        showsToolSettings = false
+        showsGallery = false
+        showsMorphToolbar = false
+        showsContentActions = false
+        isMovingCanvas = false
+        isEyedropperActive = false
+        hasEyedropperSession = false
+        // Let an existing modal finish dismissing before presenting a discard prompt.
+        if hasPresentation {
+            do { try await Task.sleep(for: .milliseconds(500)) }
+            catch { return }
+        }
+        guard !Task.isCancelled, isActive, launchRequest?.id == request.id else { return }
+        switch request.destination {
+        case .app:
+            break
+        case .newCanvas:
+            session.requestCanvasAction(.open(CanvasDocument()))
+        case .gallery:
+            showsGallery = true
+        }
+        launchRequest = nil
     }
 
     @MainActor

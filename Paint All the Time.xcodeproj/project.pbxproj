@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		257D4058305EA358002072CB /* Paint All the Time (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint All the Time (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
+		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -18,6 +19,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 257D4056305EA358002072CB;
 			remoteInfo = "Paint All the Time (Watch) Watch App";
+		};
+		C30000000000000000000004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 25AC818F305D90C700C8F69E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C30000000000000000000005;
+			remoteInfo = PaintAnytimeComplications;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -31,6 +39,15 @@
 			);
 			name = "Embed Watch Content";
 		};
+		C3000000000000000000000C /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +55,7 @@
 		257D4057305EA358002072CB /* Paint All the Time (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint All the Time (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		25AC8197305D90C700C8F69E /* Paint All the Time.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint All the Time.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B20000020000000000000002 /* Preset Photos */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preset Photos"; sourceTree = "<group>"; };
+		C30000000000000000000002 /* PaintAnytimeComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -61,6 +79,11 @@
 			path = "Paint Anytime iPhone";
 			sourceTree = "<group>";
 		};
+		C30000000000000000000003 /* Paint Anytime Complications */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Paint Anytime Complications";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,12 +97,18 @@
 			files = (
 			);
 		};
+		C30000000000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		25AC818E305D90C700C8F69E = {
 			isa = PBXGroup;
 			children = (
+				C30000000000000000000003 /* Paint Anytime Complications */,
 				B20000020000000000000002 /* Preset Photos */,
 				25AC8199305D90C700C8F69E /* Paint All the Time */,
 				A10000050000000000000005 /* Paint Anytime iPhone */,
@@ -93,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				25AC8197305D90C700C8F69E /* Paint All the Time.app */,
+				C30000000000000000000002 /* PaintAnytimeComplications.appex */,
 				257D4052305EA358002072CB /* Paint All the Time (Watch).app */,
 				257D4057305EA358002072CB /* Paint All the Time (Watch) Watch App.app */,
 			);
@@ -126,8 +156,12 @@
 				257D4053305EA358002072CB /* Sources */,
 				257D4054305EA358002072CB /* Frameworks */,
 				257D4055305EA358002072CB /* Resources */,
+				C3000000000000000000000C /* Embed App Extensions */,
 			);
 			buildRules = (
+			);
+			dependencies = (
+				C3000000000000000000000D /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				2523992A3060233F00774395 /* Shared */,
@@ -156,6 +190,24 @@
 			productName = "Paint All the Time";
 			productReference = 25AC8197305D90C700C8F69E /* Paint All the Time.app */;
 			productType = "com.apple.product-type.application";
+		};
+		C30000000000000000000005 /* PaintAnytimeComplications */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C30000000000000000000006 /* Build configuration list for PBXNativeTarget "PaintAnytimeComplications" */;
+			buildPhases = (
+				C30000000000000000000007 /* Sources */,
+				C30000000000000000000008 /* Frameworks */,
+				C30000000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				C30000000000000000000003 /* Paint Anytime Complications */,
+			);
+			name = PaintAnytimeComplications;
+			productName = PaintAnytimeComplications;
+			productReference = C30000000000000000000002 /* PaintAnytimeComplications.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -219,6 +271,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				C30000000000000000000005 /* PaintAnytimeComplications */,
 				25AC8196305D90C700C8F69E /* Paint All the Time */,
 				257D4051305EA358002072CB /* Paint All the Time (Watch) */,
 				257D4056305EA358002072CB /* Paint All the Time (Watch) Watch App */,
@@ -243,6 +296,11 @@
 			files = (
 			);
 		};
+		C30000000000000000000009 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -256,6 +314,11 @@
 			files = (
 			);
 		};
+		C30000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -263,6 +326,11 @@
 			isa = PBXTargetDependency;
 			target = 257D4056305EA358002072CB /* Paint All the Time (Watch) Watch App */;
 			targetProxy = 257D4059305EA358002072CB /* PBXContainerItemProxy */;
+		};
+		C3000000000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C30000000000000000000005 /* PaintAnytimeComplications */;
+			targetProxy = C30000000000000000000004 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -318,6 +386,7 @@
 				ENABLE_PREVIEWS = YES;
 				EXECUTABLE_NAME = PaintAnytimeWatch;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "WatchApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;
@@ -353,6 +422,7 @@
 				ENABLE_PREVIEWS = YES;
 				EXECUTABLE_NAME = PaintAnytimeWatch;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "WatchApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKWatchOnly = YES;
@@ -567,6 +637,60 @@
 			};
 			name = Release;
 		};
+		C3000000000000000000000A /* Debug configuration for PBXNativeTarget "PaintAnytimeComplications" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 7H7XHY3693;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Complications-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp.complications;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		C3000000000000000000000B /* Release configuration for PBXNativeTarget "PaintAnytimeComplications" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				DEVELOPMENT_TEAM = 7H7XHY3693;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Complications-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp.complications;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -599,6 +723,14 @@
 			buildConfigurations = (
 				25AC81A3305D90C900C8F69E /* Debug configuration for PBXNativeTarget "Paint All the Time" */,
 				25AC81A4305D90C900C8F69E /* Release configuration for PBXNativeTarget "Paint All the Time" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		C30000000000000000000006 /* Build configuration list for PBXNativeTarget "PaintAnytimeComplications" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C3000000000000000000000A /* Debug configuration for PBXNativeTarget "PaintAnytimeComplications" */,
+				C3000000000000000000000B /* Release configuration for PBXNativeTarget "PaintAnytimeComplications" */,
 			);
 			defaultConfigurationName = Release;
 		};

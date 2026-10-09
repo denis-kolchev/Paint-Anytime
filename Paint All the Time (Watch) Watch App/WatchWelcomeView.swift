@@ -3,6 +3,7 @@ import SwiftUI
 struct WatchWelcomeView: View {
     @StateObject private var onboarding = OnboardingController()
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @State private var launchRequest: WatchLaunchRequest?
     @State private var welcomePage: WelcomePage = .language
 
     private enum WelcomePage { case language, chooseLanguage, offer, later }
@@ -13,7 +14,7 @@ struct WatchWelcomeView: View {
         NavigationStack {
             ZStack {
                 // Keep the real editor alive, including its document, undo history and camera.
-                ContentView(isActive: onboarding.hasCompletedWelcome && onboarding.tutorialFolder == nil && !onboarding.preparesTutorial,
+                ContentView(launchRequest: $launchRequest, isActive: onboarding.hasCompletedWelcome && onboarding.tutorialFolder == nil && !onboarding.preparesTutorial,
                             onStartTutorial: { onboarding.requestTutorial() })
                     .opacity(onboarding.hasCompletedWelcome && onboarding.tutorialFolder == nil ? 1 : 0)
                     .allowsHitTesting(onboarding.hasCompletedWelcome && onboarding.tutorialFolder == nil && !onboarding.preparesTutorial)
@@ -42,6 +43,11 @@ struct WatchWelcomeView: View {
             .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
             // Each tutorial page owns its top background; forcing a native
             // background here overrides the settings preview’s bounded material.
+        }
+        .onOpenURL { url in
+            guard let request = WatchLaunchRequest(url: url) else { return }
+            // A plain app launch preserves the current screen and document.
+            launchRequest = request.destination == .app ? nil : request
         }
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)

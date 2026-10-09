@@ -1,0 +1,76 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "New canvas": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Новый холст"
+          }
+        }
+      }
+    },
+    "Gallery": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Галерея"
+          }
+        }
+      }
+    },
+    "Open a fresh canvas in Paint Anytime.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть чистый холст в Paint Anytime."
+          }
+        }
+      }
+    },
+    "Open your saved drawings in Paint Anytime.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть сохранённые рисунки в Paint Anytime."
+          }
+        }
+      }
+    },
+    "Open Paint Anytime": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть Paint Anytime"
+          }
+        }
+      }
+    },
+    "Paint Anytime": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paint Anytime"
+          }
+        }
+      }
+    },
+    "Open Paint Anytime without changing your canvas.": {
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Открыть Paint Anytime, сохранив текущий холст."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

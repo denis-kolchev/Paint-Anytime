@@ -73,6 +73,7 @@ struct InkPaletteBrowser: View {
     @State private var showsColorEditor = false
     @State private var sampledColor: SIMD4<Float>?
     @State private var pendingDeletionID: String?
+    @State private var actionPalette: SavedInkPalette?
     @GestureState private var carouselTranslation = CGSize.zero
     private let addID = "add-palette"
 
@@ -128,6 +129,17 @@ struct InkPaletteBrowser: View {
                         .accessibilityLabel(L10n.text("Done"))
                 }
             }
+        }
+        .confirmationDialog(L10n.text("Palette"), isPresented: Binding(
+            get: { actionPalette != nil },
+            set: { if !$0 { actionPalette = nil } }
+        ), presenting: actionPalette) { entry in
+            Button(L10n.text("Move left")) { move(entry.id, by: -1) }
+                .disabled(library.palettes.first?.id == entry.id)
+            Button(L10n.text("Move right")) { move(entry.id, by: 1) }
+                .disabled(library.palettes.last?.id == entry.id)
+            Button(L10n.text("Delete"), role: .destructive) { delete(entry.id) }
+            Button(L10n.text("Cancel"), role: .cancel) {}
         }
     }
 
@@ -303,16 +315,8 @@ struct InkPaletteBrowser: View {
             .contentShape(cardShape)
         }
         .buttonStyle(.plain)
-        .contextMenu {
-            Button { move(entry.id, by: -1) } label: {
-                Label(L10n.text("Move left"), systemImage: "arrow.left")
-            }.disabled(library.palettes.first?.id == entry.id)
-            Button { move(entry.id, by: 1) } label: {
-                Label(L10n.text("Move right"), systemImage: "arrow.right")
-            }.disabled(library.palettes.last?.id == entry.id)
-            Button(role: .destructive) { delete(entry.id) } label: {
-                Label(L10n.text("Delete"), systemImage: "trash")
-            }
+        .onLongPressGesture {
+            actionPalette = entry
         }
         .accessibilityLabel(L10n.text(entry.palette.title ?? "Palette"))
         .accessibilityAddTraits(currentID == entry.id ? [.isSelected] : [])
