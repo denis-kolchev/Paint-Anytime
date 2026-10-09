@@ -221,10 +221,10 @@ struct InkPaletteBrowser: View {
                                     .opacity(movingID == nil ? 1 : 0)
                                 paletteSlot(entry,
                                             width: movingID == nil ? cardWidth : previewSize,
-                                            height: movingID == nil ? cardHeight : previewSize)
+                                            height: movingID == nil ? cardHeight : previewSize,
+                                            stride: stride)
                                     .opacity(movingID == entry.id ? 0 : 1)
                                     .offset(y: movingID == nil ? 0 : -6)
-                                    .highPriorityGesture(reorderGesture(entry, stride: stride))
                             }
                             // Collapse the held card's slot so the remaining cards
                             // form one compact row with the insertion boundary at center.
@@ -269,7 +269,10 @@ struct InkPaletteBrowser: View {
                     .clipped()
                     // A recognized swipe must cancel the card's button press.
                     .coordinateSpace(name: "paletteReordering")
-                    .simultaneousGesture(pageGesture(stride: stride))
+                    // Once a swipe is recognized, cancel the card button's tap.
+                    // Leave the revealed Delete button outside this arbitration.
+                    .highPriorityGesture(pageGesture(stride: stride),
+                                         including: pendingDeletionID == nil ? .all : .subviews)
                     .animation(pageAnimation, value: carouselTranslation)
                     .overlay(alignment: .top) {
                         if let movingID, let entry = library.palettes.first(where: { $0.id == movingID }) {
@@ -349,7 +352,8 @@ struct InkPaletteBrowser: View {
             .environment(\.layoutDirection, layoutDirection)
     }
 
-    private func paletteSlot(_ entry: SavedInkPalette, width: CGFloat, height: CGFloat) -> some View {
+    private func paletteSlot(_ entry: SavedInkPalette, width: CGFloat, height: CGFloat,
+                             stride: CGFloat) -> some View {
         let awaitingDeletion = pendingDeletionID == entry.id
         let lift = entry.id == currentID ? carouselTranslation.height : 0
         return ZStack {
@@ -372,6 +376,10 @@ struct InkPaletteBrowser: View {
                 .accessibilityHidden(!awaitingDeletion)
             }
             paletteCard(entry, width: width, height: height)
+                // Observe a hold alongside the button's tap, and only on the
+                // card itself so the revealed Delete button has no hold handler.
+                .simultaneousGesture(reorderGesture(entry, stride: stride),
+                                     including: pendingDeletionID == nil ? .all : .none)
                 .offset(y: awaitingDeletion ? -height - 12 : lift)
                 .opacity(awaitingDeletion ? 0 : 1)
                 .allowsHitTesting(pendingDeletionID == nil)
