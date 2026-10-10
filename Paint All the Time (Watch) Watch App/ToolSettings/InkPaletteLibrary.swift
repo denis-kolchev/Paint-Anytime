@@ -5,12 +5,15 @@ struct SavedInkPalette: Codable, Identifiable {
     var palette: InkPalette
     var isHidden: Bool?
 
-    var isVisible: Bool { id == "basic" || isHidden != true }
+    var isVisible: Bool { isHidden != true }
+    var isBuiltIn: Bool { InkPaletteLibrary.builtInIDs.contains(id) }
 }
 
 struct InkPaletteLibrary: Codable {
     var palettes: [SavedInkPalette]
     var activeID: String
+
+    static let builtInIDs = Set(initial.palettes.map(\.id))
 
     var visiblePalettes: [SavedInkPalette] { palettes.filter(\.isVisible) }
 

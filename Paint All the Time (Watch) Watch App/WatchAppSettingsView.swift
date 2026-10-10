@@ -117,7 +117,29 @@ private struct PaletteVisibilitySettingsView: View {
     }
 
     var body: some View {
-        List(library.palettes) { entry in
+        List {
+            if library.palettes.contains(where: { !$0.isBuiltIn }) {
+                NavigationLink {
+                    List { paletteRows(builtIn: true) }
+                        .navigationTitle(L10n.text("Ready-made palettes"))
+                } label: {
+                    Label(L10n.text("Ready-made palettes"), systemImage: "paintpalette")
+                }
+                NavigationLink {
+                    List { paletteRows(builtIn: false) }
+                        .navigationTitle(L10n.text("My palettes"))
+                } label: {
+                    Label(L10n.text("My palettes"), systemImage: "person.crop.square")
+                }
+            } else {
+                paletteRows(builtIn: true)
+            }
+        }
+        .navigationTitle(L10n.text("Visible palettes"))
+    }
+
+    private func paletteRows(builtIn: Bool) -> some View {
+        ForEach(library.palettes.filter { $0.isBuiltIn == builtIn }) { entry in
             Button {
                 setVisible(!entry.isVisible, id: entry.id)
             } label: {
@@ -128,16 +150,16 @@ private struct PaletteVisibilitySettingsView: View {
                         .foregroundStyle(entry.isVisible ? Color.green : Color.secondary)
                 }
             }
-            .disabled(entry.id == "basic")
+            .disabled(entry.isVisible && library.visiblePalettes.count == 1)
             .accessibilityAddTraits(entry.isVisible ? .isSelected : [])
         }
-        .navigationTitle(L10n.text("Visible palettes"))
     }
 
     private func setVisible(_ visible: Bool, id: String) {
         var updated = library
         let previousActiveID = updated.activeID
-        guard id != "basic", let index = updated.palettes.firstIndex(where: { $0.id == id }) else { return }
+        guard let index = updated.palettes.firstIndex(where: { $0.id == id }) else { return }
+        guard visible || !updated.palettes[index].isVisible || updated.visiblePalettes.count > 1 else { return }
         updated.palettes[index].isHidden = !visible
         // Keep an available palette selected when hiding the active one.
         if !visible && updated.activeID == id {
