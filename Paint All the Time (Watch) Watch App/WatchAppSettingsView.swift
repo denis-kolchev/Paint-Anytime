@@ -28,7 +28,7 @@ struct WatchAppSettingsView: View {
                     NavigationLink {
                         DrawingSettingsView(controller: controller)
                     } label: {
-                        Label(L10n.text("Drawing"), systemImage: "paintpalette")
+                        Label(L10n.text("Drawing"), systemImage: "paintbrush")
                     }
                     NavigationLink {
                         WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
