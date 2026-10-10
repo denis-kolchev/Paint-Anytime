@@ -51,12 +51,12 @@
         }
       }
     },
-    "Paint Anytime": {
+    "Open App": {
       "localizations": {
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Paint Anytime"
+            "value": "Открыть приложение"
           }
         }
       }

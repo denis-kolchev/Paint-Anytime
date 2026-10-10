@@ -287,12 +287,18 @@ private struct LayerSettingsView: View {
                     let availableWidth = max(0, geometry.size.width - 52)
                     let scale = min(availableWidth / size.width, geometry.size.height / size.height)
                     HStack(spacing: 8) {
-                        layerPreview(layer)
+                        ZStack {
+                            layerPreview(layer)
+                        }
                             .frame(width: size.width * scale, height: size.height * scale)
                             .overlay { Rectangle().strokeBorder(.white.opacity(0.25), lineWidth: 1) }
                             .overlay {
                                 if let transparencyFeedbackID {
-                                    TransparencyBoundaryFeedback(layer: layer, canvasSize: size)
+                                    TransparencyBoundaryFeedback(layer: layer, canvasSize: size) {
+                                        if self.transparencyFeedbackID == transparencyFeedbackID {
+                                            self.transparencyFeedbackID = nil
+                                        }
+                                    }
                                         .id(transparencyFeedbackID)
                                         .allowsHitTesting(false)
                                         .accessibilityHidden(true)
@@ -342,6 +348,7 @@ private struct LayerSettingsView: View {
                             }
 
                             Button {
+                                transparencyFeedbackID = nil
                                 showsAllLayers.toggle()
                                 crownFocused = true
                             } label: {
@@ -427,10 +434,10 @@ private struct LayerSettingsView: View {
             }
             .onAppear {
                 opacity = Double(layer.opacity)
-                showsAllLayers = false
                 crownFocused = true
             }
             .onDisappear {
+                transparencyFeedbackID = nil
                 if let currentLayer = self.layer, Float(opacity) != currentLayer.opacity {
                     updateLayer { $0.opacity = Float(opacity) }
                 }
@@ -545,6 +552,7 @@ private extension CanvasLayer {
 private struct TransparencyBoundaryFeedback: View {
     let layer: CanvasLayer
     let canvasSize: CGSize
+    let onFinished: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var boundary: Path?
     @State private var startedAt = Date()
@@ -594,6 +602,7 @@ private struct TransparencyBoundaryFeedback: View {
             do {
                 try await Task.sleep(for: .milliseconds(1300))
                 finished = true
+                onFinished()
             } catch { }
         }
     }
