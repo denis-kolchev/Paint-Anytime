@@ -4,6 +4,7 @@ import WatchKit
 struct WatchLayersView: View {
     @ObservedObject var controller: CanvasController
     let canvasSize: CGSize
+    private let rowSpacing: CGFloat = 4
     @State private var editingLayer: UUID?
     @State private var showsPaperEditor = false
     @GestureState private var isReordering = false
@@ -14,11 +15,16 @@ struct WatchLayersView: View {
     @State private var rowFrames: [UUID: CGRect] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var previewAspectRatio: CGFloat {
+        canvasSize.width > 0 && canvasSize.height > 0
+            ? canvasSize.width / canvasSize.height : 200.0 / 240.0
+    }
+
     var body: some View {
         NavigationStack {
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(spacing: 8) {
+                    VStack(spacing: rowSpacing) {
                         ForEach(Array(controller.document.layers.reversed())) { layer in
                             layerRow(layer, proxy: proxy)
                                 .id(layer.id)
@@ -37,29 +43,12 @@ struct WatchLayersView: View {
                                 }
                                 .zIndex(draggedLayer == layer.id ? 1 : 0)
                         }
-                        HStack(spacing: 4) {
-                            Button { showsPaperEditor = true } label: {
-                                HStack(spacing: 10) {
-                                    CanvasBackgroundPreview(color: controller.document.effectiveBackgroundColor)
-                                        .frame(width: 62, height: 54)
-                                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                                    Text(L10n.text("Canvas"))
-                                        .font(.caption)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .lineLimit(2)
-                                }
-                                .padding(6)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            Button { showsPaperEditor = true } label: {
-                                Image(systemName: "slider.horizontal.3")
-                                    .font(.system(size: 15, weight: .semibold))
-                            }
-                            .buttonStyle(LayerSettingsIconStyle())
-                            .accessibilityLabel(L10n.text("Settings") + ": " + L10n.text("Canvas"))
+                        LayerCard(title: L10n.text("Canvas"), canvasSize: canvasSize,
+                                  onSelect: { showsPaperEditor = true },
+                                  onEdit: { showsPaperEditor = true }) {
+                            CanvasBackgroundPreview(color: controller.document.effectiveBackgroundColor)
+                                .aspectRatio(previewAspectRatio, contentMode: .fit)
                         }
-                        .background(.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
                     }
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
@@ -101,44 +90,22 @@ struct WatchLayersView: View {
     }
 
     private func layerRow(_ layer: CanvasLayer, proxy: ScrollViewProxy) -> some View {
-        HStack(spacing: 4) {
-            Button {
-                guard draggedLayer == nil, !isReordering,
-                      Date() >= selectionBlockedUntil else { return }
-                controller.selectLayer(layer.id)
-            } label: {
-                HStack(spacing: 10) {
-                    LayerThumbnail(layer: layer, canvasSize: canvasSize)
-                        .frame(width: 62, height: 54)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
-                    Text(layer.displayName)
-                        .font(.caption)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .lineLimit(2)
-                }
-                .padding(6)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            // Let the button recognize taps without waiting for the hold-and-drag sequence.
-            .simultaneousGesture(reorderGesture(layer.id, proxy: proxy))
-            .accessibilityLabel(layer.displayName)
-            .accessibilityAddTraits(controller.selectedLayer.id == layer.id ? [.isSelected] : [])
-            .accessibilityAction(named: Text(L10n.text("Move up"))) { move(layer.id, up: true) }
-            .accessibilityAction(named: Text(L10n.text("Move down"))) { move(layer.id, up: false) }
-            .accessibilityAction(named: Text(L10n.text("Delete"))) { controller.deleteLayer(layer.id) }
-
-            Button {
-                guard draggedLayer == nil else { return }
-                editingLayer = layer.id
-            } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 15, weight: .semibold))
-            }
-            .buttonStyle(LayerSettingsIconStyle())
-            .accessibilityLabel(L10n.text("Settings") + ": " + layer.displayName)
+        LayerCard(title: layer.displayName, canvasSize: canvasSize, onSelect: {
+            guard draggedLayer == nil, !isReordering,
+                  Date() >= selectionBlockedUntil else { return }
+            controller.selectLayer(layer.id)
+        }, onEdit: {
+            guard draggedLayer == nil, !isReordering,
+                  Date() >= selectionBlockedUntil else { return }
+            editingLayer = layer.id
+        }) {
+            LayerThumbnail(layer: layer, canvasSize: canvasSize)
         }
-        .background(.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
+        .simultaneousGesture(reorderGesture(layer.id, proxy: proxy))
+        .accessibilityAddTraits(controller.selectedLayer.id == layer.id ? [.isSelected] : [])
+        .accessibilityAction(named: Text(L10n.text("Move up"))) { move(layer.id, up: true) }
+        .accessibilityAction(named: Text(L10n.text("Move down"))) { move(layer.id, up: false) }
+        .accessibilityAction(named: Text(L10n.text("Delete"))) { controller.deleteLayer(layer.id) }
         .overlay {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(controller.selectedLayer.id == layer.id ? Color.accentColor : .clear, lineWidth: 2)
@@ -197,7 +164,7 @@ struct WatchLayersView: View {
               let destination = ids.firstIndex(of: reorderTarget),
               let index = ids.firstIndex(of: id),
               let origin = rowFrames[draggedLayer] else { return 0 }
-        let distance = origin.height + 8
+        let distance = origin.height + rowSpacing
         if destination < source, (destination..<source).contains(index) { return distance }
         if destination > source, ((source + 1)...destination).contains(index) { return -distance }
         return 0
@@ -227,12 +194,54 @@ struct WatchLayersView: View {
     }
 }
 
-private struct LayerSettingsIconStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .frame(width: 44, height: 54)
-            .contentShape(Rectangle())
-            .opacity(configuration.isPressed ? 0.45 : 1)
+/// Preview, title, and settings share one compact, stable drag slot.
+private struct LayerCard<Preview: View>: View {
+    let title: String
+    let canvasSize: CGSize
+    let onSelect: () -> Void
+    let onEdit: () -> Void
+    @ViewBuilder let preview: () -> Preview
+
+    private let previewHeight: CGFloat = 52
+
+    var body: some View {
+        GeometryReader { geometry in
+            let ratio = canvasSize.width > 0 && canvasSize.height > 0
+                ? canvasSize.width / canvasSize.height : 200.0 / 240.0
+            let previewWidth = min(previewHeight * ratio, geometry.size.width * 0.45)
+            HStack(spacing: 6) {
+                Button(action: onSelect) {
+                    preview()
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .frame(width: previewWidth, height: previewHeight)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel(title)
+
+                Button(action: onSelect) {
+                    Text(title)
+                        .font(.system(size: 15))
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.7)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .frame(maxWidth: .infinity)
+
+                Button(action: onEdit) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 15, weight: .semibold))
+                        .frame(width: 30, height: previewHeight)
+                        .contentShape(Rectangle())
+                }
+                .accessibilityLabel(L10n.text("Settings") + ": " + title)
+            }
+            .frame(height: previewHeight)
+            .buttonStyle(.plain)
+        }
+        .frame(height: previewHeight)
+        .padding(4)
+        .background(.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
     }
 }
 
@@ -249,6 +258,7 @@ private struct LayerSettingsView: View {
     let canvasSize: CGSize
     @FocusState private var crownFocused: Bool
     @State private var opacity: Double = 1
+    @State private var previewSideInset: CGFloat = 0
     @State private var showsAllLayers = false
     @State private var transparencyFeedbackID: UUID?
     @Environment(\.dismiss) private var dismiss
@@ -280,13 +290,21 @@ private struct LayerSettingsView: View {
 
     var body: some View {
         if let layer {
-            VStack(spacing: 6) {
+            VStack(spacing: 0) {
                 GeometryReader { geometry in
                     let size = canvasSize.width > 0 && canvasSize.height > 0
                         ? canvasSize : CGSize(width: 200, height: 240)
+                    // The navigation safe area bounds the top; the opacity row bounds the bottom.
+                    // Equal slots keep all three controls inside that space on every watch size.
+                    let controlHeight = max(0, geometry.size.height / 3)
                     let availableWidth = max(0, geometry.size.width - 52)
                     let scale = min(availableWidth / size.width, geometry.size.height / size.height)
-                    HStack(spacing: 8) {
+                    let previewWidth = size.width * scale
+                    let previewRight = (availableWidth + previewWidth) / 2
+                    let screenRight = WKInterfaceDevice.current().screenBounds.maxX
+                        - geometry.frame(in: .global).minX
+                    let controlsCenterX = (previewRight + screenRight) / 2
+                    ZStack(alignment: .topLeading) {
                         ZStack {
                             layerPreview(layer)
                         }
@@ -305,7 +323,9 @@ private struct LayerSettingsView: View {
                                 }
                             }
                             .accessibilityLabel(showsAllLayers ? L10n.text("All layers") : layer.displayName)
-                            .frame(width: availableWidth, height: geometry.size.height)
+                            // Anchor the paper's bottom edge to the spacing above the opacity row.
+                            .position(x: availableWidth / 2,
+                                      y: geometry.size.height - size.height * scale / 2)
 
                         VStack(spacing: 0) {
                             Button {
@@ -314,7 +334,7 @@ private struct LayerSettingsView: View {
                             } label: {
                                 Image(systemName: layer.isVisible ? "eye.fill" : "eye.slash.fill")
                                     .font(.system(size: 20))
-                                    .frame(width: 44, height: 44)
+                                    .frame(width: 44, height: controlHeight)
                                     .contentShape(Rectangle())
                             }
                             .accessibilityLabel(L10n.text("Visible"))
@@ -327,7 +347,7 @@ private struct LayerSettingsView: View {
                                         .fill(Color(.sRGB, red: Double(color.x), green: Double(color.y), blue: Double(color.z)))
                                         .frame(width: 23, height: 23)
                                         .overlay { Circle().strokeBorder(.white.opacity(0.6), lineWidth: 1) }
-                                        .frame(width: 44, height: 44)
+                                        .frame(width: 44, height: controlHeight)
                                         .contentShape(Rectangle())
                                 }
                                 .accessibilityLabel(L10n.text("Canvas color"))
@@ -340,7 +360,7 @@ private struct LayerSettingsView: View {
                                     Image(systemName: layer.locksTransparency ? "lock.square.dashed" : "square.dashed")
                                         .font(.system(size: 23))
                                         .foregroundStyle(.white)
-                                        .frame(width: 44, height: 44)
+                                        .frame(width: 44, height: controlHeight)
                                         .contentShape(Rectangle())
                                 }
                                 .accessibilityLabel(L10n.text("Lock transparency"))
@@ -355,19 +375,28 @@ private struct LayerSettingsView: View {
                                 Image(systemName: "square.3.layers.3d")
                                     .font(.system(size: 21))
                                     .foregroundStyle(showsAllLayers ? Color.white : Color.gray)
-                                    .frame(width: 44, height: 44)
+                                    .frame(width: 44, height: controlHeight)
                                     .contentShape(Rectangle())
                             }
                             .accessibilityLabel(L10n.text(showsAllLayers ? "Show only this layer" : "Show all layers"))
                             .accessibilityValue(L10n.text(showsAllLayers ? "All layers" : "Only this layer"))
                             .accessibilityAddTraits(showsAllLayers ? [.isSelected] : [])
                         }
+                        .frame(width: 44, height: geometry.size.height)
                         .buttonStyle(.plain)
+                        .position(x: controlsCenterX, y: geometry.size.height / 2)
                     }
                     .frame(width: geometry.size.width, height: geometry.size.height)
+                    .onGeometryChange(for: CGFloat.self) { proxy in
+                        let width = max(0, proxy.size.width - 52)
+                        let fit = min(width / size.width, proxy.size.height / size.height)
+                        return max(0, (width - size.width * fit) / 2)
+                    } action: { inset in
+                        previewSideInset = inset
+                    }
                 }
 
-                VStack(spacing: 2) {
+                VStack(spacing: 0) {
                     HStack {
                         Text(L10n.text("Opacity"))
                         Spacer(minLength: 4)
@@ -375,8 +404,9 @@ private struct LayerSettingsView: View {
                             .monospacedDigit()
                     }
                     .font(.system(size: 12, weight: .semibold))
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, previewSideInset)
                     .frame(height: 16)
+                    .padding(.vertical, 4)
 
                     HStack(spacing: 4) {
                         opacityButton("minus", amount: -1)
@@ -398,8 +428,8 @@ private struct LayerSettingsView: View {
                     }
                     .environment(\.layoutDirection, .leftToRight)
                     .frame(height: 28)
+                    .padding(.horizontal, 4)
                 }
-                .padding(.horizontal, 4)
                 .padding(.bottom, 8)
             }
             .padding(.horizontal, 8)
@@ -523,7 +553,8 @@ private struct LayerThumbnail: View {
                     .opacity(previewOpacity)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .aspectRatio(canvasSize.width > 0 && canvasSize.height > 0
+            ? canvasSize.width / canvasSize.height : 200.0 / 240.0, contentMode: .fit)
         .clipped()
         .task(id: layer.strokes.map(\.geometryRevision)) {
             let strokes = layer.strokes

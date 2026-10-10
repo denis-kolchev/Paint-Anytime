@@ -57,31 +57,33 @@ struct WatchCanvasView: View {
         GeometryReader { geometry in
             let paperSize = controller.document.size(fallback: geometry.size)
             let fit = canvasFit(geometry.size)
-            ZStack {
-                Color(white: 0.16)
-                // Hiding settings/gallery must not destroy the raster view's image and cache.
-                // Keep its identity so returning to the canvas displays the last frame immediately.
-                WatchRasterArtwork(document: needsLayerRendering ? controller.document : nil,
-                    selectedLayerID: controller.selectedLayer.id, strokes: controller.document.strokes,
-                    activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
-                    documentRevision: controller.documentRevision,
-                    activeStrokeRevision: controller.activeStrokeRevision,
-                    activeStrokeID: controller.activeStrokeID, zoom: zoom)
-                    .frame(width: paperSize.width, height: paperSize.height)
-                    .background {
-                        if controller.document.effectiveBackgroundColor.w < 1 {
-                            TransparencyCheckerboard()
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
+            Color(white: 0.16)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .overlay {
+                    // Hiding settings/gallery must not destroy the raster view's image and cache.
+                    // Keep its identity so returning to the canvas displays the last frame immediately.
+                    WatchRasterArtwork(document: needsLayerRendering ? controller.document : nil,
+                        selectedLayerID: controller.selectedLayer.id, strokes: controller.document.strokes,
+                        activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
+                        documentRevision: controller.documentRevision,
+                        activeStrokeRevision: controller.activeStrokeRevision,
+                        activeStrokeID: controller.activeStrokeID, zoom: zoom)
+                        .frame(width: paperSize.width, height: paperSize.height)
+                        .background {
+                            if controller.document.effectiveBackgroundColor.w < 1 {
+                                TransparencyCheckerboard()
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
                         }
-                    }
-                    .clipped()
-                    .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
-                    .scaleEffect(zoom * fit)
-                    .offset(offset)
-                    .opacity(rendersArtwork ? 1 : 0)
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
+                        .scaleEffect(zoom * fit)
+                        // Constrain layout after scaling: the paper must not resize the viewport.
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .offset(offset)
+                        .opacity(rendersArtwork ? 1 : 0)
+                }
             .clipped()
             .overlay {
                 if isEyedropperActive, let loupeImage, let loupePoint {
@@ -184,6 +186,7 @@ struct WatchCanvasView: View {
                 including: acceptsInput && tutorial.acceptsActions ? .all : .none
             )
         }
+        .ignoresSafeArea()
         // Keep the Crown target registered throughout the canvas exercise. The
         // binding below still rejects zoom until the lesson permits it.
         .focusable(acceptsInput)
