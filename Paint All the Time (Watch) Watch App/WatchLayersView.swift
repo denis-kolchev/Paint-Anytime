@@ -406,15 +406,16 @@ private struct LayerSettingsView: View {
                 range: 0...100))
             .navigationTitle(layer.displayName)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(role: .destructive) {
-                        if let layerID { controller.deleteLayer(layerID) }
-                        else { controller.setBackgroundVisible(false) }
-                        dismiss()
-                    } label: {
-                        Image(systemName: "trash")
+                if let layerID {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(role: .destructive) {
+                            controller.deleteLayer(layerID)
+                            dismiss()
+                        } label: {
+                            Image(systemName: "trash")
+                        }
+                        .accessibilityLabel(L10n.text("Delete"))
                     }
-                    .accessibilityLabel(L10n.text("Delete"))
                 }
             }
             .navigationDestination(isPresented: $showsColorEditor) {
