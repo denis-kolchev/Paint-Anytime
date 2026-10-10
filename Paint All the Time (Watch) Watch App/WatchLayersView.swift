@@ -132,8 +132,7 @@ struct WatchLayersView: View {
                 Image(systemName: "slider.horizontal.3")
                     .font(.system(size: 15, weight: .semibold))
             }
-            .buttonStyle(TutorialOverlayButtonStyle(diameter: 34, hitDiameter: 44))
-            .frame(height: 54)
+            .buttonStyle(LayerSettingsIconStyle())
             .accessibilityLabel(L10n.text("Settings") + ": " + layer.displayName)
         }
         .background(.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
@@ -222,6 +221,15 @@ struct WatchLayersView: View {
         let target = index + (up ? 1 : -1)
         guard layers.indices.contains(target) else { return }
         controller.moveLayer(id, to: layers[target].id)
+    }
+}
+
+private struct LayerSettingsIconStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .frame(width: 44, height: 54)
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.45 : 1)
     }
 }
 
