@@ -44,8 +44,8 @@ struct ContentView: View {
                     let diameter: CGFloat = 36
                     let top = (buttonFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY - diameter / 2
                     let centerX = (buttonFrame?.midX ?? (canvasFrame.maxX - 30)) - canvasFrame.minX
-                    let rowHeight = min(diameter, max(20, (geometry.size.height - top - 16) / 7))
-                    let panelHeight = showsMorphToolbar ? rowHeight * 7 : diameter
+                    let rowHeight = min(diameter, max(20, (geometry.size.height - top - 16) / 4))
+                    let panelHeight = showsMorphToolbar ? rowHeight * 4 : diameter
                     morphToolbar(diameter: diameter, rowHeight: rowHeight)
                         .position(x: centerX, y: top + panelHeight / 2)
                         .zIndex(3)
@@ -53,20 +53,13 @@ struct ContentView: View {
                     // Both controls use the same glass and explicit outer diameter.
                     // Native toolbar slots remain installed solely for system layout.
                     let moreFrame = canvasControlFrames[.more]
-                    morphButton("More", height: diameter) {
-                        controller.cancelStroke()
-                        showsAppSettings = true
-                    } label: {
-                        Image(systemName: "ellipsis")
-                    }
-                    .frame(width: diameter)
-                    .modifier(CanvasMorphGlass())
-                    // The native toolbar host owns touches in this top-bar slot.
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
-                    .position(x: (moreFrame?.midX ?? (canvasFrame.minX + 30)) - canvasFrame.minX,
-                              y: (moreFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY)
-                    .zIndex(3)
+                    let contentTop = (moreFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY - diameter / 2
+                    let contentRowHeight = min(diameter, max(20, (geometry.size.height - contentTop - 16) / 4))
+                    let contentHeight = showsContentActions ? contentRowHeight * 4 : diameter
+                    morphContentActions(diameter: diameter, rowHeight: contentRowHeight)
+                        .position(x: (moreFrame?.midX ?? (canvasFrame.minX + 30)) - canvasFrame.minX,
+                                  y: contentTop + contentHeight / 2)
+                        .zIndex(3)
                 }
 
                 if !usesMorphToolbar && isActive && !showsGallery && !showsToolSettings && !isMovingCanvas && controller.activeStroke == nil {
@@ -164,16 +157,26 @@ struct ContentView: View {
                         if isMovingCanvas {
                             isEyedropperActive.toggle()
                             hasEyedropperSession = true
+                        } else if usesMorphToolbar {
+                            if showsContentActions {
+                                showsContentActions = false
+                                showsAppSettings = true
+                            } else {
+                                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                                    showsMorphToolbar = false
+                                    showsContentActions = true
+                                }
+                            }
                         } else { showsAppSettings = true }
                     } label: {
-                        Image(systemName: isMovingCanvas ? "eyedropper" : "ellipsis")
+                        Image(systemName: isMovingCanvas ? "eyedropper" : usesMorphToolbar && !showsContentActions ? "doc.badge.gearshape" : "ellipsis")
                             .foregroundStyle(isEyedropperActive ? .green : .primary)
                             .frame(width: 18, height: 18, alignment: .center)
                             .opacity(usesMorphToolbar && !isMovingCanvas ? 0 : 1)
                             .contentShape(Rectangle())
                     }
                     .watchToolbarButtonStyle(hidesNativeChrome: (usesMorphToolbar && !isMovingCanvas) || controller.activeStroke != nil)
-                    .accessibilityLabel(L10n.text(isMovingCanvas ? "Eyedropper" : "More"))
+                    .accessibilityLabel(L10n.text(isMovingCanvas ? "Eyedropper" : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
                     .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
                     .trackCanvasControl(.more, frames: $canvasControlFrames)
                     .opacity(controller.activeStroke != nil ? 0 : 1)
@@ -198,6 +201,7 @@ struct ContentView: View {
                         showsToolSettings = true
                     } else if usesMorphToolbar && !showsToolSettings {
                         withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                            showsContentActions = false
                             showsMorphToolbar.toggle()
                         }
                     } else { showsToolSettings.toggle() }
@@ -207,7 +211,7 @@ struct ContentView: View {
                             Image(systemName: "checkmark")
                                 .foregroundStyle(.green)
                         } else if usesMorphToolbar {
-                            Image(systemName: "chevron.up")
+                            Image(systemName: "paintbrush.pointed")
                         } else {
                             ToolIcon(instrument: controller.pencilStyle.instrument)
                         }
@@ -356,7 +360,7 @@ struct ContentView: View {
 
     @MainActor
     private func resetMorphBehindPresentation() async {
-        guard showsMorphToolbar else { return }
+        guard showsMorphToolbar || showsContentActions else { return }
         // onAppear/task starts during the presentation transition, not after it.
         // A view-owned task is cancelled if the user dismisses the window early.
         do {
@@ -370,6 +374,7 @@ struct ContentView: View {
         transaction.disablesAnimations = true
         withTransaction(transaction) {
             showsMorphToolbar = false
+            showsContentActions = false
         }
     }
 
@@ -402,6 +407,42 @@ struct ContentView: View {
         .trackCanvasControl(.contentMorph, frames: $canvasControlFrames)
     }
 
+    private func morphContentActions(diameter: CGFloat, rowHeight: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            if showsContentActions {
+                morphButton("More", height: rowHeight) {
+                    controller.cancelStroke()
+                    showsContentActions = false
+                    showsAppSettings = true
+                } label: { Image(systemName: "ellipsis") }
+                morphButton("Clear canvas", height: rowHeight) {
+                    showsContentActions = false
+                    session.requestCanvasAction(.clear)
+                } label: { BroomIcon() }
+                .disabled(!controller.canClear)
+                morphButton("Save drawing", height: rowHeight) {
+                    showsContentActions = false
+                    session.saveDrawing(size: canvasSize, scale: displayScale)
+                } label: { Image(systemName: "square.and.arrow.down") }
+                morphButton("Canvas size", height: rowHeight) {
+                    controller.cancelStroke()
+                    showsContentActions = false
+                    showsCanvasSize = true
+                } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
+            } else {
+                // The native leading toolbar slot handles the opening tap.
+                morphButton("Canvas actions", height: diameter, action: {}) {
+                    Image(systemName: "doc.badge.gearshape")
+                }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            }
+        }
+        .frame(width: diameter)
+        .modifier(CanvasMorphGlass())
+        .trackCanvasControl(.contentMorph, frames: $canvasControlFrames)
+    }
+
     private func morphToolbar(diameter: CGFloat, rowHeight: CGFloat) -> some View {
         VStack(spacing: 0) {
             if showsMorphToolbar {
@@ -413,10 +454,6 @@ struct ContentView: View {
                     ToolIcon(instrument: controller.pencilStyle.instrument)
                         .frame(width: 18, height: 18)
                 }
-                morphButton("Clear canvas", height: rowHeight) {
-                    session.requestCanvasAction(.clear)
-                } label: { BroomIcon() }
-                .disabled(!controller.canClear)
                 morphButton("Undo", height: rowHeight, action: { controller.undo() }) {
                     Image(systemName: "arrow.uturn.backward")
                 }
@@ -425,14 +462,6 @@ struct ContentView: View {
                     Image(systemName: "arrow.uturn.forward")
                 }
                 .disabled(!controller.canRedo)
-                morphButton("Save drawing", height: rowHeight) {
-                    session.saveDrawing(size: canvasSize, scale: displayScale)
-                } label: { Image(systemName: "square.and.arrow.down") }
-                morphButton("Canvas size", height: rowHeight) {
-                    controller.cancelStroke()
-                    showsMorphToolbar = false
-                    showsCanvasSize = true
-                } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
                 morphButton("Layers", height: rowHeight) {
                     controller.cancelStroke()
                     showsLayers = true
@@ -444,7 +473,7 @@ struct ContentView: View {
                         showsMorphToolbar = true
                     }
                 } label: {
-                    Image(systemName: "chevron.up")
+                    Image(systemName: "paintbrush.pointed")
                 }
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
@@ -487,7 +516,7 @@ struct ContentView: View {
         guard !showsGallery && !showsToolSettings && controller.activeStroke == nil else { return [:] }
         return canvasControlFrames.filter { control, _ in
             if isMovingCanvas { return control == .tools || control == .more }
-            if usesMorphToolbar { return control == .more || control == .tools || control == .morph }
+            if usesMorphToolbar { return control == .more || control == .tools || control == .morph || control == .contentMorph }
             return control != .morph
         }
     }
