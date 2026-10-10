@@ -54,8 +54,9 @@ struct ContentView: View {
                     // Native toolbar slots remain installed solely for system layout.
                     let moreFrame = canvasControlFrames[.more]
                     let contentTop = (moreFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY - diameter / 2
-                    let contentRowHeight = min(diameter, max(20, (geometry.size.height - contentTop - 16) / 4))
-                    let contentHeight = showsContentActions ? contentRowHeight * 4 : diameter
+                    let contentRowCount: CGFloat = AppReleaseFeatures.current.showsCanvasSizeControls ? 4 : 3
+                    let contentRowHeight = min(diameter, max(20, (geometry.size.height - contentTop - 16) / contentRowCount))
+                    let contentHeight = showsContentActions ? contentRowHeight * contentRowCount : diameter
                     morphContentActions(diameter: diameter, rowHeight: contentRowHeight)
                         .position(x: (moreFrame?.midX ?? (canvasFrame.minX + 30)) - canvasFrame.minX,
                                   y: contentTop + contentHeight / 2)
@@ -424,11 +425,13 @@ struct ContentView: View {
                     showsContentActions = false
                     session.saveDrawing(size: canvasSize, scale: displayScale)
                 } label: { Image(systemName: "square.and.arrow.down") }
-                morphButton("Canvas size", height: rowHeight) {
-                    controller.cancelStroke()
-                    showsContentActions = false
-                    showsCanvasSize = true
-                } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
+                if AppReleaseFeatures.current.showsCanvasSizeControls {
+                    morphButton("Canvas size", height: rowHeight) {
+                        controller.cancelStroke()
+                        showsContentActions = false
+                        showsCanvasSize = true
+                    } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
+                }
             } else {
                 // The native leading toolbar slot handles the opening tap.
                 morphButton("Canvas actions", height: diameter, action: {}) {

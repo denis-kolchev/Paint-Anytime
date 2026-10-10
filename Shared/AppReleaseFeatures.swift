@@ -8,6 +8,8 @@ struct AppReleaseFeatures {
 
     let includesVersion11Tools: Bool
     let includesVersion12Tools: Bool
+    /// Keep canvas editing available for the same future release as Pencil and Crayon.
+    var showsCanvasSizeControls: Bool { includesVersion12Tools }
     let showsPhotoTransferControls: Bool
 
     init(version: String) {
