@@ -80,7 +80,7 @@ struct WatchLayersView: View {
                 get: { editingLayer != nil }, set: { if !$0 { editingLayer = nil } }
             )) {
                 if let id = editingLayer {
-                    LayerSettingsView(controller: controller, layerID: id)
+                    LayerSettingsView(controller: controller, layerID: id, canvasSize: canvasSize)
                 }
             }
             .navigationDestination(isPresented: $showsPaperEditor) {
@@ -130,10 +130,10 @@ struct WatchLayersView: View {
                 editingLayer = layer.id
             } label: {
                 Image(systemName: "slider.horizontal.3")
-                    .frame(width: 44, height: 54)
-                    .contentShape(Rectangle())
+                    .font(.system(size: 15, weight: .semibold))
             }
-            .buttonStyle(.plain)
+            .buttonStyle(TutorialOverlayButtonStyle(diameter: 34, hitDiameter: 44))
+            .frame(height: 54)
             .accessibilityLabel(L10n.text("Settings") + ": " + layer.displayName)
         }
         .background(.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
@@ -235,33 +235,113 @@ private struct LayerRowFrames: PreferenceKey {
 private struct LayerSettingsView: View {
     @ObservedObject var controller: CanvasController
     let layerID: UUID
+    let canvasSize: CGSize
+    @FocusState private var crownFocused: Bool
     @State private var opacity: Double = 1
     @Environment(\.dismiss) private var dismiss
     private var layer: CanvasLayer? { controller.document.layers.first { $0.id == layerID } }
 
     var body: some View {
         if let layer {
-            Form {
-                Toggle(L10n.text("Visible"), isOn: Binding(
-                    get: { layer.isVisible },
-                    set: { value in controller.updateLayer(layerID) { $0.isVisible = value } }
-                ))
-                Toggle(L10n.text("Lock transparency"), isOn: Binding(
-                    get: { layer.locksTransparency },
-                    set: { value in controller.updateLayer(layerID) { $0.locksTransparency = value } }
-                ))
-                VStack(alignment: .leading) {
-                    Text(L10n.text("Opacity") + " \(Int((opacity * 100).rounded()))%")
-                    Slider(value: $opacity, in: 0...1, step: 0.01)
-                        .focusable(false)
+            VStack(spacing: 6) {
+                GeometryReader { geometry in
+                    let size = canvasSize.width > 0 && canvasSize.height > 0
+                        ? canvasSize : CGSize(width: 200, height: 240)
+                    let availableWidth = max(0, geometry.size.width - 52)
+                    let scale = min(availableWidth / size.width, geometry.size.height / size.height)
+                    HStack(spacing: 8) {
+                        LayerThumbnail(layer: layer, canvasSize: canvasSize,
+                                       previewOpacity: layer.isVisible ? opacity : 0,
+                                       maximumPixelDimension: 400)
+                            .frame(width: size.width * scale, height: size.height * scale)
+                            .overlay { Rectangle().strokeBorder(.white.opacity(0.25), lineWidth: 1) }
+                            .accessibilityLabel(layer.displayName)
+                            .frame(width: availableWidth, height: geometry.size.height)
+
+                        VStack(spacing: 0) {
+                            Button {
+                                controller.updateLayer(layerID) { $0.isVisible.toggle() }
+                                crownFocused = true
+                            } label: {
+                                Image(systemName: layer.isVisible ? "eye.fill" : "eye.slash.fill")
+                                    .font(.system(size: 20))
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .accessibilityLabel(L10n.text("Visible"))
+                            .accessibilityAddTraits(layer.isVisible ? [.isSelected] : [])
+
+                            Button {
+                                controller.updateLayer(layerID) { $0.locksTransparency.toggle() }
+                                crownFocused = true
+                            } label: {
+                                Image(systemName: "square.dashed")
+                                    .font(.system(size: 23))
+                                    .overlay(alignment: .bottomTrailing) {
+                                        if layer.locksTransparency {
+                                            Image(systemName: "lock.fill")
+                                                .font(.system(size: 11, weight: .bold))
+                                                .padding(3)
+                                                .background(.black, in: Circle())
+                                                .offset(x: 5, y: 5)
+                                        }
+                                    }
+                                    .foregroundStyle(layer.locksTransparency ? Color.accentColor : .white)
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .accessibilityLabel(L10n.text("Lock transparency"))
+                            .accessibilityAddTraits(layer.locksTransparency ? [.isSelected] : [])
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(width: geometry.size.width, height: geometry.size.height)
                 }
-                .focusable()
-                .modifier(SteppedCrownModifier(
-                    value: Binding(
-                        get: { (opacity * 100).rounded() },
-                        set: { opacity = $0 / 100 }),
-                    range: 0...100))
+
+                VStack(spacing: 2) {
+                    HStack {
+                        Text(L10n.text("Opacity"))
+                        Spacer(minLength: 4)
+                        Text("\(Int((opacity * 100).rounded()))%")
+                            .monospacedDigit()
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .padding(.horizontal, 8)
+                    .frame(height: 16)
+
+                    HStack(spacing: 4) {
+                        opacityButton("minus", amount: -1)
+                        WatchGradientSlider(
+                            value: Binding(get: { opacity * 100 }, set: { setOpacity($0) }),
+                            maximum: 100, colors: [.white, .black],
+                            thumbColor: Color(white: 1 - opacity))
+                            .accessibilityElement(children: .ignore)
+                            .accessibilityLabel(L10n.text("Opacity"))
+                            .accessibilityValue("\(Int((opacity * 100).rounded()))%")
+                            .accessibilityAdjustableAction { direction in
+                                switch direction {
+                                case .increment: setOpacity(opacity * 100 + 1)
+                                case .decrement: setOpacity(opacity * 100 - 1)
+                                @unknown default: break
+                                }
+                            }
+                        opacityButton("plus", amount: 1)
+                    }
+                    .environment(\.layoutDirection, .leftToRight)
+                    .frame(height: 28)
+                }
+                .padding(.horizontal, 4)
+                .padding(.bottom, 8)
             }
+            .padding(.horizontal, 8)
+            .ignoresSafeArea(.container, edges: .bottom)
+            .focusable()
+            .focused($crownFocused)
+            .modifier(SteppedCrownModifier(
+                value: Binding(
+                    get: { (opacity * 100).rounded() },
+                    set: { opacity = $0 / 100 }),
+                range: 0...100))
             .navigationTitle(layer.displayName)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -274,7 +354,10 @@ private struct LayerSettingsView: View {
                     .accessibilityLabel(L10n.text("Delete"))
                 }
             }
-            .onAppear { opacity = Double(layer.opacity) }
+            .onAppear {
+                opacity = Double(layer.opacity)
+                crownFocused = true
+            }
             .onDisappear {
                 if let currentLayer = self.layer, Float(opacity) != currentLayer.opacity {
                     controller.updateLayer(layerID) { $0.opacity = Float(opacity) }
@@ -282,30 +365,54 @@ private struct LayerSettingsView: View {
             }
         }
     }
+
+    private func setOpacity(_ percent: Double) {
+        opacity = min(100, max(0, percent.rounded())) / 100
+        crownFocused = true
+    }
+
+    private func opacityButton(_ symbol: String, amount: Double) -> some View {
+        Button { setOpacity(opacity * 100 + amount) } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(amount > 0 ? opacity >= 1 : opacity <= 0)
+        .accessibilityLabel(L10n.text("Opacity") + (amount > 0 ? " +1" : " −1"))
+    }
+
 }
 
 private struct LayerThumbnail: View {
     let layer: CanvasLayer
     let canvasSize: CGSize
+    var previewOpacity: Double = 1
+    var maximumPixelDimension: CGFloat = 124
     @State private var image: CGImage?
 
     var body: some View {
         ZStack {
             Canvas { context, size in
-                for y in 0..<7 { for x in 0..<8 {
+                for y in 0..<Int(ceil(size.height / 8)) { for x in 0..<Int(ceil(size.width / 8)) {
                     let rect = CGRect(x: CGFloat(x) * 8, y: CGFloat(y) * 8, width: 8, height: 8)
                     context.fill(Path(rect), with: .color((x + y).isMultiple(of: 2) ? .white : Color(white: 0.78)))
                 } }
             }
             if let image {
                 Image(decorative: image, scale: 1).resizable().scaledToFit()
+                    .opacity(previewOpacity)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
         .task(id: layer.strokes.map(\.geometryRevision)) {
             let strokes = layer.strokes
             let size = canvasSize.width > 0 && canvasSize.height > 0 ? canvasSize : CGSize(width: 200, height: 240)
+            let scale = min(1, maximumPixelDimension / max(size.width, size.height))
             let task = Task.detached(priority: .utility) {
-                WatchBitmapRenderer.layerThumbnail(strokes: strokes, size: size, scale: min(1, 124 / size.width))
+                WatchBitmapRenderer.layerThumbnail(strokes: strokes, size: size, scale: scale)
             }
             let result = await withTaskCancellationHandler { await task.value } onCancel: { task.cancel() }
             guard !Task.isCancelled else { return }
