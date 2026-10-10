@@ -246,6 +246,8 @@ private struct LayerSettingsView: View {
     let canvasSize: CGSize
     @FocusState private var crownFocused: Bool
     @State private var opacity: Double = 1
+    @State private var showsAllLayers = false
+    @State private var transparencyFeedbackID: UUID?
     @Environment(\.dismiss) private var dismiss
     private var layer: CanvasLayer? { controller.document.layers.first { $0.id == layerID } }
 
@@ -258,12 +260,18 @@ private struct LayerSettingsView: View {
                     let availableWidth = max(0, geometry.size.width - 52)
                     let scale = min(availableWidth / size.width, geometry.size.height / size.height)
                     HStack(spacing: 8) {
-                        LayerThumbnail(layer: layer, canvasSize: canvasSize,
-                                       previewOpacity: layer.isVisible ? opacity : 0,
-                                       maximumPixelDimension: 400)
+                        layerPreview(layer)
                             .frame(width: size.width * scale, height: size.height * scale)
                             .overlay { Rectangle().strokeBorder(.white.opacity(0.25), lineWidth: 1) }
-                            .accessibilityLabel(layer.displayName)
+                            .overlay {
+                                if let transparencyFeedbackID {
+                                    TransparencyBoundaryFeedback(layer: layer, canvasSize: size)
+                                        .id(transparencyFeedbackID)
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                }
+                            }
+                            .accessibilityLabel(showsAllLayers ? L10n.text("All layers") : layer.displayName)
                             .frame(width: availableWidth, height: geometry.size.height)
 
                         VStack(spacing: 0) {
@@ -281,25 +289,31 @@ private struct LayerSettingsView: View {
 
                             Button {
                                 controller.updateLayer(layerID) { $0.locksTransparency.toggle() }
+                                transparencyFeedbackID = UUID()
                                 crownFocused = true
                             } label: {
-                                Image(systemName: "square.dashed")
+                                Image(systemName: layer.locksTransparency ? "lock.square.dashed" : "square.dashed")
                                     .font(.system(size: 23))
-                                    .overlay(alignment: .bottomTrailing) {
-                                        if layer.locksTransparency {
-                                            Image(systemName: "lock.fill")
-                                                .font(.system(size: 11, weight: .bold))
-                                                .padding(3)
-                                                .background(.black, in: Circle())
-                                                .offset(x: 5, y: 5)
-                                        }
-                                    }
-                                    .foregroundStyle(layer.locksTransparency ? Color.accentColor : .white)
+                                    .foregroundStyle(.white)
                                     .frame(width: 44, height: 44)
                                     .contentShape(Rectangle())
                             }
                             .accessibilityLabel(L10n.text("Lock transparency"))
                             .accessibilityAddTraits(layer.locksTransparency ? [.isSelected] : [])
+
+                            Button {
+                                showsAllLayers.toggle()
+                                crownFocused = true
+                            } label: {
+                                Image(systemName: "square.3.layers.3d")
+                                    .font(.system(size: 21))
+                                    .foregroundStyle(showsAllLayers ? Color.white : Color.gray)
+                                    .frame(width: 44, height: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .accessibilityLabel(L10n.text(showsAllLayers ? "Show only this layer" : "Show all layers"))
+                            .accessibilityValue(L10n.text(showsAllLayers ? "All layers" : "Only this layer"))
+                            .accessibilityAddTraits(showsAllLayers ? [.isSelected] : [])
                         }
                         .buttonStyle(.plain)
                     }
@@ -364,6 +378,7 @@ private struct LayerSettingsView: View {
             }
             .onAppear {
                 opacity = Double(layer.opacity)
+                showsAllLayers = false
                 crownFocused = true
             }
             .onDisappear {
@@ -371,6 +386,28 @@ private struct LayerSettingsView: View {
                     controller.updateLayer(layerID) { $0.opacity = Float(opacity) }
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func layerPreview(_ layer: CanvasLayer) -> some View {
+        if showsAllLayers {
+            ZStack {
+                let color = controller.document.backgroundColor
+                Color(.sRGB, red: Double(color.x), green: Double(color.y),
+                      blue: Double(color.z), opacity: Double(color.w))
+                ForEach(controller.document.layers) { previewLayer in
+                    LayerThumbnail(
+                        layer: previewLayer, canvasSize: canvasSize,
+                        previewOpacity: previewLayer.isVisible
+                            ? (previewLayer.id == layerID ? opacity : Double(previewLayer.opacity)) : 0,
+                        maximumPixelDimension: 400, showsCheckerboard: false)
+                }
+            }
+        } else {
+            LayerThumbnail(layer: layer, canvasSize: canvasSize,
+                           previewOpacity: layer.isVisible ? opacity : 0,
+                           maximumPixelDimension: 400)
         }
     }
 
@@ -398,15 +435,18 @@ private struct LayerThumbnail: View {
     let canvasSize: CGSize
     var previewOpacity: Double = 1
     var maximumPixelDimension: CGFloat = 124
+    var showsCheckerboard = true
     @State private var image: CGImage?
 
     var body: some View {
         ZStack {
-            Canvas { context, size in
-                for y in 0..<Int(ceil(size.height / 8)) { for x in 0..<Int(ceil(size.width / 8)) {
-                    let rect = CGRect(x: CGFloat(x) * 8, y: CGFloat(y) * 8, width: 8, height: 8)
-                    context.fill(Path(rect), with: .color((x + y).isMultiple(of: 2) ? .white : Color(white: 0.78)))
-                } }
+            if showsCheckerboard {
+                Canvas { context, size in
+                    for y in 0..<Int(ceil(size.height / 8)) { for x in 0..<Int(ceil(size.width / 8)) {
+                        let rect = CGRect(x: CGFloat(x) * 8, y: CGFloat(y) * 8, width: 8, height: 8)
+                        context.fill(Path(rect), with: .color((x + y).isMultiple(of: 2) ? .white : Color(white: 0.78)))
+                    } }
+                }
             }
             if let image {
                 Image(decorative: image, scale: 1).resizable().scaledToFit()
@@ -435,5 +475,118 @@ private extension CanvasLayer {
             return L10n.format("Layer %d", number)
         }
         return name
+    }
+}
+
+/// A short, view-only cue; the mask uses the same ink replay as the layer preview.
+private struct TransparencyBoundaryFeedback: View {
+    let layer: CanvasLayer
+    let canvasSize: CGSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var boundary: Path?
+    @State private var startedAt = Date()
+    @State private var finished = false
+
+    var body: some View {
+        GeometryReader { geometry in
+            if let boundary, !finished {
+                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                    let elapsed = timeline.date.timeIntervalSince(startedAt)
+                    let progress = min(1, max(0, elapsed / 1.1))
+                    let fade = min(1, elapsed / 0.08) * min(1, (1.3 - elapsed) / 0.25)
+                    // Only the paper border is inset; ink uses the full preview coordinates.
+                    let inset: CGFloat = layer.locksTransparency ? 0 : 1.5
+                    let path = boundary.applying(CGAffineTransform(
+                        scaleX: max(0, geometry.size.width - inset * 2),
+                        y: max(0, geometry.size.height - inset * 2)))
+                        .applying(CGAffineTransform(translationX: inset, y: inset))
+                    let highlight = reduceMotion ? path : path.trimmedPath(
+                        from: max(0, progress * 1.25 - 0.25), to: min(1, progress * 1.25))
+                    ZStack {
+                        path.stroke(.cyan.opacity(0.35), lineWidth: 1)
+                        highlight.stroke(.cyan, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                            .blur(radius: 3)
+                        highlight.stroke(.white, style: StrokeStyle(lineWidth: 1.3, lineCap: .round, lineJoin: .round))
+                    }
+                    .opacity(max(0, fade))
+                }
+            }
+        }
+        .task {
+            if layer.locksTransparency {
+                let strokes = layer.strokes
+                let size = canvasSize
+                let work = Task.detached(priority: .userInitiated) {
+                    Self.inkBoundary(strokes: strokes, size: size)
+                }
+                let result = await withTaskCancellationHandler {
+                    await work.value
+                } onCancel: { work.cancel() }
+                guard !Task.isCancelled else { return }
+                boundary = result
+            } else {
+                boundary = Path(CGRect(x: 0, y: 0, width: 1, height: 1))
+            }
+            startedAt = Date()
+            do {
+                try await Task.sleep(for: .milliseconds(1300))
+                finished = true
+            } catch { }
+        }
+    }
+
+    private static func inkBoundary(strokes: [Stroke], size: CGSize) -> Path? {
+        let scale = min(1, 400 / max(size.width, size.height))
+        guard !Task.isCancelled,
+              let image = WatchBitmapRenderer.layerThumbnail(strokes: strokes, size: size, scale: scale)
+        else { return nil }
+        let width = image.width, height = image.height
+        var pixels = [UInt8](repeating: 0, count: width * height * 4)
+        let rendered = pixels.withUnsafeMutableBytes { bytes -> Bool in
+            guard let context = CGContext(data: bytes.baseAddress, width: width, height: height,
+                bitsPerComponent: 8, bytesPerRow: width * 4,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+            else { return false }
+            // Copy the CGImage without flipping: its first pixel row already
+            // corresponds to the top of the image displayed by SwiftUI.
+            context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            return true
+        }
+        guard rendered, !Task.isCancelled else { return nil }
+        func occupied(_ x: Int, _ y: Int) -> Bool {
+            x >= 0 && x < width && y >= 0 && y < height && pixels[(y * width + x) * 4 + 3] > 8
+        }
+        // Directed pixel edges form closed loops, including holes left by the eraser.
+        let stride = width + 1
+        var edges: [Int: [Int]] = [:]
+        func edge(_ x: Int, _ y: Int, _ endX: Int, _ endY: Int) {
+            edges[y * stride + x, default: []].append(endY * stride + endX)
+        }
+        for y in 0..<height {
+            guard !Task.isCancelled else { return nil }
+            for x in 0..<width where occupied(x, y) {
+                if !occupied(x, y - 1) { edge(x, y, x + 1, y) }
+                if !occupied(x + 1, y) { edge(x + 1, y, x + 1, y + 1) }
+                if !occupied(x, y + 1) { edge(x + 1, y + 1, x, y + 1) }
+                if !occupied(x - 1, y) { edge(x, y + 1, x, y) }
+            }
+        }
+        func point(_ vertex: Int) -> CGPoint {
+            CGPoint(x: CGFloat(vertex % stride) / CGFloat(width),
+                    y: CGFloat(vertex / stride) / CGFloat(height))
+        }
+        var path = Path()
+        while let start = edges.keys.min() {
+            var current = start
+            path.move(to: point(start))
+            while var outgoing = edges[current], let next = outgoing.popLast() {
+                edges[current] = outgoing.isEmpty ? nil : outgoing
+                path.addLine(to: point(next))
+                current = next
+                if current == start { path.closeSubpath(); break }
+            }
+        }
+        return path
     }
 }
