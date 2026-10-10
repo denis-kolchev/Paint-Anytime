@@ -443,8 +443,8 @@ nonisolated enum WatchBitmapRenderer {
               let output = makeDisplayContext(width: Int(ceil(size.width * scale)),
                                               height: Int(ceil(size.height * scale))) else { return nil }
         let bounds = CGRect(x: 0, y: 0, width: output.width, height: output.height)
-        let c = document.backgroundColor
-        output.setFillColor(CGColor(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: 1))
+        let c = document.effectiveBackgroundColor
+        output.setFillColor(CGColor(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: CGFloat(c.w)))
         output.fill(bounds)
         if let cache {
             if cache.size != size || cache.scale != scale { cache.inks.removeAll() }

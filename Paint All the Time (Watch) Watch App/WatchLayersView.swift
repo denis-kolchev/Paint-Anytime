@@ -37,18 +37,29 @@ struct WatchLayersView: View {
                                 }
                                 .zIndex(draggedLayer == layer.id ? 1 : 0)
                         }
-                        Button { showsPaperEditor = true } label: {
-                            HStack(spacing: 10) {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(paperColor)
-                                    .frame(width: 62, height: 54)
-                                    .overlay { RoundedRectangle(cornerRadius: 6).strokeBorder(.gray, lineWidth: 1) }
-                                Text(L10n.text("Canvas color"))
-                                    .font(.caption).frame(maxWidth: .infinity, alignment: .leading)
+                        HStack(spacing: 4) {
+                            Button { showsPaperEditor = true } label: {
+                                HStack(spacing: 10) {
+                                    CanvasBackgroundPreview(color: controller.document.effectiveBackgroundColor)
+                                        .frame(width: 62, height: 54)
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                                    Text(L10n.text("Canvas"))
+                                        .font(.caption)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .lineLimit(2)
+                                }
+                                .padding(6)
+                                .contentShape(Rectangle())
                             }
-                            .padding(6)
+                            .buttonStyle(.plain)
+                            Button { showsPaperEditor = true } label: {
+                                Image(systemName: "slider.horizontal.3")
+                                    .font(.system(size: 15, weight: .semibold))
+                            }
+                            .buttonStyle(LayerSettingsIconStyle())
+                            .accessibilityLabel(L10n.text("Settings") + ": " + L10n.text("Canvas"))
                         }
-                        .buttonStyle(.plain)
+                        .background(.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
                     }
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
@@ -84,17 +95,9 @@ struct WatchLayersView: View {
                 }
             }
             .navigationDestination(isPresented: $showsPaperEditor) {
-                CustomInkEditor(initialColor: controller.document.backgroundColor,
-                                saveTitle: "Done") { preset in
-                    controller.setBackgroundColor(preset.rgba)
-                }
+                LayerSettingsView(controller: controller, layerID: nil, canvasSize: canvasSize)
             }
         }
-    }
-
-    private var paperColor: Color {
-        let c = controller.document.backgroundColor
-        return Color(.sRGB, red: Double(c.x), green: Double(c.y), blue: Double(c.z))
     }
 
     private func layerRow(_ layer: CanvasLayer, proxy: ScrollViewProxy) -> some View {
@@ -242,14 +245,38 @@ private struct LayerRowFrames: PreferenceKey {
 
 private struct LayerSettingsView: View {
     @ObservedObject var controller: CanvasController
-    let layerID: UUID
+    let layerID: UUID?
     let canvasSize: CGSize
     @FocusState private var crownFocused: Bool
     @State private var opacity: Double = 1
     @State private var showsAllLayers = false
     @State private var transparencyFeedbackID: UUID?
     @Environment(\.dismiss) private var dismiss
-    private var layer: CanvasLayer? { controller.document.layers.first { $0.id == layerID } }
+    @State private var showsColorEditor = false
+    private var layer: CanvasLayer? {
+        guard let layerID else {
+            return CanvasLayer(name: L10n.text("Canvas"),
+                               isVisible: controller.document.backgroundIsVisible,
+                               opacity: controller.document.backgroundColor.w)
+        }
+        return controller.document.layers.first { $0.id == layerID }
+    }
+
+    private func updateLayer(_ edit: (inout CanvasLayer) -> Void) {
+        if let layerID {
+            controller.updateLayer(layerID, edit)
+        } else if var updated = layer {
+            edit(&updated)
+            if updated.isVisible != controller.document.backgroundIsVisible {
+                controller.setBackgroundVisible(updated.isVisible)
+            }
+            if updated.opacity != controller.document.backgroundColor.w {
+                var color = controller.document.backgroundColor
+                color.w = updated.opacity
+                controller.setBackgroundColor(color)
+            }
+        }
+    }
 
     var body: some View {
         if let layer {
@@ -276,7 +303,7 @@ private struct LayerSettingsView: View {
 
                         VStack(spacing: 0) {
                             Button {
-                                controller.updateLayer(layerID) { $0.isVisible.toggle() }
+                                updateLayer { $0.isVisible.toggle() }
                                 crownFocused = true
                             } label: {
                                 Image(systemName: layer.isVisible ? "eye.fill" : "eye.slash.fill")
@@ -287,19 +314,32 @@ private struct LayerSettingsView: View {
                             .accessibilityLabel(L10n.text("Visible"))
                             .accessibilityAddTraits(layer.isVisible ? [.isSelected] : [])
 
-                            Button {
-                                controller.updateLayer(layerID) { $0.locksTransparency.toggle() }
-                                transparencyFeedbackID = UUID()
-                                crownFocused = true
-                            } label: {
-                                Image(systemName: layer.locksTransparency ? "lock.square.dashed" : "square.dashed")
-                                    .font(.system(size: 23))
-                                    .foregroundStyle(.white)
-                                    .frame(width: 44, height: 44)
-                                    .contentShape(Rectangle())
+                            if layerID == nil {
+                                Button { showsColorEditor = true } label: {
+                                    let color = controller.document.backgroundColor
+                                    Circle()
+                                        .fill(Color(.sRGB, red: Double(color.x), green: Double(color.y), blue: Double(color.z)))
+                                        .frame(width: 23, height: 23)
+                                        .overlay { Circle().strokeBorder(.white.opacity(0.6), lineWidth: 1) }
+                                        .frame(width: 44, height: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .accessibilityLabel(L10n.text("Canvas color"))
+                            } else {
+                                Button {
+                                    updateLayer { $0.locksTransparency.toggle() }
+                                    transparencyFeedbackID = UUID()
+                                    crownFocused = true
+                                } label: {
+                                    Image(systemName: layer.locksTransparency ? "lock.square.dashed" : "square.dashed")
+                                        .font(.system(size: 23))
+                                        .foregroundStyle(.white)
+                                        .frame(width: 44, height: 44)
+                                        .contentShape(Rectangle())
+                                }
+                                .accessibilityLabel(L10n.text("Lock transparency"))
+                                .accessibilityAddTraits(layer.locksTransparency ? [.isSelected] : [])
                             }
-                            .accessibilityLabel(L10n.text("Lock transparency"))
-                            .accessibilityAddTraits(layer.locksTransparency ? [.isSelected] : [])
 
                             Button {
                                 showsAllLayers.toggle()
@@ -368,12 +408,20 @@ private struct LayerSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(role: .destructive) {
-                        controller.deleteLayer(layerID)
+                        if let layerID { controller.deleteLayer(layerID) }
+                        else { controller.setBackgroundVisible(false) }
                         dismiss()
                     } label: {
                         Image(systemName: "trash")
                     }
                     .accessibilityLabel(L10n.text("Delete"))
+                }
+            }
+            .navigationDestination(isPresented: $showsColorEditor) {
+                CustomInkEditor(initialColor: controller.document.backgroundColor, saveTitle: "Done") { preset in
+                    var color = preset.rgba
+                    color.w = Float(opacity)
+                    controller.setBackgroundColor(color)
                 }
             }
             .onAppear {
@@ -383,7 +431,7 @@ private struct LayerSettingsView: View {
             }
             .onDisappear {
                 if let currentLayer = self.layer, Float(opacity) != currentLayer.opacity {
-                    controller.updateLayer(layerID) { $0.opacity = Float(opacity) }
+                    updateLayer { $0.opacity = Float(opacity) }
                 }
             }
         }
@@ -393,9 +441,7 @@ private struct LayerSettingsView: View {
     private func layerPreview(_ layer: CanvasLayer) -> some View {
         if showsAllLayers {
             ZStack {
-                let color = controller.document.backgroundColor
-                Color(.sRGB, red: Double(color.x), green: Double(color.y),
-                      blue: Double(color.z), opacity: Double(color.w))
+                CanvasBackgroundPreview(color: previewBackgroundColor)
                 ForEach(controller.document.layers) { previewLayer in
                     LayerThumbnail(
                         layer: previewLayer, canvasSize: canvasSize,
@@ -404,11 +450,19 @@ private struct LayerSettingsView: View {
                         maximumPixelDimension: 400, showsCheckerboard: false)
                 }
             }
+        } else if layerID == nil {
+            CanvasBackgroundPreview(color: previewBackgroundColor)
         } else {
             LayerThumbnail(layer: layer, canvasSize: canvasSize,
                            previewOpacity: layer.isVisible ? opacity : 0,
                            maximumPixelDimension: 400)
         }
+    }
+
+    private var previewBackgroundColor: SIMD4<Float> {
+        var color = controller.document.effectiveBackgroundColor
+        if layerID == nil, controller.document.backgroundIsVisible { color.w = Float(opacity) }
+        return color
     }
 
     private func setOpacity(_ percent: Double) {
@@ -430,6 +484,19 @@ private struct LayerSettingsView: View {
 
 }
 
+private struct CanvasBackgroundPreview: View {
+    let color: SIMD4<Float>
+
+    var body: some View {
+        ZStack {
+            TransparencyCheckerboard()
+            Color(.sRGB, red: Double(color.x), green: Double(color.y),
+                  blue: Double(color.z), opacity: Double(color.w))
+        }
+        .clipped()
+    }
+}
+
 private struct LayerThumbnail: View {
     let layer: CanvasLayer
     let canvasSize: CGSize
@@ -441,12 +508,7 @@ private struct LayerThumbnail: View {
     var body: some View {
         ZStack {
             if showsCheckerboard {
-                Canvas { context, size in
-                    for y in 0..<Int(ceil(size.height / 8)) { for x in 0..<Int(ceil(size.width / 8)) {
-                        let rect = CGRect(x: CGFloat(x) * 8, y: CGFloat(y) * 8, width: 8, height: 8)
-                        context.fill(Path(rect), with: .color((x + y).isMultiple(of: 2) ? .white : Color(white: 0.78)))
-                    } }
-                }
+                TransparencyCheckerboard()
             }
             if let image {
                 Image(decorative: image, scale: 1).resizable().scaledToFit()

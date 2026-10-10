@@ -37,7 +37,7 @@ struct WatchCanvasView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     private var needsLayerRendering: Bool {
-        controller.document.layers.count != 1 || controller.document.backgroundColor != SIMD4(1, 1, 1, 1)
+        controller.document.layers.count != 1 || controller.document.effectiveBackgroundColor != SIMD4(1, 1, 1, 1)
         || !controller.selectedLayer.isVisible || controller.selectedLayer.opacity != 1
         || controller.selectedLayer.locksTransparency || controller.document.strokes.contains { $0.locksTransparency }
     }
@@ -68,6 +68,13 @@ struct WatchCanvasView: View {
                     activeStrokeRevision: controller.activeStrokeRevision,
                     activeStrokeID: controller.activeStrokeID, zoom: zoom)
                     .frame(width: paperSize.width, height: paperSize.height)
+                    .background {
+                        if controller.document.effectiveBackgroundColor.w < 1 {
+                            TransparencyCheckerboard()
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    }
                     .clipped()
                     .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
                     .scaleEffect(zoom * fit)
@@ -366,5 +373,19 @@ struct WatchCanvasView: View {
     private func sample(at point: CGPoint, time: Date) -> PointerSample {
         PointerSample(position: SIMD2(Float(point.x), Float(point.y)),
                       pressure: 1, timestamp: time.timeIntervalSinceReferenceDate)
+    }
+}
+
+/// Display-only transparency backing shared by the canvas and layer previews.
+struct TransparencyCheckerboard: View {
+    var body: some View {
+        Canvas { context, size in
+            for y in 0..<Int(ceil(size.height / 8)) {
+                for x in 0..<Int(ceil(size.width / 8)) {
+                    let rect = CGRect(x: CGFloat(x) * 8, y: CGFloat(y) * 8, width: 8, height: 8)
+                    context.fill(Path(rect), with: .color((x + y).isMultiple(of: 2) ? .white : Color(white: 0.78)))
+                }
+            }
+        }
     }
 }

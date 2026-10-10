@@ -103,6 +103,10 @@ final class CanvasController: ObservableObject {
     func setBackgroundColor(_ color: SIMD4<Float>) {
         editLayers { $0.backgroundColor = color }
     }
+    func setBackgroundVisible(_ visible: Bool) {
+        editLayers { $0.backgroundIsVisible = visible }
+    }
+
     /// Geometry stays editable; the complete document participates in history.
     func adjustCanvas(from oldSize: CGSize, to newSize: CGSize, resample: Bool,
                       origin: CGPoint = .zero, quarterTurns: Int = 0, resolution: Double? = nil) {
