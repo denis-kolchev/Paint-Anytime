@@ -44,8 +44,8 @@ struct ContentView: View {
                     let diameter: CGFloat = 36
                     let top = (buttonFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY - diameter / 2
                     let centerX = (buttonFrame?.midX ?? (canvasFrame.maxX - 30)) - canvasFrame.minX
-                    let rowHeight = min(diameter, max(20, (geometry.size.height - top - 16) / 4))
-                    let panelHeight = showsMorphToolbar ? rowHeight * 4 : diameter
+                    let rowHeight = min(diameter, max(20, (geometry.size.height - top - 16) / 3))
+                    let panelHeight = showsMorphToolbar ? rowHeight * 3 : diameter
                     morphToolbar(diameter: diameter, rowHeight: rowHeight)
                         .position(x: centerX, y: top + panelHeight / 2)
                         .zIndex(3)
@@ -54,7 +54,7 @@ struct ContentView: View {
                     // Native toolbar slots remain installed solely for system layout.
                     let moreFrame = canvasControlFrames[.more]
                     let contentTop = (moreFrame?.midY ?? (canvasFrame.minY + 34)) - canvasFrame.minY - diameter / 2
-                    let contentRowCount: CGFloat = AppReleaseFeatures.current.showsCanvasSizeControls ? 4 : 3
+                    let contentRowCount: CGFloat = AppReleaseFeatures.current.showsCanvasSizeControls ? 5 : 4
                     let contentRowHeight = min(diameter, max(20, (geometry.size.height - contentTop - 16) / contentRowCount))
                     let contentHeight = showsContentActions ? contentRowHeight * contentRowCount : diameter
                     morphContentActions(diameter: diameter, rowHeight: contentRowHeight)
@@ -432,6 +432,11 @@ struct ContentView: View {
                         showsCanvasSize = true
                     } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
                 }
+                morphButton("Layers", height: rowHeight) {
+                    controller.cancelStroke()
+                    showsContentActions = false
+                    showsLayers = true
+                } label: { Image(systemName: "square.3.layers.3d") }
             } else {
                 // The native leading toolbar slot handles the opening tap.
                 morphButton("Canvas actions", height: diameter, action: {}) {
@@ -465,10 +470,6 @@ struct ContentView: View {
                     Image(systemName: "arrow.uturn.forward")
                 }
                 .disabled(!controller.canRedo)
-                morphButton("Layers", height: rowHeight) {
-                    controller.cancelStroke()
-                    showsLayers = true
-                } label: { Image(systemName: "square.3.layers.3d") }
             } else {
                 morphButton("Open drawing controls", height: diameter) {
                     controller.cancelStroke()
