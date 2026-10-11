@@ -24,7 +24,7 @@ struct WatchToolSettingsView: View {
         }
     }
     @State private var strokePreviewHeight: CGFloat = 0
-    @State private var safeFillSensitivity: Float?
+    @State private var fillFocusRequest = 0
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
@@ -181,7 +181,10 @@ struct WatchToolSettingsView: View {
                     VStack(spacing: 6) {
                         ToolStrokePreview(style: controller.pencilStyle,
                                           synchronizesOpacity: controller.synchronization.opacity,
-                                          safeFillSensitivity: $safeFillSensitivity)
+                                          fillPreviewSize: CGSize(width: settingsGeometry.size.width,
+                                                                  height: max(1, settingsGeometry.size.height - 22)),
+                                          fillFocusRequest: fillFocusRequest,
+                                          applyFillSensitivity: { controller.pencilStyle.fillSensitivity = $0 })
                             .overlay {
                                 if selection == .color && isAddingColor {
                                     Button {
@@ -274,18 +277,16 @@ struct WatchToolSettingsView: View {
 
                             if selection == .sensitivity {
                                 Button {
-                                    guard let safeFillSensitivity else { return }
                                     tutorial.activity()
-                                    controller.pencilStyle.fillSensitivity = safeFillSensitivity
+                                    fillFocusRequest += 1
                                     crownFocused = true
                                 } label: {
                                     Image(systemName: "scope")
                                         .font(.title3)
                                         .frame(width: 40, height: 40)
+                                        .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
-                                .background(.white.opacity(0.15), in: Circle())
-                                .disabled(safeFillSensitivity == nil || !tutorial.allowsToolAdjustment(page: ToolSetting.sensitivity.rawValue))
                                 .accessibilityLabel(L10n.text("Find safe sensitivity"))
                                 .offset(y: strokePreviewHeight > 0
                                     ? (strokePreviewHeight - pickerGeometry.size.height) / 2 : 0)

@@ -39391,6 +39391,23 @@
         }
       }
     },
+    "Sets how different neighboring colors can be from the tapped color during a fill. Lower values keep the fill within similar colors; higher values include more colors. The preview shows a Pen circle in the fill color, using the fill opacity when opacity synchronization is on and full opacity otherwise. Turn the Crown to see the unfilled edge colors and when the fill escapes the circle. Tap the focus icon to select the highest whole percentage that keeps the fill inside; one percentage point higher breaks through. If no percentage contains the fill, the button selects 0%." : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets how different neighboring colors can be from the tapped color during a fill. Lower values keep the fill within similar colors; higher values include more colors. The preview shows a Pen circle in the fill color, using the fill opacity when opacity synchronization is on and full opacity otherwise. Turn the Crown to see the unfilled edge colors and when the fill escapes the circle. Tap the focus icon to select the highest whole percentage that keeps the fill inside; one percentage point higher breaks through. If no percentage contains the fill, the button selects 0%."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Определяет, насколько цвета соседних участков могут отличаться от цвета в точке заливки. Низкие значения ограничивают заливку похожими цветами, высокие — включают больше цветов. В превью показан круг, нарисованный Pen цветом заливки. При включённой синхронизации непрозрачности используется непрозрачность заливки, иначе — 100%. Вращайте колёсико, чтобы увидеть незакрашенные оттенки по краю и момент выхода заливки за контур. Нажмите значок фокуса, чтобы выбрать наибольший целый процент, при котором заливка остаётся внутри: следующий процент уже приводит к выходу наружу. Если контур не удерживает заливку ни при каком значении, кнопка устанавливает 0%."
+          }
+        }
+      }
+    },
     "Sets paint coverage: 0% is invisible, 100% gives the brush its full coverage. Textured and translucent brushes retain their character. For the pixel eraser, this sets erasing strength." : {
       "extractionState" : "manual",
       "localizations" : {

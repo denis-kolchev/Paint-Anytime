@@ -5,7 +5,9 @@ struct ToolStrokePreview: View {
 
     let style: PencilStyle
     var synchronizesOpacity = true
-    @Binding var safeFillSensitivity: Float?
+    let fillPreviewSize: CGSize
+    let fillFocusRequest: Int
+    let applyFillSensitivity: (Float) -> Void
     @Environment(\.displayScale) private var displayScale
     @State private var bitmap: CGImage?
     @State private var renderer = ToolPreviewRenderer()
@@ -14,7 +16,8 @@ struct ToolStrokePreview: View {
         Group {
             if style.instrument == .fill {
                 ToolFillPreview(style: style, synchronizesOpacity: synchronizesOpacity,
-                                safeSensitivity: $safeFillSensitivity)
+                                size: fillPreviewSize, focusRequest: fillFocusRequest,
+                                applySensitivity: applyFillSensitivity)
             } else if style.instrument == .pencil || style.instrument == .crayon {
                 deferredPreview
             } else {
@@ -129,34 +132,47 @@ nonisolated private enum ToolPreviewStroke {
 private struct ToolFillPreview: View {
     let style: PencilStyle
     let synchronizesOpacity: Bool
-    @Binding var safeSensitivity: Float?
+    let size: CGSize
+    let focusRequest: Int
+    let applySensitivity: (Float) -> Void
     @State private var renderer = ToolFillPreviewRenderer()
     @State private var bitmap: CGImage?
 
+    private var request: ToolFillPreviewRequest {
+        ToolFillPreviewRequest(style: style,
+            size: CGSize(width: max(1, size.width.rounded()),
+                         height: max(1, size.height.rounded())),
+            synchronizesOpacity: synchronizesOpacity)
+    }
+
     var body: some View {
-        GeometryReader { geometry in
-            let request = ToolFillPreviewRequest(style: style,
-                size: CGSize(width: max(1, geometry.size.width.rounded()),
-                             height: max(1, geometry.size.height.rounded())),
-                synchronizesOpacity: synchronizesOpacity)
-            ZStack {
-                Color.white
+        // Render on a stable canvas shared by all settings pages. Layout only
+        // moves its center; the viewport clips it without stretching the ink.
+        Color.white
+            .overlay {
                 if let bitmap {
                     Image(decorative: bitmap, scale: 2)
-                        .resizable()
+                        .frame(width: CGFloat(bitmap.width) / 2,
+                               height: CGFloat(bitmap.height) / 2)
+                        .allowsHitTesting(false)
                 }
             }
             .task(id: request) {
-                safeSensitivity = nil
                 do {
                     try await Task.sleep(for: .milliseconds(30))
                     let result = await renderer.render(request)
                     try Task.checkCancellation()
-                    bitmap = result?.image
-                    safeSensitivity = result?.safeSensitivity
+                    if let result { bitmap = result.image }
                 } catch {}
             }
-        }
+            .task(id: focusRequest) {
+                guard focusRequest > 0 else { return }
+                // A tap always requests a calculation, even during Crown updates.
+                // With no containing threshold, use the minimum sensitivity.
+                let result = await renderer.render(request)
+                guard !Task.isCancelled, let result else { return }
+                applySensitivity(result.safeSensitivity ?? 0)
+            }
     }
 }
 
@@ -189,7 +205,7 @@ private actor ToolFillPreviewRenderer {
             pen.color = request.style.color
             pen.opacity = request.synchronizesOpacity ? request.style.effectiveOpacity : 1
             pen.width = 4
-            let radius = max(1, min(size.width, size.height) * 0.34)
+            let radius = max(1, min(max(1, size.width - 48), size.height) * 0.34)
             // This reference contour has constant nib width. Equal timestamps
             // keep Pen's speed smoothing from widening its starting point,
             // which would otherwise leave a bump where the circle closes.

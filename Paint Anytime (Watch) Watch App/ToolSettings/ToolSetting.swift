@@ -24,7 +24,7 @@ enum ToolSetting: Int, CaseIterable {
         case .mode: style.eraserMode.helpDescription
         case .direction: L10n.text("Sets the flat nib angle. The angle changes the stroke shape and width as you draw in different directions.")
         case .opacity: L10n.text("Sets paint coverage: 0% is invisible, 100% gives the brush its full coverage. Textured and translucent brushes retain their character. For the pixel eraser, this sets erasing strength.")
-        case .sensitivity: L10n.text("Sets how different neighboring colors can be from the tapped color during a fill. Lower values keep the fill within similar colors; higher values include more colors.")
+        case .sensitivity: L10n.text("Sets how different neighboring colors can be from the tapped color during a fill. Lower values keep the fill within similar colors; higher values include more colors. The preview shows a Pen circle in the fill color, using the fill opacity when opacity synchronization is on and full opacity otherwise. Turn the Crown to see the unfilled edge colors and when the fill escapes the circle. Tap the focus icon to select the highest whole percentage that keeps the fill inside; one percentage point higher breaks through. If no percentage contains the fill, the button selects 0%.")
         }
     }
 }
