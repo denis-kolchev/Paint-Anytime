@@ -150,7 +150,15 @@ struct InkPaletteBrowser: View {
                 }
             }
             .toolbar {
-                if editing && !browsing {
+                if browsing || currentID == addID {
+                    // Occupy the cancellation slot so watchOS does not insert its own close button.
+                    ToolbarItem(placement: .cancellationAction) {
+                        Color.clear
+                            .frame(width: 1, height: 1)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                } else if editing {
                     ToolbarItem(placement: .cancellationAction) {
                         Button(action: cancelEditing) { Image(systemName: "xmark") }
                             .accessibilityLabel(L10n.text("Cancel"))
@@ -163,6 +171,8 @@ struct InkPaletteBrowser: View {
                 }
             }
         }
+        // watchOS supplies a modal close button separately from the navigation back button.
+        .interactiveDismissDisabled(browsing || currentID == addID)
         .onChange(of: moveGestureActive) { _, active in
             if !active { cancelMove() }
         }
