@@ -79,6 +79,7 @@ final class CanvasController: ObservableObject {
     }
 
     func deleteLayer(_ id: UUID) {
+        guard document.layers.count > 1, document.layers.contains(where: { $0.id == id }) else { return }
         editLayers {
             $0.layers.removeAll { $0.id == id }
             if $0.layers.isEmpty { $0.layers = [CanvasLayer()] }

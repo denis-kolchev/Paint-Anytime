@@ -543,6 +543,7 @@ extension View {
 
 struct DestructiveConfirmationView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @Environment(\.layoutDirection) private var layoutDirection
     let title: String
     let confirmTitle: String
     var cancelTitle: String = L10n.text("No")
@@ -557,7 +558,7 @@ struct DestructiveConfirmationView: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
 
-                HStack(spacing: 8) {
+                ConfirmationButtonsLayout(layoutDirection: layoutDirection) {
                     Button(action: onCancel) {
                         Text(cancelTitle)
                             .frame(maxWidth: .infinity, minHeight: 32)
@@ -580,6 +581,42 @@ struct DestructiveConfirmationView: View {
             .padding(.vertical, 16)
         }
         .background(.black)
+    }
+}
+
+/// Share spare width equally after measuring the localized button labels.
+private struct ConfirmationButtonsLayout: Layout {
+    let layoutDirection: LayoutDirection
+    private let spacing: CGFloat = 8
+
+    private func widths(for proposedWidth: CGFloat?, subviews: Subviews) -> [CGFloat] {
+        let ideal = subviews.map { $0.sizeThatFits(.unspecified).width }
+        guard ideal.count == 2 else { return ideal }
+        let available = max(0, (proposedWidth ?? (ideal[0] + ideal[1] + spacing)) - spacing)
+        let minimum = min(44, available / 2)
+        let first = min(available - minimum, max(minimum, (available + ideal[0] - ideal[1]) / 2))
+        return [first, available - first]
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let widths = widths(for: proposal.width, subviews: subviews)
+        let height = zip(subviews, widths).map { view, width in
+            view.sizeThatFits(ProposedViewSize(width: width, height: nil)).height
+        }.max() ?? 0
+        return CGSize(width: widths.reduce(0, +) + spacing, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let widths = widths(for: bounds.width, subviews: subviews)
+        var offset: CGFloat = 0
+        for (view, width) in zip(subviews, widths) {
+            let x = layoutDirection == .rightToLeft
+                ? bounds.maxX - offset - width / 2
+                : bounds.minX + offset + width / 2
+            view.place(at: CGPoint(x: x, y: bounds.midY), anchor: .center,
+                       proposal: ProposedViewSize(width: width, height: bounds.height))
+            offset += width + spacing
+        }
     }
 }
 

@@ -6,6 +6,7 @@ struct WatchLayersView: View {
     let canvasSize: CGSize
     private let rowSpacing: CGFloat = 4
     @State private var editingLayer: UUID?
+    @State private var pendingLayerDeletion: UUID?
     @State private var showsPaperEditor = false
     @GestureState private var isReordering = false
     @State private var draggedLayer: UUID?
@@ -83,6 +84,17 @@ struct WatchLayersView: View {
                     LayerSettingsView(controller: controller, layerID: id, canvasSize: canvasSize)
                 }
             }
+            .fullScreenCover(isPresented: Binding(
+                get: { pendingLayerDeletion != nil },
+                set: { if !$0 { pendingLayerDeletion = nil } }
+            )) {
+                DestructiveConfirmationView(title: L10n.text("Delete this layer?"), confirmTitle: L10n.text("Delete")) {
+                    pendingLayerDeletion = nil
+                } onConfirm: {
+                    if let id = pendingLayerDeletion { controller.deleteLayer(id) }
+                    pendingLayerDeletion = nil
+                }
+            }
             .navigationDestination(isPresented: $showsPaperEditor) {
                 LayerSettingsView(controller: controller, layerID: nil, canvasSize: canvasSize)
             }
@@ -105,7 +117,11 @@ struct WatchLayersView: View {
         .accessibilityAddTraits(controller.selectedLayer.id == layer.id ? [.isSelected] : [])
         .accessibilityAction(named: Text(L10n.text("Move up"))) { move(layer.id, up: true) }
         .accessibilityAction(named: Text(L10n.text("Move down"))) { move(layer.id, up: false) }
-        .accessibilityAction(named: Text(L10n.text("Delete"))) { controller.deleteLayer(layer.id) }
+        .accessibilityActions {
+            if controller.document.layers.count > 1 {
+                Button(L10n.text("Delete")) { pendingLayerDeletion = layer.id }
+            }
+        }
         .overlay {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(controller.selectedLayer.id == layer.id ? Color.accentColor : .clear, lineWidth: 2)
@@ -263,6 +279,7 @@ private struct LayerSettingsView: View {
     @State private var transparencyFeedbackID: UUID?
     @Environment(\.dismiss) private var dismiss
     @State private var showsColorEditor = false
+    @State private var showsDeleteConfirmation = false
     private var layer: CanvasLayer? {
         guard let layerID else {
             return CanvasLayer(name: L10n.text("Canvas"),
@@ -443,16 +460,25 @@ private struct LayerSettingsView: View {
                 range: 0...100))
             .navigationTitle(layer.displayName)
             .toolbar {
-                if let layerID {
+                if layerID != nil, controller.document.layers.count > 1 {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(role: .destructive) {
-                            controller.deleteLayer(layerID)
-                            dismiss()
+                            showsDeleteConfirmation = true
                         } label: {
                             Image(systemName: "trash")
                         }
                         .accessibilityLabel(L10n.text("Delete"))
                     }
+                }
+            }
+            .fullScreenCover(isPresented: $showsDeleteConfirmation) {
+                DestructiveConfirmationView(title: L10n.text("Delete this layer?"), confirmTitle: L10n.text("Delete")) {
+                    showsDeleteConfirmation = false
+                } onConfirm: {
+                    showsDeleteConfirmation = false
+                    guard let layerID, controller.document.layers.count > 1 else { return }
+                    controller.deleteLayer(layerID)
+                    dismiss()
                 }
             }
             .navigationDestination(isPresented: $showsColorEditor) {
