@@ -172,17 +172,6 @@ struct InkPaletteEditor: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel(L10n.text("Create color"))
-                        Button {
-                            sampledColor = nil
-                            showsEyedropper = true
-                        } label: {
-                            Image(systemName: "eyedropper")
-                                .font(.title2)
-                                .frame(maxWidth: .infinity)
-                                .aspectRatio(1, contentMode: .fit)
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(L10n.text("Eyedropper"))
                     }
                 }
                 .padding(.horizontal, 10)
@@ -196,6 +185,19 @@ struct InkPaletteEditor: View {
             .scrollDisabled(draggedID != nil)
             }
             .coordinateSpace(name: "paletteViewport")
+        }
+        .toolbar {
+            if !isEditing {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        sampledColor = nil
+                        showsEyedropper = true
+                    } label: {
+                        Image(systemName: "eyedropper")
+                    }
+                    .accessibilityLabel(L10n.text("Eyedropper"))
+                }
+            }
         }
         .fullScreenCover(isPresented: $showsEyedropper, onDismiss: {
             if sampledColor != nil { showsColorEditor = true }

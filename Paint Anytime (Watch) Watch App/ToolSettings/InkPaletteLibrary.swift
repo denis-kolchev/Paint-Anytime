@@ -92,6 +92,7 @@ struct InkPaletteBrowser: View {
     @State private var currentID: String
     @State private var browsing = false
     @State private var editing = false
+    @State private var paletteBeforeEditing: SavedInkPalette?
     @State private var showsColorEditor = false
     @State private var sampledColor: SIMD4<Float>?
     @State private var pendingDeletionID: String?
@@ -134,6 +135,7 @@ struct InkPaletteBrowser: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .navigationBarBackButtonHidden(true)
             .navigationDestination(isPresented: $showsColorEditor) {
                 CustomInkEditor(initialColor: sampledColor) { preset in
                     guard let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
@@ -148,9 +150,11 @@ struct InkPaletteBrowser: View {
                 }
             }
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button { dismiss() } label: { Image(systemName: "xmark") }
-                        .accessibilityLabel(L10n.text("Cancel"))
+                if editing && !browsing {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(action: cancelEditing) { Image(systemName: "xmark") }
+                            .accessibilityLabel(L10n.text("Cancel"))
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
@@ -174,6 +178,7 @@ struct InkPaletteBrowser: View {
             Button(L10n.text("Move right")) { move(entry.id, by: 1) }
                 .disabled(library.palettes.last?.id == entry.id)
             Button(L10n.text("Delete"), role: .destructive) { delete(entry.id) }
+                .disabled(!canDeletePalette)
             Button(L10n.text("Cancel"), role: .cancel) {}
         }
     }
@@ -184,8 +189,27 @@ struct InkPaletteBrowser: View {
         }
     }
 
+    private func beginEditing() {
+        guard let palette = library.palettes.first(where: { $0.id == currentID }) else { return }
+        paletteBeforeEditing = palette
+        editing = true
+        setBrowsing(false)
+    }
+
+    private func cancelEditing() {
+        guard let original = paletteBeforeEditing,
+              let index = library.palettes.firstIndex(where: { $0.id == original.id }) else { return }
+        library.palettes[index] = original
+        paletteBeforeEditing = nil
+        sampledColor = nil
+        showsColorEditor = false
+        editing = false
+        setBrowsing(true)
+    }
+
     private func finishEditingOrConfirm() {
         if editing && !browsing {
+            paletteBeforeEditing = nil
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                 editing = false
             }
@@ -321,7 +345,7 @@ struct InkPaletteBrowser: View {
                     Button {
                         if pendingDeletionID != nil {
                             withAnimation(pageAnimation) { pendingDeletionID = nil }
-                        } else if currentID != addID { editing = true; setBrowsing(false) }
+                        } else if currentID != addID { beginEditing() }
                     } label: {
                         Text(L10n.text(pendingDeletionID != nil ? "Cancel" : "Edit"))
                             .font(.body.weight(.medium))
@@ -445,7 +469,11 @@ struct InkPaletteBrowser: View {
         .buttonStyle(.plain)
         .accessibilityLabel(entry.palette.displayTitle)
         .accessibilityAddTraits(currentID == entry.id ? [.isSelected] : [])
-        .accessibilityAction(named: Text(L10n.text("Delete"))) { delete(entry.id) }
+        .accessibilityActions {
+            if canDeletePalette {
+                Button(L10n.text("Delete")) { delete(entry.id) }
+            }
+        }
         .accessibilityAction(named: Text(L10n.text("Move left"))) { move(entry.id, by: -1) }
         .accessibilityAction(named: Text(L10n.text("Move right"))) { move(entry.id, by: 1) }
         .accessibilityAdjustableAction { adjustPage($0) }
@@ -523,6 +551,7 @@ struct InkPaletteBrowser: View {
     }
 
     private var pageIDs: [String] { library.palettes.map(\.id) + [addID] }
+    private var canDeletePalette: Bool { library.visiblePalettes.count > 1 }
     private var pageIndex: Int { pageIDs.firstIndex(of: currentID) ?? 0 }
     private var pageAnimation: Animation? {
         reduceMotion ? nil : .easeOut(duration: 0.22)
@@ -548,7 +577,9 @@ struct InkPaletteBrowser: View {
                 guard pendingDeletionID == nil, movingID == nil else { return }
                 transaction.animation = nil
                 if abs(value.translation.height) > abs(value.translation.width) {
-                    if currentID != addID { translation.height = min(0, value.translation.height) }
+                    if canDeletePalette, currentID != addID {
+                        translation.height = min(0, value.translation.height)
+                    }
                     return
                 }
                 let atEdge = (pageIndex == 0 && value.translation.width > 0)
@@ -558,7 +589,7 @@ struct InkPaletteBrowser: View {
             .onEnded { value in
                 guard pendingDeletionID == nil, movingID == nil else { return }
                 if abs(value.translation.height) > abs(value.translation.width) {
-                    if currentID != addID && value.translation.height < -30 {
+                    if canDeletePalette, currentID != addID, value.translation.height < -30 {
                         withAnimation(pageAnimation) { pendingDeletionID = currentID }
                     }
                     return
@@ -614,7 +645,8 @@ struct InkPaletteBrowser: View {
     }
 
     private func delete(_ id: String) {
-        guard let index = library.palettes.firstIndex(where: { $0.id == id }) else { return }
+        guard canDeletePalette,
+              let index = library.palettes.firstIndex(where: { $0.id == id }) else { return }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
             pendingDeletionID = nil
             library.palettes.remove(at: index)
