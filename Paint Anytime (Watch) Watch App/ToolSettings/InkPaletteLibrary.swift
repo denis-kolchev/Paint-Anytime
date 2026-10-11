@@ -318,16 +318,20 @@ struct InkPaletteBrowser: View {
                         }
                     }
 
-                    Button(L10n.text(pendingDeletionID != nil ? "Cancel" : "Edit")) {
+                    Button {
                         if pendingDeletionID != nil {
                             withAnimation(pageAnimation) { pendingDeletionID = nil }
                         } else if currentID != addID { editing = true; setBrowsing(false) }
+                    } label: {
+                        Text(L10n.text(pendingDeletionID != nil ? "Cancel" : "Edit"))
+                            .font(.body.weight(.medium))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
+                            .padding(.horizontal, 12)
+                            .frame(width: width * 0.46, height: buttonHeight)
+                            .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
-                    .font(.body.weight(.medium))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
-                    .frame(width: width * 0.46, height: buttonHeight)
                     .background {
                         Capsule().fill(LinearGradient(colors: [.white.opacity(0.14), .white.opacity(0.08)],
                                                       startPoint: .top, endPoint: .bottom))

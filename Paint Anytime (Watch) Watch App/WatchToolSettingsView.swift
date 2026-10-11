@@ -185,15 +185,7 @@ struct WatchToolSettingsView: View {
                                         crownFocused = false
                                         showsPalette = true
                                     } label: {
-                                        VStack(spacing: 8) {
-                                            Image(systemName: "plus.circle.fill")
-                                                .font(.system(size: 30))
-                                            Text(L10n.text("Tap to add more colors"))
-                                                .font(.headline)
-                                                .multilineTextAlignment(.center)
-                                                .minimumScaleFactor(0.75)
-                                        }
-                                        .padding(12)
+                                        AddColorsPrompt()
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                         .background(.black.opacity(0.85))
                                         .contentShape(Rectangle())
@@ -224,7 +216,7 @@ struct WatchToolSettingsView: View {
                             .font(.caption2)
                             .monospacedDigit()
                             .lineLimit(1)
-                            .minimumScaleFactor(0.7)
+                            .minimumScaleFactor(selection == .color && isAddingColor ? 0.5 : 0.7)
                     }
                     // Keep both panels alive: animate their space and contents together.
                     GeometryReader { pickerGeometry in
@@ -562,5 +554,59 @@ private struct TutorialToolSwipeGuide: View {
                     offset = 0
                 }
             }
+    }
+}
+
+/// Reflow at each shared scale before choosing the largest prompt that fits.
+private struct AddColorsPrompt: View {
+    var body: some View {
+        ViewThatFits(in: .vertical) {
+            prompt(scale: 1)
+            prompt(scale: 0.9)
+            prompt(scale: 0.8)
+            prompt(scale: 0.7)
+            prompt(scale: 0.6)
+            prompt(scale: 0.5)
+            prompt(scale: 0.4)
+            prompt(scale: 0.3)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(12)
+    }
+
+    private func prompt(scale: CGFloat) -> some View {
+        ScaledPromptLayout(scale: scale) {
+            VStack(spacing: 8) {
+                Image(systemName: "plus.circle.fill")
+                    .font(.system(size: 30))
+                    .accessibilityHidden(true)
+                Text(L10n.text("Tap to add more colors"))
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .scaleEffect(scale)
+        }
+    }
+}
+
+/// A smaller visual scale gets a wider typesetting area, keeping the final width constant.
+private struct ScaledPromptLayout: Layout {
+    let scale: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let content = subviews.first else { return .zero }
+        let width = proposal.width.map { max(0, $0) / scale }
+        let size = content.sizeThatFits(ProposedViewSize(width: width, height: nil))
+        return CGSize(width: size.width * scale, height: size.height * scale)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(
+            at: CGPoint(x: bounds.midX, y: bounds.midY),
+            anchor: .center,
+            proposal: ProposedViewSize(width: bounds.width / scale, height: nil)
+        )
     }
 }
