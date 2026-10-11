@@ -449,7 +449,8 @@ private struct InkComponentsEditor: View {
                      blue: components[2] / 255, opacity: 1)
     }
     private func valueLabel(_ index: Int) -> String {
-        "\(Int(values[index].rounded()))" + (isHue ? (index == 0 ? "°" : "%") : "")
+        if isHue && index != 0 { return L10n.percent(values[index] / 100) }
+        return "\(Int(values[index].rounded()))" + (isHue ? "°" : "")
     }
     private var channelValue: Binding<Double> {
         Binding { values[selectedChannel] } set: { value in

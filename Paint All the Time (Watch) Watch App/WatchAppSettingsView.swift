@@ -221,6 +221,9 @@ struct AppLanguageSelectionView: View {
                 } label: {
                     HStack {
                         Text(verbatim: language.nativeName)
+                            // Native names must use their own script, not the selected UI language.
+                            .typesettingLanguage(.explicit(Locale.Language(identifier: language.id)))
+                            .environment(\.locale, Locale(identifier: language.id))
                         Spacer()
                         if AppLanguage.currentCode == language.id {
                             Image(systemName: "checkmark")
@@ -366,7 +369,7 @@ private struct ColorBlendingInformationView: View {
                 ColorBlendingIllustration(mode: mode)
                     .aspectRatio(1, contentMode: .fit)
                     .accessibilityLabel(L10n.text("Blend chart: yellow passes increase to the right; blue passes increase downward."))
-                Text(L10n.text("Yellow → · Blue ↓\n0–10 passes, 80% opacity. Yellow first, then blue. Watercolor example; marker builds up more gently."))
+                Text(L10n.format("Yellow → · Blue ↓\n0–10 passes, %@ opacity. Yellow first, then blue. Watercolor example; marker builds up more gently.", L10n.percent(0.8)))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -388,7 +391,7 @@ private struct ColorBlendingInformationView: View {
         case .normal: L10n.text("Block in flat colors, paint over mistakes, and add crisp details. Opaque strokes replace the color below. Lower opacity lets you build transitions gradually without extra darkening.")
         case .screen: L10n.text("Build soft highlights, haze, and reflected light over darker paint. Repeated passes brighten the image. Black has no effect, and Screen cannot add visible color over white.")
         case .overlay: L10n.text("Tint existing shading while boosting contrast: shadows deepen and light areas brighten. Useful for color accents on a modeled form. Pure black and white stay unchanged; start over midtones.")
-        case .softLight: L10n.text("Gently warm or cool existing paint and adjust its lighting. Softer than Overlay, useful for subtle shading and atmosphere. Neutral 50% gray has no effect; work over midtones.")
+        case .softLight: L10n.format("Gently warm or cool existing paint and adjust its lighting. Softer than Overlay, useful for subtle shading and atmosphere. Neutral %@ gray has no effect; work over midtones.", L10n.percent(0.5))
         case .hardLight: L10n.text("Paint dramatic light and strong colored shadows. Light brush colors brighten; dark brush colors deepen the image. Useful for bold lighting accents; lower opacity for more control.")
         case .darken: L10n.text("Add darker accents without lightening existing dark details. Each RGB channel keeps the darker value. Useful for reinforcing linework or shading; repeated identical opaque passes stop changing the result.")
         case .lighten: L10n.text("Add light accents while protecting brighter details. Each RGB channel keeps the lighter value. Useful for highlights on dark paint; it cannot leave a visible mark over white.")

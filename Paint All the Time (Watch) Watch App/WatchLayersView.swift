@@ -400,7 +400,7 @@ private struct LayerSettingsView: View {
                     HStack {
                         Text(L10n.text("Opacity"))
                         Spacer(minLength: 4)
-                        Text("\(Int((opacity * 100).rounded()))%")
+                        Text(verbatim: L10n.percent(opacity))
                             .monospacedDigit()
                     }
                     .font(.system(size: 12, weight: .semibold))
@@ -416,7 +416,7 @@ private struct LayerSettingsView: View {
                             thumbColor: Color(white: 1 - opacity))
                             .accessibilityElement(children: .ignore)
                             .accessibilityLabel(L10n.text("Opacity"))
-                            .accessibilityValue("\(Int((opacity * 100).rounded()))%")
+                            .accessibilityValue(L10n.percent(opacity))
                             .accessibilityAdjustableAction { direction in
                                 switch direction {
                                 case .increment: setOpacity(opacity * 100 + 1)

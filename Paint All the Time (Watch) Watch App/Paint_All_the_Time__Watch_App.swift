@@ -19,6 +19,7 @@ struct Paint_All_the_Time__Watch__Watch_AppApp: App {
         return WindowGroup {
             WatchWelcomeView()
                 .environment(\.locale, Locale(identifier: code))
+                .typesettingLanguage(.explicit(Locale.Language(identifier: code)))
                 .environment(\.layoutDirection, .leftToRight)
         }
     }

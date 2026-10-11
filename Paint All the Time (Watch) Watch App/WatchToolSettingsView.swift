@@ -91,8 +91,8 @@ struct WatchToolSettingsView: View {
 
     private var valueTitle: String {
         switch selection {
-        case .sensitivity: "\(Int((controller.pencilStyle.effectiveFillSensitivity * 100).rounded()))%"
-        case .opacity: "\(Int((controller.pencilStyle.effectiveOpacity * 100).rounded()))%"
+        case .sensitivity: L10n.percent(Double(controller.pencilStyle.effectiveFillSensitivity))
+        case .opacity: L10n.percent(Double(controller.pencilStyle.effectiveOpacity))
         case .width: L10n.format("%d pt", Int(controller.pencilStyle.width))
         case .color: isAddingColor ? L10n.text("Add colors") : colors[colorIndex].name
         case .instrument: controller.pencilStyle.instrument.title

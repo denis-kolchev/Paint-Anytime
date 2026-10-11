@@ -186,7 +186,8 @@ struct WatchCanvasSizeView: View {
             }
                 .frame(width: 25).disabled(value.wrappedValue <= range.lowerBound)
                 .accessibilityLabel("− " + L10n.text(title))
-            Text("\(Int(value.wrappedValue)) \(suffix)")
+            Text(verbatim: suffix == "%" ? L10n.percent(value.wrappedValue / 100)
+                 : "\(Int(value.wrappedValue)) \(suffix)")
                 .monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
                 .frame(width: 53)
                 .foregroundStyle(range.contains(value.wrappedValue) ? Color.primary : .orange)
@@ -252,8 +253,8 @@ struct WatchCanvasSizeView: View {
                         .lineLimit(1).minimumScaleFactor(0.7)
                     if mode == 0 {
                         HStack(spacing: 4) {
-                            compactButton("50%") { setScale(0.5) }
-                            compactButton("100%") { setScale(1) }
+                            compactButton(L10n.percent(0.5)) { setScale(0.5) }
+                            compactButton(L10n.percent(1)) { setScale(1) }
                         }.frame(height: 18)
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading)
