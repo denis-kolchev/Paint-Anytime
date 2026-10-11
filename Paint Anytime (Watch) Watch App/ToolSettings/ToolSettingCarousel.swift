@@ -57,9 +57,6 @@ struct ToolSettingCarousel: View {
         GeometryReader { geometry in
             let width = itemWidth(in: geometry.size.width)
             let titleWidth = max(0, width - 2 * titleHorizontalPadding)
-            // Scale the entire set equally; per-label minimumScaleFactor makes
-            // long translations smaller than their neighbors and may overflow.
-            let titleScale = min(1, titleWidth / max(1, measuredTitleWidth))
             // Reserve space for angle controls without resizing the titles.
             let viewportWidth = max(0, geometry.size.width - trailingInset)
             let sideInset = max(0, (viewportWidth - width) / 2)
@@ -74,8 +71,7 @@ struct ToolSettingCarousel: View {
                                     .font(titleFont)
                                     .foregroundStyle(selection == setting ? .primary : .secondary)
                                     .lineLimit(1)
-                                    .fixedSize()
-                                    .scaleEffect(titleScale)
+                                    .minimumScaleFactor(0.1)
                                     .frame(width: titleWidth, height: 30)
                                     .clipped()
                                     .padding(.horizontal, titleHorizontalPadding)

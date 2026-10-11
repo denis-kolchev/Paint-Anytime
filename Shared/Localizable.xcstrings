@@ -2610,7 +2610,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавляйте свет для искр, неона и яркого свечения. Значения RGB складываются до белого, поэтому блики быстро теряют детали. Лучше работает по тёмному рисунку с небольшой прозрачностью."
+            "value" : "Добавляйте свет для искр, неона и яркого свечения. Значения RGB складываются до белого, поэтому блики быстро теряют детали. Лучше работает по тёмному рисунку с небольшой плотностью."
           }
         },
         "sv" : {
@@ -4686,7 +4686,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Заливайте основные цвета, перекрывайте ошибки и добавляйте чёткие детали. Непрозрачный мазок заменяет нижний цвет. При меньшей прозрачности можно плавно набирать цвет без дополнительного затемнения."
+            "value" : "Заливайте основные цвета, перекрывайте ошибки и добавляйте чёткие детали. Непрозрачный мазок заменяет нижний цвет. При меньшей плотности можно плавно набирать цвет без дополнительного затемнения."
           }
         },
         "sv" : {
@@ -7629,7 +7629,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выберите инструмент рисования, чтобы изменить прозрачность."
+            "value" : "Выберите инструмент рисования, чтобы изменить плотность."
           }
         },
         "sv" : {
@@ -11785,7 +11785,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Создавайте яркое свечение, горячие блики и светящиеся края поверх цвета. Светлая кисть быстро выбеливает блики. Используйте небольшую прозрачность; поверх непрозрачной белой краски эффект не виден."
+            "value" : "Создавайте яркое свечение, горячие блики и светящиеся края поверх цвета. Светлая кисть быстро выбеливает блики. Используйте небольшую плотность; поверх непрозрачной белой краски эффект не виден."
           }
         },
         "sv" : {
@@ -13342,7 +13342,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Углубляйте насыщенные цветные тени и добавляйте жёсткий контраст. Тёмная кисть быстро уводит детали в чёрный. Работайте с небольшой прозрачностью по готовому цвету; непрозрачная белая краска остаётся белой."
+            "value" : "Углубляйте насыщенные цветные тени и добавляйте жёсткий контраст. Тёмная кисть быстро уводит детали в чёрный. Работайте с небольшой плотностью по готовому цвету; непрозрачная белая краска остаётся белой."
           }
         },
         "sv" : {
@@ -15941,7 +15941,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "На каждом примере синяя акварель нанесена поверх жёлтой с полной прозрачностью."
+            "value" : "На каждом примере синяя акварель нанесена поверх жёлтой с полной плотностью."
           }
         },
         "sv" : {
@@ -28407,7 +28407,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Прозрачность"
+            "value" : "Плотность"
           }
         },
         "sv" : {
@@ -29448,7 +29448,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Откройте «Прозрачность» и вращайте Crown."
+            "value" : "Откройте «Плотность» и вращайте Crown."
           }
         },
         "sv" : {
@@ -29621,7 +29621,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Откройте «Прозрачность»."
+            "value" : "Откройте «Плотность»."
           }
         },
         "sv" : {
@@ -29967,7 +29967,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Перейди в раздел «Инструмент» и выбери «Тростник» колёсиком или нажатием в списке инструментов."
+            "value" : "Перейди в раздел «Режим» и выбери «Тростник» колёсиком или нажатием в списке инструментов."
           }
         },
         "sv" : {
@@ -30141,7 +30141,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Откройте «Инструмент» и выберите «Тростник»."
+            "value" : "Откройте «Режим» и выберите «Тростник»."
           }
         },
         "sv" : {
@@ -30315,7 +30315,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Откройте «Инструмент» и нажмите ⓘ."
+            "value" : "Откройте «Режим» и нажмите ⓘ."
           }
         },
         "sv" : {
@@ -30489,7 +30489,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Откройте «Инструмент»."
+            "value" : "Откройте «Режим»."
           }
         },
         "sv" : {
@@ -32403,7 +32403,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Рисуйте выразительный свет и насыщенные цветные тени. Светлые цвета кисти осветляют рисунок, тёмные — затемняют. Подходит для резких световых акцентов; меньшая прозрачность даёт больше контроля."
+            "value" : "Рисуйте выразительный свет и насыщенные цветные тени. Светлые цвета кисти осветляют рисунок, тёмные — затемняют. Подходит для резких световых акцентов; меньшая плотность даёт больше контроля."
           }
         },
         "sv" : {
@@ -39154,7 +39154,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Чувствительность"
+            "value" : "Допуск"
           }
         },
         "sv" : {
@@ -39846,7 +39846,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Используйте общую толщину, прозрачность и цвет для всех инструментов. Цвет и прозрачность не применяются к стиралке."
+            "value" : "Используйте общую толщину, плотность и цвет для всех инструментов. Цвет и плотность не применяются к стиралке."
           }
         },
         "sv" : {
@@ -40192,7 +40192,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Общая прозрачность"
+            "value" : "Общая плотность"
           }
         },
         "sv" : {
@@ -42447,7 +42447,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Смахните влево к «Прозрачность»."
+            "value" : "Смахните влево к «Плотность»."
           }
         },
         "sv" : {
@@ -42621,7 +42621,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Смахните влево к «Инструмент»."
+            "value" : "Смахните влево к «Режим»."
           }
         },
         "sv" : {
@@ -45919,7 +45919,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Коснитесь связной области, чтобы залить её выбранным цветом с заданной непрозрачностью."
+            "value" : "Коснитесь связной области, чтобы залить её выбранным цветом с заданной плотностью."
           }
         },
         "sv" : {
@@ -47651,7 +47651,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Инструмент"
+            "value" : "Режим"
           }
         },
         "sv" : {
@@ -49038,7 +49038,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Вращайте Crown, чтобы изменить прозрачность"
+            "value" : "Вращайте Crown, чтобы изменить плотность"
           }
         },
         "sv" : {
@@ -53545,7 +53545,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Жёлтый → · Синий ↓\n0–10 проходов, прозрачность %@. Сначала жёлтый, затем синий. Пример для акварели; маркер набирает цвет мягче."
+            "value" : "Жёлтый → · Синий ↓\n0–10 проходов, плотность %@. Сначала жёлтый, затем синий. Пример для акварели; маркер набирает цвет мягче."
           }
         },
         "sv" : {
@@ -55321,6 +55321,871 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "縮放百分之%d"
+          }
+        }
+      }
+    },
+    "Sets how different neighboring colors can be from the tapped color during a fill. Lower values keep the fill within similar colors; higher values include more colors." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يضبط مدى اختلاف الألوان المجاورة عن لون نقطة اللمس أثناء التعبئة. تحصر القيم المنخفضة التعبئة في الألوان المتشابهة، وتشمل القيم المرتفعة ألوانًا أكثر."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nastavuje, jak moc se při vyplňování mohou sousední barvy lišit od barvy v místě klepnutí. Nízké hodnoty omezují výplň na podobné barvy, vysoké zahrnují více barev."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indstiller hvor meget nabofarver må afvige fra farven på det berørte punkt under udfyldning. Lave værdier begrænser udfyldningen til lignende farver; høje værdier medtager flere farver."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legt fest, wie stark benachbarte Farben beim Füllen von der angetippten Farbe abweichen dürfen. Niedrige Werte beschränken die Füllung auf ähnliche Farben, höhere schließen mehr Farben ein."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ορίζει πόσο μπορούν να διαφέρουν τα γειτονικά χρώματα από το χρώμα στο σημείο αφής κατά το γέμισμα. Οι χαμηλές τιμές περιορίζουν το γέμισμα σε παρόμοια χρώματα, ενώ οι υψηλές περιλαμβάνουν περισσότερα χρώματα."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets how different neighboring colors can be from the tapped color during a fill. Lower values keep the fill within similar colors; higher values include more colors."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define cuánto pueden diferir los colores vecinos del color tocado al rellenar. Los valores bajos limitan el relleno a colores similares; los altos incluyen más colores."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Määrittää, kuinka paljon viereiset värit saavat poiketa kosketetun kohdan väristä täytettäessä. Pienet arvot rajaavat täytön samankaltaisiin väreihin, suuret sisältävät enemmän värejä."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Règle l’écart de couleur admis entre les pixels voisins et le point touché lors du remplissage. Une valeur faible limite le remplissage aux couleurs proches ; une valeur élevée inclut davantage de couleurs."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קובע עד כמה צבעים סמוכים יכולים להיות שונים מהצבע בנקודת הנגיעה בזמן מילוי. ערכים נמוכים מגבילים את המילוי לצבעים דומים; ערכים גבוהים כוללים יותר צבעים."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beállítja, mennyire térhetnek el a szomszédos színek a megérintett színtől kitöltéskor. Az alacsony értékek hasonló színekre korlátozzák a kitöltést, a magasabbak több színt vonnak be."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mengatur seberapa jauh warna di sekitar boleh berbeda dari warna yang diketuk saat mengisi. Nilai rendah membatasi isian pada warna serupa; nilai tinggi mencakup lebih banyak warna."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta quanto i colori vicini possono differire dal colore toccato durante il riempimento. Valori bassi limitano il riempimento ai colori simili; valori alti includono più colori."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "塗りつぶす際、隣接する色とタップした位置の色との違いをどこまで許容するかを設定します。低い値では似た色だけを、高い値ではより多くの色を塗りつぶします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "채우기 시 인접 색상이 탭한 색상과 얼마나 달라도 되는지 설정합니다. 낮은 값은 비슷한 색상만 채우고 높은 값은 더 많은 색상을 포함합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angir hvor mye nabofarger kan avvike fra fargen på punktet du trykket på under fylling. Lave verdier begrenser fyllet til lignende farger; høye verdier tar med flere farger."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stelt in hoeveel aangrenzende kleuren bij het vullen mogen afwijken van de aangetikte kleur. Lage waarden beperken de vulling tot vergelijkbare kleuren; hoge waarden omvatten meer kleuren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawia dopuszczalną różnicę między sąsiednimi kolorami a kolorem dotkniętego punktu podczas wypełniania. Niskie wartości ograniczają wypełnienie do podobnych kolorów, wysokie obejmują więcej kolorów."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define quanto as cores vizinhas podem diferir da cor tocada durante o preenchimento. Valores baixos limitam o preenchimento a cores semelhantes; valores altos incluem mais cores."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define quanto as cores vizinhas podem diferir da cor tocada durante o preenchimento. Valores baixos limitam o preenchimento a cores semelhantes; valores altos incluem mais cores."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Допуск определяет, насколько цвет соседних пикселей может отличаться от цвета в точке касания при заливке. Низкое значение ограничивает заливку близкими цветами, высокое — включает больше цветов."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ställer in hur mycket närliggande färger får skilja sig från den tryckta färgen vid fyllning. Låga värden begränsar fyllningen till liknande färger; höga värden inkluderar fler färger."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำหนดว่าสีข้างเคียงจะแตกต่างจากสีที่แตะได้มากเพียงใดขณะเติมสี ค่าต่ำจะจำกัดการเติมไว้ที่สีใกล้เคียง ส่วนค่าสูงจะรวมสีมากขึ้น"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doldurma sırasında komşu renklerin dokunulan renkten ne kadar farklı olabileceğini ayarlar. Düşük değerler dolguyu benzer renklerle sınırlar; yüksek değerler daha fazla rengi kapsar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задає, наскільки сусідні кольори можуть відрізнятися від кольору в точці дотику під час заливки. Низькі значення обмежують заливку близькими кольорами, високі — охоплюють більше кольорів."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đặt mức chênh lệch cho phép giữa màu lân cận và màu tại điểm chạm khi tô vùng. Giá trị thấp chỉ tô các màu tương tự; giá trị cao bao gồm nhiều màu hơn."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置填充时相邻颜色与点击位置颜色之间允许的差异。较低的值只填充相近颜色，较高的值会包含更多颜色。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定填色時相鄰顏色與點選位置顏色之間允許的差異。較低的值只填入相近顏色，較高的值會包含更多顏色。"
+          }
+        }
+      }
+    },
+    "Sets the drawing color. Choose Add colors to edit your palette." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يضبط لون الرسم. اختر إضافة ألوان لتعديل لوحة الألوان."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nastavuje barvu kreslení. Paletu upravíte volbou Přidat barvy."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indstiller tegnefarven. Vælg Tilføj farver for at redigere paletten."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legt die Zeichenfarbe fest. Wähle Farben hinzufügen, um die Palette zu bearbeiten."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ορίζει το χρώμα σχεδίασης. Επιλέξτε Προσθήκη χρωμάτων για να επεξεργαστείτε την παλέτα."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets the drawing color. Choose Add colors to edit your palette."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define el color de dibujo. Elige Añadir colores para editar la paleta."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Määrittää piirustusvärin. Muokkaa palettia valitsemalla Lisää värejä."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Règle la couleur de dessin. Choisissez Ajouter des couleurs pour modifier la palette."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קובע את צבע הציור. יש לבחור בהוספת צבעים כדי לערוך את לוח הצבעים."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beállítja a rajzolás színét. A paletta szerkesztéséhez válaszd a Színek hozzáadása lehetőséget."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mengatur warna gambar. Pilih Tambahkan warna untuk mengedit palet."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta il colore del disegno. Scegli Aggiungi colori per modificare la tavolozza."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "描画色を設定します。「色を追加」を選ぶとパレットを編集できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "그리기 색상을 설정합니다. 색상 추가를 선택하면 팔레트를 편집할 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angir tegnefargen. Velg Legg til farger for å redigere paletten."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stelt de tekenkleur in. Kies Kleuren toevoegen om het palet te bewerken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawia kolor rysowania. Wybierz Dodaj kolory, aby edytować paletę."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define a cor do desenho. Escolha Adicionar cores para editar a paleta."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define a cor do desenho. Escolha Adicionar cores para editar a paleta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задаёт цвет рисования. Выберите «Добавить цвета», чтобы изменить палитру."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ställer in ritfärgen. Välj Lägg till färger för att redigera paletten."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำหนดสีที่ใช้วาด เลือกเพิ่มสีเพื่อแก้ไขจานสี"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çizim rengini ayarlar. Paleti düzenlemek için Renk ekle seçeneğini kullanın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задає колір малювання. Виберіть «Додати кольори», щоб змінити палітру."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đặt màu vẽ. Chọn Thêm màu để chỉnh sửa bảng màu."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置绘画颜色。选择“添加颜色”可编辑调色板。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定繪畫顏色。選擇「加入顏色」可編輯調色盤。"
+          }
+        }
+      }
+    },
+    "Sets the flat nib angle. The angle changes the stroke shape and width as you draw in different directions." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يضبط زاوية السن المسطح. تغيّر الزاوية شكل الخط وعرضه بحسب اتجاه الرسم."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nastavuje úhel plochého hrotu. Úhel mění tvar a šířku tahu podle směru kreslení."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indstiller den flade penspids vinkel. Vinklen ændrer stregens form og bredde afhængigt af tegneretningen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legt den Winkel der flachen Feder fest. Der Winkel verändert Form und Breite des Strichs je nach Zeichenrichtung."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ορίζει τη γωνία της επίπεδης μύτης. Η γωνία αλλάζει το σχήμα και το πάχος της γραμμής ανάλογα με την κατεύθυνση σχεδίασης."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets the flat nib angle. The angle changes the stroke shape and width as you draw in different directions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define el ángulo de la plumilla plana. El ángulo cambia la forma y el grosor del trazo según la dirección del dibujo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Määrittää litteän kärjen kulman. Kulma muuttaa viivan muotoa ja leveyttä piirustussuunnan mukaan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Règle l’angle de la plume plate. Cet angle modifie la forme et la largeur du trait selon la direction du dessin."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קובע את זווית הציפורן השטוחה. הזווית משנה את צורת הקו ואת עוביו בהתאם לכיוון הציור."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beállítja a lapos tollhegy szögét. A szög a rajzolás irányától függően módosítja a vonal alakját és vastagságát."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mengatur sudut mata pena datar. Sudut mengubah bentuk dan lebar goresan sesuai arah menggambar."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta l’angolo del pennino piatto. L’angolo cambia la forma e lo spessore del tratto in base alla direzione del disegno."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "平たいペン先の角度を設定します。角度によって、描く方向に応じた線の形や太さが変わります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "납작한 펜촉의 각도를 설정합니다. 각도에 따라 그리는 방향별 선의 모양과 두께가 달라집니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angir vinkelen på den flate pennespissen. Vinkelen endrer strekens form og bredde avhengig av tegneretningen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stelt de hoek van de platte penpunt in. De hoek verandert de vorm en breedte van de lijn afhankelijk van de tekenrichting."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawia kąt płaskiej stalówki. Kąt zmienia kształt i grubość kreski zależnie od kierunku rysowania."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define o ângulo da ponta plana. O ângulo altera a forma e a espessura do traço conforme a direção do desenho."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define o ângulo da ponta plana. O ângulo altera a forma e a espessura do traço conforme a direção do desenho."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задаёт угол плоского пера. От угла зависят форма и толщина штриха при рисовании в разных направлениях."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ställer in den platta spetsens vinkel. Vinkeln ändrar linjens form och bredd beroende på ritriktning."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำหนดมุมของหัวปากกาแบน มุมจะเปลี่ยนรูปทรงและความกว้างของเส้นตามทิศทางที่วาด"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Düz kalem ucunun açısını ayarlar. Açı, çizim yönüne göre çizginin şeklini ve kalınlığını değiştirir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задає кут плоского пера. Кут змінює форму й товщину штриха залежно від напрямку малювання."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đặt góc ngòi bút dẹt. Góc này thay đổi hình dạng và độ rộng nét theo hướng vẽ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置扁平笔尖的角度。角度会影响不同绘画方向下笔画的形状和宽度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定扁平筆尖的角度。角度會影響不同繪畫方向下筆畫的形狀和寬度。"
+          }
+        }
+      }
+    },
+    "Sets the stroke width or eraser size." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يضبط عرض الخط أو حجم الممحاة."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nastavuje šířku tahu nebo velikost gumy."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indstiller stregbredden eller viskelæderets størrelse."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legt die Strichbreite oder Radierergröße fest."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ορίζει το πάχος της γραμμής ή το μέγεθος της γόμας."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets the stroke width or eraser size."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define el grosor del trazo o el tamaño de la goma."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Määrittää viivan leveyden tai pyyhekumin koon."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Règle la largeur du trait ou la taille de la gomme."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קובע את עובי הקו או את גודל המחק."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beállítja a vonalvastagságot vagy a radír méretét."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mengatur lebar goresan atau ukuran penghapus."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta lo spessore del tratto o la dimensione della gomma."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "線の太さや消しゴムの大きさを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선 두께 또는 지우개 크기를 설정합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angir strekbredden eller størrelsen på viskelæret."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stelt de lijndikte of gumgrootte in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawia grubość kreski lub rozmiar gumki."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define a espessura do traço ou o tamanho da borracha."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define a espessura do traço ou o tamanho da borracha."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задаёт толщину штриха или размер ластика."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ställer in linjebredden eller suddgummits storlek."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำหนดความกว้างของเส้นหรือขนาดยางลบ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çizgi kalınlığını veya silgi boyutunu ayarlar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задає товщину штриха або розмір гумки."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đặt độ rộng nét vẽ hoặc kích thước tẩy."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置笔画宽度或橡皮擦大小。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定筆畫寬度或橡皮擦大小。"
+          }
+        }
+      }
+    },
+    "Sets paint coverage: 0% is invisible, 100% gives the brush its full coverage. Textured and translucent brushes retain their character. For the pixel eraser, this sets erasing strength." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يضبط تغطية الطلاء: عند 0% يكون غير مرئي، وعند 100% تبلغ الفرشاة أقصى تغطية لها. تحتفظ الفرش المزخرفة وشبه الشفافة بخصائصها. بالنسبة لممحاة البكسل، يضبط هذا الإعداد قوة المحو."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nastavuje krytí barvy: při 0 % je neviditelná, při 100 % má štětec plné krytí. Texturované a průsvitné štětce si zachovávají své vlastnosti. U pixelové gumy nastavuje sílu mazání."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Indstiller farvens dækning: Ved 0 % er farven usynlig, ved 100 % giver penslen fuld dækning. Teksturerede og gennemskinnelige pensler bevarer deres egenskaber. For pixelviskelæderet indstiller dette viskestyrken."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legt die Deckkraft fest: Bei 0 % ist die Farbe unsichtbar, bei 100 % erreicht der Pinsel seine volle Deckkraft. Strukturierte und durchscheinende Pinsel behalten ihre Eigenschaften. Beim Pixelradierer wird damit die Radierstärke eingestellt."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ορίζει την κάλυψη του χρώματος: στο 0% είναι αόρατο, στο 100% το πινέλο δίνει τη μέγιστη κάλυψή του. Τα πινέλα με υφή και τα ημιδιαφανή πινέλα διατηρούν τις ιδιότητές τους. Για τη γόμα pixel, ορίζει την ένταση σβησίματος."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sets paint coverage: 0% is invisible, 100% gives the brush its full coverage. Textured and translucent brushes retain their character. For the pixel eraser, this sets erasing strength."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define la cobertura: al 0 %, la pintura es invisible; al 100 %, el pincel alcanza su cobertura máxima. Los pinceles texturizados y translúcidos conservan sus propiedades. Para la goma de píxeles, define la intensidad del borrado."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Määrittää maalin peittävyyden: 0 % tekee maalista näkymättömän, 100 % antaa siveltimen täyden peittävyyden. Teksturoidut ja läpikuultavat siveltimet säilyttävät ominaisuutensa. Pikselipyyhekumissa tämä määrittää pyyhkimisen voimakkuuden."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Règle la couverture : à 0 %, la peinture est invisible ; à 100 %, la couverture du pinceau est maximale. Les pinceaux texturés et translucides conservent leurs propriétés. Pour la gomme pixel, ce réglage définit la force d’effacement."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קובע את כיסוי הצבע: ב־0% הצבע אינו נראה, וב־100% המברשת מגיעה לכיסוי המרבי שלה. מברשות בעלות מרקם ומברשות שקופות למחצה שומרות על תכונותיהן. במחק הפיקסלים, הגדרה זו קובעת את עוצמת המחיקה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beállítja a festék fedettségét: 0%-nál láthatatlan, 100%-nál az ecset teljes fedettségét adja. A texturált és áttetsző ecsetek megőrzik tulajdonságaikat. A pixelradírnál a törlés erősségét állítja be."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mengatur cakupan cat: 0% tidak terlihat, 100% memberi cakupan penuh kuas. Kuas bertekstur dan tembus cahaya tetap mempertahankan sifatnya. Untuk penghapus piksel, ini mengatur kekuatan penghapusan."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta la copertura: allo 0% la pittura è invisibile, al 100% il pennello raggiunge la copertura massima. I pennelli con texture e traslucidi mantengono le loro proprietà. Per la gomma pixel, imposta l’intensità della cancellazione."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "絵の具の被覆率を設定します。0%では見えなくなり、100%ではブラシの最大の被覆率になります。質感や半透明の特性は保たれます。ピクセル消しゴムでは、消す強さを設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "물감의 덮임 정도를 설정합니다. 0%에서는 보이지 않고 100%에서는 브러시의 최대 덮임 정도가 적용됩니다. 질감과 반투명 특성은 유지됩니다. 픽셀 지우개에서는 지우는 강도를 설정합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angir fargens dekning: Ved 0 % er fargen usynlig, ved 100 % gir penselen full dekning. Teksturerte og gjennomskinnelige pensler beholder egenskapene sine. For pikselviskelæret angir dette viskestyrken."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stelt de dekking in: bij 0% is de verf onzichtbaar, bij 100% bereikt het penseel zijn volledige dekking. Penselen met textuur en doorschijnende penselen behouden hun eigenschappen. Voor de pixelgum stelt dit de gumsterkte in."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustawia krycie farby: przy 0% jest niewidoczna, przy 100% pędzel osiąga pełne krycie. Pędzle teksturowane i półprzezroczyste zachowują swoje właściwości. Dla gumki pikselowej ustawia siłę wymazywania."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define a cobertura: em 0%, a tinta é invisível; em 100%, o pincel atinge a cobertura máxima. Pincéis texturizados e translúcidos mantêm suas propriedades. Na borracha de pixels, define a intensidade do apagamento."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define a cobertura: a 0%, a tinta é invisível; a 100%, o pincel atinge a cobertura máxima. Os pincéis texturados e translúcidos mantêm as suas propriedades. Na borracha de píxeis, define a intensidade de apagamento."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Плотность определяет, насколько краска перекрывает фон: 0% — краска невидима, 100% — максимальное перекрытие для выбранной кисти. Текстурные и полупрозрачные кисти сохраняют свои свойства. Для пиксельного ластика задаёт силу стирания."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ställer in färgens täckning: vid 0 % är färgen osynlig, vid 100 % ger penseln full täckning. Texturerade och genomskinliga penslar behåller sina egenskaper. För pixelsuddgummit ställer detta in suddningsstyrkan."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำหนดการปกคลุมของสี: 0% จะมองไม่เห็น และ 100% จะให้การปกคลุมสูงสุดของแปรง แปรงที่มีพื้นผิวและแปรงกึ่งโปร่งใสยังคงคุณสมบัติเดิม สำหรับยางลบพิกเซล ค่านี้จะกำหนดความแรงในการลบ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boyanın kapatıcılığını ayarlar: %0 görünmezdir, %100 fırçanın tam kapatıcılığını sağlar. Dokulu ve yarı saydam fırçalar özelliklerini korur. Piksel silgisi için silme gücünü ayarlar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задає покриття фарби: 0% — фарба невидима, 100% — максимальне покриття пензля. Текстурні й напівпрозорі пензлі зберігають свої властивості. Для піксельної гумки задає силу стирання."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đặt độ phủ của màu: 0% là vô hình, 100% là độ phủ tối đa của cọ. Cọ có kết cấu và cọ bán trong suốt vẫn giữ đặc tính riêng. Với tẩy điểm ảnh, mục này đặt cường độ xóa."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "设置颜料覆盖程度：0% 时不可见，100% 时达到该画笔的最大覆盖程度。纹理和半透明画笔仍保留其特性。对于像素橡皮擦，此设置控制擦除强度。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "設定顏料覆蓋程度：0% 時不可見，100% 時達到該筆刷的最大覆蓋程度。紋理和半透明筆刷仍保留其特性。對於像素橡皮擦，此設定控制擦除強度。"
           }
         }
       }

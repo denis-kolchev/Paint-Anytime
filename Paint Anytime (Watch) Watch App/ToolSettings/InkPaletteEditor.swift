@@ -112,9 +112,32 @@ struct InkPaletteEditor: View {
                                     .overlay {
                                         if selected {
                                             Circle().strokeBorder(preset.color, lineWidth: 5)
+                                            Circle()
+                                                .inset(by: 4)
+                                                .strokeBorder(.white.opacity(0.2), lineWidth: 1)
                                             Image(systemName: "checkmark")
                                                 .font(.system(size: 22, weight: .semibold))
                                                 .foregroundStyle(preset.color)
+                                                .background {
+                                                    // Match the ring: white at 20% over the swatch color,
+                                                    // rather than white over the canvas behind the glyph.
+                                                    Rectangle()
+                                                        .fill(preset.color)
+                                                        .overlay { Color.white.opacity(0.2) }
+                                                        .padding(-1)
+                                                        .mask {
+                                                            ZStack {
+                                                                ForEach(0..<8) { index in
+                                                                    let angle = Double(index) * .pi / 4
+                                                                    Image(systemName: "checkmark")
+                                                                        .font(.system(size: 22, weight: .semibold))
+                                                                        .foregroundStyle(.white)
+                                                                        .offset(x: cos(angle), y: sin(angle))
+                                                                }
+                                                            }
+                                                        }
+                                                        .accessibilityHidden(true)
+                                                }
                                         }
                                     }
                                     // Keep black swatches visible on the black background.

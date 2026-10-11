@@ -391,7 +391,7 @@ struct WatchToolSettingsView: View {
                 }
         )
         .toolbar {
-            if (selection == .instrument || selection == .mode) && tutorial.allowsToolInfo {
+            if tutorial.allowsToolInfo {
                 ToolbarItem(placement: .topBarLeading) {
                     // Reference: the compact Information button seen after returning
                     // from Width. The shared modifier fixes that diameter on first
@@ -426,8 +426,9 @@ struct WatchToolSettingsView: View {
             if !tutorial.isActive { crownFocused = true }
         }) {
             ToolInformationView(
-                title: selection == .mode ? controller.pencilStyle.eraserMode.title : controller.pencilStyle.instrument.title,
-                description: selection == .mode ? controller.pencilStyle.eraserMode.helpDescription : controller.pencilStyle.instrument.helpDescription
+                title: selection == .mode ? controller.pencilStyle.eraserMode.title
+                    : selection == .instrument ? controller.pencilStyle.instrument.title : selection.title,
+                description: selection.helpDescription(for: controller.pencilStyle)
             )
             .presentationBackground(.black)
             .environment(\.colorScheme, .dark)

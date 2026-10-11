@@ -257,7 +257,7 @@ struct RenderCheck {
         let rightAngle = render([Stroke(points: [sample(30, 20), sample(30, 60), sample(75, 60)], style: flatMarker)])
         precondition(pixel(rightAngle, 120, 120)[0] < 250 && pixel(rightAngle, 120, 130)[0] == 255,
                      "A right-angle turn must travel on the thin edge of the nib")
-        // Opacity fades the whole brush, including texture, with no effect on erasing.
+        // Density fades the whole brush, including texture.
         func darkness(_ image: CGImage) -> Int {
             let data = image.dataProvider!.data!
             let bytes = CFDataGetBytePtr(data)!
@@ -274,13 +274,15 @@ struct RenderCheck {
             brush.color = SIMD4(0, 0, 0, 1)
             brush.width = 20
             let points = [sample(25, 30), sample(65, 65), sample(25, 30)]
-            let full = darkness(render([Stroke(points: points, style: brush)]))
+            // Preserve the stroke identity so grain patterns stay identical.
+            let stroke = Stroke(points: points, style: brush)
+            let full = darkness(render([stroke]))
             brush.opacity = 0.5
-            let half = darkness(render([Stroke(points: points, style: brush)]))
+            let half = darkness(render([Stroke(points: points, style: brush, id: stroke.id)]))
             precondition(full > 0 && abs(Double(half) / Double(full) - 0.5) < 0.025,
                          "Opacity must fade the complete brush consistently: \(instrument)")
             brush.opacity = 0
-            precondition(darkness(render([Stroke(points: points, style: brush)])) == 0,
+            precondition(darkness(render([Stroke(points: points, style: brush, id: stroke.id)])) == 0,
                          "Zero opacity must leave the canvas untouched: \(instrument)")
         }
         var solid = PencilStyle()
@@ -289,8 +291,12 @@ struct RenderCheck {
         var transparentEraser = PencilStyle.initial(for: .eraser)
         transparentEraser.width = 30
         transparentEraser.opacity = 0
-        precondition(pixel(render([solidStroke, Stroke(points: [sample(40, 40)], style: transparentEraser)]),
-                           80, 80)[0] == 255, "Opacity must never weaken the eraser")
+        for (density, expected) in [(Float(0), 0), (Float(0.5), 128), (Float(1), 255)] {
+            transparentEraser.opacity = density
+            let erased = pixel(render([solidStroke, Stroke(points: [sample(40, 40)], style: transparentEraser)]), 80, 80)
+            precondition(abs(Int(erased[0]) - expected) <= 2,
+                         "Pixel eraser density must control erasing strength at 0%, 50%, and 100%")
+        }
         style.instrument = .monoline
         style.width = 8
         let crossing = render([Stroke(points: [sample(-20, 50), sample(120, 50)], style: style)])

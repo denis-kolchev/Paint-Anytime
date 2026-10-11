@@ -15,6 +15,18 @@ enum ToolSetting: Int, CaseIterable {
         case .direction: L10n.text("Angle")
         }
     }
+
+    func helpDescription(for style: PencilStyle) -> String {
+        switch self {
+        case .width: L10n.text("Sets the stroke width or eraser size.")
+        case .color: L10n.text("Sets the drawing color. Choose Add colors to edit your palette.")
+        case .instrument: style.instrument.helpDescription
+        case .mode: style.eraserMode.helpDescription
+        case .direction: L10n.text("Sets the flat nib angle. The angle changes the stroke shape and width as you draw in different directions.")
+        case .opacity: L10n.text("Sets paint coverage: 0% is invisible, 100% gives the brush its full coverage. Textured and translucent brushes retain their character. For the pixel eraser, this sets erasing strength.")
+        case .sensitivity: L10n.text("Sets how different neighboring colors can be from the tapped color during a fill. Lower values keep the fill within similar colors; higher values include more colors.")
+        }
+    }
 }
 
 /// Uses a fixed Crown step independent of rotation speed.
