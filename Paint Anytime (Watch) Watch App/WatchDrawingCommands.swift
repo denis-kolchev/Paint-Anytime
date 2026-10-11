@@ -675,7 +675,7 @@ actor WatchArtworkRenderer {
 // Resolve connectivity once at tap time and persist compact horizontal spans.
 // Replaying a saved fill never re-evaluates boundaries after later layer edits.
 extension WatchBitmapRenderer {
-    static func floodFill(document: CanvasDocument, size: CGSize, point: CGPoint,
+    nonisolated static func floodFill(document: CanvasDocument, size: CGSize, point: CGPoint,
                           style: PencilStyle) -> Stroke? {
         let scale: CGFloat = 2
         guard point.x.isFinite, point.y.isFinite, point.x >= 0, point.y >= 0,
@@ -685,7 +685,7 @@ extension WatchBitmapRenderer {
     }
 
     // Shared by the canvas and the sensitivity preview so their boundaries agree.
-    static func floodFill(image: CGImage, scale: CGFloat, point: CGPoint,
+    nonisolated static func floodFill(image: CGImage, scale: CGFloat, point: CGPoint,
                           style: PencilStyle) -> Stroke? {
         let width = image.width, height = image.height
         guard point.x.isFinite, point.y.isFinite, point.x >= 0, point.y >= 0,

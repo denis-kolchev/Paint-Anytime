@@ -664,7 +664,7 @@ private struct TransparencyBoundaryFeedback: View {
         }
     }
 
-    private static func inkBoundary(strokes: [Stroke], size: CGSize) -> Path? {
+    nonisolated private static func inkBoundary(strokes: [Stroke], size: CGSize) -> Path? {
         let scale = min(1, 400 / max(size.width, size.height))
         guard !Task.isCancelled,
               let image = WatchBitmapRenderer.layerThumbnail(strokes: strokes, size: size, scale: scale)
