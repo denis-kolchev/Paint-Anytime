@@ -24,6 +24,7 @@ struct WatchToolSettingsView: View {
         }
     }
     @State private var strokePreviewHeight: CGFloat = 0
+    @State private var safeFillSensitivity: Float?
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
@@ -173,12 +174,14 @@ struct WatchToolSettingsView: View {
                 let angleHeight = settingsGeometry.size.height + (tutorial.isActive ? 40 : 0)
                 let angleScale = tutorial.isActive
                     ? min(1, max(0, angleHeight) / ToolDirectionControl.idealSize.height) : 1
-                let panelWidth = (selection == .width || selection == .opacity || selection == .sensitivity) ? 0 : selection == .direction
+                let panelWidth = (selection == .width || selection == .opacity) ? 0 : selection == .direction
                     ? ToolDirectionControl.idealSize.width * angleScale : 40
-                let panelSpacing = (selection == .width || selection == .opacity || selection == .sensitivity) ? 0 : selection == .direction ? 8 * angleScale : 8
+                let panelSpacing = (selection == .width || selection == .opacity) ? 0 : selection == .direction ? 8 * angleScale : 8
                 HStack(spacing: panelSpacing) {
                     VStack(spacing: 6) {
-                        ToolStrokePreview(style: controller.pencilStyle)
+                        ToolStrokePreview(style: controller.pencilStyle,
+                                          synchronizesOpacity: controller.synchronization.opacity,
+                                          safeFillSensitivity: $safeFillSensitivity)
                             .overlay {
                                 if selection == .color && isAddingColor {
                                     Button {
@@ -269,6 +272,25 @@ struct WatchToolSettingsView: View {
                                 .accessibilityHidden(selection != .mode)
 
 
+                            if selection == .sensitivity {
+                                Button {
+                                    guard let safeFillSensitivity else { return }
+                                    tutorial.activity()
+                                    controller.pencilStyle.fillSensitivity = safeFillSensitivity
+                                    crownFocused = true
+                                } label: {
+                                    Image(systemName: "scope")
+                                        .font(.title3)
+                                        .frame(width: 40, height: 40)
+                                }
+                                .buttonStyle(.plain)
+                                .background(.white.opacity(0.15), in: Circle())
+                                .disabled(safeFillSensitivity == nil || !tutorial.allowsToolAdjustment(page: ToolSetting.sensitivity.rawValue))
+                                .accessibilityLabel(L10n.text("Find safe sensitivity"))
+                                .offset(y: strokePreviewHeight > 0
+                                    ? (strokePreviewHeight - pickerGeometry.size.height) / 2 : 0)
+                            }
+
                             if !tutorial.isActive {
                                 ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
                                                      isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
@@ -283,7 +305,7 @@ struct WatchToolSettingsView: View {
                         .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
                     }
                     .frame(width: panelWidth)
-                    .opacity((selection == .width || selection == .opacity || selection == .sensitivity) ? 0 : 1)
+                    .opacity((selection == .width || selection == .opacity) ? 0 : 1)
                     .modifier(ToolPickerViewportClip(isEnabled: !tutorial.isActive))
                 }
                 .frame(width: settingsGeometry.size.width, height: settingsGeometry.size.height)

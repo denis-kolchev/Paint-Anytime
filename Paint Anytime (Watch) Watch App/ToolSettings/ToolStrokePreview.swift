@@ -4,13 +4,18 @@ struct ToolStrokePreview: View {
     static let viewportShape = RoundedRectangle(cornerRadius: 16)
 
     let style: PencilStyle
+    var synchronizesOpacity = true
+    @Binding var safeFillSensitivity: Float?
     @Environment(\.displayScale) private var displayScale
     @State private var bitmap: CGImage?
     @State private var renderer = ToolPreviewRenderer()
 
     var body: some View {
         Group {
-            if style.instrument == .pencil || style.instrument == .crayon {
+            if style.instrument == .fill {
+                ToolFillPreview(style: style, synchronizesOpacity: synchronizesOpacity,
+                                safeSensitivity: $safeFillSensitivity)
+            } else if style.instrument == .pencil || style.instrument == .crayon {
                 deferredPreview
             } else {
                 Canvas { context, size in
@@ -115,12 +120,121 @@ nonisolated private enum ToolPreviewStroke {
                 strokes.append(Stroke(points: line, style: demoStyle))
             }
         }
-        var preview = Stroke(points: samples, style: style, id: id)
-        if style.instrument == .fill {
-            preview.fillRects = [SIMD4(Float(size.width) * 0.15, Float(size.height) * 0.2,
-                                       Float(size.width) * 0.7, Float(size.height) * 0.6)]
-        }
-        strokes.append(preview)
+        strokes.append(Stroke(points: samples, style: style, id: id))
         return strokes
+    }
+}
+
+
+private struct ToolFillPreview: View {
+    let style: PencilStyle
+    let synchronizesOpacity: Bool
+    @Binding var safeSensitivity: Float?
+    @State private var renderer = ToolFillPreviewRenderer()
+    @State private var bitmap: CGImage?
+
+    var body: some View {
+        GeometryReader { geometry in
+            let request = ToolFillPreviewRequest(style: style,
+                size: CGSize(width: max(1, geometry.size.width.rounded()),
+                             height: max(1, geometry.size.height.rounded())),
+                synchronizesOpacity: synchronizesOpacity)
+            ZStack {
+                Color.white
+                if let bitmap {
+                    Image(decorative: bitmap, scale: 2)
+                        .resizable()
+                }
+            }
+            .task(id: request) {
+                safeSensitivity = nil
+                do {
+                    try await Task.sleep(for: .milliseconds(30))
+                    let result = await renderer.render(request)
+                    try Task.checkCancellation()
+                    bitmap = result?.image
+                    safeSensitivity = result?.safeSensitivity
+                } catch {}
+            }
+        }
+    }
+}
+
+nonisolated private struct ToolFillPreviewRequest: Equatable {
+    let style: PencilStyle
+    let size: CGSize
+    let synchronizesOpacity: Bool
+}
+
+private actor ToolFillPreviewRenderer {
+    struct Result {
+        let image: CGImage
+        let safeSensitivity: Float?
+    }
+
+    private var boundaryRequest: ToolFillPreviewRequest?
+    private var boundaryImage: CGImage?
+    private var boundaryStroke: Stroke?
+    private var safeSensitivity: Float?
+
+    func render(_ request: ToolFillPreviewRequest) -> Result? {
+        let size = request.size
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        var keyStyle = request.style
+        keyStyle.fillSensitivity = 0
+        let key = ToolFillPreviewRequest(style: keyStyle, size: size,
+                                        synchronizesOpacity: request.synchronizesOpacity)
+        if boundaryRequest != key {
+            var pen = PencilStyle.initial(for: .pen)
+            pen.color = request.style.color
+            pen.opacity = request.synchronizesOpacity ? request.style.effectiveOpacity : 1
+            pen.width = 4
+            let radius = max(1, min(size.width, size.height) * 0.34)
+            // This reference contour has constant nib width. Equal timestamps
+            // keep Pen's speed smoothing from widening its starting point,
+            // which would otherwise leave a bump where the circle closes.
+            let points = (0...128).map { index in
+                let angle = Double(index % 128) * 2 * Double.pi / 128
+                return PointerSample(position: SIMD2(Float(center.x + radius * cos(angle)),
+                                                     Float(center.y + radius * sin(angle))),
+                                     pressure: 1, timestamp: 0)
+            }
+            let outline = Stroke(points: points, style: pen)
+            guard let image = WatchBitmapRenderer.render(strokes: [outline], size: size, scale: 2)
+                else { return nil }
+            func escapes(_ percent: Int) -> Bool {
+                var fill = request.style
+                fill.fillSensitivity = Float(percent) / 100
+                guard let stroke = WatchBitmapRenderer.floodFill(image: image, scale: 2,
+                    point: center, style: fill) else { return true }
+                return stroke.fillRects?.contains { rect in
+                    rect.x <= 0 || rect.y <= 0 || rect.x + rect.z >= Float(image.width) / 2
+                        || rect.y + rect.w >= Float(image.height) / 2
+                } ?? true
+            }
+            // Connectivity grows monotonically with tolerance. Find the first
+            // leaking integer percentage, then use the preceding percentage.
+            var safe: Float?
+            if !escapes(0) {
+                var low = 0
+                var high = 100
+                while high - low > 1 {
+                    guard !Task.isCancelled else { return nil }
+                    let middle = (low + high) / 2
+                    if escapes(middle) { high = middle } else { low = middle }
+                }
+                safe = Float(low) / 100
+            }
+            boundaryRequest = key
+            boundaryImage = image
+            boundaryStroke = outline
+            safeSensitivity = safe
+        }
+        guard !Task.isCancelled, let boundaryImage, let boundaryStroke,
+              let fill = WatchBitmapRenderer.floodFill(image: boundaryImage, scale: 2,
+                  point: center, style: request.style),
+              let image = WatchBitmapRenderer.render(strokes: [boundaryStroke, fill], size: size, scale: 2)
+            else { return nil }
+        return Result(image: image, safeSensitivity: safeSensitivity)
     }
 }

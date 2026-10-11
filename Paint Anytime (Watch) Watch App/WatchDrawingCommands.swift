@@ -681,7 +681,15 @@ extension WatchBitmapRenderer {
         guard point.x.isFinite, point.y.isFinite, point.x >= 0, point.y >= 0,
               point.x < size.width, point.y < size.height, style.effectiveOpacity > 0,
               let image = render(document: document, size: size, scale: scale) else { return nil }
+        return floodFill(image: image, scale: scale, point: point, style: style)
+    }
+
+    // Shared by the canvas and the sensitivity preview so their boundaries agree.
+    static func floodFill(image: CGImage, scale: CGFloat, point: CGPoint,
+                          style: PencilStyle) -> Stroke? {
         let width = image.width, height = image.height
+        guard point.x.isFinite, point.y.isFinite, point.x >= 0, point.y >= 0,
+              Int(point.x * scale) < width, Int(point.y * scale) < height else { return nil }
         guard let context = CGContext(data: nil, width: width, height: height,
             bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue),
