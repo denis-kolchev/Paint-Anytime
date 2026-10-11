@@ -9,11 +9,19 @@ struct InkPreset: Codable, Identifiable {
     // Legacy custom colors stored their HEX as the name. Built-in names stay intact.
     var resolvedNameKey: String {
         guard customID != nil else { return nameKey }
+        guard AppReleaseFeatures.current.showsNamedInkColors else {
+            return String(format: "#%02X%02X%02X",
+                          Int((min(1, max(0, rgba.x)) * 255).rounded()),
+                          Int((min(1, max(0, rgba.y)) * 255).rounded()),
+                          Int((min(1, max(0, rgba.z)) * 255).rounded()))
+        }
         return NamedInkColors.name(forHex: nameKey) ?? nameKey
     }
 
     var resolvingColorName: InkPreset {
-        InkPreset(customID: customID, nameKey: resolvedNameKey, rgba: rgba)
+        // Hiding names before 1.2 must not overwrite names in saved palettes.
+        guard AppReleaseFeatures.current.showsNamedInkColors else { return self }
+        return InkPreset(customID: customID, nameKey: resolvedNameKey, rgba: rgba)
     }
     let rgba: SIMD4<Float>
 

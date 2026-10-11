@@ -2,7 +2,8 @@
 // Duplicate HEX values always retain the earliest name.
 enum NamedInkColors {
     static func name(forHex hex: String) -> String? {
-        namesByHex[hex.uppercased()]
+        guard AppReleaseFeatures.current.showsNamedInkColors else { return nil }
+        return namesByHex[hex.uppercased()]
     }
 
     private static let namesByHex: [String: String] = {
