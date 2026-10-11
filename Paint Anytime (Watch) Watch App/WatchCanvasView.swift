@@ -1,6 +1,6 @@
 //
 //  WatchCanvasView.swift
-//  Paint All the Time
+//  Paint Anytime
 //
 //  Created by Denis Kolchev on 20.09.2026.
 //

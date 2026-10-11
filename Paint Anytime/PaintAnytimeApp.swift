@@ -1,6 +1,6 @@
 //
-//  Paint_All_the_TimeApp.swift
-//  Paint All the Time
+//  PaintAnytimeApp.swift
+//  Paint Anytime
 //
 //  Created by Denis Kolchev on 18.09.2026.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 @main
-struct Paint_All_the_TimeApp: App {
+struct PaintAnytimeApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

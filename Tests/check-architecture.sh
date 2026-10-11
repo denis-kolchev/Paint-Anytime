@@ -7,7 +7,7 @@ xcrun swiftc -parse-as-library \
   Shared/CanvasDocument.swift Shared/AppLanguage.swift Shared/AppReleaseFeatures.swift \
   Shared/BrushGeometry.swift Shared/FountainPenGeometry.swift Shared/PencilTool.swift Shared/ShapeRecognizer.swift \
   Shared/CanvasController.swift Shared/ToolSettings.swift Shared/ToolPreferencesStore.swift \
-  "Paint All the Time (Watch) Watch App/CanvasExport.swift" \
-  "Paint All the Time (Watch) Watch App/CanvasExportStore.swift" \
+  "Paint Anytime (Watch) Watch App/CanvasExport.swift" \
+  "Paint Anytime (Watch) Watch App/CanvasExportStore.swift" \
   Tests/ArchitectureChecks.swift -o "$check_dir/check"
 "$check_dir/check"

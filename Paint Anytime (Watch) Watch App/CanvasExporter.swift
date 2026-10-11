@@ -24,7 +24,7 @@ enum CanvasExporter {
         let name = "Paint-Anytime_\(formatter.string(from: now))_\(UUID().uuidString.prefix(8))"
         let device = WKInterfaceDevice.current()
         let details: [String: Any] = [
-            "application": "Paint All the Time",
+            "application": "Paint Anytime",
             "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
             "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
             "createdAt": ISO8601DateFormatter().string(from: now),
@@ -43,7 +43,7 @@ enum CanvasExporter {
             kCGImagePropertyDPIHeight: document.resolution,
             kCGImagePropertyPNGDictionary: [
                 kCGImagePropertyPNGTitle: name,
-                kCGImagePropertyPNGSoftware: "Paint All the Time",
+                kCGImagePropertyPNGSoftware: "Paint Anytime",
                 kCGImagePropertyPNGCreationTime: ISO8601DateFormatter().string(from: now),
                 kCGImagePropertyPNGDescription: String(decoding: metadata, as: UTF8.self)
             ]

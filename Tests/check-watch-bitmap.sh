@@ -6,8 +6,8 @@ trap 'rm -rf "$check_dir"' EXIT
 xcrun swiftc -parse-as-library \
   Shared/CanvasDocument.swift Shared/AppLanguage.swift Shared/AppReleaseFeatures.swift \
   Shared/BrushGeometry.swift Shared/FountainPenGeometry.swift Shared/PencilTool.swift Shared/ShapeRecognizer.swift \
-  "Paint All the Time (Watch) Watch App/WatchStrokeDrawing.swift" \
-  "Paint All the Time (Watch) Watch App/WatchDrawingCommands.swift" \
-  "Paint All the Time (Watch) Watch App/WatchStrokeCoverage.swift" \
+  "Paint Anytime (Watch) Watch App/WatchStrokeDrawing.swift" \
+  "Paint Anytime (Watch) Watch App/WatchDrawingCommands.swift" \
+  "Paint Anytime (Watch) Watch App/WatchStrokeCoverage.swift" \
   Tests/WatchBitmapRendererChecks.swift -o "$check_dir/check"
 "$check_dir/check"

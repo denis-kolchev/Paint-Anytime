@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Paint All the Time
+//  Paint Anytime
 //
 //  Created by Denis Kolchev on 18.09.2026.
 //
