@@ -300,6 +300,11 @@ struct SavedDrawingsView: View {
                             url: drawing.url, shortSidePixels: thumbnailPixels, displayScale: displayScale),
                             loadsImage: imageTransition == nil)
                             .frame(width: width, height: width)
+                            .overlay {
+                                if drawing.isFavorite {
+                                    GalleryFavoriteBadge()
+                                }
+                            }
                             .clipped()
                             .opacity(hidesThumbnail(drawing) ? 0 : 1)
                             .background {
@@ -536,6 +541,41 @@ struct SavedDrawingsView: View {
 
 private enum GalleryTransitionDirection {
     case opening, closing
+}
+
+/// A soft corner treatment keeps the favorite marker legible over any artwork.
+private struct GalleryFavoriteBadge: View {
+    var body: some View {
+        GeometryReader { geometry in
+            let side = min(geometry.size.width, geometry.size.height)
+            let cornerSize = min(38, side * 0.58)
+            let heartSize = min(13, max(9, side * 0.18))
+            let inset = max(3, heartSize * 0.35)
+
+            Rectangle()
+                .fill(.ultraThinMaterial)
+                .overlay(Color.black.opacity(0.18))
+                .mask {
+                    RadialGradient(
+                        colors: [.black, .black.opacity(0.75), .clear],
+                        center: UnitPoint(x: 0, y: 1),
+                        startRadius: 0,
+                        endRadius: cornerSize
+                    )
+                }
+                .frame(width: cornerSize, height: cornerSize)
+                .position(x: cornerSize / 2, y: geometry.size.height - cornerSize / 2)
+
+            Image(systemName: "heart.fill")
+                .font(.system(size: heartSize, weight: .semibold))
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.2), radius: 1, y: 1)
+                .position(x: inset + heartSize / 2,
+                          y: geometry.size.height - inset - heartSize / 2)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
 }
 
 private struct GalleryImageTransition: Identifiable {
