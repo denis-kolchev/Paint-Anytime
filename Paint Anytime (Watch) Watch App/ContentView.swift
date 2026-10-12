@@ -20,6 +20,8 @@ struct ContentView: View {
     @State private var hasEyedropperSession = false
     @State private var showsAppSettings = false
     @State private var showsGallery = false
+    @State private var galleryArtworkFilename: String?
+    @State private var galleryLaunchID = UUID()
     @State private var canvasSize: CGSize = .zero
     @State private var canvasControlFrames: [CanvasToolbarControl: CGRect] = [:]
     @Environment(\.displayScale) private var displayScale
@@ -75,9 +77,13 @@ struct ContentView: View {
                 }
 
                 if showsGallery {
-                    SavedDrawingsView(onClose: { showsGallery = false }) { document in
+                    SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, onClose: {
+                        showsGallery = false
+                        galleryArtworkFilename = nil
+                    }) { document in
                         session.requestCanvasAction(.open(document))
                     }
+                    .id(galleryLaunchID)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .zIndex(2)
                 }
@@ -354,6 +360,8 @@ struct ContentView: View {
         case .newCanvas:
             session.requestCanvasAction(.open(CanvasDocument()))
         case .gallery:
+            galleryArtworkFilename = request.artworkFilename
+            galleryLaunchID = request.id
             showsGallery = true
         }
         launchRequest = nil
@@ -621,7 +629,7 @@ private struct ConfirmationButtonsLayout: Layout {
 }
 
 /// One glass surface persists as the circle expands into a capsule.
-private struct CanvasMorphGlass: ViewModifier {
+struct CanvasMorphGlass: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(watchOS 26, *) {

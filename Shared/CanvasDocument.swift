@@ -292,6 +292,7 @@ nonisolated struct CanvasLayer: Codable, Equatable, Identifiable {
 }
 
 nonisolated struct CanvasDocument: Codable, Equatable {
+    var id = UUID()
     // Stored bottom to top. The paper is always below every drawing layer.
     var layers: [CanvasLayer]
     var canvasSize: CGSize? = nil
@@ -315,7 +316,7 @@ nonisolated struct CanvasDocument: Codable, Equatable {
 
     init(strokes: [Stroke] = []) { layers = [CanvasLayer(strokes: strokes)] }
 
-    private enum CodingKeys: String, CodingKey { case layers, backgroundColor, backgroundIsVisible, strokes, canvasSize, resolution }
+    private enum CodingKeys: String, CodingKey { case id, layers, backgroundColor, backgroundIsVisible, strokes, canvasSize, resolution }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         if let decoded = try values.decodeIfPresent([CanvasLayer].self, forKey: .layers) {
@@ -323,6 +324,8 @@ nonisolated struct CanvasDocument: Codable, Equatable {
         } else {
             layers = [CanvasLayer(strokes: try values.decodeIfPresent([Stroke].self, forKey: .strokes) ?? [])]
         }
+        // Existing layered documents already carry a persistent layer identifier.
+        id = try values.decodeIfPresent(UUID.self, forKey: .id) ?? layers.first?.id ?? UUID()
         canvasSize = try values.decodeIfPresent(CGSize.self, forKey: .canvasSize)
         if let size = canvasSize, !size.width.isFinite || !size.height.isFinite || size.width <= 0 || size.height <= 0 || size.width > 2048 || size.height > 2048 { canvasSize = nil }
         resolution = try values.decodeIfPresent(Double.self, forKey: .resolution) ?? 72
@@ -333,6 +336,7 @@ nonisolated struct CanvasDocument: Codable, Equatable {
     }
     func encode(to encoder: Encoder) throws {
         var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(id, forKey: .id)
         try values.encodeIfPresent(canvasSize, forKey: .canvasSize)
         try values.encode(resolution, forKey: .resolution)
         try values.encode(layers, forKey: .layers)

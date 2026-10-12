@@ -208,5 +208,7 @@ struct PaintAnytimeComplications: WidgetBundle {
         OpenAppComplication()
         NewCanvasComplication()
         GalleryComplication()
+        RandomArtworkTrioComplication()
+        FavoriteArtworkTrioComplication()
     }
 }

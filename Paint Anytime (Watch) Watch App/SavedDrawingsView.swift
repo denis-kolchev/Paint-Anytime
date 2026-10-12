@@ -5,6 +5,7 @@ struct SavedDrawingsView: View {
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @ObservedObject var tutorial = TutorialSession.inactive
     var galleryFolder: URL? = nil
+    var initialArtworkFilename: String? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     var onClose: () -> Void
     var onEditDrawing: (CanvasDocument) -> Void
@@ -17,6 +18,7 @@ struct SavedDrawingsView: View {
     @State private var pendingDeletion: CanvasExport?
     @State private var confirmedDeletion: CanvasExport?
     @State private var showsFullscreen = false
+    @State private var showsGalleryActions = false
     @State private var galleryScrollTarget: URL?
     @State private var thumbnailFrames: [URL: CGRect] = [:]
     @State private var transitionRequest: GalleryTransitionDirection?
@@ -123,6 +125,16 @@ struct SavedDrawingsView: View {
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
+            .overlay(alignment: .topTrailing) {
+                if showsFullscreen && !isTransitioning && !tutorial.isActive,
+                   let selectedDrawing {
+                    let top = max(16, geometry.safeAreaInsets.top)
+                    let rowHeight = min(36.0, max(24.0, (geometry.size.height - top - 16) / 5))
+                    galleryActions(for: selectedDrawing, rowHeight: rowHeight)
+                        .padding(.trailing, 12)
+                        .padding(.top, top)
+                }
+            }
             .coordinateSpace(name: "drawingGallery")
             .task(id: transitionImageRequest) {
                 guard let request = transitionImageRequest else { return }
@@ -143,6 +155,20 @@ struct SavedDrawingsView: View {
         }
         .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
         .toolbar {
+            if showsFullscreen && !tutorial.isActive {
+                // Reserve the native trailing slot, as on the canvas, so watchOS
+                // centers its clock. The overlay supplies the visible control.
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {} label: {
+                        Image(systemName: "ellipsis")
+                            .frame(width: 18, height: 18)
+                            .opacity(0)
+                    }
+                    .watchToolbarButtonStyle(hidesNativeChrome: true)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+            }
             if tutorial.allowsGalleryBack {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: goBack) {
@@ -154,43 +180,8 @@ struct SavedDrawingsView: View {
                     .accessibilityLabel(L10n.text("Back"))
                 }
             }
-            if showsFullscreen && !isTransitioning, let selectedDrawing {
-                if !tutorial.isActive {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button { editDrawing(selectedDrawing) } label: {
-                            Image(systemName: "pencil")
-                        }
-                        .watchToolbarButtonStyle()
-                        .accessibilityLabel(L10n.text("Edit drawing"))
-                    }
-                }
-                if !tutorial.isActive && tutorial.allowsGalleryDelete {
-                    ToolbarItemGroup(placement: .bottomBar) {
-                        Button(role: .destructive) {
-                            crownFocused = false
-                            tutorial.pauseReminders()
-                            pendingDeletion = selectedDrawing
-                        } label: {
-                            Image(systemName: "trash")
-                            .tutorialHint(tutorial, steps: [.deleteDrawing])
-                        }
-                        .disabled(isTransitioning)
-                        .watchToolbarButtonStyle()
-                        .accessibilityLabel(L10n.text("Delete drawing"))
-                        Spacer()
-                        if !tutorial.isActive {
-                            ShareLink(item: DrawingShareItem(url: selectedDrawing.url),
-                                      preview: SharePreview(Text(verbatim: selectedDrawing.url.lastPathComponent),
-                                                            image: DrawingShareItem(url: selectedDrawing.url))) {
-                                Image(systemName: "square.and.arrow.up")
-                            }
-                            .watchToolbarButtonStyle()
-                            .accessibilityLabel(L10n.text("Share"))
-                        }
-                    }
-                }
-            }
         }
+
         .overlay(alignment: .bottom) {
             if tutorial.isActive && showsFullscreen && !isTransitioning,
                tutorial.allowsGalleryDelete, let selectedDrawing {
@@ -253,13 +244,30 @@ struct SavedDrawingsView: View {
             get: { controller.errorMessage != nil }, set: { if !$0 { controller.errorMessage = nil } }
         )) { Button(L10n.text("OK"), role: .cancel) { controller.errorMessage = nil } }
         message: { Text(controller.errorMessage ?? "") }
-        .onAppear { crownFocused = tutorial.allowsGalleryZoom; controller.reload(in: galleryFolder) }
+         .onAppear {
+            crownFocused = tutorial.allowsGalleryZoom
+            controller.reload(in: galleryFolder)
+            if let filename = initialArtworkFilename,
+               let drawing = drawings.first(where: { $0.url.lastPathComponent == filename }) {
+                // Direct widget launches do not need a transition from a visible grid tile.
+                focusedDrawing = drawing
+                selectedDrawing = drawing
+                zoomLevel = 2
+                crownPosition = 2
+                showsFullscreen = true
+                galleryScrollTarget = drawing.id
+            }
+        }
         .onChange(of: tutorial.showsInstruction) { _, showing in
             crownFocused = !showing && tutorial.allowsGalleryZoom && pendingDeletion == nil
             if !showing && showsFullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
         }
         .onChange(of: showsFullscreen) { _, fullscreen in
             tutorial.galleryIsFullscreen = fullscreen
+            showsGalleryActions = false
+        }
+        .onChange(of: selectedDrawing?.id) { _, _ in
+            showsGalleryActions = false
         }
         .onChange(of: isTransitioning) { _, transitioning in
             if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
@@ -438,6 +446,61 @@ struct SavedDrawingsView: View {
                     url: drawings[index].url, shortSidePixels: nil, displayScale: displayScale))
             }
         }
+    }
+
+    private func galleryActions(for drawing: CanvasExport, rowHeight: CGFloat) -> some View {
+        let isFavorite = drawings.first(where: { $0.id == drawing.id })?.isFavorite ?? false
+        return VStack(spacing: 0) {
+            Button {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                    showsGalleryActions.toggle()
+                }
+            } label: {
+                galleryActionIcon(showsGalleryActions ? "xmark" : "ellipsis",
+                                  rowHeight: showsGalleryActions ? rowHeight : 36)
+            }
+            .accessibilityLabel(L10n.text(showsGalleryActions ? "Close" : "More"))
+
+            if showsGalleryActions {
+            Button { showsGalleryActions = false; editDrawing(drawing) } label: {
+                galleryActionIcon("pencil", rowHeight: rowHeight)
+            }
+            .accessibilityLabel(L10n.text("Edit drawing"))
+
+            Button {
+                controller.setFavorite(!isFavorite, for: drawing, in: galleryFolder)
+            } label: {
+                galleryActionIcon(isFavorite ? "heart.fill" : "heart", rowHeight: rowHeight)
+            }
+            .accessibilityLabel(L10n.text(isFavorite ? "Remove from favorites" : "Add to favorites"))
+
+            ShareLink(item: DrawingShareItem(url: drawing.url),
+                      preview: SharePreview(Text(verbatim: drawing.url.lastPathComponent),
+                                            image: DrawingShareItem(url: drawing.url))) {
+                galleryActionIcon("square.and.arrow.up", rowHeight: rowHeight)
+            }
+            .accessibilityLabel(L10n.text("Share"))
+
+            Button(role: .destructive) {
+                crownFocused = false
+                pendingDeletion = drawing
+            } label: {
+                galleryActionIcon("trash", rowHeight: rowHeight)
+            }
+            .accessibilityLabel(L10n.text("Delete drawing"))
+            }
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.white)
+        .frame(width: 36)
+        .modifier(CanvasMorphGlass())
+    }
+
+    private func galleryActionIcon(_ symbol: String, rowHeight: CGFloat) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 17, weight: .medium))
+            .frame(width: 36, height: rowHeight)
+            .contentShape(Rectangle())
     }
 
     private func deleteDrawing(_ drawing: CanvasExport) {

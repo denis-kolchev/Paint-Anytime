@@ -9,6 +9,7 @@ final class GalleryController: ObservableObject {
     func reload(in folder: URL? = nil) {
         do {
             drawings = try CanvasExportStore.all(in: folder)
+            if folder == nil { try? CanvasExportStore.refreshWidgets() }
             errorMessage = nil
         } catch { errorMessage = error.localizedDescription }
     }
@@ -23,6 +24,16 @@ final class GalleryController: ObservableObject {
             errorMessage = error.localizedDescription
             return false
         }
+    }
+
+    func setFavorite(_ isFavorite: Bool, for drawing: CanvasExport, in folder: URL? = nil) {
+        do {
+            try CanvasExportStore.setFavorite(isFavorite, for: drawing, in: folder)
+            if let index = drawings.firstIndex(where: { $0.id == drawing.id }) {
+                drawings[index].isFavorite = isFavorite
+            }
+            errorMessage = nil
+        } catch { errorMessage = error.localizedDescription }
     }
 
     func loadDocument(for drawing: CanvasExport) -> CanvasDocument? {

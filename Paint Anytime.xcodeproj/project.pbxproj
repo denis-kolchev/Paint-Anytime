@@ -10,6 +10,7 @@
 		257D4058305EA358002072CB /* Paint Anytime (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
 		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D40000000000000000000001 /* Shared/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,6 +57,7 @@
 		25AC8197305D90C700C8F69E /* Paint Anytime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B20000020000000000000002 /* Preset Photos */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preset Photos"; sourceTree = "<group>"; };
 		C30000000000000000000002 /* PaintAnytimeComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -105,6 +107,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		259166BF307D5FE20044FEF7 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		25AC818E305D90C700C8F69E = {
 			isa = PBXGroup;
 			children = (
@@ -115,6 +125,7 @@
 				257D405B305EA358002072CB /* Paint Anytime (Watch) Watch App */,
 				25AC8198305D90C700C8F69E /* Products */,
 				2523992A3060233F00774395 /* Shared */,
+				259166BF307D5FE20044FEF7 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -317,6 +328,7 @@
 		C30000000000000000000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				D40000000000000000000001 /* Shared/GalleryWidgetStore.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */
@@ -379,6 +391,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WatchApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
@@ -415,6 +428,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WatchApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
@@ -641,6 +655,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Complications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
@@ -668,6 +683,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Complications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
