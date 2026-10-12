@@ -1,5 +1,6 @@
 import SwiftUI
 import WidgetKit
+import CoreText
 
 private struct LauncherEntry: TimelineEntry {
     let date: Date
@@ -18,36 +19,77 @@ private struct LauncherProvider: TimelineProvider {
 }
 
 private struct LauncherView<Icon: View>: View {
+    @Environment(\.widgetFamily) private var family
+    @Environment(\.locale) private var locale
+
     let icon: Icon
     let title: LocalizedStringKey
+    let shortTitle: LocalizedStringResource
     let destination: String
 
+    private var caption: String {
+        var resource = shortTitle
+        resource.locale = locale
+        return String(localized: resource)
+    }
+
+    // Conservative width budgets keep long translations from becoming tiny
+    // curved labels. Measure glyphs, since character counts differ across scripts.
+    private var showsCaption: Bool {
+        let font = CTFontCreateUIFontForLanguage(.system, 12, locale.identifier as CFString)
+            ?? CTFontCreateWithName("Helvetica" as CFString, 12, nil)
+        let string = NSAttributedString(string: caption, attributes: [
+            NSAttributedString.Key(kCTFontAttributeName as String): font
+        ])
+        let line = CTLineCreateWithAttributedString(string)
+        return CTLineGetTypographicBounds(line, nil, nil, nil)
+            <= (family == .accessoryInline ? 100 : 70)
+    }
+
+    // Inline complications require an Image rather than an arbitrary icon view.
+    // Render the same artwork used by the circular and corner complications.
+    private var inlineImage: Image {
+        let renderer = ImageRenderer(content: icon
+            .foregroundStyle(.white)
+            .frame(width: 20, height: 20))
+        renderer.scale = 2
+        if let image = renderer.cgImage {
+            return Image(decorative: image, scale: 2).renderingMode(.template)
+        }
+        return Image(systemName: "paintbrush")
+    }
+
     var body: some View {
-        ZStack {
-            AccessoryWidgetBackground()
-            icon
-                .foregroundStyle(.white)
-                .padding(7)
-                .widgetAccentable()
+        Group {
+            if family == .accessoryInline {
+                if showsCaption {
+                    Text("\(inlineImage) \(caption)")
+                } else {
+                    inlineImage
+                }
+            } else {
+                if showsCaption {
+                    badge.widgetLabel { Text(verbatim: caption) }
+                } else {
+                    badge
+                }
+            }
         }
         .containerBackground(for: .widget) { Color.clear }
         .accessibilityLabel(Text(title))
         .widgetURL(URL(string: "paintanytime://\(destination)"))
     }
-}
 
-private struct OpenAppView: View {
-    var body: some View {
+    private var badge: some View {
         ZStack {
-            AccessoryWidgetBackground()
-            LauncherSailboat()
-                .fill(.white)
-                .padding(7)
+            if family == .accessoryCircular {
+                AccessoryWidgetBackground()
+            }
+            icon
+                .foregroundStyle(.white)
+                .padding(family == .accessoryCorner ? 3 : 7)
                 .widgetAccentable()
         }
-        .containerBackground(for: .widget) { Color.clear }
-        .accessibilityLabel(Text("Open Paint Anytime"))
-        .widgetURL(URL(string: "paintanytime://app"))
     }
 }
 
@@ -168,11 +210,12 @@ struct OpenAppComplication: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: LauncherProvider()) { _ in
-            OpenAppView()
+            LauncherView(icon: LauncherSailboat().fill(.white),
+                         title: "Open Paint Anytime", shortTitle: "Open", destination: "app")
         }
         .configurationDisplayName("Open App")
         .description("Open Paint Anytime without changing your canvas.")
-        .supportedFamilies([.accessoryCircular])
+        .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryInline])
     }
 }
 
@@ -181,11 +224,11 @@ struct NewCanvasComplication: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: LauncherProvider()) { _ in
-            LauncherView(icon: NewCanvasIcon(), title: "New canvas", destination: "new-canvas")
+            LauncherView(icon: NewCanvasIcon(), title: "New canvas", shortTitle: "New canvas", destination: "new-canvas")
         }
         .configurationDisplayName("New canvas")
         .description("Open a fresh canvas in Paint Anytime.")
-        .supportedFamilies([.accessoryCircular])
+        .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryInline])
     }
 }
 
@@ -194,11 +237,11 @@ struct GalleryComplication: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: LauncherProvider()) { _ in
-            LauncherView(icon: GalleryIcon(), title: "Gallery", destination: "gallery")
+            LauncherView(icon: GalleryIcon(), title: "Gallery", shortTitle: "Gallery", destination: "gallery")
         }
         .configurationDisplayName("Gallery")
         .description("Open your saved drawings in Paint Anytime.")
-        .supportedFamilies([.accessoryCircular])
+        .supportedFamilies([.accessoryCircular, .accessoryCorner, .accessoryInline])
     }
 }
 
