@@ -19,6 +19,7 @@ struct SavedDrawingsView: View {
     @State private var confirmedDeletion: CanvasExport?
     @State private var showsFullscreen = false
     @State private var showsGalleryActions = false
+    @State private var toolbarFrames: [String: CGRect] = [:]
     @State private var galleryScrollTarget: URL?
     @State private var thumbnailFrames: [URL: CGRect] = [:]
     @State private var transitionRequest: GalleryTransitionDirection?
@@ -128,11 +129,14 @@ struct SavedDrawingsView: View {
             .overlay(alignment: .topTrailing) {
                 if showsFullscreen && !isTransitioning && !tutorial.isActive,
                    let selectedDrawing {
-                    let top = max(16, geometry.safeAreaInsets.top)
+                    let galleryFrame = geometry.frame(in: .global)
+                    let centerY = toolbarFrames["back"]?.midY ?? toolbarFrames["actions"]?.midY
+                        ?? (galleryFrame.minY + 36)
+                    let top = centerY - galleryFrame.minY - 18
+                    let centerX = (toolbarFrames["actions"]?.midX ?? (galleryFrame.maxX - 30)) - galleryFrame.minX
                     let rowHeight = min(36.0, max(24.0, (geometry.size.height - top - 16) / 5))
                     galleryActions(for: selectedDrawing, rowHeight: rowHeight)
-                        .padding(.trailing, 12)
-                        .padding(.top, top)
+                        .position(x: centerX, y: top + (showsGalleryActions ? rowHeight * 5 : 36) / 2)
                 }
             }
             .coordinateSpace(name: "drawingGallery")
@@ -156,23 +160,25 @@ struct SavedDrawingsView: View {
         .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
         .toolbar {
             if showsFullscreen && !tutorial.isActive {
-                // Reserve the native trailing slot, as on the canvas, so watchOS
-                // centers its clock. The overlay supplies the visible control.
+                // Keep native toolbar activation above the overlay; both controls
+                // toggle the same expanding glass surface.
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {} label: {
+                    Button(action: toggleGalleryActions) {
                         Image(systemName: "ellipsis")
                             .frame(width: 18, height: 18)
                             .opacity(0)
+                            .background { toolbarFrameReader("actions") }
                     }
                     .watchToolbarButtonStyle(hidesNativeChrome: true)
-                    .allowsHitTesting(false)
-                    .accessibilityHidden(true)
+                    .disabled(isTransitioning)
+                    .accessibilityLabel(L10n.text(showsGalleryActions ? "Close" : "More"))
                 }
             }
             if tutorial.allowsGalleryBack {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: goBack) {
                         Image(systemName: "chevron.left")
+                            .background { toolbarFrameReader("back") }
                             .tutorialHint(tutorial, steps: [.returnToCanvas])
                     }
                     .disabled(isTransitioning)
@@ -182,6 +188,7 @@ struct SavedDrawingsView: View {
             }
         }
 
+        .onPreferenceChange(GalleryToolbarFramesKey.self) { toolbarFrames = $0 }
         .overlay(alignment: .bottom) {
             if tutorial.isActive && showsFullscreen && !isTransitioning,
                tutorial.allowsGalleryDelete, let selectedDrawing {
@@ -448,14 +455,23 @@ struct SavedDrawingsView: View {
         }
     }
 
+    private func toolbarFrameReader(_ control: String) -> some View {
+        GeometryReader { geometry in
+            Color.clear.preference(key: GalleryToolbarFramesKey.self,
+                                   value: [control: geometry.frame(in: .global)])
+        }
+    }
+
+    private func toggleGalleryActions() {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            showsGalleryActions.toggle()
+        }
+    }
+
     private func galleryActions(for drawing: CanvasExport, rowHeight: CGFloat) -> some View {
         let isFavorite = drawings.first(where: { $0.id == drawing.id })?.isFavorite ?? false
         return VStack(spacing: 0) {
-            Button {
-                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                    showsGalleryActions.toggle()
-                }
-            } label: {
+            Button(action: toggleGalleryActions) {
                 galleryActionIcon(showsGalleryActions ? "xmark" : "ellipsis",
                                   rowHeight: showsGalleryActions ? rowHeight : 36)
             }
@@ -534,6 +550,14 @@ private struct GalleryThumbnailFramesKey: PreferenceKey {
     static var defaultValue: [URL: CGRect] { [:] }
 
     static func reduce(value: inout [URL: CGRect], nextValue: () -> [URL: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
+}
+
+private struct GalleryToolbarFramesKey: PreferenceKey {
+    static var defaultValue: [String: CGRect] { [:] }
+
+    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
     }
 }
