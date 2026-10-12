@@ -29,7 +29,7 @@ struct ContentView: View {
                     )
                     .frame(width: 140)
 
-                    Text("\(Int(controller.pencilStyle.width)) pt")
+                    Text(L10n.format("%d pt", Int(controller.pencilStyle.width)))
                         .monospacedDigit()
                         .frame(width: 44, alignment: .trailing)
                 }

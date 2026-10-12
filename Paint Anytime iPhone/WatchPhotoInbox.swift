@@ -32,7 +32,7 @@ final class WatchPhotoInbox: ObservableObject {
             switch result {
             case .success: self?.refresh()
             case .failure(let error):
-                self?.errorMessage = "Не удалось получить рисунок с часов: \(error.localizedDescription)"
+                self?.errorMessage = String(localized: "Could not receive the drawing from your watch: \(error.localizedDescription)")
             }
         }
     }
@@ -54,7 +54,7 @@ final class WatchPhotoInbox: ObservableObject {
             pendingCount = images.count
             if writer.canSave, let next = images.first { save(next) }
         } catch {
-            errorMessage = "Не удалось прочитать полученные рисунки: \(error.localizedDescription)"
+            errorMessage = String(localized: "Could not read the received drawings: \(error.localizedDescription)")
         }
     }
 
@@ -65,13 +65,13 @@ final class WatchPhotoInbox: ObservableObject {
             do { try await writer.save(image) }
             catch {
                 isSaving = false
-                errorMessage = "Не удалось сохранить рисунок в Фото: \(error.localizedDescription)"
+                errorMessage = String(localized: "Could not save the drawing to Photos: \(error.localizedDescription)")
                 return
             }
             isSaving = false
             do { try store.remove(image) }
             catch {
-                errorMessage = "Рисунок сохранён в Фото, но временный файл не удалён: \(error.localizedDescription)"
+                errorMessage = String(localized: "The drawing was saved to Photos, but the temporary file could not be deleted: \(error.localizedDescription)")
                 return
             }
             refresh()

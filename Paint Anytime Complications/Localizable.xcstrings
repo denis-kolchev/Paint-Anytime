@@ -7,11 +7,12 @@
       "localizations" : {
         "en" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ %2$@"
+            "state" : "translated",
+            "value" : "%@ %@"
           }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "A random artwork every hour." : {
       "localizations" : {
@@ -534,31 +535,31 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "عمل مفضل · 3"
+            "value" : "المفضلة · 3"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Oblíbené dílo · 3"
+            "value" : "Oblíbené · 3"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Favoritværk · 3"
+            "value" : "Favoritter · 3"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lieblingswerk · 3"
+            "value" : "Favoriten · 3"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Αγαπημένο έργο · 3"
+            "value" : "Αγαπημένα · 3"
           }
         },
         "en" : {
@@ -570,85 +571,85 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obra favorita · 3"
+            "value" : "Favoritos · 3"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Suosikkiteos · 3"
+            "value" : "Suosikit · 3"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Œuvre favorite · 3"
+            "value" : "Favoris · 3"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "יצירה מועדפת · 3"
+            "value" : "מועדפים · 3"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kedvenc kép · 3"
+            "value" : "Kedvencek · 3"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Karya favorit · 3"
+            "value" : "Favorit · 3"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opera preferita · 3"
+            "value" : "Preferiti · 3"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "お気に入りの作品 · 3"
+            "value" : "お気に入り · 3"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "즐겨찾는 작품 · 3"
+            "value" : "즐겨찾기 · 3"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Favorittverk · 3"
+            "value" : "Favoritter · 3"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Favoriet werk · 3"
+            "value" : "Favorieten · 3"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ulubiona praca · 3"
+            "value" : "Ulubione · 3"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obra favorita · 3"
+            "value" : "Favoritos · 3"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obra favorita · 3"
+            "value" : "Favoritos · 3"
           }
         },
         "ru" : {
@@ -660,43 +661,43 @@
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Favoritverk · 3"
+            "value" : "Favoriter · 3"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ผลงานโปรด · 3"
+            "value" : "รายการโปรด · 3"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Favori eser · 3"
+            "value" : "Favoriler · 3"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Улюблена робота · 3"
+            "value" : "Улюблені · 3"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tác phẩm yêu thích · 3"
+            "value" : "Yêu thích · 3"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "收藏作品 · 3"
+            "value" : "收藏 · 3"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "收藏作品 · 3"
+            "value" : "收藏 · 3"
           }
         }
       }
