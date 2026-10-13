@@ -88,68 +88,50 @@
   </tr>
 </table>
 
+## Description
+
+Paint Anytime is a drawing app made specifically for Apple Watch. Sketch a quick idea or create a tiny piece of art right from your wrist.
+
+Choose from a variety of brushes, сustomize colors, stroke width, angle, and opacity. Organize your artwork with layers, lock transparency to paint within existing boundaries, and use the Lasso to select, move, and rearrange parts of your drawing. Draw and hold to create cleaner shapes, or use the Fill tool to color larger areas in seconds.
+
+Create custom colors with HSB and RGB sliders, organize them into palettes, and switch between color collections to match your mood. Explore different blending modes and see how colors interact on the canvas.
+
+Save your drawings to your personal gallery and continue editing whenever inspiration returns. Use widgets to display your favorite creations or jump straight back into drawing.
+
 ## Features
 
-### Brushes and Colors
-
-- 6 brushes with distinct drawing behaviors: Monoline, Pen, Fountain Pen, Reed Pen, Marker, and Watercolor.
-- Adjustable stroke width, opacity, and brush-specific settings.
-- Customizable color palette with support for adding, deleting, and reordering colors.
-- RGB color editor for precise color selection.
-- Common colors are recognized by name instead of showing only their HEX value.
-- 14 color blending modes for different ways to mix and layer paint.
-
-### Canvas and Drawing
-
-- Zoom and move the canvas for precise drawing.
-- Start strokes outside the canvas and draw inward, making edges easier to reach.
-- Shape recognition with live resizing and rotation.
-- Morphing controls free up more canvas space while drawing.
-- Regular eraser and object eraser.
-- Undo and Redo.
-- Clear the entire canvas with one tap.
-
-### Shape Recognition
-
-Draw a shape in one gesture and briefly hold your finger to snap it into a clean geometric form.
-
-Paint Anytime can recognize common shapes including lines, circles, ellipses, rectangles, triangles, polygons, arrows, stars, hearts, clouds, and speech bubbles.
-
-After recognition, keep moving your finger to resize or rotate the shape before releasing it.
-
-### Learning
-
-- Compact interactive tutorial designed specifically for the Apple Watch screen.
-- Faster progression without unnecessary **Next** buttons.
-- Animated hints for Digital Crown interactions.
-- More freedom to explore the canvas while completing lessons.
-
-### Save and Share
-
-- Save drawings to your personal gallery.
-- Continue editing saved drawings later.
-- Share drawings through iMessage or email.
-- Send saved drawings from Apple Watch to Photos on iPhone.
+- Custom colors, stroke width, angle, and opacity;
+- Layers with transparency lock;
+- Lasso tool for arranging your artwork;
+- Shape recognition with draw-and-hold;
+- Fill tool for coloring enclosed areas;
+- Multiple color blending modes;
+- Custom color palettes with RGB and HSB editors;
+- Canvas zoom and expandable drawing space;
+- Undo, Redo, and two types of erasers;
+- Personal gallery with editable saved drawings;
+- Apple Watch widgets for artwork and quick access;
+- Compact, interactive drawing tutorial;
+- Share your creations through iMessage or email.
 
 ## What's New in 1.1.0
 
 ### New Features
 
-- **Watercolor brush** — a new painting tool with natural color buildup.
-- **Brush opacity** — adjust the transparency of every brush.
-- **14 blending modes** — expanded from the original blending system with 13 additional modes.
-- **White default color** — white is now part of the starting palette.
-- **Custom color palettes** — add, delete, and rearrange colors.
-- **RGB color editor** — enter precise RGB values when creating or editing colors.
-- **Named colors** — recognized colors can display their familiar names instead of only HEX values.
-- **Shape recognition** — draw and hold to turn freehand strokes into clean geometric shapes.
-- **Live shape adjustment** — resize and rotate recognized shapes before releasing your finger.
-- **More usable canvas space** — morphing controls can collapse while drawing.
-- **Draw from outside the canvas** — strokes can begin beyond the canvas boundary and continue inward.
-- **Redesigned tutorial** — more compact, flexible, and faster to complete.
-- **Digital Crown guidance** — animated hints show when Crown interaction is expected.
+- New UI hides controls to give you more space to draw and view your artwork;
+- Layers. Lock transparency to keep your colors within painted boundaries;
+- Use the Lasso tool to adjust your composition;
+- Draw and hold to turn rough shapes into perfect geometry;
+- HSB and RGB sliders give you more ways to create colors for your palette;
+- Palette collections make it easy to switch your painting mood;
+- Color blending. Yellow plus blue doesn't always equal green anymore;
+- Watercolor brush is a great addition to Marker for exploring color blending;
+- New Fill tool helps you spend less time covering large areas;
+- Widgets to display your favorite artwork, jump back into drawing, and track your streaks;
+- Updated tutorial is quicker to complete and comes in a more compact form;
+- All brushes and layers now have opacity settings to adjust transparency.
 
-### Bug Fixes & Improvements
+### Bug Fixes
 
 - Reduced lag while drawing with Marker and other brushes.
 - Improved Marker stroke direction and corner behavior.
@@ -157,10 +139,7 @@ After recognition, keep moving your finger to resize or rotate the shape before 
 - Improved zooming and panning performance on complex drawings.
 - Fixed visual and layout issues on watchOS 10.
 - Improved compatibility across supported watchOS versions.
-- Keeps the system clock positioned consistently while drawing.
-- Fixed a crash that could occur while saving a drawing to Photos.
-- Improved tutorial responsiveness and removed lag from tutorial interactions.
-- Improved rendering and persistence reliability for more complex drawings.
+- Kept the system clock consistently positioned while drawing.
 
 ## Requirements
 
