@@ -36,7 +36,12 @@ final class CanvasController: ObservableObject {
     private var undoStack: [CanvasDocument] = []
     private var redoStack: [CanvasDocument] = []
     private let historyLimit = 30
-    var canClear: Bool { !document.strokes.isEmpty }
+    var canClear: Bool {
+        document.layers.count != 1
+            || document.layers.first.map { $0 != CanvasLayer(id: $0.id) } == true
+            || document.backgroundColor != SIMD4<Float>(1, 1, 1, 1)
+            || !document.backgroundIsVisible
+    }
     var canUndo: Bool { !undoStack.isEmpty }
     var canRedo: Bool { !redoStack.isEmpty }
     var onNeedsDisplay: (() -> Void)?
@@ -276,7 +281,11 @@ final class CanvasController: ObservableObject {
         documentAtStrokeStart = nil
         strokeBeforeRecognition = nil
         recordUndo(document)
-        for index in document.layers.indices { document.layers[index].strokes.removeAll() }
+        let firstLayer = CanvasLayer(id: document.layers[0].id)
+        document.layers = [firstLayer]
+        document.backgroundColor = SIMD4(1, 1, 1, 1)
+        document.backgroundIsVisible = true
+        selectedLayerID = firstLayer.id
         onNeedsDisplay?()
     }
 

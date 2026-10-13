@@ -3,7 +3,62 @@ import Foundation
 
 @main
 struct ArchitectureChecks {
+    @MainActor static func checkClear() {
+        let canvas = CanvasController(persistsPreferences: false)
+        precondition(!canvas.canClear)
+        var original = canvas.document
+        let firstID = original.layers[0].id
+        original.canvasSize = CGSize(width: 320, height: 240)
+        original.resolution = 144
+        original.layers[0].name = "Layer 7"
+        original.layers[0].opacity = 0.3
+        original.layers[0].isVisible = false
+        original.layers[0].locksTransparency = true
+        original.layers[0].strokes = [Stroke(points: [], style: PencilStyle())]
+        original.layers.append(CanvasLayer(name: "Layer 8"))
+        original.backgroundColor = SIMD4(1, 0, 0, 1)
+        original.backgroundIsVisible = false
+        canvas.load(original)
+        precondition(canvas.canClear)
+        canvas.clear()
+        let cleared = canvas.document
+        precondition(cleared.layers == [CanvasLayer(id: firstID)])
+        precondition(canvas.selectedLayerID == firstID)
+        precondition(cleared.backgroundColor == SIMD4(1, 1, 1, 1) && cleared.backgroundIsVisible)
+        precondition(cleared.id == original.id && cleared.canvasSize == original.canvasSize
+                     && cleared.resolution == original.resolution)
+        precondition(!canvas.canClear)
+        canvas.undo()
+        precondition(canvas.document == original)
+        canvas.redo()
+        precondition(canvas.document == cleared)
+        canvas.addLayer()
+        precondition(canvas.selectedLayer.name == "Layer 2")
+        canvas.clear()
+        precondition(canvas.document.layers == [CanvasLayer(id: firstID)])
+
+        // Each setting alone must enable clearing, even without any strokes.
+        let edits: [(inout CanvasDocument) -> Void] = [
+            { $0.layers.append(CanvasLayer(name: "Layer 2")) },
+            { $0.layers[0].name = "Layer 9" },
+            { $0.layers[0].opacity = 0.5 },
+            { $0.layers[0].isVisible = false },
+            { $0.layers[0].locksTransparency = true },
+            { $0.backgroundColor = SIMD4(0, 0, 0, 1) },
+            { $0.backgroundIsVisible = false }
+        ]
+        for edit in edits {
+            var document = cleared
+            edit(&document)
+            canvas.load(document)
+            precondition(canvas.canClear)
+            canvas.clear()
+            precondition(canvas.document == cleared && !canvas.canClear)
+        }
+    }
+
     @MainActor static func main() throws {
+        checkClear()
         let fillCanvas = CanvasController(persistsPreferences: false)
         var fill = Stroke(points: [PointerSample(position: SIMD2(10, 10), pressure: 1, timestamp: 0)],
                           style: .initial(for: .fill))
@@ -144,7 +199,10 @@ struct ArchitectureChecks {
         precondition(all.map { $0.id.resolvingSymlinksInPath() } == [drawing.id.resolvingSymlinksInPath()])
         try CanvasExportStore.delete(drawing, in: folder)
         let remaining = try FileManager.default.contentsOfDirectory(atPath: folder.path)
-        precondition(remaining.isEmpty)
+        precondition(remaining == ["favorites.json"])
+        let favoritesData = try Data(contentsOf: folder.appendingPathComponent("favorites.json"))
+        let favorites = try JSONDecoder().decode([String].self, from: favoritesData)
+        precondition(favorites.isEmpty)
         let blendSuite = "BlendChecks.\(UUID().uuidString)"
         let blendDefaults = UserDefaults(suiteName: blendSuite)!
         defer { blendDefaults.removePersistentDomain(forName: blendSuite) }
