@@ -5,9 +5,38 @@ import simd
 // proprietary ink textures are not available to this finger-driven canvas.
 nonisolated enum WatchStrokeDrawing {
     static func commands(for stroke: Stroke, region: CGRect? = nil, dryGeometry: DryGeometry? = nil) -> [WatchDrawingCommand] {
+        guard stroke.raster == nil else { return [] }
         var context = WatchDrawingContext()
-        draw(stroke, region: region, dryGeometry: dryGeometry, in: &context)
-        return context.storage.commands
+        let localRegion = region.map { $0.applying(stroke.transform.affine.inverted()) }
+        draw(stroke, region: localRegion, dryGeometry: dryGeometry, in: &context)
+        let exclusions = exclusionPaths(for: stroke)
+        guard stroke.transform != .identity || !exclusions.isEmpty else { return context.storage.commands }
+        return context.storage.commands.map { command in
+            let outline: CGPath
+            switch command.shape {
+            case .fill(let path): outline = path.cgPath
+            case .stroke(let path, let style):
+                outline = path.cgPath.copy(strokingWithWidth: style.lineWidth,
+                    lineCap: style.lineCap, lineJoin: style.lineJoin, miterLimit: style.miterLimit)
+            }
+            var transform = stroke.transform.affine
+            let path = outline.copy(using: &transform) ?? outline
+            return WatchDrawingCommand(shape: .fill(Path(path)), rgba: command.rgba,
+                opacity: command.opacity, blendMode: command.blendMode, usesOpacityLayer: command.usesOpacityLayer,
+                exclusionPaths: exclusions)
+        }
+    }
+
+    static func exclusionPaths(for stroke: Stroke) -> [Path] {
+        stroke.excludedAreas.map { polygon in
+            var path = Path()
+            if let first = polygon.first {
+                path.move(to: point(first))
+                for vertex in polygon.dropFirst() { path.addLine(to: point(vertex)) }
+                path.closeSubpath()
+            }
+            return path.applying(stroke.transform.affine)
+        }
     }
 
     private static func draw(_ stroke: Stroke, region: CGRect?, dryGeometry: DryGeometry?, in context: inout WatchDrawingContext) {

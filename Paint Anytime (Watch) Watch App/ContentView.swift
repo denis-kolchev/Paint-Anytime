@@ -18,6 +18,7 @@ struct ContentView: View {
     @State private var isMovingCanvas = false
     @State private var isEyedropperActive = false
     @State private var hasEyedropperSession = false
+    @StateObject private var lasso = WatchLassoController()
     @State private var showsAppSettings = false
     @State private var showsGallery = false
     @State private var galleryArtworkFilename: String?
@@ -73,6 +74,25 @@ struct ContentView: View {
                     contentActions(diameter: diameter)
                         .position(x: (buttonFrame?.midX ?? (canvasFrame.minX + 30)) - canvasFrame.minX,
                                   y: (buttonFrame?.midY ?? (canvasFrame.maxY - 26)) - canvasFrame.minY + diameter / 2 - height / 2)
+                        .zIndex(3)
+                }
+
+                if isActive && !showsGallery && !showsToolSettings && isMovingCanvas {
+                    let canvasFrame = geometry.frame(in: .global)
+                    let anchor = canvasControlFrames[.more]
+                    let diameter: CGFloat = 36
+                    let top = (anchor?.midY ?? canvasFrame.minY + 34) - canvasFrame.minY - diameter / 2
+                    // Both actions stay visible; this overlay never changes the native toolbar slots.
+                    canvasToolsMorph(diameter: diameter)
+                        .position(x: (anchor?.midX ?? canvasFrame.minX + 30) - canvasFrame.minX,
+                                  y: top + diameter)
+                        .zIndex(3)
+
+                    let trailingAnchor = canvasControlFrames[.tools]
+                    let trailingTop = (trailingAnchor?.midY ?? canvasFrame.minY + 34) - canvasFrame.minY - diameter / 2
+                    cameraHistoryMorph(diameter: diameter)
+                        .position(x: (trailingAnchor?.midX ?? canvasFrame.maxX - 30) - canvasFrame.minX,
+                                  y: trailingTop + diameter * 1.5)
                         .zIndex(3)
                 }
 
@@ -162,8 +182,12 @@ struct ContentView: View {
                     Button {
                         controller.cancelStroke()
                         if isMovingCanvas {
-                            isEyedropperActive.toggle()
-                            hasEyedropperSession = true
+                            if lasso.isActive {
+                                lasso.setMode(.strokes)
+                            } else {
+                                isEyedropperActive.toggle()
+                                hasEyedropperSession = true
+                            }
                         } else if usesMorphToolbar {
                             if showsContentActions {
                                 showsContentActions = false
@@ -179,12 +203,12 @@ struct ContentView: View {
                         Image(systemName: isMovingCanvas ? "eyedropper" : usesMorphToolbar && !showsContentActions ? "doc.badge.gearshape" : "ellipsis")
                             .foregroundStyle(isEyedropperActive ? .green : .primary)
                             .frame(width: 18, height: 18, alignment: .center)
-                            .opacity(usesMorphToolbar && !isMovingCanvas ? 0 : 1)
+                            .opacity(usesMorphToolbar || isMovingCanvas ? 0 : 1)
                             .contentShape(Rectangle())
                     }
-                    .watchToolbarButtonStyle(hidesNativeChrome: (usesMorphToolbar && !isMovingCanvas) || controller.activeStroke != nil)
-                    .accessibilityLabel(L10n.text(isMovingCanvas ? "Eyedropper" : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
-                    .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
+                    .watchToolbarButtonStyle(hidesNativeChrome: usesMorphToolbar || isMovingCanvas || controller.activeStroke != nil)
+                    .accessibilityLabel(L10n.text(isMovingCanvas ? (lasso.isActive ? WatchLassoMode.strokes.title : "Eyedropper") : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
+                    .accessibilityAddTraits((lasso.isActive ? lasso.mode == .strokes : isEyedropperActive) ? [.isSelected] : [])
                     .trackCanvasControl(.more, frames: $canvasControlFrames)
                     .opacity(controller.activeStroke != nil ? 0 : 1)
                     .allowsHitTesting(controller.activeStroke == nil)
@@ -196,10 +220,7 @@ struct ContentView: View {
                 Button {
                     controller.cancelStroke()
                     if isMovingCanvas {
-                        if hasEyedropperSession {
-                            isEyedropperActive = false
-                            hasEyedropperSession = false
-                        } else { isMovingCanvas = false }
+                        finishCameraTool()
                     }
                     else if usesMorphToolbar && !showsToolSettings && showsMorphToolbar {
                         // In the expanded capsule this same screen position is
@@ -302,6 +323,11 @@ struct ContentView: View {
         }
         .onChange(of: isMovingCanvas) { _, moving in
             if moving { showsMorphToolbar = false; showsContentActions = false }
+            else {
+                lasso.deactivate()
+                isEyedropperActive = false
+                hasEyedropperSession = false
+            }
         }
         .onChange(of: session.canvasSessionID) { _, _ in
             showsContentActions = false
@@ -309,6 +335,7 @@ struct ContentView: View {
             isMovingCanvas = false
             isEyedropperActive = false
             hasEyedropperSession = false
+            lasso.deactivate()
             showsToolSettings = false
             showsGallery = false
         }
@@ -348,6 +375,7 @@ struct ContentView: View {
         isMovingCanvas = false
         isEyedropperActive = false
         hasEyedropperSession = false
+        lasso.deactivate()
         // Let an existing modal finish dismissing before presenting a discard prompt.
         if hasPresentation {
             do { try await Task.sleep(for: .milliseconds(500)) }
@@ -388,7 +416,7 @@ struct ContentView: View {
     }
 
     private var morphOwnsTrailingControl: Bool {
-        usesMorphToolbar && !showsToolSettings && !isMovingCanvas
+        !showsToolSettings && (usesMorphToolbar || isMovingCanvas)
     }
 
     private func contentActions(diameter: CGFloat) -> some View {
@@ -496,6 +524,78 @@ struct ContentView: View {
         .trackCanvasControl(.morph, frames: $canvasControlFrames)
     }
 
+    private func finishCameraTool() {
+        controller.cancelStroke()
+        lasso.deactivate()
+        isEyedropperActive = false
+        hasEyedropperSession = false
+        isMovingCanvas = false
+    }
+
+    private func cameraHistoryMorph(diameter: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            morphButton("Done", height: diameter, action: finishCameraTool) {
+                Image(systemName: "checkmark").foregroundStyle(.green)
+            }
+            // The permanent native toolbar button owns this top-row hit target.
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            morphButton("Undo", height: diameter) {
+                lasso.resetSelection()
+                controller.undo()
+            } label: { Image(systemName: "arrow.uturn.backward") }
+            .disabled(!controller.canUndo)
+            .opacity(controller.canUndo ? 1 : 0.35)
+            morphButton("Redo", height: diameter) {
+                lasso.resetSelection()
+                controller.redo()
+            } label: { Image(systemName: "arrow.uturn.forward") }
+            .disabled(!controller.canRedo)
+            .opacity(controller.canRedo ? 1 : 0.35)
+        }
+        .frame(width: diameter)
+        .modifier(CanvasMorphGlass())
+        .trackCanvasControl(.morph, frames: $canvasControlFrames)
+    }
+
+    private func canvasToolsMorph(diameter: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            if lasso.isActive {
+                ForEach(WatchLassoMode.allCases, id: \.self) { mode in
+                    morphButton(mode.title, height: diameter) { lasso.setMode(mode) } label: {
+                        Image(systemName: mode.symbol)
+                            .foregroundStyle(lasso.mode == mode ? .green : .white)
+                    }
+                    .accessibilityAddTraits(lasso.mode == mode ? [.isSelected] : [])
+                    .allowsHitTesting(mode != .strokes)
+                    .accessibilityHidden(mode == .strokes)
+                }
+            } else {
+                morphButton("Eyedropper", height: diameter) {
+                    isEyedropperActive.toggle()
+                    hasEyedropperSession = true
+                } label: {
+                    Image(systemName: "eyedropper")
+                        .foregroundStyle(isEyedropperActive ? .green : .white)
+                }
+                .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+                morphButton("Lasso", height: diameter) {
+                    controller.cancelStroke()
+                    isEyedropperActive = false
+                    hasEyedropperSession = false
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                        lasso.activate()
+                    }
+                } label: { Image(systemName: "lasso") }
+            }
+        }
+        .frame(width: diameter)
+        .modifier(CanvasMorphGlass())
+        .trackCanvasControl(.canvasToolsMorph, frames: $canvasControlFrames)
+    }
+
     private func morphButton<Label: View>(_ title: String, height: CGFloat, action: @escaping () -> Void,
                                           @ViewBuilder label: () -> Label) -> some View {
         Button(action: action) {
@@ -511,7 +611,9 @@ struct ContentView: View {
 
     private var drawingPage: some View {
         // Animate the whole page above, keeping the cached artwork fully visible inside it.
-        WatchCanvasView(controller: controller, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onCanvasInteraction: {
+        WatchCanvasView(controller: controller, lasso: lasso, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
+            controller.pencilStyle.color = color
+        }, onCanvasInteraction: {
             if showsContentActions {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { showsContentActions = false }
             }
@@ -527,9 +629,9 @@ struct ContentView: View {
     private var protectedCanvasControls: [CanvasToolbarControl: CGRect] {
         guard !showsGallery && !showsToolSettings && controller.activeStroke == nil else { return [:] }
         return canvasControlFrames.filter { control, _ in
-            if isMovingCanvas { return control == .tools || control == .more }
+            if isMovingCanvas { return control == .tools || control == .more || control == .canvasToolsMorph || control == .morph }
             if usesMorphToolbar { return control == .more || control == .tools || control == .morph || control == .contentMorph }
-            return control != .morph
+            return control != .morph && control != .canvasToolsMorph
         }
     }
 }

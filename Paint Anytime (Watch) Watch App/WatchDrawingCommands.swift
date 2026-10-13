@@ -1,5 +1,6 @@
 import SwiftUI
 import simd
+import ImageIO
 
 /// Geometry is generated once by the brushes and consumed by both rendering paths.
 nonisolated struct WatchDrawingCommand {
@@ -12,6 +13,7 @@ nonisolated struct WatchDrawingCommand {
     let opacity: Double
     let blendMode: GraphicsContext.BlendMode
     let usesOpacityLayer: Bool
+    var exclusionPaths: [Path] = []
 }
 
 nonisolated struct WatchDrawingContext {
@@ -80,7 +82,11 @@ nonisolated enum WatchBitmapRenderer {
 
         init(_ stroke: Stroke) throws {
             revision = stroke.geometryRevision
-            if stroke.style.instrument == .marker || stroke.style.instrument == .watercolor {
+            if let raster = stroke.raster {
+                coverage = nil
+                commands = []
+                bounds = raster.bounds.applying(stroke.transform.affine)
+            } else if stroke.style.instrument == .marker || stroke.style.instrument == .watercolor {
                 let geometry = try WatchStrokeCoverage.geometry(for: stroke)
                 coverage = geometry
                 commands = []
@@ -492,6 +498,19 @@ nonisolated enum WatchBitmapRenderer {
         context.scaleBy(x: scale, y: -scale)
         for stroke in strokes {
             guard !Task.isCancelled else { return nil }
+            if let raster = stroke.raster {
+                guard let source = CGImageSourceCreateWithData(raster.png as CFData, nil),
+                      let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
+                context.saveGState()
+                exclude(WatchStrokeDrawing.exclusionPaths(for: stroke), from: context)
+                context.concatenate(stroke.transform.affine)
+                context.translateBy(x: raster.bounds.minX, y: raster.bounds.maxY)
+                context.scaleBy(x: 1, y: -1)
+                context.interpolationQuality = .high
+                context.draw(image, in: CGRect(origin: .zero, size: raster.bounds.size))
+                context.restoreGState()
+                continue
+            }
             // Paint on opaque straight RGB, then restore the original alpha mask.
             // This preserves even partially transparent edges across repeated strokes.
             var lockedAlpha: [Float] = []
@@ -608,6 +627,7 @@ nonisolated enum WatchBitmapRenderer {
     private static func draw(_ command: WatchDrawingCommand, in context: CGContext,
                              space: CGColorSpace, normalBlend: Bool = false) {
         context.saveGState()
+        exclude(command.exclusionPaths, from: context)
         let c = command.rgba
         let color = CGColor(colorSpace: space, components: [
             CGFloat(c.x), CGFloat(c.y), CGFloat(c.z), (normalBlend || command.usesOpacityLayer) ? 1 : CGFloat(c.w)])!
@@ -636,6 +656,15 @@ nonisolated enum WatchBitmapRenderer {
         }
         if command.usesOpacityLayer { context.endTransparencyLayer() }
         context.restoreGState()
+    }
+
+    static func exclude(_ paths: [Path], from context: CGContext) {
+        for path in paths {
+            // The enclosing rectangle supplies the inverse of the lasso contour.
+            context.addRect(context.boundingBoxOfClipPath)
+            context.addPath(path.cgPath)
+            context.clip(using: .evenOdd)
+        }
     }
 
 }

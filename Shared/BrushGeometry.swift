@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 import simd
 
 // Input-dependent geometry shared independently of the display technology.
@@ -193,6 +194,21 @@ nonisolated enum BrushGeometry {
     }
 
     static func touches(_ stroke: Stroke, from a: SIMD2<Float>, to b: SIMD2<Float>, radius: Float) -> Bool {
+        if stroke.transform != .identity {
+            let inverse = stroke.transform.affine.inverted()
+            let p = CGPoint(x: CGFloat(a.x), y: CGFloat(a.y)).applying(inverse)
+            let q = CGPoint(x: CGFloat(b.x), y: CGFloat(b.y)).applying(inverse)
+            var source = stroke
+            source.transform = .identity
+            let reach = radius * Float(max(hypot(inverse.a, inverse.b), hypot(inverse.c, inverse.d)))
+            return touches(source, from: SIMD2(Float(p.x), Float(p.y)), to: SIMD2(Float(q.x), Float(q.y)), radius: reach)
+        }
+        if let raster = stroke.raster {
+            let area = raster.bounds.insetBy(dx: -CGFloat(radius), dy: -CGFloat(radius))
+            let path = CGRect(x: CGFloat(min(a.x, b.x)), y: CGFloat(min(a.y, b.y)),
+                              width: CGFloat(abs(b.x - a.x)) + 0.001, height: CGFloat(abs(b.y - a.y)) + 0.001)
+            return area.intersects(path)
+        }
         if stroke.style.instrument == .fill {
             return (stroke.fillRects ?? []).contains { rect in
                 let lo = SIMD2(rect.x, rect.y), hi = lo + SIMD2(rect.z, rect.w)

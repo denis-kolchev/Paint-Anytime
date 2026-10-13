@@ -106,6 +106,13 @@ final class CanvasController: ObservableObject {
         editLayers { edit(&$0.layers[index]) }
     }
 
+    /// A complete selection drag is one undoable edit, independent of preview frames.
+    func replaceLayerStrokes(_ strokes: [Stroke], in layerID: UUID) {
+        guard let index = document.layers.firstIndex(where: { $0.id == layerID }),
+              document.layers[index].strokes != strokes else { return }
+        editLayers { $0.layers[index].strokes = strokes }
+    }
+
     func setBackgroundColor(_ color: SIMD4<Float>) {
         editLayers { $0.backgroundColor = color }
     }
@@ -137,6 +144,16 @@ final class CanvasController: ObservableObject {
             if let resolution { document.resolution = resolution }
             for layer in document.layers.indices {
                 document.layers[layer].strokes = document.layers[layer].strokes.map { original in
+                    if original.transform != .identity || original.raster != nil || !original.excludedAreas.isEmpty {
+                        let origin = transform(.zero)
+                        let x = transform(SIMD2(1, 0)) - origin
+                        let y = transform(SIMD2(0, 1)) - origin
+                        let adjustment = CGAffineTransform(a: CGFloat(x.x), b: CGFloat(x.y),
+                            c: CGFloat(y.x), d: CGFloat(y.y), tx: CGFloat(origin.x), ty: CGFloat(origin.y))
+                        var stroke = original
+                        stroke.transform = StrokeTransform(original.transform.affine.concatenating(adjustment))
+                        return stroke
+                    }
                     var style = original.style
                     style.width *= sqrt(sx * sy)
                     style.reedAngle = (style.reedAngle + Float(turns * 90) + 270).truncatingRemainder(dividingBy: 180) - 90

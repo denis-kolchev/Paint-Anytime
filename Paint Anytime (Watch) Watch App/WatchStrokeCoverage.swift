@@ -8,6 +8,7 @@ nonisolated final class WatchStrokeCoverage {
     struct Geometry {
         var primitives: [(path: Path, band: Int)] = []
         var endCap: Path?
+        var exclusionPaths: [Path] = []
         var bounds: CGRect {
             primitives.reduce(endCap?.boundingRect ?? .null) { $0.union($1.path.boundingRect) }
         }
@@ -15,15 +16,28 @@ nonisolated final class WatchStrokeCoverage {
 
     // Recording uses the exact same primitive generator as live coverage, but no raster work.
     private var recordedGeometry: Geometry?
+    private var exclusionPaths: [Path] = []
 
     static func geometry(for stroke: Stroke) throws -> Geometry {
         let recorder = WatchStrokeCoverage(style: stroke.style, width: 1, height: 1, scale: 1)
         recorder.recordedGeometry = Geometry()
-        _ = try recorder.append(stroke)
-        return recorder.recordedGeometry!
+        var source = stroke
+        source.transform = .identity
+        source.excludedAreas = []
+        _ = try recorder.append(source)
+        var geometry = recorder.recordedGeometry!
+        if stroke.transform != .identity {
+            geometry.primitives = geometry.primitives.map {
+                (path: $0.path.applying(stroke.transform.affine), band: $0.band)
+            }
+            geometry.endCap = geometry.endCap?.applying(stroke.transform.affine)
+        }
+        geometry.exclusionPaths = WatchStrokeDrawing.exclusionPaths(for: stroke)
+        return geometry
     }
 
     func replay(_ geometry: Geometry) throws -> CGRect {
+        exclusionPaths = geometry.exclusionPaths
         var dirty = CGRect.null
         for primitive in geometry.primitives {
             dirty = dirty.union(try merge(primitive.path, band: primitive.band))
@@ -91,6 +105,7 @@ nonisolated final class WatchStrokeCoverage {
     /// Returns only the changed rectangle. Event batches and full replay use the same
     /// primitive order, making live drawing, stroke completion, and export agree.
     func append(_ stroke: Stroke) throws -> CGRect {
+        if stroke.transform != .identity || !stroke.excludedAreas.isEmpty { return try replay(Self.geometry(for: stroke)) }
         var dirty = CGRect.null
         guard stroke.points.count > processedPointCount else { return dirty }
         if processedPointCount == 0 { firstPoint = stroke.points.first }
@@ -187,6 +202,7 @@ nonisolated final class WatchStrokeCoverage {
               context.data != nil else { throw RenderError.allocation }
         context.translateBy(x: -bounds.minX, y: -bounds.minY)
         context.concatenate(transform)
+        WatchBitmapRenderer.exclude(exclusionPaths, from: context)
         context.setFillColor(gray: 1, alpha: 1)
         context.addPath(path.cgPath)
         context.fillPath()

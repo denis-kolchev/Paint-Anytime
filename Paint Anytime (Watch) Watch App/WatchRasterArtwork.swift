@@ -6,6 +6,7 @@ import Combine
 struct WatchRasterArtwork: View {
     var document: CanvasDocument? = nil
     var selectedLayerID: UUID? = nil
+    var previewSessionID: UUID? = nil
     let strokes: [Stroke]
     let activeStroke: Stroke?
     let documentID: ObjectIdentifier
@@ -20,7 +21,7 @@ struct WatchRasterArtwork: View {
         let _ = TutorialDebug.trace("raster.body")
         GeometryReader { geometry in
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
-            RasterFrame(document: document, selectedLayerID: selectedLayerID, strokes: strokes, activeStroke: activeStroke,
+            RasterFrame(document: document, selectedLayerID: selectedLayerID, previewSessionID: previewSessionID, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
@@ -41,6 +42,7 @@ struct WatchRasterArtwork: View {
     private struct RasterFrame: View {
         let document: CanvasDocument?
         let selectedLayerID: UUID?
+        let previewSessionID: UUID?
         let strokes: [Stroke]
         let activeStroke: Stroke?
         let activeStrokeRevision: UInt64
@@ -77,7 +79,7 @@ struct WatchRasterArtwork: View {
                 }
             }
             .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision)) { @MainActor in
-                frames.submit(document: document, selectedLayerID: selectedLayerID, strokes: strokes, activeStroke: activeStroke,
+                frames.submit(document: document, selectedLayerID: selectedLayerID, previewSessionID: previewSessionID, strokes: strokes, activeStroke: activeStroke,
                               key: key, activeStrokeID: activeStrokeID)
             }
             .onDisappear { frames.stop() }
@@ -95,6 +97,7 @@ private final class CanvasFrameQueue: ObservableObject {
     private struct Job {
         let document: CanvasDocument?
         let selectedLayerID: UUID?
+        let previewSessionID: UUID?
         let strokes: [Stroke]
         let activeStroke: Stroke?
         let key: WatchBitmapRenderer.CacheKey
@@ -105,9 +108,9 @@ private final class CanvasFrameQueue: ObservableObject {
     private var worker: Task<Void, Never>?
     private var generation: UInt64 = 0
 
-    func submit(document: CanvasDocument?, selectedLayerID: UUID?, strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
+    func submit(document: CanvasDocument?, selectedLayerID: UUID?, previewSessionID: UUID?, strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
                 activeStrokeID: UInt64) {
-        let job = Job(document: document, selectedLayerID: selectedLayerID, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
+        let job = Job(document: document, selectedLayerID: selectedLayerID, previewSessionID: previewSessionID, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
         pending = job
         latest = job
         guard worker == nil else { return }
@@ -127,7 +130,8 @@ private final class CanvasFrameQueue: ObservableObject {
                 guard !Task.isCancelled, self.generation == token else { return }
                 // An older prefix of this gesture is useful. An old document,
                 // cancelled gesture or viewport must never replace the new one.
-                if let latest = self.latest, latest.key == job.key,
+                if let latest = self.latest,
+                   (latest.key == job.key || Self.sameSelectionDrag(latest, job)),
                    latest.activeStrokeID == job.activeStrokeID,
                    latest.activeStroke?.id == job.activeStroke?.id, let next {
                     self.frame = next
@@ -135,6 +139,14 @@ private final class CanvasFrameQueue: ObservableObject {
             }
             if self.generation == token { self.worker = nil }
         }
+    }
+
+    private static func sameSelectionDrag(_ latest: Job, _ rendered: Job) -> Bool {
+        // A slower frame from the current drag is still useful while the finger
+        // moves. Never publish it after commit, cancellation, or another drag.
+        latest.previewSessionID != nil && latest.previewSessionID == rendered.previewSessionID
+            && latest.key.documentID == rendered.key.documentID
+            && latest.key.size == rendered.key.size && latest.key.scale == rendered.key.scale
     }
 
     func stop() {

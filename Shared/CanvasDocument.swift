@@ -1,4 +1,5 @@
 import Foundation
+import CoreGraphics
 import simd
 
 nonisolated struct PointerSample: Codable, Equatable {
@@ -228,6 +229,30 @@ nonisolated struct PencilStyle: Codable, Equatable {
     }
 }
 
+/// Keep the authored brush geometry intact when a selection is stretched.
+nonisolated struct StrokeTransform: Codable, Equatable {
+    var a: CGFloat = 1
+    var b: CGFloat = 0
+    var c: CGFloat = 0
+    var d: CGFloat = 1
+    var tx: CGFloat = 0
+    var ty: CGFloat = 0
+
+    static let identity = StrokeTransform()
+    var affine: CGAffineTransform { CGAffineTransform(a: a, b: b, c: c, d: d, tx: tx, ty: ty) }
+
+    init() {}
+    init(_ value: CGAffineTransform) {
+        a = value.a; b = value.b; c = value.c; d = value.d; tx = value.tx; ty = value.ty
+    }
+}
+
+/// Area selections carry transparent pixels; the paper is never part of a cut.
+nonisolated struct StrokeRaster: Codable, Equatable {
+    var png: Data
+    var bounds: CGRect
+}
+
 nonisolated struct Stroke: Codable, Equatable, Identifiable {
     let id: UUID
     // A copied stroke can still be edited; invalidate geometry without comparing points.
@@ -246,7 +271,9 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
     }
 
     func extends(_ previous: Stroke) -> Bool {
-        guard id == previous.id, style == previous.style, points.count >= previous.points.count else { return false }
+        guard id == previous.id, style == previous.style, points.count >= previous.points.count,
+              transform == previous.transform, raster == previous.raster,
+              excludedAreas == previous.excludedAreas else { return false }
         if let inputStream, inputStream == previous.inputStream {
             return previous.points.last == (previous.points.isEmpty ? nil : points[previous.points.count - 1])
         }
@@ -254,6 +281,16 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
     }
     let style: PencilStyle
     var locksTransparency = false
+    var transform = StrokeTransform.identity {
+        didSet { geometryRevision = UUID(); inputStream = nil }
+    }
+    var raster: StrokeRaster? {
+        didSet { geometryRevision = UUID(); inputStream = nil }
+    }
+    /// Cutouts live in the original stroke's coordinates and follow its transform.
+    var excludedAreas: [[SIMD2<Float>]] = [] {
+        didSet { geometryRevision = UUID(); inputStream = nil }
+    }
     // Horizontal filled rectangles in canvas coordinates; independent of brush width.
     var fillRects: [SIMD4<Float>]? {
         didSet { geometryRevision = UUID() }
@@ -265,7 +302,7 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         self.style = style
     }
 
-    private enum CodingKeys: String, CodingKey { case id, points, style, locksTransparency, fillRects }
+    private enum CodingKeys: String, CodingKey { case id, points, style, locksTransparency, fillRects, transform, raster, excludedAreas }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -275,10 +312,14 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         points = try values.decode([PointerSample].self, forKey: .points)
         style = try values.decode(PencilStyle.self, forKey: .style)
         locksTransparency = try values.decodeIfPresent(Bool.self, forKey: .locksTransparency) ?? false
+        transform = try values.decodeIfPresent(StrokeTransform.self, forKey: .transform) ?? .identity
+        raster = try values.decodeIfPresent(StrokeRaster.self, forKey: .raster)
+        excludedAreas = try values.decodeIfPresent([[SIMD2<Float>]].self, forKey: .excludedAreas) ?? []
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.fillRects == rhs.fillRects && lhs.id == rhs.id && lhs.points == rhs.points && lhs.style == rhs.style && lhs.locksTransparency == rhs.locksTransparency
+            && lhs.transform == rhs.transform && lhs.raster == rhs.raster && lhs.excludedAreas == rhs.excludedAreas
     }
 }
 

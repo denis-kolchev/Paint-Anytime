@@ -9,12 +9,13 @@ import SwiftUI
 import WatchKit
 
 enum CanvasToolbarControl: Hashable {
-    case more, tools, clear, undo, redo, save, morph, contentMorph
+    case more, tools, clear, undo, redo, save, morph, contentMorph, canvasToolsMorph
 }
 
 struct WatchCanvasView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
+    @ObservedObject var lasso = WatchLassoController()
     @ObservedObject var tutorial = TutorialSession.inactive
     var rendersArtwork = true
     var acceptsInput = true
@@ -57,15 +58,16 @@ struct WatchCanvasView: View {
         GeometryReader { geometry in
             let paperSize = controller.document.size(fallback: geometry.size)
             let fit = canvasFit(geometry.size)
+            let displayedDocument = lasso.previewDocument ?? controller.document
             Color(white: 0.16)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .overlay {
                     // Hiding settings/gallery must not destroy the raster view's image and cache.
                     // Keep its identity so returning to the canvas displays the last frame immediately.
-                    WatchRasterArtwork(document: needsLayerRendering ? controller.document : nil,
-                        selectedLayerID: controller.selectedLayer.id, strokes: controller.document.strokes,
+                    WatchRasterArtwork(document: needsLayerRendering || lasso.previewDocument != nil ? displayedDocument : nil,
+                        selectedLayerID: controller.selectedLayer.id, previewSessionID: lasso.previewSessionID, strokes: displayedDocument.strokes,
                         activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
-                        documentRevision: controller.documentRevision,
+                        documentRevision: controller.documentRevision &+ lasso.previewRevision,
                         activeStrokeRevision: controller.activeStrokeRevision,
                         activeStrokeID: controller.activeStrokeID, zoom: zoom)
                         .frame(width: paperSize.width, height: paperSize.height)
@@ -85,6 +87,14 @@ struct WatchCanvasView: View {
                         .opacity(rendersArtwork ? 1 : 0)
                 }
             .clipped()
+            .overlay {
+                if lasso.isActive {
+                    WatchLassoOverlay(lasso: lasso, canvasToScreen: CGAffineTransform(
+                        a: zoom * fit, b: 0, c: 0, d: zoom * fit,
+                        tx: geometry.size.width / 2 + offset.width - paperSize.width * zoom * fit / 2,
+                        ty: geometry.size.height / 2 + offset.height - paperSize.height * zoom * fit / 2))
+                }
+            }
             .overlay {
                 if isEyedropperActive, let loupeImage, let loupePoint {
                     Image(decorative: loupeImage, scale: 1)
@@ -108,6 +118,9 @@ struct WatchCanvasView: View {
             .onChange(of: geometry.size) { _, size in
                 if isEyedropperActive { prepareSampler(size: size) }
             }
+            .onChange(of: controller.documentRevision) { _, _ in
+                if isEyedropperActive { prepareSampler(size: geometry.size) }
+            }
             .onChange(of: crownZoom) { _, _ in
                 if isEyedropperActive { updateSample(at: loupePoint ?? CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2), size: geometry.size) }
             }
@@ -122,10 +135,21 @@ struct WatchCanvasView: View {
                         if acceptsCurrentGesture == nil {
                             acceptsCurrentGesture = !isProtectedStart(value.startLocation,
                                 canvasFrame: geometry.frame(in: .global))
-                            if acceptsCurrentGesture == true { onCanvasInteraction() }
+                            if acceptsCurrentGesture == true {
+                                onCanvasInteraction()
+                                if lasso.isActive {
+                                    lasso.begin(at: canvasPoint(value.startLocation, size: geometry.size),
+                                        tolerance: 11 / (zoom * fit), controller: controller)
+                                }
+                            }
                         }
                         // Keep the initial decision even when controls hide or the finger moves away.
                         guard acceptsCurrentGesture == true else { return }
+                        if lasso.isActive {
+                            cancelShapeHold()
+                            lasso.update(at: canvasPoint(value.location, size: geometry.size), pointSpacing: 1 / (zoom * fit))
+                            return
+                        }
                         if isMovingCanvas && isEyedropperActive {
                             updateSample(at: value.location, size: geometry.size)
                             return
@@ -164,6 +188,11 @@ struct WatchCanvasView: View {
                         cancelShapeHold()
                         defer { acceptsCurrentGesture = nil; panOrigin = nil }
                         guard acceptsInput && acceptsCurrentGesture == true else { return }
+                        if lasso.isActive {
+                            lasso.end(at: canvasPoint(value.location, size: geometry.size), controller: controller,
+                                size: paperSize, scale: min(4, max(1, displayScale)))
+                            return
+                        }
                         if isMovingCanvas {
                             panOrigin = nil
                             return
@@ -213,7 +242,7 @@ struct WatchCanvasView: View {
            onChange: { [step = tutorial.step] event in
                 tutorial.usedCrown(in: step, velocity: event.velocity)
             })
-        .accessibilityLabel(isMovingCanvas ? L10n.text("Moving canvas") : L10n.text("Finger drawing canvas"))
+        .accessibilityLabel(lasso.isActive ? L10n.text(lasso.mode.title) : isMovingCanvas ? L10n.text("Moving canvas") : L10n.text("Finger drawing canvas"))
         .accessibilityValue(L10n.format("Zoom %d percent", Int(zoom * 100)))
         .task(id: CrownFocusRequest(enabled: shouldFocusCrown, step: tutorial.step)) {
             crownFocused = false
@@ -235,6 +264,7 @@ struct WatchCanvasView: View {
                 // A normal onEnded already commits and clears the stroke.
                 // A cancelled gesture has no onEnded and must not remain live.
                 if controller.activeStroke != nil { controller.cancelStroke() }
+                lasso.cancelGesture()
                 panOrigin = nil
                 acceptsCurrentGesture = nil
             }
@@ -248,14 +278,22 @@ struct WatchCanvasView: View {
         .onChange(of: acceptsInput) { _, enabled in
             TutorialDebug.trace("canvas.enabled.enter", "value=\(enabled)")
             defer { TutorialDebug.trace("canvas.enabled.exit", "focused=\(crownFocused)") }
-            if !enabled { cancelShapeHold(); controller.cancelStroke() }
+            if !enabled { cancelShapeHold(); controller.cancelStroke(); lasso.cancelGesture() }
+        }
+        .onChange(of: controller.documentRevision) { _, _ in lasso.documentChanged(controller) }
+        .onChange(of: controller.selectedLayerID) { _, _ in lasso.documentChanged(controller) }
+        .alert(L10n.text("Could not create selection"), isPresented: Binding(
+            get: { lasso.errorMessage != nil }, set: { if !$0 { lasso.errorMessage = nil } }
+        )) {
+            Button(L10n.text("OK"), role: .cancel) { lasso.errorMessage = nil }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active { cancelShapeHold(); controller.cancelStroke() }
+            if phase != .active { cancelShapeHold(); controller.cancelStroke(); lasso.cancelGesture() }
         }
         .onDisappear {
             cancelShapeHold()
             controller.cancelStroke()
+            lasso.deactivate()
         }
     }
 
@@ -341,7 +379,7 @@ struct WatchCanvasView: View {
             let dx: CGFloat
             let dy: CGFloat
             switch control {
-            case .morph, .contentMorph:
+            case .morph, .contentMorph, .canvasToolsMorph:
                 if frame.contains(screenPoint) { return true }
                 continue
             case .more, .tools:
