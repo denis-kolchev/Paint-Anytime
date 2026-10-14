@@ -18,8 +18,7 @@ struct SavedDrawingsView: View {
     @State private var pendingDeletion: CanvasExport?
     @State private var confirmedDeletion: CanvasExport?
     @State private var showsFullscreen = false
-    @State private var showsGalleryActions = false
-    @State private var toolbarFrames: [String: CGRect] = [:]
+    @State private var morphState = GalleryMorphState()
     @State private var galleryScrollTarget: URL?
     @State private var thumbnailFrames: [URL: CGRect] = [:]
     @State private var transitionRequest: GalleryTransitionDirection?
@@ -129,14 +128,16 @@ struct SavedDrawingsView: View {
             .overlay(alignment: .topTrailing) {
                 if showsFullscreen && !isTransitioning && !tutorial.isActive,
                    let selectedDrawing {
-                    let galleryFrame = geometry.frame(in: .global)
-                    let centerY = toolbarFrames["back"]?.midY ?? toolbarFrames["actions"]?.midY
-                        ?? (galleryFrame.minY + 36)
-                    let top = centerY - galleryFrame.minY - 18
-                    let centerX = (toolbarFrames["actions"]?.midX ?? (galleryFrame.maxX - 30)) - galleryFrame.minX
-                    let rowHeight = min(36.0, max(24.0, (geometry.size.height - top - 16) / 5))
-                    galleryActions(for: selectedDrawing, rowHeight: rowHeight)
-                        .position(x: centerX, y: top + (showsGalleryActions ? rowHeight * 5 : 36) / 2)
+                    GalleryMorphActions(state: morphState, canvasOrigin: geometry.frame(in: .global).origin,
+                                        drawing: selectedDrawing, size: geometry.size,
+                                        isFavorite: drawings.first(where: { $0.id == selectedDrawing.id })?.isFavorite ?? false,
+                                        onEdit: { editDrawing(selectedDrawing) },
+                                        onFavorite: { favorite in
+                                            controller.setFavorite(favorite, for: selectedDrawing, in: galleryFolder)
+                                        }, onDelete: {
+                                            crownFocused = false
+                                            pendingDeletion = selectedDrawing
+                                        })
                 }
             }
             .coordinateSpace(name: "drawingGallery")
@@ -160,25 +161,15 @@ struct SavedDrawingsView: View {
         .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
         .toolbar {
             if showsFullscreen && !tutorial.isActive {
-                // Keep native toolbar activation above the overlay; both controls
-                // toggle the same expanding glass surface.
+                // Native toolbar hosts receive taps above the visible morph panel.
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: toggleGalleryActions) {
-                        Image(systemName: "ellipsis")
-                            .frame(width: 18, height: 18)
-                            .opacity(0)
-                            .background { toolbarFrameReader("actions") }
-                    }
-                    .watchToolbarButtonStyle(hidesNativeChrome: true)
-                    .disabled(isTransitioning)
-                    .accessibilityLabel(L10n.text(showsGalleryActions ? "Close" : "More"))
+                    GalleryMorphToolbarButton(state: morphState, isEnabled: !isTransitioning)
                 }
             }
             if tutorial.allowsGalleryBack {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: goBack) {
                         Image(systemName: "chevron.left")
-                            .background { toolbarFrameReader("back") }
                             .tutorialHint(tutorial, steps: [.returnToCanvas])
                     }
                     .disabled(isTransitioning)
@@ -188,7 +179,6 @@ struct SavedDrawingsView: View {
             }
         }
 
-        .onPreferenceChange(GalleryToolbarFramesKey.self) { toolbarFrames = $0 }
         .overlay(alignment: .bottom) {
             if tutorial.isActive && showsFullscreen && !isTransitioning,
                tutorial.allowsGalleryDelete, let selectedDrawing {
@@ -270,10 +260,11 @@ struct SavedDrawingsView: View {
             if !showing && showsFullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
         }
         .onChange(of: showsFullscreen) { _, fullscreen in
+            morphState.isExpanded = false
             tutorial.galleryIsFullscreen = fullscreen
-            showsGalleryActions = false
         }
         .onChange(of: isTransitioning) { _, transitioning in
+            if transitioning { morphState.isExpanded = false }
             if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
         }
     }
@@ -457,70 +448,6 @@ struct SavedDrawingsView: View {
         }
     }
 
-    private func toolbarFrameReader(_ control: String) -> some View {
-        GeometryReader { geometry in
-            Color.clear.preference(key: GalleryToolbarFramesKey.self,
-                                   value: [control: geometry.frame(in: .global)])
-        }
-    }
-
-    private func toggleGalleryActions() {
-        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-            showsGalleryActions.toggle()
-        }
-    }
-
-    private func galleryActions(for drawing: CanvasExport, rowHeight: CGFloat) -> some View {
-        let isFavorite = drawings.first(where: { $0.id == drawing.id })?.isFavorite ?? false
-        return VStack(spacing: 0) {
-            Button(action: toggleGalleryActions) {
-                galleryActionIcon(showsGalleryActions ? "xmark" : "ellipsis",
-                                  rowHeight: showsGalleryActions ? rowHeight : 36)
-            }
-            .accessibilityLabel(L10n.text(showsGalleryActions ? "Close" : "More"))
-
-            if showsGalleryActions {
-            Button { showsGalleryActions = false; editDrawing(drawing) } label: {
-                galleryActionIcon("pencil", rowHeight: rowHeight)
-            }
-            .accessibilityLabel(L10n.text("Edit drawing"))
-
-            Button {
-                controller.setFavorite(!isFavorite, for: drawing, in: galleryFolder)
-            } label: {
-                galleryActionIcon(isFavorite ? "heart.fill" : "heart", rowHeight: rowHeight)
-            }
-            .accessibilityLabel(L10n.text(isFavorite ? "Remove from favorites" : "Add to favorites"))
-
-            ShareLink(item: DrawingShareItem(url: drawing.url),
-                      preview: SharePreview(Text(verbatim: drawing.url.lastPathComponent),
-                                            image: DrawingShareItem(url: drawing.url))) {
-                galleryActionIcon("square.and.arrow.up", rowHeight: rowHeight)
-            }
-            .accessibilityLabel(L10n.text("Share"))
-
-            Button(role: .destructive) {
-                crownFocused = false
-                pendingDeletion = drawing
-            } label: {
-                galleryActionIcon("trash", rowHeight: rowHeight)
-            }
-            .accessibilityLabel(L10n.text("Delete drawing"))
-            }
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(.white)
-        .frame(width: 36)
-        .modifier(CanvasMorphGlass())
-    }
-
-    private func galleryActionIcon(_ symbol: String, rowHeight: CGFloat) -> some View {
-        Image(systemName: symbol)
-            .font(.system(size: 17, weight: .medium))
-            .frame(width: 36, height: rowHeight)
-            .contentShape(Rectangle())
-    }
-
     private func deleteDrawing(_ drawing: CanvasExport) {
         guard controller.delete(drawing, in: galleryFolder) else { return }
         focusedDrawing = nil
@@ -587,14 +514,6 @@ private struct GalleryThumbnailFramesKey: PreferenceKey {
     static var defaultValue: [URL: CGRect] { [:] }
 
     static func reduce(value: inout [URL: CGRect], nextValue: () -> [URL: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
-    }
-}
-
-private struct GalleryToolbarFramesKey: PreferenceKey {
-    static var defaultValue: [String: CGRect] { [:] }
-
-    static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
     }
 }

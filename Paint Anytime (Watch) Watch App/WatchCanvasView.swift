@@ -20,6 +20,8 @@ struct WatchCanvasView: View {
     var rendersArtwork = true
     var acceptsInput = true
     var protectedControls: [CanvasToolbarControl: CGRect] = [:]
+    // Resolve live menu bounds only at gesture start, without observing menu animation.
+    var protectedControlsProvider: (() -> [CanvasToolbarControl: CGRect])? = nil
     @Binding var isMovingCanvas: Bool
     var isEyedropperActive = false
     var onSampleColor: (SIMD4<Float>) -> Void = { _ in }
@@ -365,7 +367,7 @@ struct WatchCanvasView: View {
 
     private func isProtectedStart(_ point: CGPoint, canvasFrame: CGRect) -> Bool {
         let screenPoint = CGPoint(x: canvasFrame.minX + point.x, y: canvasFrame.minY + point.y)
-        for (control, frame) in protectedControls {
+        for (control, frame) in protectedControlsProvider?() ?? protectedControls {
             guard !frame.isNull && !frame.isEmpty else { continue }
             // Include the button when the toolbar reports only its icon, without
             // adding a margin toward the canvas. Extend its rounded footprint
