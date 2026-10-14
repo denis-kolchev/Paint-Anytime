@@ -190,6 +190,22 @@ final class WatchLassoController: ObservableObject {
             preview(in: dragBounds.offsetBy(dx: point.x - dragStart.x, dy: point.y - dragStart.y))
         case .resize(let handle):
             let delta = CGSize(width: point.x - dragStart.x, height: point.y - dragStart.y)
+            if [0, 2, 4, 6].contains(handle) {
+                let handles = WatchLassoGeometry.handles(dragBounds)
+                let anchor = handles[(handle + 4) % handles.count]
+                let corner = handles[handle]
+                let dx = corner.x - anchor.x, dy = corner.y - anchor.y
+                // Project the drag onto the original diagonal, keeping the
+                // opposite corner fixed and using one scale for both axes.
+                let minimumScale = max(min(1, dragBounds.width) / dragBounds.width,
+                                       min(1, dragBounds.height) / dragBounds.height)
+                let scale = max(minimumScale, 1 + (delta.width * dx + delta.height * dy) / (dx * dx + dy * dy))
+                let width = dragBounds.width * scale, height = dragBounds.height * scale
+                preview(in: CGRect(x: dx < 0 ? anchor.x - width : anchor.x,
+                                   y: dy < 0 ? anchor.y - height : anchor.y,
+                                   width: width, height: height))
+                return
+            }
             var left = dragBounds.minX, right = dragBounds.maxX
             var top = dragBounds.minY, bottom = dragBounds.maxY
             let minimumWidth = min(1, dragBounds.width), minimumHeight = min(1, dragBounds.height)
@@ -286,6 +302,7 @@ final class WatchLassoController: ObservableObject {
                 CGAffineTransform(translationX: 8, y: 8)))
             copy.raster = source.raster
             copy.excludedAreas = source.excludedAreas
+            copy.erasures = source.erasures
             copy.fillRects = source.fillRects
             return copy
         }
@@ -325,11 +342,12 @@ private actor WatchLassoBuilder {
 
     func prepare(document: CanvasDocument, layerID: UUID, polygon: [CGPoint], mode: WatchLassoMode,
                  size: CGSize, scale: CGFloat) throws -> WatchLassoSelection? {
-        guard let layer = document.layers.first(where: { $0.id == layerID }),
+        guard var layer = document.layers.first(where: { $0.id == layerID }),
               layer.isVisible, layer.opacity > 0 else { return nil }
         let path = WatchLassoGeometry.path(polygon)
         let paper = CGRect(origin: .zero, size: size)
         guard path.boundingBoxOfPath.intersects(paper) else { return nil }
+        layer.strokes = try attachingErasers(in: layer.strokes)
         if mode == .area {
             return try cutArea(document: document, layer: layer, polygon: polygon, path: path, size: size, scale: scale)
         }
@@ -344,13 +362,38 @@ private actor WatchLassoBuilder {
             guard let visibleBounds = try majorityAreaBounds(stroke, bounds: geometry.bounds, path: path,
                 size: size, scale: scale) else { continue }
             selected.insert(stroke.id)
-            let selectionBounds = stroke.raster != nil || !stroke.excludedAreas.isEmpty
+            let selectionBounds = stroke.raster != nil || !stroke.excludedAreas.isEmpty || !stroke.erasures.isEmpty
                 ? visibleBounds : geometry.bounds
             bounds = bounds.union(selectionBounds)
         }
         guard !selected.isEmpty, !bounds.isNull, !bounds.isEmpty else { return nil }
         return WatchLassoSelection(document: document, layerID: layerID, strokes: layer.strokes,
                                    selectedIDs: selected, bounds: bounds)
+    }
+
+    private func attachingErasers(in strokes: [Stroke]) throws -> [Stroke] {
+        guard strokes.contains(where: { $0.style.instrument == .eraser }) else { return strokes }
+        var objects: [Stroke] = []
+        var bounds: [CGRect] = []
+        for stroke in strokes {
+            try Task.checkCancellation()
+            let geometry = try WatchBitmapRenderer.StrokeGeometry(stroke)
+            if stroke.style.instrument == .eraser {
+                guard stroke.style.eraserMode == .pixels, !stroke.locksTransparency else { continue }
+                // Only earlier objects were affected by this eraser. Keep a
+                // separate local mask for each, so shared erasures can separate.
+                for index in objects.indices where bounds[index].intersects(geometry.bounds) {
+                    var eraser = stroke
+                    eraser.transform = StrokeTransform(stroke.transform.affine.concatenating(
+                        objects[index].transform.affine.inverted()))
+                    objects[index].erasures.append(eraser)
+                }
+            } else {
+                objects.append(stroke)
+                bounds.append(geometry.bounds)
+            }
+        }
+        return objects
     }
 
     private func majorityAreaBounds(_ stroke: Stroke, bounds: CGRect, path: CGPath,
@@ -490,7 +533,7 @@ struct WatchLassoOverlay: View {
                 context.stroke(path, with: .color(.gray),
                     style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round, dash: [0.1, 4]))
             }
-            if let bounds = lasso.bounds {
+            if let bounds = lasso.bounds, !lasso.hidesControls {
                 let rect = bounds.applying(canvasToScreen)
                 let borderColor = Color(red: 0.20, green: 0.43, blue: 1)
                 let handleColor = Color(red: 0.16, green: 0.67, blue: 0.87)

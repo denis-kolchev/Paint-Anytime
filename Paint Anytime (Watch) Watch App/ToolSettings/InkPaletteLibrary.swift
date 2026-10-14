@@ -88,6 +88,7 @@ struct InkPaletteBrowser: View {
     @State var library: InkPaletteLibrary
     @ObservedObject var controller: CanvasController
     let onSave: (InkPaletteLibrary) -> Void
+    private let returnsToCanvasAfterColorSave: Bool
     private let hiddenNameIDs: Set<PaletteNameID>
     @State private var currentID: String
     @State private var browsing = false
@@ -95,6 +96,7 @@ struct InkPaletteBrowser: View {
     @State private var paletteBeforeEditing: SavedInkPalette?
     @State private var showsColorEditor = false
     @State private var sampledColor: SIMD4<Float>?
+    @State private var addedColors: [(paletteID: String, colorID: String)] = []
     @State private var pendingDeletionID: String?
     @State private var actionPalette: SavedInkPalette?
     @GestureState private var carouselTranslation = CGSize.zero
@@ -105,11 +107,14 @@ struct InkPaletteBrowser: View {
     @GestureState private var moveGestureActive = false
     private let addID = "add-palette"
 
-    init(library: InkPaletteLibrary, controller: CanvasController,
+    init(library: InkPaletteLibrary, controller: CanvasController, initialColor: SIMD4<Float>? = nil,
          onSave: @escaping (InkPaletteLibrary) -> Void) {
         let visibleLibrary = InkPaletteLibrary(palettes: library.visiblePalettes, activeID: library.activeID)
         _library = State(initialValue: visibleLibrary)
         self.controller = controller
+        returnsToCanvasAfterColorSave = initialColor != nil
+        _sampledColor = State(initialValue: initialColor)
+        _showsColorEditor = State(initialValue: initialColor != nil)
         hiddenNameIDs = Set(library.palettes.filter { !$0.isVisible }.compactMap { $0.palette.generatedNameID })
         self.onSave = { draft in onSave(library.mergingVisiblePalettes(draft)) }
         // Resolve the selection before the first render. An empty Group has no
@@ -137,7 +142,7 @@ struct InkPaletteBrowser: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .navigationBarBackButtonHidden(true)
             .navigationDestination(isPresented: $showsColorEditor) {
-                CustomInkEditor(initialColor: sampledColor) { preset in
+                CustomInkEditor(initialColor: sampledColor, dismissesOnSave: !returnsToCanvasAfterColorSave) { preset in
                     guard let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
                     if let existing = library.palettes[index].palette.allColors.first(where: { $0.rgba == preset.rgba }) {
                         if !library.palettes[index].palette.selectedIDs.contains(existing.id) {
@@ -146,6 +151,13 @@ struct InkPaletteBrowser: View {
                     } else {
                         library.palettes[index].palette.customColors.append(preset)
                         library.palettes[index].palette.selectedIDs.append(preset.id)
+                        addedColors.append((currentID, preset.id))
+                    }
+                    if returnsToCanvasAfterColorSave {
+                        // Also select an existing swatch when the sampled color
+                        // already belongs to the palette.
+                        controller.pencilStyle.color = preset.rgba
+                        confirm()
                     }
                 }
             }
@@ -618,6 +630,16 @@ struct InkPaletteBrowser: View {
         guard canConfirm else { return }
         updateGeneratedName()
         library.activeID = currentID
+        let palette = library.activePalette
+        if let lastAdded = addedColors.reversed().first(where: { entry in
+            entry.paletteID == currentID && palette.allColors.contains { $0.id == entry.colorID }
+        }), let color = palette.allColors.first(where: { $0.id == lastAdded.colorID }) {
+            if let index = library.palettes.firstIndex(where: { $0.id == currentID }),
+               !library.palettes[index].palette.selectedIDs.contains(color.id) {
+                library.palettes[index].palette.selectedIDs.append(color.id)
+            }
+            controller.pencilStyle.color = color.rgba
+        }
         onSave(library)
         dismiss()
     }

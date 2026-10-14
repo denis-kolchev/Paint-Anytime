@@ -307,6 +307,7 @@ private struct PaletteSwatchFramesKey: PreferenceKey {
 struct CustomInkEditor: View {
     var initialColor: SIMD4<Float>? = nil
     var saveTitle = "Add color"
+    var dismissesOnSave = true
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -392,7 +393,7 @@ struct CustomInkEditor: View {
                 Button {
                     onSave(InkPreset(customID: UUID().uuidString, nameKey: colorName,
                                      rgba: SIMD4(Float(rgb[0] / 255), Float(rgb[1] / 255), Float(rgb[2] / 255), 1)))
-                    dismiss()
+                    if dismissesOnSave { dismiss() }
                 } label: { Image(systemName: "checkmark") }
                 .accessibilityLabel(L10n.text(saveTitle))
             }
@@ -405,7 +406,7 @@ struct CustomInkEditor: View {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal) {
                     HStack(spacing: 0) {
-                        schemeButton("Hue", page: 0)
+                        schemeButton("HSB", page: 0)
                         schemeButton("RGB", page: 1)
                     }
                     .padding(.horizontal, max(0, (geometry.size.width - itemWidth) / 2))
@@ -438,7 +439,7 @@ struct CustomInkEditor: View {
         Button {
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.3)) { page = target }
         } label: {
-            Text(title == "Hue" ? L10n.text("Hue") : title)
+            Text(title)
                 .font(.caption2.weight(.semibold))
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)

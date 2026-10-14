@@ -231,12 +231,14 @@ nonisolated final class WatchStrokeCoverage {
     /// Evaluate the hybrid formula directly in premultiplied RGBA. Native vector
     /// operations avoid unoptimized per-channel loops in Debug as well as Release.
     /// `base` may equal `output` during full replay; live frames use an immutable base.
-    func composite(dirty rect: CGRect, over base: CGContext, into output: CGContext) {
+    func composite(dirty rect: CGRect, over base: CGContext, into output: CGContext, erasure: CGContext? = nil) {
         guard !rect.isNull, !rect.isEmpty, let baseData = base.data, let outputData = output.data else { return }
         let basePixels = baseData.assumingMemoryBound(to: Float.self)
         let outputPixels = outputData.assumingMemoryBound(to: Float.self)
         let baseStride = base.bytesPerRow / MemoryLayout<Float>.stride
         let outputStride = output.bytesPerRow / MemoryLayout<Float>.stride
+        let erasurePixels = erasure?.data?.assumingMemoryBound(to: Float.self)
+        let erasureStride = (erasure?.bytesPerRow ?? 0) / MemoryLayout<Float>.stride
         let count = Int(rect.width)
         let n = vDSP_Length(count)
         let alpha = scratch
@@ -275,6 +277,9 @@ nonisolated final class WatchStrokeCoverage {
             }
             var inkAlpha = style.color.w * style.effectiveOpacity
             vDSP_vsmul(alpha, 1, &inkAlpha, alpha, 1, n)
+            if let erasurePixels {
+                vDSP_vmul(alpha, 1, erasurePixels + y * erasureStride + x * 4 + 3, 4, alpha, 1, n)
+            }
             let backdrop = basePixels + y * baseStride + x * 4
             let destination = outputPixels + y * outputStride + x * 4
             if !style.blendingMode.usesMultiplyFastPath {

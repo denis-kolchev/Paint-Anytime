@@ -273,7 +273,7 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
     func extends(_ previous: Stroke) -> Bool {
         guard id == previous.id, style == previous.style, points.count >= previous.points.count,
               transform == previous.transform, raster == previous.raster,
-              excludedAreas == previous.excludedAreas else { return false }
+              excludedAreas == previous.excludedAreas, erasures == previous.erasures else { return false }
         if let inputStream, inputStream == previous.inputStream {
             return previous.points.last == (previous.points.isEmpty ? nil : points[previous.points.count - 1])
         }
@@ -291,6 +291,10 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
     var excludedAreas: [[SIMD2<Float>]] = [] {
         didSet { geometryRevision = UUID(); inputStream = nil }
     }
+    /// Pixel erasers in this object's local coordinates, carried with its transform.
+    var erasures: [Stroke] = [] {
+        didSet { geometryRevision = UUID(); inputStream = nil }
+    }
     // Horizontal filled rectangles in canvas coordinates; independent of brush width.
     var fillRects: [SIMD4<Float>]? {
         didSet { geometryRevision = UUID() }
@@ -302,7 +306,7 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         self.style = style
     }
 
-    private enum CodingKeys: String, CodingKey { case id, points, style, locksTransparency, fillRects, transform, raster, excludedAreas }
+    private enum CodingKeys: String, CodingKey { case id, points, style, locksTransparency, fillRects, transform, raster, excludedAreas, erasures }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -315,11 +319,13 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         transform = try values.decodeIfPresent(StrokeTransform.self, forKey: .transform) ?? .identity
         raster = try values.decodeIfPresent(StrokeRaster.self, forKey: .raster)
         excludedAreas = try values.decodeIfPresent([[SIMD2<Float>]].self, forKey: .excludedAreas) ?? []
+        erasures = try values.decodeIfPresent([Stroke].self, forKey: .erasures) ?? []
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.fillRects == rhs.fillRects && lhs.id == rhs.id && lhs.points == rhs.points && lhs.style == rhs.style && lhs.locksTransparency == rhs.locksTransparency
             && lhs.transform == rhs.transform && lhs.raster == rhs.raster && lhs.excludedAreas == rhs.excludedAreas
+            && lhs.erasures == rhs.erasures
     }
 }
 

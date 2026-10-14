@@ -18,6 +18,10 @@ struct ContentView: View {
     @State private var isMovingCanvas = false
     @State private var isEyedropperActive = false
     @State private var hasEyedropperSession = false
+    @State private var cameraSampledColor: SIMD4<Float>?
+    @State private var showsSampledPalette = false
+    @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
+    @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
     @StateObject private var lasso = WatchLassoController()
     @State private var showsSelectionActions = false
     @State private var layerMoveName: String?
@@ -290,6 +294,17 @@ struct ContentView: View {
             }
         }
         }
+        .fullScreenCover(isPresented: $showsSampledPalette) {
+            InkPaletteBrowser(library: InkPaletteLibrary.decode(palettesData, legacy: paletteData),
+                              controller: controller, initialColor: cameraSampledColor) { library in
+                if let data = try? JSONEncoder().encode(library) { palettesData = data }
+                if !library.activePalette.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
+                   let first = library.activePalette.selectedColors.first {
+                    controller.pencilStyle.color = first.rgba
+                }
+            }
+            .environment(\.colorScheme, .dark)
+        }
         .sheet(isPresented: $showsCanvasSize) {
             WatchCanvasSizeView(controller: controller, viewportSize: canvasSize, displayScale: displayScale)
         }
@@ -353,7 +368,7 @@ struct ContentView: View {
             if !active { showsMorphToolbar = false; showsContentActions = false }
         }
         .onChange(of: isMovingCanvas) { _, moving in
-            if moving { showsMorphToolbar = false; showsContentActions = false }
+            if moving { showsMorphToolbar = false; showsContentActions = false; cameraSampledColor = nil }
             else {
                 lasso.deactivate()
                 isEyedropperActive = false
@@ -561,11 +576,13 @@ struct ContentView: View {
     }
 
     private func finishCameraTool() {
+        let shouldEditColor = hasEyedropperSession && cameraSampledColor != nil
         controller.cancelStroke()
         lasso.deactivate()
         isEyedropperActive = false
         hasEyedropperSession = false
         isMovingCanvas = false
+        if shouldEditColor { showsSampledPalette = true }
     }
 
     private func startLasso() {
@@ -675,8 +692,8 @@ struct ContentView: View {
 
     private var drawingPage: some View {
         // Animate the whole page above, keeping the cached artwork fully visible inside it.
-        WatchCanvasView(controller: controller, lasso: lasso, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
-            controller.pencilStyle.color = color
+        WatchCanvasView(controller: controller, lasso: lasso, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControls: protectedCanvasControls, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
+            cameraSampledColor = color
         }, onCanvasInteraction: {
             if showsContentActions {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { showsContentActions = false }

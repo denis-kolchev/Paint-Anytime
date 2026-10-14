@@ -158,7 +158,7 @@ final class CanvasController: ObservableObject {
             if let resolution { document.resolution = resolution }
             for layer in document.layers.indices {
                 document.layers[layer].strokes = document.layers[layer].strokes.map { original in
-                    if original.transform != .identity || original.raster != nil || !original.excludedAreas.isEmpty {
+                    if original.transform != .identity || original.raster != nil || !original.excludedAreas.isEmpty || !original.erasures.isEmpty {
                         let origin = transform(.zero)
                         let x = transform(SIMD2(1, 0)) - origin
                         let y = transform(SIMD2(0, 1)) - origin

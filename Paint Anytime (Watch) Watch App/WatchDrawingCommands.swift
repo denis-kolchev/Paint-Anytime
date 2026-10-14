@@ -498,6 +498,22 @@ nonisolated enum WatchBitmapRenderer {
         context.scaleBy(x: scale, y: -scale)
         for stroke in strokes {
             guard !Task.isCancelled else { return nil }
+            context.saveGState()
+            defer { context.restoreGState() }
+            var erasure: CGContext?
+            if !stroke.erasures.isEmpty {
+                guard let maskContext = erasureMask(for: stroke, size: size, scale: scale),
+                      let mask = maskContext.makeImage() else { return nil }
+                erasure = maskContext
+                // CGImage rows run down from the top, while CGContext image
+                // drawing uses a bottom-left origin. Flip only to install the clip.
+                let imageHeight = height / scale
+                context.translateBy(x: 0, y: imageHeight)
+                context.scaleBy(x: 1, y: -1)
+                context.clip(to: CGRect(x: 0, y: 0, width: width / scale, height: imageHeight), mask: mask)
+                context.scaleBy(x: 1, y: -1)
+                context.translateBy(x: 0, y: -imageHeight)
+            }
             if let raster = stroke.raster {
                 guard let source = CGImageSourceCreateWithData(raster.png as CFData, nil),
                       let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
@@ -542,7 +558,7 @@ nonisolated enum WatchBitmapRenderer {
                         dirty = try coverage.append(stroke)
                     }
                 } catch { return nil }
-                coverage.composite(dirty: dirty, over: context, into: context)
+                coverage.composite(dirty: dirty, over: context, into: context, erasure: erasure)
             } else {
                 // Fade the complete stroke once, preserving texture and avoiding
                 // darker overlaps within a single translucent gesture.
@@ -576,6 +592,24 @@ nonisolated enum WatchBitmapRenderer {
         }
         guard let image = context.makeImage() else { return nil }
         return InkSnapshot(image: image)
+    }
+
+    private static func erasureMask(for stroke: Stroke, size: CGSize, scale: CGFloat) -> CGContext? {
+        guard let background = makeFloatContext(width: Int(ceil(size.width * scale)),
+                                                height: Int(ceil(size.height * scale))) else { return nil }
+        background.setFillColor(CGColor(gray: 1, alpha: 1))
+        background.fill(CGRect(x: 0, y: 0, width: background.width, height: background.height))
+        guard let image = background.makeImage() else { return nil }
+        let erasers = stroke.erasures.map { local in
+            var eraser = local
+            eraser.transform = StrokeTransform(local.transform.affine.concatenating(stroke.transform.affine))
+            return eraser
+        }
+        guard let mask = renderInk(strokes: erasers, size: size, scale: scale, base: InkSnapshot(image: image))?.image
+        else { return nil }
+        background.setBlendMode(.copy)
+        background.draw(mask, in: CGRect(x: 0, y: 0, width: background.width, height: background.height))
+        return background
     }
 
     private static func makeFloatContext(width: Int, height: Int) -> CGContext? {
