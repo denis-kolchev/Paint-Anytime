@@ -273,9 +273,6 @@ struct SavedDrawingsView: View {
             tutorial.galleryIsFullscreen = fullscreen
             showsGalleryActions = false
         }
-        .onChange(of: selectedDrawing?.id) { _, _ in
-            showsGalleryActions = false
-        }
         .onChange(of: isTransitioning) { _, transitioning in
             if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
         }
