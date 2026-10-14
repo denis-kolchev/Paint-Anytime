@@ -57,7 +57,30 @@ struct ArchitectureChecks {
         }
     }
 
+    @MainActor static func checkSelectionTransfer() {
+        let canvas = CanvasController(persistsPreferences: false)
+        let retained = Stroke(points: [], style: PencilStyle())
+        let selected = Stroke(points: [], style: PencilStyle())
+        let existing = Stroke(points: [], style: PencilStyle())
+        var document = canvas.document
+        document.layers[0].strokes = [retained, selected]
+        document.layers.append(CanvasLayer(name: "Destination"))
+        document.layers[1].strokes = [existing]
+        canvas.load(document)
+        canvas.moveSelection(strokes: [retained, selected], selectedIDs: [selected.id],
+                             from: document.layers[0].id, to: document.layers[1].id)
+        precondition(canvas.document.layers[0].strokes == [retained])
+        precondition(canvas.document.layers[1].strokes == [existing, selected])
+        precondition(canvas.selectedLayerID == document.layers[1].id)
+        let moved = canvas.document
+        canvas.undo()
+        precondition(canvas.document == document)
+        canvas.redo()
+        precondition(canvas.document == moved)
+    }
+
     @MainActor static func main() throws {
+        checkSelectionTransfer()
         checkClear()
         let fillCanvas = CanvasController(persistsPreferences: false)
         var fill = Stroke(points: [PointerSample(position: SIMD2(10, 10), pressure: 1, timestamp: 0)],

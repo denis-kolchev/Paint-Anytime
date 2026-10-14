@@ -1,6 +1,28 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Move to layer below": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переместить на слой ниже"
+          }
+        }
+      }
+    },
+    "Move to layer above": {
+      "extractionState": "manual",
+      "localizations": {
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Переместить на слой выше"
+          }
+        }
+      }
+    },
     "Canvas tools" : {
       "extractionState" : "manual",
       "localizations" : {

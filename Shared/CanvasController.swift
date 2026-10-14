@@ -113,6 +113,20 @@ final class CanvasController: ObservableObject {
         editLayers { $0.layers[index].strokes = strokes }
     }
 
+    /// Transfers a prepared selection (including area cutouts) as one history edit.
+    func moveSelection(strokes: [Stroke], selectedIDs: Set<UUID>, from sourceID: UUID, to targetID: UUID) {
+        guard sourceID != targetID,
+              let source = document.layers.firstIndex(where: { $0.id == sourceID }),
+              let target = document.layers.firstIndex(where: { $0.id == targetID }) else { return }
+        let moved = strokes.filter { selectedIDs.contains($0.id) }
+        guard !moved.isEmpty else { return }
+        editLayers {
+            $0.layers[source].strokes = strokes.filter { !selectedIDs.contains($0.id) }
+            $0.layers[target].strokes.append(contentsOf: moved)
+        }
+        selectedLayerID = targetID
+    }
+
     func setBackgroundColor(_ color: SIMD4<Float>) {
         editLayers { $0.backgroundColor = color }
     }

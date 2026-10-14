@@ -61,6 +61,26 @@ final class WatchLassoController: ObservableObject {
         redoSteps.removeAll()
     }
 
+    func canMoveLayer(_ offset: Int, controller: CanvasController) -> Bool {
+        guard isActive, !hidesControls, let selection,
+              selection.document == controller.document,
+              selection.layerID == controller.selectedLayer.id,
+              let index = controller.document.layers.firstIndex(where: { $0.id == selection.layerID }) else { return false }
+        return controller.document.layers.indices.contains(index + offset)
+    }
+
+    func moveLayer(_ offset: Int, controller: CanvasController) -> String? {
+        guard canMoveLayer(offset, controller: controller), let selection else { return nil }
+        let before = state(controller)
+        let target = controller.document.layers[controller.selectedLayerIndex + offset]
+        controller.moveSelection(strokes: selection.strokes, selectedIDs: selection.selectedIDs,
+                                 from: selection.layerID, to: target.id)
+        self.selection = WatchLassoSelection(document: controller.document, layerID: target.id,
+            strokes: controller.selectedLayer.strokes, selectedIDs: selection.selectedIDs, bounds: selection.bounds)
+        record(before, controller: controller)
+        return target.displayName
+    }
+
     func undo(_ controller: CanvasController) {
         guard canUndo, let step = undoSteps.last else { return }
         guard controller.document == step.after.document,
@@ -90,6 +110,7 @@ final class WatchLassoController: ObservableObject {
         if controller.document != state.document {
             if undo { controller.undo() } else { controller.redo() }
         }
+        controller.selectLayer(state.layerID)
         selection = state.selection
         bounds = state.selection?.bounds
         mode = state.mode
