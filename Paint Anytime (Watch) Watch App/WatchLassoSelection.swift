@@ -28,17 +28,84 @@ final class WatchLassoController: ObservableObject {
     @Published var errorMessage: String?
     private(set) var previewRevision: UInt64 = 0
     private var selection: WatchLassoSelection?
+    private struct HistoryState {
+        let document: CanvasDocument
+        let layerID: UUID
+        let selection: WatchLassoSelection?
+        let mode: WatchLassoMode
+    }
+    private struct HistoryStep {
+        let before: HistoryState
+        let after: HistoryState
+    }
+    @Published private var undoSteps: [HistoryStep] = []
+    @Published private var redoSteps: [HistoryStep] = []
+    var canUndo: Bool { isActive && !hidesControls && !undoSteps.isEmpty }
+    var canRedo: Bool { isActive && !hidesControls && !redoSteps.isEmpty }
+
+    private func state(_ controller: CanvasController) -> HistoryState {
+        HistoryState(document: controller.document, layerID: controller.selectedLayer.id,
+                     selection: selection, mode: mode)
+    }
+
+    private func record(_ before: HistoryState, controller: CanvasController) {
+        guard before.document != controller.document else { return }
+        undoSteps.append(HistoryStep(before: before, after: state(controller)))
+        // Never retain more document edits than the canvas can restore.
+        if undoSteps.count > controller.historyLimit { undoSteps.removeFirst() }
+        redoSteps.removeAll()
+    }
+
+    private func clearHistory() {
+        undoSteps.removeAll()
+        redoSteps.removeAll()
+    }
+
+    func undo(_ controller: CanvasController) {
+        guard canUndo, let step = undoSteps.last else { return }
+        guard controller.document == step.after.document,
+              controller.selectedLayer.id == step.after.layerID else {
+            resetSelection(); clearHistory(); return
+        }
+        undoSteps.removeLast()
+        restore(step.before, controller: controller, undo: true)
+        redoSteps.append(step)
+    }
+
+    func redo(_ controller: CanvasController) {
+        guard canRedo, let step = redoSteps.last else { return }
+        guard controller.document == step.before.document,
+              controller.selectedLayer.id == step.before.layerID else {
+            resetSelection(); clearHistory(); return
+        }
+        redoSteps.removeLast()
+        restore(step.after, controller: controller, undo: false)
+        undoSteps.append(step)
+    }
+
+    private func restore(_ state: HistoryState, controller: CanvasController, undo: Bool) {
+        resetSelection()
+        // Each history step represents a committed object edit; creating a
+        // selection or choosing its mode does not add an undo step.
+        if controller.document != state.document {
+            if undo { controller.undo() } else { controller.redo() }
+        }
+        selection = state.selection
+        bounds = state.selection?.bounds
+        mode = state.mode
+    }
     private var preparation: Task<Void, Never>?
     private let builder = WatchLassoBuilder()
     private var generation = UUID()
     private enum Drag { case outline, move, resize(Int) }
-    private var drag: Drag?
+    @Published private var drag: Drag?
+    var hidesControls: Bool { isActive && (drag != nil || isPreparing) }
     private var dragStart = CGPoint.zero
     private var dragBounds = CGRect.zero
     var previewSessionID: UUID? { previewDocument == nil ? nil : generation }
 
-    func activate() { resetSelection(); isActive = true }
-    func deactivate() { resetSelection(); isActive = false }
+    func activate() { resetSelection(); clearHistory(); isActive = true }
+    func deactivate() { resetSelection(); clearHistory(); isActive = false }
     func setMode(_ value: WatchLassoMode) {
         guard mode != value else { return }
         resetSelection()
@@ -63,6 +130,7 @@ final class WatchLassoController: ObservableObject {
         guard let selection else { return }
         if selection.document != controller.document || selection.layerID != controller.selectedLayer.id {
             resetSelection()
+            clearHistory()
         }
     }
 
@@ -173,15 +241,51 @@ final class WatchLassoController: ObservableObject {
                 cancelGesture()
                 return
             }
+            let before = state(controller)
             // Update our snapshot before publishing the controller's document change.
             selection.document = previewDocument
             selection.strokes = layer.strokes
             selection.bounds = bounds ?? selection.bounds
             self.selection = selection
             controller.replaceLayerStrokes(layer.strokes, in: selection.layerID)
+            record(before, controller: controller)
             self.previewDocument = nil
             previewRevision &+= 1
         }
+    }
+
+    func duplicate(_ controller: CanvasController) {
+        documentChanged(controller)
+        guard var selection else { return }
+        let before = state(controller)
+        let copies = selection.strokes.filter { selection.selectedIDs.contains($0.id) }.map { source in
+            var copy = Stroke(points: source.points, style: source.style)
+            copy.locksTransparency = source.locksTransparency
+            copy.transform = StrokeTransform(source.transform.affine.concatenating(
+                CGAffineTransform(translationX: 8, y: 8)))
+            copy.raster = source.raster
+            copy.excludedAreas = source.excludedAreas
+            copy.fillRects = source.fillRects
+            return copy
+        }
+        let strokes = selection.strokes + copies
+        guard let index = selection.document.layers.firstIndex(where: { $0.id == selection.layerID }) else { return }
+        selection.document.layers[index].strokes = strokes
+        self.selection = WatchLassoSelection(document: selection.document, layerID: selection.layerID,
+            strokes: strokes, selectedIDs: Set(copies.map(\.id)), bounds: selection.bounds.offsetBy(dx: 8, dy: 8))
+        bounds = self.selection?.bounds
+        controller.replaceLayerStrokes(strokes, in: selection.layerID)
+        record(before, controller: controller)
+    }
+
+    func delete(_ controller: CanvasController) {
+        documentChanged(controller)
+        guard let selection else { return }
+        let before = state(controller)
+        let remaining = selection.strokes.filter { !selection.selectedIDs.contains($0.id) }
+        resetSelection()
+        controller.replaceLayerStrokes(remaining, in: selection.layerID)
+        record(before, controller: controller)
     }
 
     func cancelGesture() {

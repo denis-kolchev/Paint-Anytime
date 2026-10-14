@@ -35,7 +35,7 @@ final class CanvasController: ObservableObject {
     private var strokeBeforeRecognition: Stroke?
     private var undoStack: [CanvasDocument] = []
     private var redoStack: [CanvasDocument] = []
-    private let historyLimit = 30
+    let historyLimit = 30
     var canClear: Bool {
         document.layers.count != 1
             || document.layers.first.map { $0 != CanvasLayer(id: $0.id) } == true

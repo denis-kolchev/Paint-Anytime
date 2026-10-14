@@ -228,7 +228,7 @@ struct WatchCanvasView: View {
                 guard value != crownZoom else { return }
                 let previousZoom = zoom
                 let wasSnapped = previousZoom == 1
-                isMovingCanvas = true
+                if !lasso.isActive { isMovingCanvas = true }
                 crownZoom = value
                 // Keep the canvas point at the viewport center fixed, including
                 // when entering or leaving the 100% zoom snap range.
