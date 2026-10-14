@@ -257,43 +257,34 @@ private struct PaletteEditingWiggle: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var isVisible = false
-    @State private var wigglePhase = false
 
     private var animates: Bool {
         enabled && isVisible && !reduceMotion && scenePhase == .active
     }
 
     func body(content: Content) -> some View {
-        content
-            .background {
-                GeometryReader { geometry in
-                    let frame = geometry.frame(in: .named("paletteViewport"))
-                    let visible = frame.intersects(CGRect(origin: .zero, size: viewportSize))
-                    Color.clear
-                        .onAppear { isVisible = visible }
-                        .onChange(of: visible) { _, value in isVisible = value }
+        // Derive motion from time instead of retaining a repeating animation in
+        // lazy cells, which may disappear while editing is being switched off.
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: !animates)) { timeline in
+            let phase = animates ? sin(timeline.date.timeIntervalSinceReferenceDate * .pi / 0.14) : 0
+            content
+                .rotationEffect(.degrees(phase * 2))
+                .offset(x: phase * 0.5)
+                .transaction { transaction in
+                    transaction.animation = nil
+                    transaction.disablesAnimations = true
                 }
+        }
+        .background {
+            GeometryReader { geometry in
+                let frame = geometry.frame(in: .named("paletteViewport"))
+                let visible = frame.intersects(CGRect(origin: .zero, size: viewportSize))
+                Color.clear
+                    .onAppear { isVisible = visible }
+                    .onChange(of: visible) { _, value in isVisible = value }
             }
-            .rotationEffect(.degrees(animates ? (wigglePhase ? 2 : -2) : 0))
-            .offset(x: animates ? (wigglePhase ? 0.5 : -0.5) : 0)
-            .animation(animates
-                       ? .easeInOut(duration: 0.14).repeatForever(autoreverses: true)
-                       : nil, value: wigglePhase)
-            .task(id: animates) {
-                // Start a new state transition after SwiftUI installs the visible
-                // editing state, including when a cell scrolls back into view.
-                var transaction = Transaction(animation: nil)
-                transaction.disablesAnimations = true
-                withTransaction(transaction) { wigglePhase = false }
-                guard animates else { return }
-                await Task.yield()
-                guard !Task.isCancelled else { return }
-                wigglePhase = true
-            }
-            .onDisappear {
-                isVisible = false
-                wigglePhase = false
-            }
+        }
+        .onDisappear { isVisible = false }
     }
 }
 
