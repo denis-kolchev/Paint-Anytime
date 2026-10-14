@@ -189,6 +189,7 @@ nonisolated enum BrushGeometry {
                 distance += step
             }
             toNext = distance - length
+            
         }
         return result
     }

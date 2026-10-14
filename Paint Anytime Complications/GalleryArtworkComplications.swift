@@ -120,6 +120,27 @@ private struct ArtworkProvider: TimelineProvider {
     }
 }
 
+/// Preserve image detail when the watch face recolors the complication.
+private struct ArtworkImage: View {
+    @Environment(\.widgetRenderingMode) private var renderingMode
+    let image: CGImage
+
+    var body: some View {
+        let artwork = Image(decorative: image, scale: 1)
+            .renderingMode(.original)
+            .resizable()
+        if #available(watchOS 11.0, *) {
+            artwork.widgetAccentedRenderingMode(.accentedDesaturated)
+        } else if renderingMode == .accented {
+            // watchOS 10 recolors alpha, so an opaque image otherwise becomes
+            // a solid rectangle. Carry its luminance into the alpha channel.
+            artwork.luminanceToAlpha().widgetAccentable()
+        } else {
+            artwork
+        }
+    }
+}
+
 private struct ArtworkView: View {
     let entry: ArtworkEntry
     let favoritesOnly: Bool
@@ -133,9 +154,7 @@ private struct ArtworkView: View {
                             let tile = entry.tiles[index]
                             if let image = tile.image, let destination = tile.destination {
                                 Link(destination: destination) {
-                                    Image(decorative: image, scale: 1)
-                                        .renderingMode(.original)
-                                        .resizable()
+                                    ArtworkImage(image: image)
                                         .scaledToFill()
                                         .frame(width: geometry.size.width / CGFloat(entry.tiles.count), height: geometry.size.height)
                                         .clipped()
@@ -148,9 +167,7 @@ private struct ArtworkView: View {
                 }
             } else if let image = entry.image {
                 GeometryReader { geometry in
-                    Image(decorative: image, scale: 1)
-                        .renderingMode(.original)
-                        .resizable()
+                    ArtworkImage(image: image)
                         .scaledToFill()
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
