@@ -19,6 +19,7 @@ struct SavedDrawingsView: View {
     @State private var confirmedDeletion: CanvasExport?
     @State private var showsFullscreen = false
     @State private var morphState = GalleryMorphState()
+    @State private var pageVisibility: [URL: Double] = [:]
     @State private var galleryScrollTarget: URL?
     @State private var thumbnailFrames: [URL: CGRect] = [:]
     @State private var transitionRequest: GalleryTransitionDirection?
@@ -98,7 +99,7 @@ struct SavedDrawingsView: View {
                         .allowsHitTesting(false)
                     // Prepare the pager before the transition; image loading stays suspended.
                     // This avoids constructing the page controller at the animation handoff.
-                    fullscreenGallery(size: geometry.size, canvasOriginY: geometry.frame(in: .global).minY,
+                    fullscreenGallery(size: geometry.size, canvasOriginX: geometry.frame(in: .global).minX, canvasOriginY: geometry.frame(in: .global).minY,
                                       thumbnailPixels: thumbnailPixels)
                         .opacity(imageTransition == nil && transitionRequest != .opening ? 1 : 0)
                         .allowsHitTesting(!isTransitioning && tutorial.allowsGalleryPaging)
@@ -125,12 +126,14 @@ struct SavedDrawingsView: View {
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
-            .overlay(alignment: .topTrailing) {
+            .overlay(alignment: .bottomLeading) {
                 if showsFullscreen && !isTransitioning && !tutorial.isActive,
                    let selectedDrawing {
-                    GalleryMorphActions(state: morphState, canvasOrigin: geometry.frame(in: .global).origin,
+                    GalleryMorphActions(state: morphState,
+                                        canvasOrigin: geometry.frame(in: .global).origin,
                                         drawing: selectedDrawing, size: geometry.size,
                                         isFavorite: drawings.first(where: { $0.id == selectedDrawing.id })?.isFavorite ?? false,
+                                        favoriteProgress: favoriteProgress,
                                         onEdit: { editDrawing(selectedDrawing) },
                                         onFavorite: { favorite in
                                             controller.setFavorite(favorite, for: selectedDrawing, in: galleryFolder)
@@ -160,21 +163,37 @@ struct SavedDrawingsView: View {
         }
         .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
         .toolbar {
-            if showsFullscreen && !tutorial.isActive {
-                // Native toolbar hosts receive taps above the visible morph panel.
-                ToolbarItem(placement: .topBarTrailing) {
-                    GalleryMorphToolbarButton(state: morphState, isEnabled: !isTransitioning)
+            if showsFullscreen && !isTransitioning && !tutorial.isActive {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    GalleryMorphToolbarButton(state: morphState)
+                    Spacer(minLength: 0)
                 }
             }
             if tutorial.allowsGalleryBack {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: goBack) {
                         Image(systemName: "chevron.left")
+                            .opacity(0)
                             .tutorialHint(tutorial, steps: [.returnToCanvas])
                     }
                     .disabled(isTransitioning)
-                    .watchToolbarButtonStyle()
+                    .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
+                    .overlay {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: GalleryMorphState.buttonDiameter,
+                                   height: GalleryMorphState.buttonDiameter)
+                            .modifier(CanvasMorphGlass())
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
                     .accessibilityLabel(L10n.text("Back"))
+                    .onGeometryChange(for: CGRect.self) { geometry in
+                        geometry.frame(in: .global)
+                    } action: { frame in
+                        if morphState.backButtonFrame != frame { morphState.backButtonFrame = frame }
+                    }
                 }
             }
         }
@@ -261,6 +280,7 @@ struct SavedDrawingsView: View {
         }
         .onChange(of: showsFullscreen) { _, fullscreen in
             morphState.isExpanded = false
+            if !fullscreen { pageVisibility = [:] }
             tutorial.galleryIsFullscreen = fullscreen
         }
         .onChange(of: isTransitioning) { _, transitioning in
@@ -409,7 +429,16 @@ struct SavedDrawingsView: View {
         withTransaction(transaction, action)
     }
 
-    private func fullscreenGallery(size: CGSize, canvasOriginY: CGFloat, thumbnailPixels: Int) -> some View {
+    private var favoriteProgress: Double {
+        let visible = drawings.map { ($0, pageVisibility[$0.id] ?? 0) }
+        let total = visible.reduce(0.0) { $0 + $1.1 }
+        guard total > 0 else {
+            return drawings.first(where: { $0.id == selectedDrawing?.id })?.isFavorite == true ? 1 : 0
+        }
+        return visible.reduce(0.0) { $0 + ($1.0.isFavorite ? $1.1 : 0) } / total
+    }
+
+    private func fullscreenGallery(size: CGSize, canvasOriginX: CGFloat, canvasOriginY: CGFloat, thumbnailPixels: Int) -> some View {
         let selectedIndex = drawings.firstIndex(where: { $0.id == selectedDrawing?.id }) ?? 0
         return TabView(selection: Binding<URL?>(
             get: { selectedDrawing?.id },
@@ -430,6 +459,17 @@ struct SavedDrawingsView: View {
                                       loadsOriginal: abs(index - selectedIndex) <= 1 && !isTransitioning,
                                       fallback: transitionBitmap?.url == drawing.url ? transitionBitmap : nil,
                                       respectsSafeArea: tutorial.isActive)
+                    .onGeometryChange(for: Double.self) { page in
+                        let distance = abs(page.frame(in: .global).minX - canvasOriginX)
+                        return max(0, 1 - Double(distance / max(size.width, 1)))
+                    } action: { visibility in
+                        // Read each native page directly; no preference propagation through TabView.
+                        // Geometry supplies the animation progress, so do not ease these updates.
+                        withoutAnimation { pageVisibility[drawing.id] = visibility }
+                    }
+                    .onDisappear {
+                        withoutAnimation { pageVisibility.removeValue(forKey: drawing.id) }
+                    }
                     .tag(Optional(drawing.id))
             }
         }

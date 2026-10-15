@@ -47,16 +47,20 @@ struct MorphPanelGeometry {
     }
 }
 
-/// Shared by the native hit target and its visible panel, not the gallery image.
+/// Shared by the gallery's expanding action panel.
 @Observable
 final class GalleryMorphState {
     var isExpanded = false
     var toolbarFrame: CGRect?
+    var backButtonFrame: CGRect?
+    // Visible glass size is independent of the native toolbar's layout slot.
+    static let buttonDiameter: CGFloat = 36
+    static let toolbarDiameter: CGFloat = 32
 }
 
+/// Use the same native bottom-toolbar slot as the canvas actions button.
 struct GalleryMorphToolbarButton: View {
     let state: GalleryMorphState
-    let isEnabled: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -69,8 +73,8 @@ struct GalleryMorphToolbarButton: View {
                 .frame(width: 18, height: 18)
                 .opacity(0)
         }
-        .watchToolbarButtonStyle(hidesNativeChrome: true)
-        .disabled(!isEnabled)
+        .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
+        // The native toolbar sits above the visible morph panel and must handle taps.
         .accessibilityLabel(L10n.text(state.isExpanded ? "Close" : "More"))
         .onGeometryChange(for: CGRect.self) { geometry in
             geometry.frame(in: .global)
@@ -86,6 +90,7 @@ struct GalleryMorphActions: View {
     let drawing: CanvasExport
     let size: CGSize
     let isFavorite: Bool
+    let favoriteProgress: Double
     var onEdit: () -> Void
     var onFavorite: (Bool) -> Void
     var onDelete: () -> Void
@@ -94,19 +99,19 @@ struct GalleryMorphActions: View {
         nonmutating set { state.isExpanded = newValue }
     }
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.layoutDirection) private var layoutDirection
-
     var body: some View {
-        let geometry = MorphPanelGeometry(size: size, layoutDirection: layoutDirection, top: 18)
         let anchor = state.toolbarFrame.flatMap { frame -> CGPoint? in
             guard !frame.isEmpty else { return nil }
             return CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
-        } ?? CGPoint(x: geometry.trailingX, y: geometry.top + geometry.diameter / 2)
-        let top = anchor.y - geometry.diameter / 2
-        let rowHeight = geometry.rowHeight(count: 5, minimum: 24, panelTop: top)
-        galleryActions(for: drawing, rowHeight: rowHeight)
-            .position(x: anchor.x,
-                      y: top + (showsGalleryActions ? rowHeight * 5 : geometry.diameter) / 2)
+        } ?? CGPoint(x: 30, y: size.height - 26)
+        let diameter = GalleryMorphState.buttonDiameter
+        let centerX = state.backButtonFrame.map { $0.midX - canvasOrigin.x } ?? anchor.x
+        let left = centerX - diameter / 2
+        // Keep matching screen-edge insets when the full-width panel does not fit.
+        let expandedWidth = min(36 * 5, max(0, size.width - left * 2))
+        let panelWidth = showsGalleryActions ? expandedWidth : diameter
+        galleryActions(for: drawing, expandedWidth: expandedWidth)
+            .position(x: left + panelWidth / 2, y: anchor.y)
     }
 
     private func toggleGalleryActions() {
@@ -115,60 +120,89 @@ struct GalleryMorphActions: View {
         }
     }
 
-    private func galleryActions(for drawing: CanvasExport, rowHeight: CGFloat) -> some View {
+    private func galleryActions(for drawing: CanvasExport, expandedWidth: CGFloat) -> some View {
         CanvasMorphContent(isExpanded: showsGalleryActions) {
-            VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                // Six equal gaps: four between the intrinsic symbol widths and two at the edges.
+                Spacer(minLength: 0)
                 Button(action: toggleGalleryActions) {
-                    galleryActionIcon("xmark", rowHeight: rowHeight)
+                    galleryActionIcon("xmark", itemWidth: nil)
                 }
-                // The native toolbar button exposes this same action to VoiceOver.
                 .accessibilityHidden(true)
+                Spacer(minLength: 0)
 
                 Button { showsGalleryActions = false; onEdit() } label: {
-                    galleryActionIcon("pencil", rowHeight: rowHeight)
+                    galleryActionIcon("pencil", itemWidth: nil)
                 }
                 .accessibilityLabel(L10n.text("Edit drawing"))
+                Spacer(minLength: 0)
 
                 Button {
-                    onFavorite(!isFavorite)
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+                        onFavorite(!isFavorite)
+                    }
                 } label: {
-                    galleryActionIcon(isFavorite ? "heart.fill" : "heart", rowHeight: rowHeight)
+                    ZStack {
+                        galleryActionIcon("heart", itemWidth: nil)
+                            .opacity(1 - favoriteProgress)
+                        galleryActionIcon("heart.fill", itemWidth: nil)
+                            .opacity(favoriteProgress)
+                    }
                 }
                 .accessibilityLabel(L10n.text(isFavorite ? "Remove from favorites" : "Add to favorites"))
+                Spacer(minLength: 0)
 
                 ShareLink(item: DrawingShareItem(url: drawing.url),
                           preview: SharePreview(Text(verbatim: drawing.url.lastPathComponent),
                                                 image: DrawingShareItem(url: drawing.url))) {
-                    galleryActionIcon("square.and.arrow.up", rowHeight: rowHeight)
+                    galleryActionIcon("square.and.arrow.up", itemWidth: nil)
                 }
                 .accessibilityLabel(L10n.text("Share"))
+                Spacer(minLength: 0)
 
                 Button(role: .destructive) {
                     onDelete()
                 } label: {
-                    galleryActionIcon("trash", rowHeight: rowHeight)
+                    galleryActionIcon("trash", itemWidth: nil)
                 }
                 .accessibilityLabel(L10n.text("Delete drawing"))
+                Spacer(minLength: 0)
             }
+            .frame(width: expandedWidth, height: GalleryMorphState.buttonDiameter)
         } collapsed: {
             Button(action: toggleGalleryActions) {
-                galleryActionIcon("ellipsis", rowHeight: 36)
+                galleryActionIcon("ellipsis", itemWidth: GalleryMorphState.buttonDiameter)
             }
             .accessibilityHidden(true)
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.white)
-        .frame(width: 36)
-        .modifier(CanvasMorphGlass())
+        .foregroundStyle(.primary)
+        .fixedSize()
+        .modifier(GalleryMorphGlass())
     }
 
-    private func galleryActionIcon(_ symbol: String, rowHeight: CGFloat) -> some View {
+    private func galleryActionIcon(_ symbol: String, itemWidth: CGFloat?) -> some View {
         Image(systemName: symbol)
             .font(.system(size: 17, weight: .medium))
-            .frame(width: 36, height: rowHeight)
+            .frame(width: itemWidth, height: GalleryMorphState.buttonDiameter)
             .contentShape(Rectangle())
     }
 
+}
+
+/// Let glass resolve the foreground contrast over the current gallery artwork.
+/// A fixed white foreground prevents the light glass appearance from using dark symbols.
+private struct GalleryMorphGlass: ViewModifier {
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(watchOS 26, *) {
+            content
+                .glassEffect(.regular.interactive(), in: Capsule())
+        } else {
+            content
+                .background(.ultraThinMaterial, in: Capsule())
+        }
+    }
 }
 
 /// Keep both states mounted so opening a panel does not insert its buttons.
