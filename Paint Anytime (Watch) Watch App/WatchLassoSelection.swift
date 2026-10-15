@@ -121,6 +121,10 @@ final class WatchLassoController: ObservableObject {
     private enum Drag { case outline, move, resize(Int) }
     @Published private var drag: Drag?
     var hidesControls: Bool { isActive && (drag != nil || isPreparing) }
+    var activeResizeHandle: Int? {
+        guard let drag, case let .resize(handle) = drag else { return nil }
+        return handle
+    }
     private var dragStart = CGPoint.zero
     private var dragBounds = CGRect.zero
 
@@ -674,12 +678,17 @@ struct WatchLassoOverlay: View {
                 context.stroke(path, with: .color(.gray),
                     style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round, dash: [0.1, 4]))
             }
-            if let bounds = lasso.bounds, !lasso.hidesControls {
+            if let bounds = lasso.bounds, !lasso.hidesControls || lasso.activeResizeHandle != nil {
                 let rect = bounds.applying(canvasToScreen)
                 let borderColor = Color(red: 0.20, green: 0.43, blue: 1)
                 let handleColor = Color(red: 0.16, green: 0.67, blue: 0.87)
-                context.stroke(Path(rect), with: .color(borderColor), lineWidth: 1)
-                for point in WatchLassoGeometry.handles(rect) {
+                if !lasso.hidesControls {
+                    context.stroke(Path(rect), with: .color(borderColor), lineWidth: 1)
+                }
+                let handles = WatchLassoGeometry.handles(rect)
+                for index in handles.indices {
+                    if let active = lasso.activeResizeHandle, index != active { continue }
+                    let point = handles[index]
                     let radius = WatchLassoGeometry.handleRadius
                     let handle = Path(ellipseIn: CGRect(x: point.x - radius, y: point.y - radius,
                                                       width: radius * 2, height: radius * 2))
@@ -688,8 +697,26 @@ struct WatchLassoOverlay: View {
                 }
             }
         }
+        .overlay(alignment: .bottom) {
+            if lasso.activeResizeHandle != nil, let bounds = lasso.bounds {
+                // Document points, independent of the canvas zoom level.
+                Text(verbatim: L10n.format("w: %.0f pt  h: %.0f pt", Double(bounds.width), Double(bounds.height)))
+                    .font(.system(size: 13, weight: .semibold))
+                    .monospacedDigit()
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 8))
+                    .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(.white.opacity(0.25), lineWidth: 1) }
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 10)
+            }
+        }
         .overlay { if lasso.isPreparing { ProgressView().tint(.cyan) } }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
+
 }

@@ -1,83 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Move to layer below": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Переместить на слой ниже"
-          }
-        }
-      }
-    },
-    "Move to layer above": {
-      "extractionState": "manual",
-      "localizations": {
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Переместить на слой выше"
-          }
-        }
-      }
-    },
-    "Canvas tools" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Инструменты холста"
-          }
-        }
-      }
-    },
-    "Lasso" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Лассо"
-          }
-        }
-      }
-    },
-    "Select whole strokes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделять мазки целиком"
-          }
-        }
-      }
-    },
-    "Select area" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выделять область"
-          }
-        }
-      }
-    },
-    "Could not create selection" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось создать выделение"
-          }
-        }
-      }
-    },
     "- GitHub Privacy Statement (https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)\n- Apple Privacy Policy (https://www.apple.com/legal/privacy/)\n- Google Privacy Policy (https://policies.google.com/privacy)" : {
       "comment" : "Privacy policy, paragraph 19 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",
@@ -7051,6 +6974,17 @@
         }
       }
     },
+    "Canvas tools" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Инструменты холста"
+          }
+        }
+      }
+    },
     "Changes and contact" : {
       "comment" : "Privacy policy, paragraph 20 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",
@@ -9993,6 +9927,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "聯絡支援"
+          }
+        }
+      }
+    },
+    "Could not create selection" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось создать выделение"
           }
         }
       }
@@ -21428,6 +21373,17 @@
         }
       }
     },
+    "Lasso" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Лассо"
+          }
+        }
+      }
+    },
     "Last updated: September 24, 2026" : {
       "comment" : "Privacy policy, paragraph 2 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",
@@ -24020,6 +23976,28 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "右移"
+          }
+        }
+      }
+    },
+    "Move to layer above" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переместить на слой выше"
+          }
+        }
+      }
+    },
+    "Move to layer below" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переместить на слой ниже"
           }
         }
       }
@@ -35289,6 +35267,28 @@
         }
       }
     },
+    "Select area" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выделять область"
+          }
+        }
+      }
+    },
+    "Select whole strokes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выделять мазки целиком"
+          }
+        }
+      }
+    },
     "Selected" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -46210,6 +46210,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "顯示的調色盤"
+          }
+        }
+      }
+    },
+    "w: %.0f pt  h: %.0f pt" : {
+      "comment" : "Compact width and height readout while resizing a lasso selection. First argument: width; second: height, in canvas points (not pixels). Keep labels short for Apple Watch.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "عرض: %1$.0f نقطة  ارتفاع: %2$.0f نقطة"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "š: %1$.0f pt  v: %2$.0f pt"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "b: %1$.0f pt  h: %2$.0f pt"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "B: %1$.0f pt  H: %2$.0f pt"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "π: %1$.0f pt  υ: %2$.0f pt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "w: %1$.0f pt  h: %2$.0f pt"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "an: %1$.0f pt  al: %2$.0f pt"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l: %1$.0f pt  k: %2$.0f pt"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "l : %1$.0f pt  h : %2$.0f pt"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "רוחב: %1$.0f נק׳  גובה: %2$.0f נק׳"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "sz: %1$.0f pt  m: %2$.0f pt"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L: %1$.0f pt  T: %2$.0f pt"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L: %1$.0f pt  A: %2$.0f pt"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "幅: %1$.0f pt  高さ: %2$.0f pt"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "너비: %1$.0f pt  높이: %2$.0f pt"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "b: %1$.0f pt  h: %2$.0f pt"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "b: %1$.0f pt  h: %2$.0f pt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "szer: %1$.0f pt  wys: %2$.0f pt"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L: %1$.0f pt  A: %2$.0f pt"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L: %1$.0f pt  A: %2$.0f pt"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ш: %1$.0f пт  в: %2$.0f пт"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "b: %1$.0f pt  h: %2$.0f pt"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กว้าง: %1$.0f pt  สูง: %2$.0f pt"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "G: %1$.0f pt  Y: %2$.0f pt"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ш: %1$.0f пт  в: %2$.0f пт"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "R: %1$.0f pt  C: %2$.0f pt"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "宽: %1$.0f 点  高: %2$.0f 点"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "寬: %1$.0f 點  高: %2$.0f 點"
           }
         }
       }
