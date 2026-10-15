@@ -439,6 +439,21 @@ nonisolated enum WatchBitmapRenderer {
         var size: CGSize = .zero
         var scale: CGFloat = 0
         fileprivate var inks: [UUID: (revisions: [UUID], ink: InkSnapshot)] = [:]
+        fileprivate struct CompositeKey: Equatable {
+            struct Layer: Equatable {
+                let id: UUID
+                let revisions: [UUID]
+                let opacity: Float
+            }
+            let background: SIMD4<Float>
+            let layers: [Layer]
+        }
+        fileprivate var composite: (key: CompositeKey, image: CGImage)?
+        private(set) var replayedStrokeCount = 0
+        private(set) var compositeBuildCount = 0
+
+        fileprivate func didReplay(_ count: Int) { replayedStrokeCount += count }
+        fileprivate func didBuildComposite() { compositeBuildCount += 1 }
     }
 
     static func render(document: CanvasDocument, size: CGSize, scale: CGFloat,
@@ -453,18 +468,45 @@ nonisolated enum WatchBitmapRenderer {
         output.setFillColor(CGColor(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: CGFloat(c.w)))
         output.fill(bounds)
         if let cache {
-            if cache.size != size || cache.scale != scale { cache.inks.removeAll() }
+            if cache.size != size || cache.scale != scale {
+                cache.inks.removeAll()
+                cache.composite = nil
+            }
             cache.size = size
             cache.scale = scale
             cache.inks = cache.inks.filter { id, _ in document.layers.contains { $0.id == id } }
         }
-        for layer in document.layers where layer.isVisible && layer.opacity > 0 {
+        let visible = document.layers.filter { $0.isVisible && $0.opacity > 0 }
+        // Preserve the exact sequential blend order and 8-bit rounding. Cache the
+        // paper and layers below the live layer, or the entire frame when idle.
+        let liveIndex = activeStroke == nil ? nil : visible.firstIndex { $0.id == selectedLayerID }
+        let prefixCount = liveIndex ?? visible.count
+        let compositeKey = LayerCache.CompositeKey(background: c, layers: visible.prefix(prefixCount).map {
+            .init(id: $0.id, revisions: $0.strokes.map(\.geometryRevision), opacity: $0.opacity)
+        })
+        let reusedComposite = cache?.composite?.key == compositeKey
+        if reusedComposite, let image = cache?.composite?.image {
+            output.setBlendMode(.copy)
+            output.draw(image, in: bounds)
+            output.setBlendMode(.normal)
+        }
+        for (index, layer) in visible.enumerated() {
+            if index == prefixCount, !reusedComposite, let cache, let image = output.makeImage() {
+                cache.composite = (compositeKey, image)
+                cache.didBuildComposite()
+            }
+            if reusedComposite && index < prefixCount { continue }
             let revisions = layer.strokes.map(\.geometryRevision)
             let committed: InkSnapshot
             if let entry = cache?.inks[layer.id], entry.revisions == revisions {
                 committed = entry.ink
             } else {
-                guard let ink = renderInk(strokes: layer.strokes, size: size, scale: scale) else { return nil }
+                let previous = cache?.inks[layer.id]
+                let canAppend = previous.map { revisions.starts(with: $0.revisions) } ?? false
+                let pending = canAppend ? Array(layer.strokes.dropFirst(previous!.revisions.count)) : layer.strokes
+                guard let ink = renderInk(strokes: pending, size: size, scale: scale,
+                                          base: canAppend ? previous?.ink : nil) else { return nil }
+                cache?.didReplay(pending.count)
                 committed = ink
                 cache?.inks[layer.id] = (revisions, ink)
             }
@@ -478,7 +520,12 @@ nonisolated enum WatchBitmapRenderer {
             output.draw(ink.image, in: bounds)
             output.restoreGState()
         }
-        return output.makeImage()
+        guard let image = output.makeImage() else { return nil }
+        if prefixCount == visible.count, !reusedComposite, let cache {
+            cache.composite = (compositeKey, image)
+            cache.didBuildComposite()
+        }
+        return image
     }
 
     private static func renderInk(strokes: [Stroke], size: CGSize, scale: CGFloat,
