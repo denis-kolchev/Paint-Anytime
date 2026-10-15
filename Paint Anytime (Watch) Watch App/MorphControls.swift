@@ -326,12 +326,11 @@ struct CanvasMorphPanels: View {
 
             if isVisible && lasso.isActive && !lasso.hidesControls {
                 let diameter = panelGeometry.diameter
-                let top = leading.y - 18
-                let rows: CGFloat = showsSelectionActions ? 4 : 2
-                let rowHeight = panelGeometry.rowHeight(count: rows, panelTop: top)
-                lassoMorph(diameter: diameter, rowHeight: rowHeight)
-                    .position(x: leading.x,
-                              y: top + rowHeight * rows / 2)
+                let left = bottom.x - diameter / 2
+                let availableWidth = max(0, size.width - left * 2)
+                let panelWidth = min(diameter * (showsSelectionActions ? 4 : 2), availableWidth)
+                lassoMorph(diameter: diameter, panelWidth: panelWidth)
+                    .position(x: size.width / 2, y: bottom.y)
                     .zIndex(3)
 
                 if showsSelectionActions {
@@ -503,54 +502,59 @@ struct CanvasMorphPanels: View {
         .trackCanvasControl(.morph, frames: framesBinding)
     }
 
-    private func lassoMorph(diameter: CGFloat, rowHeight: CGFloat) -> some View {
+    private func lassoMorph(diameter: CGFloat, panelWidth: CGFloat) -> some View {
         CanvasMorphContent(isExpanded: showsSelectionActions) {
-            VStack(spacing: 0) {
-                morphButton("Move to layer above", height: rowHeight) {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                morphButton("Move to layer above", height: diameter, intrinsicWidth: true) {
                     onMoveSelectionLayer(1)
                 } label: { Image(systemName: "square.3.layers.3d.top.filled") }
-                .accessibilityHidden(true)
                 .disabled(!lasso.canMoveLayer(1, controller: controller))
                 .opacity(lasso.canMoveLayer(1, controller: controller) ? 1 : 0.35)
+                Spacer(minLength: 0)
 
-                morphButton("Move to layer below", height: rowHeight) {
+                morphButton("Move to layer below", height: diameter, intrinsicWidth: true) {
                     onMoveSelectionLayer(-1)
                 } label: { Image(systemName: "square.3.layers.3d.bottom.filled") }
                 .disabled(!lasso.canMoveLayer(-1, controller: controller))
                 .opacity(lasso.canMoveLayer(-1, controller: controller) ? 1 : 0.35)
-                morphButton("Duplicate", height: rowHeight) { lasso.duplicate(controller) } label: {
+                Spacer(minLength: 0)
+                morphButton("Duplicate", height: diameter, intrinsicWidth: true) { lasso.duplicate(controller) } label: {
                     Image(systemName: "plus.square.on.square")
                 }
                 .disabled(lasso.bounds == nil)
-                morphButton("Delete", height: rowHeight) { lasso.delete(controller) } label: {
+                Spacer(minLength: 0)
+                morphButton("Delete", height: diameter, intrinsicWidth: true) { lasso.delete(controller) } label: {
                     Image(systemName: "trash").foregroundStyle(.red)
                 }
                 .disabled(lasso.bounds == nil)
+                Spacer(minLength: 0)
             }
         } collapsed: {
-            VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
                 ForEach(WatchLassoMode.allCases, id: \.self) { mode in
-                    morphButton(mode.title, height: rowHeight) { lasso.setMode(mode) } label: {
+                    morphButton(mode.title, height: diameter, intrinsicWidth: true) { lasso.setMode(mode) } label: {
                         Image(systemName: mode.symbol)
                             .foregroundStyle(lasso.mode == mode ? .green : .white)
                     }
                     .accessibilityAddTraits(lasso.mode == mode ? [.isSelected] : [])
-                    .accessibilityHidden(mode == .strokes)
+                    Spacer(minLength: 0)
 
                 }
             }
         }
-        .frame(width: diameter)
+        .frame(width: panelWidth, height: diameter)
         .modifier(CanvasMorphGlass())
         .trackCanvasControl(.canvasToolsMorph, frames: framesBinding)
     }
 
-    private func morphButton<Label: View>(_ title: String, height: CGFloat, action: @escaping () -> Void,
+    private func morphButton<Label: View>(_ title: String, height: CGFloat, intrinsicWidth: Bool = false, action: @escaping () -> Void,
                                           @ViewBuilder label: () -> Label) -> some View {
         Button(action: action) {
             label()
                 .font(.system(size: 17, weight: .semibold))
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: intrinsicWidth ? nil : .infinity)
                 .frame(height: height)
                 .contentShape(Rectangle())
         }

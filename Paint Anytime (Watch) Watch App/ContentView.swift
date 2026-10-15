@@ -173,7 +173,20 @@ struct ContentView: View {
                 }
             }
 
-            if isActive && !showsGallery && !showsToolSettings {
+            if isActive && !showsGallery && !showsToolSettings && lasso.isActive && !lasso.hidesControls {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    // Retain the native vertical anchor without an invisible action
+                    // at the old leading position of the now-centered panel.
+                    Color.clear
+                        .frame(width: 32, height: 32)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                        .trackCanvasControl(.clear, frames: controlFramesBinding)
+                    Spacer(minLength: 0)
+                }
+            }
+
+            if isActive && !showsGallery && !showsToolSettings && !lasso.isActive {
                 ToolbarItem(placement: .topBarLeading) {
                     MorphControlsScope {
                         Button {
