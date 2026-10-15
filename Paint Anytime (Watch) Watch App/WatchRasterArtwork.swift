@@ -6,7 +6,7 @@ import Combine
 struct WatchRasterArtwork: View {
     var document: CanvasDocument? = nil
     var selectedLayerID: UUID? = nil
-    var previewSessionID: UUID? = nil
+    var selectionPreview: WatchSelectionPreview? = nil
     let strokes: [Stroke]
     let activeStroke: Stroke?
     let documentID: ObjectIdentifier
@@ -21,7 +21,7 @@ struct WatchRasterArtwork: View {
         let _ = TutorialDebug.trace("raster.body")
         GeometryReader { geometry in
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
-            RasterFrame(document: document, selectedLayerID: selectedLayerID, previewSessionID: previewSessionID, strokes: strokes, activeStroke: activeStroke,
+            RasterFrame(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
@@ -42,7 +42,7 @@ struct WatchRasterArtwork: View {
     private struct RasterFrame: View {
         let document: CanvasDocument?
         let selectedLayerID: UUID?
-        let previewSessionID: UUID?
+        let selectionPreview: WatchSelectionPreview?
         let strokes: [Stroke]
         let activeStroke: Stroke?
         let activeStrokeRevision: UInt64
@@ -55,6 +55,8 @@ struct WatchRasterArtwork: View {
         private struct Request: Equatable {
             let key: WatchBitmapRenderer.CacheKey
             let activeStrokeRevision: UInt64
+            let sessionID: UUID?
+            let transform: CGAffineTransform?
         }
 
         var body: some View {
@@ -78,8 +80,8 @@ struct WatchRasterArtwork: View {
                     Color.white
                 }
             }
-            .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision)) { @MainActor in
-                frames.submit(document: document, selectedLayerID: selectedLayerID, previewSessionID: previewSessionID, strokes: strokes, activeStroke: activeStroke,
+            .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: selectionPreview?.transform)) { @MainActor in
+                frames.submit(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke,
                               key: key, activeStrokeID: activeStrokeID)
             }
             .onDisappear { frames.stop() }
@@ -97,7 +99,7 @@ private final class CanvasFrameQueue: ObservableObject {
     private struct Job {
         let document: CanvasDocument?
         let selectedLayerID: UUID?
-        let previewSessionID: UUID?
+        let selectionPreview: WatchSelectionPreview?
         let strokes: [Stroke]
         let activeStroke: Stroke?
         let key: WatchBitmapRenderer.CacheKey
@@ -108,9 +110,9 @@ private final class CanvasFrameQueue: ObservableObject {
     private var worker: Task<Void, Never>?
     private var generation: UInt64 = 0
 
-    func submit(document: CanvasDocument?, selectedLayerID: UUID?, previewSessionID: UUID?, strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
+    func submit(document: CanvasDocument?, selectedLayerID: UUID?, selectionPreview: WatchSelectionPreview?, strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
                 activeStrokeID: UInt64) {
-        let job = Job(document: document, selectedLayerID: selectedLayerID, previewSessionID: previewSessionID, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
+        let job = Job(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
         pending = job
         latest = job
         guard worker == nil else { return }
@@ -120,7 +122,9 @@ private final class CanvasFrameQueue: ObservableObject {
             while let job = self.pending, !Task.isCancelled {
                 self.pending = nil
                 let next: WatchBitmapRenderer.ScreenFrame?
-                if let document = job.document {
+                if let preview = job.selectionPreview {
+                    next = await self.renderer.selectionFrame(preview, key: job.key)
+                } else if let document = job.document {
                     next = await self.renderer.layeredFrame(document: document, activeStroke: job.activeStroke,
                         selectedLayerID: job.selectedLayerID, key: job.key)
                 } else {
@@ -131,7 +135,7 @@ private final class CanvasFrameQueue: ObservableObject {
                 // An older prefix of this gesture is useful. An old document,
                 // cancelled gesture or viewport must never replace the new one.
                 if let latest = self.latest,
-                   (latest.key == job.key || Self.sameSelectionDrag(latest, job)),
+                   ((latest.key == job.key && latest.selectionPreview?.sessionID == job.selectionPreview?.sessionID) || Self.sameSelectionDrag(latest, job)),
                    latest.activeStrokeID == job.activeStrokeID,
                    latest.activeStroke?.id == job.activeStroke?.id, let next {
                     self.frame = next
@@ -144,7 +148,7 @@ private final class CanvasFrameQueue: ObservableObject {
     private static func sameSelectionDrag(_ latest: Job, _ rendered: Job) -> Bool {
         // A slower frame from the current drag is still useful while the finger
         // moves. Never publish it after commit, cancellation, or another drag.
-        latest.previewSessionID != nil && latest.previewSessionID == rendered.previewSessionID
+        latest.selectionPreview != nil && latest.selectionPreview?.sessionID == rendered.selectionPreview?.sessionID
             && latest.key.documentID == rendered.key.documentID
             && latest.key.size == rendered.key.size && latest.key.scale == rendered.key.scale
     }

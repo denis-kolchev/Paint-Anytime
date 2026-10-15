@@ -60,16 +60,16 @@ struct WatchCanvasView: View {
         GeometryReader { geometry in
             let paperSize = controller.document.size(fallback: geometry.size)
             let fit = canvasFit(geometry.size)
-            let displayedDocument = lasso.previewDocument ?? controller.document
+            let displayedDocument = controller.document
             Color(white: 0.16)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .overlay {
                     // Hiding settings/gallery must not destroy the raster view's image and cache.
                     // Keep its identity so returning to the canvas displays the last frame immediately.
-                    WatchRasterArtwork(document: needsLayerRendering || lasso.previewDocument != nil ? displayedDocument : nil,
-                        selectedLayerID: controller.selectedLayer.id, previewSessionID: lasso.previewSessionID, strokes: displayedDocument.strokes,
+                    WatchRasterArtwork(document: needsLayerRendering ? displayedDocument : nil,
+                        selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, strokes: displayedDocument.strokes,
                         activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
-                        documentRevision: controller.documentRevision &+ lasso.previewRevision,
+                        documentRevision: controller.documentRevision,
                         activeStrokeRevision: controller.activeStrokeRevision,
                         activeStrokeID: controller.activeStrokeID, zoom: zoom)
                         .frame(width: paperSize.width, height: paperSize.height)
@@ -141,7 +141,7 @@ struct WatchCanvasView: View {
                                 onCanvasInteraction()
                                 if lasso.isActive {
                                     lasso.begin(at: canvasPoint(value.startLocation, size: geometry.size),
-                                        tolerance: 11 / (zoom * fit), controller: controller)
+                                        tolerance: WatchLassoGeometry.handleHitRadius / (zoom * fit), controller: controller)
                                 }
                             }
                         }
