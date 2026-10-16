@@ -34,6 +34,7 @@ struct WatchCanvasView: View {
     @State private var offset = CGSize.zero
     @State private var panOrigin: CGSize?
     @State private var acceptsCurrentGesture: Bool?
+    @State private var blockedEraserLayerID: UUID?
     @GestureState private var isDragging = false
     @State private var shapeHoldTask: Task<Void, Never>?
     @State private var shapeHoldAnchor: CGPoint?
@@ -133,7 +134,7 @@ struct WatchCanvasView: View {
                 DragGesture(minimumDistance: 0)
                     .updating($isDragging) { _, state, _ in state = true }
                     .onChanged { value in
-                        guard acceptsInput && tutorial.acceptsActions else { return }
+                        guard acceptsInput && tutorial.acceptsActions && blockedEraserLayerID == nil else { return }
                         guard (isMovingCanvas ? tutorial.allowsCanvasPan : tutorial.allowsDrawing) else { return }
                         tutorial.activity()
                         if acceptsCurrentGesture == nil {
@@ -178,6 +179,15 @@ struct WatchCanvasView: View {
                             return
                         }
                         guard controller.pencilStyle.instrument != .fill else { return }
+                        if controller.pencilStyle.instrument == .eraser,
+                           controller.selectedLayer.isVisible,
+                           controller.selectedLayer.locksTransparency {
+                            // Reject the whole gesture; unlocking requires a fresh touch to erase.
+                            acceptsCurrentGesture = false
+                            cancelShapeHold()
+                            blockedEraserLayerID = controller.selectedLayer.id
+                            return
+                        }
                         let start = canvasPoint(value.startLocation, size: geometry.size)
                         // Preserve off-canvas samples so a stroke can enter the paper naturally.
                         // The artwork view and exported bitmap clip ink to the canvas bounds.
@@ -220,6 +230,15 @@ struct WatchCanvasView: View {
             )
         }
         .ignoresSafeArea()
+        .alert(L10n.text("Layer is locked"), isPresented: Binding(
+            get: { blockedEraserLayerID != nil },
+            set: { if !$0 { blockedEraserLayerID = nil } }
+        ), presenting: blockedEraserLayerID) { layerID in
+            Button(L10n.text("Unlock")) {
+                controller.updateLayer(layerID) { $0.locksTransparency = false }
+            }
+            Button(L10n.text("Cancel"), role: .cancel) {}
+        }
         // Keep the Crown target registered throughout the canvas exercise. The
         // binding below still rejects zoom until the lesson permits it.
         .focusable(acceptsInput)
