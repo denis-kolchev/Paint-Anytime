@@ -1,6 +1,179 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Artwork saved to gallery" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم حفظ العمل في المعرض"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dílo uloženo do galerie"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Værket er gemt i galleriet"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunstwerk in der Galerie gespeichert"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Το έργο αποθηκεύτηκε στη συλλογή"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Artwork saved to gallery"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obra guardada en la galería"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teos tallennettu galleriaan"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Œuvre enregistrée dans la galerie"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "היצירה נשמרה בגלריה"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alkotás mentve a galériába"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karya disimpan ke galeri"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opera salvata nella galleria"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作品をギャラリーに保存しました"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "작품이 갤러리에 저장되었습니다"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verket er lagret i galleriet"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werk opgeslagen in de galerij"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Praca zapisana w galerii"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obra salva na galeria"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obra guardada na galeria"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Работа сохранена в галерею"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verket har sparats i galleriet"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "บันทึกผลงานลงในแกลเลอรีแล้ว"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çalışma galeriye kaydedildi"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Роботу збережено в галереї"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đã lưu tác phẩm vào thư viện"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作品已保存到图库"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作品已儲存至圖庫"
+          }
+        }
+      }
+    },
     "- GitHub Privacy Statement (https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement)\n- Apple Privacy Policy (https://www.apple.com/legal/privacy/)\n- Google Privacy Policy (https://policies.google.com/privacy)" : {
       "comment" : "Privacy policy, paragraph 19 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",
@@ -35093,176 +35266,175 @@
         }
       }
     },
-    "Scroll down to share your drawing, or tap × to close." : {
-      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+    "Tap Share to share your drawing, or tap × to close." : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "مرّر لأسفل للمشاركة، أو اضغط × للإغلاق."
+            "value" : "اضغط على «مشاركة» لمشاركة رسمك، أو × للإغلاق."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Posuňte dolů pro sdílení nebo klepněte na × pro zavření."
+            "value" : "Klepnutím na Sdílet sdílejte kresbu, nebo klepnutím na × zavřete."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rul ned for at dele, eller tryk på × for at lukke."
+            "value" : "Tryk på Del for at dele din tegning, eller på × for at lukke."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scrolle zum Teilen nach unten oder tippe zum Schließen auf ×."
+            "value" : "Tippe auf Teilen, um deine Zeichnung zu teilen, oder auf × zum Schließen."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Κάντε κύλιση προς τα κάτω για κοινή χρήση ή πατήστε × για κλείσιμο."
+            "value" : "Πάτησε Κοινοποίηση για να μοιραστείς τη ζωγραφιά σου ή × για κλείσιμο."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scroll down to share your drawing, or tap × to close."
+            "value" : "Tap Share to share your drawing, or tap × to close."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desplázate hacia abajo para compartir o toca × para cerrar."
+            "value" : "Toca Compartir para compartir tu dibujo, o × para cerrar."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jaa vierittämällä alas tai sulje napauttamalla ×."
+            "value" : "Jaa piirustuksesi napauttamalla Jaa tai sulje napauttamalla ×."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Faites défiler vers le bas pour partager, ou touchez × pour fermer."
+            "value" : "Touchez Partager pour partager votre dessin, ou × pour fermer."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "גללו למטה לשיתוף, או הקישו על × לסגירה."
+            "value" : "להפצת הציור, יש להקיש על שיתוף. לסגירה, יש להקיש על ×."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Görgess le a megosztáshoz, vagy koppints a × jelre a bezáráshoz."
+            "value" : "Koppints a Megosztás gombra a rajz megosztásához, vagy a × jelre a bezáráshoz."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gulir ke bawah untuk berbagi, atau ketuk × untuk menutup."
+            "value" : "Ketuk Bagikan untuk membagikan gambarmu, atau ketuk × untuk menutup."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scorri in basso per condividere o tocca × per chiudere."
+            "value" : "Tocca Condividi per condividere il disegno, oppure × per chiudere."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "下にスクロールして共有するか、×で閉じます。"
+            "value" : "「共有」で絵を共有するか、×で閉じます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "아래로 스크롤해 공유하거나 ×를 탭해 닫으세요."
+            "value" : "공유를 눌러 그림을 공유하거나 ×를 눌러 닫으세요."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rull ned for å dele, eller trykk på × for å lukke."
+            "value" : "Trykk på Del for å dele tegningen din, eller på × for å lukke."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scrol omlaag om te delen of tik op × om te sluiten."
+            "value" : "Tik op Deel om je tekening te delen, of op × om te sluiten."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przewiń w dół, aby udostępnić, lub stuknij ×, aby zamknąć."
+            "value" : "Stuknij Udostępnij, aby udostępnić rysunek, lub ×, aby zamknąć."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Role para baixo para compartilhar ou toque em × para fechar."
+            "value" : "Toque em Compartilhar para compartilhar seu desenho ou em × para fechar."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desloque-se para baixo para partilhar ou toque em × para fechar."
+            "value" : "Toque em Partilhar para partilhar o desenho ou em × para fechar."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Прокрутите вниз, чтобы поделиться, или нажмите ×, чтобы закрыть."
+            "value" : "Нажмите «Поделиться», чтобы поделиться рисунком, или ×, чтобы закрыть."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rulla nedåt för att dela eller tryck på × för att stänga."
+            "value" : "Tryck på Dela för att dela din teckning, eller på × för att stänga."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "เลื่อนลงเพื่อแชร์ หรือแตะ × เพื่อปิด"
+            "value" : "แตะแชร์เพื่อแชร์ภาพวาด หรือแตะ × เพื่อปิด"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Paylaşmak için aşağı kaydır, kapatmak için × işaretine dokun."
+            "value" : "Çizimini paylaşmak için Paylaş’a, kapatmak için × işaretine dokun."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Прокрутіть униз, щоб поділитися, або натисніть ×, щоб закрити."
+            "value" : "Натисніть «Поділитися», щоб поділитися малюнком, або ×, щоб закрити."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cuộn xuống để chia sẻ hoặc chạm × để đóng."
+            "value" : "Chạm vào Chia sẻ để chia sẻ bản vẽ, hoặc chạm × để đóng."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "向下滚动来分享画作，或轻点 × 关闭。"
+            "value" : "轻点“分享”以分享画作，或轻点 × 关闭。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "向下捲動來分享畫作，或點一下 × 關閉。"
+            "value" : "點一下「分享」來分享畫作，或點一下 × 關閉。"
           }
         }
       }

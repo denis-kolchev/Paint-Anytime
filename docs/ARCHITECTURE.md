@@ -7,7 +7,7 @@ The app uses MVC responsibilities with SwiftUI observation and bindings.
 - **Drawing session:** `DrawingSessionController` coordinates saving, transfer to iPhone, opening documents, and confirmation before discarding changes. `ContentView` owns presentation, layout, and resets its navigation state when a new canvas session opens.
 - **Gallery:** `GalleryController` loads the list, deletes drawings, and restores editable documents. `SavedDrawingsView` owns selection, scrolling, gesture state, and transitions.
 - **Export and storage:** `CanvasExporter` renders artwork and encodes PNG metadata. `CanvasExportStore` writes the PNG/JSON pair, lists drawings, loads documents, and deletes files. The PNG/JSON pairing and naming convention remain unchanged; stroke JSON now also stores stable IDs.
-- **Views:** `SavedDrawingView` presents a saved image. Shared tutorial scrolling modifiers live in `TutorialScrollActivity.swift`.
+- **Views:** `SavedDrawingsView` opens saved artwork directly in the gallery at 1:1. Shared tutorial scrolling modifiers live in `TutorialScrollActivity.swift`.
 
 ## Tutorial
 

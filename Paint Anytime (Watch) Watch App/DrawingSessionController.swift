@@ -8,8 +8,6 @@ final class DrawingSessionController: ObservableObject {
     @Published var canvasSessionID = UUID()
     @Published var savedDrawing: CanvasExport?
     @Published var pendingCanvasAction: PendingCanvasAction?
-    @Published var photoTransferStatus = ""
-    @Published var photoTransferCanRetry = false
     @Published var exportError: String?
 
     init(canvas: CanvasController? = nil) {
@@ -24,11 +22,7 @@ final class DrawingSessionController: ObservableObject {
             let drawing = try CanvasExporter.save(
                 document: canvas.document, size: size, scale: scale)
             canvas.markSaved()
-            let queued = WatchPhotoTransfer.shared.queue(drawing.url)
-            photoTransferCanRetry = !queued
-            photoTransferStatus = queued
-                ? L10n.text("Your drawing is being sent to Photos on iPhone.")
-                : L10n.text("Your drawing is saved on your watch. Open the iPhone app to send it to Photos.")
+            _ = WatchPhotoTransfer.shared.queue(drawing.url)
             savedDrawing = drawing
         } catch { exportError = error.localizedDescription }
     }

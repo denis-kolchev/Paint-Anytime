@@ -39,6 +39,7 @@ struct ContentView: View {
     @State private var showsGallery = false
     @State private var galleryArtworkFilename: String?
     @State private var galleryInitialBitmap: GalleryBitmap?
+    @State private var savedNoticeID: UUID?
     @State private var galleryLaunchID = UUID()
     @State private var canvasSize: CGSize = .zero
     @State private var morphState = CanvasMorphState()
@@ -99,12 +100,31 @@ struct ContentView: View {
                         showsGallery = false
                         galleryArtworkFilename = nil
                         galleryInitialBitmap = nil
+                        savedNoticeID = nil
                     }) { document in
                         session.requestCanvasAction(.open(document))
                     }
                     .id(galleryLaunchID)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .zIndex(2)
+                }
+
+                if let savedNoticeID, showsGallery {
+                    Text(L10n.text("Artwork saved to gallery"))
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 9)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                        .padding(.horizontal, 42)
+                        .id(savedNoticeID)
+                        .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
+                        .allowsHitTesting(false)
+                        .zIndex(4)
+                        .task(id: savedNoticeID) {
+                            do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                            withAnimation(.easeOut(duration: 0.2)) { self.savedNoticeID = nil }
+                        }
                 }
 
                 if showsToolSettings {
@@ -335,6 +355,9 @@ struct ContentView: View {
                 showsGallery = true
                 session.savedDrawing = nil
             }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.8)) {
+                savedNoticeID = UUID()
+            }
         }
         .fullScreenCover(item: $session.pendingCanvasAction) { action in
             DestructiveConfirmationView(title: action.title, confirmTitle: L10n.text("Clear")) {
@@ -412,6 +435,7 @@ struct ContentView: View {
         showsToolSettings = false
         showsGallery = false
         galleryInitialBitmap = nil
+        savedNoticeID = nil
         showsMorphToolbar = false
         showsContentActions = false
         isMovingCanvas = false

@@ -93,8 +93,18 @@ struct TutorialPlayerView: View {
                     }
 
                     if page == .saved, let savedDrawing = player.savedDrawing {
-                        SavedDrawingView(drawing: savedDrawing, tutorial: tutorial)
-                            .background(.black)
+                        SavedDrawingsView(tutorial: tutorial, galleryFolder: folder,
+                                          initialArtworkFilename: savedDrawing.url.lastPathComponent,
+                                          onClose: { player.closeSavedDrawing() }, onEditDrawing: { _ in })
+                            .overlay(alignment: .bottom) {
+                                ShareLink(item: DrawingShareItem(url: savedDrawing.url),
+                                          preview: SharePreview("Paint Anytime", image: DrawingShareItem(url: savedDrawing.url))) {
+                                    Label(L10n.text("Share"), systemImage: "square.and.arrow.up")
+                                }
+                                .simultaneousGesture(TapGesture().onEnded { tutorial.activity() })
+                                .watchActionButtonStyle()
+                                .padding(.bottom, hintReservedHeight)
+                            }
                     }
 
                     if page == .menu {

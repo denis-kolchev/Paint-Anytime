@@ -22,7 +22,7 @@ enum TutorialLesson {
         case .reedStrokes: return L10n.text("Try your new brush.")
         case .history: return L10n.text("Use the arrows to undo and redo.")
         case .saveDrawing: return L10n.text("Tap the button to save your drawing.")
-        case .shareDrawing: return L10n.text("Scroll down to share your drawing, or tap × to close.")
+        case .shareDrawing: return L10n.text("Tap Share to share your drawing, or tap × to close.")
         case .openMenu: return L10n.text("Tap ••• to visit the gallery.")
         case .openGallery: return L10n.text("Tap Gallery to see your saved drawings.")
         case .galleryFullscreen: return L10n.text("Turn the Crown or double-tap a picture.")
