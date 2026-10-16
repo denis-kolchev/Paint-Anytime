@@ -27,7 +27,20 @@ final class WatchLassoController: ObservableObject {
     @Published private(set) var previewState: WatchSelectionPreview?
     @Published private(set) var isPreparing = false
     @Published var errorMessage: String?
-    private var selection: WatchLassoSelection?
+    @Published private(set) var selectionSeed: WatchSelectionPreview?
+    private var selection: WatchLassoSelection? {
+        didSet {
+            guard let selection,
+                  let index = selection.document.layers.firstIndex(where: { $0.id == selection.layerID }) else {
+                selectionSeed = nil
+                return
+            }
+            var document = selection.document
+            document.layers[index].strokes = selection.strokes
+            selectionSeed = WatchSelectionPreview(sessionID: UUID(), document: document,
+                layerID: selection.layerID, selectedIDs: selection.selectedIDs, bounds: selection.bounds)
+        }
+    }
     private struct HistoryState {
         let document: CanvasDocument
         let layerID: UUID
@@ -226,14 +239,7 @@ final class WatchLassoController: ObservableObject {
 
     private func preview(in rect: CGRect) {
         guard let selection else { return }
-        if previewState == nil {
-            var document = selection.document
-            guard let index = document.layers.firstIndex(where: { $0.id == selection.layerID }) else { return }
-            // Attach erasures / area cutouts once, before the first interactive frame.
-            document.layers[index].strokes = selection.strokes
-            previewState = WatchSelectionPreview(sessionID: generation, document: document,
-                layerID: selection.layerID, selectedIDs: selection.selectedIDs, bounds: selection.bounds)
-        }
+        if previewState == nil { previewState = selectionSeed }
         let old = selection.bounds
         let sx = rect.width / old.width, sy = rect.height / old.height
         previewState?.transform = CGAffineTransform(a: sx, b: 0, c: 0, d: sy,

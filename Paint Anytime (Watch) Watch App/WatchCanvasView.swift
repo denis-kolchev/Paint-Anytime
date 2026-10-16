@@ -61,13 +61,15 @@ struct WatchCanvasView: View {
             let paperSize = controller.document.size(fallback: geometry.size)
             let fit = canvasFit(geometry.size)
             let displayedDocument = controller.document
+            let useLayers = lasso.isActive || needsLayerRendering
             Color(white: 0.16)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .overlay {
                     // Hiding settings/gallery must not destroy the raster view's image and cache.
                     // Keep its identity so returning to the canvas displays the last frame immediately.
-                    WatchRasterArtwork(document: needsLayerRendering ? displayedDocument : nil,
-                        selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, strokes: displayedDocument.strokes,
+                    WatchRasterArtwork(document: useLayers ? displayedDocument : nil,
+                        selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, selectionSeed: lasso.selectionSeed,
+                        strokes: useLayers ? [] : (displayedDocument.layers.first?.strokes ?? []),
                         activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
                         documentRevision: controller.documentRevision,
                         activeStrokeRevision: controller.activeStrokeRevision,

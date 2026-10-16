@@ -67,9 +67,22 @@ nonisolated enum WatchBitmapRenderer {
         let rect: CGRect // Canvas points, top-left origin.
         let image: CGImage
     }
+    struct SelectionTexture {
+        let image: CGImage
+        let rect: CGRect
+        let sessionID: UUID
+        let key: CacheKey
+        let transform: CGAffineTransform
+        let layerBelow: CGImage?
+        let layerAbove: CGImage?
+        let upperLayers: CGImage?
+        let opacity: Float
+    }
+
     struct ScreenFrame {
         let background: CGImage
         let tiles: [ScreenTile]
+        var selection: SelectionTexture? = nil
     }
 
     struct CacheKey: Equatable {
@@ -545,14 +558,18 @@ nonisolated enum WatchBitmapRenderer {
         return image
     }
 
-    /// Two textures are safe only for a normal-blended suffix of the top layer
-    /// at full layer opacity. All other compositions retain sequential replay.
+    /// Preserve the selected layer's isolation and the order of static artwork
+    /// above/below it. Contiguous normal-blended selections can move as one texture.
     final class SelectionRenderCache {
         private var sessionID: UUID?
         private var key: CacheKey?
         private var background: CGImage?
         private var foreground: CGImage?
         private var region = CGRect.zero
+        private var layerBelow: CGImage?
+        private var layerAbove: CGImage?
+        private var upperLayers: CGImage?
+        private var opacity: Float = 1
         private let layers = LayerCache()
 
         func clear() {
@@ -560,11 +577,14 @@ nonisolated enum WatchBitmapRenderer {
             key = nil
             background = nil
             foreground = nil
+            layerBelow = nil
+            layerAbove = nil
+            upperLayers = nil
             layers.inks.removeAll()
             layers.composite = nil
         }
 
-        func render(_ preview: WatchSelectionPreview, key nextKey: CacheKey) -> CGImage? {
+        func render(_ preview: WatchSelectionPreview, key nextKey: CacheKey, allowReplay: Bool = true) -> ScreenFrame? {
             if sessionID != preview.sessionID || key != nextKey {
                 clear()
                 sessionID = preview.sessionID
@@ -572,59 +592,91 @@ nonisolated enum WatchBitmapRenderer {
                 prepare(preview, key: nextKey)
             }
             guard let background, let foreground else {
-                return WatchBitmapRenderer.render(document: preview.document, size: nextKey.size,
-                    scale: nextKey.scale, cache: layers, selection: preview)
+                guard allowReplay else { return nil }
+                guard let image = WatchBitmapRenderer.render(document: preview.document, size: nextKey.size,
+                    scale: nextKey.scale, cache: layers, selection: preview) else { return nil }
+                return ScreenFrame(background: image, tiles: [])
             }
-            guard let output = makeDisplayContext(width: background.width, height: background.height) else { return nil }
-            output.draw(background, in: CGRect(x: 0, y: 0, width: output.width, height: output.height))
-            output.translateBy(x: 0, y: CGFloat(output.height))
-            output.scaleBy(x: nextKey.scale, y: -nextKey.scale)
-            output.concatenate(preview.transform)
-            output.translateBy(x: region.minX, y: region.maxY)
-            output.scaleBy(x: 1, y: -1)
-            output.interpolationQuality = .high
-            output.draw(foreground, in: CGRect(origin: .zero, size: region.size))
-            return output.makeImage()
+            // Publish the two immutable textures once. The view applies the live
+            // matrix without allocating/resampling a full canvas bitmap per update.
+            return ScreenFrame(background: background, tiles: [], selection: SelectionTexture(
+                image: foreground, rect: region, sessionID: preview.sessionID,
+                key: nextKey, transform: preview.transform, layerBelow: layerBelow,
+                layerAbove: layerAbove, upperLayers: upperLayers, opacity: opacity))
         }
 
         private func prepare(_ preview: WatchSelectionPreview, key: CacheKey) {
             let visible = preview.document.layers.filter { $0.isVisible && $0.opacity > 0 }
-            guard let top = visible.last, top.id == preview.layerID, top.opacity == 1,
-                  let start = top.strokes.firstIndex(where: { preview.selectedIDs.contains($0.id) }),
-                  top.strokes[start...].allSatisfy({ preview.selectedIDs.contains($0.id) }),
-                  top.strokes[start...].allSatisfy({
-                      !$0.locksTransparency && $0.style.instrument != .eraser &&
-                      // Only coverage brushes use the configurable color blend mode.
-                      (($0.style.instrument != .marker && $0.style.instrument != .watercolor) ||
-                       $0.style.blendingMode == .normal)
-                  }) else { return }
-            // Include geometry outside the paper, which can move back into view.
+            guard let index = visible.firstIndex(where: { $0.id == preview.layerID }) else { return }
+            let layer = visible[index]
+            guard let start = layer.strokes.firstIndex(where: { preview.selectedIDs.contains($0.id) }),
+                  let end = layer.strokes.lastIndex(where: { preview.selectedIDs.contains($0.id) }),
+                  layer.strokes[start...end].allSatisfy({ preview.selectedIDs.contains($0.id) }) else { return }
+            func independent(_ stroke: Stroke) -> Bool {
+                !stroke.locksTransparency && stroke.style.instrument != .eraser &&
+                    ((stroke.style.instrument != .marker && stroke.style.instrument != .watercolor) ||
+                     stroke.style.blendingMode == .normal)
+            }
+            // Later dependent blends must see the moved ink: those use exact replay.
+            guard layer.strokes[start...].allSatisfy(independent) else { return }
             var extent = preview.bounds
-            for stroke in top.strokes[start...] {
-                guard let geometry = try? StrokeGeometry(stroke) else { return }
+            for stroke in layer.strokes[start...end] {
+                guard !Task.isCancelled, let geometry = try? StrokeGeometry(stroke) else { return }
                 extent = extent.union(geometry.bounds)
             }
-            let pixels = extent.insetBy(dx: -2 / key.scale, dy: -2 / key.scale)
-                .applying(CGAffineTransform(scaleX: key.scale, y: key.scale)).integral
-            guard !pixels.isNull, !pixels.isEmpty, pixels.width.isFinite, pixels.height.isFinite,
-                  pixels.width <= 8192, pixels.height <= 8192,
-                  // Float ink is 16 bytes/pixel. Bound temporary selection storage.
-                  pixels.width * pixels.height <= 1_048_576 else { return }
-            let region = pixels.applying(CGAffineTransform(scaleX: 1 / key.scale, y: 1 / key.scale))
-            let local = top.strokes[start...].map { source in
+            guard !extent.isNull, !extent.isEmpty, extent.width.isFinite, extent.height.isFinite,
+                  key.size.width > 0, key.size.height > 0 else { return }
+            // Interaction needs a screen-sized bitmap, not export/zoom resolution.
+            // Cap each retained image at roughly 1 MiB in 8-bit RGBA.
+            let largestArea = max(extent.width * extent.height, key.size.width * key.size.height)
+            let longestSide = max(max(extent.width, extent.height), max(key.size.width, key.size.height))
+            let scale = min(key.scale, 2, sqrt(262_144 / largestArea), 2048 / longestSide)
+            guard scale.isFinite, scale > 0 else { return }
+            let pixels = extent.insetBy(dx: -2 / scale, dy: -2 / scale)
+                .applying(CGAffineTransform(scaleX: scale, y: scale)).integral
+            let region = pixels.applying(CGAffineTransform(scaleX: 1 / scale, y: 1 / scale))
+            let local = layer.strokes[start...end].map { source in
                 var stroke = source
                 stroke.transform = StrokeTransform(source.transform.affine.concatenating(
                     CGAffineTransform(translationX: -region.minX, y: -region.minY)))
                 return stroke
             }
-            guard let foreground = layerThumbnail(strokes: local, size: region.size, scale: key.scale),
-                  let index = preview.document.layers.firstIndex(where: { $0.id == top.id }) else { return }
-            var remaining = preview.document
-            remaining.layers[index].strokes = Array(top.strokes[..<start])
-            guard let background = WatchBitmapRenderer.render(document: remaining, size: key.size, scale: key.scale) else { return }
+            // Keep float buffers only during preparation; upload compact textures.
+            func compact(_ image: CGImage?) -> CGImage? {
+                guard let image, let context = makeDisplayContext(width: image.width, height: image.height) else { return nil }
+                context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+                return context.makeImage()
+            }
+            guard let foreground = compact(layerThumbnail(strokes: local, size: region.size, scale: scale)) else { return }
+            var below: CGImage?
+            if start > 0 {
+                guard let image = compact(layerThumbnail(strokes: Array(layer.strokes[..<start]), size: key.size, scale: scale)) else { return }
+                below = image
+            }
+            var above: CGImage?
+            if end + 1 < layer.strokes.count {
+                guard let image = compact(layerThumbnail(strokes: Array(layer.strokes[(end + 1)...]), size: key.size, scale: scale)) else { return }
+                above = image
+            }
+            var lower = preview.document
+            lower.layers = Array(visible[..<index])
+            guard let background = WatchBitmapRenderer.render(document: lower, size: key.size, scale: scale) else { return }
+            var upper: CGImage?
+            if index + 1 < visible.count {
+                var document = preview.document
+                document.layers = Array(visible[(index + 1)...])
+                document.backgroundIsVisible = false
+                guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: scale) else { return }
+                upper = image
+            }
+            guard !Task.isCancelled else { return }
             self.region = region
             self.background = background
             self.foreground = foreground
+            self.layerBelow = below
+            self.layerAbove = above
+            self.upperLayers = upper
+            self.opacity = layer.opacity
         }
     }
 
@@ -862,9 +914,12 @@ actor WatchArtworkRenderer {
     private let layers = WatchBitmapRenderer.LayerCache()
     private let selection = WatchBitmapRenderer.SelectionRenderCache()
 
+    func prepareSelectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
+        selection.render(preview, key: key, allowReplay: false)
+    }
+
     func selectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
-        guard let image = selection.render(preview, key: key) else { return nil }
-        return WatchBitmapRenderer.ScreenFrame(background: image, tiles: [])
+        selection.render(preview, key: key)
     }
 
     func layeredFrame(document: CanvasDocument, activeStroke: Stroke?, selectedLayerID: UUID?,

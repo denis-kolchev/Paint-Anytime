@@ -7,6 +7,7 @@ struct WatchRasterArtwork: View {
     var document: CanvasDocument? = nil
     var selectedLayerID: UUID? = nil
     var selectionPreview: WatchSelectionPreview? = nil
+    var selectionSeed: WatchSelectionPreview? = nil
     let strokes: [Stroke]
     let activeStroke: Stroke?
     let documentID: ObjectIdentifier
@@ -21,7 +22,7 @@ struct WatchRasterArtwork: View {
         let _ = TutorialDebug.trace("raster.body")
         GeometryReader { geometry in
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
-            RasterFrame(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke,
+            RasterFrame(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
@@ -43,6 +44,7 @@ struct WatchRasterArtwork: View {
         let document: CanvasDocument?
         let selectedLayerID: UUID?
         let selectionPreview: WatchSelectionPreview?
+        let selectionSeed: WatchSelectionPreview?
         let strokes: [Stroke]
         let activeStroke: Stroke?
         let activeStrokeRevision: UInt64
@@ -50,6 +52,35 @@ struct WatchRasterArtwork: View {
         let key: WatchBitmapRenderer.CacheKey
 
         @StateObject private var frames = CanvasFrameQueue()
+        @State private var finishedTransform: CGAffineTransform?
+
+        private var displayFrame: WatchBitmapRenderer.ScreenFrame? {
+            if let preview = selectionPreview, let prepared = frames.preparedFrame,
+               prepared.selection?.sessionID == preview.sessionID, prepared.selection?.key == key {
+                return prepared
+            }
+            return frames.frame
+        }
+
+        private var hasSelectionTexture: Bool {
+            guard let texture = displayFrame?.selection, let selectionPreview else { return false }
+            return texture.sessionID == selectionPreview.sessionID && texture.key == key
+        }
+
+        private func displayedTransform(_ texture: WatchBitmapRenderer.SelectionTexture) -> CGAffineTransform {
+            if let selectionPreview, selectionPreview.sessionID == texture.sessionID {
+                return selectionPreview.transform
+            }
+            // Hold the last interactive frame until the committed/cancelled frame
+            // is ready, rather than snapping back while it is being rendered.
+            return finishedTransform ?? texture.transform
+        }
+
+        private func staticTexture(_ image: CGImage) -> some View {
+            Image(decorative: image, scale: key.scale)
+                .resizable()
+                .frame(width: key.size.width, height: key.size.height)
+        }
 
         // No stroke arrays or point comparisons in task identity.
         private struct Request: Equatable {
@@ -62,11 +93,34 @@ struct WatchRasterArtwork: View {
         var body: some View {
             let _ = TutorialDebug.trace("raster.frame.body", "strokes=\(strokes.count) imageReady=\(frames.frame != nil)")
             Group {
-                if let frame = frames.frame {
+                if let frame = displayFrame {
                     ZStack(alignment: .topLeading) {
                         Image(decorative: frame.background, scale: key.scale)
                             .resizable()
                             .frame(width: key.size.width, height: key.size.height)
+                        if let texture = frame.selection {
+                            ZStack(alignment: .topLeading) {
+                                if let image = texture.layerBelow {
+                                    staticTexture(image)
+                                }
+                                Image(decorative: texture.image, scale: texture.key.scale)
+                                    .resizable()
+                                    .frame(width: texture.rect.width, height: texture.rect.height)
+                                    .offset(x: texture.rect.minX, y: texture.rect.minY)
+                                    .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+                                    .transformEffect(displayedTransform(texture))
+                                if let image = texture.layerAbove {
+                                    staticTexture(image)
+                                }
+                            }
+                            .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+                            .clipped()
+                            .compositingGroup()
+                            .opacity(Double(texture.opacity))
+                            if let image = texture.upperLayers {
+                                staticTexture(image)
+                            }
+                        }
                         ForEach(frame.tiles) { tile in
                             Image(decorative: tile.image, scale: key.scale)
                                 .resizable()
@@ -80,10 +134,21 @@ struct WatchRasterArtwork: View {
                     Color.white
                 }
             }
-            .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: selectionPreview?.transform)) { @MainActor in
+            .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: hasSelectionTexture ? nil : selectionPreview?.transform)) { @MainActor in
+                if hasSelectionTexture { return }
                 frames.submit(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke,
                               key: key, activeStrokeID: activeStrokeID)
             }
+            .task(id: Request(key: key, activeStrokeRevision: 0, sessionID: selectionSeed?.sessionID, transform: nil)) {
+                await frames.prepareSelection(selectionSeed, key: key)
+            }
+            .onChange(of: selectionPreview?.transform) { old, new in
+                if new == nil, let old {
+                    finishedTransform = old
+                    frames.holdPreparedSelection()
+                }
+            }
+            .transaction { $0.animation = nil }
             .onDisappear { frames.stop() }
         }
 
@@ -95,7 +160,24 @@ struct WatchRasterArtwork: View {
 @MainActor
 private final class CanvasFrameQueue: ObservableObject {
     @Published private(set) var frame: WatchBitmapRenderer.ScreenFrame?
+    @Published private(set) var preparedFrame: WatchBitmapRenderer.ScreenFrame?
     private let renderer = WatchArtworkRenderer()
+    private var preparationID = UUID()
+
+    func prepareSelection(_ seed: WatchSelectionPreview?, key: WatchBitmapRenderer.CacheKey) async {
+        let token = UUID()
+        preparationID = token
+        preparedFrame = nil
+        guard let seed else { return }
+        let next = await renderer.prepareSelectionFrame(seed, key: key)
+        guard !Task.isCancelled, preparationID == token, next?.selection != nil else { return }
+        preparedFrame = next
+    }
+
+    func holdPreparedSelection() {
+        if let preparedFrame { frame = preparedFrame }
+    }
+
     private struct Job {
         let document: CanvasDocument?
         let selectedLayerID: UUID?
@@ -139,6 +221,11 @@ private final class CanvasFrameQueue: ObservableObject {
                    latest.activeStrokeID == job.activeStrokeID,
                    latest.activeStroke?.id == job.activeStroke?.id, let next {
                     self.frame = next
+                    if let texture = next.selection, let pending = self.pending,
+                       pending.key == texture.key,
+                       pending.selectionPreview?.sessionID == texture.sessionID {
+                        self.pending = nil
+                    }
                 }
             }
             if self.generation == token { self.worker = nil }
@@ -155,6 +242,8 @@ private final class CanvasFrameQueue: ObservableObject {
 
     func stop() {
         generation &+= 1
+        preparationID = UUID()
+        preparedFrame = nil
         worker?.cancel()
         worker = nil
         pending = nil

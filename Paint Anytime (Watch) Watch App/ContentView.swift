@@ -38,6 +38,7 @@ struct ContentView: View {
     @State private var showsAppSettings = false
     @State private var showsGallery = false
     @State private var galleryArtworkFilename: String?
+    @State private var galleryInitialBitmap: GalleryBitmap?
     @State private var galleryLaunchID = UUID()
     @State private var canvasSize: CGSize = .zero
     @State private var morphState = CanvasMorphState()
@@ -94,9 +95,10 @@ struct ContentView: View {
                     .zIndex(3)
 
                 if showsGallery {
-                    SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, onClose: {
+                    SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap, onClose: {
                         showsGallery = false
                         galleryArtworkFilename = nil
+                        galleryInitialBitmap = nil
                     }) { document in
                         session.requestCanvasAction(.open(document))
                     }
@@ -317,11 +319,22 @@ struct ContentView: View {
             })
             .task { await resetMorphBehindPresentation() }
         }
-        .sheet(item: $session.savedDrawing) { drawing in
-            NavigationStack {
-                SavedDrawingView(drawing: drawing)
+        .task(id: session.savedDrawing?.id) {
+            guard let drawing = session.savedDrawing else { return }
+            let bitmap = await GalleryImageCache.shared.load(GalleryImageRequest(
+                url: drawing.url, shortSidePixels: nil, displayScale: displayScale))
+            guard !Task.isCancelled, session.savedDrawing?.id == drawing.id else { return }
+            var transaction = Transaction(animation: nil)
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                showsMorphToolbar = false
+                showsContentActions = false
+                galleryArtworkFilename = drawing.url.lastPathComponent
+                galleryInitialBitmap = bitmap
+                galleryLaunchID = UUID()
+                showsGallery = true
+                session.savedDrawing = nil
             }
-            .task { await resetMorphBehindPresentation() }
         }
         .fullScreenCover(item: $session.pendingCanvasAction) { action in
             DestructiveConfirmationView(title: action.title, confirmTitle: L10n.text("Clear")) {
@@ -398,6 +411,7 @@ struct ContentView: View {
         session.exportError = nil
         showsToolSettings = false
         showsGallery = false
+        galleryInitialBitmap = nil
         showsMorphToolbar = false
         showsContentActions = false
         isMovingCanvas = false

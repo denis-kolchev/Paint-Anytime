@@ -6,6 +6,7 @@ struct SavedDrawingsView: View {
     @ObservedObject var tutorial = TutorialSession.inactive
     var galleryFolder: URL? = nil
     var initialArtworkFilename: String? = nil
+    var initialBitmap: GalleryBitmap? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     var onClose: () -> Void
     var onEditDrawing: (CanvasDocument) -> Void
@@ -265,7 +266,8 @@ struct SavedDrawingsView: View {
             controller.reload(in: galleryFolder)
             if let filename = initialArtworkFilename,
                let drawing = drawings.first(where: { $0.url.lastPathComponent == filename }) {
-                // Direct widget launches do not need a transition from a visible grid tile.
+                // Direct launches open at 1:1 without a transition from a grid tile.
+                transitionBitmap = initialBitmap?.url == drawing.url ? initialBitmap : nil
                 focusedDrawing = drawing
                 selectedDrawing = drawing
                 zoomLevel = 2
