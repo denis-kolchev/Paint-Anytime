@@ -6,9 +6,18 @@ The supported languages and their native names are defined in
 [`AppLanguage.supported`](../Shared/AppLanguage.swift). Translations live in
 [`Shared/Localizable.xcstrings`](../Shared/Localizable.xcstrings) and the
 [complication catalog](../Paint%20Anytime%20Complications/Localizable.xcstrings), and project
-localizations are registered in the [Xcode project](../Paint%20All%20the%20Time.xcodeproj/project.pbxproj).
+localizations are registered in the [Xcode project](../Paint%20Anytime.xcodeproj/project.pbxproj).
 Use these files for the current language list and translation coverage; this guide
 does not duplicate counts that change as the app grows.
+
+The watch-only distribution container (`Paint Anytime (Watch)`) also includes
+`Shared/Localizable.xcstrings` in its Resources phase. This produces localized
+resources in the outer app bundle as well as the watch app, so the submitted
+package exposes the supported languages to the App Store. Keep this reference
+pointing to the shared catalog instead of maintaining a separate language list.
+The App Store language list comes from the uploaded app's localized resources;
+translated store descriptions and screenshots are managed separately in App Store
+Connect.
 
 ## Language selection
 
@@ -22,6 +31,11 @@ launch, the app matches `Locale.preferredLanguages` in preference order, includi
 regional variants, and falls back to English. A supported manual selection takes
 priority on later launches. If a saved language is no longer supported, the app
 uses the device’s supported language preferences, falling back to English.
+
+On a fresh watch installation, the language confirmation question and its Yes/No
+buttons use that same system-selected language, including Simplified or
+Traditional Chinese. The system preferences are those of the Apple Watch; if its
+language differs from the paired iPhone, the watch language takes precedence.
 
 Changing language temporarily disables the picker and dismissal while a progress
 overlay is shown. Existing views update without resetting the canvas or navigation.

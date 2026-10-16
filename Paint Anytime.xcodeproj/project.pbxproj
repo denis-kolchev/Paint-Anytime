@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E50000000000000000000001 /* Shared/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E50000000000000000000002 /* Shared/Localizable.xcstrings */; };
 		257D4058305EA358002072CB /* Paint Anytime (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
 		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -52,6 +53,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E50000000000000000000002 /* Shared/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Shared/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
 		257D4052305EA358002072CB /* Paint Anytime (Watch).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		25AC8197305D90C700C8F69E /* Paint Anytime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -126,6 +128,7 @@
 				25AC8198305D90C700C8F69E /* Products */,
 				2523992A3060233F00774395 /* Shared */,
 				259166BF307D5FE20044FEF7 /* Recovered References */,
+				E50000000000000000000002 /* Shared/Localizable.xcstrings */,
 			);
 			sourceTree = "<group>";
 		};
@@ -294,6 +297,7 @@
 		257D4050305EA358002072CB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
+				E50000000000000000000001 /* Shared/Localizable.xcstrings in Resources */,
 			);
 		};
 		257D4055305EA358002072CB /* Resources */ = {
