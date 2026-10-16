@@ -218,7 +218,13 @@ struct CanvasMorphContent<Expanded: View, Collapsed: View>: View {
                 .allowsHitTesting(isExpanded)
                 .accessibilityHidden(!isExpanded)
             collapsed
-                .opacity(isExpanded ? 0 : 1)
+                // Hide the source symbols before the expanding layout moves them.
+                // Scope this transaction to opacity so the panel still morphs.
+                .transaction { transaction in
+                    if isExpanded { transaction.animation = nil }
+                } body: { content in
+                    content.opacity(isExpanded ? 0 : 1)
+                }
                 .allowsHitTesting(!isExpanded)
                 .accessibilityHidden(isExpanded)
         }
