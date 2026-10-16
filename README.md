@@ -17,6 +17,16 @@
 </p>
 
 <p align="center">
+  <a href="https://apps.apple.com/ae/app/paint-anytime/id6816100087?platform=watch">
+    <img
+      src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83"
+      alt="Download on the App Store"
+      width="170"
+    >
+  </a>
+</p>
+
+<p align="center">
   <a href="https://github.com/denis-kolchev/Paint-Anytime/releases/tag/v1.0.0">
     <strong>Latest Release — v1.0.0</strong>
   </a>
