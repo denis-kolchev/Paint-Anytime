@@ -80,11 +80,6 @@ private struct DrawingSettingsView: View {
     var body: some View {
         List {
             NavigationLink {
-                DrawingSpaceSettingsView()
-            } label: {
-                Label(L10n.text("More room to draw"), systemImage: "arrow.up.left.and.arrow.down.right")
-            }
-            NavigationLink {
                 ToolSynchronizationView(controller: controller)
             } label: {
                 Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
@@ -98,6 +93,11 @@ private struct DrawingSettingsView: View {
                 ColorBlendingSelectionView(controller: controller)
             } label: {
                 Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
+            }
+            NavigationLink {
+                DrawingControlsSettingsView()
+            } label: {
+                Label(L10n.text("Everything at hand"), systemImage: "rectangle.compress.vertical")
             }
         }
         .labelStyle(CenteredMenuLabelStyle())
@@ -432,18 +432,21 @@ private struct ColorBlendingIllustration: View {
     }
 }
 
-private struct DrawingSpaceSettingsView: View {
+private struct DrawingControlsSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
-    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = false
+    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
 
     var body: some View {
         List {
             Section {
-                Toggle(L10n.text("Keep buttons in a menu"), isOn: $usesMorphToolbar)
+                Toggle(L10n.text("Always show buttons"), isOn: Binding(
+                    get: { !usesMorphToolbar },
+                    set: { usesMorphToolbar = !$0 }
+                ))
             } footer: {
-                Text(L10n.text("Keep drawing controls in one menu for fewer buttons on the canvas and more room to draw."))
+                Text(L10n.text("Show drawing buttons directly on the canvas for quick access. When off, buttons are grouped in expandable menus."))
             }
         }
-        .navigationTitle(L10n.text("More room to draw"))
+        .navigationTitle(L10n.text("Everything at hand"))
     }
 }

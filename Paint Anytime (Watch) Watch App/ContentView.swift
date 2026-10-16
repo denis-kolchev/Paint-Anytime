@@ -8,7 +8,7 @@ struct ContentView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @StateObject private var session = DrawingSessionController()
     private var controller: CanvasController { session.canvas }
-    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = false
+    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
     private var showsMorphToolbar: Bool {
         get { morphState.showsMorphToolbar }
         nonmutating set { morphState.showsMorphToolbar = newValue }

@@ -20679,175 +20679,175 @@
         }
       }
     },
-    "Keep buttons in a menu" : {
+    "Always show buttons" : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "جمع الأزرار في قائمة"
+            "value" : "إظهار الأزرار دائمًا"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seskupit tlačítka do nabídky"
+            "value" : "Vždy zobrazovat tlačítka"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saml knapper i en menu"
+            "value" : "Vis altid knapper"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Schaltflächen im Menü bündeln"
+            "value" : "Tasten immer anzeigen"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Συγκέντρωση κουμπιών σε μενού"
+            "value" : "Πάντα ορατά κουμπιά"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keep buttons in a menu"
+            "value" : "Always show buttons"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agrupar botones en un menú"
+            "value" : "Mostrar botones siempre"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kokoa painikkeet valikkoon"
+            "value" : "Näytä painikkeet aina"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Regrouper les boutons dans un menu"
+            "value" : "Toujours afficher les boutons"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ריכוז הכפתורים בתפריט"
+            "value" : "הצגת כפתורים תמיד"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gombok egy menüben"
+            "value" : "Gombok mindig láthatók"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Satukan tombol dalam menu"
+            "value" : "Selalu tampilkan tombol"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raggruppa i pulsanti in un menu"
+            "value" : "Mostra sempre i pulsanti"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ボタンをメニューにまとめる"
+            "value" : "ボタンを常に表示"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "버튼을 메뉴에 모으기"
+            "value" : "버튼 항상 표시"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Samle knapper i en meny"
+            "value" : "Vis alltid knapper"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Knoppen in een menu bundelen"
+            "value" : "Knoppen altijd tonen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zbierz przyciski w menu"
+            "value" : "Zawsze pokazuj przyciski"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agrupar botões em um menu"
+            "value" : "Sempre mostrar botões"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agrupar botões num menu"
+            "value" : "Mostrar sempre os botões"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Скрывать кнопки в меню"
+            "value" : "Всегда показывать кнопки"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Samla knappar i en meny"
+            "value" : "Visa alltid knappar"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "รวมปุ่มไว้ในเมนู"
+            "value" : "แสดงปุ่มเสมอ"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Düğmeleri menüde topla"
+            "value" : "Düğmeleri her zaman göster"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ховати кнопки в меню"
+            "value" : "Завжди показувати кнопки"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gộp các nút vào menu"
+            "value" : "Luôn hiển thị nút"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "将按钮收纳到菜单"
+            "value" : "始终显示按钮"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "將按鈕收納到選單"
+            "value" : "一律顯示按鈕"
           }
         }
       }
@@ -21026,175 +21026,175 @@
         }
       }
     },
-    "Keep drawing controls in one menu for fewer buttons on the canvas and more room to draw." : {
+    "Show drawing buttons directly on the canvas for quick access. When off, buttons are grouped in expandable menus." : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اجمع أدوات الرسم في قائمة واحدة لتقليل الأزرار على اللوحة وتوفير مساحة أكبر للرسم."
+            "value" : "اعرض أزرار الرسم مباشرة على اللوحة للوصول السريع. عند إيقاف هذا الخيار، تُجمع الأزرار في قوائم قابلة للتوسيع."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seskupte nástroje do jedné nabídky, aby na plátně bylo méně tlačítek a více místa na kreslení."
+            "value" : "Zobrazte tlačítka kreslení přímo na plátně pro rychlý přístup. Po vypnutí jsou tlačítka seskupena v rozbalovacích nabídkách."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Saml tegneværktøjerne i én menu, så der er færre knapper på lærredet og mere plads til at tegne."
+            "value" : "Vis tegneknapper direkte på lærredet for hurtig adgang. Når funktionen er slået fra, samles knapperne i menuer, der kan foldes ud."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fasse die Zeichenwerkzeuge in einem Menü zusammen: weniger Schaltflächen auf der Leinwand und mehr Platz zum Zeichnen."
+            "value" : "Zeige Zeichentasten für schnellen Zugriff direkt auf der Leinwand an. Ist die Option deaktiviert, werden die Tasten in aufklappbaren Menüs gruppiert."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Συγκεντρώστε τα εργαλεία σχεδίασης σε ένα μενού για λιγότερα κουμπιά στον καμβά και περισσότερο χώρο για σχέδιο."
+            "value" : "Εμφανίστε τα κουμπιά σχεδίασης απευθείας στον καμβά για γρήγορη πρόσβαση. Όταν η επιλογή είναι ανενεργή, τα κουμπιά ομαδοποιούνται σε αναπτυσσόμενα μενού."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keep drawing controls in one menu for fewer buttons on the canvas and more room to draw."
+            "value" : "Show drawing buttons directly on the canvas for quick access. When off, buttons are grouped in expandable menus."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agrupa los controles en un solo menú para tener menos botones en el lienzo y más espacio para dibujar."
+            "value" : "Muestra los botones de dibujo directamente en el lienzo para acceder rápidamente. Al desactivar esta opción, los botones se agrupan en menús desplegables."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kokoa piirtotyökalut yhteen valikkoon, niin piirtoalueella on vähemmän painikkeita ja enemmän tilaa piirtää."
+            "value" : "Näytä piirron painikkeet suoraan piirtoalustalla nopeaa käyttöä varten. Kun asetus on pois päältä, painikkeet on ryhmitelty avattaviin valikoihin."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Regroupez les commandes dans un seul menu pour réduire le nombre de boutons sur la toile et avoir plus de place pour dessiner."
+            "value" : "Affichez les boutons de dessin directement sur la toile pour un accès rapide. Si cette option est désactivée, les boutons sont regroupés dans des menus dépliables."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ריכוז כלי הציור בתפריט אחד מפחית את מספר הכפתורים על משטח הציור ומפנה יותר מקום לצייר."
+            "value" : "הצגת כפתורי הציור ישירות על הקנבס לגישה מהירה. כשהאפשרות כבויה, הכפתורים מקובצים בתפריטים נפתחים."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gyűjtsd a rajzeszközöket egyetlen menübe, hogy kevesebb gomb legyen a vásznon, és több hely maradjon a rajzoláshoz."
+            "value" : "A rajzolás gombjai közvetlenül a vásznon jelennek meg a gyors eléréshez. Kikapcsolva a gombok lenyitható menükbe vannak rendezve."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Satukan kontrol menggambar dalam satu menu agar tombol di kanvas lebih sedikit dan ruang menggambar lebih luas."
+            "value" : "Tampilkan tombol menggambar langsung di kanvas agar mudah diakses. Saat dinonaktifkan, tombol dikelompokkan dalam menu yang dapat dibuka."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raggruppa i comandi in un unico menu per avere meno pulsanti sulla tela e più spazio per disegnare."
+            "value" : "Mostra i pulsanti di disegno direttamente sulla tela per un accesso rapido. Quando l’opzione è disattivata, i pulsanti sono raggruppati in menu espandibili."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描画操作を1つのメニューにまとめることで、キャンバス上のボタンが減り、描くスペースが広がります。"
+            "value" : "描画ボタンをキャンバス上に直接表示して、すばやく操作できます。オフにすると、ボタンは展開できるメニューにまとめられます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "그리기 도구를 하나의 메뉴에 모아 캔버스의 버튼을 줄이고 그릴 공간을 넓힙니다."
+            "value" : "빠르게 사용할 수 있도록 그리기 버튼을 캔버스에 바로 표시합니다. 끄면 버튼이 펼칠 수 있는 메뉴에 모입니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Samle tegneverktøyene i én meny for færre knapper på lerretet og mer plass til å tegne."
+            "value" : "Vis tegneknapper direkte på lerretet for rask tilgang. Når funksjonen er slått av, samles knappene i menyer som kan utvides."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bundel de tekenbediening in één menu voor minder knoppen op het canvas en meer ruimte om te tekenen."
+            "value" : "Toon tekenknoppen direct op het canvas voor snelle toegang. Als deze optie uitstaat, worden de knoppen gegroepeerd in uitklapbare menu’s."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zbierz narzędzia w jednym menu, aby na płótnie było mniej przycisków i więcej miejsca do rysowania."
+            "value" : "Wyświetlaj przyciski rysowania bezpośrednio na płótnie, aby mieć do nich szybki dostęp. Po wyłączeniu tej opcji przyciski są zgrupowane w rozwijanych menu."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agrupe os controles em um único menu para ter menos botões na tela e mais espaço para desenhar."
+            "value" : "Mostre os botões de desenho diretamente na tela para acesso rápido. Quando a opção está desativada, os botões ficam agrupados em menus expansíveis."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Agrupe os controlos num único menu para ter menos botões na tela e mais espaço para desenhar."
+            "value" : "Mostre os botões de desenho diretamente na tela para acesso rápido. Quando a opção está desativada, os botões ficam agrupados em menus expansíveis."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Кнопки собраны в одном меню: они меньше закрывают холст и оставляют больше места для рисования."
+            "value" : "Кнопки рисования всегда на холсте для быстрого доступа. Когда настройка выключена, кнопки собраны в раскрывающихся меню."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Samla ritverktygen i en meny för färre knappar på arbetsytan och mer plats att rita."
+            "value" : "Visa ritknappar direkt på duken för snabb åtkomst. När funktionen är avstängd grupperas knapparna i menyer som kan fällas ut."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "รวมเครื่องมือวาดไว้ในเมนูเดียว เพื่อลดจำนวนปุ่มบนผืนผ้าใบและเพิ่มพื้นที่ในการวาดรูป"
+            "value" : "แสดงปุ่มวาดบนผืนผ้าใบโดยตรงเพื่อให้เข้าถึงได้รวดเร็ว เมื่อปิด ปุ่มต่าง ๆ จะรวมอยู่ในเมนูที่ขยายได้"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Çizim kontrollerini tek bir menüde toplayarak tuvaldeki düğmeleri azaltın ve çizmek için daha fazla alan açın."
+            "value" : "Hızlı erişim için çizim düğmelerini doğrudan tuvalde gösterin. Kapatıldığında düğmeler genişletilebilir menülerde gruplanır."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Кнопки зібрано в одному меню: вони менше закривають полотно й залишають більше місця для малювання."
+            "value" : "Кнопки малювання завжди на полотні для швидкого доступу. Коли налаштування вимкнено, кнопки зібрані в розгортних меню."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gộp các công cụ vẽ vào một menu để giảm số nút trên khung vẽ và có thêm không gian để vẽ."
+            "value" : "Hiển thị các nút vẽ trực tiếp trên khung vẽ để truy cập nhanh. Khi tắt, các nút được nhóm trong các menu có thể mở rộng."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "将绘画工具集中到一个菜单中，减少画布上的按钮，留出更多绘画空间。"
+            "value" : "在画布上直接显示绘画按钮，方便快速操作。关闭后，按钮将集中在可展开的菜单中。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "將繪畫工具集中到一個選單中，減少畫布上的按鈕，留出更多繪畫空間。"
+            "value" : "在畫布上直接顯示繪畫按鈕，方便快速操作。關閉後，按鈕會集中在可展開的選單中。"
           }
         }
       }
@@ -23461,175 +23461,175 @@
         }
       }
     },
-    "More room to draw" : {
+    "Everything at hand" : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "مساحة أكبر للرسم"
+            "value" : "كل شيء في متناولك"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Více místa na kreslení"
+            "value" : "Vše po ruce"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mere plads til at tegne"
+            "value" : "Alt lige ved hånden"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mehr Platz zum Zeichnen"
+            "value" : "Alles griffbereit"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Περισσότερος χώρος για σχέδιο"
+            "value" : "Όλα πρόχειρα"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "More Drawing Space"
+            "value" : "Everything at hand"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Más espacio para dibujar"
+            "value" : "Todo a mano"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enemmän tilaa piirtää"
+            "value" : "Kaikki käden ulottuvilla"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Plus de place pour dessiner"
+            "value" : "Tout à portée de main"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "יותר מקום לציור"
+            "value" : "הכול בהישג יד"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Több hely a rajzoláshoz"
+            "value" : "Minden kéznél"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lebih banyak ruang menggambar"
+            "value" : "Semua mudah dijangkau"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Più spazio per disegnare"
+            "value" : "Tutto a portata di mano"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "描くスペースを広く"
+            "value" : "すべて手元に"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "더 넓은 그리기 공간"
+            "value" : "모든 기능을 가까이"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mer plass til å tegne"
+            "value" : "Alt for hånden"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Meer ruimte om te tekenen"
+            "value" : "Alles bij de hand"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Więcej miejsca do rysowania"
+            "value" : "Wszystko pod ręką"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mais espaço para desenhar"
+            "value" : "Tudo à mão"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mais espaço para desenhar"
+            "value" : "Tudo à mão"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Больше места для рисования"
+            "value" : "Всё под рукой"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mer plats att rita"
+            "value" : "Allt nära till hands"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "พื้นที่วาดรูปมากขึ้น"
+            "value" : "ทุกอย่างอยู่ใกล้มือ"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Çizmek için daha fazla alan"
+            "value" : "Her şey elinizin altında"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Більше місця для малювання"
+            "value" : "Усе під рукою"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Thêm không gian để vẽ"
+            "value" : "Mọi thứ trong tầm tay"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "更多绘画空间"
+            "value" : "一切触手可及"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "更多繪畫空間"
+            "value" : "一切觸手可及"
           }
         }
       }
