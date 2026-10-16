@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import WatchKit
 
 struct WatchLayersView: View {
@@ -13,6 +14,15 @@ struct WatchLayersView: View {
     @State private var selectionBlockedUntil = Date.distantPast
     @State private var reorderTarget: UUID?
     @State private var dragOffset: CGFloat = 0
+    @State private var dragLocationY: CGFloat?
+    @State private var dragGrabOffset: CGFloat = 0
+    @State private var canvasRowID = UUID()
+    @State private var autoScrollRequest: CGFloat = 0
+    @State private var heldEdge: Int?
+    @State private var edgeEnteredAt: Date?
+    @State private var lastScrollTick: Date?
+    private let scrollClock = Timer.publish(every: 1.0 / 30, on: .main, in: .common).autoconnect()
+    @State private var scrollViewport: CGRect = .zero
     @State private var rowFrames: [UUID: CGRect] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -27,19 +37,22 @@ struct WatchLayersView: View {
                 ScrollView {
                     VStack(spacing: rowSpacing) {
                         ForEach(Array(controller.document.layers.reversed())) { layer in
-                            layerRow(layer, proxy: proxy)
+                            ZStack {
+                                layerRow(layer)
+                                    .offset(y: rowOffset(layer.id))
+                                    .animation(
+                                        layer.id == draggedLayer || reduceMotion ? nil : .easeInOut(duration: 0.18),
+                                        value: reorderTarget
+                                    )
+                                    .scaleEffect(draggedLayer == layer.id && !reduceMotion ? 1.04 : 1)
+                            }
+                                // Scroll targets and measurements must use the stationary slot.
                                 .id(layer.id)
-                                .offset(y: rowOffset(layer.id))
-                                .animation(
-                                    layer.id == draggedLayer || reduceMotion ? nil : .easeInOut(duration: 0.18),
-                                    value: reorderTarget
-                                )
-                                .scaleEffect(draggedLayer == layer.id && !reduceMotion ? 1.04 : 1)
                                 // Measure the layout slot, outside the visual drag/preview transforms.
                                 .background {
                                     GeometryReader { geometry in
                                         Color.clear.preference(key: LayerRowFrames.self,
-                                            value: [layer.id: geometry.frame(in: .named("layers"))])
+                                            value: [layer.id: geometry.frame(in: .global)])
                                     }
                                 }
                                 .zIndex(draggedLayer == layer.id ? 1 : 0)
@@ -50,24 +63,67 @@ struct WatchLayersView: View {
                             CanvasBackgroundPreview(color: controller.document.effectiveBackgroundColor)
                                 .aspectRatio(previewAspectRatio, contentMode: .fit)
                         }
+                        .id(canvasRowID)
+                        .background {
+                            GeometryReader { geometry in
+                                Color.clear.preference(key: LayerRowFrames.self,
+                                    value: [canvasRowID: geometry.frame(in: .global)])
+                            }
+                        }
                     }
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
                 }
-                .coordinateSpace(name: "layers")
-                .scrollDisabled(draggedLayer != nil)
-                .onPreferenceChange(LayerRowFrames.self) { rowFrames = $0 }
+                .onGeometryChange(for: CGRect.self) { geometry in
+                    let frame = geometry.frame(in: .global)
+                    return CGRect(x: frame.minX, y: frame.minY + geometry.safeAreaInsets.top,
+                                  width: frame.width,
+                                  height: max(0, frame.height
+                                      - geometry.safeAreaInsets.top - geometry.safeAreaInsets.bottom))
+                } action: { scrollViewport = $0 }
+                .onPreferenceChange(LayerRowFrames.self) {
+                    rowFrames = $0
+                    updateDragPosition()
+                }
+                .modifier(LayerScrollPositionModifier(request: autoScrollRequest))
+                .onReceive(scrollClock) { now in
+                    guard let velocity = autoScrollVelocity else {
+                        heldEdge = nil
+                        edgeEnteredAt = nil
+                        lastScrollTick = nil
+                        return
+                    }
+                    let direction = velocity < 0 ? -1 : 1
+                    if heldEdge != direction {
+                        heldEdge = direction
+                        edgeEnteredAt = now
+                        lastScrollTick = nil
+                        return
+                    }
+                    guard let edgeEnteredAt, now.timeIntervalSince(edgeEnteredAt) >= 0.45 else { return }
+                    if #available(watchOS 11.0, *) {
+                        let elapsed = min(0.1, now.timeIntervalSince(lastScrollTick ?? now.addingTimeInterval(-1.0 / 30)))
+                        autoScrollRequest += velocity * CGFloat(elapsed)
+                        lastScrollTick = now
+                    } else {
+                        // Older watches scroll by rows; vary the interval with the same speed curve.
+                        let rowHeight = draggedLayer.flatMap { rowFrames[$0]?.height } ?? 60
+                        let interval = Double((rowHeight + rowSpacing) / abs(velocity))
+                        guard now.timeIntervalSince(lastScrollTick ?? .distantPast) >= interval else { return }
+                        scrollDuringDrag(direction: direction, proxy: proxy)
+                        lastScrollTick = now
+                    }
+                }
             }
             .onChange(of: isReordering) { _, active in
                 if !active {
                     if draggedLayer != nil {
                         selectionBlockedUntil = Date().addingTimeInterval(0.2)
                     }
-                    draggedLayer = nil
-                    reorderTarget = nil
-                    dragOffset = 0
+                    resetDrag()
                 }
             }
+            .onDisappear { resetDrag() }
             .navigationTitle(L10n.text("Layers"))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -101,7 +157,7 @@ struct WatchLayersView: View {
         }
     }
 
-    private func layerRow(_ layer: CanvasLayer, proxy: ScrollViewProxy) -> some View {
+    private func layerRow(_ layer: CanvasLayer) -> some View {
         LayerCard(title: layer.displayName, canvasSize: canvasSize, onSelect: {
             guard draggedLayer == nil, !isReordering,
                   Date() >= selectionBlockedUntil else { return }
@@ -113,7 +169,8 @@ struct WatchLayersView: View {
         }) {
             LayerThumbnail(layer: layer, canvasSize: canvasSize)
         }
-        .simultaneousGesture(reorderGesture(layer.id, proxy: proxy))
+        // Let the card's buttons receive short taps; only a completed long press reorders.
+        .simultaneousGesture(reorderGesture(layer.id))
         .accessibilityAddTraits(controller.selectedLayer.id == layer.id ? [.isSelected] : [])
         .accessibilityAction(named: Text(L10n.text("Move up"))) { move(layer.id, up: true) }
         .accessibilityAction(named: Text(L10n.text("Move down"))) { move(layer.id, up: false) }
@@ -129,9 +186,9 @@ struct WatchLayersView: View {
         }
     }
 
-    private func reorderGesture(_ id: UUID, proxy: ScrollViewProxy) -> some Gesture {
+    private func reorderGesture(_ id: UUID) -> some Gesture {
         LongPressGesture(minimumDuration: 0.45)
-            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named("layers")))
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .global))
             .updating($isReordering) { value, state, _ in
                 if case .second(true, _) = value { state = true }
             }
@@ -140,33 +197,97 @@ struct WatchLayersView: View {
                 selectionBlockedUntil = .distantFuture
                 if draggedLayer == nil {
                     draggedLayer = id
+                    controller.selectLayer(id)
                     WKInterfaceDevice.current().play(.click)
                 }
                 if let drag {
-                    dragOffset = drag.translation.height
-                    let target = dropTarget(for: id, translation: drag.translation.height)
-                    if reorderTarget != target {
-                        reorderTarget = target
-                        if let target {
-                            proxy.scrollTo(target, anchor: drag.translation.height < 0 ? .top : .bottom)
-                        }
+                    if dragLocationY == nil, let origin = rowFrames[id] {
+                        dragGrabOffset = drag.startLocation.y - origin.midY
                     }
+                    dragLocationY = drag.location.y
+                    updateDragPosition()
                 }
             }
             .onEnded { value in
-                defer {
-                    draggedLayer = nil
-                    reorderTarget = nil
-                    dragOffset = 0
-                }
+                defer { resetDrag() }
                 if case .second(true, _) = value {
                     // Button and gesture callbacks can finish in either order on release.
                     selectionBlockedUntil = Date().addingTimeInterval(0.2)
                 }
                 guard case .second(true, let drag?) = value else { return }
-                guard let target = dropTarget(for: id, translation: drag.translation.height) else { return }
+                dragLocationY = drag.location.y
+                updateDragPosition()
+                guard let target = reorderTarget else { return }
                 controller.moveLayer(id, to: target)
             }
+    }
+
+    // Card bounds activate scrolling; the finger's distance to the physical screen
+    // edge controls speed. The viewport ends before the screen's safe-area margins.
+    private var autoScrollVelocity: CGFloat? {
+        guard let draggedLayer, let dragLocationY,
+              let origin = rowFrames[draggedLayer], scrollViewport.height > 0 else { return nil }
+        let edgeZone = min(origin.height / 2 + 20, scrollViewport.height / 2)
+        let center = dragLocationY - dragGrabOffset
+        let topDistance = center - scrollViewport.minY
+        let bottomDistance = scrollViewport.maxY - center
+        let screen = WKInterfaceDevice.current().screenBounds
+        let direction: CGFloat
+        let proximity: CGFloat
+        if topDistance < edgeZone, topDistance <= bottomDistance {
+            direction = -1
+            let entryY = scrollViewport.minY + edgeZone + dragGrabOffset
+            proximity = (entryY - dragLocationY) / max(1, entryY - screen.minY)
+        } else if bottomDistance < edgeZone {
+            direction = 1
+            let entryY = scrollViewport.maxY - edgeZone + dragGrabOffset
+            proximity = (dragLocationY - entryY) / max(1, screen.maxY - entryY)
+        } else {
+            return nil
+        }
+        let progress = min(1, max(0, proximity))
+        // Restore the original speed range and reserve the fastest motion for the
+        // screen edge, rather than saturating as soon as the card leaves the list.
+        return direction * (24 + (180 - 24) * progress * progress)
+    }
+
+    private func scrollDuringDrag(direction: Int, proxy: ScrollViewProxy) {
+        let ids = controller.document.layers.reversed().map(\.id) + [canvasRowID]
+        let frames = ids.compactMap { id in
+            rowFrames[id].map { (id: id, frame: $0) }
+        }
+        // Reveal the next clipped row using a standard anchor instead of deriving
+        // a fractional anchor from the moving row's screen position.
+        let target = direction < 0
+            ? frames.last(where: { $0.frame.minY < scrollViewport.minY - 1 })
+            : frames.first(where: { $0.frame.maxY > scrollViewport.maxY + 1 })
+        guard let target else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            proxy.scrollTo(target.id, anchor: direction < 0 ? .top : .bottom)
+        }
+    }
+
+    private func updateDragPosition() {
+        guard let draggedLayer, let dragLocationY, let origin = rowFrames[draggedLayer] else { return }
+        dragOffset = dragLocationY - dragGrabOffset - origin.midY
+        reorderTarget = dropTarget(for: draggedLayer, translation: dragOffset)
+    }
+
+    private func resetDrag() {
+        // Cancellation must not leave selection blocked indefinitely.
+        if selectionBlockedUntil == .distantFuture {
+            selectionBlockedUntil = Date().addingTimeInterval(0.2)
+        }
+        draggedLayer = nil
+        reorderTarget = nil
+        dragOffset = 0
+        dragLocationY = nil
+        dragGrabOffset = 0
+        heldEdge = nil
+        edgeEnteredAt = nil
+        lastScrollTick = nil
     }
 
     // Keep document order unchanged until release, so one drag produces one undo step.
@@ -189,7 +310,8 @@ struct WatchLayersView: View {
     private func dropTarget(for id: UUID, translation: CGFloat) -> UUID? {
         guard let origin = rowFrames[id] else { return nil }
         let center = origin.midY + translation
-        let neighbors = rowFrames.filter { $0.key != id }
+        // The canvas is a scroll target, but never a layer reorder destination.
+        let neighbors = rowFrames.filter { $0.key != id && $0.key != canvasRowID }
         if translation < 0 {
             return neighbors.filter { $0.value.midY < origin.midY && center <= $0.value.midY }
                 .min { $0.value.midY < $1.value.midY }?.key
@@ -207,6 +329,54 @@ struct WatchLayersView: View {
         let target = index + (up ? 1 : -1)
         guard layers.indices.contains(target) else { return }
         controller.moveLayer(id, to: layers[target].id)
+    }
+}
+
+/// Keep the watchOS 11 scroll state out of the watchOS 10 view's stored properties.
+private struct LayerScrollPositionModifier: ViewModifier {
+    let request: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(watchOS 11.0, *) {
+            content.modifier(LayerOffsetScrollModifier(request: request))
+        } else {
+            content
+        }
+    }
+}
+
+@available(watchOS 11.0, *)
+private struct LayerOffsetScrollModifier: ViewModifier {
+    let request: CGFloat
+    @State private var position = ScrollPosition()
+    @State private var geometry: ScrollGeometry?
+
+    func body(content: Content) -> some View {
+        content
+            .scrollPosition($position)
+            .onScrollGeometryChange(for: ScrollGeometry.self, of: { $0 }) { _, newGeometry in
+                geometry = newGeometry
+            }
+            .onChange(of: request) { oldRequest, newRequest in
+                guard let geometry else { return }
+                // ScrollPosition uses distance from the top, whereas ScrollGeometry's
+                // resting contentOffset includes the negative top inset. Normalize both
+                // the current position and the range before requesting either direction.
+                let current = geometry.contentOffset.y + geometry.contentInsets.top
+                let maximum = max(0, geometry.contentSize.height
+                    + geometry.contentInsets.top + geometry.contentInsets.bottom
+                    - geometry.containerSize.height)
+                let next = min(maximum, max(0,
+                    current + newRequest - oldRequest))
+                guard abs(next - current) > 0.01 else { return }
+                // Drive the actual offset, independently of row IDs and drop targets.
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    position.scrollTo(y: next)
+                }
+            }
     }
 }
 
