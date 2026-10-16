@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <a href="https://apps.apple.com/ae/app/paint-anytime/id6816100087?platform=watch">
+  <a href="https://apps.apple.com/app/paint-anytime/id6816100087?platform=watch">
     <img
       src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83"
       alt="Download on the App Store"
