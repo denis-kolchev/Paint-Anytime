@@ -10,11 +10,14 @@ struct TutorialPlayerView: View {
     @State private var isMovingCanvas = false
     @State private var canvasSize = CGSize.zero
     @State private var hintHeight: CGFloat = 0
+    @State private var savedExitCenterX: CGFloat?
+    @State private var savedNoticeID: UUID?
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var panGuideOffset = CGSize.zero
     @State private var panGuideVisible = false
     @State private var historyEmphasizesRedo = false
+    @State private var shareEmphasizesExit = false
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
 
@@ -36,12 +39,12 @@ struct TutorialPlayerView: View {
                     GeometryReader { geometry in
                         ZStack {
                             WatchCanvasView(controller: controller, tutorial: tutorial,
-                                            rendersArtwork: page == .canvas,
+                                            rendersArtwork: page == .canvas || page == .saved,
                                             acceptsInput: page == .canvas && tutorial.acceptsActions,
                                             protectedControls: canvasProtectedControls, isMovingCanvas: $isMovingCanvas)
-                                .opacity(page == .canvas ? 1 : 0)
+                                .opacity(page == .canvas || page == .saved ? 1 : 0)
                                 .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
-                                .accessibilityHidden(page != .canvas)
+                                .accessibilityHidden(page != .canvas && page != .saved)
 
                             if page == .canvas && tutorial.showsPanGuide {
                                 Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
@@ -93,17 +96,26 @@ struct TutorialPlayerView: View {
                     }
 
                     if page == .saved, let savedDrawing = player.savedDrawing {
-                        SavedDrawingsView(tutorial: tutorial, galleryFolder: folder,
-                                          initialArtworkFilename: savedDrawing.url.lastPathComponent,
-                                          onClose: { player.closeSavedDrawing() }, onEditDrawing: { _ in })
+                        // Keep the existing canvas visible for the share lesson instead
+                        // of mounting a gallery pager that starts with an empty black frame.
+                        Color.clear
                             .overlay(alignment: .bottom) {
                                 ShareLink(item: DrawingShareItem(url: savedDrawing.url),
                                           preview: SharePreview("Paint Anytime", image: DrawingShareItem(url: savedDrawing.url))) {
-                                    Label(L10n.text("Share"), systemImage: "square.and.arrow.up")
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(.system(size: 17))
+                                        .frame(width: 24, height: 24, alignment: .center)
+                                        .tutorialHint(tutorial, steps: [.shareDrawing], isSuggested: !shareEmphasizesExit)
                                 }
+                                .accessibilityLabel(L10n.text("Share"))
                                 .simultaneousGesture(TapGesture().onEnded { tutorial.activity() })
-                                .watchActionButtonStyle()
-                                .padding(.bottom, hintReservedHeight)
+                                .buttonStyle(TutorialOverlayButtonStyle())
+                                // Follow the measured, localized tip with a little breathing room.
+                                .padding(.bottom, hintReservedHeight + 8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .offset(x: (savedExitCenterX.map {
+                                    $0 - screen.frame(in: .global).minX
+                                } ?? 38) - 22)
                             }
                     }
 
@@ -112,6 +124,24 @@ struct TutorialPlayerView: View {
                                              onOpenDrawings: { player.openGallery() },
                                              onStartTutorial: {},
                                              tutorial: tutorial)
+                    }
+
+                    if let savedNoticeID, page == .saved {
+                        Text(L10n.text("Artwork saved to gallery"))
+                            .font(.headline)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                            .padding(.horizontal, 42)
+                            .id(savedNoticeID)
+                            .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
+                            .allowsHitTesting(false)
+                            .zIndex(4)
+                            .task(id: savedNoticeID) {
+                                do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                                withAnimation(.easeOut(duration: 0.2)) { self.savedNoticeID = nil }
+                            }
                     }
                 }
                 .overlay(alignment: .bottom) {
@@ -157,12 +187,18 @@ struct TutorialPlayerView: View {
                             Button {
                                 player.closeSavedDrawing()
                             } label: {
-                                Image(systemName: "xmark").tutorialHint(tutorial, steps: [.shareDrawing])
+                                Image(systemName: "xmark")
+                                    .tutorialHint(tutorial, steps: [.shareDrawing], isSuggested: shareEmphasizesExit)
                                     .frame(width: 32, height: 32)
                                     .contentShape(Circle())
                             }
                             .watchToolbarButtonStyle(usesCanvasMaterial: true)
                             .accessibilityLabel(L10n.text("Back"))
+                            .onGeometryChange(for: CGFloat.self) { geometry in
+                                geometry.frame(in: .global).midX
+                            } action: { centerX in
+                                savedExitCenterX = centerX
+                            }
                         }
                     }
                     if page == .canvas && tutorial.permits([.openMenu]) {
@@ -220,6 +256,21 @@ struct TutorialPlayerView: View {
         }
         .onChange(of: controller.canRedo) { _, canRedo in
             if canRedo { historyEmphasizesRedo = true }
+        }
+        .task(id: tutorial.step) {
+            shareEmphasizesExit = false
+            guard tutorial.step == .shareDrawing else { return }
+            do {
+                while !Task.isCancelled {
+                    try await Task.sleep(for: .milliseconds(1400))
+                    shareEmphasizesExit.toggle()
+                }
+            } catch {}
+        }
+        .onChange(of: page) { _, page in
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+                savedNoticeID = page == .saved ? UUID() : nil
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             TutorialDebug.trace("player.scenePhase", "phase=\(phase)")
