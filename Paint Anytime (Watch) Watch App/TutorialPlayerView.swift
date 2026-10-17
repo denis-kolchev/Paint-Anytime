@@ -134,6 +134,10 @@ struct TutorialPlayerView: View {
                             .padding(.vertical, 9)
                             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                             .padding(.horizontal, 42)
+                            // Center in the space above the measured lesson card,
+                            // leaving a gap even when localized tips become taller.
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.bottom, measuredHintHeight + 4)
                             .id(savedNoticeID)
                             .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
                             .allowsHitTesting(false)
