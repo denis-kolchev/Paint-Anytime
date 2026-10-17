@@ -211,9 +211,20 @@ struct CanvasMorphContent<Expanded: View, Collapsed: View>: View {
     @ViewBuilder var expanded: Expanded
     @ViewBuilder var collapsed: Collapsed
 
+    private var usesLegacyMorphAnimation: Bool {
+        if #available(watchOS 27, *) { return false }
+        return true
+    }
+
     var body: some View {
-        CanvasMorphLayout(isExpanded: isExpanded) {
+        CanvasMorphLayout(isExpanded: isExpanded,
+                          progress: isExpanded ? 1 : 0,
+                          interpolatesLayout: usesLegacyMorphAnimation) {
             expanded
+                // Older SwiftUI toolbar hosts animate the hidden, full-size
+                // layout from stale coordinates. Collapse its visual contents
+                // to the current button center instead of merely fading them.
+                .scaleEffect(usesLegacyMorphAnimation && !isExpanded ? 0 : 1, anchor: .center)
                 .opacity(isExpanded ? 1 : 0)
                 .allowsHitTesting(isExpanded)
                 .accessibilityHidden(!isExpanded)
@@ -234,10 +245,23 @@ struct CanvasMorphContent<Expanded: View, Collapsed: View>: View {
 /// Measure both states in advance, but let only the active state size the glass.
 private struct CanvasMorphLayout: Layout {
     let isExpanded: Bool
+    var progress: CGFloat
+    let interpolatesLayout: Bool
+
+    var animatableData: CGFloat {
+        get { progress }
+        set { progress = newValue }
+    }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let sizes = subviews.map {
             $0.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil))
+        }
+        if interpolatesLayout {
+            // Resolve the bounds on every animation frame so both layers share
+            // the moving panel center, including when the animation reverses.
+            return CGSize(width: sizes[1].width + (sizes[0].width - sizes[1].width) * progress,
+                          height: sizes[1].height + (sizes[0].height - sizes[1].height) * progress)
         }
         return sizes[isExpanded ? 0 : 1]
     }
