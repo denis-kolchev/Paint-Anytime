@@ -130,7 +130,7 @@ struct InkPaletteBrowser: View {
                 if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
                     InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller,
                         onBrowse: {
-                            if showsEmptyPaletteClose && canDeletePalette {
+                            if showsEmptyPaletteClose {
                                 discardEmptyPalette()
                             } else {
                                 setBrowsing(true)
