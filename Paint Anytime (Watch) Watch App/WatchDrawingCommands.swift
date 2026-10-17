@@ -733,6 +733,25 @@ nonisolated enum WatchBitmapRenderer {
             }
             // Paint on opaque straight RGB, then restore the original alpha mask.
             // This preserves even partially transparent edges across repeated strokes.
+            // Evaluate translucent fill overlap against the ink rendered at this
+            // exact scale, rather than baking a correction at the flood-fill scale.
+            let fillAlpha = min(1, max(0, stroke.style.color.w * stroke.style.effectiveOpacity))
+            var fillBaseAlpha: [Float] = []
+            if stroke.style.instrument == .fill, fillAlpha > 0, fillAlpha < 1,
+               !stroke.locksTransparency, let data = context.data {
+                let pixels = data.assumingMemoryBound(to: Float.self)
+                let stride = context.bytesPerRow / MemoryLayout<Float>.size
+                let color = [stroke.style.color.x, stroke.style.color.y, stroke.style.color.z]
+                fillBaseAlpha.reserveCapacity(context.width * context.height)
+                for y in 0..<context.height { for x in 0..<context.width {
+                    let i = y * stride + x * 4
+                    let alpha = pixels[i + 3]
+                    let matches = (0..<3).allSatisfy {
+                        abs(pixels[i + $0] - color[$0] * alpha) <= 2 / 255.0
+                    }
+                    fillBaseAlpha.append(matches ? alpha : -1)
+                } }
+            }
             var lockedAlpha: [Float] = []
             if stroke.locksTransparency, let data = context.data {
                 if stroke.style.instrument == .eraser { continue }
@@ -782,6 +801,22 @@ nonisolated enum WatchBitmapRenderer {
                     context.endTransparencyLayer()
                     context.restoreGState()
                 }
+            }
+            if !fillBaseAlpha.isEmpty, let data = context.data {
+                let pixels = data.assumingMemoryBound(to: Float.self)
+                let stride = context.bytesPerRow / MemoryLayout<Float>.size
+                for y in 0..<context.height { for x in 0..<context.width {
+                    let i = y * stride + x * 4
+                    let before = fillBaseAlpha[y * context.width + x]
+                    let after = pixels[i + 3]
+                    guard before > 0, before < 1, after > before else { continue }
+                    let added = max(0, (after - before) / (1 - before))
+                    // Sum edge coverage, capped at the intended opacity. This
+                    // closes the seam without applying a second coat to the ink.
+                    let alpha = max(before, min(fillAlpha, before + added))
+                    for channel in 0..<3 { pixels[i + channel] *= alpha / after }
+                    pixels[i + 3] = alpha
+                } }
             }
             if !lockedAlpha.isEmpty, let data = context.data {
                 let pixels = data.assumingMemoryBound(to: Float.self)
@@ -1048,42 +1083,6 @@ extension WatchBitmapRenderer {
         var stroke = Stroke(points: [PointerSample(position: SIMD2(Float(point.x), Float(point.y)),
                                                    pressure: 1, timestamp: 0)], style: fillStyle)
         stroke.fillRects = rectangles
-        let desiredAlpha = min(1, max(0, style.color.w * style.effectiveOpacity))
-        if target[3] == 0, desiredAlpha > 0, desiredAlpha < 1 {
-            // Equal-colored translucent ink needs only the missing opacity,
-            // not a second full coat along the overlapped contour.
-            guard let output = CGContext(data: nil, width: width, height: height,
-                bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
-                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue),
-                  let outputData = output.data else { return nil }
-            let result = outputData.assumingMemoryBound(to: UInt8.self)
-            let color = [style.color.x, style.color.y, style.color.z].map { min(1, max(0, $0)) }
-            for index in visited.indices where visited[index] {
-                let offset = index * 4
-                let existingAlpha = Float(pixels[offset + 3]) / 255
-                var alpha = desiredAlpha
-                if existingAlpha > 0 {
-                    let sameColor = (0..<3).allSatisfy { channel in
-                        abs(Float(pixels[offset + channel]) / 255 - color[channel] * existingAlpha) <= 2 / 255.0
-                    }
-                    if sameColor {
-                        alpha = existingAlpha >= desiredAlpha ? 0
-                            : (desiredAlpha - existingAlpha) / (1 - existingAlpha)
-                    }
-                }
-                for channel in 0..<3 {
-                    result[offset + channel] = UInt8((color[channel] * alpha * 255).rounded())
-                }
-                result[offset + 3] = UInt8((alpha * 255).rounded())
-            }
-            let png = NSMutableData()
-            guard let image = output.makeImage(),
-                  let destination = CGImageDestinationCreateWithData(png, "public.png" as CFString, 1, nil) else { return nil }
-            CGImageDestinationAddImage(destination, image, nil)
-            guard CGImageDestinationFinalize(destination) else { return nil }
-            stroke.raster = StrokeRaster(png: png as Data,
-                bounds: CGRect(x: 0, y: 0, width: CGFloat(width) / scale, height: CGFloat(height) / scale))
-        }
         return stroke
     }
 }
