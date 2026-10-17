@@ -129,7 +129,13 @@ struct InkPaletteBrowser: View {
             ZStack {
                 if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
                     InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller,
-                        onBrowse: { setBrowsing(true) }, isEditing: $editing,
+                        onBrowse: {
+                            if showsEmptyPaletteClose && canDeletePalette {
+                                discardEmptyPalette()
+                            } else {
+                                setBrowsing(true)
+                            }
+                        }, isEditing: $editing,
                         sampledColor: $sampledColor, showsColorEditor: $showsColorEditor)
                         .id(currentID)
                         .transition(.opacity)

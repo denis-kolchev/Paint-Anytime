@@ -99,7 +99,12 @@ struct InkPaletteEditor: View {
                         ForEach(palette.allColors) { preset in
                             let selected = palette.selectedIDs.contains(preset.id)
                             Button {
-                                guard !isEditing else { return }
+                                if isEditing {
+                                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                                        palette.delete(preset.id)
+                                    }
+                                    return
+                                }
                                 if selected {
                                     guard palette.selectedIDs.count > 1 else { return }
                                     palette.selectedIDs.removeAll { $0 == preset.id }
@@ -182,9 +187,9 @@ struct InkPaletteEditor: View {
                                 LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() },
                                 including: isEditing ? .none : .all)
                             .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
-                            .accessibilityLabel(preset.name)
-                            .accessibilityValue(L10n.text(selected ? "Selected" : "Not selected"))
-                            .accessibilityAddTraits(selected ? [.isSelected] : [])
+                            .accessibilityLabel(isEditing ? L10n.text("Delete") + " " + preset.name : preset.name)
+                            .accessibilityValue(isEditing ? "" : L10n.text(selected ? "Selected" : "Not selected"))
+                            .accessibilityAddTraits(!isEditing && selected ? [.isSelected] : [])
                         }
                         Button { sampledColor = nil; showsColorEditor = true } label: {
                             Image(systemName: "plus.circle.fill")
