@@ -193,7 +193,13 @@ struct WatchToolSettingsView: View {
                                     } label: {
                                         AddColorsPrompt()
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                        .background(.black.opacity(0.85))
+                                        .background {
+                                            // Overscan the largest viewport throughout page transitions;
+                                            // the shared viewport shape clips the excess below.
+                                            Color.black.opacity(0.85)
+                                                .frame(width: settingsGeometry.size.width * 2,
+                                                       height: settingsGeometry.size.height * 2)
+                                        }
                                         .contentShape(Rectangle())
                                     }
                                     .buttonStyle(StaticPalettePromptButtonStyle())
