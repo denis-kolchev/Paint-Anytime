@@ -132,6 +132,7 @@ private enum GalleryFavoriteThumbnailRenderer {
         let cornerSize = side * 0.9
         let artwork = Image(decorative: bitmap.image, scale: 1)
             .resizable()
+            .interpolation(.high)
             .scaledToFill()
             .frame(width: side, height: side)
             .clipped()
@@ -139,6 +140,7 @@ private enum GalleryFavoriteThumbnailRenderer {
             .overlay {
                 artwork
                     .blur(radius: 3)
+                    .opacity(0.25)
                     .overlay(Color.black.opacity(0.22))
                     .mask {
                         RadialGradient(stops: [
@@ -190,7 +192,16 @@ struct GalleryThumbnailView: View {
         }
         .task(id: loadsImage ? LoadRequest(image: request, isFavorite: isFavorite) : nil) {
             guard loadsImage else { return }
-            let loaded = await GalleryImageCache.shared.load(request)
+            // Decode real source detail before compositing, rather than enlarging
+            // an already small thumbnail. Keep the same point size for the badge.
+            let imageRequest: GalleryImageRequest
+            if isFavorite, let pixels = request.shortSidePixels {
+                imageRequest = GalleryImageRequest(url: request.url,
+                    shortSidePixels: pixels * 2, displayScale: request.displayScale * 2)
+            } else {
+                imageRequest = request
+            }
+            let loaded = await GalleryImageCache.shared.load(imageRequest)
             guard !Task.isCancelled else { return }
             if isFavorite, let loaded {
                 bitmap = GalleryFavoriteThumbnailRenderer.render(loaded) ?? loaded
