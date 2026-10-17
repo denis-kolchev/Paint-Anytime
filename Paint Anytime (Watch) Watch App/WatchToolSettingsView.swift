@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 struct WatchToolSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
@@ -184,6 +185,8 @@ struct WatchToolSettingsView: View {
                                           fillPreviewSize: CGSize(width: settingsGeometry.size.width,
                                                                   height: max(1, settingsGeometry.size.height - 22)),
                                           fillFocusRequest: fillFocusRequest,
+                                          fillCalibrationLayer: controller.selectedLayer,
+                                          fillCanvasSize: controller.document.size(fallback: WKInterfaceDevice.current().screenBounds.size),
                                           applyFillSensitivity: { controller.pencilStyle.fillSensitivity = $0 })
                             .overlay {
                                 if selection == .color && isAddingColor {

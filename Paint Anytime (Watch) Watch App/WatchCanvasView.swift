@@ -214,7 +214,7 @@ struct WatchCanvasView: View {
                         if controller.pencilStyle.instrument == .fill {
                             let point = canvasPoint(value.startLocation, size: geometry.size)
                             if controller.selectedLayer.isVisible,
-                               let fill = WatchBitmapRenderer.floodFill(document: controller.document,
+                               let fill = WatchBitmapRenderer.floodFill(layer: controller.selectedLayer,
                                    size: controller.document.size(fallback: geometry.size), point: point, style: controller.pencilStyle) {
                                 controller.commitFill(fill)
                             }

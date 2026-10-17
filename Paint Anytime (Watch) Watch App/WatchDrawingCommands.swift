@@ -953,6 +953,17 @@ actor WatchArtworkRenderer {
 // Resolve connectivity once at tap time and persist compact horizontal spans.
 // Replaying a saved fill never re-evaluates boundaries after later layer edits.
 extension WatchBitmapRenderer {
+    nonisolated static func floodFill(layer: CanvasLayer, size: CGSize, point: CGPoint,
+                                     style: PencilStyle) -> Stroke? {
+        let scale: CGFloat = 2
+        guard layer.isVisible, point.x.isFinite, point.y.isFinite,
+              point.x >= 0, point.y >= 0, point.x < size.width, point.y < size.height,
+              style.effectiveOpacity > 0,
+              let image = layerThumbnail(strokes: layer.strokes, size: size, scale: scale) else { return nil }
+        // Layer opacity and paper color affect presentation, not ink connectivity.
+        return floodFill(image: image, scale: scale, point: point, style: style)
+    }
+
     nonisolated static func floodFill(document: CanvasDocument, size: CGSize, point: CGPoint,
                           style: PencilStyle) -> Stroke? {
         let scale: CGFloat = 2
@@ -1005,12 +1016,74 @@ extension WatchBitmapRenderer {
                 }
             }
         }
+        if target[3] == 0 {
+            // Overlap the antialiased contour by one source pixel. Only existing
+            // ink can be added, and added pixels never propagate the fill further.
+            var covered = visited
+            for index in visited.indices where visited[index] {
+                let x = index % width, y = index / width
+                for nextY in max(0, y - 1)...min(height - 1, y + 1) {
+                    for nextX in max(0, x - 1)...min(width - 1, x + 1) {
+                        let next = nextY * width + nextX
+                        if pixels[next * 4 + 3] > 0 { covered[next] = true }
+                    }
+                }
+            }
+            rectangles.removeAll(keepingCapacity: true)
+            for y in 0..<height {
+                var x = 0
+                while x < width {
+                    guard covered[y * width + x] else { x += 1; continue }
+                    let left = x
+                    while x < width && covered[y * width + x] { x += 1 }
+                    rectangles.append(SIMD4(Float(left) / Float(scale), Float(y) / Float(scale),
+                                            Float(x - left) / Float(scale), 1 / Float(scale)))
+                }
+            }
+            visited = covered
+        }
         var fillStyle = style
         fillStyle.instrument = .fill
         fillStyle.blendingMode = .normal
         var stroke = Stroke(points: [PointerSample(position: SIMD2(Float(point.x), Float(point.y)),
                                                    pressure: 1, timestamp: 0)], style: fillStyle)
         stroke.fillRects = rectangles
+        let desiredAlpha = min(1, max(0, style.color.w * style.effectiveOpacity))
+        if target[3] == 0, desiredAlpha > 0, desiredAlpha < 1 {
+            // Equal-colored translucent ink needs only the missing opacity,
+            // not a second full coat along the overlapped contour.
+            guard let output = CGContext(data: nil, width: width, height: height,
+                bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue),
+                  let outputData = output.data else { return nil }
+            let result = outputData.assumingMemoryBound(to: UInt8.self)
+            let color = [style.color.x, style.color.y, style.color.z].map { min(1, max(0, $0)) }
+            for index in visited.indices where visited[index] {
+                let offset = index * 4
+                let existingAlpha = Float(pixels[offset + 3]) / 255
+                var alpha = desiredAlpha
+                if existingAlpha > 0 {
+                    let sameColor = (0..<3).allSatisfy { channel in
+                        abs(Float(pixels[offset + channel]) / 255 - color[channel] * existingAlpha) <= 2 / 255.0
+                    }
+                    if sameColor {
+                        alpha = existingAlpha >= desiredAlpha ? 0
+                            : (desiredAlpha - existingAlpha) / (1 - existingAlpha)
+                    }
+                }
+                for channel in 0..<3 {
+                    result[offset + channel] = UInt8((color[channel] * alpha * 255).rounded())
+                }
+                result[offset + 3] = UInt8((alpha * 255).rounded())
+            }
+            let png = NSMutableData()
+            guard let image = output.makeImage(),
+                  let destination = CGImageDestinationCreateWithData(png, "public.png" as CFString, 1, nil) else { return nil }
+            CGImageDestinationAddImage(destination, image, nil)
+            guard CGImageDestinationFinalize(destination) else { return nil }
+            stroke.raster = StrokeRaster(png: png as Data,
+                bounds: CGRect(x: 0, y: 0, width: CGFloat(width) / scale, height: CGFloat(height) / scale))
+        }
         return stroke
     }
 }
