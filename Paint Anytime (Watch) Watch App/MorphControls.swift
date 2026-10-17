@@ -552,6 +552,11 @@ struct CanvasMorphPanels: View {
         .trackCanvasControl(.morph, frames: framesBinding)
     }
 
+    private var selectionForeground: AnyShapeStyle {
+        if #available(watchOS 26, *) { return AnyShapeStyle(.primary) }
+        return AnyShapeStyle(.white)
+    }
+
     private func lassoMorph(diameter: CGFloat, panelWidth: CGFloat) -> some View {
         CanvasMorphContent(isExpanded: showsSelectionActions) {
             HStack(spacing: 0) {
@@ -586,7 +591,7 @@ struct CanvasMorphPanels: View {
                 ForEach(WatchLassoMode.allCases, id: \.self) { mode in
                     morphButton(mode.title, height: diameter, intrinsicWidth: true) { lasso.setMode(mode) } label: {
                         Image(systemName: mode.symbol)
-                            .foregroundStyle(lasso.mode == mode ? .green : .white)
+                            .foregroundStyle(lasso.mode == mode ? AnyShapeStyle(.green) : selectionForeground)
                     }
                     .accessibilityAddTraits(lasso.mode == mode ? [.isSelected] : [])
                     Spacer(minLength: 0)
@@ -595,7 +600,7 @@ struct CanvasMorphPanels: View {
             }
         }
         .frame(width: panelWidth, height: diameter)
-        .modifier(CanvasMorphGlass())
+        .modifier(CanvasMorphGlass(adaptsToCanvas: true))
         .trackCanvasControl(.canvasToolsMorph, frames: framesBinding)
     }
 
@@ -616,12 +621,18 @@ struct CanvasMorphPanels: View {
 
 /// One glass surface persists as the circle expands into a capsule.
 struct CanvasMorphGlass: ViewModifier {
+    var adaptsToCanvas = false
+    @Environment(\.colorScheme) private var colorScheme
+
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(watchOS 26, *) {
             content
+                .foregroundStyle(.primary)
                 .glassEffect(.regular.interactive(), in: Capsule())
-                .environment(\.colorScheme, .dark)
+                // Selection controls need the glass's adaptive foreground;
+                // forcing dark appearance makes white icons vanish on light glass.
+                .environment(\.colorScheme, adaptsToCanvas ? colorScheme : .dark)
         } else {
             content
                 .foregroundStyle(.white)
