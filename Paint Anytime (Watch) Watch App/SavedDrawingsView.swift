@@ -182,10 +182,10 @@ struct SavedDrawingsView: View {
                     .overlay {
                         Image(systemName: "chevron.left")
                             .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .frame(width: GalleryMorphState.buttonDiameter,
                                    height: GalleryMorphState.buttonDiameter)
-                            .modifier(CanvasMorphGlass())
+                            .modifier(CanvasMorphGlass(adaptsToCanvas: true))
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }

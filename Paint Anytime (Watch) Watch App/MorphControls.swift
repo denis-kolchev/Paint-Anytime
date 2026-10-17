@@ -390,9 +390,9 @@ struct CanvasMorphPanels: View {
     private func cameraIcon(_ symbol: String, diameter: CGFloat, isHighlighted: Bool) -> some View {
         Image(systemName: symbol)
             .font(.system(size: 17, weight: .semibold))
-            .foregroundStyle(isHighlighted ? Color.green : Color.white)
+            .foregroundStyle(isHighlighted ? AnyShapeStyle(.green) : AnyShapeStyle(.primary))
             .frame(width: diameter, height: diameter, alignment: .center)
-            .modifier(CanvasMorphGlass())
+            .modifier(CanvasMorphGlass(adaptsToCanvas: true))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
     }
