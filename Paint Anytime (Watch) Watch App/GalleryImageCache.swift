@@ -1,5 +1,6 @@
 import SwiftUI
 import ImageIO
+import WatchKit
 
 // These values cross from the decoding actor to the UI. CGImage is immutable.
 nonisolated struct GalleryImageRequest: Hashable, Sendable {
@@ -176,6 +177,7 @@ struct GalleryThumbnailView: View {
     var loadsImage: Bool
     var isFavorite = false
     @State private var bitmap: GalleryBitmap?
+    @State private var isNearViewport = false
 
     private struct LoadRequest: Equatable {
         let image: GalleryImageRequest
@@ -190,7 +192,17 @@ struct GalleryThumbnailView: View {
                 Rectangle().fill(.white.opacity(0.12))
             }
         }
-        .task(id: loadsImage ? LoadRequest(image: request, isFavorite: isFavorite) : nil) {
+        .onGeometryChange(for: Bool.self) { geometry in
+            let screen = WKInterfaceDevice.current().screenBounds
+            // A 5-column viewport exposes almost three times as many tiles as
+            // a 3-column viewport; prepare those images before zooming out.
+            let prefetchBounds = screen.insetBy(dx: -screen.width, dy: -screen.height * 2)
+            return geometry.frame(in: .global).intersects(prefetchBounds)
+        } action: { nearViewport in
+            isNearViewport = nearViewport
+        }
+        .task(id: loadsImage && isNearViewport ? LoadRequest(image: request, isFavorite: isFavorite) : nil) {
+            guard isNearViewport else { bitmap = nil; return }
             guard loadsImage else { return }
             // Decode real source detail before compositing, rather than enlarging
             // an already small thumbnail. Keep the same point size for the badge.

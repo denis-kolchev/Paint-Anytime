@@ -298,7 +298,7 @@ struct SavedDrawingsView: View {
         } else if drawings.isEmpty {
             ContentUnavailableView(L10n.text("No drawings"), systemImage: "photo.on.rectangle")
         } else {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnCount), spacing: spacing) {
+            GalleryThumbnailGrid(columns: columnCount, spacing: spacing, side: width) {
                 ForEach(drawings) { drawing in
                     Button {
                         tutorial.activity()
@@ -498,6 +498,29 @@ struct SavedDrawingsView: View {
         onEditDrawing(document)
     }
 
+}
+
+/// Keep tile identities and offscreen positions alive across column changes.
+/// Bitmap loading remains limited to the viewport and its prefetch margin.
+private struct GalleryThumbnailGrid: Layout {
+    let columns: Int
+    let spacing: CGFloat
+    let side: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = (subviews.count + columns - 1) / columns
+        return CGSize(width: CGFloat(columns) * side + CGFloat(columns - 1) * spacing,
+                      height: CGFloat(rows) * side + CGFloat(max(0, rows - 1)) * spacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for (index, subview) in subviews.enumerated() {
+            subview.place(at: CGPoint(x: bounds.minX + CGFloat(index % columns) * (side + spacing),
+                                     y: bounds.minY + CGFloat(index / columns) * (side + spacing)),
+                          anchor: .topLeading,
+                          proposal: ProposedViewSize(width: side, height: side))
+        }
+    }
 }
 
 private enum GalleryTransitionDirection {
