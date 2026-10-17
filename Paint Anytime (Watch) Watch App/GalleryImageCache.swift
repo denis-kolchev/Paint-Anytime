@@ -109,10 +109,76 @@ actor GalleryImageCache {
     }
 }
 
+/// Only grid thumbnails receive this decoration; originals and exported files stay untouched.
+/// Rasterizing the artwork, blur and heart together gives zoom a single image to animate.
+@MainActor
+private enum GalleryFavoriteThumbnailRenderer {
+    private static let cache: NSCache<NSURL, GalleryThumbnailVariants> = {
+        let cache = NSCache<NSURL, GalleryThumbnailVariants>()
+        cache.totalCostLimit = 3 * 1024 * 1024
+        cache.countLimit = 100
+        return cache
+    }()
+
+    static func render(_ bitmap: GalleryBitmap) -> GalleryBitmap? {
+        let request = bitmap.request
+        let key = bitmap.url as NSURL
+        if let cached = cache.object(forKey: key)?.images[request] { return cached }
+        guard let pixels = request.shortSidePixels else { return nil }
+        let scale = max(1, request.displayScale)
+        let side = CGFloat(pixels) / scale
+        let heartSize = side * 0.18
+        let inset = side * 0.075
+        let cornerSize = side * 0.9
+        let artwork = Image(decorative: bitmap.image, scale: 1)
+            .resizable()
+            .scaledToFill()
+            .frame(width: side, height: side)
+            .clipped()
+        let content = artwork
+            .overlay {
+                artwork
+                    .blur(radius: 3)
+                    .overlay(Color.black.opacity(0.22))
+                    .mask {
+                        RadialGradient(stops: [
+                            .init(color: .black, location: 0),
+                            .init(color: .black.opacity(0.65), location: 0.3),
+                            .init(color: .black.opacity(0.2), location: 0.65),
+                            .init(color: .clear, location: 1)
+                        ], center: .bottomLeading, startRadius: 0, endRadius: cornerSize)
+                    }
+            }
+            .overlay(alignment: .bottomLeading) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: heartSize, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.2), radius: 1, y: 1)
+                    .padding(inset)
+            }
+            .clipped()
+            .environment(\.displayScale, scale)
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = scale
+        guard let image = renderer.cgImage else { return nil }
+        let result = GalleryBitmap(request: request, image: image, originalSize: bitmap.originalSize)
+        let variants = cache.object(forKey: key) ?? GalleryThumbnailVariants()
+        variants.images[request] = result
+        cache.setObject(variants, forKey: key, cost: variants.memoryCost)
+        return result
+    }
+}
+
 struct GalleryThumbnailView: View {
     let request: GalleryImageRequest
     var loadsImage: Bool
+    var isFavorite = false
     @State private var bitmap: GalleryBitmap?
+
+    private struct LoadRequest: Equatable {
+        let image: GalleryImageRequest
+        let isFavorite: Bool
+    }
 
     var body: some View {
         Group {
@@ -122,11 +188,15 @@ struct GalleryThumbnailView: View {
                 Rectangle().fill(.white.opacity(0.12))
             }
         }
-        .task(id: loadsImage ? request : nil) {
+        .task(id: loadsImage ? LoadRequest(image: request, isFavorite: isFavorite) : nil) {
             guard loadsImage else { return }
             let loaded = await GalleryImageCache.shared.load(request)
             guard !Task.isCancelled else { return }
-            bitmap = loaded
+            if isFavorite, let loaded {
+                bitmap = GalleryFavoriteThumbnailRenderer.render(loaded) ?? loaded
+            } else {
+                bitmap = loaded
+            }
         }
         .onDisappear { bitmap = nil }
     }
