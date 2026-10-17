@@ -37287,175 +37287,175 @@
         }
       }
     },
-    "Sets how different neighboring colors can be from the tapped color during a fill. Lower values keep the fill within similar colors; higher values include more colors. The preview shows a Pen circle in the fill color, using the fill opacity when opacity synchronization is on and full opacity otherwise. Turn the Crown to see the unfilled edge colors and when the fill escapes the circle. Tap the focus icon to select the highest whole percentage that keeps the fill inside; one percentage point higher breaks through. If no percentage contains the fill, the button selects %@." : {
+    "Fill tolerance on the current layer. Higher values include more colors and opacity levels. The crosshair finds a threshold without leaks using closed shapes, or the preview." : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يضبط مدى اختلاف الألوان المجاورة عن لون نقطة اللمس أثناء التعبئة. تحصر القيم المنخفضة التعبئة في الألوان المتشابهة، وتشمل القيم المرتفعة ألوانًا أكثر. تعرض المعاينة دائرة مرسومة بأداة القلم بلون التعبئة، وبعتامة التعبئة عند تفعيل مزامنة العتامة، وبعتامة كاملة خلاف ذلك. أدر التاج لرؤية ألوان الحواف غير المعبأة ومتى تتجاوز التعبئة الدائرة. اضغط على أيقونة التركيز لاختيار أعلى نسبة مئوية صحيحة تُبقي التعبئة داخل الدائرة؛ زيادة نقطة مئوية واحدة تجعلها تتجاوز الحدود. إذا لم تحصر أي نسبة التعبئة، يختار الزر %@."
+            "value" : "تفاوت اللون والعتامة في الطبقة الحالية. القيم الأعلى توسّع التعبئة. تضبط علامة التصويب حدًا بلا تسرّب اعتمادًا على الأشكال المغلقة أو المعاينة."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nastavuje, jak moc se při vyplňování mohou sousední barvy lišit od barvy v místě klepnutí. Nízké hodnoty omezují výplň na podobné barvy, vysoké zahrnují více barev. Náhled ukazuje kruh nakreslený perem v barvě výplně. Při zapnuté synchronizaci krytí používá krytí výplně, jinak plné krytí. Otáčením korunky sledujte nevyplněné barvy okrajů a okamžik, kdy výplň unikne z kruhu. Klepnutím na ikonu zaměření vyberete nejvyšší celé procento, které udrží výplň uvnitř; zvýšení o jeden procentní bod již hranici překročí. Pokud výplň neudrží žádná hodnota, tlačítko vybere %@."
+            "value" : "Tolerance barev a krytí v aktuální vrstvě. Vyšší hodnoty rozšiřují výplň. Zaměřovač najde práh bez přetékání podle uzavřených tvarů nebo náhledu."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Indstiller hvor meget nabofarver må afvige fra farven på det berørte punkt under udfyldning. Lave værdier begrænser udfyldningen til lignende farver; høje værdier medtager flere farver. Forhåndsvisningen viser en cirkel tegnet med Pen i fyldfarven. Når synkronisering af opacitet er slået til, bruges fyldets opacitet; ellers bruges fuld opacitet. Drej på kronen for at se de ufyldte kantfarver, og hvornår fyldet løber ud af cirklen. Tryk på fokusikonet for at vælge den højeste hele procent, der holder fyldet indenfor; ét procentpoint mere bryder igennem. Hvis ingen procent holder fyldet inde, vælger knappen %@."
+            "value" : "Tolerance for farve og opacitet på det aktuelle lag. Højere værdier udvider udfyldningen. Sigtet finder en grænse uden overløb ud fra lukkede figurer eller forhåndsvisningen."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Legt fest, wie stark benachbarte Farben beim Füllen von der angetippten Farbe abweichen dürfen. Niedrige Werte beschränken die Füllung auf ähnliche Farben, höhere schließen mehr Farben ein. Die Vorschau zeigt einen mit dem Stift gezeichneten Kreis in der Füllfarbe. Bei aktivierter Deckkraftsynchronisierung wird die Deckkraft der Füllung verwendet, sonst die volle Deckkraft. Drehe die Krone, um ungefüllte Randfarben zu sehen und zu erkennen, wann die Füllung aus dem Kreis austritt. Tippe auf das Fokussymbol, um den höchsten ganzzahligen Prozentwert zu wählen, der die Füllung im Kreis hält; ein Prozentpunkt mehr durchbricht den Rand. Falls kein Wert die Füllung begrenzt, wählt die Taste %@."
+            "value" : "Farb- und Deckkrafttoleranz auf der aktuellen Ebene. Höhere Werte erweitern die Füllung. Das Fadenkreuz ermittelt anhand geschlossener Formen oder der Vorschau einen Wert ohne Überlaufen."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ορίζει πόσο μπορούν να διαφέρουν τα γειτονικά χρώματα από το χρώμα στο σημείο αφής κατά το γέμισμα. Οι χαμηλές τιμές περιορίζουν το γέμισμα σε παρόμοια χρώματα, ενώ οι υψηλές περιλαμβάνουν περισσότερα χρώματα. Η προεπισκόπηση δείχνει έναν κύκλο σχεδιασμένο με Στυλό στο χρώμα γεμίσματος, με την αδιαφάνεια γεμίσματος όταν ο συγχρονισμός αδιαφάνειας είναι ενεργός και πλήρη αδιαφάνεια διαφορετικά. Περιστρέψτε την κορόνα για να δείτε τα χρώματα των άβαφων άκρων και πότε το γέμισμα βγαίνει από τον κύκλο. Πατήστε το εικονίδιο εστίασης για το μεγαλύτερο ακέραιο ποσοστό που κρατά το γέμισμα μέσα· μία ποσοστιαία μονάδα παραπάνω διαπερνά το όριο. Αν κανένα ποσοστό δεν το συγκρατεί, το κουμπί επιλέγει %@."
+            "value" : "Ανοχή χρώματος και αδιαφάνειας στην τρέχουσα στρώση. Οι υψηλότερες τιμές διευρύνουν το γέμισμα. Το στόχαστρο βρίσκει όριο χωρίς διαρροή από κλειστά σχήματα ή την προεπισκόπηση."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sets how different neighboring colors can be from the tapped color during a fill. Lower values keep the fill within similar colors; higher values include more colors. The preview shows a Pen circle in the fill color, using the fill opacity when opacity synchronization is on and full opacity otherwise. Turn the Crown to see the unfilled edge colors and when the fill escapes the circle. Tap the focus icon to select the highest whole percentage that keeps the fill inside; one percentage point higher breaks through. If no percentage contains the fill, the button selects %@."
+            "value" : "Fill tolerance on the current layer. Higher values include more colors and opacity levels. The crosshair finds a threshold without leaks using closed shapes, or the preview."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Define cuánto pueden diferir los colores vecinos del color tocado al rellenar. Los valores bajos limitan el relleno a colores similares; los altos incluyen más colores. La vista previa muestra un círculo dibujado con Bolígrafo en el color de relleno, con la opacidad del relleno si la sincronización de opacidad está activada y con opacidad total en caso contrario. Gira la corona para ver los colores de los bordes sin rellenar y cuándo el relleno sale del círculo. Toca el icono de enfoque para elegir el mayor porcentaje entero que mantiene el relleno dentro; un punto porcentual más atraviesa el borde. Si ningún porcentaje contiene el relleno, el botón selecciona %@."
+            "value" : "Tolerancia de color y opacidad en la capa actual. Los valores altos amplían el relleno. La mirilla calcula un umbral sin desbordamientos según las formas cerradas o la vista previa."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Määrittää, kuinka paljon viereiset värit saavat poiketa kosketetun kohdan väristä täytettäessä. Pienet arvot rajaavat täytön samankaltaisiin väreihin, suuret sisältävät enemmän värejä. Esikatselu näyttää Kynä-työkalulla piirretyn ympyrän täyttövärissä. Kun peittävyyden synkronointi on käytössä, käytetään täytön peittävyyttä, muuten täyttä peittävyyttä. Kierrä kruunua nähdäksesi täyttämättömien reunojen värit ja sen, milloin täyttö karkaa ympyrästä. Napauta kohdistuskuvaketta valitaksesi suurimman kokonaisprosentin, joka pitää täytön sisällä; yksi prosenttiyksikkö enemmän läpäisee reunan. Jos mikään prosentti ei pidä täyttöä sisällä, painike valitsee %@."
+            "value" : "Nykyisen tason värin ja peittävyyden toleranssi. Suuremmat arvot laajentavat täyttöä. Tähtäin etsii vuotamattoman raja-arvon suljettujen muotojen tai esikatselun perusteella."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Règle l’écart de couleur admis entre les pixels voisins et le point touché lors du remplissage. Une valeur faible limite le remplissage aux couleurs proches ; une valeur élevée inclut davantage de couleurs. L’aperçu montre un cercle tracé avec le Stylo dans la couleur de remplissage, avec l’opacité du remplissage si la synchronisation de l’opacité est activée, sinon à pleine opacité. Tournez la couronne pour voir les couleurs des bords non remplis et le moment où le remplissage sort du cercle. Touchez l’icône de mise au point pour choisir le pourcentage entier le plus élevé qui maintient le remplissage à l’intérieur ; un point de pourcentage de plus franchit le bord. Si aucun pourcentage ne le contient, le bouton sélectionne %@."
+            "value" : "Tolérance de couleur et d’opacité du calque actuel. Une valeur élevée étend le remplissage. Le viseur calcule un seuil sans débordement à partir des formes fermées ou de l’aperçu."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "קובע עד כמה צבעים סמוכים יכולים להיות שונים מהצבע בנקודת הנגיעה בזמן מילוי. ערכים נמוכים מגבילים את המילוי לצבעים דומים; ערכים גבוהים כוללים יותר צבעים. התצוגה המקדימה מציגה עיגול שצויר בעט בצבע המילוי, באטימות המילוי כאשר סנכרון האטימות פעיל ובאטימות מלאה אחרת. סובבו את הכתר כדי לראות את צבעי הקצוות שלא מולאו ומתי המילוי יוצא מהעיגול. הקישו על סמל המיקוד כדי לבחור את האחוז השלם הגבוה ביותר שמשאיר את המילוי בפנים; נקודת אחוז אחת נוספת פורצת את הגבול. אם שום אחוז אינו מכיל את המילוי, הכפתור בוחר %@."
+            "value" : "סבילות לצבע ולאטימות בשכבה הנוכחית. ערכים גבוהים מרחיבים את המילוי. הכוונת מוצאת סף ללא גלישה לפי צורות סגורות או התצוגה המקדימה."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Beállítja, mennyire térhetnek el a szomszédos színek a megérintett színtől kitöltéskor. Az alacsony értékek hasonló színekre korlátozzák a kitöltést, a magasabbak több színt vonnak be. Az előnézet a Toll eszközzel rajzolt kört mutatja a kitöltés színével. Bekapcsolt fedettségszinkronizálásnál a kitöltés fedettségét, egyébként teljes fedettséget használ. Forgassa a koronát a kitöltetlen peremszínek és annak megfigyeléséhez, mikor lép ki a kitöltés a körből. A célkereszt ikonjára koppintva a legnagyobb egész százalékot választhatja, amely még belül tartja a kitöltést; egy százalékponttal több már áttöri a határt. Ha egyik érték sem tartja bent, a gomb %@ értéket választ."
+            "value" : "Szín- és fedettségtűrés az aktuális rétegen. A magasabb értékek bővítik a kitöltést. A célkereszt zárt alakzatok vagy az előnézet alapján keres túlfolyásmentes küszöböt."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mengatur seberapa jauh warna di sekitar boleh berbeda dari warna yang diketuk saat mengisi. Nilai rendah membatasi isian pada warna serupa; nilai tinggi mencakup lebih banyak warna. Pratinjau menampilkan lingkaran yang digambar dengan Pena dalam warna isian, menggunakan opasitas isian saat sinkronisasi opasitas aktif dan opasitas penuh jika tidak. Putar Crown untuk melihat warna tepi yang belum terisi dan kapan isian keluar dari lingkaran. Ketuk ikon fokus untuk memilih persentase bulat tertinggi yang menjaga isian tetap di dalam; satu poin persentase lebih tinggi akan menembus batas. Jika tidak ada persentase yang menahan isian, tombol memilih %@."
+            "value" : "Toleransi warna dan opasitas pada lapisan aktif. Nilai lebih tinggi memperluas isian. Bidikan mencari ambang tanpa kebocoran berdasarkan bentuk tertutup atau pratinjau."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Imposta quanto i colori vicini possono differire dal colore toccato durante il riempimento. Valori bassi limitano il riempimento ai colori simili; valori alti includono più colori. L’anteprima mostra un cerchio disegnato con Penna nel colore di riempimento, con l’opacità del riempimento se la sincronizzazione dell’opacità è attiva, altrimenti con opacità piena. Ruota la corona per vedere i colori dei bordi non riempiti e quando il riempimento esce dal cerchio. Tocca l’icona di messa a fuoco per scegliere la percentuale intera più alta che mantiene il riempimento all’interno; un punto percentuale in più supera il bordo. Se nessuna percentuale contiene il riempimento, il pulsante seleziona %@."
+            "value" : "Tolleranza di colore e opacità sul livello attuale. Valori più alti ampliano il riempimento. Il mirino trova una soglia senza fuoriuscite usando le forme chiuse o l’anteprima."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "塗りつぶす際、隣接する色とタップした位置の色との違いをどこまで許容するかを設定します。低い値では似た色だけを、高い値ではより多くの色を塗りつぶします。 プレビューには、ペンで描いた円が塗りつぶしの色で表示されます。不透明度の同期がオンの場合は塗りつぶしの不透明度を使い、オフの場合は完全に不透明になります。クラウンを回すと、塗りつぶされていない縁の色と、塗りつぶしが円の外に漏れるタイミングを確認できます。フォーカスアイコンをタップすると、塗りつぶしが円内に収まる最大の整数パーセントを選択します。1パーセントポイント上げると縁を越えます。どの割合でも円内に収まらない場合、ボタンは%@を選択します。"
+            "value" : "現在のレイヤーの色と不透明度の許容範囲。値を上げると塗りつぶす範囲が広がります。照準ボタンは閉じた図形、またはプレビューから、はみ出さないしきい値を求めます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "채우기 시 인접 색상이 탭한 색상과 얼마나 달라도 되는지 설정합니다. 낮은 값은 비슷한 색상만 채우고 높은 값은 더 많은 색상을 포함합니다. 미리보기에는 펜으로 그린 원이 채우기 색상으로 표시됩니다. 불투명도 동기화가 켜져 있으면 채우기의 불투명도를 사용하고, 꺼져 있으면 완전히 불투명하게 표시합니다. 크라운을 돌려 채워지지 않은 가장자리 색상과 채우기가 원 밖으로 새어 나가는 시점을 확인하세요. 초점 아이콘을 탭하면 채우기가 원 안에 머무르는 가장 높은 정수 백분율을 선택합니다. 1퍼센트포인트만 높여도 경계를 뚫습니다. 어떤 백분율에서도 채우기가 원 안에 머무르지 않으면 버튼은 %@를 선택합니다."
+            "value" : "현재 레이어의 색상과 불투명도 허용 범위입니다. 값이 높을수록 채우는 범위가 넓어집니다. 조준 버튼은 닫힌 도형 또는 미리보기를 기준으로 넘치지 않는 임계값을 찾습니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Angir hvor mye nabofarger kan avvike fra fargen på punktet du trykket på under fylling. Lave verdier begrenser fyllet til lignende farger; høye verdier tar med flere farger. Forhåndsvisningen viser en sirkel tegnet med Penn i fyllfargen. Når synkronisering av opasitet er på, brukes fyllets opasitet; ellers brukes full opasitet. Drei kronen for å se de ufylte kantfargene og når fyllet slipper ut av sirkelen. Trykk på fokusikonet for å velge den høyeste hele prosenten som holder fyllet innenfor; ett prosentpoeng mer bryter gjennom. Hvis ingen prosent holder fyllet inne, velger knappen %@."
+            "value" : "Toleranse for farge og opasitet på gjeldende lag. Høyere verdier utvider fyllet. Siktet finner en terskel uten lekkasje ut fra lukkede former eller forhåndsvisningen."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stelt in hoeveel aangrenzende kleuren bij het vullen mogen afwijken van de aangetikte kleur. Lage waarden beperken de vulling tot vergelijkbare kleuren; hoge waarden omvatten meer kleuren. Het voorbeeld toont een met Pen getekende cirkel in de vulkleur, met de dekking van de vulling als dekkingssynchronisatie aanstaat en anders met volledige dekking. Draai aan de kroon om de ongevulde randkleuren te zien en te ontdekken wanneer de vulling buiten de cirkel komt. Tik op het focuspictogram voor het hoogste gehele percentage dat de vulling binnenhoudt; één procentpunt hoger doorbreekt de rand. Als geen percentage de vulling binnenhoudt, kiest de knop %@."
+            "value" : "Kleur- en dekkingstolerantie op de huidige laag. Hogere waarden vergroten de vulling. Het vizier bepaalt een drempel zonder uitlopen op basis van gesloten vormen of het voorbeeld."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ustawia dopuszczalną różnicę między sąsiednimi kolorami a kolorem dotkniętego punktu podczas wypełniania. Niskie wartości ograniczają wypełnienie do podobnych kolorów, wysokie obejmują więcej kolorów. Podgląd pokazuje okrąg narysowany Piórem w kolorze wypełnienia. Przy włączonej synchronizacji krycia używa krycia wypełnienia, a w przeciwnym razie pełnego krycia. Obracaj koronkę, aby zobaczyć niewypełnione kolory krawędzi i moment, w którym wypełnienie wydostaje się poza okrąg. Stuknij ikonę celownika, aby wybrać najwyższy całkowity procent utrzymujący wypełnienie wewnątrz; jeden punkt procentowy więcej przebija granicę. Jeśli żadna wartość nie zatrzymuje wypełnienia, przycisk wybiera %@."
+            "value" : "Tolerancja koloru i krycia na bieżącej warstwie. Wyższe wartości rozszerzają wypełnienie. Celownik dobiera próg bez wyciekania na podstawie zamkniętych kształtów lub podglądu."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Define quanto as cores vizinhas podem diferir da cor tocada durante o preenchimento. Valores baixos limitam o preenchimento a cores semelhantes; valores altos incluem mais cores. A prévia mostra um círculo desenhado com Caneta na cor de preenchimento, usando a opacidade do preenchimento quando a sincronização de opacidade está ativada e opacidade total caso contrário. Gire a coroa para ver as cores das bordas não preenchidas e quando o preenchimento sai do círculo. Toque no ícone de foco para selecionar a maior porcentagem inteira que mantém o preenchimento dentro; um ponto percentual a mais atravessa a borda. Se nenhuma porcentagem contiver o preenchimento, o botão selecionará %@."
+            "value" : "Tolerância de cor e opacidade na camada atual. Valores maiores ampliam o preenchimento. A mira calcula um limite sem vazamentos com base nas formas fechadas ou na prévia."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Define quanto as cores vizinhas podem diferir da cor tocada durante o preenchimento. Valores baixos limitam o preenchimento a cores semelhantes; valores altos incluem mais cores. A pré-visualização mostra um círculo desenhado com Caneta na cor de preenchimento, usando a opacidade do preenchimento quando a sincronização da opacidade está ativa e opacidade total caso contrário. Rode a coroa para ver as cores das margens não preenchidas e quando o preenchimento sai do círculo. Toque no ícone de focagem para selecionar a maior percentagem inteira que mantém o preenchimento dentro; um ponto percentual a mais atravessa a margem. Se nenhuma percentagem contiver o preenchimento, o botão seleciona %@."
+            "value" : "Tolerância de cor e opacidade na camada atual. Valores mais altos alargam o preenchimento. A mira calcula um limite sem fugas com base nas formas fechadas ou na pré-visualização."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Определяет, насколько цвета соседних участков могут отличаться от цвета в точке заливки. Низкие значения ограничивают заливку похожими цветами, высокие — включают больше цветов. В превью показан круг, нарисованный инструментом «Перо» цветом заливки. При включённой синхронизации плотности используется плотность заливки, иначе — полная плотность. Вращайте колёсико, чтобы увидеть незакрашенные оттенки по краю и момент выхода заливки за контур. Нажмите значок фокуса, чтобы выбрать наибольший целый процент, при котором заливка остаётся внутри: следующий процент уже приводит к выходу наружу. Если контур не удерживает заливку ни при каком значении, кнопка устанавливает %@."
+            "value" : "Допуск цвета и прозрачности на текущем слое. Выше — шире область заливки. Прицел подбирает порог без утечки по замкнутым фигурам или превью."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ställer in hur mycket närliggande färger får skilja sig från den tryckta färgen vid fyllning. Låga värden begränsar fyllningen till liknande färger; höga värden inkluderar fler färger. Förhandsvisningen visar en cirkel ritad med Penna i fyllningsfärgen. När synkronisering av opacitet är på används fyllningens opacitet, annars full opacitet. Vrid kronan för att se de ofyllda kantfärgerna och när fyllningen rinner ut ur cirkeln. Tryck på fokusikonen för att välja den högsta hela procenten som håller fyllningen innanför; en procentenhet mer bryter igenom. Om ingen procent håller fyllningen inne väljer knappen %@."
+            "value" : "Tolerans för färg och opacitet på det aktuella lagret. Högre värden utökar fyllningen. Siktet hittar ett tröskelvärde utan läckage utifrån slutna former eller förhandsvisningen."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "กำหนดว่าสีข้างเคียงจะแตกต่างจากสีที่แตะได้มากเพียงใดขณะเติมสี ค่าต่ำจะจำกัดการเติมไว้ที่สีใกล้เคียง ส่วนค่าสูงจะรวมสีมากขึ้น ตัวอย่างแสดงวงกลมที่วาดด้วยปากกาในสีเติม โดยใช้ความทึบของสีเติมเมื่อเปิดการซิงค์ความทึบ และใช้ความทึบเต็มที่เมื่อปิด หมุนเม็ดมะยมเพื่อดูสีขอบที่ยังไม่ถูกเติมและจังหวะที่สีเติมไหลออกนอกวงกลม แตะไอคอนโฟกัสเพื่อเลือกเปอร์เซ็นต์จำนวนเต็มสูงสุดที่ยังเก็บสีเติมไว้ภายใน หากเพิ่มอีกหนึ่งจุดเปอร์เซ็นต์ สีจะทะลุขอบออกไป หากไม่มีค่าใดเก็บสีไว้ภายในได้ ปุ่มจะเลือก %@"
+            "value" : "ความคลาดเคลื่อนของสีและความทึบบนเลเยอร์ปัจจุบัน ค่าสูงจะขยายพื้นที่เติมสี ปุ่มเป้าเล็งจะหาค่าที่สีไม่รั่วจากรูปทรงปิด หรือจากภาพตัวอย่าง"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Doldurma sırasında komşu renklerin dokunulan renkten ne kadar farklı olabileceğini ayarlar. Düşük değerler dolguyu benzer renklerle sınırlar; yüksek değerler daha fazla rengi kapsar. Önizleme, dolgu renginde Kalem ile çizilmiş bir daire gösterir. Opaklık eşzamanlaması açıksa dolgu opaklığı, değilse tam opaklık kullanılır. Doldurulmamış kenar renklerini ve dolgunun daireden ne zaman taştığını görmek için tepeyi çevirin. Dolguyu içeride tutan en yüksek tam sayı yüzdesini seçmek için odak simgesine dokunun; bir yüzde puanı daha yüksek değer sınırı aşar. Hiçbir yüzde dolguyu içeride tutmuyorsa düğme %@ değerini seçer."
+            "value" : "Geçerli katmandaki renk ve opaklık toleransı. Yüksek değerler dolguyu genişletir. Nişangâh, kapalı şekillere veya önizlemeye göre taşmayan bir eşik bulur."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Задає, наскільки сусідні кольори можуть відрізнятися від кольору в точці дотику під час заливки. Низькі значення обмежують заливку близькими кольорами, високі — охоплюють більше кольорів. Попередній перегляд показує коло, намальоване Ручкою у кольорі заливки: з непрозорістю заливки, якщо синхронізацію непрозорості ввімкнено, і з повною непрозорістю інакше. Обертайте коронку, щоб побачити незалиті кольори країв і момент, коли заливка виходить за межі кола. Натисніть значок фокусування, щоб вибрати найбільший цілий відсоток, який утримує заливку всередині; на один відсотковий пункт більше — і заливка проривається. Якщо жоден відсоток не утримує заливку, кнопка вибирає %@."
+            "value" : "Допуск кольору й непрозорості на поточному шарі. Вищі значення розширюють заливку. Приціл підбирає поріг без витікання за замкнутими фігурами або попереднім переглядом."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Đặt mức chênh lệch cho phép giữa màu lân cận và màu tại điểm chạm khi tô vùng. Giá trị thấp chỉ tô các màu tương tự; giá trị cao bao gồm nhiều màu hơn. Bản xem trước hiển thị một vòng tròn vẽ bằng Bút mực với màu tô, dùng độ đục của màu tô khi bật đồng bộ độ đục và độ đục tối đa khi tắt. Xoay núm xoay để xem màu viền chưa được tô và lúc màu tô tràn ra ngoài vòng tròn. Chạm biểu tượng lấy nét để chọn phần trăm nguyên cao nhất giữ màu tô bên trong; tăng thêm một điểm phần trăm sẽ làm màu tràn qua viền. Nếu không có phần trăm nào giữ được màu tô, nút sẽ chọn %@."
+            "value" : "Dung sai màu và độ mờ trên lớp hiện tại. Giá trị cao mở rộng vùng tô. Nút tâm ngắm tìm ngưỡng không tràn dựa trên hình khép kín hoặc bản xem trước."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "设置填充时相邻颜色与点击位置颜色之间允许的差异。较低的值只填充相近颜色，较高的值会包含更多颜色。 预览以填充颜色显示用“笔”工具绘制的圆。开启不透明度同步时使用填充的不透明度，否则使用完全不透明。转动表冠可查看未填充的边缘颜色，以及填充何时溢出圆圈。轻点对焦图标可选择让填充保持在圆内的最高整数百分比；再提高一个百分点就会突破边缘。如果没有任何百分比能将填充限制在圆内，按钮会选择%@。"
+            "value" : "当前图层的颜色和不透明度容差。数值越高，填充范围越广。准星按钮根据封闭图形或预览选择不会溢出的阈值。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "設定填色時相鄰顏色與點選位置顏色之間允許的差異。較低的值只填入相近顏色，較高的值會包含更多顏色。 預覽以填色顏色顯示用「筆」工具繪製的圓。開啟不透明度同步時使用填色的不透明度，否則使用完全不透明。轉動錶冠可查看未填色的邊緣顏色，以及填色何時溢出圓圈。點一下對焦圖示可選擇讓填色保持在圓內的最高整數百分比；再提高一個百分點就會突破邊緣。如果沒有任何百分比能將填色限制在圓內，按鈕會選擇%@。"
+            "value" : "目前圖層的顏色和不透明度容差。數值越高，填色範圍越廣。準星按鈕依據封閉圖形或預覽選擇不會溢出的臨界值。"
           }
         }
       }
