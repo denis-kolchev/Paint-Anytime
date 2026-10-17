@@ -263,6 +263,7 @@ struct CanvasMorphPanels: View {
     let isVisible: Bool
     let usesMorphToolbar: Bool
     let isMovingCanvas: Bool
+    let isEyedropperActive: Bool
     @Binding var showsToolSettings: Bool
     @Binding var showsAppSettings: Bool
     @Binding var showsCanvasSize: Bool
@@ -298,6 +299,15 @@ struct CanvasMorphPanels: View {
         let trailing = anchor(.tools, fallback: CGPoint(x: panelGeometry.trailingX, y: panelGeometry.top + 18))
         let bottom = anchor(.clear, fallback: CGPoint(x: panelGeometry.leadingX, y: panelGeometry.bottom - 18))
         ZStack {
+            if isVisible && isMovingCanvas && !lasso.isActive && controller.activeStroke == nil {
+                // Native toolbar slots still handle taps. Draw both camera controls
+                // with the same anchors, diameter and glass as the canvas controls.
+                cameraIcon("eyedropper", diameter: panelGeometry.diameter,
+                           isHighlighted: isEyedropperActive)
+                    .position(leading)
+                cameraIcon("checkmark", diameter: panelGeometry.diameter, isHighlighted: true)
+                    .position(trailing)
+            }
             if usesMorphToolbar && isVisible && !isMovingCanvas && !lasso.isActive && controller.activeStroke == nil {
                 let diameter = panelGeometry.diameter
                 let top = trailing.y - 18
@@ -351,6 +361,16 @@ struct CanvasMorphPanels: View {
 
         }
         .frame(width: size.width, height: size.height)
+    }
+
+    private func cameraIcon(_ symbol: String, diameter: CGFloat, isHighlighted: Bool) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(isHighlighted ? Color.green : Color.white)
+            .frame(width: diameter, height: diameter, alignment: .center)
+            .modifier(CanvasMorphGlass())
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     private func anchor(_ control: CanvasToolbarControl, fallback: CGPoint) -> CGPoint {

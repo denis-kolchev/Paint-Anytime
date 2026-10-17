@@ -88,6 +88,7 @@ struct ContentView: View {
                                   canvasOrigin: geometry.frame(in: .global).origin,
                                   isVisible: isActive && !showsGallery && !showsToolSettings,
                                   usesMorphToolbar: usesMorphToolbar, isMovingCanvas: isMovingCanvas,
+                                  isEyedropperActive: isEyedropperActive,
                                   showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
                                   showsCanvasSize: $showsCanvasSize, showsLayers: $showsLayers,
                                   onStartLasso: startLasso, onFinishLasso: finishLasso,
@@ -234,10 +235,10 @@ struct ContentView: View {
                             Image(systemName: lasso.isActive ? "checkmark" : isMovingCanvas ? "eyedropper" : usesMorphToolbar ? "doc.badge.gearshape" : "ellipsis")
                                 .foregroundStyle(lasso.isActive || isEyedropperActive ? .green : .primary)
                                 .frame(width: 18, height: 18, alignment: .center)
-                                .opacity(lasso.isActive ? 0 : usesMorphToolbar && !isMovingCanvas ? 0 : 1)
+                                .opacity(lasso.isActive || isMovingCanvas || usesMorphToolbar ? 0 : 1)
                                 .contentShape(Rectangle())
                         }
-                        .watchToolbarButtonStyle(hidesNativeChrome: lasso.isActive ? true : (usesMorphToolbar && !isMovingCanvas) || controller.activeStroke != nil)
+                        .watchToolbarButtonStyle(hidesNativeChrome: lasso.isActive ? true : (usesMorphToolbar || isMovingCanvas) || controller.activeStroke != nil)
                         .accessibilityLabel(L10n.text(lasso.isActive ? (showsSelectionActions ? "Move to layer above" : WatchLassoMode.strokes.title) : isMovingCanvas ? "Eyedropper" : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
                         .disabled(lasso.isActive && showsSelectionActions && !lasso.canMoveLayer(1, controller: controller))
                         .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
@@ -482,8 +483,8 @@ struct ContentView: View {
     }
 
     private var morphOwnsTrailingControl: Bool {
-        !showsToolSettings && ((lasso.isActive && showsSelectionActions) ||
-            (!lasso.isActive && usesMorphToolbar && !isMovingCanvas))
+        !showsToolSettings && (isMovingCanvas || (lasso.isActive && showsSelectionActions) ||
+            (!lasso.isActive && usesMorphToolbar))
     }
 
     private func finishCameraTool() {
