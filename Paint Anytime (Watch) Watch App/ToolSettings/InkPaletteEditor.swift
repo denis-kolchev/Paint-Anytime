@@ -192,8 +192,13 @@ struct InkPaletteEditor: View {
                                 .scaledToFit()
                                 .foregroundStyle(.gray)
                                 .aspectRatio(1, contentMode: .fit)
+                                .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .highPriorityGesture(
+                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() },
+                            including: isEditing ? .none : .all)
+                        .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
                         .accessibilityLabel(L10n.text("Create color"))
                     }
                 }

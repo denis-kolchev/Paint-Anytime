@@ -177,9 +177,14 @@ struct InkPaletteBrowser: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
-                        .disabled(movingID != nil || pendingDeletionID != nil || (!canConfirm && !editing))
-                        .accessibilityLabel(L10n.text("Done"))
+                    if showsEmptyPaletteClose {
+                        Button(action: discardEmptyPalette) { Image(systemName: "xmark") }
+                            .accessibilityLabel(L10n.text("Close"))
+                    } else {
+                        Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
+                            .disabled(movingID != nil || pendingDeletionID != nil || (!canConfirm && !editing))
+                            .accessibilityLabel(L10n.text("Done"))
+                    }
                 }
             }
         }
@@ -226,7 +231,7 @@ struct InkPaletteBrowser: View {
         sampledColor = nil
         showsColorEditor = false
         editing = false
-        setBrowsing(true)
+        setBrowsing(false)
     }
 
     private func finishEditingOrConfirm() {
@@ -620,6 +625,28 @@ struct InkPaletteBrowser: View {
                 guard abs(travel) > stride * 0.2 else { return }
                 selectPage(by: travel < 0 ? 1 : -1)
             }
+    }
+
+    private var showsEmptyPaletteClose: Bool {
+        !browsing && !editing && library.palettes.contains {
+            $0.id == currentID && $0.palette.allColors.isEmpty
+        }
+    }
+
+    private func discardEmptyPalette() {
+        guard showsEmptyPaletteClose,
+              let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
+        let discardedID = currentID
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
+            library.palettes.remove(at: index)
+            addedColors.removeAll { $0.paletteID == discardedID }
+            if library.activeID == discardedID {
+                library.activeID = library.palettes.first(where: { !$0.palette.selectedColors.isEmpty })?.id
+                    ?? library.palettes.first?.id ?? InkPaletteLibrary.initial.activeID
+            }
+            currentID = addID
+            browsing = true
+        }
     }
 
     private var canConfirm: Bool {
