@@ -110,10 +110,12 @@ struct ContentView: View {
                     .zIndex(2)
                 }
 
-                if let savedNoticeID, showsGallery {
+                if let savedNoticeID, !showsGallery {
                     Text(L10n.text("Artwork saved to gallery"))
                         .font(.headline)
                         .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.5)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 9)
                         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
@@ -335,6 +337,10 @@ struct ContentView: View {
         }) {
             WatchAppSettingsView(controller: controller, onOpenDrawings: {
                 showsAppSettings = false
+                savedNoticeID = nil
+                galleryArtworkFilename = nil
+                galleryInitialBitmap = nil
+                galleryLaunchID = UUID()
                 showsGallery = true
             }, onStartTutorial: {
                 startsTutorialAfterDismiss = true
@@ -343,19 +349,15 @@ struct ContentView: View {
             .task { await resetMorphBehindPresentation() }
         }
         .task(id: session.savedDrawing?.id) {
-            guard let drawing = session.savedDrawing else { return }
-            let bitmap = await GalleryImageCache.shared.load(GalleryImageRequest(
-                url: drawing.url, shortSidePixels: nil, displayScale: displayScale))
-            guard !Task.isCancelled, session.savedDrawing?.id == drawing.id else { return }
+            guard session.savedDrawing != nil else { return }
             var transaction = Transaction(animation: nil)
             transaction.disablesAnimations = true
             withTransaction(transaction) {
                 showsMorphToolbar = false
                 showsContentActions = false
-                galleryArtworkFilename = drawing.url.lastPathComponent
-                galleryInitialBitmap = bitmap
+                galleryArtworkFilename = nil
+                galleryInitialBitmap = nil
                 galleryLaunchID = UUID()
-                showsGallery = true
                 session.savedDrawing = nil
             }
             withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.8)) {
