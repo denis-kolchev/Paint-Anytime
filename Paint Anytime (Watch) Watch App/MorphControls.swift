@@ -135,6 +135,7 @@ struct GalleryMorphActions: View {
                     galleryActionIcon("pencil", itemWidth: nil)
                 }
                 .accessibilityLabel(L10n.text("Edit drawing"))
+                .disabled(!drawing.isEditable)
                 Spacer(minLength: 0)
 
                 Button {

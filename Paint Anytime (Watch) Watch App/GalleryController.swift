@@ -8,6 +8,7 @@ final class GalleryController: ObservableObject {
 
     func reload(in folder: URL? = nil) {
         do {
+            if folder == nil { try CanvasExportStore.prepareTutorialPreviews() }
             drawings = try CanvasExportStore.all(in: folder)
             if folder == nil { try? CanvasExportStore.refreshWidgets() }
             errorMessage = nil
@@ -37,6 +38,7 @@ final class GalleryController: ObservableObject {
     }
 
     func loadDocument(for drawing: CanvasExport) -> CanvasDocument? {
+        guard drawing.isEditable else { return nil }
         do { return try CanvasExportStore.loadDocument(for: drawing) }
         catch {
             errorMessage = L10n.text("This drawing was saved without stroke data and cannot be restored for editing.")

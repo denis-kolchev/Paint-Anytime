@@ -28,28 +28,28 @@
   <tr>
     <td align="center">
       <img
-        src="https://github.com/denis-kolchev/Paint-Anytime/blob/main/images/app%20previews/release%201.0/incoming-7F7B719D-E511-4B7B-95E0-23666C91AE0F.PNG?raw=true"
+        src="images/app%20previews/release%201.1/incoming-1AEBBC6E-A272-4BA0-B910-78FCBD1E6DAD.PNG"
         width="180"
         alt="Paint Anytime screenshot 1"
       >
     </td>
     <td align="center">
       <img
-        src="https://github.com/denis-kolchev/Paint-Anytime/blob/main/images/app%20previews/release%201.0/incoming-F1A50180-A7B1-4820-B40F-1DF043406D16.PNG?raw=true"
+        src="images/app%20previews/release%201.1/incoming-3130074F-56B5-43F4-B57A-162A5D5F04E0.PNG"
         width="180"
         alt="Paint Anytime screenshot 2"
       >
     </td>
     <td align="center">
       <img
-        src="https://github.com/denis-kolchev/Paint-Anytime/blob/main/images/app%20previews/release%201.0/incoming-E29FF2EF-6C44-45CF-AB06-3BDD8D0C92C4.PNG?raw=true"
+        src="images/app%20previews/release%201.1/incoming-4E3E4793-5295-448D-84D5-496EA4E122A2.PNG"
         width="180"
         alt="Paint Anytime screenshot 3"
       >
     </td>
     <td align="center">
       <img
-        src="https://github.com/denis-kolchev/Paint-Anytime/blob/main/images/app%20previews/release%201.0/incoming-BBA58A1F-EEBA-4819-BE4A-009C6A1472A1.PNG?raw=true"
+        src="images/app%20previews/release%201.1/incoming-6FBC533E-7009-475F-8647-BEFFEFAD1808.PNG"
         width="180"
         alt="Paint Anytime screenshot 4"
       >
@@ -59,28 +59,28 @@
   <tr>
     <td align="center">
       <img
-        src="https://github.com/denis-kolchev/Paint-Anytime/blob/main/images/app%20previews/release%201.0/incoming-36D76474-D3BA-49F0-A2A4-A0A93C0558F2.PNG?raw=true"
+        src="images/app%20previews/release%201.1/incoming-8C254FDB-0C45-47C7-A118-73F23427EA86.PNG"
         width="180"
         alt="Paint Anytime screenshot 5"
       >
     </td>
     <td align="center">
       <img
-        src="https://github.com/denis-kolchev/Paint-Anytime/blob/main/images/app%20previews/release%201.0/incoming-3076C3F4-61B7-4788-BDD8-2914F3D8640A.PNG?raw=true"
+        src="images/app%20previews/release%201.1/incoming-DA93715A-7D78-4C52-95BF-D886B5D34BC2.PNG"
         width="180"
         alt="Paint Anytime screenshot 6"
       >
     </td>
     <td align="center">
       <img
-        src="https://github.com/denis-kolchev/Paint-Anytime/blob/main/images/app%20previews/release%201.0/incoming-185C263D-45DF-4083-A93E-5BB0CED69B8F.PNG?raw=true"
+        src="images/app%20previews/release%201.1/incoming-EC535183-5B10-4C78-885D-DC738FBEEA96.PNG"
         width="180"
         alt="Paint Anytime screenshot 7"
       >
     </td>
     <td align="center">
       <img
-        src="https://github.com/denis-kolchev/Paint-Anytime/blob/main/images/app%20previews/release%201.0/incoming-D327A1E5-91DC-4D89-80A2-A2DD989374AF.PNG?raw=true"
+        src="images/app%20previews/release%201.1/incoming-EE80BF22-304A-4C77-A428-2D7BC9E92237.PNG"
         width="180"
         alt="Paint Anytime screenshot 8"
       >

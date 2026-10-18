@@ -1,6 +1,37 @@
 import Foundation
 
 enum CanvasExportStore {
+    // Temporary gallery dressing. Turn off to remove only these imported previews.
+    private static let includesTutorialPreviews = true
+    static let tutorialPreviewPrefix = "TutorialPreview_"
+
+    static func prepareTutorialPreviews() throws {
+        let folder = try directory()
+        let marker = folder.appendingPathComponent(".tutorial-previews-v1")
+        if !includesTutorialPreviews {
+            for file in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+                where file.lastPathComponent.hasPrefix(tutorialPreviewPrefix) && file.pathExtension.lowercased() == "png" {
+                try FileManager.default.removeItem(at: file)
+            }
+            if FileManager.default.fileExists(atPath: marker.path) {
+                try FileManager.default.removeItem(at: marker)
+            }
+            return
+        }
+        guard !FileManager.default.fileExists(atPath: marker.path),
+              let source = Bundle.main.url(forResource: "Preset Photos", withExtension: nil) else { return }
+        let pictures = try FileManager.default.contentsOfDirectory(at: source, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension.lowercased() == "png" }
+        guard !pictures.isEmpty else { return }
+        for picture in pictures {
+            let destination = folder.appendingPathComponent(tutorialPreviewPrefix + picture.lastPathComponent)
+            if !FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.copyItem(at: picture, to: destination)
+            }
+        }
+        try Data().write(to: marker, options: .atomic)
+    }
+
     static func directory() throws -> URL {
         let folder = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
                                                  appropriateFor: nil, create: true)
