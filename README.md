@@ -73,7 +73,7 @@
     </td>
     <td align="center">
       <img
-        src="images/app%20previews/release%201.1/incoming-EC535183-5B10-4C78-885D-DC738FBEEA96.PNG"
+        src="images/app%20previews/release%201.1/incoming-4D2D5F4B-0080-4027-90C2-0D0496BF7369.PNG"
         width="180"
         alt="Paint Anytime screenshot 7"
       >
