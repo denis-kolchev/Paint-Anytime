@@ -560,30 +560,25 @@ struct CanvasMorphPanels: View {
     private func lassoMorph(diameter: CGFloat, panelWidth: CGFloat) -> some View {
         CanvasMorphContent(isExpanded: showsSelectionActions) {
             HStack(spacing: 0) {
-                Spacer(minLength: 0)
-                morphButton("Move to layer above", height: diameter, intrinsicWidth: true) {
+                morphButton("Move to layer above", height: diameter) {
                     onMoveSelectionLayer(1)
                 } label: { Image(systemName: "square.3.layers.3d.top.filled") }
                 .disabled(!lasso.canMoveLayer(1, controller: controller))
                 .opacity(lasso.canMoveLayer(1, controller: controller) ? 1 : 0.35)
-                Spacer(minLength: 0)
 
-                morphButton("Move to layer below", height: diameter, intrinsicWidth: true) {
+                morphButton("Move to layer below", height: diameter) {
                     onMoveSelectionLayer(-1)
                 } label: { Image(systemName: "square.3.layers.3d.bottom.filled") }
                 .disabled(!lasso.canMoveLayer(-1, controller: controller))
                 .opacity(lasso.canMoveLayer(-1, controller: controller) ? 1 : 0.35)
-                Spacer(minLength: 0)
-                morphButton("Duplicate", height: diameter, intrinsicWidth: true) { lasso.duplicate(controller) } label: {
+                morphButton("Duplicate", height: diameter) { lasso.duplicate(controller) } label: {
                     Image(systemName: "plus.square.on.square")
                 }
                 .disabled(lasso.bounds == nil)
-                Spacer(minLength: 0)
-                morphButton("Delete", height: diameter, intrinsicWidth: true) { lasso.delete(controller) } label: {
+                morphButton("Delete", height: diameter) { lasso.delete(controller) } label: {
                     Image(systemName: "trash").foregroundStyle(.red)
                 }
                 .disabled(lasso.bounds == nil)
-                Spacer(minLength: 0)
             }
         } collapsed: {
             HStack(spacing: 0) {
