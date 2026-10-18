@@ -19,6 +19,7 @@ struct SavedDrawingsView: View {
     @State private var pendingDeletion: CanvasExport?
     @State private var confirmedDeletion: CanvasExport?
     @State private var showsFullscreen = false
+    @State private var isCleanViewing = false
     @State private var morphState = GalleryMorphState()
     @State private var pageVisibility: [URL: Double] = [:]
     @State private var galleryScrollTarget: URL?
@@ -142,6 +143,10 @@ struct SavedDrawingsView: View {
                                             crownFocused = false
                                             pendingDeletion = selectedDrawing
                                         })
+                        .opacity(isCleanViewing ? 0 : 1)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
+                        .allowsHitTesting(!isCleanViewing)
+                        .accessibilityHidden(isCleanViewing)
                 }
             }
             .coordinateSpace(name: "drawingGallery")
@@ -163,10 +168,15 @@ struct SavedDrawingsView: View {
             }
         }
         .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
+        // watchOS keeps its clock visible with persistentSystemOverlays(.hidden).
+        // Its SDK exposes status-bar visibility through this underscored modifier.
+        ._statusBarHidden(isCleanViewing)
         .toolbar {
             if showsFullscreen && !isTransitioning && !tutorial.isActive {
                 ToolbarItemGroup(placement: .bottomBar) {
                     GalleryMorphToolbarButton(state: morphState)
+                        .disabled(isCleanViewing)
+                        .accessibilityHidden(isCleanViewing)
                     Spacer(minLength: 0)
                 }
             }
@@ -177,7 +187,7 @@ struct SavedDrawingsView: View {
                             .opacity(0)
                             .tutorialHint(tutorial, steps: [.returnToCanvas])
                     }
-                    .disabled(isTransitioning)
+                    .disabled(isTransitioning || isCleanViewing)
                     .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
                     .overlay {
                         Image(systemName: "chevron.left")
@@ -189,6 +199,10 @@ struct SavedDrawingsView: View {
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
+                    .opacity(isCleanViewing ? 0 : 1)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
+                    .allowsHitTesting(!isCleanViewing)
+                    .accessibilityHidden(isCleanViewing)
                     .accessibilityLabel(L10n.text("Back"))
                     .onGeometryChange(for: CGRect.self) { geometry in
                         geometry.frame(in: .global)
@@ -341,6 +355,7 @@ struct SavedDrawingsView: View {
 
     private func setZoom(_ level: Int) {
         guard !isTransitioning else { return }
+        isCleanViewing = false
         if showsFullscreen && level < 2 {
             transitionBitmap = nil
             transitionRequest = .closing
@@ -411,6 +426,7 @@ struct SavedDrawingsView: View {
     }
 
     private func returnToGrid() {
+        isCleanViewing = false
         showsFullscreen = false
         selectedDrawing = nil
         transitionBitmap = nil
@@ -456,6 +472,13 @@ struct SavedDrawingsView: View {
                                       loadsOriginal: abs(index - selectedIndex) <= 1 && !isTransitioning,
                                       fallback: transitionBitmap?.url == drawing.url ? transitionBitmap : nil,
                                       respectsSafeArea: tutorial.isActive)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard showsFullscreen, zoomLevel == 2, !isTransitioning,
+                              !tutorial.isActive else { return }
+                        morphState.isExpanded = false
+                        isCleanViewing.toggle()
+                    }
                     .onGeometryChange(for: Double.self) { page in
                         let distance = abs(page.frame(in: .global).minX - canvasOriginX)
                         return max(0, 1 - Double(distance / max(size.width, 1)))
