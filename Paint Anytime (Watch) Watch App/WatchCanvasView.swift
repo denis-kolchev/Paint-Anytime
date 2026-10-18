@@ -264,7 +264,7 @@ struct WatchCanvasView: View {
                 tutorial.changedZoom()
                 if zoom == 1 && !wasSnapped { WKInterfaceDevice.current().play(.click) }
             }
-        ), from: 0.25, through: 4, by: 0.05, sensitivity: .low,
+        ), from: 0.25, through: 8, by: 0.05, sensitivity: .low,
            isContinuous: false, isHapticFeedbackEnabled: false,
            onChange: { [step = tutorial.step] event in
                 tutorial.usedCrown(in: step, velocity: event.velocity)
