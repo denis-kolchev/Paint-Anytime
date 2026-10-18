@@ -221,10 +221,14 @@ struct WatchCanvasView: View {
                             return
                         }
                         guard controller.activeStroke != nil else { return }
+                        let recognizedKind = controller.recognizedShapeKind
                         let previousCount = controller.document.strokes.count
                         controller.endStroke(at: sample(
                             at: canvasPoint(value.location, size: geometry.size), time: value.time))
-                        if controller.document.strokes.count > previousCount { tutorial.record(.stroke) }
+                        if controller.document.strokes.count > previousCount {
+                            tutorial.finishedCircleAttempt(kind: recognizedKind)
+                            tutorial.record(.stroke)
+                        }
                     },
                 including: acceptsInput && tutorial.acceptsActions ? .all : .none
             )
@@ -381,6 +385,7 @@ struct WatchCanvasView: View {
                       tutorial.acceptsActions, tutorial.allowsDrawing else { return }
                 if controller.recognizeActiveShape(adjustmentTolerance: tolerance) {
                     WKInterfaceDevice.current().play(.click)
+                    tutorial.finishedCircleAttempt(kind: controller.recognizedShapeKind)
                 }
             } catch { }
         }

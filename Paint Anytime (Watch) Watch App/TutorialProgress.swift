@@ -2,7 +2,7 @@ import Foundation
 
 enum TutorialStep: Int, CaseIterable {
     case inactive = 0
-    case firstStrokes, zoomCanvas, panCanvas, finishCamera, openTools
+    case firstStrokes, holdCircle, zoomCanvas, panCanvas, finishCamera, openTools
     case selectColor, openWidth, setWidth, openOpacity, setOpacity, openTool
     case selectReed, openAngle, setAngle, closeTools, reedStrokes
     case history, saveDrawing, shareDrawing, openMenu, openGallery
@@ -20,7 +20,7 @@ struct TutorialProgress {
     private var unlockedToolPages: Set<Int> = [1]
 
     enum Event {
-        case stroke, openedTools, closedTools, openedInfo, closedInfo
+        case heldCircle, stroke, openedTools, closedTools, openedInfo, closedInfo
         case panned, finishedCamera, history, saved, closedSave, openedMenu, openedGallery
         case galleryFullscreen, deleted, returnedToCanvas, cleared
     }
@@ -55,6 +55,7 @@ struct TutorialProgress {
         // Information remains optional and never completes a lesson.
         case (_, .openedInfo): return .pauseReminders
         case (_, .closedInfo): return .resumeReminders(advance: false)
+        case (.holdCircle, .heldCircle): return .advance
         case (.clearCanvas, .cleared): return .showResult
         case (.openTools, .openedTools), (.closeTools, .closedTools), (.reedStrokes, .stroke),
              (.saveDrawing, .saved), (.shareDrawing, .closedSave), (.openMenu, .openedMenu),

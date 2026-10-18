@@ -15,6 +15,7 @@ final class PencilTool {
     enum ShapeState: Equatable { case drawing, snapped, adjusting }
     private(set) var shapeState: ShapeState = .drawing
     private var recognizedShape: ShapeRecognizer.Result?
+    var recognizedShapeKind: ShapeRecognizer.Kind? { recognizedShape?.kind }
     private var shapeSamples: [PointerSample] = []
     private var holdPosition = SIMD2<Float>.zero
     private var adjustmentTolerance: Float = 2

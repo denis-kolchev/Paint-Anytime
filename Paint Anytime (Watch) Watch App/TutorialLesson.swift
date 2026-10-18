@@ -5,6 +5,7 @@ enum TutorialLesson {
         switch step {
         case .inactive: return ""
         case .firstStrokes: return L10n.text("Touch to draw.")
+        case .holdCircle: return L10n.text("Draw a circle and hold at the end.")
         case .zoomCanvas: return L10n.text("Turn the Digital Crown to zoom.")
         case .panCanvas: return L10n.text("Drag your finger to move around.")
         case .finishCamera: return L10n.text("Tap ✓ when ready.")

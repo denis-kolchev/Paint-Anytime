@@ -189,6 +189,7 @@ final class CanvasController: ObservableObject {
     }
 
     var isShapeSnapped: Bool { pencil.shapeState != .drawing }
+    var recognizedShapeKind: ShapeRecognizer.Kind? { pencil.recognizedShapeKind }
 
     @discardableResult
     func recognizeActiveShape(adjustmentTolerance: Float = 2) -> Bool {

@@ -46,6 +46,17 @@ struct TutorialPlayerView: View {
                                 .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
                                 .accessibilityHidden(page != .canvas && page != .saved)
 
+                            if page == .canvas && tutorial.step == .holdCircle
+                                && !tutorial.showsResult && !tutorial.remindersPaused
+                                && controller.activeStroke == nil && scenePhase == .active {
+                                TutorialCircleGuide()
+                                    .frame(width: geometry.size.width,
+                                           height: max(0, geometry.size.height - hintReservedHeight))
+                                    .frame(maxHeight: .infinity, alignment: .top)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
+
                             if page == .canvas && tutorial.showsPanGuide {
                                 Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
                                     .font(.title2.bold())
@@ -250,6 +261,14 @@ struct TutorialPlayerView: View {
         .onAppear {
             player.startOrResume()
         }
+        .onChange(of: tutorial.step) { _, step in
+            guard step == .holdCircle,
+                  let red = InkPreset.all.first(where: { $0.nameKey == "Red" }) else { return }
+            var style = controller.pencilStyle
+            style.color = red.rgba
+            style.opacity = 1
+            controller.pencilStyle = style
+        }
         .task(id: tutorial.step) {
             guard tutorial.step == .history else { return }
             historyEmphasizesRedo = false
@@ -394,5 +413,65 @@ private struct TutorialHintHeightKey: PreferenceKey {
 
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
+    }
+}
+
+/// A display-only demonstration; never adds strokes to the practice drawing.
+private struct TutorialCircleGuide: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var startedAt = Date()
+
+    // Use the same red swatch as the tutorial's color picker.
+    private var ink: Color {
+        (InkPreset.all.first { $0.nameKey == "Red" }?.color ?? .red).opacity(0.5)
+    }
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
+            let elapsed = max(0, timeline.date.timeIntervalSince(startedAt))
+            let phase = elapsed.truncatingRemainder(dividingBy: 4.4)
+            let drawn = reduceMotion ? 1 : min(1, max(0, (phase - 0.4) / 1.8))
+            // Match the real recognizer's half-second hold before straightening.
+            let straightened = reduceMotion ? 1 : min(1, max(0, (phase - 2.7) / 0.25))
+            let visibility = reduceMotion ? 1 : min(1, max(0, (4.4 - phase) / 0.4))
+            Canvas { context, size in
+                let radius = min(size.width * 0.27, size.height * 0.29)
+                let center = CGPoint(x: size.width / 2, y: size.height * 0.55)
+                var path = Path()
+                let count = max(1, Int(drawn * 160))
+                for index in 0...count {
+                    let fraction = min(drawn, Double(index) / 160)
+                    let point = point(at: fraction, radius: radius, center: center,
+                                      straightened: straightened)
+                    if index == 0 { path.move(to: point) }
+                    else { path.addLine(to: point) }
+                }
+                context.opacity = visibility
+                context.stroke(path, with: .color(ink),
+                               style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+                let finger = point(at: drawn, radius: radius, center: center,
+                                   straightened: straightened)
+                // A stationary contact marker makes the hold visible after the loop closes.
+                if reduceMotion || (phase >= 0.4 && phase < 3.15) {
+                    let holding = drawn == 1 && straightened == 0
+                    let pulse = holding && !reduceMotion ? 1 + 0.15 * sin((phase - 2.2) * .pi * 4) : 1
+                    let marker = CGRect(x: finger.x - 8 * pulse, y: finger.y - 8 * pulse,
+                                        width: 16 * pulse, height: 16 * pulse)
+                    context.fill(Path(ellipseIn: marker), with: .color(.white.opacity(0.35)))
+                    context.stroke(Path(ellipseIn: marker), with: .color(.white.opacity(0.85)), lineWidth: 1.5)
+                }
+            }
+        }
+        .onAppear { startedAt = Date() }
+    }
+
+    private func point(at fraction: Double, radius: CGFloat, center: CGPoint,
+                       straightened: Double) -> CGPoint {
+        let angle = fraction * .pi * 2 - .pi / 2
+        // Periodic deviations close naturally, like a slightly uneven hand-drawn loop.
+        let wobble = 1 + (1 - straightened)
+            * (0.065 * sin(angle * 3 + 0.7) + 0.035 * sin(angle * 7 - 0.4))
+        return CGPoint(x: center.x + radius * wobble * cos(angle),
+                       y: center.y + radius * wobble * sin(angle))
     }
 }

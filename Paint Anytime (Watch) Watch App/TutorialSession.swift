@@ -9,10 +9,12 @@ final class TutorialSession: ObservableObject {
     var step: TutorialStep { progress.step }
     @Published private(set) var toolPage = 1
     @Published private var toolIsEraser = false
+    @Published private var releasedCircleEarly = false
     @Published var galleryIsOpen = false
     @Published var galleryIsFullscreen = false
     var instruction: String {
         switch step {
+        case .holdCircle where releasedCircleEarly: return L10n.text("Hold your finger at the end.")
         case .selectColor where toolPage != 1: return L10n.text("Open Color, then turn the Crown.")
         case .openWidth where toolPage != 1: return L10n.text("Open Width.")
         case .setWidth where toolPage != 0: return L10n.text("Open Width, then turn the Crown.")
@@ -38,7 +40,7 @@ final class TutorialSession: ObservableObject {
     @Published private(set) var showsResult = false
     var isActive: Bool { step != .inactive }
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
-    var allowsDrawing: Bool { permits([.firstStrokes, .zoomCanvas, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
     var allowsGalleryZoom: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
@@ -94,6 +96,7 @@ final class TutorialSession: ObservableObject {
     func start() {
         cancelPendingAdvance()
         progress.start()
+        releasedCircleEarly = false
         crownPracticedSteps = []
         toolPage = 1
         toolIsEraser = false
@@ -111,6 +114,17 @@ final class TutorialSession: ObservableObject {
         TutorialDebug.trace("beginExercise.afterHide", debugState)
         activity()
         TutorialDebug.trace("beginExercise.exit", debugState)
+    }
+
+    func finishedCircleAttempt(kind: ShapeRecognizer.Kind?) {
+        guard step == .holdCircle, acceptsActions else { return }
+        // A finger-drawn circle can snap as an ellipse; both demonstrate the hold gesture.
+        if kind == .circle || kind == .ellipse {
+            record(.heldCircle)
+        } else {
+            releasedCircleEarly = kind == nil
+            activity()
+        }
     }
 
     func activity() { if isActive { lastActivity = Date() } }
