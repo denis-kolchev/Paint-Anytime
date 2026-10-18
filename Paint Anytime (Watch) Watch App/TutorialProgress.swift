@@ -38,7 +38,7 @@ struct TutorialProgress {
         switch next {
         case .openWidth: unlockedToolPages.insert(0)
         case .openOpacity: unlockedToolPages.insert(5)
-        case .openTool: unlockedToolPages.formUnion([2, 3])
+        case .openTool: unlockedToolPages.formUnion([2, 3, 6])
         case .openAngle: unlockedToolPages.insert(4)
         default: break
         }
@@ -64,7 +64,7 @@ struct TutorialProgress {
         }
         return .none
     }
-    var visibleToolPages: Set<Int> { [0, 1, 2, 3, 4, 5] }
+    var visibleToolPages: Set<Int> { [0, 1, 2, 3, 4, 5, 6] }
     func allowsToolAdjustment(page: Int) -> Bool { visibleToolPages.contains(page) }
     func allowsToolPage(_ page: Int) -> Bool {
         step == .inactive ? visibleToolPages.contains(page) : unlockedToolPages.contains(page)

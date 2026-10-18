@@ -64,7 +64,8 @@ struct WatchToolSettingsView: View {
     private var availableSettings: [ToolSetting] {
         let pages: [ToolSetting]
         if isEraser { pages = controller.pencilStyle.eraserMode == .pixels
-            ? [.width, .opacity, .instrument, .mode] : [.width, .instrument, .mode] }
+            ? (tutorial.isActive ? [.color, .width, .opacity, .instrument, .mode] : [.width, .opacity, .instrument, .mode])
+            : (tutorial.isActive ? [.color, .width, .instrument, .mode] : [.width, .instrument, .mode]) }
         else if controller.pencilStyle.instrument == .fill { pages = [.color, .sensitivity, .opacity, .instrument] }
         else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .opacity, .instrument, .direction] }
         else { pages = [.color, .width, .opacity, .instrument] }
@@ -285,20 +286,46 @@ struct WatchToolSettingsView: View {
 
 
                             if selection == .sensitivity {
-                                Button {
-                                    tutorial.activity()
-                                    fillFocusRequest += 1
-                                    crownFocused = true
-                                } label: {
-                                    Image(systemName: "scope")
-                                        .font(.title3)
-                                        .frame(width: 40, height: 40)
-                                        .contentShape(Rectangle())
+                                VStack(spacing: 0) {
+                                    Spacer(minLength: 0)
+                                    Button {
+                                        tutorial.activity()
+                                        fillFocusRequest += 1
+                                        crownFocused = true
+                                    } label: {
+                                        Image(systemName: "scope")
+                                            .font(.title3)
+                                            .frame(width: 40, height: 40)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .accessibilityLabel(L10n.text("Find safe sensitivity"))
+                                    Spacer(minLength: 0)
+                                    Button {
+                                        tutorial.activity()
+                                        controller.pencilStyle.smoothFill.toggle()
+                                        crownFocused = true
+                                    } label: {
+                                        FillEdgeIcon(isSmooth: controller.pencilStyle.smoothFill)
+                                            .fill(.white)
+                                            .frame(width: 23, height: 23)
+                                            .frame(width: 40, height: 40)
+                                            .contentShape(Rectangle())
+                                    }
+                                    .accessibilityLabel(L10n.text("Smooth fill"))
+                                    .accessibilityValue(L10n.text(controller.pencilStyle.smoothFill ? "On" : "Off"))
+                                    .accessibilityAddTraits(controller.pencilStyle.smoothFill ? [.isSelected] : [])
+                                    Spacer(minLength: 0)
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel(L10n.text("Find safe sensitivity"))
-                                .offset(y: strokePreviewHeight > 0
-                                    ? (strokePreviewHeight - pickerGeometry.size.height) / 2 : 0)
+                                // In the tutorial, span from the clock area's bottom
+                                // (8 pt above the preview) to the carousel's top.
+                                // The three spacers divide the free height equally.
+                                .frame(height: tutorial.isActive
+                                    ? pickerGeometry.size.height + 8
+                                    : (strokePreviewHeight > 0
+                                        ? strokePreviewHeight : pickerGeometry.size.height))
+                                .frame(maxHeight: .infinity, alignment: .top)
+                                .offset(y: tutorial.isActive ? -8 : 0)
                             }
 
                             if !tutorial.isActive {
@@ -644,5 +671,46 @@ private struct ScaledPromptLayout: Layout {
             anchor: .center,
             proposal: ProposedViewSize(width: bounds.width / scale, height: nil)
         )
+    }
+}
+
+/// Two monochrome silhouettes communicate edge treatment without a color cue.
+private struct FillEdgeIcon: Shape {
+    let isSmooth: Bool
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        if isSmooth {
+            // A gently uneven, closed ink blot with continuous rounded lobes.
+            let count = 48
+            let points = (0..<count).map { index -> CGPoint in
+                let angle = Double(index) * 2 * Double.pi / Double(count)
+                let radius = 0.42 + 0.035 * sin(angle * 5) + 0.02 * cos(angle * 3)
+                return CGPoint(x: rect.midX + rect.width * radius * cos(angle),
+                               y: rect.midY + rect.height * radius * sin(angle))
+            }
+            func middle(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
+                CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+            }
+            path.move(to: middle(points[count - 1], points[0]))
+            for index in points.indices {
+                path.addQuadCurve(to: middle(points[index], points[(index + 1) % count]),
+                                  control: points[index])
+            }
+            path.closeSubpath()
+        } else {
+            let grid = 11
+            for y in 0..<grid {
+                for x in 0..<grid {
+                    let dx = Double(x) - 5, dy = Double(y) - 5
+                    if dx * dx + dy * dy <= 25 {
+                        path.addRect(CGRect(x: rect.minX + CGFloat(x) * rect.width / CGFloat(grid),
+                                            y: rect.minY + CGFloat(y) * rect.height / CGFloat(grid),
+                                            width: rect.width / CGFloat(grid), height: rect.height / CGFloat(grid)))
+                    }
+                }
+            }
+        }
+        return path
     }
 }

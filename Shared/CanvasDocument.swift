@@ -184,6 +184,7 @@ nonisolated struct PencilStyle: Codable, Equatable {
     var color = SIMD4<Float>(0, 0, 0, 1)
     var width: Float = 4
     var opacity: Float = 1
+    var smoothFill = false
     var fillSensitivity: Float = 16.0 / 255.0
 
     var effectiveFillSensitivity: Float {
@@ -201,7 +202,7 @@ nonisolated struct PencilStyle: Codable, Equatable {
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case instrument, color, width, opacity, eraserMode, reedAngle, blendingMode, fillSensitivity
+        case instrument, color, width, opacity, eraserMode, reedAngle, blendingMode, fillSensitivity, smoothFill
     }
 
     init(from decoder: Decoder) throws {
@@ -211,6 +212,7 @@ nonisolated struct PencilStyle: Codable, Equatable {
         width = try values.decodeIfPresent(Float.self, forKey: .width) ?? instrument.defaultWidth
         let decodedOpacity = try values.decodeIfPresent(Float.self, forKey: .opacity) ?? 1
         opacity = decodedOpacity.isFinite ? min(1, max(0, decodedOpacity)) : 1
+        smoothFill = try values.decodeIfPresent(Bool.self, forKey: .smoothFill) ?? false
         fillSensitivity = try values.decodeIfPresent(Float.self, forKey: .fillSensitivity) ?? 16.0 / 255.0
         fillSensitivity = effectiveFillSensitivity
         eraserMode = try values.decodeIfPresent(EraserMode.self, forKey: .eraserMode) ?? .pixels

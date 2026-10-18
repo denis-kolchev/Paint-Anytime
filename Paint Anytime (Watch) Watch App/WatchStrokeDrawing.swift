@@ -39,6 +39,74 @@ nonisolated enum WatchStrokeDrawing {
         }
     }
 
+    // Cancel shared pixel edges, then round each closed contour. A single path
+    // preserves holes and avoids seams between the saved horizontal spans.
+    private static func smoothFillPath(_ rects: [SIMD4<Float>]) -> Path {
+        guard let step = rects.first?.w, step > 0 else { return Path() }
+        struct Vertex: Hashable { let x: Int; let y: Int }
+        struct Edge: Hashable { let start: Vertex; let end: Vertex }
+        var edges = Set<Edge>()
+        func edge(_ a: Vertex, _ b: Vertex) {
+            if edges.remove(Edge(start: b, end: a)) == nil {
+                edges.insert(Edge(start: a, end: b))
+            }
+        }
+        for rect in rects {
+            let left = Int((rect.x / step).rounded())
+            let right = Int(((rect.x + rect.z) / step).rounded())
+            let y = Int((rect.y / step).rounded())
+            guard right > left else { continue }
+            for x in left..<right {
+                edge(Vertex(x: x, y: y), Vertex(x: x + 1, y: y))
+                edge(Vertex(x: x + 1, y: y + 1), Vertex(x: x, y: y + 1))
+            }
+            edge(Vertex(x: right, y: y), Vertex(x: right, y: y + 1))
+            edge(Vertex(x: left, y: y + 1), Vertex(x: left, y: y))
+        }
+        var outgoing: [Vertex: Set<Vertex>] = [:]
+        for edge in edges { outgoing[edge.start, default: []].insert(edge.end) }
+        func point(_ v: Vertex) -> CGPoint {
+            CGPoint(x: CGFloat(v.x) * CGFloat(step), y: CGFloat(v.y) * CGFloat(step))
+        }
+        func midpoint(_ a: CGPoint, _ b: CGPoint) -> CGPoint {
+            CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+        }
+        var path = Path()
+        while let start = outgoing.keys.first {
+            var vertices = [start]
+            var current = start
+            while let next = outgoing[current]?.first {
+                outgoing[current]?.remove(next)
+                if outgoing[current]?.isEmpty == true { outgoing[current] = nil }
+                current = next
+                if current == start { break }
+                vertices.append(current)
+            }
+            guard current == start, vertices.count >= 3 else { continue }
+            let rawPoints = vertices.map(point)
+            // Filter only within one source pixel, keeping the contour close to
+            // the detected boundary while removing the staircase's sharp turns.
+            let points = rawPoints.indices.map { index in
+                var x: CGFloat = 0
+                var y: CGFloat = 0
+                for offset in -2...2 {
+                    let sample = rawPoints[(index + offset + rawPoints.count) % rawPoints.count]
+                    let weight: CGFloat = offset == 0 ? 3 : (abs(offset) == 1 ? 2 : 1)
+                    x += sample.x * weight
+                    y += sample.y * weight
+                }
+                return CGPoint(x: x / 9, y: y / 9)
+            }
+            path.move(to: midpoint(points.last!, points[0]))
+            for index in points.indices {
+                path.addQuadCurve(to: midpoint(points[index], points[(index + 1) % points.count]),
+                                  control: points[index])
+            }
+            path.closeSubpath()
+        }
+        return path
+    }
+
     private static func draw(_ stroke: Stroke, region: CGRect?, dryGeometry: DryGeometry?, in context: inout WatchDrawingContext) {
         guard !stroke.points.isEmpty else { return }
         let ink = stroke.style.color
@@ -46,9 +114,13 @@ nonisolated enum WatchStrokeDrawing {
         switch stroke.style.instrument {
         case .fill:
             var path = Path()
-            for rect in stroke.fillRects ?? [] {
-                path.addRect(CGRect(x: CGFloat(rect.x), y: CGFloat(rect.y),
-                                    width: CGFloat(rect.z), height: CGFloat(rect.w)))
+            if stroke.style.smoothFill {
+                path = smoothFillPath(stroke.fillRects ?? [])
+            } else {
+                for rect in stroke.fillRects ?? [] {
+                    path.addRect(CGRect(x: CGFloat(rect.x), y: CGFloat(rect.y),
+                                        width: CGFloat(rect.z), height: CGFloat(rect.w)))
+                }
             }
             paint.fill(path, with: .color(ink))
         case .monoline:

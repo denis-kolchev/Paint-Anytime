@@ -1,6 +1,698 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+  "The button below the crosshair toggles smooth edges for new fills.": {
+    "extractionState": "manual",
+    "localizations": {
+      "ar": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "الزر أسفل علامة التصويب يفعّل أو يعطّل تنعيم حواف التعبئات الجديدة."
+        }
+      },
+      "cs": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Tlačítko pod zaměřovačem zapíná a vypíná vyhlazení okrajů nových výplní."
+        }
+      },
+      "da": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Knappen under sigtet slår glatte kanter til eller fra for nye udfyldninger."
+        }
+      },
+      "de": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Die Taste unter dem Fadenkreuz schaltet die Kantenglättung für neue Füllungen ein oder aus."
+        }
+      },
+      "el": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Το κουμπί κάτω από το στόχαστρο ενεργοποιεί ή απενεργοποιεί την εξομάλυνση των άκρων για νέα γεμίσματα."
+        }
+      },
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "The button below the crosshair toggles smooth edges for new fills."
+        }
+      },
+      "es": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "El botón bajo la mirilla activa o desactiva el suavizado de bordes para los nuevos rellenos."
+        }
+      },
+      "fi": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Tähtäimen alla oleva painike ottaa uusien täyttöjen reunojen pehmennyksen käyttöön tai poistaa sen käytöstä."
+        }
+      },
+      "fr": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Le bouton sous le viseur active ou désactive le lissage des bords des nouveaux remplissages."
+        }
+      },
+      "he": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "הכפתור מתחת לכוונת מפעיל או מכבה החלקת קצוות למילויים חדשים."
+        }
+      },
+      "hu": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "A célkereszt alatti gomb be- és kikapcsolja az új kitöltések élsimítását."
+        }
+      },
+      "id": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Tombol di bawah bidikan mengaktifkan atau menonaktifkan penghalusan tepi untuk isian baru."
+        }
+      },
+      "it": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Il pulsante sotto il mirino attiva o disattiva la levigatura dei bordi per i nuovi riempimenti."
+        }
+      },
+      "ja": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "照準の下のボタンで、新しい塗りつぶしの輪郭を滑らかにする機能を切り替えます。"
+        }
+      },
+      "ko": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "조준 버튼 아래의 버튼으로 새 채우기의 가장자리 부드럽게 처리를 켜거나 끕니다."
+        }
+      },
+      "nb": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Knappen under siktet slår utjevning av kantene på eller av for nye fyllinger."
+        }
+      },
+      "nl": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "De knop onder het vizier schakelt gladde randen voor nieuwe vullingen in of uit."
+        }
+      },
+      "pl": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Przycisk pod celownikiem włącza i wyłącza wygładzanie krawędzi nowych wypełnień."
+        }
+      },
+      "pt-BR": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "O botão abaixo da mira ativa ou desativa a suavização das bordas dos novos preenchimentos."
+        }
+      },
+      "pt-PT": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "O botão por baixo da mira ativa ou desativa a suavização das margens dos novos preenchimentos."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Кнопка под прицелом включает и выключает сглаживание краёв новых заливок."
+        }
+      },
+      "sv": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Knappen under siktet slår på eller av kantutjämning för nya fyllningar."
+        }
+      },
+      "th": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "ปุ่มใต้เป้าเล็งใช้เปิดหรือปิดการทำขอบให้เรียบสำหรับการเติมสีครั้งใหม่"
+        }
+      },
+      "tr": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Nişangâhın altındaki düğme, yeni dolgular için kenar yumuşatmayı açıp kapatır."
+        }
+      },
+      "uk": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Кнопка під прицілом вмикає та вимикає згладжування країв нових заливок."
+        }
+      },
+      "vi": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Nút dưới tâm ngắm bật hoặc tắt làm mượt đường viền cho các lần tô mới."
+        }
+      },
+      "zh-Hans": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "准星下方的按钮可开启或关闭新填充的边缘平滑效果。"
+        }
+      },
+      "zh-Hant": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "準星下方的按鈕可開啟或關閉新填色的邊緣平滑效果。"
+        }
+      }
+    }
+  },
+  "Smooth fill": {
+  "extractionState": "manual",
+  "localizations": {
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "تعبئة ناعمة"
+      }
+    },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Hladká výplň"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Blød udfyldning"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Weiche Füllung"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Ομαλό γέμισμα"
+      }
+    },
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Smooth fill"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Relleno suave"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Pehmeä täyttö"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Remplissage lissé"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "מילוי חלק"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Sima kitöltés"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Isian halus"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Riempimento morbido"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "滑らかな塗りつぶし"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "부드러운 채우기"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Myk fylling"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Zachte vulling"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Gładkie wypełnienie"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Preenchimento suave"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Preenchimento suave"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Мягкая заливка"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Mjuk fyllning"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "การเติมสีแบบนุ่ม"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Yumuşak dolgu"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "М’яка заливка"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tô mượt"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "平滑填充"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "平滑填色"
+      }
+    }
+  }
+},
+  "On": {
+  "extractionState": "manual",
+  "localizations": {
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "مفعّل"
+      }
+    },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Zapnuto"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Til"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Ein"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Ενεργό"
+      }
+    },
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "On"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Activado"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Päällä"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Activé"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "פעיל"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Be"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Aktif"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Attivo"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "オン"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "켜짐"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "På"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Aan"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Włączone"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Ativado"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Ativado"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Включено"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "På"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "เปิด"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Açık"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Увімкнено"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Bật"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "开启"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "開啟"
+      }
+    }
+  }
+},
+  "Off": {
+  "extractionState": "manual",
+  "localizations": {
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "متوقف"
+      }
+    },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Vypnuto"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Fra"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Aus"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Ανενεργό"
+      }
+    },
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Off"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Desactivado"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Pois"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Désactivé"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "כבוי"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Ki"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Nonaktif"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Disattivo"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "オフ"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "꺼짐"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Av"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Uit"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Wyłączone"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Desativado"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Desativado"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Выключено"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Av"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "ปิด"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Kapalı"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Вимкнено"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Tắt"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "关闭"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "關閉"
+      }
+    }
+  }
+},
     "Unlock" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1215,54 +1907,880 @@
       }
     },
     "%lld / %lld" : {
-      "comment" : "Language-neutral numeric notation or symbol; no words to translate. Numeric values are supplied by the UI.",
-      "generatesSymbol" : false,
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld / %lld"
-          }
-        }
-      },
-      "shouldTranslate" : false
+  "comment": "Language-neutral numeric notation or symbol; no words to translate. Numeric values are supplied by the UI.",
+  "generatesSymbol": false,
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
     },
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld / %lld"
+      }
+    }
+  },
+  "shouldTranslate": false
+},
     "%lld × %lld px" : {
-      "comment" : "Language-neutral numeric notation or symbol; no words to translate. Numeric values are supplied by the UI.",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld × %lld px"
-          }
-        }
-      },
-      "shouldTranslate" : false
+  "comment": "Language-neutral numeric notation or symbol; no words to translate. Numeric values are supplied by the UI.",
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
     },
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld × %lld px"
+      }
+    }
+  },
+  "shouldTranslate": false
+},
     "%lld/%lld" : {
-      "comment" : "A label displaying the current and total number of instruments. The first argument is the current instrument index, starting at 1. The second argument is the total number of instruments.",
-      "generatesSymbol" : false,
-      "isCommentAutoGenerated" : true,
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld/%lld"
-          }
-        }
-      },
-      "shouldTranslate" : false
+  "comment": "A label displaying the current and total number of instruments. The first argument is the current instrument index, starting at 1. The second argument is the total number of instruments.",
+  "generatesSymbol": false,
+  "isCommentAutoGenerated": true,
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
     },
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "%lld/%lld"
+      }
+    }
+  },
+  "shouldTranslate": false
+},
     "−" : {
-      "comment" : "Language-neutral numeric notation or symbol; no words to translate. Numeric values are supplied by the UI.",
-      "generatesSymbol" : false,
-      "shouldTranslate" : false
+  "comment": "Language-neutral numeric notation or symbol; no words to translate. Numeric values are supplied by the UI.",
+  "generatesSymbol": false,
+  "shouldTranslate": false,
+  "localizations": {
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
     },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "−"
+      }
+    }
+  }
+},
     "✓" : {
-      "comment" : "Language-neutral numeric notation or symbol; no words to translate. Numeric values are supplied by the UI.",
-      "generatesSymbol" : false,
-      "shouldTranslate" : false
+  "comment": "Language-neutral numeric notation or symbol; no words to translate. Numeric values are supplied by the UI.",
+  "generatesSymbol": false,
+  "shouldTranslate": false,
+  "localizations": {
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
     },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "✓"
+      }
+    }
+  }
+},
     "A flat calligraphy nib creates sharp edges. Adjust its angle on the Angle page." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -30184,10 +31702,180 @@
       }
     },
     "Paint Anytime" : {
-      "comment" : "A button that shares a drawing.",
-      "isCommentAutoGenerated" : true,
-      "shouldTranslate" : false
+  "comment": "A button that shares a drawing.",
+  "isCommentAutoGenerated": true,
+  "shouldTranslate": false,
+  "localizations": {
+    "ar": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
     },
+    "cs": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "da": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "de": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "el": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "es": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "fi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "fr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "he": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "hu": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "id": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "it": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "ja": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "ko": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "nb": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "nl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "pl": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "pt-BR": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "pt-PT": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "sv": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "th": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "tr": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "uk": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "vi": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "zh-Hans": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    },
+    "zh-Hant": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Paint Anytime"
+      }
+    }
+  }
+},
     "Paint Anytime does not require an account. Drawings saved to the gallery, editable drawing data, and preferences such as language and tool settings are stored locally on your device. The app does not upload your drawings or preferences to a developer-operated server." : {
       "comment" : "Privacy policy, paragraph 5 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",

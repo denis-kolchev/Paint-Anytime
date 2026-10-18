@@ -24,7 +24,7 @@ enum ToolSetting: Int, CaseIterable {
         case .mode: style.eraserMode.helpDescription
         case .direction: L10n.text("Sets the flat nib angle. The angle changes the stroke shape and width as you draw in different directions.")
         case .opacity: L10n.format("Sets paint coverage: %1$@ is invisible, %2$@ gives the brush its full coverage. Textured and translucent brushes retain their character. For the pixel eraser, this sets erasing strength.", L10n.percent(0), L10n.percent(1))
-        case .sensitivity: L10n.text("Fill tolerance on the current layer. Higher values include more colors and opacity levels. The crosshair finds a threshold without leaks using closed shapes, or the preview.")
+        case .sensitivity: L10n.text("Fill tolerance on the current layer. Higher values include more colors and opacity levels. The crosshair finds a threshold without leaks using closed shapes, or the preview.") + " " + L10n.text("The button below the crosshair toggles smooth edges for new fills.")
         }
     }
 }
