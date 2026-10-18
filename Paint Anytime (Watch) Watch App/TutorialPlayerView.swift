@@ -130,6 +130,8 @@ struct TutorialPlayerView: View {
                         Text(L10n.text("Artwork saved to gallery"))
                             .font(.headline)
                             .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.5)
                             .padding(.horizontal, 14)
                             .padding(.vertical, 9)
                             .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
