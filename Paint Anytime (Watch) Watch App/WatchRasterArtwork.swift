@@ -15,6 +15,8 @@ struct WatchRasterArtwork: View {
     let activeStrokeRevision: UInt64
     let activeStrokeID: UInt64
     let zoom: Double
+    var viewport: CGRect? = nil
+    var canvasFit: CGFloat = 1
     @State private var rasterZoom: Double = 1
     @Environment(\.displayScale) private var displayScale
 
@@ -22,12 +24,17 @@ struct WatchRasterArtwork: View {
         let _ = TutorialDebug.trace("raster.body")
         GeometryReader { geometry in
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
-            RasterFrame(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
+            let region = viewport ?? CGRect(origin: .zero, size: geometry.size)
+            // Only the visible crop gets full screen resolution. Its pixel area stays
+            // bounded by the watch display, even at 800% or with a large document.
+            let scale = viewport == nil
+                ? WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom)
+                : displayScale * canvasFit * CGFloat(min(zoom, rasterZoom))
+            RasterFrame(canvasSize: geometry.size, document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
-                            documentRevision: documentRevision, size: geometry.size,
-                            // Keep the previous resolution until Crown input settles.
-                            scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom)))
+                            documentRevision: documentRevision, size: region.size,
+                            scale: scale, viewportOrigin: viewport?.origin))
         }
         .task(id: zoom) {
             do {
@@ -41,6 +48,7 @@ struct WatchRasterArtwork: View {
     }
 
     private struct RasterFrame: View {
+        let canvasSize: CGSize
         let document: CanvasDocument?
         let selectedLayerID: UUID?
         let selectionPreview: WatchSelectionPreview?
@@ -52,7 +60,27 @@ struct WatchRasterArtwork: View {
         let key: WatchBitmapRenderer.CacheKey
 
         @StateObject private var frames = CanvasFrameQueue()
+        @StateObject private var overview = CanvasFrameQueue()
         @State private var finishedTransform: CGAffineTransform?
+
+        private var overviewKey: WatchBitmapRenderer.CacheKey {
+            WatchBitmapRenderer.CacheKey(
+                documentID: key.documentID, documentRevision: key.documentRevision,
+                size: canvasSize,
+                scale: min(1, 512 / max(1, max(canvasSize.width, canvasSize.height))))
+        }
+
+        private var uncoveredPaper: Path {
+            var path = Path(CGRect(origin: .zero, size: canvasSize))
+            // Opaque detail can cover an uninterrupted overview directly. Cutting
+            // a hole there creates a partially transparent seam after scaling.
+            let needsCutout = (document?.effectiveBackgroundColor.w ?? 1) < 1
+            if needsCutout, displayFrame != nil {
+                path.addRect(CGRect(origin: displayKey.viewportOrigin ?? .zero,
+                                    size: displayKey.size))
+            }
+            return path
+        }
 
         private var displayFrame: WatchBitmapRenderer.ScreenFrame? {
             if let preview = selectionPreview, let prepared = frames.preparedFrame,
@@ -60,6 +88,10 @@ struct WatchRasterArtwork: View {
                 return prepared
             }
             return frames.frame
+        }
+
+        private var displayKey: WatchBitmapRenderer.CacheKey {
+            displayFrame?.rasterKey ?? key
         }
 
         private var hasSelectionTexture: Bool {
@@ -77,9 +109,9 @@ struct WatchRasterArtwork: View {
         }
 
         private func staticTexture(_ image: CGImage) -> some View {
-            Image(decorative: image, scale: key.scale)
+            Image(decorative: image, scale: displayKey.scale)
                 .resizable()
-                .frame(width: key.size.width, height: key.size.height)
+                .frame(width: displayKey.size.width, height: displayKey.size.height)
         }
 
         // No stroke arrays or point comparisons in task identity.
@@ -95,9 +127,9 @@ struct WatchRasterArtwork: View {
             Group {
                 if let frame = displayFrame {
                     ZStack(alignment: .topLeading) {
-                        Image(decorative: frame.background, scale: key.scale)
+                        Image(decorative: frame.background, scale: displayKey.scale)
                             .resizable()
-                            .frame(width: key.size.width, height: key.size.height)
+                            .frame(width: displayKey.size.width, height: displayKey.size.height)
                         if let texture = frame.selection {
                             ZStack(alignment: .topLeading) {
                                 if let image = texture.layerBelow {
@@ -107,13 +139,13 @@ struct WatchRasterArtwork: View {
                                     .resizable()
                                     .frame(width: texture.rect.width, height: texture.rect.height)
                                     .offset(x: texture.rect.minX, y: texture.rect.minY)
-                                    .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+                                    .frame(width: displayKey.size.width, height: displayKey.size.height, alignment: .topLeading)
                                     .transformEffect(displayedTransform(texture))
                                 if let image = texture.layerAbove {
                                     staticTexture(image)
                                 }
                             }
-                            .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+                            .frame(width: displayKey.size.width, height: displayKey.size.height, alignment: .topLeading)
                             .clipped()
                             .compositingGroup()
                             .opacity(Double(texture.opacity))
@@ -122,17 +154,48 @@ struct WatchRasterArtwork: View {
                             }
                         }
                         ForEach(frame.tiles) { tile in
-                            Image(decorative: tile.image, scale: key.scale)
+                            Image(decorative: tile.image, scale: displayKey.scale)
                                 .resizable()
                                 .frame(width: tile.rect.width, height: tile.rect.height)
                                 .offset(x: tile.rect.minX, y: tile.rect.minY)
                         }
                     }
-                    .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+                    .frame(width: displayKey.size.width, height: displayKey.size.height, alignment: .topLeading)
                     .clipped()
+                    .offset(x: displayKey.viewportOrigin?.x ?? 0,
+                            y: displayKey.viewportOrigin?.y ?? 0)
+                    .frame(width: canvasSize.width, height: canvasSize.height, alignment: .topLeading)
                 } else {
-                    Color.white
+                    Color.clear
                 }
+            }
+            .background(alignment: .topLeading) {
+                // Keep the entire paper covered while an older detail crop moves
+                // out of view. Only transparent paper needs a cutout to avoid
+                // applying translucent ink twice; opaque paper stays continuous.
+                Group {
+                    if let frame = overview.frame {
+                        Image(decorative: frame.background, scale: overviewKey.scale)
+                            .resizable()
+                    } else if let document {
+                        let color = document.effectiveBackgroundColor
+                        Color(.sRGB, red: Double(color.x), green: Double(color.y),
+                              blue: Double(color.z), opacity: Double(color.w))
+                    } else {
+                        Color.white
+                    }
+                }
+                .frame(width: canvasSize.width, height: canvasSize.height)
+                .mask {
+                    uncoveredPaper.fill(.white, style: FillStyle(eoFill: true, antialiased: false))
+                }
+            }
+            .task(id: overviewKey) { @MainActor in
+                // Commit changes refresh this small snapshot; panning, Crown
+                // input and live stroke samples never trigger another replay.
+                overview.submit(document: document, selectedLayerID: selectedLayerID,
+                                selectionPreview: nil, strokes: strokes, activeStroke: nil,
+                                key: overviewKey, activeStrokeID: 0)
             }
             .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: hasSelectionTexture ? nil : selectionPreview?.transform)) { @MainActor in
                 if hasSelectionTexture { return }
@@ -153,7 +216,7 @@ struct WatchRasterArtwork: View {
                 }
             }
             .transaction { $0.animation = nil }
-            .onDisappear { frames.stop() }
+            .onDisappear { frames.stop(); overview.stop() }
         }
 
     }
@@ -175,8 +238,9 @@ private final class CanvasFrameQueue: ObservableObject {
         // A new seed is published as soon as the finger is released, and clearing
         // here could discard that texture before the view has a chance to hold it.
         guard let seed else { return }
-        let next = await renderer.prepareSelectionFrame(seed, key: key)
+        var next = await renderer.prepareSelectionFrame(seed, key: key)
         guard !Task.isCancelled, preparationID == token, next?.selection != nil else { return }
+        next?.rasterKey = key
         preparedFrame = next
     }
 
@@ -208,6 +272,16 @@ private final class CanvasFrameQueue: ObservableObject {
 
     func submit(document: CanvasDocument?, selectedLayerID: UUID?, selectionPreview: WatchSelectionPreview?, strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
                 activeStrokeID: UInt64) {
+        // Viewport jobs can be expensive with many layers. Once their crop or
+        // resolution is obsolete, stop replaying instead of delaying the new view.
+        if let latest, latest.key.documentID == key.documentID,
+           latest.selectionPreview == nil, selectionPreview == nil,
+           (latest.key.viewportOrigin != nil || key.viewportOrigin != nil),
+           (latest.key.viewportOrigin != key.viewportOrigin || latest.key.size != key.size || latest.key.scale != key.scale) {
+            generation &+= 1
+            worker?.cancel()
+            worker = nil
+        }
         let job = Job(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
         pending = job
         latest = job
@@ -234,7 +308,9 @@ private final class CanvasFrameQueue: ObservableObject {
                    ((latest.key == job.key && latest.selectionPreview?.sessionID == job.selectionPreview?.sessionID) || Self.sameSelectionDrag(latest, job)),
                    latest.activeStrokeID == job.activeStrokeID,
                    latest.activeStroke?.id == job.activeStroke?.id, let next {
-                    self.frame = next
+                    var presented = next
+                    presented.rasterKey = job.key
+                    self.frame = presented
                     if let texture = next.selection, let pending = self.pending,
                        pending.key == texture.key,
                        pending.selectionPreview?.sessionID == texture.sessionID {
@@ -252,6 +328,7 @@ private final class CanvasFrameQueue: ObservableObject {
         latest.selectionPreview != nil && latest.selectionPreview?.sessionID == rendered.selectionPreview?.sessionID
             && latest.key.documentID == rendered.key.documentID
             && latest.key.size == rendered.key.size && latest.key.scale == rendered.key.scale
+            && latest.key.viewportOrigin == rendered.key.viewportOrigin
     }
 
     func stop() {

@@ -62,7 +62,9 @@ struct WatchCanvasView: View {
             let paperSize = controller.document.size(fallback: geometry.size)
             let fit = canvasFit(geometry.size)
             let displayedDocument = controller.document
-            let useLayers = lasso.isActive || needsLayerRendering
+            let viewport = rasterViewport(size: geometry.size, paperSize: paperSize)
+            let usesViewport = zoom > 2 && !lasso.isActive && !viewport.isNull && !viewport.isEmpty
+            let useLayers = usesViewport || lasso.isActive || needsLayerRendering
             Color(white: 0.16)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .overlay {
@@ -74,7 +76,8 @@ struct WatchCanvasView: View {
                         activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
                         documentRevision: controller.documentRevision,
                         activeStrokeRevision: controller.activeStrokeRevision,
-                        activeStrokeID: controller.activeStrokeID, zoom: zoom)
+                        activeStrokeID: controller.activeStrokeID, zoom: zoom,
+                        viewport: usesViewport ? viewport : nil, canvasFit: fit)
                         .frame(width: paperSize.width, height: paperSize.height)
                         .background {
                             if controller.document.effectiveBackgroundColor.w < 1 {
@@ -264,7 +267,7 @@ struct WatchCanvasView: View {
                 tutorial.changedZoom()
                 if zoom == 1 && !wasSnapped { WKInterfaceDevice.current().play(.click) }
             }
-        ), from: 0.25, through: 4, by: 0.05, sensitivity: .low,
+        ), from: 0.25, through: 8, by: 0.05, sensitivity: .low,
            isContinuous: false, isHapticFeedbackEnabled: false,
            onChange: { [step = tutorial.step] event in
                 tutorial.usedCrown(in: step, velocity: event.velocity)
@@ -425,6 +428,23 @@ struct WatchCanvasView: View {
             if normalizedX * normalizedX + normalizedY * normalizedY <= 1 { return true }
         }
         return false
+    }
+
+    private func rasterViewport(size: CGSize, paperSize: CGSize) -> CGRect {
+        let scale = zoom * canvasFit(size)
+        guard scale > 0 else { return .null }
+        let visible = CGRect(origin: canvasPoint(.zero, size: size),
+                             size: CGSize(width: size.width / scale, height: size.height / scale))
+        // Overscan covers movement while the next frame renders. Stable document
+        // boundaries also avoid replaying the layers for every tiny pan update.
+        let expanded = visible.insetBy(dx: -visible.width * 0.25, dy: -visible.height * 0.25)
+        let grid: CGFloat = 8
+        let left = floor(expanded.minX / grid) * grid
+        let top = floor(expanded.minY / grid) * grid
+        let right = ceil(expanded.maxX / grid) * grid
+        let bottom = ceil(expanded.maxY / grid) * grid
+        return CGRect(x: left, y: top, width: right - left, height: bottom - top)
+            .intersection(CGRect(origin: .zero, size: paperSize))
     }
 
     private func canvasFit(_ size: CGSize) -> CGFloat {

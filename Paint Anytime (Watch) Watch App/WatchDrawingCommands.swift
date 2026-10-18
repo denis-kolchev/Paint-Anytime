@@ -83,6 +83,8 @@ nonisolated enum WatchBitmapRenderer {
         let background: CGImage
         let tiles: [ScreenTile]
         var selection: SelectionTexture? = nil
+        // Publish pixels and their document-space placement as one snapshot.
+        var rasterKey: CacheKey? = nil
     }
 
     struct CacheKey: Equatable {
@@ -90,6 +92,7 @@ nonisolated enum WatchBitmapRenderer {
         let documentRevision: UInt64
         let size: CGSize
         let scale: CGFloat
+        var viewportOrigin: CGPoint? = nil
     }
 
     /// Screen-only policy; export keeps its explicitly requested resolution.
@@ -103,6 +106,46 @@ nonisolated enum WatchBitmapRenderer {
         let commands: [WatchDrawingCommand]
         let coverage: WatchStrokeCoverage.Geometry?
         let bounds: CGRect
+
+        /// Reuse brush geometry across viewport changes instead of regenerating
+        /// procedural nibs and texture for every layer at every pan position.
+        init(_ source: StrokeGeometry, revision: UUID, viewport: CGRect, origin: CGPoint) {
+            self.revision = revision
+            let transform = CGAffineTransform(translationX: -origin.x, y: -origin.y)
+            bounds = source.bounds.applying(transform)
+            commands = source.commands.compactMap { command in
+                let commandBounds: CGRect
+                switch command.shape {
+                case .fill(let path): commandBounds = path.boundingRect
+                case .stroke(let path, let style):
+                    let padding = style.lineWidth * max(1, style.miterLimit)
+                    commandBounds = path.boundingRect.insetBy(dx: -padding, dy: -padding)
+                }
+                guard commandBounds.intersects(viewport) else { return nil }
+                let translatedShape: WatchDrawingCommand.Shape
+                switch command.shape {
+                case .fill(let path): translatedShape = .fill(path.applying(transform))
+                case .stroke(let path, let style): translatedShape = .stroke(path.applying(transform), style)
+                }
+                return WatchDrawingCommand(shape: translatedShape, rgba: command.rgba,
+                    opacity: command.opacity, blendMode: command.blendMode,
+                    usesOpacityLayer: command.usesOpacityLayer,
+                    exclusionPaths: command.exclusionPaths.map { $0.applying(transform) })
+            }
+            if var shapes = source.coverage {
+                shapes.primitives = shapes.primitives.compactMap {
+                    guard $0.path.boundingRect.intersects(viewport) else { return nil }
+                    return (path: $0.path.applying(transform), band: $0.band)
+                }
+                shapes.endCap = shapes.endCap.flatMap {
+                    $0.boundingRect.intersects(viewport) ? $0.applying(transform) : nil
+                }
+                shapes.exclusionPaths = shapes.exclusionPaths.map { $0.applying(transform) }
+                coverage = shapes
+            } else {
+                coverage = nil
+            }
+        }
 
         init(_ stroke: Stroke) throws {
             revision = stroke.geometryRevision
@@ -482,7 +525,8 @@ nonisolated enum WatchBitmapRenderer {
 
     static func render(document: CanvasDocument, size: CGSize, scale: CGFloat,
                        activeStroke: Stroke? = nil, selectedLayerID: UUID? = nil,
-                       cache: LayerCache? = nil, selection: WatchSelectionPreview? = nil) -> CGImage? {
+                       cache: LayerCache? = nil, selection: WatchSelectionPreview? = nil,
+                       geometry: [UUID: StrokeGeometry] = [:]) -> CGImage? {
         guard size.width > 0, size.height > 0, scale > 0,
               size.width * scale <= 8192, size.height * scale <= 8192,
               let output = makeDisplayContext(width: Int(ceil(size.width * scale)),
@@ -526,7 +570,7 @@ nonisolated enum WatchBitmapRenderer {
             if selection?.layerID == layer.id {
                 // Replay the selected layer in its original order. Other layers stay cached.
                 guard let ink = renderInk(strokes: layer.strokes, size: size, scale: scale,
-                                          selection: selection) else { return nil }
+                                          geometry: geometry, selection: selection) else { return nil }
                 committed = ink
             } else if let entry = cache?.inks[layer.id], entry.revisions == revisions {
                 committed = entry.ink
@@ -535,14 +579,14 @@ nonisolated enum WatchBitmapRenderer {
                 let canAppend = previous.map { revisions.starts(with: $0.revisions) } ?? false
                 let pending = canAppend ? Array(layer.strokes.dropFirst(previous!.revisions.count)) : layer.strokes
                 guard let ink = renderInk(strokes: pending, size: size, scale: scale,
-                                          base: canAppend ? previous?.ink : nil) else { return nil }
+                                          base: canAppend ? previous?.ink : nil, geometry: geometry) else { return nil }
                 cache?.didReplay(pending.count)
                 committed = ink
                 cache?.inks[layer.id] = (revisions, ink)
             }
             var ink = committed
             if layer.id == selectedLayerID, let activeStroke {
-                guard let live = renderInk(strokes: [activeStroke], size: size, scale: scale, base: committed) else { return nil }
+                guard let live = renderInk(strokes: [activeStroke], size: size, scale: scale, base: committed, geometry: geometry) else { return nil }
                 ink = live
             }
             output.saveGState()
@@ -948,6 +992,24 @@ actor WatchArtworkRenderer {
     private let cache = WatchBitmapRenderer.Cache()
     private let layers = WatchBitmapRenderer.LayerCache()
     private let selection = WatchBitmapRenderer.SelectionRenderCache()
+    private var sourceGeometry: [UUID: WatchBitmapRenderer.StrokeGeometry] = [:]
+    private var viewportGeometry: [UUID: WatchBitmapRenderer.StrokeGeometry] = [:]
+    private var viewportSize: CGSize = .zero
+    private var viewportOrigin: CGPoint?
+    private var viewportDocumentID: ObjectIdentifier?
+    private var translatedStrokes: [UUID: (revision: UUID, stroke: Stroke)] = [:]
+
+    /// Preserve stroke revisions between live frames so committed layers remain cached.
+    private func viewportStroke(_ source: Stroke, origin: CGPoint) -> Stroke {
+        if let cached = translatedStrokes[source.id], cached.revision == source.geometryRevision {
+            return cached.stroke
+        }
+        var stroke = source
+        stroke.transform = StrokeTransform(source.transform.affine.concatenating(
+            CGAffineTransform(translationX: -origin.x, y: -origin.y)))
+        translatedStrokes[source.id] = (source.geometryRevision, stroke)
+        return stroke
+    }
 
     func prepareSelectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
         selection.render(preview, key: key, allowReplay: false)
@@ -960,8 +1022,59 @@ actor WatchArtworkRenderer {
     func layeredFrame(document: CanvasDocument, activeStroke: Stroke?, selectedLayerID: UUID?,
                       key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
         selection.clear()
-        guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: key.scale,
-            activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers) else { return nil }
+        if viewportDocumentID != key.documentID { sourceGeometry.removeAll() }
+        if viewportOrigin != key.viewportOrigin || viewportDocumentID != key.documentID {
+            translatedStrokes.removeAll()
+            viewportGeometry.removeAll()
+            layers.inks.removeAll()
+            layers.composite = nil
+            viewportOrigin = key.viewportOrigin
+            viewportDocumentID = key.documentID
+        }
+        if viewportSize != key.size {
+            viewportGeometry.removeAll()
+            viewportSize = key.size
+        }
+        var visibleDocument = document
+        var visibleStroke = activeStroke
+        if let origin = key.viewportOrigin {
+            // A little padding keeps antialiased edge primitives in the crop.
+            let region = CGRect(origin: origin, size: key.size).insetBy(dx: -2 / key.scale, dy: -2 / key.scale)
+            for index in visibleDocument.layers.indices {
+                guard !Task.isCancelled else { return nil }
+                guard document.layers[index].isVisible, document.layers[index].opacity > 0 else { continue }
+                var visibleStrokes: [Stroke] = []
+                for stroke in document.layers[index].strokes {
+                    guard !Task.isCancelled else { return nil }
+                    let shape: WatchBitmapRenderer.StrokeGeometry
+                    if let cached = sourceGeometry[stroke.id], cached.revision == stroke.geometryRevision {
+                        shape = cached
+                    } else {
+                        guard let built = try? WatchBitmapRenderer.StrokeGeometry(stroke) else { return nil }
+                        shape = built
+                        sourceGeometry[stroke.id] = built
+                    }
+                    guard shape.bounds.intersects(region) else { continue }
+                    let translated = viewportStroke(stroke, origin: origin)
+                    if viewportGeometry[stroke.id]?.revision != translated.geometryRevision {
+                        viewportGeometry[stroke.id] = WatchBitmapRenderer.StrokeGeometry(
+                            shape, revision: translated.geometryRevision,
+                            viewport: region, origin: origin)
+                    }
+                    visibleStrokes.append(translated)
+                }
+                visibleDocument.layers[index].strokes = visibleStrokes
+            }
+            visibleStroke = activeStroke.map { viewportStroke($0, origin: origin) }
+            let ids = Set(document.layers.flatMap { $0.strokes.map(\.id) })
+                .union(activeStroke.map { [$0.id] } ?? [])
+            translatedStrokes = translatedStrokes.filter { ids.contains($0.key) }
+            sourceGeometry = sourceGeometry.filter { ids.contains($0.key) }
+            viewportGeometry = viewportGeometry.filter { ids.contains($0.key) }
+        }
+        guard let image = WatchBitmapRenderer.render(document: visibleDocument, size: key.size, scale: key.scale,
+            activeStroke: visibleStroke, selectedLayerID: selectedLayerID, cache: layers,
+            geometry: key.viewportOrigin == nil ? [:] : viewportGeometry) else { return nil }
         return WatchBitmapRenderer.ScreenFrame(background: image, tiles: [])
     }
 
