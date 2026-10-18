@@ -521,7 +521,10 @@ private struct ToolPickerViewportClip: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if isEnabled {
-            content.clipped()
+            // Clipping hides overflowing picker rows but does not limit their hit targets.
+            content
+                .contentShape(Rectangle())
+                .clipped()
         } else {
             // Continue above the viewport, but stop before the horizontal settings carousel.
             content.mask {
