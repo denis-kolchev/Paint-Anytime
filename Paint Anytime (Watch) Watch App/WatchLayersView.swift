@@ -544,7 +544,7 @@ private struct LayerSettingsView: View {
                                     transparencyFeedbackID = UUID()
                                     crownFocused = true
                                 } label: {
-                                    Image(systemName: layer.locksTransparency ? "lock.square.dashed" : "square.dashed")
+                                    LayerTransparencyLockIcon(isLocked: layer.locksTransparency)
                                         .font(.system(size: 23))
                                         .foregroundStyle(.white)
                                         .frame(width: 44, height: controlHeight)
@@ -716,6 +716,27 @@ private struct LayerSettingsView: View {
         .accessibilityLabel(L10n.text("Opacity") + (amount > 0 ? " +1" : " −1"))
     }
 
+}
+
+private struct LayerTransparencyLockIcon: View {
+    let isLocked: Bool
+
+    var body: some View {
+        if isLocked {
+            if #available(watchOS 26.0, *) {
+                Image(systemName: "lock.square.dashed")
+            } else {
+                // Recreate the newer symbol using symbols available on watchOS 10 and 11.
+                Image(systemName: "square.dashed")
+                    .overlay {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 12, weight: .regular))
+                    }
+            }
+        } else {
+            Image(systemName: "square.dashed")
+        }
+    }
 }
 
 private struct CanvasBackgroundPreview: View {
