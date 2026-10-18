@@ -15,7 +15,9 @@ nonisolated struct WatchLassoSelection {
     let layerID: UUID
     var strokes: [Stroke]
     let selectedIDs: Set<UUID>
+    // Bounds retain their local width and height; rotation never enlarges them.
     var bounds: CGRect
+    var rotation: CGFloat = 0
 }
 
 @MainActor
@@ -23,6 +25,7 @@ final class WatchLassoController: ObservableObject {
     @Published private(set) var isActive = false
     @Published private(set) var mode: WatchLassoMode = .strokes
     @Published private(set) var outline: [CGPoint] = []
+    @Published private(set) var rotation: CGFloat = 0
     @Published private(set) var bounds: CGRect?
     @Published private(set) var previewState: WatchSelectionPreview?
     @Published private(set) var isPreparing = false
@@ -38,7 +41,8 @@ final class WatchLassoController: ObservableObject {
             var document = selection.document
             document.layers[index].strokes = selection.strokes
             selectionSeed = WatchSelectionPreview(sessionID: UUID(), document: document,
-                layerID: selection.layerID, selectedIDs: selection.selectedIDs, bounds: selection.bounds)
+                layerID: selection.layerID, selectedIDs: selection.selectedIDs,
+                bounds: selection.bounds.applying(WatchLassoGeometry.rotation(selection.rotation, around: selection.bounds)))
         }
     }
     private struct HistoryState {
@@ -89,7 +93,7 @@ final class WatchLassoController: ObservableObject {
         controller.moveSelection(strokes: selection.strokes, selectedIDs: selection.selectedIDs,
                                  from: selection.layerID, to: target.id)
         self.selection = WatchLassoSelection(document: controller.document, layerID: target.id,
-            strokes: controller.selectedLayer.strokes, selectedIDs: selection.selectedIDs, bounds: selection.bounds)
+            strokes: controller.selectedLayer.strokes, selectedIDs: selection.selectedIDs, bounds: selection.bounds, rotation: selection.rotation)
         record(before, controller: controller)
         return target.displayName
     }
@@ -125,14 +129,20 @@ final class WatchLassoController: ObservableObject {
         }
         controller.selectLayer(state.layerID)
         selection = state.selection
+        rotation = state.selection?.rotation ?? 0
         bounds = state.selection?.bounds
         mode = state.mode
     }
     private var preparation: Task<Void, Never>?
     private let builder = WatchLassoBuilder()
     private var generation = UUID()
-    private enum Drag { case outline, move, resize(Int) }
+    private enum Drag { case outline, move, resize(Int), rotate }
     @Published private var drag: Drag?
+    var isRotating: Bool {
+        guard let drag, case .rotate = drag else { return false }
+        return true
+    }
+    var rotationHandleBounds: CGRect? { bounds }
     var hidesControls: Bool { isActive && (drag != nil || isPreparing) }
     var activeResizeHandle: Int? {
         guard let drag, case let .resize(handle) = drag else { return nil }
@@ -158,6 +168,7 @@ final class WatchLassoController: ObservableObject {
         selection = nil
         outline = []
         bounds = nil
+        rotation = 0
         previewState = nil
         drag = nil
     }
@@ -178,7 +189,19 @@ final class WatchLassoController: ObservableObject {
         if let bounds {
             generation = UUID()
             dragBounds = bounds
+            let inverse = WatchLassoGeometry.rotation(selection?.rotation ?? 0, around: bounds).inverted()
+            let point = point.applying(inverse)
             let handles = WatchLassoGeometry.handles(bounds)
+            let rotationHandle = WatchLassoGeometry.rotationHandle(bounds,
+                offset: tolerance * WatchLassoGeometry.rotationHandleOffset / WatchLassoGeometry.handleHitRadius)
+            let rotationDistance = WatchLassoGeometry.distance(rotationHandle, point)
+            if rotationDistance <= tolerance,
+               handles.allSatisfy({ WatchLassoGeometry.distance($0, point) > rotationDistance }) {
+                drag = .rotate
+                // Confirm the initial grab once, without repeating during rotation.
+                WKInterfaceDevice.current().play(.click)
+                return
+            }
             // The nearest handle wins when the selection is small on a watch screen.
             if let nearest = handles.indices.min(by: {
                 WatchLassoGeometry.distance(handles[$0], point) < WatchLassoGeometry.distance(handles[$1], point)
@@ -208,8 +231,25 @@ final class WatchLassoController: ObservableObject {
             outline.append(point)
         case .move:
             preview(in: dragBounds.offsetBy(dx: point.x - dragStart.x, dy: point.y - dragStart.y))
+        case .rotate:
+            guard let selection else { return }
+            let center = CGPoint(x: dragBounds.midX, y: dragBounds.midY)
+            // Ignore points at the pivot, where the finger has no meaningful angle.
+            guard WatchLassoGeometry.distance(center, point) > pointSpacing else { return }
+            let angle = atan2(point.y - center.y, point.x - center.x)
+                - atan2(dragStart.y - center.y, dragStart.x - center.x)
+            let cosine = cos(angle), sine = sin(angle)
+            let transform = CGAffineTransform(a: cosine, b: sine, c: -sine, d: cosine,
+                tx: center.x - cosine * center.x + sine * center.y,
+                ty: center.y - sine * center.x - cosine * center.y)
+            if previewState == nil { previewState = selectionSeed }
+            previewState?.transform = transform
+            rotation = selection.rotation + angle
+            bounds = selection.bounds
         case .resize(let handle):
-            let delta = CGSize(width: point.x - dragStart.x, height: point.y - dragStart.y)
+            let inverse = WatchLassoGeometry.rotation(selection?.rotation ?? 0, around: dragBounds).inverted()
+            let localPoint = point.applying(inverse), localStart = dragStart.applying(inverse)
+            let delta = CGSize(width: localPoint.x - localStart.x, height: localPoint.y - localStart.y)
             if [0, 2, 4, 6].contains(handle) {
                 let handles = WatchLassoGeometry.handles(dragBounds)
                 let anchor = handles[(handle + 4) % handles.count]
@@ -242,9 +282,18 @@ final class WatchLassoController: ObservableObject {
         if previewState == nil { previewState = selectionSeed }
         let old = selection.bounds
         let sx = rect.width / old.width, sy = rect.height / old.height
-        previewState?.transform = CGAffineTransform(a: sx, b: 0, c: 0, d: sy,
+        let scaling = CGAffineTransform(a: sx, b: 0, c: 0, d: sy,
             tx: rect.minX - old.minX * sx, ty: rect.minY - old.minY * sy)
-        bounds = rect
+        if let drag, case .resize = drag {
+            let orientation = WatchLassoGeometry.rotation(selection.rotation, around: old)
+            previewState?.transform = orientation.inverted().concatenating(scaling).concatenating(orientation)
+            let center = CGPoint(x: rect.midX, y: rect.midY).applying(orientation)
+            bounds = CGRect(x: center.x - rect.width / 2, y: center.y - rect.height / 2,
+                            width: rect.width, height: rect.height)
+        } else {
+            previewState?.transform = scaling
+            bounds = rect
+        }
     }
 
     func end(at point: CGPoint, controller: CanvasController, size: CGSize, scale: CGFloat) {
@@ -277,7 +326,7 @@ final class WatchLassoController: ObservableObject {
                     errorMessage = "Could not create selection"
                 }
             }
-        case .move, .resize:
+        case .move, .resize, .rotate:
             guard var selection, let previewState,
                   !previewState.transform.isIdentity,
                   selection.document == controller.document,
@@ -294,6 +343,7 @@ final class WatchLassoController: ObservableObject {
             }
             selection.document.layers[index].strokes = selection.strokes
             selection.bounds = bounds ?? selection.bounds
+            selection.rotation = rotation
             self.selection = selection
             controller.replaceLayerStrokes(selection.strokes, in: selection.layerID)
             record(before, controller: controller)
@@ -320,7 +370,7 @@ final class WatchLassoController: ObservableObject {
         guard let index = selection.document.layers.firstIndex(where: { $0.id == selection.layerID }) else { return }
         selection.document.layers[index].strokes = strokes
         self.selection = WatchLassoSelection(document: selection.document, layerID: selection.layerID,
-            strokes: strokes, selectedIDs: Set(copies.map(\.id)), bounds: selection.bounds.offsetBy(dx: 8, dy: 8))
+            strokes: strokes, selectedIDs: Set(copies.map(\.id)), bounds: selection.bounds.offsetBy(dx: 8, dy: 8), rotation: selection.rotation)
         bounds = self.selection?.bounds
         controller.replaceLayerStrokes(strokes, in: selection.layerID)
         record(before, controller: controller)
@@ -342,6 +392,7 @@ final class WatchLassoController: ObservableObject {
         outline = []
         previewState = nil
         bounds = selection?.bounds
+        rotation = selection?.rotation ?? 0
     }
 }
 
@@ -648,6 +699,17 @@ nonisolated enum WatchLassoGeometry {
     // Screen-point sizes stay constant as the artwork zooms.
     static let handleRadius: CGFloat = 6
     static let handleHitRadius: CGFloat = 22
+    static let rotationHandleOffset: CGFloat = 28
+
+    static func rotationHandle(_ rect: CGRect, offset: CGFloat = rotationHandleOffset) -> CGPoint {
+        CGPoint(x: rect.midX, y: rect.minY - offset)
+    }
+
+    static func rotation(_ angle: CGFloat, around rect: CGRect) -> CGAffineTransform {
+        let c = cos(angle), s = sin(angle), x = rect.midX, y = rect.midY
+        return CGAffineTransform(a: c, b: s, c: -s, d: c,
+                                 tx: x - c * x + s * y, ty: y - s * x - c * y)
+    }
 
     static func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat { hypot(a.x - b.x, a.y - b.y) }
 
@@ -685,13 +747,14 @@ struct WatchLassoOverlay: View {
                     style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round, dash: [0.1, 4]))
             }
             if let bounds = lasso.bounds, !lasso.hidesControls || lasso.activeResizeHandle != nil {
-                let rect = bounds.applying(canvasToScreen)
+                let orientation = WatchLassoGeometry.rotation(lasso.rotation, around: bounds)
+                    .concatenating(canvasToScreen)
                 let borderColor = Color(red: 0.20, green: 0.43, blue: 1)
                 let handleColor = Color(red: 0.16, green: 0.67, blue: 0.87)
                 if !lasso.hidesControls {
-                    context.stroke(Path(rect), with: .color(borderColor), lineWidth: 1)
+                    context.stroke(Path(bounds).applying(orientation), with: .color(borderColor), lineWidth: 1)
                 }
-                let handles = WatchLassoGeometry.handles(rect)
+                let handles = WatchLassoGeometry.handles(bounds).map { $0.applying(orientation) }
                 for index in handles.indices {
                     if let active = lasso.activeResizeHandle, index != active { continue }
                     let point = handles[index]
@@ -701,6 +764,23 @@ struct WatchLassoOverlay: View {
                     context.fill(handle, with: .color(handleColor))
                     context.stroke(handle, with: .color(.white), lineWidth: 1)
                 }
+            }
+        }
+        .overlay {
+            if let bounds = lasso.rotationHandleBounds, !lasso.hidesControls || lasso.isRotating {
+                let scale = hypot(canvasToScreen.a, canvasToScreen.b)
+                let orientation = WatchLassoGeometry.rotation(lasso.rotation, around: bounds)
+                    .concatenating(canvasToScreen)
+                let point = WatchLassoGeometry.rotationHandle(bounds,
+                    offset: WatchLassoGeometry.rotationHandleOffset / max(scale, 0.001)).applying(orientation)
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 22, height: 22)
+                    .background(Color(red: 0.16, green: 0.67, blue: 0.87), in: Circle())
+                    .overlay { Circle().strokeBorder(.white, lineWidth: 1) }
+                    .rotationEffect(.radians(Double(lasso.rotation)))
+                    .position(point)
             }
         }
         .overlay(alignment: .bottom) {

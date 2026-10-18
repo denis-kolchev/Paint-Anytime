@@ -145,7 +145,11 @@ struct WatchRasterArtwork: View {
             .onChange(of: selectionPreview?.transform) { old, new in
                 if new == nil, let old {
                     finishedTransform = old
-                    frames.holdPreparedSelection()
+                }
+            }
+            .onChange(of: selectionPreview?.sessionID) { old, new in
+                if new == nil, let old {
+                    frames.holdPreparedSelection(sessionID: old)
                 }
             }
             .transaction { $0.animation = nil }
@@ -167,15 +171,25 @@ private final class CanvasFrameQueue: ObservableObject {
     func prepareSelection(_ seed: WatchSelectionPreview?, key: WatchBitmapRenderer.CacheKey) async {
         let token = UUID()
         preparationID = token
-        preparedFrame = nil
+        // Keep the previous interactive texture until its committed frame arrives.
+        // A new seed is published as soon as the finger is released, and clearing
+        // here could discard that texture before the view has a chance to hold it.
         guard let seed else { return }
         let next = await renderer.prepareSelectionFrame(seed, key: key)
         guard !Task.isCancelled, preparationID == token, next?.selection != nil else { return }
         preparedFrame = next
     }
 
-    func holdPreparedSelection() {
-        if let preparedFrame { frame = preparedFrame }
+    func holdPreparedSelection(sessionID: UUID) {
+        // Invalidate outstanding preview jobs so they cannot overwrite the held
+        // final transform while the committed document is being rendered.
+        if latest?.selectionPreview?.sessionID == sessionID {
+            latest = nil
+            pending = nil
+        }
+        if let preparedFrame, preparedFrame.selection?.sessionID == sessionID {
+            frame = preparedFrame
+        }
     }
 
     private struct Job {
