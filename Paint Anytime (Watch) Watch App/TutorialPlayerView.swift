@@ -96,7 +96,9 @@ struct TutorialPlayerView: View {
                                     .background(.black)
                             }
                             if page == .gallery {
-                                SavedDrawingsView(tutorial: tutorial, galleryFolder: folder, onClose: {
+                                // Temporary screenshot setup: show only the tutorial's preset artwork.
+                                SavedDrawingsView(tutorial: tutorial, galleryFolder: folder,
+                                                  hiddenArtworkURL: player.savedDrawing?.url, onClose: {
                                     player.closeGallery()
                                 }, onEditDrawing: { _ in })
                             }
