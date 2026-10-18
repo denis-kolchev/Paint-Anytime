@@ -26,8 +26,7 @@ struct ToolColorPicker: View {
                     .accessibilityHidden(true)
             }
             GeometryReader { geometry in
-                ScrollViewReader { proxy in
-                ScrollView(.vertical) {
+                ZStack(alignment: .top) {
                     VStack(spacing: 3) {
                         ForEach(0..<itemCount, id: \.self) { index in
                             Button {
@@ -56,11 +55,16 @@ struct ToolColorPicker: View {
                             .id(index)
                         }
                     }
-                    .padding(.vertical, max(0, (geometry.size.height - rowHeight) / 2))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .offset(y: (geometry.size.height - rowHeight) / 2
+                            - CGFloat(colorIndex) * (rowHeight + 3))
+                    .animation(choiceAnimation, value: colorIndex)
                 }
-                .scrollIndicators(.hidden)
-                    .scrollClipDisabled(extendsBeyondViewport)
-                .scrollDisabled(true)
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+                .mask {
+                    Rectangle()
+                        .padding(.vertical, extendsBeyondViewport ? -CGFloat(itemCount) * (rowHeight + 3) : 0)
+                }
                 .overlay(alignment: .center) {
                     // The selection window stays fixed while swatches move beneath it.
                     Circle()
@@ -68,16 +72,6 @@ struct ToolColorPicker: View {
                         .frame(width: swatchSize + 6, height: swatchSize + 6)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
-                }
-                .onAppear { proxy.scrollTo(colorIndex, anchor: .center) }
-                .onChange(of: geometry.size.height) { _, _ in
-                    proxy.scrollTo(colorIndex, anchor: .center)
-                }
-                .onChange(of: colorIndex) { _, index in
-                    withAnimation(choiceAnimation) {
-                        proxy.scrollTo(index, anchor: .center)
-                    }
-                }
                 }
             }
 

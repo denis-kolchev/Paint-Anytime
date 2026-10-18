@@ -23,49 +23,45 @@ struct ToolInstrumentPicker: View {
                     .accessibilityHidden(true)
             }
             GeometryReader { geometry in
-                ScrollViewReader { proxy in
-                    ScrollView(.vertical) {
-                        VStack(spacing: 4) {
-                            ForEach(instruments.indices, id: \.self) { index in
-                                let instrument = instruments[index]
-                                Button {
-                                    onSelect(instrument)
-                                } label: {
-                                    ToolIcon(instrument: instrument)
-                                        .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
-                                                     : instrumentIndex == index ? 1 : 0.72)
-                                        .animation(choiceAnimation, value: instrumentIndex)
-                                        .tutorialHint(tutorial, steps: [.selectReed],
-                                                      isSuggested: isActive && instrument == .reed)
-                                        .frame(width: 40, height: rowHeight)
-                                        .contentShape(Rectangle())
-                                }
-                                .buttonStyle(.borderless)
-                                .disabled(!isEnabled)
-                                .accessibilityLabel(instrument.title)
-                                .accessibilityAddTraits(instrumentIndex == index ? [.isSelected] : [])
-                                .id(index)
+                ZStack(alignment: .top) {
+                    VStack(spacing: 4) {
+                        ForEach(instruments.indices, id: \.self) { index in
+                            let instrument = instruments[index]
+                            Button {
+                                onSelect(instrument)
+                            } label: {
+                                ToolIcon(instrument: instrument)
+                                    .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
+                                                 : instrumentIndex == index ? 1 : 0.72)
+                                    .animation(choiceAnimation, value: instrumentIndex)
+                                    .tutorialHint(tutorial, steps: [.selectReed],
+                                                  isSuggested: isActive && instrument == .reed)
+                                    .frame(width: 40, height: rowHeight)
+                                    .contentShape(Rectangle())
                             }
+                            .buttonStyle(.borderless)
+                            .disabled(!isEnabled)
+                            .accessibilityLabel(instrument.title)
+                            .accessibilityAddTraits(instrumentIndex == index ? [.isSelected] : [])
+                            .id(index)
                         }
-                        .padding(.vertical, max(0, (geometry.size.height - rowHeight) / 2))
                     }
-                    .scrollIndicators(.hidden)
-                    .scrollClipDisabled(extendsBeyondViewport)
-                    .scrollDisabled(true)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 10)
-                            .strokeBorder(.white, lineWidth: 1.5)
-                            .frame(width: rowHeight, height: rowHeight)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                    }
-                    .onAppear { proxy.scrollTo(instrumentIndex, anchor: .center) }
-                    .onChange(of: geometry.size.height) { _, _ in
-                        proxy.scrollTo(instrumentIndex, anchor: .center)
-                    }
-                    .onChange(of: instrumentIndex) { _, index in
-                        withAnimation(choiceAnimation) { proxy.scrollTo(index, anchor: .center) }
-                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .offset(y: (geometry.size.height - rowHeight) / 2
+                            - CGFloat(instrumentIndex) * (rowHeight + 4))
+                    .animation(choiceAnimation, value: instrumentIndex)
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+                .mask {
+                    Rectangle()
+                        .padding(.vertical, extendsBeyondViewport ? -CGFloat(instruments.count) * (rowHeight + 4) : 0)
+                }
+                .overlay {
+                    RoundedRectangle(cornerRadius: 10)
+                        .strokeBorder(.white, lineWidth: 1.5)
+                        .frame(width: rowHeight, height: rowHeight)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                 }
             }
             if showsNavigationHints {
