@@ -196,7 +196,7 @@ struct ContentView: View {
                 }
             }
 
-            if isActive && !showsGallery && !showsToolSettings && lasso.isActive && !lasso.hidesControls {
+            if isActive && !showsGallery && !showsToolSettings && lasso.isActive {
                 ToolbarItemGroup(placement: .bottomBar) {
                     // Retain the native vertical anchor without an invisible action
                     // at the old leading position of the now-centered panel.
@@ -209,7 +209,7 @@ struct ContentView: View {
                 }
             }
 
-            if isActive && !showsGallery && !showsToolSettings && !lasso.isActive {
+            if isActive && !showsGallery && !showsToolSettings {
                 ToolbarItem(placement: .topBarLeading) {
                     MorphControlsScope {
                         Button {
@@ -243,9 +243,11 @@ struct ContentView: View {
                         .disabled(lasso.isActive && showsSelectionActions && !lasso.canMoveLayer(1, controller: controller))
                         .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
                         .trackCanvasControl(.more, frames: controlFramesBinding)
-                        .opacity(controller.activeStroke != nil || lasso.hidesControls ? 0 : 1)
-                        .allowsHitTesting(controller.activeStroke == nil && !lasso.hidesControls)
-                        .accessibilityHidden(controller.activeStroke != nil || lasso.hidesControls)
+                        // Preserve the leading slot in lasso mode to balance the
+                        // trailing Done slot and keep the system clock centered.
+                        .opacity(controller.activeStroke != nil || lasso.isActive ? 0 : 1)
+                        .allowsHitTesting(controller.activeStroke == nil && !lasso.isActive)
+                        .accessibilityHidden(controller.activeStroke != nil || lasso.isActive)
                     }
                 }
             }
