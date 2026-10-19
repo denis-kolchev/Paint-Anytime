@@ -360,10 +360,14 @@ struct SavedDrawingsView: View {
         guard !isTransitioning else { return }
         isCleanViewing = false
         if showsFullscreen && level < 2 {
-            transitionBitmap = nil
-            transitionRequest = .closing
+            if reduceMotion {
+                withoutAnimation { returnToGrid() }
+            } else {
+                transitionBitmap = nil
+                transitionRequest = .closing
+            }
         } else {
-            withAnimation(.smooth(duration: 0.25)) { zoomLevel = level }
+            withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) { zoomLevel = level }
             crownPosition = Double(level)
         }
         WKInterfaceDevice.current().play(.click)
@@ -378,7 +382,9 @@ struct SavedDrawingsView: View {
         zoomLevel = 2
         crownPosition = 2
         showsFullscreen = true
-        transitionRequest = .opening
+        // Reduced motion must not wait for a morph animation's completion to
+        // enable the pager, image loading, and back button on watchOS 10.
+        transitionRequest = reduceMotion ? nil : .opening
         WKInterfaceDevice.current().play(.click)
     }
 
@@ -410,18 +416,27 @@ struct SavedDrawingsView: View {
 
     private func animateImageTransition(_ transition: GalleryImageTransition) {
         guard imageTransition?.id == transition.id else { return }
+        // Also handle Reduce Motion being enabled while a transition is pending.
+        guard !reduceMotion else {
+            finishImageTransition(transition)
+            return
+        }
         // A fixed-duration curve has no settling tail after the image reaches its destination.
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.32), completionCriteria: .logicallyComplete) {
+        withAnimation(.easeInOut(duration: 0.32), completionCriteria: .logicallyComplete) {
             transitionExpanded = transition.direction == .opening
         } completion: {
-            guard imageTransition?.id == transition.id else { return }
-            withoutAnimation {
-                if transition.direction == .closing { returnToGrid() }
-                else {
-                    imageTransition = nil
-                    transitionRequest = nil
-                    crownPosition = 2
-                }
+            finishImageTransition(transition)
+        }
+    }
+
+    private func finishImageTransition(_ transition: GalleryImageTransition) {
+        guard imageTransition?.id == transition.id else { return }
+        withoutAnimation {
+            if transition.direction == .closing { returnToGrid() }
+            else {
+                imageTransition = nil
+                transitionRequest = nil
+                crownPosition = 2
             }
         }
     }
