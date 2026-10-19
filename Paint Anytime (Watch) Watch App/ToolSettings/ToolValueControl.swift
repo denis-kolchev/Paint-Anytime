@@ -1,17 +1,15 @@
 import SwiftUI
 
 struct ToolValueControl: View {
-    static let idealSize = ToolDirectionControl.idealSize
+    static let idealSize = CGSize(width: 40, height: 112)
     @Binding var value: Double
     let range: ClosedRange<Double>
     let valueTitle: String
     let title: String
     let isEnabled: Bool
-    var includesOuterSpacing = false
 
     var body: some View {
-        VStack(spacing: includesOuterSpacing ? 0 : 8) {
-            if includesOuterSpacing { Spacer(minLength: 0) }
+        VStack(spacing: 8) {
 
             Button {
                 adjust(by: 1)
@@ -22,7 +20,6 @@ struct ToolValueControl: View {
             }
             .disabled(!isEnabled || value >= range.upperBound)
 
-            if includesOuterSpacing { Spacer(minLength: 0) }
 
             Text(valueTitle)
                 .font(.caption2)
@@ -40,7 +37,6 @@ struct ToolValueControl: View {
                     }
                 }
 
-            if includesOuterSpacing { Spacer(minLength: 0) }
 
             Button {
                 adjust(by: -1)
@@ -51,7 +47,6 @@ struct ToolValueControl: View {
             }
             .disabled(!isEnabled || value <= range.lowerBound)
 
-            if includesOuterSpacing { Spacer(minLength: 0) }
         }
         .frame(width: Self.idealSize.width)
         .buttonStyle(.borderless)

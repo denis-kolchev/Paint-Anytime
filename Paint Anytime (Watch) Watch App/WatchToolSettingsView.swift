@@ -107,12 +107,11 @@ struct WatchToolSettingsView: View {
         selection == .sensitivity || selection == .opacity || selection == .width
     }
 
-    private func valueControl(includesOuterSpacing: Bool = false) -> some View {
+    private func valueControl() -> some View {
         ToolValueControl(value: crownValue,
                          range: (selection == .width ? 1 : 0)...crownMaximum,
                          valueTitle: valueTitle, title: selection.title,
-                         isEnabled: tutorial.allowsToolAdjustment(page: selection.rawValue),
-                         includesOuterSpacing: includesOuterSpacing)
+                         isEnabled: tutorial.allowsToolAdjustment(page: selection.rawValue))
     }
 
     private var crownMaximum: Double {
@@ -188,9 +187,9 @@ struct WatchToolSettingsView: View {
                 let angleHeight = settingsGeometry.size.height + (tutorial.isActive ? 40 : 0)
                 let angleScale = tutorial.isActive
                     ? min(1, max(0, angleHeight) / ToolDirectionControl.idealSize.height) : 1
-                let panelWidth = (selection == .direction || usesValueControl)
+                let panelWidth = selection == .direction
                     ? ToolDirectionControl.idealSize.width * angleScale : 40
-                let panelSpacing = (selection == .direction || usesValueControl) ? 8 * angleScale : 8
+                let panelSpacing = selection == .direction ? 8 * angleScale : 8
                 HStack(spacing: panelSpacing) {
                     ToolPreviewLayout(captionSpace: usesValueControl ? 0 : previewCaptionHeight + 6,
                                       captionHeight: previewCaptionHeight) {
@@ -307,20 +306,17 @@ struct WatchToolSettingsView: View {
                                 .accessibilityHidden(selection != .mode)
 
 
-                            if !tutorial.isActive && usesValueControl {
+                            if usesValueControl {
                                 valueControl()
                                     .frame(height: ToolValueControl.idealSize.height)
                             }
 
-                            if !tutorial.isActive {
+                            if !tutorial.isActive && selection == .direction {
                                 ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
                                                      isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
                                                      onAdjust: { adjustDirection(by: $0) })
                                     .frame(width: 40)
-                                    .opacity(selection == .direction ? 1 : 0)
-                                    .scaleEffect(reduceMotion || selection == .direction ? 1 : 0.35)
-                                    .allowsHitTesting(selection == .direction)
-                                    .accessibilityHidden(selection != .direction)
+                                    .transition(.identity)
                             }
                         }
                         .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
@@ -335,26 +331,20 @@ struct WatchToolSettingsView: View {
             ToolSettingCarousel(availableSettings: availableSettings, selection: selection,
                                 isEnabled: { tutorial.allowsToolPage($0.rawValue) }, onSelect: select,
                                 tutorial: tutorial,
-                                trailingInset: tutorial.isActive && (selection == .direction || usesValueControl) ? 48 : 0)
+                                trailingInset: tutorial.isActive && selection == .direction ? 48 : 0)
                 .frame(height: 30)
         }
         .overlay(alignment: .trailing) {
-            if tutorial.isActive {
+            if tutorial.isActive && selection == .direction {
                 // Extend 8 pt to the bottom of the clock area and 2 pt to the card.
                 // The control shares the remaining height among four equal gaps.
                 GeometryReader { geometry in
                     let height = geometry.size.height + 10
                     let scale = min(1, max(0, height) / ToolDirectionControl.idealSize.height)
-                    Group {
-                        if usesValueControl {
-                            valueControl(includesOuterSpacing: true)
-                        } else {
-                            ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
-                                                 isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
-                                                 onAdjust: { adjustDirection(by: $0) },
-                                                 includesOuterSpacing: true)
-                        }
-                    }
+                    ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
+                                         isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
+                                         onAdjust: { adjustDirection(by: $0) },
+                                         includesOuterSpacing: true)
                         .frame(width: ToolDirectionControl.idealSize.width,
                                height: max(ToolDirectionControl.idealSize.height,
                                            height / max(scale, 0.001)))
@@ -364,9 +354,7 @@ struct WatchToolSettingsView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                         .offset(y: -8)
                 }
-                .opacity(selection == .direction || usesValueControl ? 1 : 0)
-                .allowsHitTesting(selection == .direction || usesValueControl)
-                .accessibilityHidden(selection != .direction && !usesValueControl)
+                .transition(.identity)
             }
         }
         .padding(.horizontal, 10)
