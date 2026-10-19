@@ -10,6 +10,7 @@ final class TutorialSession: ObservableObject {
     @Published private(set) var toolPage = 1
     @Published private var toolIsEraser = false
     @Published private var releasedCircleEarly = false
+    private var failedCircleAttempts = 0
     @Published var galleryIsOpen = false
     @Published var galleryIsFullscreen = false
     var instruction: String {
@@ -97,6 +98,7 @@ final class TutorialSession: ObservableObject {
         cancelPendingAdvance()
         progress.start()
         releasedCircleEarly = false
+        failedCircleAttempts = 0
         crownPracticedSteps = []
         toolPage = 1
         toolIsEraser = false
@@ -116,12 +118,17 @@ final class TutorialSession: ObservableObject {
         TutorialDebug.trace("beginExercise.exit", debugState)
     }
 
-    func finishedCircleAttempt(kind: ShapeRecognizer.Kind?) {
+    func finishedCircleAttempt(kind: ShapeRecognizer.Kind?, isStrokeComplete: Bool = true) {
         guard step == .holdCircle, acceptsActions else { return }
         // A finger-drawn circle can snap as an ellipse; both demonstrate the hold gesture.
         if kind == .circle || kind == .ellipse {
             record(.heldCircle)
-        } else {
+        } else if isStrokeComplete {
+            failedCircleAttempts += 1
+            if failedCircleAttempts >= 3 {
+                advance()
+                return
+            }
             releasedCircleEarly = kind == nil
             activity()
         }

@@ -385,7 +385,7 @@ struct WatchCanvasView: View {
                       tutorial.acceptsActions, tutorial.allowsDrawing else { return }
                 if controller.recognizeActiveShape(adjustmentTolerance: tolerance) {
                     WKInterfaceDevice.current().play(.click)
-                    tutorial.finishedCircleAttempt(kind: controller.recognizedShapeKind)
+                    tutorial.finishedCircleAttempt(kind: controller.recognizedShapeKind, isStrokeComplete: false)
                 }
             } catch { }
         }
