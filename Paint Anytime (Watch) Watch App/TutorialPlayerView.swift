@@ -241,7 +241,12 @@ struct TutorialPlayerView: View {
                     if player.preserveDrawing() { onFinish() }
                 },
                                    screenWidth: screen.size.width,
-                                   screenHeight: screen.size.height)
+                                   screenHeight: screen.size.height,
+                                   // Reserve the tool chrome, carousel, and a readable
+                                   // three-item control. The card already scrolls overflow.
+                                   maximumCardHeight: page == .tools
+                                    ? max(32, screen.size.height - 40 - 30
+                                          - ToolValueControl.minimumHeight - 12) : nil)
                     .frame(width: screen.size.width)
                     .fixedSize(horizontal: false, vertical: true)
                     .background {

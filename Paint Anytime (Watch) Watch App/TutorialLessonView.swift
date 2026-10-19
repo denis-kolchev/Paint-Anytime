@@ -8,6 +8,7 @@ struct TutorialLessonView: View {
     let onFinish: () -> Void
     let screenWidth: CGFloat
     let screenHeight: CGFloat
+    var maximumCardHeight: CGFloat? = nil
     @State private var confirmsFinish = false
     @State private var didConfirmFinish = false
     @State private var greenDotCount = 0
@@ -15,7 +16,7 @@ struct TutorialLessonView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TutorialHintLayout(maximumHeight: screenHeight * 0.32) {
+        TutorialHintLayout(maximumHeight: min(screenHeight * 0.32, maximumCardHeight ?? .infinity)) {
             // Keep one layout child while the old and new copy crossfade.
             // The independent measurement below sizes the card for the new copy.
             ZStack {

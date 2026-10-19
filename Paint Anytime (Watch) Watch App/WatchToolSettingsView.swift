@@ -308,7 +308,7 @@ struct WatchToolSettingsView: View {
 
                             if usesValueControl {
                                 valueControl()
-                                    .frame(height: ToolValueControl.idealSize.height)
+                                    .frame(height: pickerGeometry.size.height)
                             }
 
                             if !tutorial.isActive && selection == .direction {
