@@ -175,6 +175,7 @@ struct WatchToolSettingsView: View {
         }
     }
 
+    @ScaledMetric(relativeTo: .caption2) private var previewCaptionHeight: CGFloat = 16
     private let topChromeHeight: CGFloat = 40
 
     private var pageAnimation: Animation? {
@@ -191,7 +192,8 @@ struct WatchToolSettingsView: View {
                     ? ToolDirectionControl.idealSize.width * angleScale : 40
                 let panelSpacing = (selection == .direction || usesValueControl) ? 8 * angleScale : 8
                 HStack(spacing: panelSpacing) {
-                    VStack(spacing: usesValueControl ? 0 : 6) {
+                    ToolPreviewLayout(captionSpace: usesValueControl ? 0 : previewCaptionHeight + 6,
+                                      captionHeight: previewCaptionHeight) {
                         ToolStrokePreview(style: controller.pencilStyle,
                                           fillPreviewSize: CGSize(width: settingsGeometry.size.width,
                                                                   height: max(1, settingsGeometry.size.height - 22)))
@@ -234,19 +236,26 @@ struct WatchToolSettingsView: View {
                                                            value: previewGeometry.size.height)
                                 }
                             }
-                        Text(valueTitle)
+                        Text(usesValueControl ? "" : valueTitle)
                             .font(.caption2)
                             .monospacedDigit()
                             .lineLimit(1)
                             .minimumScaleFactor(selection == .color && isAddingColor ? 0.5 : 0.7)
-                            // Hide the changing label immediately; only its layout
-                            // space animates as the viewport expands or contracts.
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .frame(height: previewCaptionHeight)
+                            // Keep text replacement and its width out of the layout
+                            // animation; only the outer opacity should animate.
+                            .contentTransition(.identity)
+                            .transaction { transaction in transaction.animation = nil }
+                            // Reveal the caption after the viewport has made room.
                             .opacity(usesValueControl ? 0 : 1)
-                            .animation(nil, value: usesValueControl)
-                            .frame(height: usesValueControl ? 0 : nil)
-                            .clipped()
+                            .animation(reduceMotion ? nil : .easeOut(duration: 0.10)
+                                .delay(usesValueControl ? 0 : 0.18), value: usesValueControl)
                             .accessibilityHidden(usesValueControl)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .animation(reduceMotion ? nil : .timingCurve(0.25, 0.1, 0.25, 1, duration: 0.28),
+                               value: usesValueControl)
                     // Keep both panels alive: animate their space and contents together.
                     GeometryReader { pickerGeometry in
                         let selectionOffset = tutorial.isActive && strokePreviewHeight > 0
@@ -692,5 +701,31 @@ private struct FillEdgeIcon: Shape {
             }
         }
         return path
+    }
+}
+
+/// Interpolate the proposed viewport height itself, keeping its top edge fixed.
+/// The caption always occupies its final position below the smaller viewport.
+private struct ToolPreviewLayout: Layout {
+    var captionSpace: CGFloat
+    let captionHeight: CGFloat
+
+    var animatableData: CGFloat {
+        get { captionSpace }
+        set { captionSpace = newValue }
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        proposal.replacingUnspecifiedDimensions()
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize,
+                       subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 2 else { return }
+        subviews[0].place(at: bounds.origin, anchor: .topLeading,
+                         proposal: ProposedViewSize(width: bounds.width,
+                                                    height: max(1, bounds.height - captionSpace)))
+        subviews[1].place(at: CGPoint(x: bounds.midX, y: bounds.maxY), anchor: .bottom,
+                         proposal: ProposedViewSize(width: bounds.width, height: captionHeight))
     }
 }
