@@ -154,7 +154,7 @@ private struct ToolFillPreview: View {
     var body: some View {
         // Render on a stable canvas shared by all settings pages. Layout only
         // moves its center; the viewport clips it without stretching the ink.
-        Color.white
+        Color(white: 0.88)
             .overlay {
                 if let bitmap {
                     Image(decorative: bitmap, scale: 2)
@@ -241,7 +241,8 @@ private actor ToolFillPreviewRenderer {
         guard !Task.isCancelled, let boundaryImage, let boundaryStroke,
               let fill = WatchBitmapRenderer.floodFill(image: boundaryImage, scale: 2,
                   point: center, style: request.style),
-              let image = WatchBitmapRenderer.render(strokes: [boundaryStroke, fill], size: size, scale: 2)
+              let image = WatchBitmapRenderer.render(strokes: [boundaryStroke, fill], size: size,
+                  scale: 2, paperWhite: 0.88)
             else { return nil }
         return Result(image: image)
     }
