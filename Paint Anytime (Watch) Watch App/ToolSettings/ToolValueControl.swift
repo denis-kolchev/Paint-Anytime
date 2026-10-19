@@ -1,8 +1,11 @@
 import SwiftUI
 
-struct ToolFillToleranceControl: View {
+struct ToolValueControl: View {
     static let idealSize = ToolDirectionControl.idealSize
     @Binding var value: Double
+    let range: ClosedRange<Double>
+    let valueTitle: String
+    let title: String
     let isEnabled: Bool
     var includesOuterSpacing = false
 
@@ -17,18 +20,18 @@ struct ToolFillToleranceControl: View {
                     .frame(width: 40, height: 30)
                     .contentShape(Rectangle())
             }
-            .disabled(!isEnabled || value >= 100)
+            .disabled(!isEnabled || value >= range.upperBound)
 
             if includesOuterSpacing { Spacer(minLength: 0) }
 
-            Text(L10n.percent(value / 100))
+            Text(valueTitle)
                 .font(.caption2)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .frame(width: 40, height: 36)
-                .accessibilityLabel(L10n.text("Sensitivity"))
-                .accessibilityValue(L10n.percent(value / 100))
+                .accessibilityLabel(title)
+                .accessibilityValue(valueTitle)
                 .accessibilityAdjustableAction { direction in
                     switch direction {
                     case .increment: adjust(by: 1)
@@ -46,7 +49,7 @@ struct ToolFillToleranceControl: View {
                     .frame(width: 40, height: 30)
                     .contentShape(Rectangle())
             }
-            .disabled(!isEnabled || value <= 0)
+            .disabled(!isEnabled || value <= range.lowerBound)
 
             if includesOuterSpacing { Spacer(minLength: 0) }
         }
@@ -57,6 +60,6 @@ struct ToolFillToleranceControl: View {
 
     private func adjust(by delta: Double) {
         guard isEnabled else { return }
-        value = min(100, max(0, value.rounded() + delta))
+        value = min(range.upperBound, max(range.lowerBound, value.rounded() + delta))
     }
 }

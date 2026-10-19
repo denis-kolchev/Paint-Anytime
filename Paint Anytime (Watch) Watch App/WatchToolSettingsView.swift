@@ -103,6 +103,18 @@ struct WatchToolSettingsView: View {
         }
     }
 
+    private var usesValueControl: Bool {
+        selection == .sensitivity || selection == .opacity || selection == .width
+    }
+
+    private func valueControl(includesOuterSpacing: Bool = false) -> some View {
+        ToolValueControl(value: crownValue,
+                         range: (selection == .width ? 1 : 0)...crownMaximum,
+                         valueTitle: valueTitle, title: selection.title,
+                         isEnabled: tutorial.allowsToolAdjustment(page: selection.rawValue),
+                         includesOuterSpacing: includesOuterSpacing)
+    }
+
     private var crownMaximum: Double {
         switch selection {
         case .opacity, .sensitivity: 100
@@ -175,11 +187,11 @@ struct WatchToolSettingsView: View {
                 let angleHeight = settingsGeometry.size.height + (tutorial.isActive ? 40 : 0)
                 let angleScale = tutorial.isActive
                     ? min(1, max(0, angleHeight) / ToolDirectionControl.idealSize.height) : 1
-                let panelWidth = (selection == .width || selection == .opacity) ? 0 : (selection == .direction || selection == .sensitivity)
+                let panelWidth = (selection == .direction || usesValueControl)
                     ? ToolDirectionControl.idealSize.width * angleScale : 40
-                let panelSpacing = (selection == .width || selection == .opacity) ? 0 : (selection == .direction || selection == .sensitivity) ? 8 * angleScale : 8
+                let panelSpacing = (selection == .direction || usesValueControl) ? 8 * angleScale : 8
                 HStack(spacing: panelSpacing) {
-                    VStack(spacing: selection == .sensitivity ? 0 : 6) {
+                    VStack(spacing: usesValueControl ? 0 : 6) {
                         ToolStrokePreview(style: controller.pencilStyle,
                                           fillPreviewSize: CGSize(width: settingsGeometry.size.width,
                                                                   height: max(1, settingsGeometry.size.height - 22)))
@@ -229,10 +241,10 @@ struct WatchToolSettingsView: View {
                             .minimumScaleFactor(selection == .color && isAddingColor ? 0.5 : 0.7)
                             // Collapse the duplicate value with the page animation,
                             // allowing the viewport to grow down into its space.
-                            .frame(height: selection == .sensitivity ? 0 : nil)
-                            .opacity(selection == .sensitivity ? 0 : 1)
+                            .frame(height: usesValueControl ? 0 : nil)
+                            .opacity(usesValueControl ? 0 : 1)
                             .clipped()
-                            .accessibilityHidden(selection == .sensitivity)
+                            .accessibilityHidden(usesValueControl)
                     }
                     // Keep both panels alive: animate their space and contents together.
                     GeometryReader { pickerGeometry in
@@ -285,10 +297,9 @@ struct WatchToolSettingsView: View {
                                 .accessibilityHidden(selection != .mode)
 
 
-                            if !tutorial.isActive && selection == .sensitivity {
-                                ToolFillToleranceControl(value: crownValue,
-                                    isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.sensitivity.rawValue))
-                                    .frame(height: ToolFillToleranceControl.idealSize.height)
+                            if !tutorial.isActive && usesValueControl {
+                                valueControl()
+                                    .frame(height: ToolValueControl.idealSize.height)
                             }
 
                             if !tutorial.isActive {
@@ -305,7 +316,6 @@ struct WatchToolSettingsView: View {
                         .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
                     }
                     .frame(width: panelWidth)
-                    .opacity((selection == .width || selection == .opacity) ? 0 : 1)
                     .modifier(ToolPickerViewportClip(isEnabled: !tutorial.isActive))
                 }
                 .frame(width: settingsGeometry.size.width, height: settingsGeometry.size.height)
@@ -315,7 +325,7 @@ struct WatchToolSettingsView: View {
             ToolSettingCarousel(availableSettings: availableSettings, selection: selection,
                                 isEnabled: { tutorial.allowsToolPage($0.rawValue) }, onSelect: select,
                                 tutorial: tutorial,
-                                trailingInset: tutorial.isActive && (selection == .direction || selection == .sensitivity) ? 48 : 0)
+                                trailingInset: tutorial.isActive && (selection == .direction || usesValueControl) ? 48 : 0)
                 .frame(height: 30)
         }
         .overlay(alignment: .trailing) {
@@ -326,10 +336,8 @@ struct WatchToolSettingsView: View {
                     let height = geometry.size.height + 10
                     let scale = min(1, max(0, height) / ToolDirectionControl.idealSize.height)
                     Group {
-                        if selection == .sensitivity {
-                            ToolFillToleranceControl(value: crownValue,
-                                isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.sensitivity.rawValue),
-                                includesOuterSpacing: true)
+                        if usesValueControl {
+                            valueControl(includesOuterSpacing: true)
                         } else {
                             ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
                                                  isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
@@ -346,9 +354,9 @@ struct WatchToolSettingsView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                         .offset(y: -8)
                 }
-                .opacity(selection == .direction || selection == .sensitivity ? 1 : 0)
-                .allowsHitTesting(selection == .direction || selection == .sensitivity)
-                .accessibilityHidden(selection != .direction && selection != .sensitivity)
+                .opacity(selection == .direction || usesValueControl ? 1 : 0)
+                .allowsHitTesting(selection == .direction || usesValueControl)
+                .accessibilityHidden(selection != .direction && !usesValueControl)
             }
         }
         .padding(.horizontal, 10)
