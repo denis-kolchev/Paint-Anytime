@@ -39323,179 +39323,23 @@
         }
       }
     },
-    "Fill tolerance on the current layer. Higher values include more colors and opacity levels. The crosshair finds a threshold without leaks using closed shapes, or the preview." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تفاوت اللون والعتامة في الطبقة الحالية. القيم الأعلى توسّع التعبئة. تضبط علامة التصويب حدًا بلا تسرّب اعتمادًا على الأشكال المغلقة أو المعاينة."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tolerance barev a krytí v aktuální vrstvě. Vyšší hodnoty rozšiřují výplň. Zaměřovač najde práh bez přetékání podle uzavřených tvarů nebo náhledu."
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tolerance for farve og opacitet på det aktuelle lag. Højere værdier udvider udfyldningen. Sigtet finder en grænse uden overløb ud fra lukkede figurer eller forhåndsvisningen."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Farb- und Deckkrafttoleranz auf der aktuellen Ebene. Höhere Werte erweitern die Füllung. Das Fadenkreuz ermittelt anhand geschlossener Formen oder der Vorschau einen Wert ohne Überlaufen."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ανοχή χρώματος και αδιαφάνειας στην τρέχουσα στρώση. Οι υψηλότερες τιμές διευρύνουν το γέμισμα. Το στόχαστρο βρίσκει όριο χωρίς διαρροή από κλειστά σχήματα ή την προεπισκόπηση."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fill tolerance on the current layer. Higher values include more colors and opacity levels. The crosshair finds a threshold without leaks using closed shapes, or the preview."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tolerancia de color y opacidad en la capa actual. Los valores altos amplían el relleno. La mirilla calcula un umbral sin desbordamientos según las formas cerradas o la vista previa."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nykyisen tason värin ja peittävyyden toleranssi. Suuremmat arvot laajentavat täyttöä. Tähtäin etsii vuotamattoman raja-arvon suljettujen muotojen tai esikatselun perusteella."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tolérance de couleur et d’opacité du calque actuel. Une valeur élevée étend le remplissage. Le viseur calcule un seuil sans débordement à partir des formes fermées ou de l’aperçu."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "סבילות לצבע ולאטימות בשכבה הנוכחית. ערכים גבוהים מרחיבים את המילוי. הכוונת מוצאת סף ללא גלישה לפי צורות סגורות או התצוגה המקדימה."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Szín- és fedettségtűrés az aktuális rétegen. A magasabb értékek bővítik a kitöltést. A célkereszt zárt alakzatok vagy az előnézet alapján keres túlfolyásmentes küszöböt."
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toleransi warna dan opasitas pada lapisan aktif. Nilai lebih tinggi memperluas isian. Bidikan mencari ambang tanpa kebocoran berdasarkan bentuk tertutup atau pratinjau."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tolleranza di colore e opacità sul livello attuale. Valori più alti ampliano il riempimento. Il mirino trova una soglia senza fuoriuscite usando le forme chiuse o l’anteprima."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "現在のレイヤーの色と不透明度の許容範囲。値を上げると塗りつぶす範囲が広がります。照準ボタンは閉じた図形、またはプレビューから、はみ出さないしきい値を求めます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "현재 레이어의 색상과 불투명도 허용 범위입니다. 값이 높을수록 채우는 범위가 넓어집니다. 조준 버튼은 닫힌 도형 또는 미리보기를 기준으로 넘치지 않는 임계값을 찾습니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toleranse for farge og opasitet på gjeldende lag. Høyere verdier utvider fyllet. Siktet finner en terskel uten lekkasje ut fra lukkede former eller forhåndsvisningen."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kleur- en dekkingstolerantie op de huidige laag. Hogere waarden vergroten de vulling. Het vizier bepaalt een drempel zonder uitlopen op basis van gesloten vormen of het voorbeeld."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tolerancja koloru i krycia na bieżącej warstwie. Wyższe wartości rozszerzają wypełnienie. Celownik dobiera próg bez wyciekania na podstawie zamkniętych kształtów lub podglądu."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tolerância de cor e opacidade na camada atual. Valores maiores ampliam o preenchimento. A mira calcula um limite sem vazamentos com base nas formas fechadas ou na prévia."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tolerância de cor e opacidade na camada atual. Valores mais altos alargam o preenchimento. A mira calcula um limite sem fugas com base nas formas fechadas ou na pré-visualização."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Допуск цвета и прозрачности на текущем слое. Выше — шире область заливки. Прицел подбирает порог без утечки по замкнутым фигурам или превью."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tolerans för färg och opacitet på det aktuella lagret. Högre värden utökar fyllningen. Siktet hittar ett tröskelvärde utan läckage utifrån slutna former eller förhandsvisningen."
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ความคลาดเคลื่อนของสีและความทึบบนเลเยอร์ปัจจุบัน ค่าสูงจะขยายพื้นที่เติมสี ปุ่มเป้าเล็งจะหาค่าที่สีไม่รั่วจากรูปทรงปิด หรือจากภาพตัวอย่าง"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geçerli katmandaki renk ve opaklık toleransı. Yüksek değerler dolguyu genişletir. Nişangâh, kapalı şekillere veya önizlemeye göre taşmayan bir eşik bulur."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Допуск кольору й непрозорості на поточному шарі. Вищі значення розширюють заливку. Приціл підбирає поріг без витікання за замкнутими фігурами або попереднім переглядом."
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dung sai màu và độ mờ trên lớp hiện tại. Giá trị cao mở rộng vùng tô. Nút tâm ngắm tìm ngưỡng không tràn dựa trên hình khép kín hoặc bản xem trước."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "当前图层的颜色和不透明度容差。数值越高，填充范围越广。准星按钮根据封闭图形或预览选择不会溢出的阈值。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "目前圖層的顏色和不透明度容差。數值越高，填色範圍越廣。準星按鈕依據封閉圖形或預覽選擇不會溢出的臨界值。"
-          }
-        }
+    "Higher fill tolerance includes more colors and opacity levels on the current layer. Drag the slider or turn the Digital Crown to adjust the tolerance." : {
+  "extractionState": "manual",
+  "localizations": {
+    "en": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Higher fill tolerance includes more colors and opacity levels on the current layer. Drag the slider or turn the Digital Crown to adjust the tolerance."
       }
     },
+    "ru": {
+      "stringUnit": {
+        "state": "translated",
+        "value": "Более высокий допуск заливки включает больше цветов и уровней прозрачности на текущем слое. Перетаскивайте ползунок или вращайте Digital Crown, чтобы изменить допуск."
+      }
+    }
+  }
+},
     "Sets paint coverage: %1$@ is invisible, %2$@ gives the brush its full coverage. Textured and translucent brushes retain their character. For the pixel eraser, this sets erasing strength." : {
       "extractionState" : "manual",
       "localizations" : {

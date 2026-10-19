@@ -80,6 +80,20 @@ struct ArchitectureChecks {
     }
 
     @MainActor static func main() throws {
+        let referenceTools = ToolSettings(persistsPreferences: false)
+        referenceTools.selectInstrument(.pen)
+        referenceTools.pencilStyle.width = 9
+        referenceTools.setSynchronizeWidth(false)
+        referenceTools.selectInstrument(.eraser)
+        referenceTools.selectInstrument(.fill)
+        referenceTools.pencilStyle.width = 13
+        referenceTools.setSynchronizeOpacity(false)
+        referenceTools.pencilStyle.color = SIMD4(0.2, 0.4, 0.8, 1)
+        referenceTools.pencilStyle.opacity = 0.35
+        precondition(referenceTools.fillReferenceStyle.instrument == .monoline)
+        precondition(referenceTools.fillReferenceStyle.width == 13)
+        precondition(referenceTools.fillReferenceStyle.color == referenceTools.pencilStyle.color)
+        precondition(referenceTools.fillReferenceStyle.opacity == 0.35)
         checkSelectionTransfer()
         checkClear()
         let fillCanvas = CanvasController(persistsPreferences: false)

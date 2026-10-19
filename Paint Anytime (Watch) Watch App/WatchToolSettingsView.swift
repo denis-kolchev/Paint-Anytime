@@ -25,7 +25,6 @@ struct WatchToolSettingsView: View {
         }
     }
     @State private var strokePreviewHeight: CGFloat = 0
-    @State private var fillFocusRequest = 0
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
@@ -176,19 +175,15 @@ struct WatchToolSettingsView: View {
                 let angleHeight = settingsGeometry.size.height + (tutorial.isActive ? 40 : 0)
                 let angleScale = tutorial.isActive
                     ? min(1, max(0, angleHeight) / ToolDirectionControl.idealSize.height) : 1
-                let panelWidth = (selection == .width || selection == .opacity) ? 0 : selection == .direction
+                let panelWidth = (selection == .width || selection == .opacity) ? 0 : (selection == .direction || selection == .sensitivity)
                     ? ToolDirectionControl.idealSize.width * angleScale : 40
-                let panelSpacing = (selection == .width || selection == .opacity) ? 0 : selection == .direction ? 8 * angleScale : 8
+                let panelSpacing = (selection == .width || selection == .opacity) ? 0 : (selection == .direction || selection == .sensitivity) ? 8 * angleScale : 8
                 HStack(spacing: panelSpacing) {
                     VStack(spacing: 6) {
                         ToolStrokePreview(style: controller.pencilStyle,
-                                          synchronizesOpacity: controller.synchronization.opacity,
+                                          fillReferenceStyle: controller.tools.fillReferenceStyle,
                                           fillPreviewSize: CGSize(width: settingsGeometry.size.width,
-                                                                  height: max(1, settingsGeometry.size.height - 22)),
-                                          fillFocusRequest: fillFocusRequest,
-                                          fillCalibrationLayer: controller.selectedLayer,
-                                          fillCanvasSize: controller.document.size(fallback: WKInterfaceDevice.current().screenBounds.size),
-                                          applyFillSensitivity: { controller.pencilStyle.fillSensitivity = $0 })
+                                                                  height: max(1, settingsGeometry.size.height - 22)))
                             .overlay {
                                 if selection == .color && isAddingColor {
                                     Button {
@@ -285,47 +280,10 @@ struct WatchToolSettingsView: View {
                                 .accessibilityHidden(selection != .mode)
 
 
-                            if selection == .sensitivity {
-                                VStack(spacing: 0) {
-                                    Spacer(minLength: 0)
-                                    Button {
-                                        tutorial.activity()
-                                        fillFocusRequest += 1
-                                        crownFocused = true
-                                    } label: {
-                                        Image(systemName: "scope")
-                                            .font(.title3)
-                                            .frame(width: 40, height: 40)
-                                            .contentShape(Rectangle())
-                                    }
-                                    .accessibilityLabel(L10n.text("Find safe sensitivity"))
-                                    Spacer(minLength: 0)
-                                    Button {
-                                        tutorial.activity()
-                                        controller.pencilStyle.smoothFill.toggle()
-                                        crownFocused = true
-                                    } label: {
-                                        FillEdgeIcon(isSmooth: controller.pencilStyle.smoothFill)
-                                            .fill(.white)
-                                            .frame(width: 23, height: 23)
-                                            .frame(width: 40, height: 40)
-                                            .contentShape(Rectangle())
-                                    }
-                                    .accessibilityLabel(L10n.text("Smooth fill"))
-                                    .accessibilityValue(L10n.text(controller.pencilStyle.smoothFill ? "On" : "Off"))
-                                    .accessibilityAddTraits(controller.pencilStyle.smoothFill ? [.isSelected] : [])
-                                    Spacer(minLength: 0)
-                                }
-                                .buttonStyle(.plain)
-                                // In the tutorial, span from the clock area's bottom
-                                // (8 pt above the preview) to the carousel's top.
-                                // The three spacers divide the free height equally.
-                                .frame(height: tutorial.isActive
-                                    ? pickerGeometry.size.height + 8
-                                    : (strokePreviewHeight > 0
-                                        ? strokePreviewHeight : pickerGeometry.size.height))
-                                .frame(maxHeight: .infinity, alignment: .top)
-                                .offset(y: tutorial.isActive ? -8 : 0)
+                            if !tutorial.isActive && selection == .sensitivity {
+                                ToolFillToleranceControl(value: crownValue,
+                                    isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.sensitivity.rawValue))
+                                    .frame(height: ToolFillToleranceControl.idealSize.height)
                             }
 
                             if !tutorial.isActive {
@@ -352,7 +310,7 @@ struct WatchToolSettingsView: View {
             ToolSettingCarousel(availableSettings: availableSettings, selection: selection,
                                 isEnabled: { tutorial.allowsToolPage($0.rawValue) }, onSelect: select,
                                 tutorial: tutorial,
-                                trailingInset: tutorial.isActive && selection == .direction ? 48 : 0)
+                                trailingInset: tutorial.isActive && (selection == .direction || selection == .sensitivity) ? 48 : 0)
                 .frame(height: 30)
         }
         .overlay(alignment: .trailing) {
@@ -362,10 +320,17 @@ struct WatchToolSettingsView: View {
                 GeometryReader { geometry in
                     let height = geometry.size.height + 10
                     let scale = min(1, max(0, height) / ToolDirectionControl.idealSize.height)
-                    ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
-                                         isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
-                                         onAdjust: { adjustDirection(by: $0) },
-                                         includesOuterSpacing: true)
+                    Group {
+                        if selection == .sensitivity {
+                            ToolFillToleranceControl(value: crownValue,
+                                isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.sensitivity.rawValue))
+                        } else {
+                            ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
+                                                 isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
+                                                 onAdjust: { adjustDirection(by: $0) },
+                                                 includesOuterSpacing: true)
+                        }
+                    }
                         .frame(width: ToolDirectionControl.idealSize.width,
                                height: max(ToolDirectionControl.idealSize.height,
                                            height / max(scale, 0.001)))
@@ -375,9 +340,9 @@ struct WatchToolSettingsView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                         .offset(y: -8)
                 }
-                .opacity(selection == .direction ? 1 : 0)
-                .allowsHitTesting(selection == .direction)
-                .accessibilityHidden(selection != .direction)
+                .opacity(selection == .direction || selection == .sensitivity ? 1 : 0)
+                .allowsHitTesting(selection == .direction || selection == .sensitivity)
+                .accessibilityHidden(selection != .direction && selection != .sensitivity)
             }
         }
         .padding(.horizontal, 10)

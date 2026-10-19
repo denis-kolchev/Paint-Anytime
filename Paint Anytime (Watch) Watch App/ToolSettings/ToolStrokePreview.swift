@@ -4,12 +4,8 @@ struct ToolStrokePreview: View {
     static let viewportShape = RoundedRectangle(cornerRadius: 16)
 
     let style: PencilStyle
-    var synchronizesOpacity = true
+    let fillReferenceStyle: PencilStyle
     let fillPreviewSize: CGSize
-    let fillFocusRequest: Int
-    let fillCalibrationLayer: CanvasLayer
-    let fillCanvasSize: CGSize
-    let applyFillSensitivity: (Float) -> Void
     @Environment(\.displayScale) private var displayScale
     @State private var bitmap: CGImage?
     @State private var renderer = ToolPreviewRenderer()
@@ -17,10 +13,8 @@ struct ToolStrokePreview: View {
     var body: some View {
         Group {
             if style.instrument == .fill {
-                ToolFillPreview(style: style, synchronizesOpacity: synchronizesOpacity,
-                                size: fillPreviewSize, focusRequest: fillFocusRequest,
-                                calibrationLayer: fillCalibrationLayer, canvasSize: fillCanvasSize,
-                                applySensitivity: applyFillSensitivity)
+                ToolFillPreview(style: style, referenceStyle: fillReferenceStyle,
+                                size: fillPreviewSize)
             } else if style.instrument == .pencil || style.instrument == .crayon {
                 deferredPreview
             } else {
@@ -134,21 +128,16 @@ nonisolated private enum ToolPreviewStroke {
 
 private struct ToolFillPreview: View {
     let style: PencilStyle
-    let synchronizesOpacity: Bool
+    let referenceStyle: PencilStyle
     let size: CGSize
-    let focusRequest: Int
-    let calibrationLayer: CanvasLayer
-    let canvasSize: CGSize
-    let applySensitivity: (Float) -> Void
     @State private var renderer = ToolFillPreviewRenderer()
-    @State private var sensitivityCalculator = ToolLayerFillSensitivity()
     @State private var bitmap: CGImage?
 
     private var request: ToolFillPreviewRequest {
         ToolFillPreviewRequest(style: style,
             size: CGSize(width: max(1, size.width.rounded()),
                          height: max(1, size.height.rounded())),
-            synchronizesOpacity: synchronizesOpacity)
+            referenceStyle: referenceStyle)
     }
 
     var body: some View {
@@ -171,26 +160,14 @@ private struct ToolFillPreview: View {
                     if let result { bitmap = result.image }
                 } catch {}
             }
-            .task(id: focusRequest) {
-                guard focusRequest > 0 else { return }
-                let layer = calibrationLayer
-                var result = await sensitivityCalculator.calculate(layer: layer, size: canvasSize)
-                if result == nil, !Task.isCancelled,
-                   let reference = await renderer.calibrationLayer(request) {
-                    // Before drawing a closed shape, calibrate against the preview
-                    // contour at the current color/opacity instead of defaulting to zero.
-                    result = await sensitivityCalculator.calculate(layer: reference, size: request.size)
-                }
-                guard !Task.isCancelled, calibrationLayer == layer else { return }
-                applySensitivity(result ?? 0)
-            }
+
     }
 }
 
 nonisolated private struct ToolFillPreviewRequest: Equatable {
     let style: PencilStyle
     let size: CGSize
-    let synchronizesOpacity: Bool
+    let referenceStyle: PencilStyle
 }
 
 private actor ToolFillPreviewRenderer {
@@ -198,14 +175,10 @@ private actor ToolFillPreviewRenderer {
         let image: CGImage
     }
 
+    private let contourID = UUID()
     private var boundaryRequest: ToolFillPreviewRequest?
     private var boundaryImage: CGImage?
     private var boundaryStroke: Stroke?
-
-    func calibrationLayer(_ request: ToolFillPreviewRequest) -> CanvasLayer? {
-        guard render(request) != nil, let boundaryStroke else { return nil }
-        return CanvasLayer(strokes: [boundaryStroke])
-    }
 
     func render(_ request: ToolFillPreviewRequest) -> Result? {
         let size = request.size
@@ -213,23 +186,19 @@ private actor ToolFillPreviewRenderer {
         var keyStyle = request.style
         keyStyle.fillSensitivity = 0
         let key = ToolFillPreviewRequest(style: keyStyle, size: size,
-                                        synchronizesOpacity: request.synchronizesOpacity)
+                                        referenceStyle: request.referenceStyle)
         if boundaryRequest != key {
-            var pen = PencilStyle.initial(for: .pen)
-            pen.color = request.style.color
-            pen.opacity = request.synchronizesOpacity ? request.style.effectiveOpacity : 1
-            pen.width = 4
+            let pen = request.referenceStyle
             let radius = max(1, min(max(1, size.width - 48), size.height) * 0.34)
-            // This reference contour has constant nib width. Equal timestamps
-            // keep Pen's speed smoothing from widening its starting point,
-            // which would otherwise leave a bump where the circle closes.
+            // Render the reference monoline with its actual width and antialiasing.
+            // Stable timing and identity keep calibration and preview identical.
             let points = (0...128).map { index in
                 let angle = Double(index % 128) * 2 * Double.pi / 128
                 return PointerSample(position: SIMD2(Float(center.x + radius * cos(angle)),
                                                      Float(center.y + radius * sin(angle))),
-                                     pressure: 1, timestamp: 0)
+                                     pressure: 1, timestamp: Double(index) / 128)
             }
-            let outline = Stroke(points: points, style: pen)
+            let outline = Stroke(points: points, style: pen, id: contourID)
             // Match canvas filling: evaluate the ink on a transparent layer,
             // independent of the preview paper or the document background.
             guard let image = WatchBitmapRenderer.layerThumbnail(strokes: [outline], size: size, scale: 2)
@@ -245,69 +214,5 @@ private actor ToolFillPreviewRenderer {
                   scale: 2, paperWhite: 0.88)
             else { return nil }
         return Result(image: image)
-    }
-}
-
-/// Find the weakest boundary of actual enclosed transparent regions, using the
-/// same pixels and alpha comparison as layer flood fill (transparent seed RGBA = 0).
-private actor ToolLayerFillSensitivity {
-    func calculate(layer: CanvasLayer, size: CGSize) -> Float? {
-        guard !Task.isCancelled,
-              let image = WatchBitmapRenderer.layerThumbnail(strokes: layer.strokes, size: size, scale: 2),
-              let context = CGContext(data: nil, width: image.width, height: image.height,
-                  bitsPerComponent: 8, bytesPerRow: image.width * 4,
-                  space: CGColorSpaceCreateDeviceRGB(),
-                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue),
-              let data = context.data else { return nil }
-        let width = image.width, height = image.height
-        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
-        let pixels = data.assumingMemoryBound(to: UInt8.self)
-        let count = width * height
-
-        func exterior(tolerance: Int) -> [Bool] {
-            var reached = [Bool](repeating: false, count: count)
-            var queue: [Int] = []
-            func enqueue(_ index: Int) {
-                guard !reached[index], Int(pixels[index * 4 + 3]) <= tolerance else { return }
-                reached[index] = true
-                queue.append(index)
-            }
-            for x in 0..<width {
-                enqueue(x)
-                enqueue((height - 1) * width + x)
-            }
-            for y in 0..<height {
-                enqueue(y * width)
-                enqueue(y * width + width - 1)
-            }
-            var head = 0
-            while head < queue.count {
-                if head % 4096 == 0 && Task.isCancelled { return reached }
-                let index = queue[head]
-                head += 1
-                let x = index % width, y = index / width
-                if x > 0 { enqueue(index - 1) }
-                if x + 1 < width { enqueue(index + 1) }
-                if y > 0 { enqueue(index - width) }
-                if y + 1 < height { enqueue(index + width) }
-            }
-            return reached
-        }
-
-        let outside = exterior(tolerance: 0)
-        let enclosed = (0..<count).filter { !outside[$0] && pixels[$0 * 4 + 3] == 0 }
-        guard !Task.isCancelled, !enclosed.isEmpty else { return nil }
-        // Protect every existing enclosed area, including narrow parts of a contour.
-        var low = 0, high = 100
-        while high - low > 1 {
-            guard !Task.isCancelled else { return nil }
-            let middle = (low + high) / 2
-            let reached = exterior(tolerance: Int((Float(middle) / 100 * 255).rounded()))
-            if enclosed.contains(where: { reached[$0] }) { high = middle }
-            else { low = middle }
-        }
-        // Use the highest safe UI percentage. Subtracting an arbitrary margin
-        // excludes partially covered contour pixels and leaves an unfilled fringe.
-        return Float(low) / 100
     }
 }

@@ -24,6 +24,15 @@ final class ToolSettings: ObservableObject {
         if persistsPreferences { preferences.defaults.set(mode.rawValue, forKey: Self.blendingKey) }
     }
 
+    /// Calibrate a monoline contour using the fill's current width and ink.
+    var fillReferenceStyle: PencilStyle {
+        var style = PencilStyle.initial(for: .monoline)
+        style.width = pencilStyle.width
+        style.color = pencilStyle.color
+        style.opacity = pencilStyle.effectiveOpacity
+        return style
+    }
+
     var maximumWidth: Float { pencilStyle.instrument.maximumWidth }
 
     func setSynchronizeWidth(_ enabled: Bool) {
