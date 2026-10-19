@@ -129,30 +129,36 @@ private struct ToolFillPreview: View {
     let size: CGSize
 
     var body: some View {
-        // Keep the blot's size stable while settings pages change the viewport.
+        // Keep the organic outline stable and center its visible bounds in the viewport.
         Color(white: 0.88)
             .overlay {
                 Canvas { context, canvasSize in
                     let center = CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2)
-                    let radius = max(1, min(max(1, canvasSize.width - 48), canvasSize.height) * 0.34)
+                    let radius = max(1, min(max(1, size.width - 48), size.height) * 0.34)
                     let blot = Path { path in
                         for index in 0..<160 {
                             let angle = Double(index) / 160 * 2 * Double.pi
                             let reach = radius * (1 + 0.13 * sin(3 * angle + 0.6)
                                                      + 0.08 * cos(5 * angle - 0.4))
-                            let point = CGPoint(x: center.x + reach * cos(angle),
-                                                y: center.y + reach * sin(angle))
+                            let point = CGPoint(x: reach * cos(angle),
+                                                y: reach * sin(angle) * 1.16)
                             if index == 0 { path.move(to: point) }
                             else { path.addLine(to: point) }
                         }
                         path.closeSubpath()
                     }
+                    let bounds = blot.boundingRect
+                    let scale = min(1, canvasSize.width * 0.84 / bounds.width,
+                                    canvasSize.height * 0.84 / bounds.height)
+                    let centeredBlot = blot.applying(CGAffineTransform(
+                        a: scale, b: 0, c: 0, d: scale,
+                        tx: center.x - bounds.midX * scale,
+                        ty: center.y - bounds.midY * scale))
                     let color = Color(.sRGB, red: Double(style.color.x),
                                       green: Double(style.color.y), blue: Double(style.color.z),
                                       opacity: Double(style.color.w * style.effectiveOpacity))
-                    context.fill(blot, with: .color(color))
+                    context.fill(centeredBlot, with: .color(color))
                 }
-                .frame(width: max(1, size.width), height: max(1, size.height))
                 .allowsHitTesting(false)
             }
     }

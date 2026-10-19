@@ -239,10 +239,11 @@ struct WatchToolSettingsView: View {
                             .monospacedDigit()
                             .lineLimit(1)
                             .minimumScaleFactor(selection == .color && isAddingColor ? 0.5 : 0.7)
-                            // Collapse the duplicate value with the page animation,
-                            // allowing the viewport to grow down into its space.
-                            .frame(height: usesValueControl ? 0 : nil)
+                            // Hide the changing label immediately; only its layout
+                            // space animates as the viewport expands or contracts.
                             .opacity(usesValueControl ? 0 : 1)
+                            .animation(nil, value: usesValueControl)
+                            .frame(height: usesValueControl ? 0 : nil)
                             .clipped()
                             .accessibilityHidden(usesValueControl)
                     }
