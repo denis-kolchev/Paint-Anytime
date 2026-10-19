@@ -39323,19 +39323,19 @@
         }
       }
     },
-    "Higher fill tolerance includes more colors and opacity levels on the current layer. Drag the slider or turn the Digital Crown to adjust the tolerance." : {
+    "Higher fill tolerance includes more colors and opacity levels on the current layer. Use the plus and minus buttons for 1% steps. Hold a button to repeat, or turn the Digital Crown." : {
   "extractionState": "manual",
   "localizations": {
     "en": {
       "stringUnit": {
         "state": "translated",
-        "value": "Higher fill tolerance includes more colors and opacity levels on the current layer. Drag the slider or turn the Digital Crown to adjust the tolerance."
+        "value": "Higher fill tolerance includes more colors and opacity levels on the current layer. Use the plus and minus buttons for 1% steps. Hold a button to repeat, or turn the Digital Crown."
       }
     },
     "ru": {
       "stringUnit": {
         "state": "translated",
-        "value": "Более высокий допуск заливки включает больше цветов и уровней прозрачности на текущем слое. Перетаскивайте ползунок или вращайте Digital Crown, чтобы изменить допуск."
+        "value": "Более высокий допуск заливки включает больше цветов и уровней прозрачности на текущем слое. Кнопки «+» и «−» меняют допуск с шагом 1%. Удерживайте кнопку для повторения или вращайте Digital Crown."
       }
     }
   }

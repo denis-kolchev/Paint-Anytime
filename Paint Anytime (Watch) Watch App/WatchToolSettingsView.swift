@@ -179,9 +179,8 @@ struct WatchToolSettingsView: View {
                     ? ToolDirectionControl.idealSize.width * angleScale : 40
                 let panelSpacing = (selection == .width || selection == .opacity) ? 0 : (selection == .direction || selection == .sensitivity) ? 8 * angleScale : 8
                 HStack(spacing: panelSpacing) {
-                    VStack(spacing: 6) {
+                    VStack(spacing: selection == .sensitivity ? 0 : 6) {
                         ToolStrokePreview(style: controller.pencilStyle,
-                                          fillReferenceStyle: controller.tools.fillReferenceStyle,
                                           fillPreviewSize: CGSize(width: settingsGeometry.size.width,
                                                                   height: max(1, settingsGeometry.size.height - 22)))
                             .overlay {
@@ -228,6 +227,12 @@ struct WatchToolSettingsView: View {
                             .monospacedDigit()
                             .lineLimit(1)
                             .minimumScaleFactor(selection == .color && isAddingColor ? 0.5 : 0.7)
+                            // Collapse the duplicate value with the page animation,
+                            // allowing the viewport to grow down into its space.
+                            .frame(height: selection == .sensitivity ? 0 : nil)
+                            .opacity(selection == .sensitivity ? 0 : 1)
+                            .clipped()
+                            .accessibilityHidden(selection == .sensitivity)
                     }
                     // Keep both panels alive: animate their space and contents together.
                     GeometryReader { pickerGeometry in
@@ -323,7 +328,8 @@ struct WatchToolSettingsView: View {
                     Group {
                         if selection == .sensitivity {
                             ToolFillToleranceControl(value: crownValue,
-                                isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.sensitivity.rawValue))
+                                isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.sensitivity.rawValue),
+                                includesOuterSpacing: true)
                         } else {
                             ToolDirectionControl(angle: controller.pencilStyle.reedAngle,
                                                  isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),

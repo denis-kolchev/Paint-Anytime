@@ -4,7 +4,6 @@ struct ToolStrokePreview: View {
     static let viewportShape = RoundedRectangle(cornerRadius: 16)
 
     let style: PencilStyle
-    let fillReferenceStyle: PencilStyle
     let fillPreviewSize: CGSize
     @Environment(\.displayScale) private var displayScale
     @State private var bitmap: CGImage?
@@ -13,8 +12,7 @@ struct ToolStrokePreview: View {
     var body: some View {
         Group {
             if style.instrument == .fill {
-                ToolFillPreview(style: style, referenceStyle: fillReferenceStyle,
-                                size: fillPreviewSize)
+                ToolFillPreview(style: style, size: fillPreviewSize)
             } else if style.instrument == .pencil || style.instrument == .crayon {
                 deferredPreview
             } else {
@@ -128,91 +126,34 @@ nonisolated private enum ToolPreviewStroke {
 
 private struct ToolFillPreview: View {
     let style: PencilStyle
-    let referenceStyle: PencilStyle
     let size: CGSize
-    @State private var renderer = ToolFillPreviewRenderer()
-    @State private var bitmap: CGImage?
-
-    private var request: ToolFillPreviewRequest {
-        ToolFillPreviewRequest(style: style,
-            size: CGSize(width: max(1, size.width.rounded()),
-                         height: max(1, size.height.rounded())),
-            referenceStyle: referenceStyle)
-    }
 
     var body: some View {
-        // Render on a stable canvas shared by all settings pages. Layout only
-        // moves its center; the viewport clips it without stretching the ink.
+        // Keep the blot's size stable while settings pages change the viewport.
         Color(white: 0.88)
             .overlay {
-                if let bitmap {
-                    Image(decorative: bitmap, scale: 2)
-                        .frame(width: CGFloat(bitmap.width) / 2,
-                               height: CGFloat(bitmap.height) / 2)
-                        .allowsHitTesting(false)
+                Canvas { context, canvasSize in
+                    let center = CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2)
+                    let radius = max(1, min(max(1, canvasSize.width - 48), canvasSize.height) * 0.34)
+                    let blot = Path { path in
+                        for index in 0..<160 {
+                            let angle = Double(index) / 160 * 2 * Double.pi
+                            let reach = radius * (1 + 0.13 * sin(3 * angle + 0.6)
+                                                     + 0.08 * cos(5 * angle - 0.4))
+                            let point = CGPoint(x: center.x + reach * cos(angle),
+                                                y: center.y + reach * sin(angle))
+                            if index == 0 { path.move(to: point) }
+                            else { path.addLine(to: point) }
+                        }
+                        path.closeSubpath()
+                    }
+                    let color = Color(.sRGB, red: Double(style.color.x),
+                                      green: Double(style.color.y), blue: Double(style.color.z),
+                                      opacity: Double(style.color.w * style.effectiveOpacity))
+                    context.fill(blot, with: .color(color))
                 }
+                .frame(width: max(1, size.width), height: max(1, size.height))
+                .allowsHitTesting(false)
             }
-            .task(id: request) {
-                do {
-                    try await Task.sleep(for: .milliseconds(30))
-                    let result = await renderer.render(request)
-                    try Task.checkCancellation()
-                    if let result { bitmap = result.image }
-                } catch {}
-            }
-
-    }
-}
-
-nonisolated private struct ToolFillPreviewRequest: Equatable {
-    let style: PencilStyle
-    let size: CGSize
-    let referenceStyle: PencilStyle
-}
-
-private actor ToolFillPreviewRenderer {
-    struct Result {
-        let image: CGImage
-    }
-
-    private let contourID = UUID()
-    private var boundaryRequest: ToolFillPreviewRequest?
-    private var boundaryImage: CGImage?
-    private var boundaryStroke: Stroke?
-
-    func render(_ request: ToolFillPreviewRequest) -> Result? {
-        let size = request.size
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        var keyStyle = request.style
-        keyStyle.fillSensitivity = 0
-        let key = ToolFillPreviewRequest(style: keyStyle, size: size,
-                                        referenceStyle: request.referenceStyle)
-        if boundaryRequest != key {
-            let pen = request.referenceStyle
-            let radius = max(1, min(max(1, size.width - 48), size.height) * 0.34)
-            // Render the reference monoline with its actual width and antialiasing.
-            // Stable timing and identity keep calibration and preview identical.
-            let points = (0...128).map { index in
-                let angle = Double(index % 128) * 2 * Double.pi / 128
-                return PointerSample(position: SIMD2(Float(center.x + radius * cos(angle)),
-                                                     Float(center.y + radius * sin(angle))),
-                                     pressure: 1, timestamp: Double(index) / 128)
-            }
-            let outline = Stroke(points: points, style: pen, id: contourID)
-            // Match canvas filling: evaluate the ink on a transparent layer,
-            // independent of the preview paper or the document background.
-            guard let image = WatchBitmapRenderer.layerThumbnail(strokes: [outline], size: size, scale: 2)
-                else { return nil }
-            boundaryRequest = key
-            boundaryImage = image
-            boundaryStroke = outline
-        }
-        guard !Task.isCancelled, let boundaryImage, let boundaryStroke,
-              let fill = WatchBitmapRenderer.floodFill(image: boundaryImage, scale: 2,
-                  point: center, style: request.style),
-              let image = WatchBitmapRenderer.render(strokes: [boundaryStroke, fill], size: size,
-                  scale: 2, paperWhite: 0.88)
-            else { return nil }
-        return Result(image: image)
     }
 }
