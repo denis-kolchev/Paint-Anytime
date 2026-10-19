@@ -235,6 +235,7 @@ struct GalleryFullscreenPage: View {
     let loadsOriginal: Bool
     let fallback: GalleryBitmap?
     var respectsSafeArea = false
+    var fitsViewport = true
     @State private var preview: GalleryBitmap?
     @State private var original: GalleryBitmap?
 
@@ -247,10 +248,12 @@ struct GalleryFullscreenPage: View {
             ZStack(alignment: .topLeading) {
                 Color.black
                 if let bitmap = original ?? preview ?? fallback {
+                    let frame = GalleryArtworkLayout.frame(imageSize: bitmap.originalSize,
+                                                           viewport: size, fitsViewport: fitsViewport)
                     Image(decorative: bitmap.image, scale: 1)
                         .resizable()
-                        .frame(width: bitmap.originalSize.width, height: bitmap.originalSize.height)
-                        .position(x: size.width / 2, y: size.height / 2)
+                        .frame(width: frame.width, height: frame.height)
+                        .position(x: frame.midX, y: frame.midY)
                 }
             }
             .frame(width: size.width, height: size.height, alignment: .topLeading)

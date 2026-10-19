@@ -399,10 +399,8 @@ struct SavedDrawingsView: View {
               let bitmap = transitionBitmap, bitmap.url == drawing.url,
               hasVisibleTile(for: drawing, size: size, topInset: topInset),
               let tileFrame = thumbnailFrames[drawing.id] else { return }
-        let originalSize = bitmap.originalSize
-        let fullFrame = CGRect(x: (size.width - originalSize.width) / 2,
-                               y: (size.height - originalSize.height) / 2,
-                               width: originalSize.width, height: originalSize.height)
+        let fullFrame = GalleryArtworkLayout.frame(imageSize: bitmap.originalSize,
+                                                   viewport: size, fitsViewport: true)
         withoutAnimation {
             transitionExpanded = direction == .closing
             imageTransition = GalleryImageTransition(image: bitmap.image, tileFrame: tileFrame,
@@ -474,7 +472,8 @@ struct SavedDrawingsView: View {
                                       isNearby: abs(index - selectedIndex) <= 1 && !isTransitioning,
                                       loadsOriginal: abs(index - selectedIndex) <= 1 && !isTransitioning,
                                       fallback: transitionBitmap?.url == drawing.url ? transitionBitmap : nil,
-                                      respectsSafeArea: tutorial.isActive)
+                                      respectsSafeArea: tutorial.isActive,
+                                      fitsViewport: true)
                     .contentShape(Rectangle())
                     .onTapGesture {
                         guard showsFullscreen, zoomLevel == 2, !isTransitioning,
