@@ -426,6 +426,24 @@ private actor WatchLassoBuilder {
     private var eraserVersions: [GeometryKey] = []
     private var eraserLocks: [Bool] = []
     private var attachedStrokes: [Stroke]?
+    private var clippingInput: [Stroke] = []
+    private var clippingSize = CGSize.zero
+    private var clippingScale: CGFloat = 0
+    private var clippedStrokes: [Stroke] = []
+
+    private func clippingTransparency(in strokes: [Stroke], size: CGSize, scale: CGFloat) throws -> [Stroke] {
+        guard strokes.contains(where: \.locksTransparency) else {
+            clippingInput = []; clippedStrokes = []
+            return strokes
+        }
+        if strokes == clippingInput, size == clippingSize, scale == clippingScale { return clippedStrokes }
+        let result = try WatchTransparencyClipping.prepare(strokes: strokes, size: size, scale: scale)
+        clippingInput = strokes
+        clippingSize = size
+        clippingScale = scale
+        clippedStrokes = result
+        return result
+    }
 
     private func cachedBounds(_ stroke: Stroke) throws -> CGRect {
         let key = GeometryKey(id: stroke.id, revision: stroke.geometryRevision)
@@ -527,6 +545,7 @@ private actor WatchLassoBuilder {
         let path = WatchLassoGeometry.path(polygon)
         let paper = CGRect(origin: .zero, size: size)
         guard path.boundingBoxOfPath.intersects(paper) else { return nil }
+        layer.strokes = try clippingTransparency(in: layer.strokes, size: size, scale: scale)
         layer.strokes = try attachingErasers(in: layer.strokes)
         if mode == .area {
             return try cutArea(document: document, layer: layer, polygon: polygon, path: path, size: size, scale: scale)
