@@ -488,9 +488,10 @@ private struct LayerSettingsView: View {
                     let scale = min(availableWidth / size.width, geometry.size.height / size.height)
                     let previewWidth = size.width * scale
                     let previewRight = (availableWidth + previewWidth) / 2
-                    let screenRight = WKInterfaceDevice.current().screenBounds.maxX
-                        - geometry.frame(in: .global).minX
-                    let controlsCenterX = (previewRight + screenRight) / 2
+                    // Include the outer horizontal padding in local coordinates so the
+                    // controls travel with the menu throughout navigation and dismissal.
+                    let menuRight = geometry.size.width + 8
+                    let controlsCenterX = (previewRight + menuRight) / 2
                     ZStack(alignment: .topLeading) {
                         ZStack {
                             layerPreview(layer)
