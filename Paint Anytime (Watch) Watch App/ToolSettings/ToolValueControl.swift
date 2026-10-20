@@ -9,6 +9,9 @@ struct ToolValueControl: View {
     let title: String
     let isEnabled: Bool
 
+    private var canIncrease: Bool { isEnabled && value < range.upperBound }
+    private var canDecrease: Bool { isEnabled && value > range.lowerBound }
+
     var body: some View {
         GeometryReader { geometry in
             let metrics = ToolValueControlMetrics(availableHeight: geometry.size.height)
@@ -18,10 +21,12 @@ struct ToolValueControl: View {
                     adjust(by: 1)
                 } label: {
                     Image(systemName: "plus")
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.white.opacity(canIncrease ? 1 : 0.25))
                         .frame(width: 40, height: metrics.buttonHeight)
                         .contentShape(Rectangle())
                 }
-                .disabled(!isEnabled || value >= range.upperBound)
+                .disabled(!canIncrease)
 
                 Text(valueTitle)
                     .font(.caption2)
@@ -43,10 +48,12 @@ struct ToolValueControl: View {
                     adjust(by: -1)
                 } label: {
                     Image(systemName: "minus")
+                        .fontWeight(.bold)
+                        .foregroundStyle(Color.white.opacity(canDecrease ? 1 : 0.25))
                         .frame(width: 40, height: metrics.buttonHeight)
                         .contentShape(Rectangle())
                 }
-                .disabled(!isEnabled || value <= range.lowerBound)
+                .disabled(!canDecrease)
 
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
