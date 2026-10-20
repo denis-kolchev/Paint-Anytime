@@ -31,6 +31,7 @@ struct SavedDrawingsView: View {
     @State private var imageTransition: GalleryImageTransition?
     @State private var transitionExpanded = false
     @State private var transitionBitmap: GalleryBitmap?
+    @State private var displayedBitmap: GalleryBitmap?
     @FocusState private var crownFocused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.displayScale) private var displayScale
@@ -44,7 +45,9 @@ struct SavedDrawingsView: View {
             let width = (geometry.size.width - spacing * CGFloat(columnCount - 1) - 6) / CGFloat(columnCount)
             let navigationHeight: CGFloat = max(60, geometry.safeAreaInsets.top + 38)
             let thumbnailPixels = Int(ceil(width * displayScale / 32)) * 32
-            let transitionImageRequest = transitionRequest == nil ? nil : selectedDrawing.map {
+            let hasClosingBitmap = transitionRequest == .closing
+                && transitionBitmap != nil && transitionBitmap?.url == selectedDrawing?.url
+            let transitionImageRequest = transitionRequest == nil || hasClosingBitmap ? nil : selectedDrawing.map {
                 GalleryImageRequest(url: $0.url, shortSidePixels: thumbnailPixels, displayScale: displayScale)
             }
             ZStack(alignment: .topLeading) {
@@ -363,7 +366,9 @@ struct SavedDrawingsView: View {
             if reduceMotion {
                 withoutAnimation { returnToGrid() }
             } else {
-                transitionBitmap = nil
+                // Hand the exact visible image to the shrinking overlay. Keep the
+                // pager alive until that overlay is ready, including tile layout.
+                transitionBitmap = displayedBitmap?.url == selectedDrawing?.url ? displayedBitmap : nil
                 transitionRequest = .closing
             }
         } else {
@@ -376,6 +381,7 @@ struct SavedDrawingsView: View {
     private func open(_ drawing: CanvasExport) {
         guard !isTransitioning else { return }
         galleryScrollTarget = nil
+        displayedBitmap = nil
         transitionBitmap = nil
         focusedDrawing = drawing
         selectedDrawing = drawing
@@ -445,6 +451,7 @@ struct SavedDrawingsView: View {
         isCleanViewing = false
         showsFullscreen = false
         selectedDrawing = nil
+        displayedBitmap = nil
         transitionBitmap = nil
         imageTransition = nil
         transitionRequest = nil
@@ -484,11 +491,16 @@ struct SavedDrawingsView: View {
                 GalleryFullscreenPage(url: drawing.url, size: size, canvasOriginY: canvasOriginY,
                                       thumbnailPixels: thumbnailPixels,
                                       displayScale: displayScale,
-                                      isNearby: abs(index - selectedIndex) <= 1 && !isTransitioning,
-                                      loadsOriginal: abs(index - selectedIndex) <= 1 && !isTransitioning,
+                                      isNearby: abs(index - selectedIndex) <= 1 && transitionRequest != .opening && imageTransition == nil,
+                                      loadsOriginal: abs(index - selectedIndex) <= 1 && transitionRequest != .opening && imageTransition == nil,
                                       fallback: transitionBitmap?.url == drawing.url ? transitionBitmap : nil,
                                       respectsSafeArea: tutorial.isActive,
-                                      fitsViewport: true)
+                                      fitsViewport: true,
+                                      isSelected: drawing.id == selectedDrawing?.id,
+                                      onDisplayedBitmap: { bitmap in
+                                          guard drawing.id == selectedDrawing?.id, !isTransitioning else { return }
+                                          displayedBitmap = bitmap
+                                      })
                     .contentShape(Rectangle())
                     .onTapGesture {
                         guard showsFullscreen, zoomLevel == 2, !isTransitioning,

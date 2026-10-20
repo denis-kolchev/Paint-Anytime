@@ -236,10 +236,13 @@ struct GalleryFullscreenPage: View {
     let fallback: GalleryBitmap?
     var respectsSafeArea = false
     var fitsViewport = true
+    var isSelected = false
+    var onDisplayedBitmap: (GalleryBitmap) -> Void = { _ in }
     @State private var preview: GalleryBitmap?
     @State private var original: GalleryBitmap?
 
     var body: some View {
+        let displayedBitmap = original ?? preview ?? fallback
         let previewRequest = isNearby
             ? GalleryImageRequest(url: url, shortSidePixels: thumbnailPixels, displayScale: displayScale) : nil
         let originalRequest = loadsOriginal
@@ -247,7 +250,7 @@ struct GalleryFullscreenPage: View {
         GeometryReader { pageGeometry in
             ZStack(alignment: .topLeading) {
                 Color.black
-                if let bitmap = original ?? preview ?? fallback {
+                if let bitmap = displayedBitmap {
                     let frame = GalleryArtworkLayout.frame(imageSize: bitmap.originalSize,
                                                            viewport: size, fitsViewport: fitsViewport)
                     Image(decorative: bitmap.image, scale: 1)
@@ -264,6 +267,12 @@ struct GalleryFullscreenPage: View {
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
         .ignoresSafeArea(.container, edges: respectsSafeArea ? [] : .all)
+        .onChange(of: displayedBitmap.map { ObjectIdentifier($0) }, initial: true) { _, _ in
+            if isSelected, let displayedBitmap { onDisplayedBitmap(displayedBitmap) }
+        }
+        .onChange(of: isSelected) { _, selected in
+            if selected, let displayedBitmap { onDisplayedBitmap(displayedBitmap) }
+        }
         .task(id: previewRequest) {
             guard let previewRequest else { preview = nil; return }
             let loaded = await GalleryImageCache.shared.load(previewRequest)
