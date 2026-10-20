@@ -12,7 +12,13 @@ struct WatchToolSettingsView: View {
     @State private var showsPalette = false
     @State private var selectsAddColor = false
 
-    private var paletteLibrary: InkPaletteLibrary { InkPaletteLibrary.decode(palettesData, legacy: paletteData) }
+    // Decode only when stored palettes change, not for every computed property
+    // read during a page transition or Crown update.
+    @State private var paletteLibrary = InkPaletteLibrary.initial
+
+    private func reloadPaletteLibrary() {
+        paletteLibrary = InkPaletteLibrary.decode(palettesData, legacy: paletteData)
+    }
     private var palette: InkPalette { paletteLibrary.activePalette }
     private var isAddingColor: Bool { !tutorial.isActive && selectsAddColor }
 
@@ -385,7 +391,11 @@ struct WatchToolSettingsView: View {
         .animation(tutorial.isActive ? pageAnimation : nil, value: tutorialHintReservedHeight)
         // Picker alignment follows the preview's measured height on a later update.
         .animation(tutorial.isActive ? pageAnimation : nil, value: strokePreviewHeight)
-        .onPreferenceChange(StrokePreviewHeightKey.self) { strokePreviewHeight = $0 }
+        .onPreferenceChange(StrokePreviewHeightKey.self) { height in
+            // Only the tutorial uses this measurement to align its picker.
+            guard tutorial.isActive, strokePreviewHeight != height else { return }
+            strokePreviewHeight = height
+        }
         .environment(\.colorScheme, .dark)
         .contentShape(Rectangle())
         .focusable(!showsInformation && !showsPalette && tutorial.allowsToolAdjustment(page: selection.rawValue))
@@ -469,7 +479,10 @@ struct WatchToolSettingsView: View {
             .presentationBackground(.black)
             .environment(\.colorScheme, .dark)
         }
+        .onChange(of: palettesData) { _, _ in reloadPaletteLibrary() }
+        .onChange(of: paletteData) { _, _ in reloadPaletteLibrary() }
         .onAppear {
+            reloadPaletteLibrary()
             if !didRestorePage {
                 selectedPage = tutorial.isActive ? ToolSetting.color.rawValue : savedPage
                 didRestorePage = true
