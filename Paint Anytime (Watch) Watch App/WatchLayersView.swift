@@ -9,7 +9,11 @@ struct WatchLayersView: View {
     @State private var editingLayer: UUID?
     @State private var pendingLayerDeletion: UUID?
     @State private var showsPaperEditor = false
-    @GestureState private var isReordering = false
+    @GestureState private var isTouchingLayers = false
+    @State private var pendingLayerHold: UUID?
+    @State private var touchStart: CGPoint?
+    @State private var touchLocation: CGPoint?
+    private var isReordering: Bool { draggedLayer != nil }
     @State private var draggedLayer: UUID?
     @State private var selectionBlockedUntil = Date.distantPast
     @State private var reorderTarget: UUID?
@@ -74,6 +78,26 @@ struct WatchLayersView: View {
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
                 }
+                .scrollDisabled(isReordering)
+                // Observe the scroll view itself, not its button descendants, so
+                // its native pan recognizer can handle swipes across every card.
+                .simultaneousGesture(layerListGesture)
+                .task(id: pendingLayerHold) {
+                    guard let id = pendingLayerHold else { return }
+                    do { try await Task.sleep(for: .milliseconds(450)) } catch { return }
+                    guard !Task.isCancelled, isTouchingLayers,
+                          pendingLayerHold == id, let location = touchLocation,
+                          let frame = rowFrames[id] else { return }
+                    var transaction = Transaction(animation: nil)
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        controller.selectLayer(id)
+                        selectionBlockedUntil = .distantFuture
+                        draggedLayer = id
+                        dragGrabOffset = location.y - frame.midY
+                        dragLocationY = location.y
+                    }
+                }
                 .onGeometryChange(for: CGRect.self) { geometry in
                     let frame = geometry.frame(in: .global)
                     return CGRect(x: frame.minX, y: frame.minY + geometry.safeAreaInsets.top,
@@ -115,7 +139,7 @@ struct WatchLayersView: View {
                     }
                 }
             }
-            .onChange(of: isReordering) { _, active in
+            .onChange(of: isTouchingLayers) { _, active in
                 if !active {
                     if draggedLayer != nil {
                         selectionBlockedUntil = Date().addingTimeInterval(0.2)
@@ -169,8 +193,6 @@ struct WatchLayersView: View {
         }) {
             LayerThumbnail(layer: layer, canvasSize: canvasSize)
         }
-        // Let the card's buttons receive short taps; only a completed long press reorders.
-        .simultaneousGesture(reorderGesture(layer.id))
         .accessibilityAddTraits(controller.selectedLayer.id == layer.id ? [.isSelected] : [])
         .accessibilityAction(named: Text(L10n.text("Move up"))) { move(layer.id, up: true) }
         .accessibilityAction(named: Text(L10n.text("Move down"))) { move(layer.id, up: false) }
@@ -182,39 +204,37 @@ struct WatchLayersView: View {
         .overlay {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(controller.selectedLayer.id == layer.id ? Color.accentColor : .clear, lineWidth: 2)
+                .transaction { $0.disablesAnimations = true }
                 .allowsHitTesting(false)
+        }
+        .sensoryFeedback(.selection, trigger: draggedLayer) { oldValue, newValue in
+            newValue == layer.id && oldValue != newValue
         }
     }
 
-    private func reorderGesture(_ id: UUID) -> some Gesture {
-        LongPressGesture(minimumDuration: 0.45)
-            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .global))
-            .updating($isReordering) { value, state, _ in
-                if case .second(true, _) = value { state = true }
-            }
-            .onChanged { value in
-                guard case .second(true, let drag) = value else { return }
-                selectionBlockedUntil = .distantFuture
-                if draggedLayer == nil {
-                    draggedLayer = id
-                    controller.selectLayer(id)
-                    WKInterfaceDevice.current().play(.click)
+    private var layerListGesture: some Gesture {
+        DragGesture(minimumDistance: 0, coordinateSpace: .global)
+            .updating($isTouchingLayers) { _, state, _ in state = true }
+            .onChanged { drag in
+                if touchStart == nil {
+                    touchStart = drag.startLocation
+                    pendingLayerHold = rowFrames.first { id, frame in
+                        id != canvasRowID && frame.contains(drag.startLocation)
+                    }?.key
                 }
-                if let drag {
-                    if dragLocationY == nil, let origin = rowFrames[id] {
-                        dragGrabOffset = drag.startLocation.y - origin.midY
-                    }
+                touchLocation = drag.location
+                if draggedLayer != nil {
                     dragLocationY = drag.location.y
                     updateDragPosition()
+                } else if hypot(drag.translation.width, drag.translation.height) > 8 {
+                    // Movement before the hold completes belongs to native scrolling.
+                    pendingLayerHold = nil
                 }
             }
-            .onEnded { value in
+            .onEnded { drag in
                 defer { resetDrag() }
-                if case .second(true, _) = value {
-                    // Button and gesture callbacks can finish in either order on release.
-                    selectionBlockedUntil = Date().addingTimeInterval(0.2)
-                }
-                guard case .second(true, let drag?) = value else { return }
+                guard let id = draggedLayer else { return }
+                selectionBlockedUntil = Date().addingTimeInterval(0.2)
                 dragLocationY = drag.location.y
                 updateDragPosition()
                 guard let target = reorderTarget else { return }
@@ -276,6 +296,9 @@ struct WatchLayersView: View {
     }
 
     private func resetDrag() {
+        pendingLayerHold = nil
+        touchStart = nil
+        touchLocation = nil
         // Cancellation must not leave selection blocked indefinitely.
         if selectionBlockedUntil == .distantFuture {
             selectionBlockedUntil = Date().addingTimeInterval(0.2)
