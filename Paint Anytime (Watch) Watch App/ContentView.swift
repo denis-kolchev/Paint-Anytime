@@ -110,6 +110,7 @@ struct ContentView: View {
                     }
                     .id(galleryLaunchID)
                     .frame(width: geometry.size.width, height: geometry.size.height)
+                    .transition(.opacity)
                     .zIndex(2)
                 }
 
@@ -142,6 +143,7 @@ struct ContentView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: showsToolSettings)
+            .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsGallery)
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
             .onAppear { canvasSize = geometry.size }
