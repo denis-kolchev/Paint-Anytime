@@ -1,35 +1,21 @@
 import Foundation
 
 enum CanvasExportStore {
-    // Temporary gallery dressing. Turn off to remove only these imported previews.
-    private static let includesTutorialPreviews = true
-    static let tutorialPreviewPrefix = "TutorialPreview_"
-
-    static func prepareTutorialPreviews() throws {
-        let folder = try directory()
+    /// Remove gallery copies installed by the temporary App Store screenshot setup.
+    /// The bundled tutorial pictures and user artwork remain in their own locations.
+    private static func removeLegacyTutorialPreviews(in folder: URL) throws {
+        let files = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .filter { $0.lastPathComponent.hasPrefix("TutorialPreview_") && $0.pathExtension.lowercased() == "png" }
+        for file in files {
+            try FileManager.default.removeItem(at: file)
+        }
+        let favorites = try favoriteNames(in: folder)
+        let remaining = favorites.filter { !$0.hasPrefix("TutorialPreview_") }
+        if remaining != favorites { try writeFavorites(remaining, in: folder) }
         let marker = folder.appendingPathComponent(".tutorial-previews-v1")
-        if !includesTutorialPreviews {
-            for file in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
-                where file.lastPathComponent.hasPrefix(tutorialPreviewPrefix) && file.pathExtension.lowercased() == "png" {
-                try FileManager.default.removeItem(at: file)
-            }
-            if FileManager.default.fileExists(atPath: marker.path) {
-                try FileManager.default.removeItem(at: marker)
-            }
-            return
+        if FileManager.default.fileExists(atPath: marker.path) {
+            try FileManager.default.removeItem(at: marker)
         }
-        guard !FileManager.default.fileExists(atPath: marker.path),
-              let source = Bundle.main.url(forResource: "Preset Photos", withExtension: nil) else { return }
-        let pictures = try FileManager.default.contentsOfDirectory(at: source, includingPropertiesForKeys: nil)
-            .filter { $0.pathExtension.lowercased() == "png" }
-        guard !pictures.isEmpty else { return }
-        for picture in pictures {
-            let destination = folder.appendingPathComponent(tutorialPreviewPrefix + picture.lastPathComponent)
-            if !FileManager.default.fileExists(atPath: destination.path) {
-                try FileManager.default.copyItem(at: picture, to: destination)
-            }
-        }
-        try Data().write(to: marker, options: .atomic)
     }
 
     static func directory() throws -> URL {
@@ -42,6 +28,7 @@ enum CanvasExportStore {
 
     static func all(in folder: URL? = nil) throws -> [CanvasExport] {
         let targetFolder = try (folder ?? directory())
+        if folder == nil { try removeLegacyTutorialPreviews(in: targetFolder) }
         let favorites = try favoriteNames(in: targetFolder)
         return try FileManager.default.contentsOfDirectory(at: targetFolder, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension.lowercased() == "png" }

@@ -5,16 +5,13 @@ struct SavedDrawingsView: View {
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @ObservedObject var tutorial = TutorialSession.inactive
     var galleryFolder: URL? = nil
-    var hiddenArtworkURL: URL? = nil
     var initialArtworkFilename: String? = nil
     var initialBitmap: GalleryBitmap? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     var onClose: () -> Void
     var onEditDrawing: (CanvasDocument) -> Void
     @StateObject private var controller = GalleryController()
-    private var drawings: [CanvasExport] {
-        controller.drawings.filter { !tutorial.isActive || $0.url != hiddenArtworkURL }
-    }
+    private var drawings: [CanvasExport] { controller.drawings }
     @State private var zoomLevel = 0
     @State private var crownPosition = 0.0
     @State private var selectedDrawing: CanvasExport?
