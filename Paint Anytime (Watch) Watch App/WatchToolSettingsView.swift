@@ -437,7 +437,7 @@ struct WatchToolSettingsView: View {
                 }
         )
         .toolbar {
-            if tutorial.allowsToolInfo {
+            if tutorial.allowsToolInfo || tutorial.isActive {
                 ToolbarItem(placement: .topBarLeading) {
                     // Reference: the compact Information button seen after returning
                     // from Width. The shared modifier fixes that diameter on first
@@ -451,6 +451,10 @@ struct WatchToolSettingsView: View {
                     }
                     .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Information"))
+                    // Tutorial result cards temporarily disable actions, not the clock's layout.
+                    .opacity(tutorial.allowsToolInfo ? 1 : 0)
+                    .allowsHitTesting(tutorial.allowsToolInfo)
+                    .accessibilityHidden(!tutorial.allowsToolInfo)
                 }
             }
         }

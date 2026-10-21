@@ -170,7 +170,9 @@ struct TutorialPlayerView: View {
                     // Keep one native toolbar item and Button alive when Done
                     // becomes Tool settings; replacing animated toolbar hosts
                     // during their own action is fragile on watchOS 10.
-                    if showsPrimaryControl {
+                    // Keep both top slots installed throughout canvas/tools/share lessons
+                    // so the native system clock stays centered between them.
+                    if page == .canvas || page == .tools || page == .saved {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 if page == .tools {
@@ -197,9 +199,12 @@ struct TutorialPlayerView: View {
                             .watchToolbarButtonStyle(usesCanvasMaterial: true)
                             .accessibilityLabel(L10n.text(primaryControlIsDone ? "Done" : "Tool settings"))
                             .trackCanvasControl(.tools, frames: $controls)
+                            .opacity(showsPrimaryControl ? 1 : 0)
+                            .allowsHitTesting(showsPrimaryControl)
+                            .accessibilityHidden(!showsPrimaryControl)
                         }
                     }
-                    if page == .saved && tutorial.permits([.shareDrawing]) {
+                    if page == .saved {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
                                 player.closeSavedDrawing()
@@ -216,9 +221,12 @@ struct TutorialPlayerView: View {
                             } action: { centerX in
                                 savedExitCenterX = centerX
                             }
+                            .opacity(tutorial.permits([.shareDrawing]) ? 1 : 0)
+                            .allowsHitTesting(tutorial.permits([.shareDrawing]))
+                            .accessibilityHidden(!tutorial.permits([.shareDrawing]))
                         }
                     }
-                    if page == .canvas && tutorial.permits([.openMenu]) {
+                    if page == .canvas {
                         ToolbarItem(placement: .topBarLeading) {
                             Button { player.openMenu() } label: {
                                 Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openMenu])
@@ -228,6 +236,9 @@ struct TutorialPlayerView: View {
                                 .watchToolbarButtonStyle(usesCanvasMaterial: true)
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
+                                .opacity(tutorial.permits([.openMenu]) ? 1 : 0)
+                                .allowsHitTesting(tutorial.permits([.openMenu]))
+                                .accessibilityHidden(!tutorial.permits([.openMenu]))
                         }
                     }
                 }
