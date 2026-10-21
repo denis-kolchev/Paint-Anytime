@@ -124,7 +124,8 @@ struct TutorialMenuPresentation: View {
     var body: some View {
         WatchAppSettingsView(controller: controller, onOpenDrawings: onOpenDrawings,
                              onStartTutorial: { onboarding.requestTutorial() }, onClose: onFinish)
-        .disabled(onboarding.preparesTutorial)
+        // Block repeated taps without dimming every menu row before dismissal.
+        .allowsHitTesting(!onboarding.preparesTutorial)
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
         .task(id: onboarding.preparesTutorial) {
