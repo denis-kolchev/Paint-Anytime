@@ -11,6 +11,7 @@ final class TutorialSession: ObservableObject {
     @Published private var toolIsEraser = false
     @Published private var releasedCircleEarly = false
     private var failedCircleAttempts = 0
+    @Published var isFadingCircleAttempt = false
     @Published var galleryIsOpen = false
     @Published var galleryIsFullscreen = false
     var instruction: String {

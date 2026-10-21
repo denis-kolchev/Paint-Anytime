@@ -38,6 +38,9 @@ struct WatchCanvasView: View {
     @GestureState private var isDragging = false
     @State private var shapeHoldTask: Task<Void, Never>?
     @State private var shapeHoldAnchor: CGPoint?
+    @State private var failedCircleImage: CGImage?
+    @State private var failedCircleOpacity = 1.0
+    @State private var failedCircleKind: ShapeRecognizer.Kind?
     @Environment(\.scenePhase) private var scenePhase
 
     private var needsLayerRendering: Bool {
@@ -76,6 +79,29 @@ struct WatchCanvasView: View {
                         activeStrokeRevision: controller.activeStrokeRevision,
                         activeStrokeID: controller.activeStrokeID, zoom: zoom)
                         .frame(width: paperSize.width, height: paperSize.height)
+                        .overlay {
+                            if let failedCircleImage {
+                                Image(decorative: failedCircleImage, scale: displayScale)
+                                    .resizable()
+                                    .opacity(failedCircleOpacity)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                                    .task {
+                                        do {
+                                            // Let the initial opaque frame appear before starting the fade.
+                                            try await Task.sleep(for: .milliseconds(20))
+                                            withAnimation(.easeOut(duration: 0.22)) { failedCircleOpacity = 0 }
+                                            try await Task.sleep(for: .milliseconds(220))
+                                            self.failedCircleImage = nil
+                                            tutorial.isFadingCircleAttempt = false
+                                            tutorial.finishedCircleAttempt(kind: failedCircleKind)
+                                        } catch {
+                                            self.failedCircleImage = nil
+                                            tutorial.isFadingCircleAttempt = false
+                                        }
+                                    }
+                            }
+                        }
                         .background {
                             if controller.document.effectiveBackgroundColor.w < 1 {
                                 TransparencyCheckerboard()
@@ -134,7 +160,7 @@ struct WatchCanvasView: View {
                 DragGesture(minimumDistance: 0)
                     .updating($isDragging) { _, state, _ in state = true }
                     .onChanged { value in
-                        guard acceptsInput && tutorial.acceptsActions && blockedEraserLayerID == nil else { return }
+                        guard acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt && blockedEraserLayerID == nil else { return }
                         guard (isMovingCanvas ? tutorial.allowsCanvasPan : tutorial.allowsDrawing) else { return }
                         tutorial.activity()
                         if acceptsCurrentGesture == nil {
@@ -222,6 +248,22 @@ struct WatchCanvasView: View {
                         }
                         guard controller.activeStroke != nil else { return }
                         let recognizedKind = controller.recognizedShapeKind
+                        if tutorial.isActive, tutorial.step == .holdCircle, tutorial.acceptsActions,
+                           recognizedKind != .circle, recognizedKind != .ellipse {
+                            controller.continueStroke(at: sample(
+                                at: canvasPoint(value.location, size: geometry.size), time: value.time))
+                            if let stroke = controller.activeStroke,
+                               let image = WatchBitmapRenderer.layerThumbnail(strokes: [stroke], size: paperSize,
+                                   scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: zoom)) {
+                                failedCircleKind = recognizedKind
+                                failedCircleOpacity = 1
+                                failedCircleImage = image
+                                tutorial.isFadingCircleAttempt = true
+                                // Failed practice strokes never enter the artwork or undo history.
+                                controller.cancelStroke()
+                                return
+                            }
+                        }
                         let previousCount = controller.document.strokes.count
                         controller.endStroke(at: sample(
                             at: canvasPoint(value.location, size: geometry.size), time: value.time))
@@ -230,7 +272,7 @@ struct WatchCanvasView: View {
                             tutorial.record(.stroke)
                         }
                     },
-                including: acceptsInput && tutorial.acceptsActions ? .all : .none
+                including: acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt ? .all : .none
             )
         }
         .ignoresSafeArea()

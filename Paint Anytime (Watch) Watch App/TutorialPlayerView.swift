@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 struct TutorialPlayerView: View {
     let folder: URL
@@ -46,13 +47,10 @@ struct TutorialPlayerView: View {
                                 .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
                                 .accessibilityHidden(page != .canvas && page != .saved)
 
-                            if page == .canvas && tutorial.step == .holdCircle
-                                && !tutorial.showsResult && !tutorial.remindersPaused
-                                && controller.activeStroke == nil && scenePhase == .active {
-                                TutorialCircleGuide()
-                                    .frame(width: geometry.size.width,
-                                           height: max(0, geometry.size.height - hintReservedHeight))
-                                    .frame(maxHeight: .infinity, alignment: .top)
+                            if showsCircleGuide {
+                                TutorialCirclePresentation(guideHeight: max(0, geometry.size.height - hintReservedHeight),
+                                                           isFadingAttempt: tutorial.isFadingCircleAttempt)
+                                    .transition(.identity)
                                     .allowsHitTesting(false)
                                     .accessibilityHidden(true)
                             }
@@ -336,6 +334,12 @@ struct TutorialPlayerView: View {
         } message: { Text(player.saveError ?? "") }
     }
 
+    private var showsCircleGuide: Bool {
+        page == .canvas && tutorial.step == .holdCircle
+            && !tutorial.showsResult && !tutorial.remindersPaused
+            && controller.activeStroke == nil && scenePhase == .active
+    }
+
     private var primaryControlIsDone: Bool { page == .tools || isMovingCanvas }
 
     private var showsPrimaryControl: Bool {
@@ -432,6 +436,35 @@ private struct TutorialHintHeightKey: PreferenceKey {
     }
 }
 
+/// Prepare the paper before starting the demonstration. Removing this view on
+/// first contact removes the dimming immediately and cancels the pending guide.
+private struct TutorialCirclePresentation: View {
+    let guideHeight: CGFloat
+    let isFadingAttempt: Bool
+    @State private var paperOpacity = 0.0
+    @State private var isGuideReady = false
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            Color.white.opacity(paperOpacity)
+            if isGuideReady && !isFadingAttempt {
+                TutorialCircleGuide()
+                    .frame(height: guideHeight)
+            }
+        }
+        .task {
+            do {
+                // Start alongside the failed stroke fade, using the same delay and duration.
+                try await Task.sleep(for: .milliseconds(20))
+                withAnimation(.easeOut(duration: 0.22)) { paperOpacity = 0.5 }
+                try await Task.sleep(for: .milliseconds(220))
+                try Task.checkCancellation()
+                isGuideReady = true
+            } catch { }
+        }
+    }
+}
+
 /// A display-only demonstration; never adds strokes to the practice drawing.
 private struct TutorialCircleGuide: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -439,7 +472,7 @@ private struct TutorialCircleGuide: View {
 
     // Use the same red swatch as the tutorial's color picker.
     private var ink: Color {
-        (InkPreset.all.first { $0.nameKey == "Red" }?.color ?? .red).opacity(0.5)
+        InkPreset.all.first { $0.nameKey == "Red" }?.color ?? .red
     }
 
     var body: some View {
@@ -476,6 +509,11 @@ private struct TutorialCircleGuide: View {
                     context.fill(Path(ellipseIn: marker), with: .color(.white.opacity(0.35)))
                     context.stroke(Path(ellipseIn: marker), with: .color(.white.opacity(0.85)), lineWidth: 1.5)
                 }
+            }
+            .onChange(of: straightened == 1) { _, isCircle in
+                // Match real shape recognition, once when each animated circle finishes snapping.
+                guard isCircle, !reduceMotion else { return }
+                WKInterfaceDevice.current().play(.click)
             }
         }
         .onAppear { startedAt = Date() }
