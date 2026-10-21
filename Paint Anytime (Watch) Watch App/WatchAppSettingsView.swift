@@ -1,8 +1,9 @@
 import SwiftUI
+import WatchKit
 
 struct WatchAppSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
-    @Environment(\.openURL) private var openURL
+    @State private var showsBugReport = false
     private let supportEmail = "paintanytime.app@gmail.com"
     @ObservedObject var controller: CanvasController
     var onOpenDrawings: () -> Void
@@ -56,18 +57,31 @@ struct WatchAppSettingsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showsBugReport) {
+            ScrollView {
+                VStack(spacing: 12) {
+                    Text(L10n.text("Report a bug"))
+                        .font(.headline)
+                    Text(L10n.text("To report a bug, email us from your iPhone or another device. Describe what happened and attach a screenshot if possible."))
+                    Text(verbatim: supportEmail)
+                        .font(.footnote)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                    Button(L10n.text("Close")) { showsBugReport = false }
+                        .watchActionButtonStyle()
+                }
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 12)
+            }
+        }
     }
 
     private func reportBug() {
-        var components = URLComponents()
-        components.scheme = "mailto"
-        components.path = supportEmail
-        components.queryItems = [
-            URLQueryItem(name: "subject", value: "Paint Anytime — " + L10n.text("Report a bug"))
-        ]
-        guard let url = components.url else { return }
-        // watchOS supports opening URLs, but not the completion-handler overload.
-        openURL(url)
+        // watchOS owns mailto failures and does not expose a completion callback.
+        // Keep support information accessible even without a mail app installed.
+        WKInterfaceDevice.current().play(.notification)
+        showsBugReport = true
     }
 }
 

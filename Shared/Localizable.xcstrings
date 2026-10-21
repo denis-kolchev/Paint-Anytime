@@ -1,6 +1,179 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "To report a bug, email us from your iPhone or another device. Describe what happened and attach a screenshot if possible.": {
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "للإبلاغ عن خطأ، راسلنا عبر البريد الإلكتروني من iPhone أو جهاز آخر. صِف ما حدث وأرفق لقطة شاشة إن أمكن."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chcete-li nahlásit chybu, pošlete nám e-mail z iPhonu nebo jiného zařízení. Popište, co se stalo, a pokud možno přiložte snímek obrazovky."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For at rapportere en fejl skal du sende os en e-mail fra din iPhone eller en anden enhed. Beskriv, hvad der skete, og vedhæft om muligt et skærmbillede."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Um einen Fehler zu melden, sende uns eine E-Mail von deinem iPhone oder einem anderen Gerät. Beschreibe, was passiert ist, und füge nach Möglichkeit einen Screenshot hinzu."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Για να αναφέρετε ένα σφάλμα, στείλτε μας email από το iPhone ή άλλη συσκευή. Περιγράψτε τι συνέβη και επισυνάψτε ένα στιγμιότυπο οθόνης, αν είναι δυνατό."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To report a bug, email us from your iPhone or another device. Describe what happened and attach a screenshot if possible."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para informar de un error, envíanos un correo desde tu iPhone u otro dispositivo. Describe lo ocurrido y adjunta una captura de pantalla si es posible."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ilmoita virheestä lähettämällä meille sähköpostia iPhonesta tai muusta laitteesta. Kuvaile, mitä tapahtui, ja liitä mukaan kuvakaappaus, jos mahdollista."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pour signaler un bug, envoyez-nous un e-mail depuis votre iPhone ou un autre appareil. Décrivez ce qui s’est passé et joignez une capture d’écran si possible."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "כדי לדווח על תקלה, שלחו לנו דוא״ל מה-iPhone או ממכשיר אחר. תארו מה קרה וצרפו צילום מסך במידת האפשר."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hiba bejelentéséhez küldj nekünk e-mailt az iPhone-odról vagy más eszközről. Írd le, mi történt, és lehetőség szerint csatolj képernyőképet."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Untuk melaporkan kesalahan, kirim email kepada kami dari iPhone atau perangkat lain. Jelaskan apa yang terjadi dan lampirkan tangkapan layar jika memungkinkan."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Per segnalare un errore, inviaci un’email dal tuo iPhone o da un altro dispositivo. Descrivi cosa è successo e, se possibile, allega uno screenshot."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "不具合を報告するには、iPhoneなどのデバイスからメールをお送りください。発生した内容を説明し、可能であればスクリーンショットを添付してください。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오류를 신고하려면 iPhone이나 다른 기기에서 이메일을 보내 주세요. 발생한 상황을 설명하고 가능하면 스크린샷을 첨부해 주세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For å rapportere en feil, send oss en e-post fra iPhone eller en annen enhet. Beskriv hva som skjedde, og legg ved et skjermbilde hvis mulig."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuur ons een e-mail vanaf je iPhone of een ander apparaat om een fout te melden. Beschrijf wat er is gebeurd en voeg indien mogelijk een schermafbeelding toe."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aby zgłosić błąd, wyślij nam e-mail z iPhone’a lub innego urządzenia. Opisz, co się stało, i w miarę możliwości dołącz zrzut ekranu."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para relatar um erro, envie um e-mail pelo iPhone ou outro dispositivo. Descreva o que aconteceu e, se possível, anexe uma captura de tela."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para comunicar um erro, envie-nos um e-mail a partir do iPhone ou de outro dispositivo. Descreva o que aconteceu e, se possível, anexe uma captura de ecrã."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы сообщить об ошибке, напишите нам с iPhone или другого устройства. Опишите, что произошло, и по возможности приложите снимок экрана."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "För att rapportera ett fel, mejla oss från din iPhone eller en annan enhet. Beskriv vad som hände och bifoga gärna en skärmbild."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หากต้องการรายงานข้อผิดพลาด โปรดส่งอีเมลถึงเราจาก iPhone หรืออุปกรณ์อื่น อธิบายสิ่งที่เกิดขึ้นและแนบภาพหน้าจอหากเป็นไปได้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hata bildirmek için iPhone’unuzdan veya başka bir cihazdan bize e-posta gönderin. Ne olduğunu açıklayın ve mümkünse ekran görüntüsü ekleyin."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Щоб повідомити про помилку, напишіть нам з iPhone або іншого пристрою. Опишіть, що сталося, і за можливості додайте знімок екрана."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Để báo lỗi, hãy gửi email cho chúng tôi từ iPhone hoặc thiết bị khác. Mô tả những gì đã xảy ra và đính kèm ảnh chụp màn hình nếu có thể."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如需报告错误，请通过 iPhone 或其他设备给我们发送电子邮件。请描述发生的情况，并尽可能附上截图。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若要回報錯誤，請透過 iPhone 或其他裝置傳送電子郵件給我們。請描述發生的情況，並盡可能附上螢幕截圖。"
+          }
+        }
+      }
+    },
     "Hold your finger at the end.": {
       "comment": "Tutorial circle-hold lesson. Keep concise for Apple Watch.",
       "extractionState": "manual",
