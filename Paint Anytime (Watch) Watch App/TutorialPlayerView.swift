@@ -194,7 +194,7 @@ struct TutorialPlayerView: View {
                                 .frame(width: 32, height: 32)
                                 .contentShape(Circle())
                             }
-                            .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                            .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: !showsPrimaryControl)
                             .accessibilityLabel(L10n.text(primaryControlIsDone ? "Done" : "Tool settings"))
                             .trackCanvasControl(.tools, frames: $controls)
                             .opacity(showsPrimaryControl ? 1 : 0)
@@ -212,7 +212,7 @@ struct TutorialPlayerView: View {
                                     .frame(width: 32, height: 32)
                                     .contentShape(Circle())
                             }
-                            .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                            .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: !tutorial.permits([.shareDrawing]))
                             .accessibilityLabel(L10n.text("Back"))
                             .onGeometryChange(for: CGFloat.self) { geometry in
                                 geometry.frame(in: .global).midX
@@ -231,7 +231,7 @@ struct TutorialPlayerView: View {
                                     .frame(width: 32, height: 32)
                                     .contentShape(Circle())
                             }
-                                .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                                .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: !tutorial.permits([.openMenu]))
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
                                 .opacity(tutorial.permits([.openMenu]) ? 1 : 0)
