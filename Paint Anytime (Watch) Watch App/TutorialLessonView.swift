@@ -9,8 +9,7 @@ struct TutorialLessonView: View {
     let screenWidth: CGFloat
     let screenHeight: CGFloat
     var maximumCardHeight: CGFloat? = nil
-    @State private var confirmsFinish = false
-    @State private var didConfirmFinish = false
+    @Binding var confirmsFinish: Bool
     @State private var greenDotCount = 0
     @State private var showsCompletionCheckmark = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -85,25 +84,7 @@ struct TutorialLessonView: View {
                 WKInterfaceDevice.current().play(.success)
             }
         }
-        .fullScreenCover(isPresented: $confirmsFinish, onDismiss: {
-            if didConfirmFinish {
-                didConfirmFinish = false
-                onFinish()
-            } else {
-                tutorial.resumeReminders()
-            }
-        }) {
-            DestructiveConfirmationView(
-                title: L10n.text("Finish the tutorial?"),
-                confirmTitle: L10n.text("Yes"),
-                cancelTitle: L10n.text("No")
-            ) {
-                confirmsFinish = false
-            } onConfirm: {
-                didConfirmFinish = true
-                confirmsFinish = false
-            }
-        }
+
     }
 
     @MainActor

@@ -24,6 +24,7 @@ struct WatchWelcomeView: View {
                         onboarding.finishTutorial()
                     }
                     .id(tutorialFolder)
+                    .transition(.opacity)
                 } else if !onboarding.hasCompletedWelcome {
                     welcome
                         .background(Color.black.ignoresSafeArea())

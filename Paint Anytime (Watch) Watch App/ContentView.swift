@@ -361,6 +361,7 @@ struct ContentView: View {
                 .id(folder)
                 .preferredColorScheme(.dark)
                 .environment(\.colorScheme, .dark)
+                .compositingGroup()
                 // Crossfade over the preserved drawing as the menu sheet closes.
                 // Inserting an opaque tutorial instantly removes the artwork
                 // from the sheet's live backdrop before dismissal finishes.

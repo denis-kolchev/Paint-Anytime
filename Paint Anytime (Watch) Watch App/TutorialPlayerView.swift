@@ -8,6 +8,7 @@ struct TutorialPlayerView: View {
     private var tutorial: TutorialSession { player.tutorial }
     private var controller: CanvasController { player.canvas }
     private var page: TutorialPlayerController.Page { player.page }
+    @State private var confirmsFinish = false
     @State private var isMovingCanvas = false
     @State private var canvasSize = CGSize.zero
     @State private var hintHeight: CGFloat = 0
@@ -253,7 +254,8 @@ struct TutorialPlayerView: View {
                                    // three-item control. The card already scrolls overflow.
                                    maximumCardHeight: page == .tools
                                     ? max(32, screen.size.height - 40 - 30
-                                          - ToolValueControl.minimumHeight - 12) : nil)
+                                          - ToolValueControl.minimumHeight - 12) : nil,
+                                   confirmsFinish: $confirmsFinish)
                     .frame(width: screen.size.width)
                     .fixedSize(horizontal: false, vertical: true)
                     .background {
@@ -271,6 +273,39 @@ struct TutorialPlayerView: View {
             if height > 0 { hintHeight = height }
         }
         .background(Color.black.ignoresSafeArea())
+        .overlay {
+            if confirmsFinish {
+                // Keep confirmation in the outgoing tutorial hierarchy so it
+                // crossfades directly to the editor without revealing the lesson.
+                ZStack {
+                    Color.black.ignoresSafeArea()
+                    DestructiveConfirmationView(
+                        title: L10n.text("Finish the tutorial?"),
+                        confirmTitle: L10n.text("Yes"),
+                        cancelTitle: L10n.text("No")
+                    ) {
+                        confirmsFinish = false
+                        tutorial.resumeReminders()
+                    } onConfirm: {
+                        guard player.preserveDrawing() else {
+                            confirmsFinish = false
+                            return
+                        }
+                        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                            onFinish()
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .transition(.opacity)
+                .zIndex(10)
+            }
+        }
+        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: confirmsFinish)
+        // Flatten the opaque confirmation and lesson before the host applies
+        // its exit opacity; otherwise the lesson can show through fading children.
+        .compositingGroup()
+        .toolbar(confirmsFinish ? .hidden : .automatic, for: .navigationBar, .bottomBar)
         .modifier(TutorialCrownHint(tutorial: tutorial))
         .onAppear {
             player.startOrResume()
