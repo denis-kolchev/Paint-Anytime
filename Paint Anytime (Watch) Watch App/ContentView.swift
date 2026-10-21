@@ -359,8 +359,14 @@ struct ContentView: View {
                 .id(folder)
                 .preferredColorScheme(.dark)
                 .environment(\.colorScheme, .dark)
+                // Crossfade over the preserved drawing as the menu sheet closes.
+                // Inserting an opaque tutorial instantly removes the artwork
+                // from the sheet's live backdrop before dismissal finishes.
+                .transition(.opacity)
             }
         }
+        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
+                   value: menuOnboarding.tutorialFolder)
         .task(id: session.savedDrawing?.id) {
             guard session.savedDrawing != nil else { return }
             var transaction = Transaction(animation: nil)
