@@ -7,6 +7,7 @@ struct WatchAppSettingsView: View {
     @ObservedObject var controller: CanvasController
     var onOpenDrawings: () -> Void
     var onStartTutorial: () -> Void
+    var onClose: (() -> Void)? = nil
     @ObservedObject var tutorial = TutorialSession.inactive
 
     var body: some View {
@@ -40,9 +41,21 @@ struct WatchAppSettingsView: View {
                     }
                 }
             }
+            .modifier(InlineMenuBackground(isEnabled: onClose != nil))
             .labelStyle(CenteredMenuLabelStyle())
             .navigationTitle(L10n.text("More"))
             .toolbarTitleDisplayMode(.inline)
+            .toolbar {
+                if let onClose {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(action: onClose) {
+                            Image(systemName: "xmark")
+                        }
+                        .watchToolbarButtonStyle()
+                        .accessibilityLabel(L10n.text("Close"))
+                    }
+                }
+            }
         }
     }
 
@@ -448,5 +461,21 @@ private struct DrawingControlsSettingsView: View {
             }
         }
         .navigationTitle(L10n.text("Everything at hand"))
+    }
+}
+
+/// The in-place menu keeps the canvas visible through the native navigation material.
+private struct InlineMenuBackground: ViewModifier {
+    let isEnabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isEnabled {
+            content
+                .scrollContentBackground(.hidden)
+                .containerBackground(.regularMaterial, for: .navigation)
+        } else {
+            content
+        }
     }
 }

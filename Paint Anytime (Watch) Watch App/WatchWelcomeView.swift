@@ -14,8 +14,7 @@ struct WatchWelcomeView: View {
         NavigationStack {
             ZStack {
                 // Keep the real editor alive, including its document, undo history and camera.
-                ContentView(launchRequest: $launchRequest, isActive: onboarding.hasCompletedWelcome && onboarding.tutorialFolder == nil && !onboarding.preparesTutorial,
-                            onStartTutorial: { onboarding.requestTutorial() })
+                ContentView(launchRequest: $launchRequest, isActive: onboarding.hasCompletedWelcome && onboarding.tutorialFolder == nil && !onboarding.preparesTutorial)
                     .opacity(onboarding.hasCompletedWelcome && onboarding.tutorialFolder == nil ? 1 : 0)
                     .allowsHitTesting(onboarding.hasCompletedWelcome && onboarding.tutorialFolder == nil && !onboarding.preparesTutorial)
                     .accessibilityHidden(!onboarding.hasCompletedWelcome || onboarding.tutorialFolder != nil)
@@ -113,5 +112,44 @@ private struct WelcomeQuestion: View {
             .watchActionButtonStyle()
         }
         .padding()
+    }
+}
+
+/// Keep the menu's presentation alive while preparing and entering a repeat tutorial.
+struct TutorialMenuPresentation: View {
+    @ObservedObject var controller: CanvasController
+    @ObservedObject var onboarding: OnboardingController
+    let onOpenDrawings: () -> Void
+    let onFinish: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            if let folder = onboarding.tutorialFolder {
+                NavigationStack {
+                    TutorialPlayerView(folder: folder, onFinish: onFinish)
+                        .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
+                }
+                .id(folder)
+                .transition(.opacity)
+                .zIndex(1)
+            } else {
+                WatchAppSettingsView(controller: controller, onOpenDrawings: onOpenDrawings,
+                                     onStartTutorial: { onboarding.requestTutorial() }, onClose: onFinish)
+                    .disabled(onboarding.preparesTutorial)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: onboarding.tutorialFolder)
+        .preferredColorScheme(.dark)
+        .environment(\.colorScheme, .dark)
+        .task(id: onboarding.preparesTutorial) {
+            await onboarding.prepareTutorial()
+        }
+        .alert(L10n.text("Tutorial"), isPresented: $onboarding.tutorialError) {
+            Button(L10n.text("OK"), role: .cancel) {}
+        } message: {
+            Text(L10n.text("The tutorial could not start. Please try again."))
+        }
     }
 }

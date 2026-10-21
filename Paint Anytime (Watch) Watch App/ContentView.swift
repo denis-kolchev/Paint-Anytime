@@ -3,10 +3,9 @@ import SwiftUI
 struct ContentView: View {
     @Binding var launchRequest: WatchLaunchRequest?
     var isActive = true
-    var onStartTutorial: () -> Void = {}
-    @State private var startsTutorialAfterDismiss = false
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @StateObject private var session = DrawingSessionController()
+    @StateObject private var menuOnboarding = OnboardingController()
     private var controller: CanvasController { session.canvas }
     @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
     private var showsMorphToolbar: Bool {
@@ -149,7 +148,7 @@ struct ContentView: View {
         // Reinstall toolbar items when returning from onboarding so watchOS
         // recalculates the clock position around the trailing tool button.
         .toolbar {
-            if !usesMorphToolbar && isActive && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive && controller.activeStroke == nil {
+            if !usesMorphToolbar && isActive && !showsAppSettings && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive && controller.activeStroke == nil {
                 ToolbarItemGroup(placement: .bottomBar) {
                     MorphControlsScope {
                         Button {
@@ -198,7 +197,7 @@ struct ContentView: View {
                 }
             }
 
-            if isActive && !showsGallery && !showsToolSettings {
+            if isActive && !showsAppSettings && !showsGallery && !showsToolSettings {
                 ToolbarItem(placement: .topBarLeading) {
                     MorphControlsScope {
                         Button {
@@ -240,7 +239,7 @@ struct ContentView: View {
                     }
                 }
             }
-            if isActive && !showsGallery {
+            if isActive && !showsAppSettings && !showsGallery {
                 ToolbarItem(placement: .topBarTrailing) {
                     MorphControlsScope {
                         Button {
@@ -315,26 +314,28 @@ struct ContentView: View {
         }
         .onChange(of: showsAppSettings) { _, shows in
             if shows { showsContentActions = false }
+            else if menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
         }
-        .sheet(isPresented: $showsAppSettings, onDismiss: {
-            if startsTutorialAfterDismiss {
-                startsTutorialAfterDismiss = false
-                onStartTutorial()
+        .accessibilityHidden(showsAppSettings)
+        .overlay {
+            // An in-place navigation host has no system modal Close button.
+            if showsAppSettings {
+                TutorialMenuPresentation(controller: controller, onboarding: menuOnboarding, onOpenDrawings: {
+                    showsAppSettings = false
+                    savedNoticeID = nil
+                    galleryArtworkFilename = nil
+                    galleryInitialBitmap = nil
+                    galleryLaunchID = UUID()
+                    showsGallery = true
+                }, onFinish: {
+                    showsAppSettings = false
+                })
+                .transition(.opacity)
+                .task { await resetMorphBehindPresentation() }
             }
-        }) {
-            WatchAppSettingsView(controller: controller, onOpenDrawings: {
-                showsAppSettings = false
-                savedNoticeID = nil
-                galleryArtworkFilename = nil
-                galleryInitialBitmap = nil
-                galleryLaunchID = UUID()
-                showsGallery = true
-            }, onStartTutorial: {
-                startsTutorialAfterDismiss = true
-                showsAppSettings = false
-            })
-            .task { await resetMorphBehindPresentation() }
         }
+        .animation(showsAppSettings ? .easeInOut(duration: reduceMotion ? 0.15 : 0.25) : nil,
+                   value: showsAppSettings)
         .task(id: session.savedDrawing?.id) {
             guard session.savedDrawing != nil else { return }
             var transaction = Transaction(animation: nil)
@@ -415,7 +416,6 @@ struct ContentView: View {
     private func openComplication(_ request: WatchLaunchRequest) async {
         guard request.destination != .app else { return }
         controller.cancelStroke()
-        startsTutorialAfterDismiss = false
         let hasPresentation = showsCanvasSize || showsLayers || showsAppSettings
             || session.savedDrawing != nil || session.pendingCanvasAction != nil || session.exportError != nil
         showsCanvasSize = false
