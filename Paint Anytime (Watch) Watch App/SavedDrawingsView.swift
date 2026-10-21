@@ -17,7 +17,6 @@ struct SavedDrawingsView: View {
     @State private var selectedDrawing: CanvasExport?
     @State private var focusedDrawing: CanvasExport?
     @State private var pendingDeletion: CanvasExport?
-    @State private var confirmedDeletion: CanvasExport?
     @State private var showsFullscreen = false
     @State private var isCleanViewing = false
     @State private var morphState = GalleryMorphState()
@@ -262,16 +261,16 @@ struct SavedDrawingsView: View {
         .fullScreenCover(item: $pendingDeletion, onDismiss: {
             tutorial.resumeReminders()
             crownFocused = tutorial.allowsGalleryZoom
-            if let drawing = confirmedDeletion {
-                confirmedDeletion = nil
-                deleteDrawing(drawing)
-            }
         }) { drawing in
             DestructiveConfirmationView(title: L10n.text("Delete the image?"), confirmTitle: L10n.text("Delete")) {
                 pendingDeletion = nil
             } onConfirm: {
-                confirmedDeletion = drawing
-                pendingDeletion = nil
+                // Prepare the updated 3-column grid while confirmation still
+                // covers the pager. Its dismissal then reveals the grid directly.
+                withoutAnimation { deleteDrawing(drawing) }
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                    pendingDeletion = nil
+                }
             }
         }
         .alert(L10n.text("Error"), isPresented: Binding(
