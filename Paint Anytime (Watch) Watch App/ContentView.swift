@@ -8,6 +8,9 @@ struct ContentView: View {
     @StateObject private var menuOnboarding = OnboardingController()
     private var controller: CanvasController { session.canvas }
     @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
+    private var canvasToolbarDiameter: CGFloat {
+        usesMorphToolbar ? 32 : MorphPanelGeometry.buttonDiameter
+    }
     private var showsMorphToolbar: Bool {
         get { morphState.showsMorphToolbar }
         nonmutating set { morphState.showsMorphToolbar = newValue }
@@ -164,7 +167,7 @@ struct ContentView: View {
                             Image(systemName: "doc.badge.gearshape")
                                 .frame(width: 18, height: 18).opacity(0)
                         }
-                        .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: true)
+                        .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: true)
                         .accessibilityLabel(L10n.text(showsContentActions ? "Lasso" : "Canvas actions"))
                         .trackCanvasControl(.clear, frames: controlFramesBinding)
                         .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))
@@ -174,7 +177,7 @@ struct ContentView: View {
                         Image(systemName: "arrow.uturn.backward")
                     }
                     .disabled(!controller.canUndo)
-                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                    .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true)
                     .accessibilityLabel(L10n.text("Undo"))
                     .trackCanvasControl(.undo, frames: controlFramesBinding)
                     .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))
@@ -183,7 +186,7 @@ struct ContentView: View {
                         Image(systemName: "arrow.uturn.forward")
                     }
                     .disabled(!controller.canRedo)
-                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                    .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true)
                     .accessibilityLabel(L10n.text("Redo"))
                     .trackCanvasControl(.redo, frames: controlFramesBinding)
                     .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))
@@ -195,7 +198,7 @@ struct ContentView: View {
                     } label: {
                         Image(systemName: "square.3.layers.3d")
                     }
-                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                    .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true)
                     .accessibilityLabel(L10n.text("Layers"))
                     .trackCanvasControl(.save, frames: controlFramesBinding)
                     .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))
@@ -231,7 +234,7 @@ struct ContentView: View {
                                 .opacity(lasso.isActive || isMovingCanvas || usesMorphToolbar ? 0 : 1)
                                 .contentShape(Rectangle())
                         }
-                        .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: lasso.isActive ? true : (usesMorphToolbar || isMovingCanvas) || controller.activeStroke != nil)
+                        .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: lasso.isActive ? true : (usesMorphToolbar || isMovingCanvas) || controller.activeStroke != nil)
                         .accessibilityLabel(L10n.text(lasso.isActive ? (showsSelectionActions ? "Move to layer above" : WatchLassoMode.strokes.title) : isMovingCanvas ? "Eyedropper" : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
                         .disabled(lasso.isActive && showsSelectionActions && !lasso.canMoveLayer(1, controller: controller))
                         .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
@@ -282,7 +285,7 @@ struct ContentView: View {
                             .opacity(morphOwnsTrailingControl ? 0 : 1)
                             .contentShape(Rectangle())
                         }
-                        .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: morphOwnsTrailingControl || lasso.hidesControls || (!showsToolSettings && controller.activeStroke != nil))
+                        .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: morphOwnsTrailingControl || lasso.hidesControls || (!showsToolSettings && controller.activeStroke != nil))
                         .accessibilityLabel(showsToolSettings || isMovingCanvas || lasso.isActive ? L10n.text("Done") : L10n.text(usesMorphToolbar && !showsMorphToolbar ? "Open drawing controls" : "Tool settings"))
                         .trackCanvasControl(.tools, frames: controlFramesBinding)
                         .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))

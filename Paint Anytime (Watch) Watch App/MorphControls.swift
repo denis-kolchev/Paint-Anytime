@@ -36,7 +36,8 @@ struct MorphPanelGeometry {
     var size: CGSize
     var layoutDirection: LayoutDirection
     var top: CGFloat = 16
-    var diameter: CGFloat = 36
+    static let buttonDiameter: CGFloat = 36
+    var diameter: CGFloat = Self.buttonDiameter
 
     var leadingX: CGFloat { layoutDirection == .rightToLeft ? size.width - 30 : 30 }
     var trailingX: CGFloat { layoutDirection == .rightToLeft ? 30 : size.width - 30 }
