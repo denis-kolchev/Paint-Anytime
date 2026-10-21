@@ -29,7 +29,9 @@ struct TutorialLessonView: View {
 
             Button(role: showsCompletionCheckmark ? nil : .destructive) {
                 if showsCompletionCheckmark {
-                    onFinish()
+                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                        onFinish()
+                    }
                 } else {
                     tutorial.pauseReminders()
                     confirmsFinish = true
