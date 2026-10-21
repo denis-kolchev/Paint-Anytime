@@ -13,6 +13,12 @@ struct WatchLayersView: View {
     @State private var pendingLayerHold: UUID?
     @State private var touchStart: CGPoint?
     @State private var touchLocation: CGPoint?
+    @State private var fingerScrollStart: CGFloat = 0
+    @State private var isFingerScrolling = false
+    @State private var fingerScrollRequest: LayerFingerScrollRequest?
+    @State private var scrollContentOffset: CGFloat?
+    @State private var contentFrame: CGRect = .zero
+    @State private var contentID = UUID()
     private var isReordering: Bool { draggedLayer != nil }
     @State private var draggedLayer: UUID?
     @State private var selectionBlockedUntil = Date.distantPast
@@ -62,7 +68,7 @@ struct WatchLayersView: View {
                                 .zIndex(draggedLayer == layer.id ? 1 : 0)
                         }
                         LayerCard(title: L10n.text("Canvas"), canvasSize: canvasSize,
-                                  onSelect: { showsPaperEditor = true },
+                                  onSelect: nil,
                                   onEdit: { showsPaperEditor = true }) {
                             CanvasBackgroundPreview(color: controller.document.effectiveBackgroundColor)
                                 .aspectRatio(previewAspectRatio, contentMode: .fit)
@@ -77,10 +83,18 @@ struct WatchLayersView: View {
                     }
                     .padding(.horizontal, 6)
                     .padding(.vertical, 8)
+                    .id(contentID)
+                    .background {
+                        GeometryReader { geometry in
+                            Color.clear.preference(key: LayerContentFrame.self,
+                                                   value: geometry.frame(in: .global))
+                        }
+                    }
                 }
+                .onPreferenceChange(LayerContentFrame.self) { contentFrame = $0 }
                 .scrollDisabled(isReordering)
-                // Observe the scroll view itself, not its button descendants, so
-                // its native pan recognizer can handle swipes across every card.
+                // One touch observer handles scrolling and held-layer movement
+                // across the whole list, including card buttons and empty space.
                 .simultaneousGesture(layerListGesture)
                 .task(id: pendingLayerHold) {
                     guard let id = pendingLayerHold else { return }
@@ -109,7 +123,21 @@ struct WatchLayersView: View {
                     rowFrames = $0
                     updateDragPosition()
                 }
-                .modifier(LayerScrollPositionModifier(request: autoScrollRequest))
+                .modifier(LayerScrollPositionModifier(request: autoScrollRequest,
+                                                       fingerRequest: fingerScrollRequest,
+                                                       currentOffset: $scrollContentOffset))
+                .onChange(of: fingerScrollRequest) { _, request in
+                    // Older watchOS can align the entire content to an arbitrary
+                    // anchor, which also gives continuous finger scrolling.
+                    if #available(watchOS 11.0, *) { return }
+                    guard let request else { return }
+                    let maximum = max(0, contentFrame.height - scrollViewport.height)
+                    guard maximum > 0 else { return }
+                    let fraction = min(1, max(0, request.offset / maximum))
+                    withAnimation(request.animated && !reduceMotion ? .easeOut(duration: 0.25) : nil) {
+                        proxy.scrollTo(contentID, anchor: UnitPoint(x: 0.5, y: fraction))
+                    }
+                }
                 .onReceive(scrollClock) { now in
                     guard let velocity = autoScrollVelocity else {
                         heldEdge = nil
@@ -218,6 +246,8 @@ struct WatchLayersView: View {
             .onChanged { drag in
                 if touchStart == nil {
                     touchStart = drag.startLocation
+                    fingerScrollStart = max(0, scrollContentOffset
+                        ?? (scrollViewport.minY - contentFrame.minY))
                     pendingLayerHold = rowFrames.first { id, frame in
                         id != canvasRowID && frame.contains(drag.startLocation)
                     }?.key
@@ -226,13 +256,26 @@ struct WatchLayersView: View {
                 if draggedLayer != nil {
                     dragLocationY = drag.location.y
                     updateDragPosition()
-                } else if hypot(drag.translation.width, drag.translation.height) > 8 {
-                    // Movement before the hold completes belongs to native scrolling.
+                } else if isFingerScrolling || hypot(drag.translation.width, drag.translation.height) > 8 {
                     pendingLayerHold = nil
+                    isFingerScrolling = true
+                    selectionBlockedUntil = Date().addingTimeInterval(0.2)
+                    // This recognizer may own the pan on watchOS. Drive the offset
+                    // ourselves instead of waiting for a second scroll recognizer.
+                    // An absolute target avoids adding native and custom deltas twice.
+                    fingerScrollRequest = LayerFingerScrollRequest(
+                        offset: fingerScrollStart - drag.translation.height)
                 }
             }
             .onEnded { drag in
                 defer { resetDrag() }
+                if isFingerScrolling {
+                    selectionBlockedUntil = Date().addingTimeInterval(0.2)
+                    fingerScrollRequest = LayerFingerScrollRequest(
+                        offset: fingerScrollStart - drag.predictedEndTranslation.height,
+                        animated: !reduceMotion)
+                    return
+                }
                 guard let id = draggedLayer else { return }
                 selectionBlockedUntil = Date().addingTimeInterval(0.2)
                 dragLocationY = drag.location.y
@@ -299,6 +342,7 @@ struct WatchLayersView: View {
         pendingLayerHold = nil
         touchStart = nil
         touchLocation = nil
+        isFingerScrolling = false
         // Cancellation must not leave selection blocked indefinitely.
         if selectionBlockedUntil == .distantFuture {
             selectionBlockedUntil = Date().addingTimeInterval(0.2)
@@ -358,11 +402,14 @@ struct WatchLayersView: View {
 /// Keep the watchOS 11 scroll state out of the watchOS 10 view's stored properties.
 private struct LayerScrollPositionModifier: ViewModifier {
     let request: CGFloat
+    let fingerRequest: LayerFingerScrollRequest?
+    @Binding var currentOffset: CGFloat?
 
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(watchOS 11.0, *) {
-            content.modifier(LayerOffsetScrollModifier(request: request))
+            content.modifier(LayerOffsetScrollModifier(request: request, fingerRequest: fingerRequest,
+                                                       currentOffset: $currentOffset))
         } else {
             content
         }
@@ -372,6 +419,8 @@ private struct LayerScrollPositionModifier: ViewModifier {
 @available(watchOS 11.0, *)
 private struct LayerOffsetScrollModifier: ViewModifier {
     let request: CGFloat
+    let fingerRequest: LayerFingerScrollRequest?
+    @Binding var currentOffset: CGFloat?
     @State private var position = ScrollPosition()
     @State private var geometry: ScrollGeometry?
 
@@ -380,6 +429,21 @@ private struct LayerOffsetScrollModifier: ViewModifier {
             .scrollPosition($position)
             .onScrollGeometryChange(for: ScrollGeometry.self, of: { $0 }) { _, newGeometry in
                 geometry = newGeometry
+                currentOffset = newGeometry.contentOffset.y + newGeometry.contentInsets.top
+            }
+            .onChange(of: fingerRequest) { _, newRequest in
+                guard let newRequest, let geometry else { return }
+                let maximum = max(0, geometry.contentSize.height
+                    + geometry.contentInsets.top + geometry.contentInsets.bottom
+                    - geometry.containerSize.height)
+                let target = min(maximum, max(0, newRequest.offset))
+                if newRequest.animated {
+                    withAnimation(.easeOut(duration: 0.25)) { position.scrollTo(y: target) }
+                } else {
+                    var transaction = Transaction(animation: nil)
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { position.scrollTo(y: target) }
+                }
             }
             .onChange(of: request) { oldRequest, newRequest in
                 guard let geometry else { return }
@@ -407,7 +471,7 @@ private struct LayerOffsetScrollModifier: ViewModifier {
 private struct LayerCard<Preview: View>: View {
     let title: String
     let canvasSize: CGSize
-    let onSelect: () -> Void
+    let onSelect: (() -> Void)?
     let onEdit: () -> Void
     @ViewBuilder let preview: () -> Preview
 
@@ -419,7 +483,7 @@ private struct LayerCard<Preview: View>: View {
                 ? canvasSize.width / canvasSize.height : 200.0 / 240.0
             let previewWidth = min(previewHeight * ratio, geometry.size.width * 0.45)
             HStack(spacing: 6) {
-                Button(action: onSelect) {
+                selectionTarget {
                     preview()
                         .clipShape(RoundedRectangle(cornerRadius: 6))
                         .frame(width: previewWidth, height: previewHeight)
@@ -427,7 +491,7 @@ private struct LayerCard<Preview: View>: View {
                 }
                 .accessibilityLabel(title)
 
-                Button(action: onSelect) {
+                selectionTarget {
                     Text(title)
                         .font(.system(size: 15))
                         .lineLimit(2)
@@ -451,6 +515,15 @@ private struct LayerCard<Preview: View>: View {
         .frame(height: previewHeight)
         .padding(4)
         .background(.gray.opacity(0.18), in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    @ViewBuilder
+    private func selectionTarget<Label: View>(@ViewBuilder label: () -> Label) -> some View {
+        if let onSelect {
+            Button(action: onSelect, label: label)
+        } else {
+            label()
+        }
     }
 }
 
@@ -932,5 +1005,17 @@ private struct TransparencyBoundaryFeedback: View {
             }
         }
         return path
+    }
+}
+
+private struct LayerFingerScrollRequest: Equatable {
+    let offset: CGFloat
+    var animated = false
+}
+
+private struct LayerContentFrame: PreferenceKey {
+    static let defaultValue: CGRect = .zero
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
     }
 }
