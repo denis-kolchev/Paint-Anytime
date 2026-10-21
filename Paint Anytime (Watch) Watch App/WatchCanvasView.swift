@@ -43,7 +43,7 @@ struct WatchCanvasView: View {
     private var needsLayerRendering: Bool {
         controller.document.layers.count != 1 || controller.document.effectiveBackgroundColor != SIMD4(1, 1, 1, 1)
         || !controller.selectedLayer.isVisible || controller.selectedLayer.opacity != 1
-        || controller.selectedLayer.locksTransparency || controller.document.strokes.contains { $0.locksTransparency }
+        || controller.selectedLayer.locksTransparency || controller.document.layers.contains { layer in layer.strokes.contains { $0.locksTransparency } }
     }
 
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }

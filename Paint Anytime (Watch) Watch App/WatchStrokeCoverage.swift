@@ -66,13 +66,17 @@ nonisolated final class WatchStrokeCoverage {
     private var markerOrientationSettled = false
     private var markerBounds = CGRect.null
     private var endCap: Patch?
+    private var patchContext: CGContext?
     private(set) var rasterizedPrimitiveCount = 0
 
     private struct Patch {
         let context: CGContext
         // Integer pixel coordinates in bitmap row order (top to bottom).
         let rect: CGRect
-        var pixels: UnsafeMutablePointer<Float> { context.data!.assumingMemoryBound(to: Float.self) }
+        var pixels: UnsafeMutablePointer<Float> {
+            // A reused bitmap may be taller than the patch; drawing occupies its bottom rows.
+            context.data!.assumingMemoryBound(to: Float.self) + (context.height - Int(rect.height)) * stride
+        }
         var stride: Int { context.bytesPerRow / MemoryLayout<Float>.stride }
     }
 
@@ -186,7 +190,7 @@ nonisolated final class WatchStrokeCoverage {
 
     private func point(_ p: SIMD2<Float>) -> CGPoint { CGPoint(x: CGFloat(p.x), y: CGFloat(p.y)) }
 
-    private func patch(_ path: Path) throws -> Patch? {
+    private func patch(_ path: Path, reusable: Bool = false) throws -> Patch? {
         if recordedGeometry != nil {
             recordedGeometry?.endCap = path
             return nil
@@ -195,11 +199,24 @@ nonisolated final class WatchStrokeCoverage {
         let bounds = path.boundingRect.applying(transform).insetBy(dx: -1, dy: -1).integral
             .intersection(CGRect(x: 0, y: 0, width: width, height: height))
         guard !bounds.isNull, !bounds.isEmpty else { return nil }
-        guard let context = CGContext(data: nil, width: Int(bounds.width), height: Int(bounds.height),
-                                      bitsPerComponent: 32, bytesPerRow: 0,
-                                      space: CGColorSpaceCreateDeviceGray(),
-                                      bitmapInfo: CGImageAlphaInfo.none.rawValue | CGBitmapInfo.floatComponents.rawValue | CGBitmapInfo.byteOrder32Little.rawValue),
-              context.data != nil else { throw RenderError.allocation }
+        let context: CGContext
+        if reusable, let cached = patchContext,
+           cached.width >= Int(bounds.width), cached.height >= Int(bounds.height) {
+            context = cached
+        } else {
+            let bitmapWidth = max(Int(bounds.width), reusable ? (patchContext?.width ?? 0) : 0)
+            let bitmapHeight = max(Int(bounds.height), reusable ? (patchContext?.height ?? 0) : 0)
+            guard let allocated = CGContext(data: nil, width: bitmapWidth, height: bitmapHeight,
+                                           bitsPerComponent: 32, bytesPerRow: 0,
+                                           space: CGColorSpaceCreateDeviceGray(),
+                                           bitmapInfo: CGImageAlphaInfo.none.rawValue | CGBitmapInfo.floatComponents.rawValue | CGBitmapInfo.byteOrder32Little.rawValue),
+                  allocated.data != nil else { throw RenderError.allocation }
+            context = allocated
+            if reusable { patchContext = context }
+        }
+        context.saveGState()
+        defer { context.restoreGState() }
+        context.clear(CGRect(x: 0, y: 0, width: bounds.width, height: bounds.height))
         context.translateBy(x: -bounds.minX, y: -bounds.minY)
         context.concatenate(transform)
         WatchBitmapRenderer.exclude(exclusionPaths, from: context)
@@ -217,7 +234,7 @@ nonisolated final class WatchStrokeCoverage {
             recordedGeometry?.primitives.append((path, band))
             return .null
         }
-        guard let patch = try patch(path) else { return .null }
+        guard let patch = try patch(path, reusable: true) else { return .null }
         let rect = patch.rect
         for row in 0..<Int(rect.height) {
             let destination = masks[band] + (Int(rect.minY) + row) * width + Int(rect.minX)
