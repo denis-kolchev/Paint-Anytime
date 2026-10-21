@@ -41,7 +41,6 @@ struct WatchAppSettingsView: View {
                     }
                 }
             }
-            .modifier(InlineMenuBackground(isEnabled: onClose != nil))
             .labelStyle(CenteredMenuLabelStyle())
             .navigationTitle(L10n.text("More"))
             .toolbarTitleDisplayMode(.inline)
@@ -461,21 +460,5 @@ private struct DrawingControlsSettingsView: View {
             }
         }
         .navigationTitle(L10n.text("Everything at hand"))
-    }
-}
-
-/// The in-place menu keeps the canvas visible through the native navigation material.
-private struct InlineMenuBackground: ViewModifier {
-    let isEnabled: Bool
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if isEnabled {
-            content
-                .scrollContentBackground(.hidden)
-                .containerBackground(.regularMaterial, for: .navigation)
-        } else {
-            content
-        }
     }
 }

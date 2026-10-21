@@ -115,32 +115,16 @@ private struct WelcomeQuestion: View {
     }
 }
 
-/// Keep the menu's presentation alive while preparing and entering a repeat tutorial.
+/// Present the menu and prepare a repeat tutorial before handing it to the editor.
 struct TutorialMenuPresentation: View {
     @ObservedObject var controller: CanvasController
     @ObservedObject var onboarding: OnboardingController
     let onOpenDrawings: () -> Void
     let onFinish: () -> Void
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
     var body: some View {
-        ZStack {
-            if let folder = onboarding.tutorialFolder {
-                NavigationStack {
-                    TutorialPlayerView(folder: folder, onFinish: onFinish)
-                        .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
-                }
-                .id(folder)
-                .transition(.opacity)
-                .zIndex(1)
-            } else {
-                WatchAppSettingsView(controller: controller, onOpenDrawings: onOpenDrawings,
-                                     onStartTutorial: { onboarding.requestTutorial() }, onClose: onFinish)
-                    .disabled(onboarding.preparesTutorial)
-                    .transition(.opacity)
-            }
-        }
-        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: onboarding.tutorialFolder)
+        WatchAppSettingsView(controller: controller, onOpenDrawings: onOpenDrawings,
+                             onStartTutorial: { onboarding.requestTutorial() }, onClose: onFinish)
+        .disabled(onboarding.preparesTutorial)
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
         .task(id: onboarding.preparesTutorial) {

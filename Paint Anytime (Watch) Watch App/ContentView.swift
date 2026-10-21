@@ -317,25 +317,40 @@ struct ContentView: View {
             else if menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
         }
         .accessibilityHidden(showsAppSettings)
+        .sheet(isPresented: Binding(
+            get: { showsAppSettings && menuOnboarding.tutorialFolder == nil },
+            set: { presented in
+                // Starting the tutorial dismisses only the menu's system sheet.
+                if !presented && menuOnboarding.tutorialFolder == nil {
+                    showsAppSettings = false
+                }
+            }
+        )) {
+            TutorialMenuPresentation(controller: controller, onboarding: menuOnboarding, onOpenDrawings: {
+                showsAppSettings = false
+                savedNoticeID = nil
+                galleryArtworkFilename = nil
+                galleryInitialBitmap = nil
+                galleryLaunchID = UUID()
+                showsGallery = true
+            }, onFinish: {
+                showsAppSettings = false
+            })
+            .task { await resetMorphBehindPresentation() }
+        }
         .overlay {
-            // An in-place navigation host has no system modal Close button.
-            if showsAppSettings {
-                TutorialMenuPresentation(controller: controller, onboarding: menuOnboarding, onOpenDrawings: {
-                    showsAppSettings = false
-                    savedNoticeID = nil
-                    galleryArtworkFilename = nil
-                    galleryInitialBitmap = nil
-                    galleryLaunchID = UUID()
-                    showsGallery = true
-                }, onFinish: {
-                    showsAppSettings = false
-                })
-                .transition(.opacity)
-                .task { await resetMorphBehindPresentation() }
+            if showsAppSettings, let folder = menuOnboarding.tutorialFolder {
+                NavigationStack {
+                    TutorialPlayerView(folder: folder) {
+                        showsAppSettings = false
+                    }
+                    .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
+                }
+                .id(folder)
+                .preferredColorScheme(.dark)
+                .environment(\.colorScheme, .dark)
             }
         }
-        .animation(showsAppSettings ? .easeInOut(duration: reduceMotion ? 0.15 : 0.25) : nil,
-                   value: showsAppSettings)
         .task(id: session.savedDrawing?.id) {
             guard session.savedDrawing != nil else { return }
             var transaction = Transaction(animation: nil)
