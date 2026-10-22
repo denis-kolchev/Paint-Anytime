@@ -12,6 +12,10 @@ final class TutorialSession: ObservableObject {
     @Published private var releasedCircleEarly = false
     private var failedCircleAttempts = 0
     @Published var isFadingCircleAttempt = false
+    var isPaletteLesson: Bool {
+        [.openPalettes, .findNewPalette, .createPalette, .addPaletteColor,
+         .adjustPaletteColor, .savePaletteColor].contains(step)
+    }
     @Published var galleryIsOpen = false
     @Published var galleryIsFullscreen = false
     var instruction: String {

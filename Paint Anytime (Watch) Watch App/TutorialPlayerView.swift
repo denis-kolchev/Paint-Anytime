@@ -8,6 +8,7 @@ struct TutorialPlayerView: View {
     private var tutorial: TutorialSession { player.tutorial }
     private var controller: CanvasController { player.canvas }
     private var page: TutorialPlayerController.Page { player.page }
+    @State private var tutorialPaletteLibrary = InkPaletteLibrary.tutorial
     @State private var confirmsFinish = false
     @State private var isMovingCanvas = false
     @State private var canvasSize = CGSize.zero
@@ -91,8 +92,22 @@ struct TutorialPlayerView: View {
                             }
 
                             if page == .tools {
-                                WatchToolSettingsView(controller: controller, tutorial: tutorial)
+                                WatchToolSettingsView(controller: controller, tutorial: tutorial,
+                                                          tutorialColors: tutorialPaletteLibrary.activePalette.selectedColors)
                                     .background(.black)
+                                    .opacity(tutorial.isPaletteLesson ? 0 : 1)
+                                    .allowsHitTesting(!tutorial.isPaletteLesson)
+                                    .accessibilityHidden(tutorial.isPaletteLesson)
+                                if tutorial.isPaletteLesson {
+                                    InkPaletteBrowser(library: tutorialPaletteLibrary, controller: controller,
+                                                      tutorial: tutorial) { library in
+                                        tutorialPaletteLibrary = library
+                                        tutorial.record(.savedColor)
+                                    }
+                                    .padding(.bottom, hintReservedHeight)
+                                    .background(.black)
+                                    .environment(\.colorScheme, .dark)
+                                }
                             }
                             if page == .gallery {
                                 SavedDrawingsView(tutorial: tutorial, galleryFolder: folder, onClose: {
@@ -171,7 +186,7 @@ struct TutorialPlayerView: View {
                     // during their own action is fragile on watchOS 10.
                     // Keep both top slots installed throughout canvas/tools/share lessons
                     // so the native system clock stays centered between them.
-                    if page == .canvas || page == .tools || page == .saved {
+                    if (page == .canvas || page == .tools || page == .saved) && !tutorial.isPaletteLesson {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 if page == .tools {

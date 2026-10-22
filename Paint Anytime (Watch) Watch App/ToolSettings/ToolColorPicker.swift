@@ -10,6 +10,7 @@ struct ToolColorPicker: View {
     var extendsBeyondViewport = false
     var showsNavigationHints = true
     var includesAddButton = false
+    @ObservedObject var tutorial = TutorialSession.inactive
     private var itemCount: Int { presets.count + (includesAddButton ? 1 : 0) }
     let onSelect: (Int) -> Void
 
@@ -41,6 +42,7 @@ struct ToolColorPicker: View {
                                     }
                                     .frame(width: swatchSize, height: swatchSize)
                                     .overlay { Circle().strokeBorder(.gray.opacity(0.5), lineWidth: 1) }
+                                    .tutorialHint(tutorial, steps: [.tapAddColor], isSuggested: index == presets.count)
                                     .padding(3)
                                     .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
                                                  : colorIndex == index ? 1 : 0.72)

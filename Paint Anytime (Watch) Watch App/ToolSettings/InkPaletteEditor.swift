@@ -77,6 +77,7 @@ struct InkPalette: Codable {
 struct InkPaletteEditor: View {
     @Binding var palette: InkPalette
     @ObservedObject var controller: CanvasController
+    @ObservedObject var tutorial = TutorialSession.inactive
     let onBrowse: () -> Void
     let onEdit: () -> Void
     @Binding var isEditing: Bool
@@ -106,12 +107,18 @@ struct InkPaletteEditor: View {
                         ForEach(palette.allColors) { preset in
                             swatch(preset, viewportSize: viewport.size)
                         }
-                        Button { sampledColor = nil; showsColorEditor = true } label: {
+                        Button {
+                            guard tutorial.permits([.addPaletteColor]) else { return }
+                            sampledColor = nil
+                            showsColorEditor = true
+                            tutorial.record(.openedColorEditor)
+                        } label: {
                             Image(systemName: "plus.circle.fill")
                                 .resizable()
                                 .scaledToFit()
                                 .foregroundStyle(.gray)
                                 .aspectRatio(1, contentMode: .fit)
+                                .tutorialHint(tutorial, steps: [.addPaletteColor])
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -120,6 +127,7 @@ struct InkPaletteEditor: View {
                             including: isEditing ? .none : .all)
                         .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
                         .accessibilityLabel(L10n.text("Create color"))
+                        .disabled(!tutorial.permits([.addPaletteColor]))
                         Button {
                             sampledColor = nil
                             showsEyedropper = true
@@ -138,6 +146,7 @@ struct InkPaletteEditor: View {
                             including: isEditing ? .none : .all)
                         .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
                         .accessibilityLabel(L10n.text("Eyedropper"))
+                        .disabled(tutorial.isActive)
                     }
                 }
                 .padding(.horizontal, 10)
@@ -158,12 +167,14 @@ struct InkPaletteEditor: View {
         .onChange(of: isEditing) { _, _ in resetDrag() }
         .onDisappear { resetDrag() }
         .toolbar {
-            if !isEditing {
+            if !isEditing && (!tutorial.isActive || tutorial.step == .openPalettes) {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(action: onBrowse) {
                         Image(systemName: "paintpalette.fill")
+                            .tutorialHint(tutorial, steps: [.openPalettes])
                     }
                     .accessibilityLabel(L10n.text("Palettes"))
+                    .disabled(!tutorial.permits([.openPalettes]))
                 }
             }
         }
@@ -236,6 +247,7 @@ struct InkPaletteEditor: View {
             including: isEditing ? .none : .all)
         .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
         .accessibilityLabel(isEditing ? L10n.text("Delete") + " " + preset.name : preset.name)
+        .disabled(tutorial.isActive)
         .accessibilityValue(isEditing ? "" : L10n.text(selected ? "Selected" : "Not selected"))
         .accessibilityAddTraits(!isEditing && selected ? [.isSelected] : [])
     }
@@ -404,6 +416,8 @@ struct CustomInkEditor: View {
     var initialColor: SIMD4<Float>? = nil
     var saveTitle = "Add color"
     var dismissesOnSave = true
+    @ObservedObject var tutorial = TutorialSession.inactive
+    @State private var acceptsColorChanges = false
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -419,6 +433,7 @@ struct CustomInkEditor: View {
 
     private var rgbBinding: Binding<[Double]> {
         Binding { rgb } set: { values in
+            let changed = values != rgb
             rgb = values
             let r = values[0] / 255, g = values[1] / 255, b = values[2] / 255
             let high = max(r, g, b), low = min(r, g, b), delta = high - low
@@ -429,10 +444,12 @@ struct CustomInkEditor: View {
             }
             if high > 0 { hsb[1] = delta / high * 100 }
             hsb[2] = high * 100
+            if changed && acceptsColorChanges { tutorial.record(.adjustedColor) }
         }
     }
     private var hsbBinding: Binding<[Double]> {
         Binding { hsb } set: { values in
+            let changed = values != hsb
             hsb = values
             let h = values[0] / 60, s = values[1] / 100, v = values[2] / 100
             let c = v * s, x = c * (1 - abs(h.truncatingRemainder(dividingBy: 2) - 1)), m = v - c
@@ -446,6 +463,7 @@ struct CustomInkEditor: View {
             default: components = [c, 0, x]
             }
             rgb = components.map { min(255, max(0, ($0 + m) * 255)) }
+            if changed && acceptsColorChanges { tutorial.record(.adjustedColor) }
         }
     }
 
@@ -481,16 +499,25 @@ struct CustomInkEditor: View {
         }
         .onAppear {
             if let c = initialColor { rgbBinding.wrappedValue = [Double(c.x) * 255, Double(c.y) * 255, Double(c.z) * 255] }
+            acceptsColorChanges = true
         }
         .padding(.bottom, 8)
+        .navigationBarBackButtonHidden(tutorial.isActive)
         .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button {
+                    guard tutorial.permits([.savePaletteColor]) else { return }
                     onSave(InkPreset(customID: UUID().uuidString, nameKey: colorName,
                                      rgba: SIMD4(Float(rgb[0] / 255), Float(rgb[1] / 255), Float(rgb[2] / 255), 1)))
                     if dismissesOnSave { dismiss() }
-                } label: { Image(systemName: "checkmark") }
+                } label: {
+                    Image(systemName: "checkmark")
+                        .tutorialHint(tutorial, steps: [.savePaletteColor])
+                }
+                .opacity(tutorial.permits([.savePaletteColor]) ? 1 : 0)
+                .disabled(!tutorial.permits([.savePaletteColor]))
+                .accessibilityHidden(!tutorial.permits([.savePaletteColor]))
                 .accessibilityLabel(L10n.text(saveTitle))
             }
         }

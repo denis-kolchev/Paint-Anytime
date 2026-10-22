@@ -5,6 +5,7 @@ struct WatchToolSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
     @ObservedObject var tutorial = TutorialSession.inactive
+    var tutorialColors: [InkPreset] = InkPaletteLibrary.tutorial.activePalette.selectedColors
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @State private var showsInformation = false
     @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
@@ -20,11 +21,23 @@ struct WatchToolSettingsView: View {
         paletteLibrary = InkPaletteLibrary.decode(palettesData, legacy: paletteData)
     }
     private var palette: InkPalette { paletteLibrary.activePalette }
-    private var isAddingColor: Bool { !tutorial.isActive && selectsAddColor }
+    private var isAddingColor: Bool { selectsAddColor }
+
+    private func openPalette() {
+        guard tutorial.permits([.tapAddColor]) else { return }
+        crownFocused = false
+        if tutorial.isActive {
+            tutorial.record(.openedColorList)
+        } else {
+            showsPalette = true
+        }
+    }
 
     private func selectColor(_ index: Int) {
-        if !tutorial.isActive && index == colors.count {
+        guard !tutorial.isActive || tutorial.step != .tapAddColor || index == colors.count else { return }
+        if index == colors.count {
             selectsAddColor = true
+            tutorial.record(.reachedAddColor)
         } else if colors.indices.contains(index) {
             selectsAddColor = false
             controller.pencilStyle.color = colors[index].rgba
@@ -47,7 +60,7 @@ struct WatchToolSettingsView: View {
 
     private var tutorialCrownFocusRequest: TutorialCrownFocusRequest {
         TutorialCrownFocusRequest(
-            enabled: scenePhase == .active && !showsInformation
+            enabled: scenePhase == .active && !showsInformation && !showsPalette && !tutorial.isPaletteLesson
                 && tutorial.allowsToolAdjustment(page: selection.rawValue),
             step: tutorial.step, page: selection.rawValue)
     }
@@ -60,7 +73,7 @@ struct WatchToolSettingsView: View {
         nonmutating set { selectedPage = newValue.rawValue }
     }
 
-    private var colors: [InkPreset] { tutorial.isActive ? InkPreset.all.filter { $0.nameKey != "White" } : palette.selectedColors }
+    private var colors: [InkPreset] { tutorial.isActive ? tutorialColors : palette.selectedColors }
 
     private var isEraser: Bool { controller.pencilStyle.instrument == .eraser }
     private var instruments: [DrawingInstrument] { DrawingInstrument.displayOrder }
@@ -124,7 +137,7 @@ struct WatchToolSettingsView: View {
         switch selection {
         case .opacity, .sensitivity: 100
         case .width: Double(controller.maximumWidth)
-        case .color: Double(colors.count - (tutorial.isActive ? 1 : 0))
+        case .color: Double(colors.count)
         case .instrument: Double(instruments.count - 1)
         case .mode: 1
         case .direction: 90
@@ -149,7 +162,8 @@ struct WatchToolSettingsView: View {
             case .direction: Double(controller.pencilStyle.reedAngle)
             }
         } set: { value in
-            guard !showsInformation, !showsPalette, tutorial.allowsToolAdjustment(page: selection.rawValue) else { return }
+            guard !showsInformation, !showsPalette, !tutorial.isPaletteLesson,
+                  tutorial.allowsToolAdjustment(page: selection.rawValue) else { return }
             tutorial.activity()
             if selection == .instrument {
                 let index = min(instruments.count - 1, max(0, Int(value.rounded())))
@@ -205,10 +219,10 @@ struct WatchToolSettingsView: View {
                             .overlay {
                                 if selection == .color && isAddingColor {
                                     Button {
-                                        crownFocused = false
-                                        showsPalette = true
+                                        openPalette()
                                     } label: {
-                                        AddColorsPrompt()
+                                        AddColorsPrompt(title: tutorial.isActive ? "Tap + to add a color." : "Tap to add more colors")
+                                        .tutorialHint(tutorial, steps: [.tapAddColor])
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                         .background {
                                             // Overscan the largest viewport throughout page transitions;
@@ -287,11 +301,16 @@ struct WatchToolSettingsView: View {
                                             isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue),
                                             extendsBeyondViewport: tutorial.isActive,
                                             showsNavigationHints: !tutorial.isActive,
-                                            includesAddButton: !tutorial.isActive) { index in
+                                            includesAddButton: true,
+                                            tutorial: tutorial) { index in
                                 guard tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue) else { return }
                                 tutorial.activity()
-                                selectColor(index)
-                                crownFocused = true
+                                if tutorial.isActive && index == colors.count && isAddingColor {
+                                    openPalette()
+                                } else {
+                                    selectColor(index)
+                                    crownFocused = true
+                                }
                             }
                                 .frame(width: 40)
                                 .offset(y: selectionOffset)
@@ -401,7 +420,7 @@ struct WatchToolSettingsView: View {
         }
         .environment(\.colorScheme, .dark)
         .contentShape(Rectangle())
-        .focusable(!showsInformation && !showsPalette && tutorial.allowsToolAdjustment(page: selection.rawValue))
+        .focusable(!showsInformation && !showsPalette && !tutorial.isPaletteLesson && tutorial.allowsToolAdjustment(page: selection.rawValue))
         .focused($crownFocused)
         .modifier(SteppedCrownModifier(
             value: crownValue,
@@ -440,7 +459,7 @@ struct WatchToolSettingsView: View {
                 }
         )
         .toolbar {
-            if tutorial.allowsToolInfo || tutorial.isActive {
+            if !tutorial.isPaletteLesson && (tutorial.allowsToolInfo || tutorial.isActive) {
                 ToolbarItem(placement: .topBarLeading) {
                     // Reference: the compact Information button seen after returning
                     // from Width. The shared modifier fixes that diameter on first
@@ -485,6 +504,9 @@ struct WatchToolSettingsView: View {
             )
             .presentationBackground(.black)
             .environment(\.colorScheme, .dark)
+        }
+        .onChange(of: tutorial.step) { _, step in
+            if step == .openWidth { selectsAddColor = false }
         }
         .onChange(of: palettesData) { _, _ in reloadPaletteLibrary() }
         .onChange(of: paletteData) { _, _ in reloadPaletteLibrary() }
@@ -575,7 +597,7 @@ private struct StaticPalettePromptButtonStyle: ButtonStyle {
 }
 
 /// Match the camera guide while demonstrating only the required horizontal swipe.
-private struct TutorialToolSwipeGuide: View {
+struct TutorialToolSwipeGuide: View {
     let direction: CGFloat
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var offset: CGFloat = 0
@@ -619,6 +641,7 @@ private struct TutorialToolSwipeGuide: View {
 
 /// Reflow at each shared scale before choosing the largest prompt that fits.
 private struct AddColorsPrompt: View {
+    var title = "Tap to add more colors"
     var body: some View {
         ViewThatFits(in: .vertical) {
             prompt(scale: 1)
@@ -640,7 +663,7 @@ private struct AddColorsPrompt: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 30))
                     .accessibilityHidden(true)
-                Text(L10n.text("Tap to add more colors"))
+                Text(L10n.text(title))
                     .font(.headline)
                     .multilineTextAlignment(.center)
                     .lineLimit(nil)

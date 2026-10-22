@@ -48532,176 +48532,1220 @@
         }
       }
     },
-    "Turn the Crown to choose a color." : {
-      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "أدر Crown لاختيار لون."
+    "Turn the Crown to + to add a color.": {
+      "comment": "Tutorial instruction. Keep concise for Apple Watch. + and ✓ denote buttons.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدر Crown إلى + لإضافة لون."
           }
         },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otáčením Crown vyberte barvu."
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otočte Crown na + a přidejte barvu."
           }
         },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drej på Crown for at vælge en farve."
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drej Crown til + for at tilføje en farve."
           }
         },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drehe die Crown, um eine Farbe zu wählen."
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drehe die Crown bis +, um eine Farbe hinzuzufügen."
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Στρέψτε το Crown για να επιλέξετε χρώμα."
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Στρέψτε το Crown στο + για προσθήκη χρώματος."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn the Crown to choose a color."
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Turn the Crown to + to add a color."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gira la Crown para elegir un color."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gira la Crown hasta + para añadir un color."
           }
         },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Valitse väri kääntämällä Crownia."
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lisää väri kiertämällä Crown kohtaan +."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tournez la Crown pour choisir une couleur."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tournez la Crown jusqu’à + pour ajouter une couleur."
           }
         },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "סובבו את ה-Crown לבחירת צבע."
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "סובבו את ה-Crown עד + להוספת צבע."
           }
         },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forgasd a Crownt a szín kiválasztásához."
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forgasd a Crownt a + jelig új színhez."
           }
         },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Putar Crown untuk memilih warna."
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Putar Crown ke + untuk menambah warna."
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ruota la Crown per scegliere un colore."
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruota la Crown fino a + per aggiungere un colore."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crownを回して色を選びます。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crownを＋まで回して色を追加します。"
           }
         },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crown을 돌려 색을 고르세요."
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crown을 +까지 돌려 색상을 추가하세요."
           }
         },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vri på Crown for å velge en farge."
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vri Crown til + for å legge til en farge."
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Draai aan de Crown om een kleur te kiezen."
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Draai de Crown naar + om een kleur toe te voegen."
           }
         },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obróć Crown, aby wybrać kolor."
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obróć Crown do +, aby dodać kolor."
           }
         },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gire a Crown para escolher uma cor."
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gire a Crown até + para adicionar uma cor."
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rode a Crown para escolher uma cor."
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rode a Crown até + para adicionar uma cor."
           }
         },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вращайте Crown, чтобы выбрать цвет."
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вращайте Crown до +, чтобы добавить цвет."
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vrid på Crown för att välja färg."
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vrid Crown till + för att lägga till en färg."
           }
         },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "หมุน Crown เพื่อเลือกสี"
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หมุน Crown ไปที่ + เพื่อเพิ่มสี"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Renk seçmek için Crown’u çevir."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renk eklemek için Crown’u + işaretine çevirin."
           }
         },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обертайте Crown, щоб вибрати колір."
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обертайте Crown до +, щоб додати колір."
           }
         },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xoay Crown để chọn màu."
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xoay Crown đến + để thêm màu."
           }
         },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "转动 Crown 来选择颜色。"
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将 Crown 转到 + 以添加颜色。"
           }
         },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉動 Crown 來選擇顏色。"
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將 Crown 轉到 + 以新增顏色。"
+          }
+        }
+      }
+    },
+    "Tap + to add a color.": {
+      "comment": "Tutorial instruction. Keep concise for Apple Watch. + and ✓ denote buttons.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط + لإضافة لون."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klepněte na + a přidejte barvu."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryk på + for at tilføje en farve."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe auf +, um eine Farbe hinzuzufügen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πατήστε + για προσθήκη χρώματος."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap + to add a color."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca + para añadir un color."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lisää väri napauttamalla +."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touchez + pour ajouter une couleur."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הקישו על + להוספת צבע."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppints a + jelre új színhez."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk + untuk menambah warna."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca + per aggiungere un colore."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "＋をタップして色を追加します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+를 탭해 색상을 추가하세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trykk på + for å legge til en farge."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik op + om een kleur toe te voegen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij +, aby dodać kolor."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque em + para adicionar uma cor."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque em + para adicionar uma cor."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите +, чтобы добавить цвет."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryck på + för att lägga till en färg."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะ + เพื่อเพิ่มสี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renk eklemek için + işaretine dokunun."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Натисніть +, щоб додати колір."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm + để thêm màu."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轻点 + 添加颜色。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下 + 新增顏色。"
+          }
+        }
+      }
+    },
+    "Tap the palette button above.": {
+      "comment": "Tutorial instruction. Keep concise for Apple Watch. + and ✓ denote buttons.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط زر لوحة الألوان بالأعلى."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klepněte na paletu nahoře."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryk på paletten øverst."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe oben auf die Palette."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πατήστε την παλέτα επάνω."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap the palette button above."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca la paleta de arriba."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napauta ylhäällä olevaa palettia."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touchez la palette en haut."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הקישו על הפלטה למעלה."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppints felül a palettára."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk palet di atas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca la tavolozza in alto."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "上のパレットボタンをタップします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "위쪽 팔레트 버튼을 탭하세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trykk på paletten øverst."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik bovenaan op het palet."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij paletę u góry."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque na paleta no topo."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque na paleta no topo."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите палитру сверху."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryck på paletten högst upp."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะปุ่มจานสีด้านบน"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Üstteki palet düğmesine dokunun."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Натисніть палітру вгорі."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm nút bảng màu ở trên."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轻点上方的调色板按钮。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下上方的調色盤按鈕。"
+          }
+        }
+      }
+    },
+    "Swipe to New palette.": {
+      "comment": "Tutorial instruction. Keep concise for Apple Watch. + and ✓ denote buttons.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب إلى «لوحة ألوان جديدة»."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Přejeďte na „Nová paleta“."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe til Ny palette."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wische zu „Neue Palette“."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Σύρετε μέχρι τη «Νέα παλέτα»."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Swipe to New palette."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desliza hasta «Nueva paleta»."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pyyhkäise kohtaan Uusi paletti."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Balayez jusqu’à « Nouvelle palette »."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "החליקו אל ״פלטה חדשה״."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lapozz az „Új paletta” elemhez."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geser ke Palet baru."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scorri fino a «Nuova tavolozza»."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「新しいパレット」までスワイプします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새 팔레트까지 스와이프하세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sveip til Ny palett."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veeg naar Nieuw palet."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń do „Nowa paleta”."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deslize até Nova paleta."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deslize até Nova paleta."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Свайпните до «Новая палитра»."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svep till Ny palett."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ปัดไปที่จานสีใหม่"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni palete kaydırın."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Проведіть до «Нова палітра»."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuốt đến Bảng màu mới."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轻扫至“新建调色板”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "滑動至「新增調色盤」。"
+          }
+        }
+      }
+    },
+    "Tap New palette.": {
+      "comment": "Tutorial instruction. Keep concise for Apple Watch. + and ✓ denote buttons.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط «لوحة ألوان جديدة»."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klepněte na „Nová paleta“."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryk på Ny palette."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe auf „Neue Palette“."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πατήστε «Νέα παλέτα»."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap New palette."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca «Nueva paleta»."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Napauta Uusi paletti."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touchez « Nouvelle palette »."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הקישו על ״פלטה חדשה״."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppints az „Új paletta” elemre."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk Palet baru."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca «Nuova tavolozza»."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "「新しいパレット」をタップします。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "새 팔레트를 탭하세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trykk på Ny palett."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik op Nieuw palet."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij „Nowa paleta”."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque em Nova paleta."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque em Nova paleta."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите «Новая палитра»."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryck på Ny palett."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะจานสีใหม่"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni palete dokunun."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Натисніть «Нова палітра»."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm Bảng màu mới."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轻点“新建调色板”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下「新增調色盤」。"
+          }
+        }
+      }
+    },
+    "Move a slider to set a color.": {
+      "comment": "Tutorial instruction. Keep concise for Apple Watch. + and ✓ denote buttons.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حرّك شريط تمرير لضبط اللون."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Posunutím jezdce nastavte barvu."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flyt en skyder for at indstille farven."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bewege einen Regler, um die Farbe einzustellen."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μετακινήστε ένα ρυθμιστικό για το χρώμα."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Move a slider to set a color."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mueve un deslizador para ajustar el color."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Säädä väriä siirtämällä liukusäädintä."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Déplacez un curseur pour régler la couleur."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הזיזו מחוון כדי לכוון את הצבע."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mozgass egy csúszkát a szín beállításához."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geser penggeser untuk mengatur warna."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sposta un cursore per regolare il colore."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スライダーを動かして色を調整します。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "슬라이더를 움직여 색상을 조절하세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flytt en glidebryter for å justere fargen."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verplaats een schuifregelaar om de kleur in te stellen."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesuń suwak, aby ustawić kolor."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mova um controle deslizante para ajustar a cor."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mova um controlo deslizante para ajustar a cor."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сдвиньте ползунок, чтобы настроить цвет."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flytta ett reglage för att ställa in färgen."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เลื่อนแถบเลื่อนเพื่อปรับสี"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rengi ayarlamak için bir sürgüyü hareket ettirin."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Посуньте повзунок, щоб налаштувати колір."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Di chuyển thanh trượt để chỉnh màu."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移动滑块调整颜色。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移動滑桿調整顏色。"
+          }
+        }
+      }
+    },
+    "Tap ✓ to use this color.": {
+      "comment": "Tutorial instruction. Keep concise for Apple Watch. + and ✓ denote buttons.",
+      "extractionState": "manual",
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اضغط ✓ لاستخدام هذا اللون."
+          }
+        },
+        "cs": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klepnutím na ✓ použijte barvu."
+          }
+        },
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryk på ✓ for at bruge farven."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe auf ✓, um die Farbe zu verwenden."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πατήστε ✓ για χρήση του χρώματος."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap ✓ to use this color."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca ✓ para usar este color."
+          }
+        },
+        "fi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Käytä väriä napauttamalla ✓."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touchez ✓ pour utiliser cette couleur."
+          }
+        },
+        "he": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "הקישו על ✓ כדי להשתמש בצבע."
+          }
+        },
+        "hu": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koppints a ✓ jelre a szín használatához."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ketuk ✓ untuk memakai warna ini."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca ✓ per usare questo colore."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✓をタップしてこの色を使います。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "✓를 탭해 이 색상을 사용하세요."
+          }
+        },
+        "nb": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trykk på ✓ for å bruke fargen."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik op ✓ om deze kleur te gebruiken."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij ✓, aby użyć tego koloru."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque em ✓ para usar esta cor."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toque em ✓ para usar esta cor."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нажмите ✓, чтобы выбрать этот цвет."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryck på ✓ för att använda färgen."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แตะ ✓ เพื่อใช้สีนี้"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu rengi kullanmak için ✓ işaretine dokunun."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Натисніть ✓, щоб вибрати цей колір."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạm ✓ để dùng màu này."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轻点 ✓ 使用此颜色。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "點一下 ✓ 使用此顏色。"
           }
         }
       }

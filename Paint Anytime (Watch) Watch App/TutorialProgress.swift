@@ -3,7 +3,9 @@ import Foundation
 enum TutorialStep: Int, CaseIterable {
     case inactive = 0
     case firstStrokes, holdCircle, zoomCanvas, panCanvas, finishCamera, openTools
-    case selectColor, openWidth, setWidth, openOpacity, setOpacity, openTool
+    case selectColor, tapAddColor, openPalettes, findNewPalette, createPalette
+    case addPaletteColor, adjustPaletteColor, savePaletteColor
+    case openWidth, setWidth, openOpacity, setOpacity, openTool
     case selectReed, openAngle, setAngle, closeTools, reedStrokes
     case history, saveDrawing, shareDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas, finished
@@ -23,6 +25,8 @@ struct TutorialProgress {
         case heldCircle, stroke, openedTools, closedTools, openedInfo, closedInfo
         case panned, finishedCamera, history, saved, closedSave, openedMenu, openedGallery
         case galleryFullscreen, deleted, returnedToCanvas, cleared
+        case reachedAddColor, openedColorList, browsedPalettes, foundNewPalette
+        case createdPalette, openedColorEditor, adjustedColor, savedColor
     }
     enum Effect: Equatable {
         case none, advance, showResult, pauseReminders
@@ -56,6 +60,10 @@ struct TutorialProgress {
         case (_, .openedInfo): return .pauseReminders
         case (_, .closedInfo): return .resumeReminders(advance: false)
         case (.holdCircle, .heldCircle): return .advance
+        case (.selectColor, .reachedAddColor), (.tapAddColor, .openedColorList),
+             (.openPalettes, .browsedPalettes), (.findNewPalette, .foundNewPalette),
+             (.createPalette, .createdPalette), (.addPaletteColor, .openedColorEditor),
+             (.adjustPaletteColor, .adjustedColor), (.savePaletteColor, .savedColor): return .advance
         case (.clearCanvas, .cleared): return .showResult
         case (.openTools, .openedTools), (.closeTools, .closedTools), (.reedStrokes, .stroke),
              (.saveDrawing, .saved), (.shareDrawing, .closedSave), (.openMenu, .openedMenu),
@@ -80,7 +88,6 @@ struct TutorialProgress {
             return false
         }
         switch step {
-        case .selectColor: return page == 1 && old.color != style.color
         case .setOpacity: return page == 5 && style.instrument != .eraser && old.opacity != style.opacity
         case .setWidth: return page == 0 && old.width != style.width
         case .selectReed: return style.instrument == .reed

@@ -34,6 +34,13 @@ struct InkPaletteLibrary: Codable {
         return Self(palettes: merged, activeID: draft.activeID)
     }
 
+    static var tutorial: Self {
+        let colors = InkPreset.all.filter { $0.nameKey == "Black" || $0.nameKey == "Red" }
+        return Self(palettes: [SavedInkPalette(id: "tutorial", palette:
+            InkPalette(baseColors: colors, title: "Basic colors", selectedIDs: colors.map(\.id)))],
+            activeID: "tutorial")
+    }
+
     static let basicColors = InkPreset.all + colors("basic", "78CBB0 CDB4DB E9CBA7")
 
     private static func colors(_ id: String, _ hexes: String) -> [InkPreset] {
@@ -87,6 +94,7 @@ struct InkPaletteBrowser: View {
     @Environment(\.layoutDirection) private var layoutDirection
     @State var library: InkPaletteLibrary
     @ObservedObject var controller: CanvasController
+    @ObservedObject var tutorial = TutorialSession.inactive
     let onSave: (InkPaletteLibrary) -> Void
     private let returnsToCanvasAfterColorSave: Bool
     private let hiddenNameIDs: Set<PaletteNameID>
@@ -108,10 +116,12 @@ struct InkPaletteBrowser: View {
     private let addID = "add-palette"
 
     init(library: InkPaletteLibrary, controller: CanvasController, initialColor: SIMD4<Float>? = nil,
+         tutorial: TutorialSession = .inactive,
          onSave: @escaping (InkPaletteLibrary) -> Void) {
         let visibleLibrary = InkPaletteLibrary(palettes: library.visiblePalettes, activeID: library.activeID)
         _library = State(initialValue: visibleLibrary)
         self.controller = controller
+        self.tutorial = tutorial
         returnsToCanvasAfterColorSave = initialColor != nil
         _sampledColor = State(initialValue: initialColor)
         _showsColorEditor = State(initialValue: initialColor != nil)
@@ -127,13 +137,18 @@ struct InkPaletteBrowser: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
-                    InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller,
+                if tutorial.isActive && showsColorEditor {
+                    // Keep tutorial screens in the same viewport as the coach card.
+                    // A watchOS navigation push takes over the full screen.
+                    colorEditor
+                } else if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
+                    InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller, tutorial: tutorial,
                         onBrowse: {
                             if showsEmptyPaletteClose {
                                 discardEmptyPalette()
                             } else {
                                 setBrowsing(true)
+                                tutorial.record(.browsedPalettes)
                             }
                         }, onEdit: beginEditing, isEditing: $editing,
                         sampledColor: $sampledColor, showsColorEditor: $showsColorEditor)
@@ -147,55 +162,51 @@ struct InkPaletteBrowser: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .navigationBarBackButtonHidden(true)
-            .navigationDestination(isPresented: $showsColorEditor) {
-                CustomInkEditor(initialColor: sampledColor, dismissesOnSave: !returnsToCanvasAfterColorSave) { preset in
-                    guard let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
-                    if let existing = library.palettes[index].palette.allColors.first(where: { $0.rgba == preset.rgba }) {
-                        if !library.palettes[index].palette.selectedIDs.contains(existing.id) {
-                            library.palettes[index].palette.selectedIDs.append(existing.id)
-                        }
-                    } else {
-                        library.palettes[index].palette.customColors.append(preset)
-                        library.palettes[index].palette.selectedIDs.append(preset.id)
-                        addedColors.append((currentID, preset.id))
-                    }
-                    if returnsToCanvasAfterColorSave {
-                        // Also select an existing swatch when the sampled color
-                        // already belongs to the palette.
-                        controller.pencilStyle.color = preset.rgba
-                        confirm()
-                    }
-                }
+            .navigationDestination(isPresented: Binding(
+                get: { !tutorial.isActive && showsColorEditor },
+                set: { if !tutorial.isActive { showsColorEditor = $0 } }
+            )) {
+                colorEditor
             }
             .toolbar {
-                if browsing || currentID == addID {
-                    // Occupy the cancellation slot so watchOS does not insert its own close button.
+                if tutorial.isActive && tutorial.step != .openPalettes {
                     ToolbarItem(placement: .cancellationAction) {
                         Color.clear
                             .frame(width: 1, height: 1)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                     }
-                } else if editing {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(action: cancelEditing) { Image(systemName: "xmark") }
-                            .accessibilityLabel(L10n.text("Cancel"))
-                    }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    if showsEmptyPaletteClose {
-                        Button(action: discardEmptyPalette) { Image(systemName: "xmark") }
-                            .accessibilityLabel(L10n.text("Close"))
-                    } else {
-                        Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
-                            .disabled(movingID != nil || pendingDeletionID != nil || (!canConfirm && !editing))
-                            .accessibilityLabel(L10n.text("Done"))
+                if !tutorial.isActive {
+                    if browsing || currentID == addID {
+                        // Occupy the cancellation slot so watchOS does not insert its own close button.
+                        ToolbarItem(placement: .cancellationAction) {
+                            Color.clear
+                                .frame(width: 1, height: 1)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    } else if editing {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(action: cancelEditing) { Image(systemName: "xmark") }
+                                .accessibilityLabel(L10n.text("Cancel"))
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        if showsEmptyPaletteClose {
+                            Button(action: discardEmptyPalette) { Image(systemName: "xmark") }
+                                .accessibilityLabel(L10n.text("Close"))
+                        } else {
+                            Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
+                                .disabled(movingID != nil || pendingDeletionID != nil || (!canConfirm && !editing))
+                                .accessibilityLabel(L10n.text("Done"))
+                        }
                     }
                 }
             }
         }
         // watchOS supplies a modal close button separately from the navigation back button.
-        .interactiveDismissDisabled(browsing || currentID == addID)
+        .interactiveDismissDisabled(tutorial.isActive || browsing || currentID == addID)
         .onChange(of: moveGestureActive) { _, active in
             if !active { cancelMove() }
         }
@@ -216,6 +227,28 @@ struct InkPaletteBrowser: View {
         }
     }
 
+    private var colorEditor: some View {
+        CustomInkEditor(initialColor: sampledColor, dismissesOnSave: !returnsToCanvasAfterColorSave && !tutorial.isActive,
+                        tutorial: tutorial) { preset in
+            guard let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
+            if let existing = library.palettes[index].palette.allColors.first(where: { $0.rgba == preset.rgba }) {
+                if !library.palettes[index].palette.selectedIDs.contains(existing.id) {
+                    library.palettes[index].palette.selectedIDs.append(existing.id)
+                }
+            } else {
+                library.palettes[index].palette.customColors.append(preset)
+                library.palettes[index].palette.selectedIDs.append(preset.id)
+                addedColors.append((currentID, preset.id))
+            }
+            if returnsToCanvasAfterColorSave || tutorial.isActive {
+                // Also select an existing swatch when the sampled color
+                // already belongs to the palette.
+                controller.pencilStyle.color = preset.rgba
+                confirm()
+            }
+        }
+    }
+
     private func setBrowsing(_ value: Bool) {
         withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
             browsing = value
@@ -223,7 +256,7 @@ struct InkPaletteBrowser: View {
     }
 
     private func beginEditing() {
-        guard !editing else { return }
+        guard !editing, !tutorial.isActive else { return }
         guard let palette = library.palettes.first(where: { $0.id == currentID }) else { return }
         paletteBeforeEditing = palette
         editing = true
@@ -297,7 +330,8 @@ struct InkPaletteBrowser: View {
                             carouselTitle(L10n.text("New palette"), width: stride - 6, height: titleHeight)
                                 .opacity(titleOpacity(for: addID, stride: stride))
                             Button {
-                                guard pendingDeletionID == nil, movingID == nil else { return }
+                                guard pendingDeletionID == nil, movingID == nil,
+                                      tutorial.permits([.createPalette]) else { return }
                                 if currentID == addID {
                                     addPalette()
                                 } else {
@@ -314,10 +348,11 @@ struct InkPaletteBrowser: View {
                                     }
                             }
                             .buttonStyle(.plain)
-                            .disabled(pendingDeletionID != nil)
+                            .disabled(pendingDeletionID != nil || !tutorial.permits([.createPalette]))
                             .accessibilityLabel(L10n.text("New palette"))
                             .accessibilityAdjustableAction { adjustPage($0) }
                         }
+                        .tutorialHint(tutorial, steps: [.createPalette])
                         .frame(width: stride)
                         .accessibilityHidden(currentID != addID || movingID != nil)
                         .opacity(movingID == nil ? 1 : 0)
@@ -336,6 +371,11 @@ struct InkPaletteBrowser: View {
                     .highPriorityGesture(pageGesture(stride: stride),
                                          including: pendingDeletionID == nil ? .all : .subviews)
                     .animation(pageAnimation, value: carouselTranslation)
+                    .overlay {
+                        if tutorial.permits([.findNewPalette]) && tutorial.isActive {
+                            TutorialToolSwipeGuide(direction: -1)
+                        }
+                    }
                     .overlay(alignment: .top) {
                         if let movingID, let entry = library.palettes.first(where: { $0.id == movingID }) {
                             ZStack(alignment: .top) {
@@ -396,9 +436,9 @@ struct InkPaletteBrowser: View {
                     }
                     .overlay { Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 1) }
                     .contentShape(Capsule())
-                    .opacity(currentID == addID || movingID != nil ? 0 : 1)
-                    .allowsHitTesting(currentID != addID && movingID == nil)
-                    .accessibilityHidden(currentID == addID || movingID != nil)
+                    .opacity(tutorial.isActive || currentID == addID || movingID != nil ? 0 : 1)
+                    .allowsHitTesting(!tutorial.isActive && currentID != addID && movingID == nil)
+                    .accessibilityHidden(tutorial.isActive || currentID == addID || movingID != nil)
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: currentID == addID)
                 }
                 .padding(.bottom, bottomPadding)
@@ -455,7 +495,7 @@ struct InkPaletteBrowser: View {
                 // Observe a hold alongside the button's tap, and only on the
                 // card itself so the revealed Delete button has no hold handler.
                 .simultaneousGesture(reorderGesture(entry, stride: stride),
-                                     including: pendingDeletionID == nil ? .all : .none)
+                                     including: pendingDeletionID == nil && !tutorial.isActive ? .all : .none)
                 .offset(y: awaitingDeletion ? -height - 12 : lift)
                 .opacity(awaitingDeletion ? 0 : 1)
                 .allowsHitTesting(pendingDeletionID == nil)
@@ -473,7 +513,7 @@ struct InkPaletteBrowser: View {
         let swatchSize = max(1, min((width - horizontalInset * 2 - spacing * 2) / 3,
                                    (height - verticalInset * 2 - spacing * 4) / 5))
         return Button {
-            guard pendingDeletionID == nil, movingID == nil else { return }
+            guard pendingDeletionID == nil, movingID == nil, !tutorial.isActive else { return }
             if currentID == entry.id {
                 editing = false
                 setBrowsing(false)
@@ -592,9 +632,10 @@ struct InkPaletteBrowser: View {
     }
 
     private func selectPage(by step: Int) {
-        guard pendingDeletionID == nil, movingID == nil else { return }
+        guard pendingDeletionID == nil, movingID == nil, tutorial.permits([.findNewPalette]) else { return }
         let target = min(pageIDs.count - 1, max(0, pageIndex + step))
         withAnimation(pageAnimation) { currentID = pageIDs[target] }
+        if currentID == addID { tutorial.record(.foundNewPalette) }
     }
 
     private func adjustPage(_ direction: AccessibilityAdjustmentDirection) {
@@ -608,7 +649,7 @@ struct InkPaletteBrowser: View {
     private func pageGesture(stride: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 10)
             .updating($carouselTranslation) { value, translation, transaction in
-                guard pendingDeletionID == nil, movingID == nil else { return }
+                guard pendingDeletionID == nil, movingID == nil, tutorial.permits([.findNewPalette]) else { return }
                 transaction.animation = nil
                 if abs(value.translation.height) > abs(value.translation.width) {
                     if canDeletePalette, currentID != addID {
@@ -621,7 +662,7 @@ struct InkPaletteBrowser: View {
                 translation.width = value.translation.width * (atEdge ? 0.2 : 1)
             }
             .onEnded { value in
-                guard pendingDeletionID == nil, movingID == nil else { return }
+                guard pendingDeletionID == nil, movingID == nil, tutorial.permits([.findNewPalette]) else { return }
                 if abs(value.translation.height) > abs(value.translation.width) {
                     if canDeletePalette, currentID != addID, value.translation.height < -30 {
                         withAnimation(pageAnimation) { pendingDeletionID = currentID }
@@ -675,7 +716,7 @@ struct InkPaletteBrowser: View {
             controller.pencilStyle.color = color.rgba
         }
         onSave(library)
-        dismiss()
+        if !tutorial.isActive { dismiss() }
     }
 
     private func addPalette() {
@@ -685,6 +726,7 @@ struct InkPaletteBrowser: View {
         currentID = id
         editing = false
         browsing = false
+        tutorial.record(.createdPalette)
     }
 
     private func updateGeneratedName() {
