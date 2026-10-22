@@ -33,6 +33,9 @@ struct TutorialPlayerView: View {
     var body: some View {
         let _ = TutorialDebug.trace("player.body", "page=\(page) \(tutorial.debugState)")
         GeometryReader { screen in
+            // Native palette pages retain horizontal safe-area insets. The
+            // floating card uses the same full screen width on every lesson.
+            let hintWidth = screen.size.width + screen.safeAreaInsets.leading + screen.safeAreaInsets.trailing
             // The card measures itself independently of the controls it moves.
             let measuredHintHeight = hintHeight > 0 ? hintHeight : screen.size.height * 0.32 + 20
             // Measurement includes 10 pt of clear padding above the card; keep only a 2 pt gap.
@@ -44,9 +47,10 @@ struct TutorialPlayerView: View {
                             WatchCanvasView(controller: controller, tutorial: tutorial,
                                             rendersArtwork: page == .canvas || page == .saved,
                                             acceptsInput: page == .canvas && tutorial.acceptsActions,
+                                            acceptsZoomOnlyInput: page == .saved && tutorial.acceptsActions,
                                             protectedControls: canvasProtectedControls, isMovingCanvas: $isMovingCanvas)
                                 .opacity(page == .canvas || page == .saved ? 1 : 0)
-                                .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
+                                .allowsHitTesting((page == .canvas || page == .saved) && tutorial.acceptsActions)
                                 .accessibilityHidden(page != .canvas && page != .saved)
 
                             if showsCircleGuide {
@@ -92,23 +96,28 @@ struct TutorialPlayerView: View {
                             }
 
                             if page == .tools {
-                                WatchToolSettingsView(controller: controller, tutorial: tutorial,
+                                if !tutorial.isPaletteLesson {
+                                    // Mount with the saved palette already installed, so the
+                                    // returning picker never animates removal of the old colors.
+                                    WatchToolSettingsView(controller: controller, tutorial: tutorial,
                                                           tutorialColors: tutorialPaletteLibrary.activePalette.selectedColors)
-                                    .background(.black)
-                                    .opacity(tutorial.isPaletteLesson ? 0 : 1)
-                                    .allowsHitTesting(!tutorial.isPaletteLesson)
-                                    .accessibilityHidden(tutorial.isPaletteLesson)
-                                if tutorial.isPaletteLesson {
+                                        .background(.black)
+                                        .transition(.opacity)
+                                } else {
                                     InkPaletteBrowser(library: tutorialPaletteLibrary, controller: controller,
                                                       tutorial: tutorial) { library in
                                         tutorialPaletteLibrary = library
-                                        tutorial.record(.savedColor)
+                                        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                            tutorial.record(.savedColor)
+                                        }
                                     }
                                     // Extend beneath the floating card while preserving
                                     // the native toolbar inset at the top.
                                     .ignoresSafeArea(.container, edges: .bottom)
                                     .background(Color.black.ignoresSafeArea())
                                     .environment(\.colorScheme, .dark)
+                                    .transition(.opacity)
+                                    .zIndex(1)
                                 }
                             }
                             if page == .gallery {
@@ -265,7 +274,7 @@ struct TutorialPlayerView: View {
                 TutorialLessonView(tutorial: tutorial, onFinish: {
                     if player.preserveDrawing() { onFinish() }
                 },
-                                   screenWidth: screen.size.width,
+                                   screenWidth: hintWidth,
                                    screenHeight: screen.size.height,
                                    // Reserve the tool chrome, carousel, and a readable
                                    // three-item control. The card already scrolls overflow.
@@ -273,7 +282,7 @@ struct TutorialPlayerView: View {
                                     ? max(32, screen.size.height - 40 - 30
                                           - ToolValueControl.minimumHeight - 12) : nil,
                                    confirmsFinish: $confirmsFinish)
-                    .frame(width: screen.size.width)
+                    .frame(width: hintWidth)
                     .fixedSize(horizontal: false, vertical: true)
                     .background {
                         GeometryReader { hintGeometry in
@@ -281,6 +290,7 @@ struct TutorialPlayerView: View {
                                                    value: hintGeometry.size.height)
                         }
                     }
+                    .frame(width: screen.size.width)
             }
         }
         // Native menu and palette content start below the navigation toolbar.
@@ -537,13 +547,18 @@ private struct TutorialCircleGuide: View {
             let straightened = reduceMotion ? 1 : min(1, max(0, (phase - 2.7) / 0.25))
             let visibility = reduceMotion ? 1 : min(1, max(0, (4.4 - phase) / 0.4))
             Canvas { context, size in
-                let radius = min(size.width * 0.27, size.height * 0.29)
-                let center = CGPoint(x: size.width / 2, y: size.height * 0.55)
+                // Keep the entire loop and contact marker below the clock and
+                // above the coach card, even on the smallest watch viewport.
+                let top = min(50.0, size.height * 0.5)
+                let bottom = max(top, size.height - 12)
+                let radiusX = size.width * 0.27
+                let radiusY = min(radiusX * 0.65, max(0, (bottom - top) / 2 - 11) / 1.1)
+                let center = CGPoint(x: size.width / 2, y: (top + bottom) / 2)
                 var path = Path()
                 let count = max(1, Int(drawn * 160))
                 for index in 0...count {
                     let fraction = min(drawn, Double(index) / 160)
-                    let point = point(at: fraction, radius: radius, center: center,
+                    let point = point(at: fraction, radiusX: radiusX, radiusY: radiusY, center: center,
                                       straightened: straightened)
                     if index == 0 { path.move(to: point) }
                     else { path.addLine(to: point) }
@@ -551,7 +566,7 @@ private struct TutorialCircleGuide: View {
                 context.opacity = visibility
                 context.stroke(path, with: .color(ink),
                                style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
-                let finger = point(at: drawn, radius: radius, center: center,
+                let finger = point(at: drawn, radiusX: radiusX, radiusY: radiusY, center: center,
                                    straightened: straightened)
                 // A stationary contact marker makes the hold visible after the loop closes.
                 if reduceMotion || (phase >= 0.4 && phase < 3.15) {
@@ -572,13 +587,13 @@ private struct TutorialCircleGuide: View {
         .onAppear { startedAt = Date() }
     }
 
-    private func point(at fraction: Double, radius: CGFloat, center: CGPoint,
+    private func point(at fraction: Double, radiusX: CGFloat, radiusY: CGFloat, center: CGPoint,
                        straightened: Double) -> CGPoint {
         let angle = fraction * .pi * 2 - .pi / 2
         // Periodic deviations close naturally, like a slightly uneven hand-drawn loop.
         let wobble = 1 + (1 - straightened)
             * (0.065 * sin(angle * 3 + 0.7) + 0.035 * sin(angle * 7 - 0.4))
-        return CGPoint(x: center.x + radius * wobble * cos(angle),
-                       y: center.y + radius * wobble * sin(angle))
+        return CGPoint(x: center.x + radiusX * wobble * cos(angle),
+                       y: center.y + radiusY * wobble * sin(angle))
     }
 }

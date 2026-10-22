@@ -34,12 +34,12 @@ struct WatchToolSettingsView: View {
     }
 
     private func selectColor(_ index: Int) {
-        guard !tutorial.isActive || tutorial.step != .tapAddColor || index == colors.count else { return }
         if index == colors.count {
             selectsAddColor = true
             tutorial.record(.reachedAddColor)
         } else if colors.indices.contains(index) {
             selectsAddColor = false
+            tutorial.record(.returnedToColorSelection)
             controller.pencilStyle.color = colors[index].rgba
         }
     }

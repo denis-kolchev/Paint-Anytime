@@ -21,6 +21,7 @@ struct WatchCanvasView: View {
     var onArtworkPrepared: (Bool) -> Void = { _ in }
     var rendersArtwork = true
     var acceptsInput = true
+    var acceptsZoomOnlyInput = false
     var protectedControls: [CanvasToolbarControl: CGRect] = [:]
     // Resolve live menu bounds only at gesture start, without observing menu animation.
     var protectedControlsProvider: (() -> [CanvasToolbarControl: CGRect])? = nil
@@ -54,7 +55,7 @@ struct WatchCanvasView: View {
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
     @FocusState private var crownFocused: Bool
     private var shouldFocusCrown: Bool {
-        scenePhase == .active && acceptsInput && tutorial.allowsCanvasZoom
+        scenePhase == .active && (acceptsInput || acceptsZoomOnlyInput) && tutorial.allowsCanvasZoom
     }
     private struct CrownFocusRequest: Equatable {
         let enabled: Bool
@@ -299,13 +300,13 @@ struct WatchCanvasView: View {
         }
         // Keep the Crown target registered throughout the canvas exercise. The
         // binding below still rejects zoom until the lesson permits it.
-        .focusable(acceptsInput)
+        .focusable(acceptsInput || acceptsZoomOnlyInput)
         .focused($crownFocused)
         .digitalCrownRotation(detent: Binding(
             get: { crownZoom },
             set: { value in
                 guard tutorial.allowsCanvasZoom else { return }
-                guard acceptsInput && !isDragging && controller.activeStroke == nil else { return }
+                guard (acceptsInput || acceptsZoomOnlyInput) && !isDragging && controller.activeStroke == nil else { return }
                 guard value != crownZoom else { return }
                 let previousZoom = zoom
                 let wasSnapped = previousZoom == 1

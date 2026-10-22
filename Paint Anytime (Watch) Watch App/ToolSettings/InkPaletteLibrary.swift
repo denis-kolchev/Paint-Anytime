@@ -35,9 +35,8 @@ struct InkPaletteLibrary: Codable {
     }
 
     static var tutorial: Self {
-        let colors = InkPreset.all.filter { $0.nameKey == "Black" || $0.nameKey == "Red" }
         return Self(palettes: [SavedInkPalette(id: "tutorial", palette:
-            InkPalette(baseColors: colors, title: "Basic colors", selectedIDs: colors.map(\.id)))],
+            initial.activePalette)],
             activeID: "tutorial")
     }
 
@@ -201,7 +200,7 @@ struct InkPaletteBrowser: View {
             colorEditor
         }
         .toolbar {
-            if tutorial.isActive && (tutorial.step == .findNewPalette || tutorial.step == .createPalette) {
+            if tutorial.isActive && !showsColorEditor {
                 // Reserve the trailing native toolbar slot to center the system clock.
                 ToolbarItem(placement: .confirmationAction) {
                     Button {} label: {

@@ -25,7 +25,7 @@ struct TutorialProgress {
         case heldCircle, stroke, openedTools, closedTools, openedInfo, closedInfo
         case panned, finishedCamera, history, saved, closedSave, openedMenu, openedGallery
         case galleryFullscreen, deleted, returnedToCanvas, cleared
-        case reachedAddColor, openedColorList, browsedPalettes, foundNewPalette
+        case reachedAddColor, returnedToColorSelection, openedColorList, browsedPalettes, foundNewPalette
         case createdPalette, openedColorEditor, adjustedColor, savedColor
     }
     enum Effect: Equatable {
@@ -49,6 +49,10 @@ struct TutorialProgress {
     }
     mutating func record(_ event: Event) -> Effect {
         switch (step, event) {
+        case (.tapAddColor, .returnedToColorSelection):
+            step = .selectColor
+            count = 0
+            return .none
         case (.firstStrokes, .stroke), (.history, .history):
             count += 1
             return count >= 2 ? .advance : .none

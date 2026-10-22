@@ -46,7 +46,7 @@ final class TutorialSession: ObservableObject {
     @Published private(set) var showsResult = false
     var isActive: Bool { step != .inactive }
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
-    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .history, .saveDrawing, .shareDrawing, .openMenu]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
     var allowsGalleryZoom: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }

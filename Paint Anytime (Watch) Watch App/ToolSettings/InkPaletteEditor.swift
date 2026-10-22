@@ -191,6 +191,7 @@ struct InkPaletteEditor: View {
     private func swatch(_ preset: InkPreset, viewportSize: CGSize) -> some View {
         let selected = palette.selectedIDs.contains(preset.id)
         return Button {
+            guard !tutorial.isActive else { return }
             if isEditing {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
                     palette.delete(preset.id)
@@ -247,7 +248,8 @@ struct InkPaletteEditor: View {
             including: isEditing ? .none : .all)
         .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
         .accessibilityLabel(isEditing ? L10n.text("Delete") + " " + preset.name : preset.name)
-        .disabled(tutorial.isActive)
+        // Block tutorial interaction without the disabled button's dimming.
+        .allowsHitTesting(!tutorial.isActive)
         .accessibilityValue(isEditing ? "" : L10n.text(selected ? "Selected" : "Not selected"))
         .accessibilityAddTraits(!isEditing && selected ? [.isSelected] : [])
     }
@@ -502,6 +504,9 @@ struct CustomInkEditor: View {
             acceptsColorChanges = true
         }
         .padding(.bottom, 8)
+        // Use the empty space below the clock in tutorial color lessons.
+        // Move the editor content together; the native toolbar stays in place.
+        .offset(y: tutorial.isActive ? -20 : 0)
         .navigationBarBackButtonHidden(tutorial.isActive)
         .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
         .toolbar {
@@ -515,8 +520,10 @@ struct CustomInkEditor: View {
                     Image(systemName: "checkmark")
                         .tutorialHint(tutorial, steps: [.savePaletteColor])
                 }
-                .watchToolbarButtonStyle(hidesNativeChrome: !tutorial.permits([.savePaletteColor]))
+                .watchToolbarButtonStyle(usesCanvasMaterial: tutorial.isActive)
                 .opacity(tutorial.permits([.savePaletteColor]) ? 1 : 0)
+                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
+                           value: tutorial.permits([.savePaletteColor]))
                 .disabled(!tutorial.permits([.savePaletteColor]))
                 .accessibilityHidden(!tutorial.permits([.savePaletteColor]))
                 .accessibilityLabel(L10n.text(saveTitle))
