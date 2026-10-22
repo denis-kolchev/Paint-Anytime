@@ -8,9 +8,12 @@ struct SavedDrawingsView: View {
     var initialArtworkFilename: String? = nil
     var initialBitmap: GalleryBitmap? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    var needsDiscardConfirmation = false
     var isPreparingCanvas = false
     var preparationError: String? = nil
     @State private var drawingToEdit: CanvasExport?
+    @State private var pendingEdit: CanvasExport?
+    @State private var confirmedEdit: CanvasExport?
     private var isLoading: Bool { drawingToEdit != nil || isPreparingCanvas }
     var onClose: () -> Void
     var onEditDrawing: (CanvasDocument) -> Void
@@ -288,6 +291,25 @@ struct SavedDrawingsView: View {
                 if let drawing = focusedDrawing ?? drawings.first { open(drawing) }
                 else { crownPosition = Double(zoomLevel) }
             } else { setZoom(next) }
+        }
+        .fullScreenCover(item: $pendingEdit, onDismiss: {
+            // Start file loading only after Yes and dismissal of the confirmation.
+            if let drawing = confirmedEdit {
+                confirmedEdit = nil
+                drawingToEdit = drawing
+            } else {
+                crownFocused = tutorial.allowsGalleryZoom
+            }
+        }) { drawing in
+            DestructiveConfirmationView(
+                title: L10n.text("Discard the previous unsaved canvas?"),
+                confirmTitle: L10n.text("Yes")) {
+                confirmedEdit = nil
+                pendingEdit = nil
+            } onConfirm: {
+                confirmedEdit = drawing
+                pendingEdit = nil
+            }
         }
         .fullScreenCover(item: $pendingDeletion, onDismiss: {
             tutorial.resumeReminders()
@@ -576,7 +598,12 @@ struct SavedDrawingsView: View {
     private func editDrawing(_ drawing: CanvasExport) {
         guard !isLoading else { return }
         crownFocused = false
-        drawingToEdit = drawing
+        if needsDiscardConfirmation {
+            confirmedEdit = nil
+            pendingEdit = drawing
+        } else {
+            drawingToEdit = drawing
+        }
     }
 
 }

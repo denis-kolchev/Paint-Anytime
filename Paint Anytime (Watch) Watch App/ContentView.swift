@@ -102,6 +102,7 @@ struct ContentView: View {
 
                 if showsGallery {
                     SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap,
+                        needsDiscardConfirmation: controller.needsDiscardConfirmation,
                         isPreparingCanvas: session.isPreparingCanvas,
                         preparationError: session.canvasPreparationError, onClose: {
                         showsGallery = false
@@ -109,7 +110,8 @@ struct ContentView: View {
                         galleryInitialBitmap = nil
                         savedNoticeID = nil
                     }) { document in
-                        session.requestCanvasAction(.open(document))
+                        // Gallery confirms discard before it reads the saved project.
+                        session.performCanvasAction(.open(document))
                     }
                     .id(galleryLaunchID)
                     .frame(width: geometry.size.width, height: geometry.size.height)
