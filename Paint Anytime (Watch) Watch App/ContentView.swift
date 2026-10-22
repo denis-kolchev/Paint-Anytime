@@ -31,6 +31,7 @@ struct ContentView: View {
     @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
     @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
     @StateObject private var lasso = WatchLassoController()
+    @State private var lassoToolbarInput = WatchLassoToolbarInput()
     private var showsSelectionActions: Bool {
         get { morphState.showsSelectionActions }
         nonmutating set { morphState.showsSelectionActions = newValue }
@@ -207,7 +208,15 @@ struct ContentView: View {
                 }
             }
 
-            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings {
+            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && lasso.isActive {
+                ToolbarItem(placement: .topBarLeading) {
+                    // Balance Done to center the system clock, and forward this
+                    // native toolbar region's drags to the same lasso controller.
+                    WatchLassoToolbarTouchRegion(input: lassoToolbarInput, lasso: lasso,
+                        controller: controller, diameter: canvasToolbarDiameter)
+                }
+            }
+            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && !lasso.isActive {
                 ToolbarItem(placement: .topBarLeading) {
                     MorphControlsScope {
                         Button {
@@ -242,11 +251,9 @@ struct ContentView: View {
                         .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
                         .trackCanvasControl(.more, frames: controlFramesBinding)
                         .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))
-                        // Preserve the leading slot in lasso mode to balance the
-                        // trailing Done slot and keep the system clock centered.
-                        .opacity(controller.activeStroke != nil || lasso.isActive ? 0 : 1)
-                        .allowsHitTesting(controller.activeStroke == nil && !lasso.isActive)
-                        .accessibilityHidden(controller.activeStroke != nil || lasso.isActive)
+                        .opacity(controller.activeStroke != nil ? 0 : 1)
+                        .allowsHitTesting(controller.activeStroke == nil)
+                        .accessibilityHidden(controller.activeStroke != nil)
                     }
                 }
             }
@@ -549,7 +556,7 @@ struct ContentView: View {
 
     private var drawingPage: some View {
         // Animate the whole page above, keeping the cached artwork fully visible inside it.
-        WatchCanvasView(controller: controller, lasso: lasso, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
+        WatchCanvasView(controller: controller, lasso: lasso, lassoToolbarInput: lassoToolbarInput, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
             cameraSampledColor = color
         }, onCanvasInteraction: {
             if showsContentActions {

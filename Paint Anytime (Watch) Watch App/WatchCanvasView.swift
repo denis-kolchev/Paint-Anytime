@@ -17,6 +17,7 @@ struct WatchCanvasView: View {
     @ObservedObject var controller: CanvasController
     @ObservedObject var lasso = WatchLassoController()
     @ObservedObject var tutorial = TutorialSession.inactive
+    var lassoToolbarInput: WatchLassoToolbarInput? = nil
     var rendersArtwork = true
     var acceptsInput = true
     var protectedControls: [CanvasToolbarControl: CGRect] = [:]
@@ -154,6 +155,13 @@ struct WatchCanvasView: View {
             }
             .onChange(of: crownZoom) { _, _ in
                 if isEyedropperActive { updateSample(at: loupePoint ?? CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2), size: geometry.size) }
+            }
+            .onChange(of: WatchLassoToolbarInput.Mapping(
+                frame: geometry.frame(in: .global), paperSize: paperSize, offset: offset,
+                zoomScale: zoom * fit, rasterScale: min(4, max(1, displayScale)),
+                enabled: acceptsInput && tutorial.acceptsActions && tutorial.allowsDrawing
+                    && !tutorial.isFadingCircleAttempt && scenePhase == .active), initial: true) { _, mapping in
+                lassoToolbarInput?.mapping = mapping
             }
             .contentShape(Rectangle())
             .gesture(
