@@ -288,6 +288,7 @@ struct ContentView: View {
                             Group {
                                 if showsToolSettings || isMovingCanvas || lasso.isActive {
                                     Image(systemName: "checkmark")
+                                        .font(.system(size: 17, weight: .semibold))
                                         .foregroundStyle(.green)
                                 } else if usesMorphToolbar {
                                     Image(systemName: "paintbrush.pointed")
@@ -301,7 +302,7 @@ struct ContentView: View {
                             .opacity(morphOwnsTrailingControl ? 0 : 1)
                             .contentShape(Rectangle())
                         }
-                        .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: morphOwnsTrailingControl || lasso.hidesControls || (!showsToolSettings && controller.activeStroke != nil))
+                        .watchToolbarButtonStyle(diameter: showsToolSettings ? 32 : canvasToolbarDiameter, usesCanvasMaterial: !showsToolSettings, hidesNativeChrome: morphOwnsTrailingControl || lasso.hidesControls || (!showsToolSettings && controller.activeStroke != nil))
                         .accessibilityLabel(showsToolSettings || isMovingCanvas || lasso.isActive ? L10n.text("Done") : L10n.text(usesMorphToolbar && !showsMorphToolbar ? "Open drawing controls" : "Tool settings"))
                         .trackCanvasControl(.tools, frames: controlFramesBinding)
                         .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))
