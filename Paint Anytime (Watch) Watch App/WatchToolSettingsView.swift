@@ -167,6 +167,7 @@ struct WatchToolSettingsView: View {
             tutorial.activity()
             if selection == .instrument {
                 let index = min(instruments.count - 1, max(0, Int(value.rounded())))
+                if index > instrumentIndex { tutorial.record(.browsedTools) }
                 controller.selectInstrument(instruments[index])
                 return
             }
@@ -288,6 +289,7 @@ struct WatchToolSettingsView: View {
                                                  tutorial: tutorial) { instrument in
                                 guard tutorial.allowsToolAdjustment(page: ToolSetting.instrument.rawValue) else { return }
                                 tutorial.activity()
+                                tutorial.record(.browsedTools)
                                 controller.selectInstrument(instrument)
                                 crownFocused = true
                             }

@@ -11,7 +11,11 @@ enum TutorialStep: Int, CaseIterable {
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas, finished
 
     // The completion screen is a result, not another lesson.
-    static var lessonCount: Int { finished.rawValue - 1 }
+    // Angle exercises are no longer part of the guided sequence.
+    static var lessonCount: Int { finished.rawValue - 3 }
+    var completedLessonCount: Int {
+        max(0, rawValue - 1 - (rawValue >= TutorialStep.closeTools.rawValue ? 2 : 0))
+    }
 }
 
 /// Pure exercise rules; completed skills remain available for exploration.
@@ -22,7 +26,7 @@ struct TutorialProgress {
     private var unlockedToolPages: Set<Int> = [1]
 
     enum Event {
-        case heldCircle, stroke, openedTools, closedTools, openedInfo, closedInfo
+        case heldCircle, stroke, openedTools, closedTools, openedInfo, closedInfo, browsedTools
         case panned, finishedCamera, history, saved, closedSave, openedMenu, openedGallery
         case galleryFullscreen, deleted, returnedToCanvas, cleared
         case reachedAddColor, returnedToColorSelection, openedColorList, browsedPalettes, foundNewPalette
@@ -38,17 +42,19 @@ struct TutorialProgress {
         guard step != .inactive, step != .finished,
               let next = TutorialStep(rawValue: step.rawValue + 1) else { return }
         count = 0
-        step = next
-        switch next {
+        step = step == .selectReed ? .closeTools : next
+        switch step {
         case .openWidth: unlockedToolPages.insert(0)
         case .openOpacity: unlockedToolPages.insert(5)
         case .openTool: unlockedToolPages.formUnion([2, 3, 6])
+        case .selectReed: unlockedToolPages = visibleToolPages
         case .openAngle: unlockedToolPages.insert(4)
         default: break
         }
     }
     mutating func record(_ event: Event) -> Effect {
         switch (step, event) {
+        case (.selectReed, .browsedTools): return .advance
         case (.tapAddColor, .returnedToColorSelection):
             step = .selectColor
             count = 0
@@ -87,14 +93,10 @@ struct TutorialProgress {
             || (step == .openAngle && page == 4) || (step == .openOpacity && page == 5)
     }
     mutating func changedStyle(from old: PencilStyle, to style: PencilStyle, page: Int) -> Bool {
-        if [.openAngle, .setAngle, .closeTools].contains(step), style.instrument != .reed {
-            step = .selectReed
-            return false
-        }
         switch step {
         case .setOpacity: return page == 5 && style.instrument != .eraser && old.opacity != style.opacity
         case .setWidth: return page == 0 && old.width != style.width
-        case .selectReed: return style.instrument == .reed
+        case .selectReed: return old.instrument != style.instrument
         case .setAngle: return page == 4 && style.instrument == .reed && old.reedAngle != style.reedAngle
         default: return false
         }

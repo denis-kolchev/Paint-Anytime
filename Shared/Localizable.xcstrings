@@ -1,6 +1,40 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Scroll down with the Crown to choose any tool." : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scroll down with the Crown to choose any tool."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Прокрутите Crown вниз и выберите любой инструмент."
+          }
+        }
+      }
+    },
+    "Choose any tool and explore its settings." : {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose any tool and explore its settings."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Выберите любой инструмент и попробуйте его настройки."
+          }
+        }
+      }
+    },
     "To report a bug, email us from your iPhone or another device. Describe what happened and attach a screenshot if possible.": {
       "extractionState": "manual",
       "localizations": {

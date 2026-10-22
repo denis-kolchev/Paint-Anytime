@@ -118,7 +118,7 @@ struct TutorialLessonView: View {
     }
 
     private var completedLessons: Int {
-        tutorial.step == .finished ? TutorialStep.lessonCount : max(0, tutorial.step.rawValue - 1)
+        tutorial.step == .finished ? TutorialStep.lessonCount : tutorial.step.completedLessonCount
     }
 
     private let edgeGap: CGFloat = 10

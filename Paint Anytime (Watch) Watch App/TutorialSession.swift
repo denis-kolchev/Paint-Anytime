@@ -29,7 +29,7 @@ final class TutorialSession: ObservableObject {
         case .openOpacity where toolPage != 0: return L10n.text("Open Opacity.")
         case .setOpacity where toolPage != 5: return L10n.text("Open Opacity, then turn the Crown.")
         case .openTool where toolPage != 5: return L10n.text("Open Tool.")
-        case .selectReed where toolPage != 2: return L10n.text("Open Tool and choose Reed pen.")
+        case .selectReed where toolPage != 2: return L10n.text("Choose any tool and explore its settings.")
         case .openAngle where toolPage != 2: return L10n.text("Open Angle.")
         case .setAngle where toolPage != 4: return L10n.text("Open Angle, then turn the Crown.")
         case .galleryFullscreen where !galleryIsOpen, .deleteDrawing where !galleryIsOpen: return L10n.text("Tap Gallery to see your pictures.")
@@ -58,7 +58,7 @@ final class TutorialSession: ObservableObject {
     @Published private(set) var crownPracticedSteps: Set<TutorialStep> = []
     var crownHintIsSubtle: Bool { !crownPracticedSteps.isEmpty }
     var showsCrownHint: Bool {
-        suggestsCrownRotation && !crownPracticedSteps.contains(step) && crownPracticedSteps.count < 3
+        suggestsCrownRotation && !crownPracticedSteps.contains(step) && (step == .selectReed || crownPracticedSteps.count < 3)
     }
 
     func usedCrown(in expectedStep: TutorialStep, velocity: Double) {

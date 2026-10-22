@@ -123,11 +123,17 @@ struct TutorialPlayerView: View {
                                 }
                                 .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
                                            value: tutorial.isPaletteLesson)
+                                .transition(.opacity)
+                                .zIndex(1)
                             }
                             if page == .gallery {
                                 SavedDrawingsView(tutorial: tutorial, galleryFolder: folder, onClose: {
-                                    player.closeGallery()
+                                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                        player.closeGallery()
+                                    }
                                 }, onEditDrawing: { _ in })
+                                .transition(.opacity)
+                                .zIndex(1)
                             }
                         }
                         .frame(width: geometry.size.width, height: geometry.size.height)
@@ -205,7 +211,9 @@ struct TutorialPlayerView: View {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 if page == .tools {
-                                    player.closeTools()
+                                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                        player.closeTools()
+                                    }
                                 } else if isMovingCanvas {
                                     isMovingCanvas = false
                                     tutorial.record(.finishedCamera)
@@ -225,10 +233,11 @@ struct TutorialPlayerView: View {
                                 .frame(width: 32, height: 32)
                                 .contentShape(Circle())
                             }
-                            .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: !showsPrimaryControl)
+                            .watchToolbarButtonStyle(diameter: 32, usesCanvasMaterial: true)
                             .accessibilityLabel(L10n.text(primaryControlIsDone ? "Done" : "Tool settings"))
                             .trackCanvasControl(.tools, frames: $controls)
                             .opacity(showsPrimaryControl ? 1 : 0)
+                            .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsPrimaryControl)
                             .allowsHitTesting(showsPrimaryControl)
                             .accessibilityHidden(!showsPrimaryControl)
                         }

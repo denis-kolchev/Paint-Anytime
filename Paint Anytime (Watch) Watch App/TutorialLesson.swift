@@ -22,7 +22,7 @@ enum TutorialLesson {
         case .openOpacity: return L10n.text("Swipe left to Opacity.")
         case .setOpacity: return L10n.text("Turn the Crown to change opacity")
         case .openTool: return L10n.text("Swipe left to Tool.")
-        case .selectReed: return L10n.text("Choose Reed pen to set the angle.")
+        case .selectReed: return L10n.text("Scroll down with the Crown to choose any tool.")
         case .openAngle: return L10n.text("Swipe left to Angle.")
         case .setAngle: return L10n.text("Turn the Crown to change the nib angle.")
         case .closeTools: return L10n.text("Tap ✓ to start drawing.")
