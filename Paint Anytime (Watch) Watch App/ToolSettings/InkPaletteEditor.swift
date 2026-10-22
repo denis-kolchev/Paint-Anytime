@@ -103,103 +103,7 @@ struct InkPaletteEditor: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 16) {
                         ForEach(palette.allColors) { preset in
-                            let selected = palette.selectedIDs.contains(preset.id)
-                            Button {
-                                if isEditing {
-                                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                                        palette.delete(preset.id)
-                                    }
-                                    return
-                                }
-                                if selected {
-                                    guard palette.selectedIDs.count > 1 else { return }
-                                    palette.selectedIDs.removeAll { $0 == preset.id }
-                                } else {
-                                    palette.selectedIDs.append(preset.id)
-                                }
-                            } label: {
-                                Circle()
-                                    .fill(selected ? Color.clear : preset.color)
-                                    .overlay {
-                                        if selected {
-                                            Circle().strokeBorder(preset.color, lineWidth: 5)
-                                            Circle()
-                                                .inset(by: 4)
-                                                .strokeBorder(.white.opacity(0.2), lineWidth: 1)
-                                            Image(systemName: "checkmark")
-                                                .font(.system(size: 22, weight: .semibold))
-                                                .foregroundStyle(preset.color)
-                                                .background {
-                                                    // Match the ring: white at 20% over the swatch color,
-                                                    // rather than white over the canvas behind the glyph.
-                                                    Rectangle()
-                                                        .fill(preset.color)
-                                                        .overlay { Color.white.opacity(0.2) }
-                                                        .padding(-1)
-                                                        .mask {
-                                                            ZStack {
-                                                                ForEach(0..<8) { index in
-                                                                    let angle = Double(index) * .pi / 4
-                                                                    Image(systemName: "checkmark")
-                                                                        .font(.system(size: 22, weight: .semibold))
-                                                                        .foregroundStyle(.white)
-                                                                        .offset(x: cos(angle), y: sin(angle))
-                                                                }
-                                                            }
-                                                        }
-                                                        .accessibilityHidden(true)
-                                                }
-                                        }
-                                    }
-                                    // Keep black swatches visible on the black background.
-                                    .overlay { Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1) }
-                                    .aspectRatio(1, contentMode: .fit)
-                                    .contentShape(Circle())
-                            }
-                            .buttonStyle(.plain)
-                            .overlay(alignment: .topLeading) {
-                                if isEditing {
-                                    Button {
-                                        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                                            palette.delete(preset.id)
-                                        }
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.system(size: 18, weight: .semibold))
-                                            .symbolRenderingMode(.palette)
-                                            .foregroundStyle(.black, .gray)
-                                            .frame(width: 28, height: 28)
-                                            .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-                                    .offset(x: -5, y: -5)
-                                    .accessibilityLabel(L10n.text("Delete") + " " + preset.name)
-                                }
-                            }
-                            .background {
-                                GeometryReader { geometry in
-                                    Color.clear.preference(key: PaletteSwatchFramesKey.self,
-                                        value: [preset.id: geometry.frame(in: .named("paletteGrid"))])
-                                }
-                            }
-                            .modifier(PaletteEditingWiggle(
-                                enabled: isEditing && !showsColorEditor && draggedID != preset.id,
-                                viewportSize: viewport.size))
-                            // Animate the row-major slot shift outside the wiggle's
-                            // animation-disabled subtree; finger tracking stays immediate.
-                            .offset(previewOffsets[preset.id] ?? .zero)
-                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: dragTargetID)
-                            .offset(draggedID == preset.id ? dragOffset : .zero)
-                            .scaleEffect(draggedID == preset.id && !reduceMotion ? 1.08 : 1)
-                            .zIndex(draggedID == preset.id ? 1 : 0)
-                            .highPriorityGesture(swatchDrag(preset.id), including: isEditing ? .all : .none)
-                            .highPriorityGesture(
-                                LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() },
-                                including: isEditing ? .none : .all)
-                            .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
-                            .accessibilityLabel(isEditing ? L10n.text("Delete") + " " + preset.name : preset.name)
-                            .accessibilityValue(isEditing ? "" : L10n.text(selected ? "Selected" : "Not selected"))
-                            .accessibilityAddTraits(!isEditing && selected ? [.isSelected] : [])
+                            swatch(preset, viewportSize: viewport.size)
                         }
                         Button { sampledColor = nil; showsColorEditor = true } label: {
                             Image(systemName: "plus.circle.fill")
@@ -257,6 +161,73 @@ struct InkPaletteEditor: View {
         }
     }
 
+    private func swatch(_ preset: InkPreset, viewportSize: CGSize) -> some View {
+        let selected = palette.selectedIDs.contains(preset.id)
+        return Button {
+            if isEditing {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                    palette.delete(preset.id)
+                }
+                return
+            }
+            if selected {
+                guard palette.selectedIDs.count > 1 else { return }
+                palette.selectedIDs.removeAll { $0 == preset.id }
+            } else {
+                palette.selectedIDs.append(preset.id)
+            }
+        } label: {
+            PaletteSwatchLabel(preset: preset, selected: selected)
+        }
+        .buttonStyle(.plain)
+        .overlay(alignment: .topLeading) {
+            if isEditing {
+                Button {
+                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
+                        palette.delete(preset.id)
+                    }
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.black, .gray)
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .offset(x: -5, y: -5)
+                .accessibilityLabel(L10n.text("Delete") + " " + preset.name)
+            }
+        }
+        .background {
+            GeometryReader { geometry in
+                Color.clear.preference(key: PaletteSwatchFramesKey.self,
+                    value: [preset.id: geometry.frame(in: .named("paletteGrid"))])
+            }
+        }
+        .modifier(PaletteEditingWiggle(
+            enabled: isEditing && !showsColorEditor && draggedID == nil,
+            viewportSize: viewportSize))
+        // Animate slot changes independently of immediate finger tracking.
+        .offset(previewOffsets[preset.id] ?? .zero)
+        .animation(reorderAnimation, value: previewOffsets[preset.id] ?? .zero)
+        .offset(draggedID == preset.id ? dragOffset : .zero)
+        .scaleEffect(draggedID == preset.id && !reduceMotion ? 1.08 : 1)
+        .zIndex(draggedID == preset.id ? 1 : 0)
+        .highPriorityGesture(swatchDrag(preset.id), including: isEditing ? .all : .none)
+        .highPriorityGesture(
+            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() },
+            including: isEditing ? .none : .all)
+        .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
+        .accessibilityLabel(isEditing ? L10n.text("Delete") + " " + preset.name : preset.name)
+        .accessibilityValue(isEditing ? "" : L10n.text(selected ? "Selected" : "Not selected"))
+        .accessibilityAddTraits(!isEditing && selected ? [.isSelected] : [])
+    }
+
+    private var reorderAnimation: Animation? {
+        reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.88)
+    }
+
     private func swatchDrag(_ id: String) -> some Gesture {
         DragGesture(minimumDistance: 8, coordinateSpace: .named("paletteGrid"))
             .updating($isDragging) { _, state, _ in state = true }
@@ -278,11 +249,9 @@ struct InkPaletteEditor: View {
             .onEnded { value in
                 guard isEditing, draggedID == id else { resetDrag(); return }
                 updateDragTarget(at: value.location, id: id)
-                // The preview already occupies the final slots. Commit and remove
-                // those offsets together so neighbours do not animate a second time.
-                var transaction = Transaction(animation: nil)
-                transaction.disablesAnimations = true
-                withTransaction(transaction) {
+                // Animate the release as well: the held swatch settles into its
+                // slot while neighbours finish moving to their final positions.
+                withAnimation(reorderAnimation) {
                     if let target = dragTargetID { palette.move(id, to: target) }
                     resetDrag()
                 }
@@ -303,8 +272,10 @@ struct InkPaletteEditor: View {
             offsets[colorID] = CGSize(width: destination.midX - origin.midX,
                                       height: destination.midY - origin.midY)
         }
-        previewOffsets = offsets
-        dragTargetID = target
+        withAnimation(reorderAnimation) {
+            previewOffsets = offsets
+            dragTargetID = target
+        }
     }
 
     private func resetDrag() {
@@ -316,6 +287,57 @@ struct InkPaletteEditor: View {
         previewOffsets = [:]
     }
 
+}
+
+private struct PaletteSwatchLabel: View {
+    let preset: InkPreset
+    let selected: Bool
+
+    var body: some View {
+        Circle()
+            .fill(selected ? Color.clear : preset.color)
+            .overlay {
+                if selected {
+                    Circle().strokeBorder(preset.color, lineWidth: 5)
+                    Circle().inset(by: 4).strokeBorder(.white.opacity(0.2), lineWidth: 1)
+                    PaletteSelectionCheckmark(color: preset.color)
+                }
+            }
+            .overlay { Circle().strokeBorder(.white.opacity(0.2), lineWidth: 1) }
+            .aspectRatio(1, contentMode: .fit)
+            .contentShape(Circle())
+    }
+}
+
+private struct PaletteSelectionCheckmark: View {
+    let color: Color
+
+    private var outlineMask: some View {
+        ZStack {
+            ForEach(0..<8) { index in
+                let angle: Double = Double(index) * Double.pi / 4.0
+                Image(systemName: "checkmark")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .offset(x: CGFloat(cos(angle)), y: CGFloat(sin(angle)))
+            }
+        }
+    }
+
+    var body: some View {
+        Image(systemName: "checkmark")
+            .font(.system(size: 22, weight: .semibold))
+            .foregroundStyle(color)
+            .background {
+                // Match the ring: white at 20% over the swatch color.
+                Rectangle()
+                    .fill(color)
+                    .overlay { Color.white.opacity(0.2) }
+                    .padding(-1)
+                    .mask(outlineMask)
+                    .accessibilityHidden(true)
+            }
+    }
 }
 
 /// Visibility is measured before rotation, so animation never triggers layout updates.
@@ -338,10 +360,9 @@ private struct PaletteEditingWiggle: ViewModifier {
             content
                 .rotationEffect(.degrees(phase * 2))
                 .offset(x: phase * 0.5)
-                .transaction { transaction in
-                    transaction.animation = nil
-                    transaction.disablesAnimations = true
-                }
+                // Only timeline ticks are immediate. Do not disable the
+                // transaction for position changes while the timeline is paused.
+                .animation(nil, value: phase)
         }
         .background {
             GeometryReader { geometry in
