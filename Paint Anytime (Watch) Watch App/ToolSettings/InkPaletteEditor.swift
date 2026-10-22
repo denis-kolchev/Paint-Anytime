@@ -124,7 +124,7 @@ struct InkPaletteEditor: View {
                         .buttonStyle(.plain)
                         .highPriorityGesture(
                             LongPressGesture(minimumDuration: 0.5).onEnded { _ in onEdit() },
-                            including: isEditing ? .none : .all)
+                            including: isEditing || tutorial.isActive ? .subviews : .all)
                         .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
                         .accessibilityLabel(L10n.text("Create color"))
                         .disabled(!tutorial.permits([.addPaletteColor]))
@@ -143,7 +143,7 @@ struct InkPaletteEditor: View {
                         .buttonStyle(.plain)
                         .highPriorityGesture(
                             LongPressGesture(minimumDuration: 0.5).onEnded { _ in onEdit() },
-                            including: isEditing ? .none : .all)
+                            including: isEditing || tutorial.isActive ? .subviews : .all)
                         .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
                         .accessibilityLabel(L10n.text("Eyedropper"))
                         .disabled(tutorial.isActive)
@@ -154,7 +154,13 @@ struct InkPaletteEditor: View {
                 .coordinateSpace(name: "paletteGrid")
                 .onPreferenceChange(PaletteSwatchFramesKey.self) { swatchFrames = $0 }
                 .contentShape(Rectangle())
-                .onLongPressGesture(minimumDuration: 0.5) { if !isEditing { onEdit() } }
+                // watchOS 10 lets the editing long press consume child button taps.
+                // Preserve child button gestures while disabling the editing gesture.
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.5).onEnded { _ in
+                        if !isEditing { onEdit() }
+                    },
+                    including: tutorial.isActive ? .subviews : .all)
                 .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
             }
             .scrollDisabled(draggedID != nil)
@@ -242,10 +248,10 @@ struct InkPaletteEditor: View {
         .offset(draggedID == preset.id ? dragOffset : .zero)
         .scaleEffect(draggedID == preset.id && !reduceMotion ? 1.08 : 1)
         .zIndex(draggedID == preset.id ? 1 : 0)
-        .highPriorityGesture(swatchDrag(preset.id), including: isEditing ? .all : .none)
+        .highPriorityGesture(swatchDrag(preset.id), including: isEditing ? .all : .subviews)
         .highPriorityGesture(
             LongPressGesture(minimumDuration: 0.5).onEnded { _ in onEdit() },
-            including: isEditing ? .none : .all)
+            including: isEditing || tutorial.isActive ? .subviews : .all)
         .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
         .accessibilityLabel(isEditing ? L10n.text("Delete") + " " + preset.name : preset.name)
         // Block tutorial interaction without the disabled button's dimming.
