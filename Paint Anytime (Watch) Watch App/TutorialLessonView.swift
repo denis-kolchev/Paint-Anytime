@@ -10,7 +10,7 @@ struct TutorialLessonView: View {
     let screenHeight: CGFloat
     var maximumCardHeight: CGFloat? = nil
     @Binding var confirmsFinish: Bool
-    @State private var greenDotCount = 0
+    @State private var completionProgress: CGFloat = 0
     @State private var showsCompletionCheckmark = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -54,7 +54,7 @@ struct TutorialLessonView: View {
             .tint(showsCompletionCheckmark ? .white : .red)
             .buttonStyle(TutorialOverlayButtonStyle(diameter: 24, hitDiameter: 32))
             .overlay {
-                TutorialProgressDots(completedLessons: completedLessons, greenDotCount: greenDotCount)
+                TutorialProgressRing(completedLessons: completedLessons, completionProgress: completionProgress)
                     .frame(width: 32, height: 32)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
@@ -92,26 +92,22 @@ struct TutorialLessonView: View {
     @MainActor
     private func animateCompletion() async {
         guard tutorial.step == .finished else {
-            greenDotCount = 0
+            completionProgress = 0
             showsCompletionCheckmark = false
             return
         }
         guard !showsCompletionCheckmark else { return }
         if reduceMotion {
-            greenDotCount = TutorialStep.lessonCount
+            completionProgress = 1
             showsCompletionCheckmark = true
             return
         }
         do {
-            // Start at twelve o'clock and sweep clockwise in about 0.7 seconds.
-            // Retain progress if the view's task is interrupted and resumed.
-            while greenDotCount < TutorialStep.lessonCount {
-                try await Task.sleep(for: .milliseconds(35))
-                try Task.checkCancellation()
-                greenDotCount += 1
+            withAnimation(.linear(duration: 0.7)) {
+                completionProgress = 1
             }
-            // Let the last dot finish lighting before replacing the cross.
-            try await Task.sleep(for: .milliseconds(100))
+            // Keep the completed green ring visible before revealing Done.
+            try await Task.sleep(for: .milliseconds(800))
             try Task.checkCancellation()
             withAnimation(.easeInOut(duration: 0.2)) {
                 showsCompletionCheckmark = true
@@ -132,33 +128,30 @@ struct TutorialLessonView: View {
     }
 }
 
-private struct TutorialProgressDots: View {
+private struct TutorialProgressRing: View {
     let completedLessons: Int
-    let greenDotCount: Int
+    let completionProgress: CGFloat
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var progress: CGFloat {
+        min(1, max(0, CGFloat(completedLessons) / CGFloat(max(1, TutorialStep.lessonCount))))
+    }
+
     var body: some View {
-        GeometryReader { geometry in
-            let size = geometry.size
-            let radius = min(size.width, size.height) / 2 - 2
-            ZStack {
-                ForEach(0..<TutorialStep.lessonCount, id: \.self) { index in
-                    let angle = Double(index) * .pi * 2 / Double(TutorialStep.lessonCount) - .pi / 2
-                    Circle()
-                        .fill(Color(white: index < completedLessons ? 0.8 : 0.3))
-                        .overlay {
-                            Circle()
-                                .fill(.green)
-                                .opacity(index < greenDotCount ? 1 : 0)
-                                .animation(reduceMotion ? nil : .easeInOut(duration: 0.1),
-                                           value: index < greenDotCount)
-                        }
-                        .frame(width: 2.5, height: 2.5)
-                        .position(x: size.width / 2 + CGFloat(cos(angle)) * radius,
-                                  y: size.height / 2 + CGFloat(sin(angle)) * radius)
-                }
-            }
+        ZStack {
+            Circle()
+                .stroke(Color(white: 0.3), lineWidth: 2.5)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(Color(white: 0.8), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: progress)
+            Circle()
+                .trim(from: 0, to: completionProgress)
+                .stroke(.green, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
         }
+        .padding(2)
     }
 }
 
