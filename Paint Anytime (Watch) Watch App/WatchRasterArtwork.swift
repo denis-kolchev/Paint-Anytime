@@ -14,6 +14,7 @@ struct WatchRasterArtwork: View {
     let documentRevision: UInt64
     let activeStrokeRevision: UInt64
     let activeStrokeID: UInt64
+    var onFramePrepared: (Bool) -> Void = { _ in }
     let zoom: Double
     @State private var rasterZoom: Double = 1
     @Environment(\.displayScale) private var displayScale
@@ -22,7 +23,7 @@ struct WatchRasterArtwork: View {
         let _ = TutorialDebug.trace("raster.body")
         GeometryReader { geometry in
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
-            RasterFrame(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
+            RasterFrame(onFramePrepared: onFramePrepared, document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
@@ -41,6 +42,7 @@ struct WatchRasterArtwork: View {
     }
 
     private struct RasterFrame: View {
+        var onFramePrepared: (Bool) -> Void
         let document: CanvasDocument?
         let selectedLayerID: UUID?
         let selectionPreview: WatchSelectionPreview?
@@ -153,6 +155,10 @@ struct WatchRasterArtwork: View {
                 }
             }
             .transaction { $0.animation = nil }
+            .onChange(of: frames.preparedResult) { _, result in
+                guard let result, result.key == key else { return }
+                onFramePrepared(result.succeeded)
+            }
             .onDisappear { frames.stop() }
         }
 
@@ -163,6 +169,11 @@ struct WatchRasterArtwork: View {
 /// input therefore cannot starve publication by cancelling every render.
 @MainActor
 private final class CanvasFrameQueue: ObservableObject {
+    struct PreparedResult: Equatable {
+        let key: WatchBitmapRenderer.CacheKey
+        let succeeded: Bool
+    }
+    @Published private(set) var preparedResult: PreparedResult?
     @Published private(set) var frame: WatchBitmapRenderer.ScreenFrame?
     @Published private(set) var preparedFrame: WatchBitmapRenderer.ScreenFrame?
     private let renderer = WatchArtworkRenderer()
@@ -235,11 +246,14 @@ private final class CanvasFrameQueue: ObservableObject {
                    latest.activeStrokeID == job.activeStrokeID,
                    latest.activeStroke?.id == job.activeStroke?.id, let next {
                     self.frame = next
+                    self.preparedResult = PreparedResult(key: job.key, succeeded: true)
                     if let texture = next.selection, let pending = self.pending,
                        pending.key == texture.key,
                        pending.selectionPreview?.sessionID == texture.sessionID {
                         self.pending = nil
                     }
+                } else if next == nil, self.latest?.key == job.key {
+                    self.preparedResult = PreparedResult(key: job.key, succeeded: false)
                 }
             }
             if self.generation == token { self.worker = nil }

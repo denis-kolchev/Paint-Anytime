@@ -36,9 +36,17 @@ final class GalleryController: ObservableObject {
         } catch { errorMessage = error.localizedDescription }
     }
 
-    func loadDocument(for drawing: CanvasExport) -> CanvasDocument? {
-        do { return try CanvasExportStore.loadDocument(for: drawing) }
+    func loadDocument(for drawing: CanvasExport) async -> CanvasDocument? {
+        let url = drawing.url
+        do {
+            let document = try await Task.detached(priority: .userInitiated) {
+                try CanvasExportStore.loadDocument(at: url)
+            }.value
+            guard !Task.isCancelled else { return nil }
+            return document
+        }
         catch {
+            guard !Task.isCancelled else { return nil }
             errorMessage = L10n.text("This drawing was saved without stroke data and cannot be restored for editing.")
             return nil
         }

@@ -18,6 +18,7 @@ struct WatchCanvasView: View {
     @ObservedObject var lasso = WatchLassoController()
     @ObservedObject var tutorial = TutorialSession.inactive
     var lassoToolbarInput: WatchLassoToolbarInput? = nil
+    var onArtworkPrepared: (Bool) -> Void = { _ in }
     var rendersArtwork = true
     var acceptsInput = true
     var protectedControls: [CanvasToolbarControl: CGRect] = [:]
@@ -78,7 +79,7 @@ struct WatchCanvasView: View {
                         activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
                         documentRevision: controller.documentRevision,
                         activeStrokeRevision: controller.activeStrokeRevision,
-                        activeStrokeID: controller.activeStrokeID, zoom: zoom)
+                        activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: zoom)
                         .frame(width: paperSize.width, height: paperSize.height)
                         .overlay {
                             if let failedCircleImage {

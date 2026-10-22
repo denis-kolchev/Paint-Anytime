@@ -5,6 +5,8 @@ import SwiftUI
 final class DrawingSessionController: ObservableObject {
     let canvas: CanvasController
     private var canvasChanges: AnyCancellable?
+    @Published var isPreparingCanvas = false
+    @Published var canvasPreparationError: String?
     @Published var canvasSessionID = UUID()
     @Published var savedDrawing: CanvasExport?
     @Published var pendingCanvasAction: PendingCanvasAction?
@@ -41,6 +43,8 @@ final class DrawingSessionController: ObservableObject {
         case .clear:
             canvas.clear()
         case .open(let document):
+            canvasPreparationError = nil
+            isPreparingCanvas = true
             canvas.load(document)
             // Reset zoom, offset, and gesture state whenever a saved drawing opens.
             canvasSessionID = UUID()

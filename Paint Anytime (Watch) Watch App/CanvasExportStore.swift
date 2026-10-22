@@ -74,7 +74,11 @@ enum CanvasExportStore {
     }
 
     static func loadDocument(for drawing: CanvasExport) throws -> CanvasDocument {
-        let url = drawing.url.deletingPathExtension().appendingPathExtension("json")
+        try loadDocument(at: drawing.url)
+    }
+
+    nonisolated static func loadDocument(at imageURL: URL) throws -> CanvasDocument {
+        let url = imageURL.deletingPathExtension().appendingPathExtension("json")
         let data = try Data(contentsOf: url)
         let document = try JSONDecoder().decode(CanvasDocument.self, from: data)
         // Migrate legacy files once so even drawings without layer IDs retain their identity.

@@ -101,7 +101,9 @@ struct ContentView: View {
                     .zIndex(3)
 
                 if showsGallery {
-                    SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap, onClose: {
+                    SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap,
+                        isPreparingCanvas: session.isPreparingCanvas,
+                        preparationError: session.canvasPreparationError, onClose: {
                         showsGallery = false
                         galleryArtworkFilename = nil
                         galleryInitialBitmap = nil
@@ -435,7 +437,7 @@ struct ContentView: View {
             hasEyedropperSession = false
             lasso.deactivate()
             showsToolSettings = false
-            showsGallery = false
+            if !session.isPreparingCanvas { showsGallery = false }
         }
         .task(id: isActive ? launchRequest?.id : nil) {
             guard isActive, let request = launchRequest else { return }
@@ -556,7 +558,15 @@ struct ContentView: View {
 
     private var drawingPage: some View {
         // Animate the whole page above, keeping the cached artwork fully visible inside it.
-        WatchCanvasView(controller: controller, lasso: lasso, lassoToolbarInput: lassoToolbarInput, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
+        WatchCanvasView(controller: controller, lasso: lasso, lassoToolbarInput: lassoToolbarInput, onArtworkPrepared: { succeeded in
+            guard session.isPreparingCanvas else { return }
+            session.isPreparingCanvas = false
+            if succeeded {
+                showsGallery = false
+            } else {
+                session.canvasPreparationError = L10n.text("Could not open the image.")
+            }
+        }, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
             cameraSampledColor = color
         }, onCanvasInteraction: {
             if showsContentActions {

@@ -8,6 +8,10 @@ struct SavedDrawingsView: View {
     var initialArtworkFilename: String? = nil
     var initialBitmap: GalleryBitmap? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    var isPreparingCanvas = false
+    var preparationError: String? = nil
+    @State private var drawingToEdit: CanvasExport?
+    private var isLoading: Bool { drawingToEdit != nil || isPreparingCanvas }
     var onClose: () -> Void
     var onEditDrawing: (CanvasDocument) -> Void
     @StateObject private var controller = GalleryController()
@@ -151,6 +155,16 @@ struct SavedDrawingsView: View {
                         .accessibilityHidden(isCleanViewing)
                 }
             }
+            .overlay {
+                if isLoading {
+                    ZStack {
+                        Color.black.opacity(0.3)
+                        ProgressView().tint(.white)
+                    }
+                    .contentShape(Rectangle())
+                }
+            }
+            .allowsHitTesting(!isLoading)
             .coordinateSpace(name: "drawingGallery")
             .task(id: transitionImageRequest) {
                 guard let request = transitionImageRequest else { return }
@@ -169,6 +183,19 @@ struct SavedDrawingsView: View {
                 prepareImageTransition(size: geometry.size, topInset: navigationHeight)
             }
         }
+        .task(id: drawingToEdit?.id) {
+            guard let drawing = drawingToEdit else { return }
+            defer { drawingToEdit = nil }
+            guard let document = await controller.loadDocument(for: drawing), !Task.isCancelled else { return }
+            onEditDrawing(document)
+        }
+        .onChange(of: preparationError) { _, error in
+            if let error { controller.errorMessage = error }
+        }
+        .onChange(of: isLoading) { _, loading in
+            crownFocused = !loading && pendingDeletion == nil && tutorial.allowsGalleryZoom
+        }
+        .disabled(isLoading)
         .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
         // watchOS keeps its clock visible with persistentSystemOverlays(.hidden).
         // Its SDK exposes status-bar visibility through this underscored modifier.
@@ -177,7 +204,7 @@ struct SavedDrawingsView: View {
             if showsFullscreen && !isTransitioning && !tutorial.isActive {
                 ToolbarItemGroup(placement: .bottomBar) {
                     GalleryMorphToolbarButton(state: morphState)
-                        .disabled(isCleanViewing)
+                        .disabled(isCleanViewing || isLoading)
                         .accessibilityHidden(isCleanViewing)
                     Spacer(minLength: 0)
                 }
@@ -189,7 +216,7 @@ struct SavedDrawingsView: View {
                             .opacity(0)
                             .tutorialHint(tutorial, steps: [.returnToCanvas])
                     }
-                    .disabled(isTransitioning || isCleanViewing)
+                    .disabled(isTransitioning || isCleanViewing || isLoading)
                     .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
                     .overlay {
                         Image(systemName: "chevron.left")
@@ -237,10 +264,11 @@ struct SavedDrawingsView: View {
                 .padding(.bottom, tutorialHintReservedHeight)
             }
         }
-        .focusable(pendingDeletion == nil && tutorial.allowsGalleryZoom)
+        .disabled(isLoading)
+        .focusable(!isLoading && pendingDeletion == nil && tutorial.allowsGalleryZoom)
         .focused($crownFocused)
         .digitalCrownRotation(detent: Binding(get: { crownPosition }, set: { value in
-            guard tutorial.allowsGalleryZoom else { return }
+            guard !isLoading, tutorial.allowsGalleryZoom else { return }
             tutorial.activity()
             crownPosition = value
         }), from: 0, through: 2, by: 1,
@@ -250,7 +278,7 @@ struct SavedDrawingsView: View {
                 tutorial.usedCrown(in: step, velocity: event.velocity)
             })
         .onChange(of: crownPosition) { _, position in
-            guard pendingDeletion == nil, !isTransitioning, tutorial.allowsGalleryZoom else { return }
+            guard !isLoading, pendingDeletion == nil, !isTransitioning, tutorial.allowsGalleryZoom else { return }
             let next = min(2, max(0, Int(position.rounded())))
             guard next != zoomLevel else { return }
             if next == 2 {
@@ -348,6 +376,7 @@ struct SavedDrawingsView: View {
     }
 
     private func goBack() {
+        guard !isLoading else { return }
         guard tutorial.allowsGalleryBack else { return }
         tutorial.activity()
         guard !isTransitioning else { return }
@@ -542,8 +571,9 @@ struct SavedDrawingsView: View {
     }
 
     private func editDrawing(_ drawing: CanvasExport) {
-        guard let document = controller.loadDocument(for: drawing) else { return }
-        onEditDrawing(document)
+        guard !isLoading else { return }
+        crownFocused = false
+        drawingToEdit = drawing
     }
 
 }
