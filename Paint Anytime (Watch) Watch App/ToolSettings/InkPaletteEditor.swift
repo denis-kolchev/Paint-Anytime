@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 struct InkPalette: Codable {
     var baseColors: [InkPreset]?
@@ -83,6 +84,11 @@ struct InkPaletteEditor: View {
     @Binding var showsColorEditor: Bool
     @State private var draggedID: String?
     @State private var dragOffset = CGSize.zero
+    @State private var dragOrder: [String] = []
+    @State private var dragFrames: [String: CGRect] = [:]
+    @State private var dragTargetID: String?
+    @State private var previewOffsets: [String: CGSize] = [:]
+    @GestureState private var isDragging = false
     @State private var swatchFrames: [String: CGRect] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -179,6 +185,10 @@ struct InkPaletteEditor: View {
                             .modifier(PaletteEditingWiggle(
                                 enabled: isEditing && !showsColorEditor && draggedID != preset.id,
                                 viewportSize: viewport.size))
+                            // Animate the row-major slot shift outside the wiggle's
+                            // animation-disabled subtree; finger tracking stays immediate.
+                            .offset(previewOffsets[preset.id] ?? .zero)
+                            .animation(reduceMotion ? nil : .easeInOut(duration: 0.18), value: dragTargetID)
                             .offset(draggedID == preset.id ? dragOffset : .zero)
                             .scaleEffect(draggedID == preset.id && !reduceMotion ? 1.08 : 1)
                             .zIndex(draggedID == preset.id ? 1 : 0)
@@ -219,6 +229,11 @@ struct InkPaletteEditor: View {
             }
             .coordinateSpace(name: "paletteViewport")
         }
+        .onChange(of: isDragging) { _, dragging in
+            if !dragging { resetDrag() }
+        }
+        .onChange(of: isEditing) { _, _ in resetDrag() }
+        .onDisappear { resetDrag() }
         .toolbar {
             if !isEditing {
                 ToolbarItem(placement: .cancellationAction) {
@@ -244,20 +259,63 @@ struct InkPaletteEditor: View {
 
     private func swatchDrag(_ id: String) -> some Gesture {
         DragGesture(minimumDistance: 8, coordinateSpace: .named("paletteGrid"))
+            .updating($isDragging) { _, state, _ in state = true }
             .onChanged { value in
                 guard isEditing else { return }
-                draggedID = id
+                if draggedID == nil {
+                    draggedID = id
+                    WKInterfaceDevice.current().play(.click)
+                    dragOrder = palette.allColors.map(\.id)
+                    // Fixed slots prevent moving neighbours from changing the drop
+                    // target underneath a stationary finger during their animation.
+                    dragFrames = swatchFrames
+                    dragTargetID = id
+                }
+                guard draggedID == id else { return }
                 dragOffset = value.translation
+                updateDragTarget(at: value.location, id: id)
             }
             .onEnded { value in
-                defer { draggedID = nil; dragOffset = .zero }
-                guard isEditing,
-                      let target = swatchFrames.first(where: { $0.value.contains(value.location) })?.key else { return }
-                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-                    palette.move(id, to: target)
+                guard isEditing, draggedID == id else { resetDrag(); return }
+                updateDragTarget(at: value.location, id: id)
+                // The preview already occupies the final slots. Commit and remove
+                // those offsets together so neighbours do not animate a second time.
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    if let target = dragTargetID { palette.move(id, to: target) }
+                    resetDrag()
                 }
             }
     }
+
+    private func updateDragTarget(at location: CGPoint, id: String) {
+        guard let target = dragOrder.first(where: { dragFrames[$0]?.contains(location) == true }),
+              target != dragTargetID,
+              let from = dragOrder.firstIndex(of: id),
+              let to = dragOrder.firstIndex(of: target) else { return }
+        var reordered = dragOrder
+        reordered.remove(at: from)
+        reordered.insert(id, at: to)
+        var offsets: [String: CGSize] = [:]
+        for (index, colorID) in reordered.enumerated() where colorID != id {
+            guard let origin = dragFrames[colorID], let destination = dragFrames[dragOrder[index]] else { continue }
+            offsets[colorID] = CGSize(width: destination.midX - origin.midX,
+                                      height: destination.midY - origin.midY)
+        }
+        previewOffsets = offsets
+        dragTargetID = target
+    }
+
+    private func resetDrag() {
+        draggedID = nil
+        dragOffset = .zero
+        dragOrder = []
+        dragFrames = [:]
+        dragTargetID = nil
+        previewOffsets = [:]
+    }
+
 }
 
 /// Visibility is measured before rotation, so animation never triggers layout updates.
