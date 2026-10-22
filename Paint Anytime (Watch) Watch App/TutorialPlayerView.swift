@@ -96,29 +96,33 @@ struct TutorialPlayerView: View {
                             }
 
                             if page == .tools {
-                                if !tutorial.isPaletteLesson {
-                                    // Mount with the saved palette already installed, so the
-                                    // returning picker never animates removal of the old colors.
-                                    WatchToolSettingsView(controller: controller, tutorial: tutorial,
-                                                          tutorialColors: tutorialPaletteLibrary.activePalette.selectedColors)
-                                        .background(.black)
-                                        .transition(.opacity)
-                                } else {
-                                    InkPaletteBrowser(library: tutorialPaletteLibrary, controller: controller,
-                                                      tutorial: tutorial) { library in
-                                        tutorialPaletteLibrary = library
-                                        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                                            tutorial.record(.savedColor)
+                                ZStack {
+                                    if !tutorial.isPaletteLesson {
+                                        // Mount with the saved palette already installed, so the
+                                        // returning picker never animates removal of the old colors.
+                                        WatchToolSettingsView(controller: controller, tutorial: tutorial,
+                                                              tutorialColors: tutorialPaletteLibrary.activePalette.selectedColors)
+                                            .background(.black)
+                                            .transition(.opacity)
+                                    } else {
+                                        InkPaletteBrowser(library: tutorialPaletteLibrary, controller: controller,
+                                                          tutorial: tutorial) { library in
+                                            tutorialPaletteLibrary = library
+                                            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                                tutorial.record(.savedColor)
+                                            }
                                         }
+                                        // Extend beneath the floating card while preserving
+                                        // the native toolbar inset at the top.
+                                        .ignoresSafeArea(.container, edges: .bottom)
+                                        .background(Color.black.ignoresSafeArea())
+                                        .environment(\.colorScheme, .dark)
+                                        .transition(.opacity)
+                                        .zIndex(1)
                                     }
-                                    // Extend beneath the floating card while preserving
-                                    // the native toolbar inset at the top.
-                                    .ignoresSafeArea(.container, edges: .bottom)
-                                    .background(Color.black.ignoresSafeArea())
-                                    .environment(\.colorScheme, .dark)
-                                    .transition(.opacity)
-                                    .zIndex(1)
                                 }
+                                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
+                                           value: tutorial.isPaletteLesson)
                             }
                             if page == .gallery {
                                 SavedDrawingsView(tutorial: tutorial, galleryFolder: folder, onClose: {

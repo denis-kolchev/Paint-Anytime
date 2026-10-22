@@ -87,6 +87,7 @@ struct InkPaletteLibrary: Codable {
     }
 }
 
+@MainActor
 struct InkPaletteBrowser: View {
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @Environment(\.dismiss) private var dismiss
@@ -116,12 +117,12 @@ struct InkPaletteBrowser: View {
     private let addID = "add-palette"
 
     init(library: InkPaletteLibrary, controller: CanvasController, initialColor: SIMD4<Float>? = nil,
-         tutorial: TutorialSession = .inactive,
+         tutorial: TutorialSession? = nil,
          onSave: @escaping (InkPaletteLibrary) -> Void) {
         let visibleLibrary = InkPaletteLibrary(palettes: library.visiblePalettes, activeID: library.activeID)
         _library = State(initialValue: visibleLibrary)
         self.controller = controller
-        self.tutorial = tutorial
+        self.tutorial = tutorial ?? .inactive
         returnsToCanvasAfterColorSave = initialColor != nil
         _sampledColor = State(initialValue: initialColor)
         _showsColorEditor = State(initialValue: initialColor != nil)
@@ -172,6 +173,8 @@ struct InkPaletteBrowser: View {
                 // Keep tutorial screens in the same viewport as the coach card.
                 // A watchOS navigation push takes over the full screen.
                 colorEditor
+                    .transition(.opacity)
+                    .zIndex(2)
             } else if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
                 InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller, tutorial: tutorial,
                     onBrowse: {
@@ -192,6 +195,10 @@ struct InkPaletteBrowser: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .animation(tutorial.isActive ? .easeInOut(duration: reduceMotion ? 0.15 : 0.3) : nil,
+                   value: browsing)
+        .animation(tutorial.isActive ? .easeInOut(duration: reduceMotion ? 0.15 : 0.3) : nil,
+                   value: showsColorEditor)
         .navigationBarBackButtonHidden(true)
         .navigationDestination(isPresented: Binding(
             get: { !tutorial.isActive && showsColorEditor },
