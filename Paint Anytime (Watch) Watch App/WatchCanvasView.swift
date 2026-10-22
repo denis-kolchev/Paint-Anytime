@@ -136,6 +136,8 @@ struct WatchCanvasView: View {
                         .frame(width: 88, height: 88)
                         .clipShape(Circle())
                         .overlay { Circle().strokeBorder(.white, lineWidth: 3) }
+                        .compositingGroup()
+                        .shadow(color: .black.opacity(0.4), radius: 3, x: 0, y: 0)
                         .overlay {
                             Rectangle().stroke(.black, lineWidth: 3).frame(width: 8, height: 8)
                                 .overlay { Rectangle().stroke(.white, lineWidth: 1).frame(width: 8, height: 8) }
