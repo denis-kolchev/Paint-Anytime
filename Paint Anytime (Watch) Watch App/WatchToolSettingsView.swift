@@ -322,7 +322,7 @@ struct WatchToolSettingsView: View {
                                                      isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.direction.rawValue),
                                                      onAdjust: { adjustDirection(by: $0) })
                                     .frame(width: 40)
-                                    .transition(.identity)
+                                    .transition(.opacity)
                             }
                         }
                         .frame(width: pickerGeometry.size.width, height: pickerGeometry.size.height)
@@ -360,9 +360,12 @@ struct WatchToolSettingsView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
                         .offset(y: -8)
                 }
-                .transition(.identity)
+                .transition(.opacity)
             }
         }
+        // The tutorial angle panel lives outside the settings GeometryReader;
+        // give its insertion/removal the same fade as the other vertical controls.
+        .animation(pageAnimation, value: selection)
         .padding(.horizontal, 10)
         // Keep the preview and pickers below the toolbar in both editor and tutorial.
         .padding(.top, topChromeHeight)
