@@ -515,6 +515,7 @@ struct CustomInkEditor: View {
                     Image(systemName: "checkmark")
                         .tutorialHint(tutorial, steps: [.savePaletteColor])
                 }
+                .watchToolbarButtonStyle(hidesNativeChrome: !tutorial.permits([.savePaletteColor]))
                 .opacity(tutorial.permits([.savePaletteColor]) ? 1 : 0)
                 .disabled(!tutorial.permits([.savePaletteColor]))
                 .accessibilityHidden(!tutorial.permits([.savePaletteColor]))

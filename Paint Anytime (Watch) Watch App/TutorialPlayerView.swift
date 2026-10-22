@@ -104,8 +104,10 @@ struct TutorialPlayerView: View {
                                         tutorialPaletteLibrary = library
                                         tutorial.record(.savedColor)
                                     }
-                                    .padding(.bottom, hintReservedHeight)
-                                    .background(.black)
+                                    // Extend beneath the floating card while preserving
+                                    // the native toolbar inset at the top.
+                                    .ignoresSafeArea(.container, edges: .bottom)
+                                    .background(Color.black.ignoresSafeArea())
                                     .environment(\.colorScheme, .dark)
                                 }
                             }
@@ -267,7 +269,7 @@ struct TutorialPlayerView: View {
                                    screenHeight: screen.size.height,
                                    // Reserve the tool chrome, carousel, and a readable
                                    // three-item control. The card already scrolls overflow.
-                                   maximumCardHeight: page == .tools
+                                   maximumCardHeight: page == .tools && !tutorial.isPaletteLesson
                                     ? max(32, screen.size.height - 40 - 30
                                           - ToolValueControl.minimumHeight - 12) : nil,
                                    confirmsFinish: $confirmsFinish)
@@ -281,9 +283,10 @@ struct TutorialPlayerView: View {
                     }
             }
         }
-        // The native menu needs the top safe area to place its first row below
-        // the navigation title. Its bottom still extends behind the hint card.
-        .ignoresSafeArea(.container, edges: page == .menu ? .bottom : .all)
+        // Native menu and palette content start below the navigation toolbar.
+        // Their full-height layouts extend through the bottom safe area,
+        // with the lesson card layered above rather than reserving space.
+        .ignoresSafeArea(.container, edges: page == .menu || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
             if height > 0 { hintHeight = height }
         }

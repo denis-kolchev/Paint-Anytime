@@ -89,6 +89,7 @@ struct InkPaletteLibrary: Codable {
 }
 
 struct InkPaletteBrowser: View {
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.layoutDirection) private var layoutDirection
@@ -135,74 +136,13 @@ struct InkPaletteBrowser: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                if tutorial.isActive && showsColorEditor {
-                    // Keep tutorial screens in the same viewport as the coach card.
-                    // A watchOS navigation push takes over the full screen.
-                    colorEditor
-                } else if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
-                    InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller, tutorial: tutorial,
-                        onBrowse: {
-                            if showsEmptyPaletteClose {
-                                discardEmptyPalette()
-                            } else {
-                                setBrowsing(true)
-                                tutorial.record(.browsedPalettes)
-                            }
-                        }, onEdit: beginEditing, isEditing: $editing,
-                        sampledColor: $sampledColor, showsColorEditor: $showsColorEditor)
-                        .id(currentID)
-                        .transition(.opacity)
-                        .zIndex(1)
-                } else {
-                    carousel
-                        .transition(.opacity)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .navigationBarBackButtonHidden(true)
-            .navigationDestination(isPresented: Binding(
-                get: { !tutorial.isActive && showsColorEditor },
-                set: { if !tutorial.isActive { showsColorEditor = $0 } }
-            )) {
-                colorEditor
-            }
-            .toolbar {
-                if tutorial.isActive && tutorial.step != .openPalettes {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Color.clear
-                            .frame(width: 1, height: 1)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                    }
-                }
-                if !tutorial.isActive {
-                    if browsing || currentID == addID {
-                        // Occupy the cancellation slot so watchOS does not insert its own close button.
-                        ToolbarItem(placement: .cancellationAction) {
-                            Color.clear
-                                .frame(width: 1, height: 1)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
-                        }
-                    } else if editing {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button(action: cancelEditing) { Image(systemName: "xmark") }
-                                .accessibilityLabel(L10n.text("Cancel"))
-                        }
-                    }
-                    ToolbarItem(placement: .confirmationAction) {
-                        if showsEmptyPaletteClose {
-                            Button(action: discardEmptyPalette) { Image(systemName: "xmark") }
-                                .accessibilityLabel(L10n.text("Close"))
-                        } else {
-                            Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
-                                .disabled(movingID != nil || pendingDeletionID != nil || (!canConfirm && !editing))
-                                .accessibilityLabel(L10n.text("Done"))
-                        }
-                    }
-                }
+        Group {
+            if tutorial.isActive {
+                // The tutorial already owns a NavigationStack. Reuse its safe
+                // area so the content starts below the native toolbar.
+                browserContent
+            } else {
+                NavigationStack { browserContent }
             }
         }
         // watchOS supplies a modal close button separately from the navigation back button.
@@ -224,6 +164,89 @@ struct InkPaletteBrowser: View {
             Button(L10n.text("Delete"), role: .destructive) { delete(entry.id) }
                 .disabled(!canDeletePalette)
             Button(L10n.text("Cancel"), role: .cancel) {}
+        }
+    }
+
+    private var browserContent: some View {
+        ZStack {
+            if tutorial.isActive && showsColorEditor {
+                // Keep tutorial screens in the same viewport as the coach card.
+                // A watchOS navigation push takes over the full screen.
+                colorEditor
+            } else if !browsing, let index = library.palettes.firstIndex(where: { $0.id == currentID }) {
+                InkPaletteEditor(palette: $library.palettes[index].palette, controller: controller, tutorial: tutorial,
+                    onBrowse: {
+                        if showsEmptyPaletteClose {
+                            discardEmptyPalette()
+                        } else {
+                            setBrowsing(true)
+                            tutorial.record(.browsedPalettes)
+                        }
+                    }, onEdit: beginEditing, isEditing: $editing,
+                    sampledColor: $sampledColor, showsColorEditor: $showsColorEditor)
+                    .id(currentID)
+                    .transition(.opacity)
+                    .zIndex(1)
+            } else {
+                carousel
+                    .transition(.opacity)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationBarBackButtonHidden(true)
+        .navigationDestination(isPresented: Binding(
+            get: { !tutorial.isActive && showsColorEditor },
+            set: { if !tutorial.isActive { showsColorEditor = $0 } }
+        )) {
+            colorEditor
+        }
+        .toolbar {
+            if tutorial.isActive && (tutorial.step == .findNewPalette || tutorial.step == .createPalette) {
+                // Reserve the trailing native toolbar slot to center the system clock.
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {} label: {
+                        Color.clear.frame(width: 32, height: 32)
+                    }
+                    .watchToolbarButtonStyle(hidesNativeChrome: true)
+                    .opacity(0)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+            }
+            if tutorial.isActive && tutorial.step != .openPalettes {
+                ToolbarItem(placement: .cancellationAction) {
+                    Color.clear
+                        .frame(width: 1, height: 1)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            if !tutorial.isActive {
+                if browsing || currentID == addID {
+                    // Occupy the cancellation slot so watchOS does not insert its own close button.
+                    ToolbarItem(placement: .cancellationAction) {
+                        Color.clear
+                            .frame(width: 1, height: 1)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                } else if editing {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(action: cancelEditing) { Image(systemName: "xmark") }
+                            .accessibilityLabel(L10n.text("Cancel"))
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    if showsEmptyPaletteClose {
+                        Button(action: discardEmptyPalette) { Image(systemName: "xmark") }
+                            .accessibilityLabel(L10n.text("Close"))
+                    } else {
+                        Button(action: finishEditingOrConfirm) { Image(systemName: "checkmark") }
+                            .disabled(movingID != nil || pendingDeletionID != nil || (!canConfirm && !editing))
+                            .accessibilityLabel(L10n.text("Done"))
+                    }
+                }
+            }
         }
     }
 
@@ -293,7 +316,16 @@ struct InkPaletteBrowser: View {
                 let bottomPadding: CGFloat = 3
                 let titleHeight: CGFloat = 20
                 let availableHeight = max(1, viewport.size.height - titleHeight - buttonHeight - verticalGap * 2 - bottomPadding)
-                let cardWidth = min(width * 0.68, availableHeight)
+                let regularCardWidth = min(width * 0.68, availableHeight)
+                let tutorialTop = max(0, (viewport.size.height - titleHeight - regularCardWidth
+                    - buttonHeight - verticalGap * 2 - bottomPadding) / 2 + 28)
+                // Keep the title in place and fit the whole outline above the
+                // measured coach card, including the 1.15x reminder animation.
+                let tutorialStripHeight = max(1, (viewport.size.height - tutorialHintReservedHeight
+                    - 6 - tutorialTop) / 1.075)
+                let cardWidth = tutorial.isActive
+                    ? min(regularCardWidth, max(1, tutorialStripHeight - titleHeight - verticalGap))
+                    : regularCardWidth
                 let cardHeight = cardWidth
                 let gap = max(4, (width - cardWidth) / 2 - width * 0.08)
                 let stride = cardWidth + gap
@@ -363,7 +395,11 @@ struct InkPaletteBrowser: View {
                     .offset(x: stripOffset)
                     .frame(width: width, height: titleHeight + verticalGap + cardHeight, alignment: .leading)
                     .contentShape(Rectangle())
+                    // Clip neighboring pages horizontally, leaving vertical room
+                    // for the tutorial's animated title and card.
+                    .padding(.vertical, tutorial.isActive ? viewport.size.height : 0)
                     .clipped()
+                    .padding(.vertical, tutorial.isActive ? -viewport.size.height : 0)
                     // A recognized swipe must cancel the card's button press.
                     .coordinateSpace(name: "paletteReordering")
                     // Once a swipe is recognized, cancel the card button's tap.
@@ -442,10 +478,13 @@ struct InkPaletteBrowser: View {
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: currentID == addID)
                 }
                 .padding(.bottom, bottomPadding)
-                .frame(width: width, height: viewport.size.height)
+                .padding(.top, tutorial.isActive ? tutorialTop : 0)
+                .frame(width: width, height: viewport.size.height,
+                       alignment: tutorial.isActive ? .top : .center)
             }
-            // Use the lower safe area for Edit, leaving more height for the palette.
-            .ignoresSafeArea(.container, edges: .bottom)
+            // Tutorial palette browsing also uses the space above the carousel;
+            // the shared lesson card remains an independent overlay below.
+            .ignoresSafeArea(.container, edges: tutorial.isActive ? .vertical : .bottom)
     }
 
     private func titleOpacity(for id: String, stride: CGFloat) -> Double {
