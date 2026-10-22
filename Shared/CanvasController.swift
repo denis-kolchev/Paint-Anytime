@@ -28,7 +28,9 @@ final class CanvasController: ObservableObject {
     }
     private var savedDocument = CanvasDocument()
     var hasUnsavedChanges: Bool { document != savedDocument }
-    var needsDiscardConfirmation: Bool { hasUnsavedChanges }
+    // Clearing can differ from the saved snapshot, but leaves nothing to discard.
+    // Use the same empty-canvas condition as the Clear button.
+    var needsDiscardConfirmation: Bool { canClear && hasUnsavedChanges }
     private let pencil = PencilTool()
     private var documentBeforeErasing: CanvasDocument?
     private var documentAtStrokeStart: CanvasDocument?
