@@ -256,6 +256,7 @@ struct WatchCanvasView: View {
                                let fill = WatchBitmapRenderer.floodFill(layer: controller.selectedLayer,
                                    size: controller.document.size(fallback: geometry.size), point: point, style: controller.pencilStyle) {
                                 controller.commitFill(fill)
+                                tutorial.record(.filled)
                             }
                             return
                         }

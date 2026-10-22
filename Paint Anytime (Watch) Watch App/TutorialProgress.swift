@@ -26,7 +26,7 @@ struct TutorialProgress {
     private var unlockedToolPages: Set<Int> = [1]
 
     enum Event {
-        case heldCircle, stroke, openedTools, closedTools, openedInfo, closedInfo, browsedTools
+        case heldCircle, stroke, filled, openedTools, closedTools, openedInfo, closedInfo, browsedTools
         case panned, finishedCamera, history, saved, closedSave, openedMenu, openedGallery
         case galleryFullscreen, deleted, returnedToCanvas, cleared
         case reachedAddColor, returnedToColorSelection, openedColorList, browsedPalettes, foundNewPalette
@@ -75,7 +75,7 @@ struct TutorialProgress {
              (.createPalette, .createdPalette), (.addPaletteColor, .openedColorEditor),
              (.adjustPaletteColor, .adjustedColor), (.savePaletteColor, .savedColor): return .advance
         case (.clearCanvas, .cleared): return .showResult
-        case (.openTools, .openedTools), (.closeTools, .closedTools), (.reedStrokes, .stroke),
+        case (.openTools, .openedTools), (.closeTools, .closedTools), (.reedStrokes, .stroke), (.reedStrokes, .filled),
              (.saveDrawing, .saved), (.shareDrawing, .closedSave), (.openMenu, .openedMenu),
              (.openGallery, .openedGallery), (.galleryFullscreen, .galleryFullscreen),
              (.deleteDrawing, .deleted), (.returnToCanvas, .returnedToCanvas): return .advance
