@@ -119,6 +119,19 @@ struct InkPaletteEditor: View {
                             including: isEditing ? .none : .all)
                         .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
                         .accessibilityLabel(L10n.text("Create color"))
+                        Button {
+                            sampledColor = nil
+                            showsEyedropper = true
+                        } label: {
+                            Image(systemName: "eyedropper")
+                                .resizable()
+                                .scaledToFit()
+                                .foregroundStyle(.gray)
+                                .aspectRatio(1, contentMode: .fit)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(L10n.text("Eyedropper"))
                     }
                 }
                 .padding(.horizontal, 10)
@@ -141,13 +154,10 @@ struct InkPaletteEditor: View {
         .toolbar {
             if !isEditing {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button {
-                        sampledColor = nil
-                        showsEyedropper = true
-                    } label: {
-                        Image(systemName: "eyedropper")
+                    Button(action: onBrowse) {
+                        Image(systemName: "paintpalette.fill")
                     }
-                    .accessibilityLabel(L10n.text("Eyedropper"))
+                    .accessibilityLabel(L10n.text("Palettes"))
                 }
             }
         }
