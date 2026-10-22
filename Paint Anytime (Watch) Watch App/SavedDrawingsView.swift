@@ -353,6 +353,9 @@ struct SavedDrawingsView: View {
             morphState.isExpanded = false
             if !fullscreen { pageVisibility = [:] }
             tutorial.galleryIsFullscreen = fullscreen
+            // Reduce Motion opens directly, so isTransitioning never changes.
+            // Record the ready fullscreen state even without an animation callback.
+            if fullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
         }
         .onChange(of: isTransitioning) { _, transitioning in
             if transitioning { morphState.isExpanded = false }
