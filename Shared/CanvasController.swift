@@ -21,6 +21,7 @@ final class CanvasController: ObservableObject {
 
     // Revisions make raster invalidation independent of the number of saved points.
     private(set) var documentRevision: UInt64 = 0
+    private(set) var clearDocumentRevision: UInt64?
     private(set) var activeStrokeRevision: UInt64 = 0
     private(set) var activeStrokeID: UInt64 = 0
     private(set) var document = CanvasDocument() {
@@ -319,6 +320,7 @@ final class CanvasController: ObservableObject {
         document.layers = [firstLayer]
         document.backgroundColor = SIMD4(1, 1, 1, 1)
         document.backgroundIsVisible = true
+        clearDocumentRevision = documentRevision
         selectedLayerID = firstLayer.id
         onNeedsDisplay?()
     }

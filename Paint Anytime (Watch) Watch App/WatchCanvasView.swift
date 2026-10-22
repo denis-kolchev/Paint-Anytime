@@ -78,6 +78,7 @@ struct WatchCanvasView: View {
                         strokes: useLayers ? [] : (displayedDocument.layers.first?.strokes ?? []),
                         activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
                         documentRevision: controller.documentRevision,
+                        clearDocumentRevision: controller.clearDocumentRevision,
                         activeStrokeRevision: controller.activeStrokeRevision,
                         activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: zoom)
                         .frame(width: paperSize.width, height: paperSize.height)

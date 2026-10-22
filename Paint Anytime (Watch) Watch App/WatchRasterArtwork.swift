@@ -12,6 +12,7 @@ struct WatchRasterArtwork: View {
     let activeStroke: Stroke?
     let documentID: ObjectIdentifier
     let documentRevision: UInt64
+    var clearDocumentRevision: UInt64? = nil
     let activeStrokeRevision: UInt64
     let activeStrokeID: UInt64
     var onFramePrepared: (Bool) -> Void = { _ in }
@@ -23,7 +24,7 @@ struct WatchRasterArtwork: View {
         let _ = TutorialDebug.trace("raster.body")
         GeometryReader { geometry in
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
-            RasterFrame(onFramePrepared: onFramePrepared, document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
+            RasterFrame(clearDocumentRevision: clearDocumentRevision, onFramePrepared: onFramePrepared, document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
@@ -42,6 +43,9 @@ struct WatchRasterArtwork: View {
     }
 
     private struct RasterFrame: View {
+        var clearDocumentRevision: UInt64?
+        @Environment(\.accessibilityReduceMotion) private var reduceMotion
+        @State private var clearOpacity = 1.0
         var onFramePrepared: (Bool) -> Void
         let document: CanvasDocument?
         let selectedLayerID: UUID?
@@ -92,46 +96,50 @@ struct WatchRasterArtwork: View {
             let transform: CGAffineTransform?
         }
 
-        var body: some View {
-            let _ = TutorialDebug.trace("raster.frame.body", "strokes=\(strokes.count) imageReady=\(frames.frame != nil)")
-            Group {
-                if let frame = displayFrame {
+        private func artwork(_ frame: WatchBitmapRenderer.ScreenFrame) -> some View {
+            ZStack(alignment: .topLeading) {
+                Image(decorative: frame.background, scale: key.scale)
+                    .resizable()
+                    .frame(width: key.size.width, height: key.size.height)
+                if let texture = frame.selection {
                     ZStack(alignment: .topLeading) {
-                        Image(decorative: frame.background, scale: key.scale)
-                            .resizable()
-                            .frame(width: key.size.width, height: key.size.height)
-                        if let texture = frame.selection {
-                            ZStack(alignment: .topLeading) {
-                                if let image = texture.layerBelow {
-                                    staticTexture(image)
-                                }
-                                Image(decorative: texture.image, scale: texture.key.scale)
-                                    .resizable()
-                                    .frame(width: texture.rect.width, height: texture.rect.height)
-                                    .offset(x: texture.rect.minX, y: texture.rect.minY)
-                                    .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
-                                    .transformEffect(displayedTransform(texture))
-                                if let image = texture.layerAbove {
-                                    staticTexture(image)
-                                }
-                            }
-                            .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
-                            .clipped()
-                            .compositingGroup()
-                            .opacity(Double(texture.opacity))
-                            if let image = texture.upperLayers {
-                                staticTexture(image)
-                            }
+                        if let image = texture.layerBelow {
+                            staticTexture(image)
                         }
-                        ForEach(frame.tiles) { tile in
-                            Image(decorative: tile.image, scale: key.scale)
-                                .resizable()
-                                .frame(width: tile.rect.width, height: tile.rect.height)
-                                .offset(x: tile.rect.minX, y: tile.rect.minY)
+                        Image(decorative: texture.image, scale: texture.key.scale)
+                            .resizable()
+                            .frame(width: texture.rect.width, height: texture.rect.height)
+                            .offset(x: texture.rect.minX, y: texture.rect.minY)
+                            .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+                            .transformEffect(displayedTransform(texture))
+                        if let image = texture.layerAbove {
+                            staticTexture(image)
                         }
                     }
                     .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
                     .clipped()
+                    .compositingGroup()
+                    .opacity(Double(texture.opacity))
+                    if let image = texture.upperLayers {
+                        staticTexture(image)
+                    }
+                }
+                ForEach(frame.tiles) { tile in
+                    Image(decorative: tile.image, scale: key.scale)
+                        .resizable()
+                        .frame(width: tile.rect.width, height: tile.rect.height)
+                        .offset(x: tile.rect.minX, y: tile.rect.minY)
+                }
+            }
+            .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+            .clipped()
+        }
+
+        var body: some View {
+            let _ = TutorialDebug.trace("raster.frame.body", "strokes=\(strokes.count) imageReady=\(frames.frame != nil)")
+            Group {
+                if let frame = displayFrame {
+                    artwork(frame)
                 } else {
                     Color.white
                 }
@@ -139,7 +147,8 @@ struct WatchRasterArtwork: View {
             .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: hasSelectionTexture ? nil : selectionPreview?.transform)) { @MainActor in
                 if hasSelectionTexture { return }
                 frames.submit(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke,
-                              key: key, activeStrokeID: activeStrokeID)
+                              key: key, activeStrokeID: activeStrokeID,
+                              animatesClear: activeStroke == nil && key.documentRevision == clearDocumentRevision)
             }
             .task(id: Request(key: key, activeStrokeRevision: 0, sessionID: selectionSeed?.sessionID, transform: nil)) {
                 await frames.prepareSelection(selectionSeed, key: key)
@@ -155,6 +164,25 @@ struct WatchRasterArtwork: View {
                 }
             }
             .transaction { $0.animation = nil }
+            .overlay {
+                if let transition = frames.clearTransition {
+                    artwork(transition.frame)
+                        .compositingGroup()
+                        .opacity(clearOpacity)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .task(id: frames.clearTransition?.id) {
+                guard let transition = frames.clearTransition else { return }
+                clearOpacity = 1
+                await Task.yield()
+                guard !Task.isCancelled else { return }
+                let duration = reduceMotion ? 0.15 : 0.3
+                withAnimation(.easeInOut(duration: duration)) { clearOpacity = 0 }
+                do { try await Task.sleep(for: .seconds(duration)) } catch { return }
+                if frames.clearTransition?.id == transition.id { frames.clearTransition = nil }
+            }
             .onChange(of: frames.preparedResult) { _, result in
                 guard let result, result.key == key else { return }
                 onFramePrepared(result.succeeded)
@@ -169,6 +197,11 @@ struct WatchRasterArtwork: View {
 /// input therefore cannot starve publication by cancelling every render.
 @MainActor
 private final class CanvasFrameQueue: ObservableObject {
+    struct ClearTransition {
+        let id = UUID()
+        let frame: WatchBitmapRenderer.ScreenFrame
+    }
+    @Published var clearTransition: ClearTransition?
     struct PreparedResult: Equatable {
         let key: WatchBitmapRenderer.CacheKey
         let succeeded: Bool
@@ -211,6 +244,7 @@ private final class CanvasFrameQueue: ObservableObject {
         let activeStroke: Stroke?
         let key: WatchBitmapRenderer.CacheKey
         let activeStrokeID: UInt64
+        let animatesClear: Bool
     }
     private var pending: Job?
     private var latest: Job?
@@ -218,8 +252,9 @@ private final class CanvasFrameQueue: ObservableObject {
     private var generation: UInt64 = 0
 
     func submit(document: CanvasDocument?, selectedLayerID: UUID?, selectionPreview: WatchSelectionPreview?, strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
-                activeStrokeID: UInt64) {
-        let job = Job(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID)
+                activeStrokeID: UInt64, animatesClear: Bool = false) {
+        if !animatesClear { clearTransition = nil }
+        let job = Job(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID, animatesClear: animatesClear)
         pending = job
         latest = job
         guard worker == nil else { return }
@@ -245,6 +280,9 @@ private final class CanvasFrameQueue: ObservableObject {
                    ((latest.key == job.key && latest.selectionPreview?.sessionID == job.selectionPreview?.sessionID) || Self.sameSelectionDrag(latest, job)),
                    latest.activeStrokeID == job.activeStrokeID,
                    latest.activeStroke?.id == job.activeStroke?.id, let next {
+                    if job.animatesClear, self.preparedResult?.key.documentRevision != job.key.documentRevision, let previous = self.frame {
+                        self.clearTransition = ClearTransition(frame: previous)
+                    }
                     self.frame = next
                     self.preparedResult = PreparedResult(key: job.key, succeeded: true)
                     if let texture = next.selection, let pending = self.pending,
