@@ -113,6 +113,9 @@ struct ContentView: View {
                     }
                     .id(galleryLaunchID)
                     .frame(width: geometry.size.width, height: geometry.size.height)
+                    // Fade the gallery as one surface. Fading its overlapping
+                    // layers separately reveals the thumbnail grid underneath.
+                    .compositingGroup()
                     .transition(.opacity)
                     .zIndex(2)
                 }

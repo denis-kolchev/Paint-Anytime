@@ -86,6 +86,9 @@ struct SavedDrawingsView: View {
                         prepareImageTransition(size: geometry.size, topInset: navigationHeight)
                     }
                 }
+                // Keep grid layout for the explicit photo-to-grid animation,
+                // but never expose thumbnails beneath a fading fullscreen photo.
+                .opacity(showsFullscreen && !isTransitioning ? 0 : 1)
 
                 Rectangle()
                     .fill(.ultraThinMaterial)
