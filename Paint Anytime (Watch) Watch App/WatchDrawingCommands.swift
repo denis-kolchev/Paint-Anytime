@@ -148,11 +148,6 @@ nonisolated enum WatchBitmapRenderer {
                     $0.id.y == $1.id.y ? $0.id.x < $1.id.x : $0.id.y < $1.id.y
                 })
             }
-            if activeStroke != nil, let ink = activeInk, let background = committedImage {
-                return ScreenFrame(background: background, tiles: ink.screenTiles.values.sorted {
-                    $0.id.y == $1.id.y ? $0.id.x < $1.id.x : $0.id.y < $1.id.y
-                })
-            }
             return ScreenFrame(background: image, tiles: [])
         }
 
@@ -332,7 +327,9 @@ nonisolated enum WatchBitmapRenderer {
 
         private struct ActiveInk {
             var stroke: Stroke
-            var screenTiles: [SIMD2<Int>: ScreenTile] = [:]
+            // Keep presentation cost independent of the area covered by a long stroke.
+            // Only dirty patches are flattened into this persistent display bitmap.
+            let display: CGContext?
             let usesScreenTiles: Bool
             let id: UInt64?
             let coverage: WatchStrokeCoverage
@@ -453,7 +450,17 @@ nonisolated enum WatchBitmapRenderer {
                     let bounds = CGRect(x: 0, y: 0, width: width, height: height)
                     base.draw(committedInk.image, in: bounds)
                     frame.draw(committedInk.image, in: bounds)
-                    activeInk = ActiveInk(stroke: activeStroke, usesScreenTiles: usesScreenTiles, id: activeStrokeID,
+                    let display: CGContext?
+                    if usesScreenTiles {
+                        guard let bitmap = WatchBitmapRenderer.makeDisplayContext(width: width, height: height),
+                              let committedImage else { return nil }
+                        bitmap.draw(committedImage, in: bounds)
+                        display = bitmap
+                    } else {
+                        display = nil
+                    }
+                    activeInk = ActiveInk(stroke: activeStroke, display: display,
+                        usesScreenTiles: usesScreenTiles, id: activeStrokeID,
                         coverage: WatchStrokeCoverage(style: activeStroke.style, width: width,
                                                       height: height, scale: nextKey.scale),
                         base: base, frame: frame)
@@ -465,12 +472,11 @@ nonisolated enum WatchBitmapRenderer {
                     let dirty = try ink.coverage.append(activeStroke)
                     if !dirty.isNull, !dirty.isEmpty {
                         ink.coverage.composite(dirty: dirty, over: ink.base, into: ink.frame)
-                        if usesScreenTiles {
+                        if let display = ink.display {
                             let tileSize: CGFloat = 32
                             let canvas = CGRect(x: 0, y: 0, width: ink.frame.width, height: ink.frame.height)
                             for y in Int(floor(dirty.minY / tileSize))...Int(floor((dirty.maxY - 1) / tileSize)) {
                                 for x in Int(floor(dirty.minX / tileSize))...Int(floor((dirty.maxX - 1) / tileSize)) {
-                                    let tile = SIMD2(x, y)
                                     let rect = CGRect(x: CGFloat(x) * tileSize, y: CGFloat(y) * tileSize,
                                                       width: tileSize, height: tileSize).intersection(canvas)
                                     guard let patch = WatchBitmapRenderer.snapshot(ink.frame, rect: rect, floating: true),
@@ -479,12 +485,17 @@ nonisolated enum WatchBitmapRenderer {
                                         self.activeInk = nil
                                         return nil
                                     }
-                                    ink.screenTiles[tile] = ScreenTile(id: tile,
-                                        rect: rect.applying(CGAffineTransform(scaleX: 1 / nextKey.scale, y: 1 / nextKey.scale)),
-                                        image: flat)
+                                    let destination = CGRect(x: rect.minX,
+                                        y: CGFloat(ink.frame.height) - rect.maxY,
+                                        width: rect.width, height: rect.height)
+                                    display.draw(flat, in: destination)
                                 }
                             }
-                            activeImage = committedImage
+                            guard let image = display.makeImage() else {
+                                self.activeInk = nil
+                                return nil
+                            }
+                            activeImage = image
                         } else {
                             guard let frame = ink.frame.makeImage(),
                                   let image = WatchBitmapRenderer.flatten(InkSnapshot(image: frame), paperWhite: 1)
