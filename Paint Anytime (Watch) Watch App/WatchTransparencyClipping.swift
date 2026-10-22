@@ -1,17 +1,25 @@
 import CoreGraphics
 import Foundation
+import ImageIO
 
-/// Materialize the otherwise implicit alpha-lock boundary before object editing.
-/// Exclusions live in stroke-local coordinates and travel with its transform.
+/// Freeze alpha-locked ink before object editing. Store its actual translucent
+/// coverage, rather than turning transparent pixels into adjacent vector cuts:
+/// antialiasing those cuts separately creates seams when objects are moved.
 nonisolated enum WatchTransparencyClipping {
     enum ClippingError: Error { case rendering }
-    private struct Run: Hashable { let x: Int; let width: Int }
 
     static func prepare(strokes: [Stroke], size: CGSize, scale: CGFloat) throws -> [Stroke] {
         guard strokes.contains(where: \.locksTransparency) else { return strokes }
+        guard size.width > 0, size.height > 0, scale > 0,
+              size.width.isFinite, size.height.isFinite, scale.isFinite else {
+            throw ClippingError.rendering
+        }
+        // Preserve smooth edges even when selection starts with the canvas zoomed out.
+        let resolution = min(max(scale, WatchBitmapRenderer.maximumRasterScale),
+                             8192 / max(size.width, size.height))
         var preceding: [Stroke] = []
         var result: [Stroke] = []
-        var alpha: CGContext?
+        var alpha: CGImage?
         for stroke in strokes {
             try Task.checkCancellation()
             defer { preceding.append(stroke) }
@@ -21,53 +29,70 @@ nonisolated enum WatchTransparencyClipping {
                 continue
             }
             if alpha == nil {
-                guard let image = WatchBitmapRenderer.layerThumbnail(strokes: preceding, size: size, scale: scale),
-                      let context = CGContext(data: nil, width: image.width, height: image.height,
-                        bitsPerComponent: 8, bytesPerRow: image.width * 4,
-                        space: CGColorSpaceCreateDeviceRGB(),
-                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
-                    else { throw ClippingError.rendering }
-                context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
-                alpha = context
+                alpha = WatchBitmapRenderer.layerThumbnail(strokes: preceding, size: size, scale: resolution)
             }
-            guard let alpha, let data = alpha.data else { throw ClippingError.rendering }
+            var ink = stroke
+            ink.locksTransparency = false
+            guard let alpha,
+                  let image = WatchBitmapRenderer.layerThumbnail(strokes: [ink], size: size, scale: resolution),
+                  image.width == alpha.width, image.height == alpha.height else {
+                throw ClippingError.rendering
+            }
+            let paper = CGRect(x: 0, y: 0, width: image.width, height: image.height)
             let bounds = try WatchBitmapRenderer.StrokeGeometry(stroke).bounds
-                .applying(CGAffineTransform(scaleX: scale, y: scale)).integral
-                .intersection(CGRect(x: 0, y: 0, width: alpha.width, height: alpha.height))
-            guard !bounds.isNull, !bounds.isEmpty else { result.append(stroke); continue }
-            let pixels = data.assumingMemoryBound(to: UInt8.self)
-            var active: [Run: CGRect] = [:]
-            var cuts: [CGRect] = []
-            for y in Int(bounds.minY)..<Int(bounds.maxY) {
+                .applying(CGAffineTransform(scaleX: resolution, y: resolution)).integral
+                .intersection(paper)
+            // Retain even an invisible stroke's identity without letting off-paper
+            // tails reappear later when the object is translated onto the paper.
+            let region = bounds.isNull || bounds.isEmpty
+                ? CGRect(x: 0, y: 0, width: 1, height: 1) : bounds
+            guard let croppedInk = image.cropping(to: region),
+                  let croppedAlpha = alpha.cropping(to: region),
+                  let pixels = pixelContext(croppedInk), let pixelData = pixels.data,
+                  let mask = pixelContext(croppedAlpha), let maskData = mask.data else {
+                throw ClippingError.rendering
+            }
+            let rgba = pixelData.assumingMemoryBound(to: UInt8.self)
+            let coverage = maskData.assumingMemoryBound(to: UInt8.self)
+            for y in 0..<pixels.height {
                 try Task.checkCancellation()
-                var next: [Run: CGRect] = [:]
-                var x = Int(bounds.minX)
-                while x < Int(bounds.maxX) {
-                    guard pixels[y * alpha.bytesPerRow + x * 4 + 3] == 0 else { x += 1; continue }
-                    let start = x
-                    while x < Int(bounds.maxX), pixels[y * alpha.bytesPerRow + x * 4 + 3] == 0 { x += 1 }
-                    let run = Run(x: start, width: x - start)
-                    var rect = active.removeValue(forKey: run) ?? CGRect(x: start, y: y, width: run.width, height: 0)
-                    rect.size.height += 1
-                    next[run] = rect
-                }
-                cuts.append(contentsOf: active.values)
-                active = next
-            }
-            cuts.append(contentsOf: active.values)
-            var clipped = stroke
-            let inverse = stroke.transform.affine.inverted()
-            clipped.excludedAreas += cuts.map { rect in
-                [CGPoint(x: rect.minX / scale, y: rect.minY / scale),
-                 CGPoint(x: rect.maxX / scale, y: rect.minY / scale),
-                 CGPoint(x: rect.maxX / scale, y: rect.maxY / scale),
-                 CGPoint(x: rect.minX / scale, y: rect.maxY / scale)].map {
-                    let point = $0.applying(inverse)
-                    return SIMD2(Float(point.x), Float(point.y))
+                for x in 0..<pixels.width {
+                    let offset = y * pixels.bytesPerRow + x * 4
+                    let opacity = bounds.isNull || bounds.isEmpty ? 0
+                        : Int(coverage[y * mask.bytesPerRow + x * 4 + 3])
+                    // Multiply premultiplied RGB as well as alpha, retaining the
+                    // fractional coverage at the boundary instead of a binary cut.
+                    for channel in 0..<4 {
+                        rgba[offset + channel] = UInt8((Int(rgba[offset + channel]) * opacity + 127) / 255)
+                    }
                 }
             }
-            result.append(clipped)
+            guard let clippedImage = pixels.makeImage() else { throw ClippingError.rendering }
+            let data = NSMutableData()
+            guard let destination = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil) else {
+                throw ClippingError.rendering
+            }
+            CGImageDestinationAddImage(destination, clippedImage, nil)
+            guard CGImageDestinationFinalize(destination) else { throw ClippingError.rendering }
+            // The snapshot already includes the old transform, cuts, and erasers.
+            // Future object edits apply once to this independent piece of ink.
+            ink.transform = .identity
+            ink.excludedAreas = []
+            ink.erasures = []
+            ink.raster = StrokeRaster(png: data as Data, bounds: region.applying(
+                CGAffineTransform(scaleX: 1 / resolution, y: 1 / resolution)))
+            result.append(ink)
         }
         return result
+    }
+
+    private static func pixelContext(_ image: CGImage) -> CGContext? {
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = CGContext(data: nil, width: image.width, height: image.height,
+                  bitsPerComponent: 8, bytesPerRow: image.width * 4, space: space,
+                  bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+        else { return nil }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        return context
     }
 }
