@@ -78,6 +78,7 @@ struct InkPaletteEditor: View {
     @Binding var palette: InkPalette
     @ObservedObject var controller: CanvasController
     let onBrowse: () -> Void
+    let onEdit: () -> Void
     @Binding var isEditing: Bool
     @State private var showsEyedropper = false
     @Binding var sampledColor: SIMD4<Float>?
@@ -115,9 +116,9 @@ struct InkPaletteEditor: View {
                         }
                         .buttonStyle(.plain)
                         .highPriorityGesture(
-                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() },
+                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onEdit() },
                             including: isEditing ? .none : .all)
-                        .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
+                        .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
                         .accessibilityLabel(L10n.text("Create color"))
                         Button {
                             sampledColor = nil
@@ -127,10 +128,15 @@ struct InkPaletteEditor: View {
                                 .resizable()
                                 .scaledToFit()
                                 .foregroundStyle(.gray)
+                                .scaleEffect(0.8)
                                 .aspectRatio(1, contentMode: .fit)
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .highPriorityGesture(
+                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onEdit() },
+                            including: isEditing ? .none : .all)
+                        .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
                         .accessibilityLabel(L10n.text("Eyedropper"))
                     }
                 }
@@ -139,8 +145,8 @@ struct InkPaletteEditor: View {
                 .coordinateSpace(name: "paletteGrid")
                 .onPreferenceChange(PaletteSwatchFramesKey.self) { swatchFrames = $0 }
                 .contentShape(Rectangle())
-                .onLongPressGesture(minimumDuration: 0.5) { if !isEditing { onBrowse() } }
-                .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
+                .onLongPressGesture(minimumDuration: 0.5) { if !isEditing { onEdit() } }
+                .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
             }
             .scrollDisabled(draggedID != nil)
             }
@@ -226,9 +232,9 @@ struct InkPaletteEditor: View {
         .zIndex(draggedID == preset.id ? 1 : 0)
         .highPriorityGesture(swatchDrag(preset.id), including: isEditing ? .all : .none)
         .highPriorityGesture(
-            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onBrowse() },
+            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onEdit() },
             including: isEditing ? .none : .all)
-        .accessibilityAction(named: Text(L10n.text("Palettes"))) { onBrowse() }
+        .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
         .accessibilityLabel(isEditing ? L10n.text("Delete") + " " + preset.name : preset.name)
         .accessibilityValue(isEditing ? "" : L10n.text(selected ? "Selected" : "Not selected"))
         .accessibilityAddTraits(!isEditing && selected ? [.isSelected] : [])

@@ -135,7 +135,7 @@ struct InkPaletteBrowser: View {
                             } else {
                                 setBrowsing(true)
                             }
-                        }, isEditing: $editing,
+                        }, onEdit: beginEditing, isEditing: $editing,
                         sampledColor: $sampledColor, showsColorEditor: $showsColorEditor)
                         .id(currentID)
                         .transition(.opacity)
@@ -223,6 +223,7 @@ struct InkPaletteBrowser: View {
     }
 
     private func beginEditing() {
+        guard !editing else { return }
         guard let palette = library.palettes.first(where: { $0.id == currentID }) else { return }
         paletteBeforeEditing = palette
         editing = true
