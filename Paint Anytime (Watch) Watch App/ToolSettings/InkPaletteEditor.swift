@@ -107,12 +107,7 @@ struct InkPaletteEditor: View {
                         ForEach(palette.allColors) { preset in
                             swatch(preset, viewportSize: viewport.size)
                         }
-                        Button {
-                            guard tutorial.permits([.addPaletteColor]) else { return }
-                            sampledColor = nil
-                            showsColorEditor = true
-                            tutorial.record(.openedColorEditor)
-                        } label: {
+                        Button(action: createColor) {
                             Image(systemName: "plus.circle.fill")
                                 .resizable()
                                 .scaledToFit()
@@ -122,16 +117,9 @@ struct InkPaletteEditor: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .highPriorityGesture(
-                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onEdit() },
-                            including: isEditing || tutorial.isActive ? .subviews : .all)
-                        .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
                         .accessibilityLabel(L10n.text("Create color"))
                         .disabled(!tutorial.permits([.addPaletteColor]))
-                        Button {
-                            sampledColor = nil
-                            showsEyedropper = true
-                        } label: {
+                        Button(action: openEyedropper) {
                             Image(systemName: "eyedropper")
                                 .resizable()
                                 .scaledToFit()
@@ -141,10 +129,6 @@ struct InkPaletteEditor: View {
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .highPriorityGesture(
-                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in onEdit() },
-                            including: isEditing || tutorial.isActive ? .subviews : .all)
-                        .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
                         .accessibilityLabel(L10n.text("Eyedropper"))
                         .disabled(tutorial.isActive)
                     }
@@ -153,14 +137,17 @@ struct InkPaletteEditor: View {
                 .padding(.bottom, 12)
                 .coordinateSpace(name: "paletteGrid")
                 .onPreferenceChange(PaletteSwatchFramesKey.self) { swatchFrames = $0 }
-                .contentShape(Rectangle())
-                // watchOS 10 lets the editing long press consume child button taps.
-                // Preserve child button gestures while disabling the editing gesture.
-                .gesture(
-                    LongPressGesture(minimumDuration: 0.5).onEnded { _ in
-                        if !isEditing { onEdit() }
-                    },
-                    including: tutorial.isActive ? .subviews : .all)
+                .background {
+                    // Only empty space owns this gesture. Keeping it off the
+                    // grid's ancestor excludes the plus and eyedropper buttons.
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .gesture(
+                            LongPressGesture(minimumDuration: 0.5).onEnded { _ in
+                                if !isEditing { onEdit() }
+                            },
+                            including: tutorial.isActive || isEditing ? .none : .all)
+                }
                 .accessibilityAction(named: Text(L10n.text("Edit"))) { onEdit() }
             }
             .scrollDisabled(draggedID != nil)
@@ -192,6 +179,19 @@ struct InkPaletteEditor: View {
                 showsEyedropper = false
             }
         }
+    }
+
+    private func createColor() {
+        guard tutorial.permits([.addPaletteColor]) else { return }
+        sampledColor = nil
+        showsColorEditor = true
+        tutorial.record(.openedColorEditor)
+    }
+
+    private func openEyedropper() {
+        guard !tutorial.isActive else { return }
+        sampledColor = nil
+        showsEyedropper = true
     }
 
     private func swatch(_ preset: InkPreset, viewportSize: CGSize) -> some View {
