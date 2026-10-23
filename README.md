@@ -158,7 +158,7 @@ Save your drawings to your personal gallery and continue editing whenever inspir
 - Color blending. Yellow plus blue doesn't always equal green anymore;
 - Watercolor brush is a great addition to Marker for exploring color blending;
 - New Fill tool helps you spend less time covering large areas;
-- Widgets to display your favorite artwork, jump back into drawing, and track your streaks;
+- Widgets to display your favorite artwork, jump back into drawing, and open gallery;
 - Updated tutorial is quicker to complete and comes in a more compact form;
 - All brushes and layers now have opacity settings to adjust transparency.
 
@@ -171,6 +171,7 @@ Save your drawings to your personal gallery and continue editing whenever inspir
 - Fixed visual and layout issues on watchOS 10.
 - Improved compatibility across supported watchOS versions.
 - Kept the system clock consistently positioned while drawing.
+- Smoothed transitions between different layouts.
 
 ## Requirements
 
