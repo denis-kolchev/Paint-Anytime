@@ -1,68 +1,120 @@
 import Foundation
+import CoreGraphics
 import Combine
 
 @main
 struct TutorialChecks {
     @MainActor static func main() async throws {
+        checkCrownPlacement()
         checkProgress()
         try await checkSession()
         try await checkWorkspaceAndOnboarding()
-        print("PASS: tutorial rules, delayed transitions, cancellation, observation, workspace isolation, onboarding persistence")
+        print("PASS: tutorial rules, exploration, observation, workspace isolation, onboarding persistence")
+    }
+
+    static func checkCrownPlacement() {
+        let screens: [(CGFloat, CGFloat, CGFloat)] = [
+            (162, 197, 49), (184, 224, 57), (176, 215, 56), (198, 242, 66),
+            (187, 223, 56), (208, 248, 66), (205, 251, 83.5), (211, 257, 85.5)
+        ]
+        for (width, height, expectedY) in screens {
+            let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+            let right = TutorialCrownPlacement.position(screenBounds: bounds, overlayFrame: bounds, crownOnLeft: false)
+            let left = TutorialCrownPlacement.position(screenBounds: bounds, overlayFrame: bounds, crownOnLeft: true)
+            precondition(right == CGPoint(x: width - 15, y: expectedY))
+            precondition(left == CGPoint(x: 15, y: height - expectedY))
+            let insetFrame = CGRect(x: 6, y: 28, width: width - 12, height: height - 44)
+            let inset = TutorialCrownPlacement.position(screenBounds: bounds, overlayFrame: insetFrame, crownOnLeft: false)
+            precondition(inset.x + insetFrame.minX == right.x && inset.y + insetFrame.minY == right.y,
+                         "Safe areas must not shift the Crown hint away from the physical Crown")
+        }
+        precondition(TutorialCrownPlacement.rightCrownY(screenSize: CGSize(width: 220, height: 280)) == 72.8)
     }
 
     static func checkProgress() {
         var progress = TutorialProgress()
-        progress.advance()
-        precondition(progress.step == .inactive)
         progress.start()
-        precondition(progress.record(.saved) == .none)
-        precondition(progress.record(.stroke) == .none)
-        precondition(progress.record(.stroke) == .advance)
-        progress.advance()
-        precondition(progress.step == .openTools && progress.record(.openedTools) == .showResult)
-        progress.advance()
-        var style = PencilStyle()
-        precondition(progress.matchesStyle(style) == false)
-        style.color = SIMD4(0.2, 0.7, 0.35, 1)
-        precondition(progress.matchesStyle(style) == true)
-        precondition(progress.visibleToolPages == [1] && progress.allowsToolAdjustment(page: 1))
-        precondition(!progress.allowsToolAdjustment(page: 0))
-        progress.advance()
-        precondition(progress.step == .openWidth && progress.completesPageChange(0))
-        precondition(!progress.completesPageChange(1) && progress.allowsToolPage(0))
-        progress.advance()
-        style.width = 10
-        precondition(progress.step == .setWidth && progress.matchesStyle(style) == true)
-        progress.advance()
-        style.instrument = .reed
-        precondition(progress.step == .selectReed && progress.matchesStyle(style) == true)
-        progress.advance()
-        precondition(progress.record(.closedInfo) == .resumeReminders(advance: false))
-        precondition(progress.record(.openedInfo) == .pauseReminders)
-        precondition(progress.record(.closedInfo) == .resumeReminders(advance: true))
-        progress.advance()
-        style.reedAngle = 20
-        precondition(progress.step == .setAngle && progress.matchesStyle(style) == true)
-        progress.advance()
-        precondition(progress.record(.stroke) == .none && progress.count == 0)
-        precondition(progress.record(.closedTools) == .none)
+        precondition(TutorialStep.lessonCount == 25)
+        precondition(TutorialStep.clearCanvas.rawValue == 25)
+        precondition(TutorialStep.finished.rawValue == 26)
         precondition(progress.record(.stroke) == .none)
         precondition(progress.record(.stroke) == .advance)
         progress.advance()
         precondition(progress.step == .zoomCanvas)
         progress.advance()
         precondition(progress.record(.finishedCamera) == .none)
-        precondition(progress.record(.panned) == .none && progress.hasPanned)
+        precondition(progress.record(.panned) == .advance && progress.hasPanned)
+        progress.advance()
+        precondition(progress.step == .finishCamera)
         precondition(progress.record(.finishedCamera) == .advance)
         progress.advance()
+        precondition(progress.record(.openedTools) == .advance)
+        progress.advance()
+        let original = PencilStyle()
+        var style = original
+        style.color = SIMD4(0.95, 0.18, 0.22, 1)
+        precondition(!progress.changedStyle(from: original, to: original, page: 1))
+        precondition(!progress.changedStyle(from: original, to: style, page: 0))
+        precondition(progress.changedStyle(from: original, to: style, page: 1))
+        precondition(progress.visibleToolPages == [0, 1, 2, 3, 4, 5])
+        precondition(progress.allowsToolAdjustment(page: 0) && !progress.allowsToolPage(2))
+        precondition(progress.allowsToolPage(1) && !progress.allowsToolPage(0))
+        progress.advance()
+        precondition(progress.completesPageChange(0))
+        precondition(progress.allowsToolPage(0) && progress.allowsToolPage(1))
+        precondition(!progress.allowsToolPage(5) && !progress.allowsToolPage(2))
+        progress.advance()
+        style.width = 7
+        precondition(progress.changedStyle(from: original, to: style, page: 0))
+        progress.advance()
+        precondition(progress.step == .openOpacity && progress.completesPageChange(5))
+        precondition(progress.allowsToolPage(5) && progress.allowsToolPage(0))
+        precondition(!progress.allowsToolPage(2) && !progress.allowsToolPage(4))
+        precondition(!progress.completesPageChange(2))
+        progress.advance()
+        precondition(progress.step == .setOpacity)
+        precondition(!progress.changedStyle(from: style, to: style, page: 5))
+        let beforeOpacity = style
+        style.opacity = 0.5
+        precondition(!progress.changedStyle(from: beforeOpacity, to: style, page: 0))
+        precondition(progress.changedStyle(from: beforeOpacity, to: style, page: 5))
+        var eraser = style
+        eraser.instrument = .eraser
+        precondition(!progress.changedStyle(from: beforeOpacity, to: eraser, page: 5))
+        progress.advance()
+        precondition(progress.completesPageChange(2))
+        precondition(progress.allowsToolPage(2) && !progress.allowsToolPage(4))
+        progress.advance()
+        precondition(progress.step == .selectReed, "Tool page goes straight to Reed selection")
+        precondition(progress.record(.openedInfo) == .pauseReminders)
+        precondition(progress.record(.closedInfo) == .resumeReminders(advance: false))
+        precondition(progress.step == .selectReed, "Optional information must not skip Reed selection")
+        style.instrument = .reed
+        precondition(progress.changedStyle(from: original, to: style, page: 2))
+        progress.advance()
+        precondition(progress.step == .openAngle)
+        precondition(!progress.changedStyle(from: style, to: original, page: 2))
+        precondition(progress.step == .selectReed, "Leaving Reed restores its selection hint")
+        precondition(progress.changedStyle(from: original, to: style, page: 2))
+        progress.advance()
+        precondition(progress.completesPageChange(4))
+        progress.advance()
+        var angled = style
+        angled.reedAngle = 35
+        precondition(progress.changedStyle(from: style, to: angled, page: 4))
+        progress.advance()
+        precondition(progress.record(.closedTools) == .advance)
+        progress.advance()
+        precondition(progress.record(.stroke) == .advance)
+        progress.advance()
         precondition(progress.record(.history) == .none)
-        precondition(progress.record(.history) == .showResult)
+        precondition(progress.record(.history) == .advance)
         progress.advance()
         for (step, event, effect): (TutorialStep, TutorialProgress.Event, TutorialProgress.Effect) in [
             (.saveDrawing, .saved, .advance), (.shareDrawing, .closedSave, .advance),
-            (.openGallery, .openedGallery, .showResult), (.galleryFullscreen, .galleryFullscreen, .advance),
-            (.deleteDrawing, .deleted, .advance), (.returnToCanvas, .returnedToCanvas, .showResult),
-            (.clearCanvas, .cleared, .showResult)
+            (.openMenu, .openedMenu, .advance), (.openGallery, .openedGallery, .advance),
+            (.galleryFullscreen, .galleryFullscreen, .advance), (.deleteDrawing, .deleted, .advance),
+            (.returnToCanvas, .returnedToCanvas, .advance), (.clearCanvas, .cleared, .showResult)
         ] {
             precondition(progress.step == step && progress.record(event) == effect)
             progress.advance()
@@ -72,7 +124,7 @@ struct TutorialChecks {
         precondition(progress.step == .finished)
         progress.stop()
         progress.start()
-        precondition(progress.step == .firstStrokes && progress.count == 0 && !progress.hasPanned)
+        precondition(progress.step == .firstStrokes && !progress.hasPanned)
     }
 
     @MainActor static func checkSession() async throws {
@@ -83,34 +135,61 @@ struct TutorialChecks {
         precondition(session.allowsDrawing && session.allowsToolPage(4))
         session.start()
         session.record(.stroke)
-        precondition(!session.allowsDrawing && session.step == .firstStrokes)
-        session.beginExercise()
         session.record(.stroke)
-        precondition(session.step == .firstStrokes)
+        precondition(session.step == .zoomCanvas && !session.canFinishCamera)
+        precondition(session.allowsDrawing && session.suggestsCrownRotation)
+        precondition(session.showsCrownHint)
+        session.usedCrown(in: .zoomCanvas, velocity: 0)
+        precondition(session.showsCrownHint, "Focus and idle events must not dismiss the hint")
+        session.usedCrown(in: .zoomCanvas, velocity: 0.2)
+        session.usedCrown(in: .zoomCanvas, velocity: 0.2)
+        precondition(!session.showsCrownHint && session.crownPracticedSteps.count == 1)
+        precondition(session.allowsDrawing, "Crown hint must never lock drawing")
         session.record(.stroke)
-        precondition(session.step == .openTools && session.showsInstruction)
-        session.beginExercise()
+        precondition(session.step == .zoomCanvas)
+        session.changedZoom()
+        precondition(session.step == .panCanvas && session.showsPanGuide && session.allowsCanvasZoom)
+        session.record(.panned)
+        precondition(session.step == .finishCamera && !session.showsPanGuide && session.canFinishCamera)
+        session.record(.finishedCamera)
+        precondition(session.step == .openTools && session.allowsDrawing)
         session.record(.openedTools)
-        precondition(session.showsResult && !session.acceptsActions)
-        session.pauseReminders()
-        try await Task.sleep(for: .milliseconds(1400))
-        precondition(session.step == .openTools)
-        session.resumeReminders()
-        try await Task.sleep(for: .milliseconds(1400))
-        precondition(session.step == .selectGreen && session.showsInstruction)
-        session.beginExercise()
+        precondition(session.step == .selectColor && session.acceptsActions)
+        precondition(session.showsCrownHint && session.crownHintIsSubtle)
+        session.usedCrown(in: .zoomCanvas, velocity: 0.2)
+        precondition(session.showsCrownHint, "An old Crown event must not dismiss the new lesson")
+        session.usedCrown(in: .selectColor, velocity: 0.2)
         var style = PencilStyle()
-        style.color = SIMD4(0.2, 0.7, 0.35, 1)
-        session.changedStyle(style)
-        style.color = SIMD4(0, 0, 0, 1)
-        session.changedStyle(style)
-        try await Task.sleep(for: .milliseconds(1400))
-        precondition(session.step == .selectGreen, "Passing over a target must not complete the lesson")
-        style.color = SIMD4(0.2, 0.7, 0.35, 1)
-        session.changedStyle(style)
+        let old = style
+        style.color = SIMD4(0.95, 0.18, 0.22, 1)
+        session.changedStyle(from: old, to: style, page: 1)
+        precondition(session.step == .openWidth && session.allowsToolAdjustment(page: 1))
+        session.changedPage(0)
+        precondition(session.step == .setWidth && session.allowsToolPage(1))
+        session.usedCrown(in: .setWidth, velocity: 0.2)
+        precondition(!session.showsCrownHint && session.crownPracticedSteps.count == 3)
+        var wider = style
+        wider.width += 2
+        session.changedStyle(from: style, to: wider, page: 0)
+        precondition(session.step == .openOpacity)
+        session.changedPage(5)
+        precondition(session.step == .setOpacity && session.suggestsCrownRotation)
+        var faded = wider
+        faded.opacity = 0.5
+        session.changedStyle(from: wider, to: faded, page: 5)
+        precondition(session.step == .openTool)
+        session.changedPage(2)
+        precondition(session.suggestsCrownRotation && !session.showsCrownHint)
+
         session.stop()
-        try await Task.sleep(for: .milliseconds(1400))
-        precondition(session.step == .inactive && !session.showsInstruction && !session.showsResult)
+        session.start()
+        precondition(session.crownPracticedSteps.isEmpty)
+        session.record(.stroke)
+        session.record(.stroke)
+        session.changedZoom()
+        session.stop()
+        try await Task.sleep(for: .milliseconds(650))
+        precondition(session.step == .inactive)
         precondition(notifications > 0)
     }
 
@@ -136,6 +215,7 @@ struct TutorialChecks {
         precondition(!FileManager.default.fileExists(atPath: first.path))
         precondition(FileManager.default.fileExists(atPath: second.path))
         try workspace.remove(second)
+        precondition(ToolSynchronization().width && ToolSynchronization().color && ToolSynchronization().opacity)
         let suite = "TutorialChecks.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }

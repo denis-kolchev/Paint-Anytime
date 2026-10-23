@@ -106,6 +106,12 @@ enum L10n {
         String(format: text(key), locale: Locale(identifier: AppLanguage.currentCode), arguments: arguments)
     }
 
+    /// Accepts a fraction (0.5 = 50%) and follows the selected app language.
+    static func percent(_ fraction: Double) -> String {
+        fraction.formatted(.percent.precision(.fractionLength(0))
+            .locale(Locale(identifier: AppLanguage.currentCode)))
+    }
+
     private static func bundle(for code: String) -> Bundle? {
         if let cached = bundles.object(forKey: code as NSString) { return cached }
         guard let path = Bundle.main.path(forResource: code, ofType: "lproj"),

@@ -1,0 +1,702 @@
+import SwiftUI
+import WatchKit
+
+struct SavedDrawingsView: View {
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
+    @ObservedObject var tutorial = TutorialSession.inactive
+    var galleryFolder: URL? = nil
+    var initialArtworkFilename: String? = nil
+    var initialBitmap: GalleryBitmap? = nil
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    var needsDiscardConfirmation = false
+    var isPreparingCanvas = false
+    var preparationError: String? = nil
+    @State private var drawingToEdit: CanvasExport?
+    @State private var pendingEdit: CanvasExport?
+    @State private var confirmedEdit: CanvasExport?
+    private var isLoading: Bool { drawingToEdit != nil || isPreparingCanvas }
+    var onClose: () -> Void
+    var onEditDrawing: (CanvasDocument) -> Void
+    @StateObject private var controller = GalleryController()
+    private var drawings: [CanvasExport] { controller.drawings }
+    @State private var zoomLevel = 0
+    @State private var crownPosition = 0.0
+    @State private var selectedDrawing: CanvasExport?
+    @State private var focusedDrawing: CanvasExport?
+    @State private var pendingDeletion: CanvasExport?
+    @State private var showsFullscreen = false
+    @State private var isCleanViewing = false
+    @State private var showsFullscreenActions = false
+    @State private var morphState = GalleryMorphState()
+    @State private var pageVisibility: [URL: Double] = [:]
+    @State private var galleryScrollTarget: URL?
+    @State private var thumbnailFrames: [URL: CGRect] = [:]
+    @State private var transitionRequest: GalleryTransitionDirection?
+    @State private var imageTransition: GalleryImageTransition?
+    @State private var transitionExpanded = false
+    @State private var transitionBitmap: GalleryBitmap?
+    @State private var displayedBitmap: GalleryBitmap?
+    @FocusState private var crownFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.displayScale) private var displayScale
+
+    private enum FullscreenControlsPhase: Hashable { case hidden, visible, closing }
+    private var fullscreenControlsPhase: FullscreenControlsPhase {
+        guard showsFullscreen, selectedDrawing != nil else { return .hidden }
+        if transitionRequest == .closing { return .closing }
+        return isTransitioning ? .hidden : .visible
+    }
+
+    private var columnCount: Int { zoomLevel == 0 ? 5 : 3 }
+    private var isTransitioning: Bool { transitionRequest != nil || imageTransition != nil }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let spacing: CGFloat = zoomLevel == 0 ? 2 : 4
+            let width = (geometry.size.width - spacing * CGFloat(columnCount - 1) - 6) / CGFloat(columnCount)
+            let navigationHeight: CGFloat = max(60, geometry.safeAreaInsets.top + 38)
+            let thumbnailPixels = Int(ceil(width * displayScale / 32)) * 32
+            let hasClosingBitmap = transitionRequest == .closing
+                && transitionBitmap != nil && transitionBitmap?.url == selectedDrawing?.url
+            let transitionImageRequest = transitionRequest == nil || hasClosingBitmap
+                || (reduceMotion && transitionRequest == .closing) ? nil : selectedDrawing.map {
+                GalleryImageRequest(url: $0.url, shortSidePixels: thumbnailPixels, displayScale: displayScale)
+            }
+            ZStack(alignment: .topLeading) {
+                Color.black
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        galleryGrid(spacing: spacing, width: width, thumbnailPixels: thumbnailPixels)
+                            .reportLegacyScrollPosition()
+                    }
+                    // Let photos scroll behind the tutorial card while allowing
+                    // the final row to scroll fully above it.
+                    .contentMargins(.bottom, tutorialHintReservedHeight, for: .scrollContent)
+                    .contentMargins(.top, navigationHeight + 4, for: .scrollContent)
+                    .scrollIndicators(.hidden)
+                    // Observe native scrolling without competing with its swipe gesture.
+                    .onTutorialScrollActivity { tutorial.activity() }
+                    .allowsHitTesting(!showsFullscreen && !isTransitioning && tutorial.allowsGalleryZoom)
+                    .accessibilityHidden(showsFullscreen)
+                    .onChange(of: zoomLevel) { previousLevel, level in
+                        if previousLevel != 2, level < 2, let drawing = focusedDrawing {
+                            withAnimation(.smooth(duration: 0.25)) {
+                                scrollProxy.scrollTo(drawing.id, anchor: .center)
+                            }
+                        }
+                    }
+                    .onChange(of: galleryScrollTarget) { _, id in
+                        guard showsFullscreen, let id else { return }
+                        withoutAnimation { scrollProxy.scrollTo(id, anchor: .center) }
+                    }
+                    .onChange(of: transitionRequest) { _, request in
+                        guard request != nil, let drawing = selectedDrawing else { return }
+                        // Lay out an offscreen destination before revealing the grid.
+                        if !hasVisibleTile(for: drawing, size: geometry.size, topInset: navigationHeight) {
+                            withoutAnimation { scrollProxy.scrollTo(drawing.id, anchor: .center) }
+                        }
+                        prepareImageTransition(size: geometry.size, topInset: navigationHeight)
+                    }
+                }
+                // Keep grid layout for the explicit photo-to-grid animation,
+                // but never expose thumbnails beneath a fading fullscreen photo.
+                .opacity(showsFullscreen && !isTransitioning ? 0 : 1)
+
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .frame(height: navigationHeight + 24)
+                    .mask {
+                        LinearGradient(stops: [
+                            .init(color: .black, location: 0),
+                            .init(color: .black, location: 0.5),
+                            .init(color: .black.opacity(0.75), location: 0.7),
+                            .init(color: .clear, location: 1)
+                        ], startPoint: .top, endPoint: .bottom)
+                    }
+                    .allowsHitTesting(false)
+
+                if showsFullscreen {
+                    Color.black
+                        .opacity(imageTransition != nil ? (transitionExpanded ? 1 : 0)
+                                 : (transitionRequest == .opening ? 0 : 1))
+                        .allowsHitTesting(false)
+                    // Prepare the pager before the transition; image loading stays suspended.
+                    // This avoids constructing the page controller at the animation handoff.
+                    fullscreenGallery(size: geometry.size, canvasOriginX: geometry.frame(in: .global).minX, canvasOriginY: geometry.frame(in: .global).minY,
+                                      thumbnailPixels: thumbnailPixels)
+                        .opacity(imageTransition == nil && transitionRequest != .opening ? 1 : 0)
+                        .allowsHitTesting(!isTransitioning && tutorial.allowsGalleryPaging)
+                        .accessibilityHidden(isTransitioning)
+                }
+
+                if let imageTransition {
+                    let frame = transitionExpanded ? imageTransition.fullFrame : imageTransition.tileFrame
+                    Image(decorative: imageTransition.image, scale: 1)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: frame.width, height: frame.height)
+                        .clipped()
+                        .position(x: frame.midX, y: frame.midY)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                        .task(id: imageTransition.id) {
+                            // Give the initial image rectangle its own layout pass.
+                            await Task.yield()
+                            guard !Task.isCancelled else { return }
+                            animateImageTransition(imageTransition)
+                        }
+                }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
+            .overlay(alignment: .bottomLeading) {
+                if showsFullscreen && (!isTransitioning || transitionRequest == .closing) && !tutorial.isActive,
+                   let selectedDrawing {
+                    GalleryMorphActions(state: morphState,
+                                        canvasOrigin: geometry.frame(in: .global).origin,
+                                        drawing: selectedDrawing, size: geometry.size,
+                                        isFavorite: drawings.first(where: { $0.id == selectedDrawing.id })?.isFavorite ?? false,
+                                        favoriteProgress: favoriteProgress,
+                                        onEdit: { editDrawing(selectedDrawing) },
+                                        onFavorite: { favorite in
+                                            controller.setFavorite(favorite, for: selectedDrawing, in: galleryFolder)
+                                        }, onDelete: {
+                                            crownFocused = false
+                                            pendingDeletion = selectedDrawing
+                                        })
+                        .opacity(isCleanViewing || !showsFullscreenActions ? 0 : 1)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
+                        .allowsHitTesting(!isCleanViewing && showsFullscreenActions && !isTransitioning)
+                        .accessibilityHidden(isCleanViewing || !showsFullscreenActions || isTransitioning)
+
+                }
+            }
+            .overlay {
+                if isLoading {
+                    ZStack {
+                        Color.black.opacity(0.3)
+                        ProgressView().tint(.white)
+                    }
+                    .contentShape(Rectangle())
+                }
+            }
+            .allowsHitTesting(!isLoading)
+            .coordinateSpace(name: "drawingGallery")
+            .task(id: transitionImageRequest) {
+                guard let request = transitionImageRequest else { return }
+                let bitmap = await GalleryImageCache.shared.load(request)
+                guard !Task.isCancelled, selectedDrawing?.url == request.url else { return }
+                guard let bitmap else {
+                    returnToGrid()
+                    controller.errorMessage = L10n.text("Could not open the image.")
+                    return
+                }
+                transitionBitmap = bitmap
+                prepareImageTransition(size: geometry.size, topInset: navigationHeight)
+            }
+            .onPreferenceChange(GalleryThumbnailFramesKey.self) { frames in
+                thumbnailFrames = frames
+                prepareImageTransition(size: geometry.size, topInset: navigationHeight)
+            }
+        }
+        .task(id: drawingToEdit?.id) {
+            guard let drawing = drawingToEdit else { return }
+            defer { drawingToEdit = nil }
+            guard let document = await controller.loadDocument(for: drawing), !Task.isCancelled else { return }
+            onEditDrawing(document)
+        }
+        .onChange(of: preparationError) { _, error in
+            if let error { controller.errorMessage = error }
+        }
+        .onChange(of: isLoading) { _, loading in
+            crownFocused = !loading && pendingDeletion == nil && tutorial.allowsGalleryZoom
+        }
+        .disabled(isLoading)
+        .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
+        // watchOS keeps its clock visible with persistentSystemOverlays(.hidden).
+        // Its SDK exposes status-bar visibility through this underscored modifier.
+        ._statusBarHidden(isCleanViewing)
+        .toolbar {
+            if showsFullscreen && (!isTransitioning || transitionRequest == .closing) && !tutorial.isActive {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    GalleryMorphToolbarButton(state: morphState)
+                        .disabled(isCleanViewing || isLoading || isTransitioning)
+                        .accessibilityHidden(isCleanViewing || isTransitioning)
+                    Spacer(minLength: 0)
+                }
+            }
+            if tutorial.allowsGalleryBack {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: goBack) {
+                        Image(systemName: "chevron.left")
+                            .opacity(0)
+                            .tutorialHint(tutorial, steps: [.returnToCanvas])
+                    }
+                    .disabled(isTransitioning || isCleanViewing || isLoading)
+                    .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
+                    .overlay {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: GalleryMorphState.buttonDiameter,
+                                   height: GalleryMorphState.buttonDiameter)
+                            .modifier(CanvasMorphGlass(adaptsToCanvas: true))
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                    .opacity(isCleanViewing ? 0 : 1)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
+                    .allowsHitTesting(!isCleanViewing)
+                    .accessibilityHidden(isCleanViewing)
+                    .accessibilityLabel(L10n.text("Back"))
+                    .onGeometryChange(for: CGRect.self) { geometry in
+                        geometry.frame(in: .global)
+                    } action: { frame in
+                        if morphState.backButtonFrame != frame { morphState.backButtonFrame = frame }
+                    }
+                }
+            }
+        }
+
+        .overlay {
+            if tutorial.isActive && showsFullscreen,
+               (!isTransitioning || transitionRequest == .closing),
+               tutorial.allowsGalleryDelete, let selectedDrawing {
+                GeometryReader { geometry in
+                    let centerX = morphState.backButtonFrame.map {
+                        $0.midX - geometry.frame(in: .global).minX
+                    } ?? 30
+                    Button(role: .destructive) {
+                        crownFocused = false
+                        tutorial.pauseReminders()
+                        pendingDeletion = selectedDrawing
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: GalleryMorphState.buttonDiameter,
+                                   height: GalleryMorphState.buttonDiameter)
+                            .modifier(CanvasMorphGlass(adaptsToCanvas: true))
+                            .tutorialHint(tutorial, steps: [.deleteDrawing])
+                            .frame(width: 44, height: 44)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .position(x: centerX,
+                              y: max(22, geometry.size.height - tutorialHintReservedHeight - 22))
+                    .opacity(showsFullscreenActions ? 1 : 0)
+                    .disabled(!showsFullscreenActions || isTransitioning || isLoading)
+                    .allowsHitTesting(showsFullscreenActions && !isTransitioning)
+                    .accessibilityHidden(!showsFullscreenActions || isTransitioning)
+                    .accessibilityLabel(L10n.text("Delete drawing"))
+                }
+            }
+        }
+        .task(id: fullscreenControlsPhase) {
+            switch fullscreenControlsPhase {
+            case .hidden:
+                showsFullscreenActions = false
+            case .visible:
+                // Photo transitions finish with animations disabled; fade the
+                // controls in a separate update, including in the tutorial.
+                do { try await Task.sleep(for: .milliseconds(20)) } catch { return }
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: reduceMotion ? 0.15 : 0.25)) {
+                    showsFullscreenActions = true
+                }
+            case .closing:
+                withAnimation(.easeOut(duration: reduceMotion ? 0.15 : 0.25)) {
+                    showsFullscreenActions = false
+                }
+                if reduceMotion {
+                    do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+                    guard !Task.isCancelled else { return }
+                    withoutAnimation { returnToGrid() }
+                }
+            }
+        }
+        .disabled(isLoading)
+        .focusable(!isLoading && pendingDeletion == nil && tutorial.allowsGalleryZoom)
+        .focused($crownFocused)
+        .digitalCrownRotation(detent: Binding(get: { crownPosition }, set: { value in
+            guard !isLoading, tutorial.allowsGalleryZoom else { return }
+            tutorial.activity()
+            crownPosition = value
+        }), from: 0, through: 2, by: 1,
+                              sensitivity: .low, isContinuous: false,
+                              isHapticFeedbackEnabled: false,
+                              onChange: { [step = tutorial.step] event in
+                tutorial.usedCrown(in: step, velocity: event.velocity)
+            })
+        .onChange(of: crownPosition) { _, position in
+            guard !isLoading, pendingDeletion == nil, !isTransitioning, tutorial.allowsGalleryZoom else { return }
+            let next = min(2, max(0, Int(position.rounded())))
+            guard next != zoomLevel else { return }
+            if next == 2 {
+                if let drawing = focusedDrawing ?? drawings.first { open(drawing) }
+                else { crownPosition = Double(zoomLevel) }
+            } else { setZoom(next) }
+        }
+        .fullScreenCover(item: $pendingEdit, onDismiss: {
+            // Start file loading only after Yes and dismissal of the confirmation.
+            if let drawing = confirmedEdit {
+                confirmedEdit = nil
+                drawingToEdit = drawing
+            } else {
+                crownFocused = tutorial.allowsGalleryZoom
+            }
+        }) { drawing in
+            DestructiveConfirmationView(
+                title: L10n.text("Discard the previous unsaved canvas?"),
+                confirmTitle: L10n.text("Yes")) {
+                confirmedEdit = nil
+                pendingEdit = nil
+            } onConfirm: {
+                confirmedEdit = drawing
+                pendingEdit = nil
+            }
+        }
+        .fullScreenCover(item: $pendingDeletion, onDismiss: {
+            tutorial.resumeReminders()
+            crownFocused = tutorial.allowsGalleryZoom
+        }) { drawing in
+            DestructiveConfirmationView(title: L10n.text("Delete the image?"), confirmTitle: L10n.text("Delete")) {
+                pendingDeletion = nil
+            } onConfirm: {
+                // Prepare the updated 3-column grid while confirmation still
+                // covers the pager. Its dismissal then reveals the grid directly.
+                withoutAnimation { deleteDrawing(drawing) }
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                    pendingDeletion = nil
+                }
+            }
+        }
+        .alert(L10n.text("Error"), isPresented: Binding(
+            get: { controller.errorMessage != nil }, set: { if !$0 { controller.errorMessage = nil } }
+        )) { Button(L10n.text("OK"), role: .cancel) { controller.errorMessage = nil } }
+        message: { Text(controller.errorMessage ?? "") }
+         .onAppear {
+            crownFocused = tutorial.allowsGalleryZoom
+            controller.reload(in: galleryFolder)
+            if let filename = initialArtworkFilename,
+               let drawing = drawings.first(where: { $0.url.lastPathComponent == filename }) {
+                // Direct launches open at 1:1 without a transition from a grid tile.
+                transitionBitmap = initialBitmap?.url == drawing.url ? initialBitmap : nil
+                focusedDrawing = drawing
+                selectedDrawing = drawing
+                zoomLevel = 2
+                crownPosition = 2
+                showsFullscreen = true
+                galleryScrollTarget = drawing.id
+            }
+        }
+        .onChange(of: tutorial.showsInstruction) { _, showing in
+            crownFocused = !showing && tutorial.allowsGalleryZoom && pendingDeletion == nil
+            if !showing && showsFullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
+        }
+        .onChange(of: showsFullscreen) { _, fullscreen in
+            morphState.isExpanded = false
+            if !fullscreen { pageVisibility = [:] }
+            tutorial.galleryIsFullscreen = fullscreen
+            // Reduce Motion opens directly, so isTransitioning never changes.
+            // Record the ready fullscreen state even without an animation callback.
+            if fullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
+        }
+        .onChange(of: isTransitioning) { _, transitioning in
+            if transitioning && transitionRequest != .closing { morphState.isExpanded = false }
+            if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
+        }
+    }
+
+    @ViewBuilder
+    private func galleryGrid(spacing: CGFloat, width: CGFloat, thumbnailPixels: Int) -> some View {
+        if let errorMessage = controller.errorMessage {
+            Text(errorMessage).foregroundStyle(.red).padding()
+        } else if drawings.isEmpty {
+            ContentUnavailableView(L10n.text("No drawings"), systemImage: "photo.on.rectangle")
+        } else {
+            GalleryThumbnailGrid(columns: columnCount, spacing: spacing, side: width) {
+                ForEach(drawings) { drawing in
+                    Button {
+                        tutorial.activity()
+                        focusedDrawing = drawing
+                        if zoomLevel == 0 { setZoom(1) }
+                        else { open(drawing) }
+                    } label: {
+                        GalleryThumbnailView(request: GalleryImageRequest(
+                            url: drawing.url, shortSidePixels: thumbnailPixels, displayScale: displayScale),
+                            loadsImage: imageTransition == nil, isFavorite: drawing.isFavorite)
+                            .frame(width: width, height: width)
+                            .clipped()
+                            .opacity(hidesThumbnail(drawing) ? 0 : 1)
+                            .background {
+                                GeometryReader { tileGeometry in
+                                    Color.clear.preference(key: GalleryThumbnailFramesKey.self,
+                                        value: [drawing.id: tileGeometry.frame(in: .named("drawingGallery"))])
+                                }
+                            }
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.borderless)
+                    .disabled(!tutorial.allowsGalleryZoom)
+                    .accessibilityLabel(L10n.text("Open drawing"))
+                    .id(drawing.id)
+                }
+            }
+            .padding(.horizontal, 3)
+            .padding(.bottom, 12)
+        }
+    }
+
+    private func goBack() {
+        guard !isLoading else { return }
+        guard tutorial.allowsGalleryBack else { return }
+        tutorial.activity()
+        guard !isTransitioning else { return }
+        if zoomLevel == 0 { onClose() }
+        else { setZoom(zoomLevel - 1) }
+    }
+
+    private func setZoom(_ level: Int) {
+        guard !isTransitioning else { return }
+        isCleanViewing = false
+        if showsFullscreen && level < 2 {
+            if reduceMotion {
+                // Keep the controls mounted until their short fade completes.
+                transitionRequest = .closing
+            } else {
+                // Hand the exact visible image to the shrinking overlay. Keep the
+                // pager alive until that overlay is ready, including tile layout.
+                transitionBitmap = displayedBitmap?.url == selectedDrawing?.url ? displayedBitmap : nil
+                transitionRequest = .closing
+            }
+        } else {
+            withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) { zoomLevel = level }
+            crownPosition = Double(level)
+        }
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    private func open(_ drawing: CanvasExport) {
+        guard !isTransitioning else { return }
+        galleryScrollTarget = nil
+        displayedBitmap = nil
+        transitionBitmap = nil
+        focusedDrawing = drawing
+        selectedDrawing = drawing
+        zoomLevel = 2
+        crownPosition = 2
+        showsFullscreen = true
+        // Reduced motion must not wait for a morph animation's completion to
+        // enable the pager, image loading, and back button on watchOS 10.
+        transitionRequest = reduceMotion ? nil : .opening
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    private func hidesThumbnail(_ drawing: CanvasExport) -> Bool {
+        selectedDrawing?.id == drawing.id && (imageTransition != nil ||
+            (showsFullscreen && transitionRequest != .opening))
+    }
+
+    private func hasVisibleTile(for drawing: CanvasExport, size: CGSize, topInset: CGFloat) -> Bool {
+        guard let frame = thumbnailFrames[drawing.id], !frame.isEmpty else { return false }
+        let expectedWidth = (size.width - 14) / 3
+        return abs(frame.width - expectedWidth) < 1 && frame.minY >= topInset && frame.maxY <= size.height
+    }
+
+    private func prepareImageTransition(size: CGSize, topInset: CGFloat) {
+        guard !(reduceMotion && transitionRequest == .closing) else { return }
+        guard imageTransition == nil, let direction = transitionRequest,
+              let drawing = selectedDrawing,
+              let bitmap = transitionBitmap, bitmap.url == drawing.url,
+              hasVisibleTile(for: drawing, size: size, topInset: topInset),
+              let tileFrame = thumbnailFrames[drawing.id] else { return }
+        let fullFrame = GalleryArtworkLayout.frame(imageSize: bitmap.originalSize,
+                                                   viewport: size, fitsViewport: true)
+        withoutAnimation {
+            transitionExpanded = direction == .closing
+            imageTransition = GalleryImageTransition(image: bitmap.image, tileFrame: tileFrame,
+                                                     fullFrame: fullFrame, direction: direction)
+        }
+    }
+
+    private func animateImageTransition(_ transition: GalleryImageTransition) {
+        guard imageTransition?.id == transition.id else { return }
+        // Also handle Reduce Motion being enabled while a transition is pending.
+        guard !reduceMotion else {
+            finishImageTransition(transition)
+            return
+        }
+        // A fixed-duration curve has no settling tail after the image reaches its destination.
+        withAnimation(.easeInOut(duration: 0.32), completionCriteria: .logicallyComplete) {
+            transitionExpanded = transition.direction == .opening
+        } completion: {
+            finishImageTransition(transition)
+        }
+    }
+
+    private func finishImageTransition(_ transition: GalleryImageTransition) {
+        guard imageTransition?.id == transition.id else { return }
+        withoutAnimation {
+            if transition.direction == .closing { returnToGrid() }
+            else {
+                imageTransition = nil
+                transitionRequest = nil
+                crownPosition = 2
+            }
+        }
+    }
+
+    private func returnToGrid() {
+        isCleanViewing = false
+        showsFullscreen = false
+        selectedDrawing = nil
+        displayedBitmap = nil
+        transitionBitmap = nil
+        imageTransition = nil
+        transitionRequest = nil
+        zoomLevel = 1
+        crownPosition = 1
+    }
+
+    private func withoutAnimation(_ action: () -> Void) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction, action)
+    }
+
+    private var favoriteProgress: Double {
+        let visible = drawings.map { ($0, pageVisibility[$0.id] ?? 0) }
+        let total = visible.reduce(0.0) { $0 + $1.1 }
+        guard total > 0 else {
+            return drawings.first(where: { $0.id == selectedDrawing?.id })?.isFavorite == true ? 1 : 0
+        }
+        return visible.reduce(0.0) { $0 + ($1.0.isFavorite ? $1.1 : 0) } / total
+    }
+
+    private func fullscreenGallery(size: CGSize, canvasOriginX: CGFloat, canvasOriginY: CGFloat, thumbnailPixels: Int) -> some View {
+        let selectedIndex = drawings.firstIndex(where: { $0.id == selectedDrawing?.id }) ?? 0
+        return TabView(selection: Binding<URL?>(
+            get: { selectedDrawing?.id },
+            set: { id in
+                guard tutorial.allowsGalleryPaging, !isTransitioning, id != selectedDrawing?.id,
+                      let drawing = drawings.first(where: { $0.id == id }) else { return }
+                tutorial.activity()
+                selectedDrawing = drawing
+                focusedDrawing = drawing
+                galleryScrollTarget = drawing.id
+            }
+        )) {
+            ForEach(Array(drawings.enumerated()), id: \.element.id) { index, drawing in
+                GalleryFullscreenPage(url: drawing.url, size: size, canvasOriginY: canvasOriginY,
+                                      thumbnailPixels: thumbnailPixels,
+                                      displayScale: displayScale,
+                                      isNearby: abs(index - selectedIndex) <= 1 && transitionRequest != .opening && imageTransition == nil,
+                                      loadsOriginal: abs(index - selectedIndex) <= 1 && transitionRequest != .opening && imageTransition == nil,
+                                      fallback: transitionBitmap?.url == drawing.url ? transitionBitmap : nil,
+                                      respectsSafeArea: tutorial.isActive,
+                                      fitsViewport: true,
+                                      isSelected: drawing.id == selectedDrawing?.id,
+                                      onDisplayedBitmap: { bitmap in
+                                          guard drawing.id == selectedDrawing?.id, !isTransitioning else { return }
+                                          displayedBitmap = bitmap
+                                      })
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        guard showsFullscreen, zoomLevel == 2, !isTransitioning,
+                              !tutorial.isActive else { return }
+                        morphState.isExpanded = false
+                        isCleanViewing.toggle()
+                    }
+                    .onGeometryChange(for: Double.self) { page in
+                        let distance = abs(page.frame(in: .global).minX - canvasOriginX)
+                        return max(0, 1 - Double(distance / max(size.width, 1)))
+                    } action: { visibility in
+                        // Read each native page directly; no preference propagation through TabView.
+                        // Geometry supplies the animation progress, so do not ease these updates.
+                        withoutAnimation { pageVisibility[drawing.id] = visibility }
+                    }
+                    .onDisappear {
+                        withoutAnimation { pageVisibility.removeValue(forKey: drawing.id) }
+                    }
+                    .tag(Optional(drawing.id))
+            }
+        }
+        .tabViewStyle(.page(indexDisplayMode: .never))
+        .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .position(x: size.width / 2, y: size.height / 2)
+        .task(id: isTransitioning ? nil : selectedDrawing?.id) {
+            // Warm adjacent originals even if TabView has not mounted those pages yet.
+            for index in [selectedIndex, selectedIndex - 1, selectedIndex + 1] {
+                guard !Task.isCancelled, !isTransitioning else { return }
+                guard drawings.indices.contains(index) else { continue }
+                _ = await GalleryImageCache.shared.load(GalleryImageRequest(
+                    url: drawings[index].url, shortSidePixels: nil, displayScale: displayScale))
+            }
+        }
+    }
+
+    private func deleteDrawing(_ drawing: CanvasExport) {
+        guard controller.delete(drawing, in: galleryFolder) else { return }
+        focusedDrawing = nil
+        returnToGrid()
+        WKInterfaceDevice.current().play(.click)
+        tutorial.record(.deleted)
+    }
+
+    private func editDrawing(_ drawing: CanvasExport) {
+        guard !isLoading else { return }
+        crownFocused = false
+        if needsDiscardConfirmation {
+            confirmedEdit = nil
+            pendingEdit = drawing
+        } else {
+            drawingToEdit = drawing
+        }
+    }
+
+}
+
+/// Keep tile identities and offscreen positions alive across column changes.
+/// Bitmap loading remains limited to the viewport and its prefetch margin.
+private struct GalleryThumbnailGrid: Layout {
+    let columns: Int
+    let spacing: CGFloat
+    let side: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = (subviews.count + columns - 1) / columns
+        return CGSize(width: CGFloat(columns) * side + CGFloat(columns - 1) * spacing,
+                      height: CGFloat(rows) * side + CGFloat(max(0, rows - 1)) * spacing)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        for (index, subview) in subviews.enumerated() {
+            subview.place(at: CGPoint(x: bounds.minX + CGFloat(index % columns) * (side + spacing),
+                                     y: bounds.minY + CGFloat(index / columns) * (side + spacing)),
+                          anchor: .topLeading,
+                          proposal: ProposedViewSize(width: side, height: side))
+        }
+    }
+}
+
+private enum GalleryTransitionDirection {
+    case opening, closing
+}
+
+private struct GalleryImageTransition: Identifiable {
+    let id = UUID()
+    let image: CGImage
+    let tileFrame: CGRect
+    let fullFrame: CGRect
+    let direction: GalleryTransitionDirection
+}
+
+private struct GalleryThumbnailFramesKey: PreferenceKey {
+    static var defaultValue: [URL: CGRect] { [:] }
+
+    static func reduce(value: inout [URL: CGRect], nextValue: () -> [URL: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
+}

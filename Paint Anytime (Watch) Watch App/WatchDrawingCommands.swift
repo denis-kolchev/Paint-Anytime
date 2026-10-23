@@ -1,0 +1,1242 @@
+import SwiftUI
+import simd
+import ImageIO
+
+/// The immutable selection snapshot is shared by all requests in a gesture.
+/// Only this small matrix changes while the finger moves.
+nonisolated struct WatchSelectionPreview {
+    let sessionID: UUID
+    let document: CanvasDocument
+    let layerID: UUID
+    let selectedIDs: Set<UUID>
+    let bounds: CGRect
+    var transform: CGAffineTransform = .identity
+}
+
+/// Geometry is generated once by the brushes and consumed by both rendering paths.
+nonisolated struct WatchDrawingCommand {
+    enum Shape {
+        case fill(Path)
+        case stroke(Path, StrokeStyle)
+    }
+    let shape: Shape
+    let rgba: SIMD4<Float>
+    let opacity: Double
+    let blendMode: GraphicsContext.BlendMode
+    let usesOpacityLayer: Bool
+    var exclusionPaths: [Path] = []
+}
+
+nonisolated struct WatchDrawingContext {
+    enum Shading {
+        case color(SIMD4<Float>)
+    }
+    final class Storage {
+        var commands: [WatchDrawingCommand] = []
+    }
+    let storage = Storage()
+    var opacity = 1.0
+    var blendMode: GraphicsContext.BlendMode = .normal
+    var usesOpacityLayer = false
+
+    func fill(_ path: Path, with shading: Shading) {
+        append(.fill(path), shading)
+    }
+
+    func stroke(_ path: Path, with shading: Shading, style: StrokeStyle) {
+        append(.stroke(path, style), shading)
+    }
+
+    private func append(_ shape: WatchDrawingCommand.Shape, _ shading: Shading) {
+        if case let .color(rgba) = shading {
+            storage.commands.append(WatchDrawingCommand(shape: shape, rgba: rgba,
+                                                        opacity: opacity, blendMode: blendMode,
+                                                        usesOpacityLayer: usesOpacityLayer))
+        }
+    }
+}
+
+nonisolated enum WatchBitmapRenderer {
+    /// A transparent, floating-point ink snapshot preserves multiply and pixel erasing.
+    fileprivate struct InkSnapshot {
+        let image: CGImage
+    }
+
+    struct ScreenTile: Identifiable {
+        let id: SIMD2<Int>
+        let rect: CGRect // Canvas points, top-left origin.
+        let image: CGImage
+    }
+    struct SelectionTexture {
+        let image: CGImage
+        let rect: CGRect
+        let sessionID: UUID
+        let key: CacheKey
+        let transform: CGAffineTransform
+        let layerBelow: CGImage?
+        let layerAbove: CGImage?
+        let upperLayers: CGImage?
+        let opacity: Float
+    }
+
+    struct ScreenFrame {
+        let background: CGImage
+        let tiles: [ScreenTile]
+        var selection: SelectionTexture? = nil
+    }
+
+    struct CacheKey: Equatable {
+        let documentID: ObjectIdentifier
+        let documentRevision: UInt64
+        let size: CGSize
+        let scale: CGFloat
+    }
+
+    /// Screen-only policy; export keeps its explicitly requested resolution.
+    static let maximumRasterScale: CGFloat = 4
+    static func rasterScale(displayScale: CGFloat, zoom: Double) -> CGFloat {
+        min(maximumRasterScale, displayScale * CGFloat(max(1, zoom)))
+    }
+
+    struct StrokeGeometry {
+        let revision: UUID
+        let commands: [WatchDrawingCommand]
+        let coverage: WatchStrokeCoverage.Geometry?
+        let bounds: CGRect
+
+        init(_ stroke: Stroke) throws {
+            revision = stroke.geometryRevision
+            if let raster = stroke.raster {
+                coverage = nil
+                commands = []
+                bounds = raster.bounds.applying(stroke.transform.affine)
+            } else if stroke.style.instrument == .marker || stroke.style.instrument == .watercolor {
+                let geometry = try WatchStrokeCoverage.geometry(for: stroke)
+                coverage = geometry
+                commands = []
+                bounds = geometry.bounds
+            } else {
+                coverage = nil
+                commands = WatchStrokeDrawing.commands(for: stroke)
+                bounds = commands.reduce(CGRect.null) { bounds, command in
+                    let shapeBounds: CGRect
+                    switch command.shape {
+                    case let .fill(path): shapeBounds = path.boundingRect
+                    case let .stroke(path, style):
+                        shapeBounds = path.cgPath.copy(strokingWithWidth: style.lineWidth,
+                            lineCap: style.lineCap, lineJoin: style.lineJoin,
+                            miterLimit: style.miterLimit).boundingBoxOfPath
+                    }
+                    return bounds.union(shapeBounds)
+                }
+            }
+        }
+    }
+
+    /// Owned by one canvas view. Appends extend the ink; history edits rebuild it.
+    final class Cache {
+        private var usesScreenTiles = false
+
+        func screenFrame(strokes: [Stroke], activeStroke: Stroke?, key: CacheKey,
+                         activeStrokeID: UInt64) -> ScreenFrame? {
+            usesScreenTiles = true
+            defer { usesScreenTiles = false }
+            guard let image = render(strokes: strokes, activeStroke: activeStroke,
+                                     key: key, activeStrokeID: activeStrokeID) else { return nil }
+            if activeStroke != nil, let dry = activeDry, let background = committedImage {
+                return ScreenFrame(background: background, tiles: dry.screenTiles.values.sorted {
+                    $0.id.y == $1.id.y ? $0.id.x < $1.id.x : $0.id.y < $1.id.y
+                })
+            }
+            return ScreenFrame(background: image, tiles: [])
+        }
+
+        private var key: CacheKey?
+        private(set) var geometry: [UUID: StrokeGeometry] = [:]
+        private(set) var geometryBuildCount = 0
+        private var committedInk: InkSnapshot?
+        private var committedImage: CGImage?
+        private(set) var rebuildCount = 0
+        private(set) var appendCount = 0
+        private(set) var committedRasterizedStrokeCount = 0
+        private var committedStrokes: [StrokeVersion] = []
+
+        private struct StrokeVersion: Equatable {
+            let id: UUID
+            let revision: UUID
+
+            init(_ stroke: Stroke) {
+                id = stroke.id
+                revision = stroke.geometryRevision
+            }
+        }
+        private var activeInk: ActiveInk?
+        private var activeImage: CGImage?
+        private(set) var activeCoverageBuildCount = 0
+        var activeRasterizedPrimitiveCount: Int { activeInk?.coverage.rasterizedPrimitiveCount ?? 0 }
+
+        private var activeDry: ActiveDry?
+        private(set) var activeDryBuildCount = 0
+        private(set) var lastDryDirtyArea: CGFloat = 0
+        private struct ActiveDry {
+            var stroke: Stroke
+            let base: CGImage
+            let frame: CGContext
+            let display: CGContext
+            let geometry: WatchStrokeDrawing.DryGeometry
+            var travel: Float = 0
+            var renderedContours: [SIMD2<Int>: UInt64] = [:]
+            var screenTiles: [SIMD2<Int>: ScreenTile] = [:]
+        }
+
+        private func renderDry(_ stroke: Stroke, base: InkSnapshot, key: CacheKey) -> CGImage? {
+            let previous = activeDry?.stroke
+            let extends = previous.map {
+                stroke.extends($0)
+            } ?? false
+            if !extends {
+                guard let frame = WatchBitmapRenderer.makeFloatContext(width: base.image.width,
+                                                                       height: base.image.height) else { return nil }
+                frame.draw(base.image, in: CGRect(x: 0, y: 0, width: base.image.width, height: base.image.height))
+                guard let display = WatchBitmapRenderer.makeDisplayContext(width: frame.width, height: frame.height) else { return nil }
+                display.setFillColor(CGColor(gray: 1, alpha: 1))
+                display.fill(CGRect(x: 0, y: 0, width: frame.width, height: frame.height))
+                display.draw(base.image, in: CGRect(x: 0, y: 0, width: frame.width, height: frame.height))
+                activeDry = ActiveDry(stroke: stroke, base: base.image, frame: frame, display: display,
+                                      geometry: WatchStrokeDrawing.DryGeometry())
+                activeDryBuildCount += 1
+                activeImage = nil
+            }
+            guard var dry = activeDry else { return nil }
+            if extends && previous?.geometryRevision == stroke.geometryRevision {
+                return usesScreenTiles ? committedImage : dry.display.makeImage()
+            }
+            // New segments can change old feather probes at crossings. Include
+            // the nib radius, feather distance, grain overhang and the last join.
+            var start = extends ? max(0, (previous?.points.count ?? 0) - 2) : 0
+            if stroke.style.instrument == .crayon, previous != nil {
+                let travel = dry.travel
+                if travel < 4 { start = 0 } // Opening contact changes opacity globally.
+            }
+            dry.geometry.append(stroke)
+            let padding = CGFloat(stroke.style.width) / 2 + 5
+            let canvas = CGRect(x: 0, y: 0, width: dry.frame.width, height: dry.frame.height)
+            let tileSize: CGFloat = 32
+            var tiles = Set<SIMD2<Int>>()
+            for i in start..<stroke.points.count {
+                let p = stroke.points[i].position
+                let q = i > start ? stroke.points[i - 1].position : p
+                var rect = CGRect(x: CGFloat(min(p.x, q.x)), y: CGFloat(min(p.y, q.y)),
+                                  width: CGFloat(abs(p.x - q.x)) + 0.001,
+                                  height: CGFloat(abs(p.y - q.y)) + 0.001)
+                rect = rect.insetBy(dx: -padding, dy: -padding)
+                    .applying(CGAffineTransform(scaleX: key.scale, y: key.scale)).integral.intersection(canvas)
+                guard !rect.isNull, !rect.isEmpty else { continue }
+                for y in Int(floor(rect.minY / tileSize))...Int(floor((rect.maxY - 0.001) / tileSize)) {
+                    for x in Int(floor(rect.minX / tileSize))...Int(floor((rect.maxX - 0.001) / tileSize)) {
+                        // Reject tiles outside the oriented swept nib envelope,
+                        // rather than visiting every corner of its bounding box.
+                        let delta = p - q
+                        let length = simd_length(delta)
+                        if length > 0.001 {
+                            let tangent = delta / length
+                            let normal = SIMD2<Float>(-tangent.y, tangent.x)
+                            let half = Float(tileSize / (2 * key.scale))
+                            let center = SIMD2<Float>(Float((CGFloat(x) + 0.5) * tileSize / key.scale),
+                                                      Float((CGFloat(y) + 0.5) * tileSize / key.scale)) - q
+                            let along = simd_dot(center, tangent)
+                            let across = abs(simd_dot(center, normal))
+                            let alongReach = half * (abs(tangent.x) + abs(tangent.y)) + Float(padding)
+                            let acrossReach = half * (abs(normal.x) + abs(normal.y)) + Float(padding)
+                            if along < -alongReach || along > length + alongReach || across > acrossReach { continue }
+                        }
+                        tiles.insert(SIMD2(x, y))
+                    }
+                }
+            }
+            lastDryDirtyArea = 0
+            var changedTiles: [SIMD2<Int>] = []
+            var batches: [(tile: SIMD2<Int>, rect: CGRect, commands: [WatchDrawingCommand], revision: UInt64?)] = []
+            for tile in tiles {
+                let dirty = CGRect(x: CGFloat(tile.x) * tileSize, y: CGFloat(tile.y) * tileSize,
+                                   width: tileSize, height: tileSize).intersection(canvas)
+                let region = dirty.applying(CGAffineTransform(scaleX: 1 / key.scale, y: 1 / key.scale))
+                let commands = WatchStrokeDrawing.commands(for: stroke, region: region, dryGeometry: dry.geometry)
+                guard !Task.isCancelled else { return nil }
+                let revision = dry.geometry.contourRevision(in: region)
+                if let revision, dry.renderedContours[tile] == revision { continue }
+                changedTiles.append(tile)
+                lastDryDirtyArea += dirty.width * dirty.height
+                batches.append((tile, dirty, commands, revision))
+            }
+            if !batches.isEmpty {
+                guard let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+                let frame = dry.frame
+                let union = CGMutablePath()
+                for batch in batches {
+                    union.addRect(CGRect(x: batch.rect.minX, y: CGFloat(frame.height) - batch.rect.maxY,
+                                         width: batch.rect.width, height: batch.rect.height))
+                }
+                frame.saveGState()
+                frame.addPath(union); frame.clip()
+                frame.clear(canvas)
+                frame.draw(dry.base, in: canvas)
+                frame.translateBy(x: 0, y: CGFloat(frame.height))
+                frame.scaleBy(x: key.scale, y: -key.scale)
+                let opacity = stroke.style.instrument == .eraser ? 1 : stroke.style.effectiveOpacity
+                if opacity < 1 {
+                    frame.setAlpha(CGFloat(opacity))
+                    frame.beginTransparencyLayer(auxiliaryInfo: nil)
+                }
+                for batch in batches {
+                    frame.saveGState()
+                    frame.clip(to: batch.rect.applying(CGAffineTransform(scaleX: 1 / key.scale, y: 1 / key.scale)))
+                    for command in batch.commands { WatchBitmapRenderer.draw(command, in: frame, space: space) }
+                    frame.restoreGState()
+                    dry.renderedContours[batch.tile] = batch.revision
+                }
+                if opacity < 1 { frame.endTransparencyLayer() }
+                frame.restoreGState()
+            }
+            if changedTiles.isEmpty {
+                dry.stroke = stroke
+                dry.travel = dry.geometry.travel
+                activeDry = dry
+                activeImage = usesScreenTiles ? committedImage : dry.display.makeImage()
+                return activeImage
+            }
+            // Copy only changed rows into small snapshots. No full-canvas
+            // CGImage snapshot is needed while a dry gesture is on screen.
+            for tile in changedTiles {
+                let dirty = CGRect(x: CGFloat(tile.x) * tileSize, y: CGFloat(tile.y) * tileSize,
+                                   width: tileSize, height: tileSize).intersection(canvas)
+                guard let patch = WatchBitmapRenderer.snapshot(dry.frame, rect: dirty, floating: true),
+                      let flat = WatchBitmapRenderer.flatten(InkSnapshot(image: patch), paperWhite: 1) else { return nil }
+                let destination = CGRect(x: dirty.minX, y: CGFloat(dry.frame.height) - dirty.maxY,
+                                         width: dirty.width, height: dirty.height)
+                dry.display.draw(flat, in: destination)
+                dry.screenTiles[tile] = ScreenTile(id: tile,
+                    rect: dirty.applying(CGAffineTransform(scaleX: 1 / key.scale, y: 1 / key.scale)), image: flat)
+            }
+            dry.stroke = stroke
+            dry.travel = dry.geometry.travel
+            activeDry = dry
+            activeImage = usesScreenTiles ? committedImage : dry.display.makeImage()
+            return activeImage
+        }
+
+        private struct ActiveInk {
+            var stroke: Stroke
+            // Keep presentation cost independent of the area covered by a long stroke.
+            // Only dirty patches are flattened into this persistent display bitmap.
+            let display: CGContext?
+            let usesScreenTiles: Bool
+            let id: UInt64?
+            let coverage: WatchStrokeCoverage
+            let base: CGContext
+            let frame: CGContext
+        }
+
+        func render(strokes: [Stroke], activeStroke: Stroke?, key nextKey: CacheKey,
+                    activeStrokeID: UInt64? = nil) -> CGImage? {
+            if key != nextKey, let oldKey = key,
+               oldKey.documentID == nextKey.documentID,
+               oldKey.size == nextKey.size, oldKey.scale == nextKey.scale,
+               strokes.count == committedStrokes.count + 1,
+               strokes.dropLast().map(StrokeVersion.init) == committedStrokes,
+               let final = strokes.last, let ink = activeInk,
+               final.extends(ink.stroke), !final.locksTransparency,
+               final.transform == .identity, final.excludedAreas.isEmpty,
+               final.erasures.isEmpty, final.raster == nil,
+               ink.coverage.canAppend(final) {
+                do {
+                    let dirty = try ink.coverage.append(final)
+                    ink.coverage.composite(dirty: dirty, over: ink.base, into: ink.frame)
+                    if let image = ink.frame.makeImage(),
+                       let display = WatchBitmapRenderer.flatten(InkSnapshot(image: image), paperWhite: 1),
+                       !Task.isCancelled {
+                        committedInk = InkSnapshot(image: image)
+                        committedImage = display
+                        committedStrokes = strokes.map(StrokeVersion.init)
+                        key = nextKey
+                        appendCount += 1
+                        activeInk = nil
+                        activeImage = nil
+                    }
+                } catch {
+                    // Fall back to the regular replay if the live buffer cannot be completed.
+                    activeInk = nil
+                }
+            }
+            if key != nextKey {
+                let versions = strokes.map(StrokeVersion.init)
+                if let oldKey = key, oldKey.documentID == nextKey.documentID,
+                   oldKey.size == nextKey.size, oldKey.scale == nextKey.scale,
+                   versions.count == committedStrokes.count + 1,
+                   versions.starts(with: committedStrokes), let final = strokes.last,
+                   let dry = activeDry, dry.stroke.id == final.id, dry.stroke.style == final.style,
+                   final.extends(dry.stroke), let base = committedInk,
+                   let display = renderDry(final, base: base, key: nextKey),
+                   let ink = activeDry?.frame.makeImage(), !Task.isCancelled {
+                    committedInk = InkSnapshot(image: ink)
+                    committedImage = usesScreenTiles ? activeDry?.display.makeImage() : display
+                    committedStrokes = versions
+                    key = nextKey
+                    appendCount += 1
+                    activeDry = nil
+                    activeImage = nil
+                }
+            }
+            if key != nextKey {
+                if key?.documentID != nextKey.documentID { geometry.removeAll() }
+                // Bound ownership to current artwork; undo can regenerate removed entries.
+                let ids = Set(strokes.map(\.id))
+                geometry = geometry.filter { ids.contains($0.key) }
+                let versions = strokes.map(StrokeVersion.init)
+                // Reuse only an unchanged prefix at the same resolution and canvas size.
+                // Requests may skip intermediate commits, so append the whole unseen suffix.
+                let canAppend = committedInk != nil &&
+                    key?.documentID == nextKey.documentID &&
+                    key?.size == nextKey.size && key?.scale == nextKey.scale &&
+                    versions.count > committedStrokes.count &&
+                    versions.starts(with: committedStrokes)
+                let pendingStrokes = canAppend ? Array(strokes.dropFirst(committedStrokes.count)) : strokes
+                // Promoted live strokes need no vector cache until a full replay
+                // (undo, resize, export) actually requires their geometry.
+                for stroke in pendingStrokes where geometry[stroke.id]?.revision != stroke.geometryRevision {
+                    guard !Task.isCancelled,
+                          let entry = try? StrokeGeometry(stroke), !Task.isCancelled else { return nil }
+                    geometry[stroke.id] = entry
+                    geometryBuildCount += 1
+                }
+                guard let ink = WatchBitmapRenderer.renderInk(strokes: pendingStrokes, size: nextKey.size,
+                                                             scale: nextKey.scale,
+                                                             base: canAppend ? committedInk : nil,
+                                                             geometry: geometry),
+                      let image = WatchBitmapRenderer.flatten(ink, paperWhite: 1),
+                      !Task.isCancelled else { return nil }
+                // Publish the snapshot and its prefix together only after success.
+                committedInk = ink
+                committedImage = image
+                committedStrokes = versions
+                key = nextKey
+                if canAppend { appendCount += 1 } else { rebuildCount += 1 }
+                committedRasterizedStrokeCount += pendingStrokes.count
+                activeInk = nil
+                activeDry = nil
+                activeImage = nil
+            }
+            guard let committedInk else { return nil }
+            guard let activeStroke else {
+                activeInk = nil
+                activeDry = nil
+                activeImage = nil
+                return committedImage
+            }
+            if activeStroke.style.instrument == .pencil || activeStroke.style.instrument == .crayon {
+                activeInk = nil
+                return renderDry(activeStroke, base: committedInk, key: nextKey)
+            }
+            activeDry = nil
+            if activeStroke.style.instrument == .marker || activeStroke.style.instrument == .watercolor {
+                if activeStrokeID == nil || activeInk?.id != activeStrokeID ||
+                    activeInk?.usesScreenTiles != usesScreenTiles ||
+                    activeInk?.coverage.canAppend(activeStroke) != true {
+                    let width = committedInk.image.width
+                    let height = committedInk.image.height
+                    guard let base = WatchBitmapRenderer.makeFloatContext(width: width, height: height),
+                          let frame = WatchBitmapRenderer.makeFloatContext(width: width, height: height)
+                    else { return nil }
+                    let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+                    base.draw(committedInk.image, in: bounds)
+                    frame.draw(committedInk.image, in: bounds)
+                    let display: CGContext?
+                    if usesScreenTiles {
+                        guard let bitmap = WatchBitmapRenderer.makeDisplayContext(width: width, height: height),
+                              let committedImage else { return nil }
+                        bitmap.draw(committedImage, in: bounds)
+                        display = bitmap
+                    } else {
+                        display = nil
+                    }
+                    activeInk = ActiveInk(stroke: activeStroke, display: display,
+                        usesScreenTiles: usesScreenTiles, id: activeStrokeID,
+                        coverage: WatchStrokeCoverage(style: activeStroke.style, width: width,
+                                                      height: height, scale: nextKey.scale),
+                        base: base, frame: frame)
+                    activeImage = committedImage
+                    activeCoverageBuildCount += 1
+                }
+                guard var ink = activeInk else { return nil }
+                do {
+                    let dirty = try ink.coverage.append(activeStroke)
+                    if !dirty.isNull, !dirty.isEmpty {
+                        ink.coverage.composite(dirty: dirty, over: ink.base, into: ink.frame)
+                        if let display = ink.display {
+                            let tileSize: CGFloat = 32
+                            let canvas = CGRect(x: 0, y: 0, width: ink.frame.width, height: ink.frame.height)
+                            for y in Int(floor(dirty.minY / tileSize))...Int(floor((dirty.maxY - 1) / tileSize)) {
+                                for x in Int(floor(dirty.minX / tileSize))...Int(floor((dirty.maxX - 1) / tileSize)) {
+                                    let rect = CGRect(x: CGFloat(x) * tileSize, y: CGFloat(y) * tileSize,
+                                                      width: tileSize, height: tileSize).intersection(canvas)
+                                    guard let patch = WatchBitmapRenderer.snapshot(ink.frame, rect: rect, floating: true),
+                                          let flat = WatchBitmapRenderer.flatten(InkSnapshot(image: patch), paperWhite: 1)
+                                    else {
+                                        self.activeInk = nil
+                                        return nil
+                                    }
+                                    let destination = CGRect(x: rect.minX,
+                                        y: CGFloat(ink.frame.height) - rect.maxY,
+                                        width: rect.width, height: rect.height)
+                                    display.draw(flat, in: destination)
+                                }
+                            }
+                            guard let image = display.makeImage() else {
+                                self.activeInk = nil
+                                return nil
+                            }
+                            activeImage = image
+                        } else {
+                            guard let frame = ink.frame.makeImage(),
+                                  let image = WatchBitmapRenderer.flatten(InkSnapshot(image: frame), paperWhite: 1)
+                            else {
+                                self.activeInk = nil
+                                return nil
+                            }
+                            activeImage = image
+                        }
+                    }
+                    ink.stroke = activeStroke
+                    self.activeInk = ink
+                    return activeImage
+                } catch {
+                    self.activeInk = nil
+                    activeImage = nil
+                    return nil
+                }
+            }
+            activeInk = nil
+            activeImage = nil
+            guard let frame = WatchBitmapRenderer.renderInk(strokes: [activeStroke], size: nextKey.size,
+                                                            scale: nextKey.scale, base: committedInk)
+            else { return nil }
+            return WatchBitmapRenderer.flatten(frame, paperWhite: 1)
+        }
+    }
+
+    /// Full replay remains available for export and previews.
+    static func render(strokes: [Stroke], size: CGSize, scale: CGFloat, paperWhite: CGFloat = 1) -> CGImage? {
+        guard let ink = renderInk(strokes: strokes, size: size, scale: scale) else { return nil }
+        return flatten(ink, paperWhite: paperWhite)
+    }
+
+    static func layerThumbnail(strokes: [Stroke], size: CGSize, scale: CGFloat) -> CGImage? {
+        renderInk(strokes: strokes, size: size, scale: scale)?.image
+    }
+
+    /// Layers are isolated so erasers never punch through neighbouring artwork.
+    final class LayerCache {
+        var size: CGSize = .zero
+        var scale: CGFloat = 0
+        fileprivate var inks: [UUID: (revisions: [UUID], ink: InkSnapshot)] = [:]
+        fileprivate struct CompositeKey: Equatable {
+            struct Layer: Equatable {
+                let id: UUID
+                let revisions: [UUID]
+                let opacity: Float
+            }
+            let background: SIMD4<Float>
+            let layers: [Layer]
+        }
+        fileprivate var composite: (key: CompositeKey, image: CGImage)?
+        // The layered renderer must keep coverage between input events too.
+        // Replaying the whole live stroke here makes every later frame more expensive.
+        fileprivate struct LiveInk {
+            let layerID: UUID
+            let revisions: [UUID]
+            var stroke: Stroke
+            let base: CGContext
+            let frame: CGContext
+            let coverage: WatchStrokeCoverage
+            var snapshot: InkSnapshot?
+        }
+        fileprivate var liveInk: LiveInk?
+
+        fileprivate func renderLive(_ stroke: Stroke, layerID: UUID, revisions: [UUID],
+                                    base: InkSnapshot, scale: CGFloat) -> InkSnapshot? {
+            guard (stroke.style.instrument == .watercolor || stroke.style.instrument == .marker),
+                  !stroke.locksTransparency, stroke.transform == .identity,
+                  stroke.excludedAreas.isEmpty, stroke.erasures.isEmpty, stroke.raster == nil else {
+                liveInk = nil
+                return nil
+            }
+            if liveInk?.layerID != layerID || liveInk?.revisions != revisions ||
+                liveInk.map({ !stroke.extends($0.stroke) || !$0.coverage.canAppend(stroke) }) != false {
+                let width = base.image.width, height = base.image.height
+                guard let backdrop = WatchBitmapRenderer.makeFloatContext(width: width, height: height),
+                      let frame = WatchBitmapRenderer.makeFloatContext(width: width, height: height) else {
+                    liveInk = nil
+                    return nil
+                }
+                let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+                backdrop.draw(base.image, in: bounds)
+                frame.draw(base.image, in: bounds)
+                liveInk = LiveInk(layerID: layerID, revisions: revisions, stroke: stroke,
+                    base: backdrop, frame: frame,
+                    coverage: WatchStrokeCoverage(style: stroke.style, width: width, height: height, scale: scale))
+            }
+            guard var live = liveInk else { return nil }
+            do {
+                let dirty = try live.coverage.append(stroke)
+                if !dirty.isNull, !dirty.isEmpty {
+                    live.coverage.composite(dirty: dirty, over: live.base, into: live.frame)
+                    live.snapshot = nil
+                }
+                if live.snapshot == nil {
+                    guard let image = live.frame.makeImage() else {
+                        liveInk = nil
+                        return nil
+                    }
+                    live.snapshot = InkSnapshot(image: image)
+                }
+                live.stroke = stroke
+                liveInk = live
+                return live.snapshot
+            } catch {
+                liveInk = nil
+                return nil
+            }
+        }
+
+        private(set) var replayedStrokeCount = 0
+        private(set) var compositeBuildCount = 0
+
+        fileprivate func didReplay(_ count: Int) { replayedStrokeCount += count }
+        fileprivate func didBuildComposite() { compositeBuildCount += 1 }
+    }
+
+    static func render(document: CanvasDocument, size: CGSize, scale: CGFloat,
+                       activeStroke: Stroke? = nil, selectedLayerID: UUID? = nil,
+                       cache: LayerCache? = nil, selection: WatchSelectionPreview? = nil) -> CGImage? {
+        guard size.width > 0, size.height > 0, scale > 0,
+              size.width * scale <= 8192, size.height * scale <= 8192,
+              let output = makeDisplayContext(width: Int(ceil(size.width * scale)),
+                                              height: Int(ceil(size.height * scale))) else { return nil }
+        let bounds = CGRect(x: 0, y: 0, width: output.width, height: output.height)
+        let c = document.effectiveBackgroundColor
+        output.setFillColor(CGColor(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: CGFloat(c.w)))
+        output.fill(bounds)
+        if let cache {
+            if cache.size != size || cache.scale != scale {
+                cache.inks.removeAll()
+                cache.composite = nil
+                cache.liveInk = nil
+            }
+            cache.size = size
+            cache.scale = scale
+            cache.inks = cache.inks.filter { id, _ in document.layers.contains { $0.id == id } }
+        }
+        let visible = document.layers.filter { $0.isVisible && $0.opacity > 0 }
+        // Preserve the exact sequential blend order and 8-bit rounding. Cache the
+        // paper and layers below the live layer, or the entire frame when idle.
+        let liveLayerID = selection?.layerID ?? (activeStroke == nil ? nil : selectedLayerID)
+        let liveIndex = visible.firstIndex { $0.id == liveLayerID }
+        let prefixCount = liveIndex ?? visible.count
+        let compositeKey = LayerCache.CompositeKey(background: c, layers: visible.prefix(prefixCount).map {
+            .init(id: $0.id, revisions: $0.strokes.map(\.geometryRevision), opacity: $0.opacity)
+        })
+        let reusedComposite = cache?.composite?.key == compositeKey
+        if reusedComposite, let image = cache?.composite?.image {
+            output.setBlendMode(.copy)
+            output.draw(image, in: bounds)
+            output.setBlendMode(.normal)
+        }
+        for (index, layer) in visible.enumerated() {
+            if index == prefixCount, !reusedComposite, let cache, let image = output.makeImage() {
+                cache.composite = (compositeKey, image)
+                cache.didBuildComposite()
+            }
+            if reusedComposite && index < prefixCount { continue }
+            let revisions = layer.strokes.map(\.geometryRevision)
+            let committed: InkSnapshot
+            if selection?.layerID == layer.id {
+                // Replay the selected layer in its original order. Other layers stay cached.
+                guard let ink = renderInk(strokes: layer.strokes, size: size, scale: scale,
+                                          selection: selection) else { return nil }
+                committed = ink
+            } else if let entry = cache?.inks[layer.id], entry.revisions == revisions {
+                committed = entry.ink
+            } else {
+                let previous = cache?.inks[layer.id]
+                let canAppend = previous.map { revisions.starts(with: $0.revisions) } ?? false
+                let pending = canAppend ? Array(layer.strokes.dropFirst(previous!.revisions.count)) : layer.strokes
+                if canAppend, pending.count == 1, let final = pending.first,
+                   let cache, let live = cache.liveInk, let previous,
+                   live.layerID == layer.id, live.revisions == previous.revisions,
+                   final.extends(live.stroke),
+                   let promoted = cache.renderLive(final, layerID: layer.id, revisions: previous.revisions,
+                                                   base: previous.ink, scale: scale) {
+                    committed = promoted
+                    cache.liveInk = nil
+                } else {
+                    guard let ink = renderInk(strokes: pending, size: size, scale: scale,
+                                              base: canAppend ? previous?.ink : nil) else { return nil }
+                    cache?.didReplay(pending.count)
+                    committed = ink
+                }
+                cache?.inks[layer.id] = (revisions, committed)
+            }
+            var ink = committed
+            if layer.id == selectedLayerID, let activeStroke {
+                if let live = cache?.renderLive(activeStroke, layerID: layer.id, revisions: revisions,
+                                                base: committed, scale: scale) {
+                    ink = live
+                } else {
+                    guard let live = renderInk(strokes: [activeStroke], size: size, scale: scale, base: committed) else { return nil }
+                    ink = live
+                }
+            }
+            output.saveGState()
+            output.setAlpha(CGFloat(layer.opacity))
+            output.draw(ink.image, in: bounds)
+            output.restoreGState()
+        }
+        if activeStroke == nil || !visible.contains(where: { $0.id == selectedLayerID }) || selection != nil {
+            cache?.liveInk = nil
+        }
+        guard let image = output.makeImage() else { return nil }
+        if prefixCount == visible.count, !reusedComposite, let cache {
+            cache.composite = (compositeKey, image)
+            cache.didBuildComposite()
+        }
+        return image
+    }
+
+    /// Preserve the selected layer's isolation and the order of static artwork
+    /// above/below it. Contiguous normal-blended selections can move as one texture.
+    final class SelectionRenderCache {
+        private var sessionID: UUID?
+        private var key: CacheKey?
+        private var background: CGImage?
+        private var foreground: CGImage?
+        private var region = CGRect.zero
+        private var layerBelow: CGImage?
+        private var layerAbove: CGImage?
+        private var upperLayers: CGImage?
+        private var opacity: Float = 1
+        private let layers = LayerCache()
+
+        func clear() {
+            sessionID = nil
+            key = nil
+            background = nil
+            foreground = nil
+            layerBelow = nil
+            layerAbove = nil
+            upperLayers = nil
+            layers.inks.removeAll()
+            layers.composite = nil
+        }
+
+        func render(_ preview: WatchSelectionPreview, key nextKey: CacheKey, allowReplay: Bool = true) -> ScreenFrame? {
+            if sessionID != preview.sessionID || key != nextKey {
+                clear()
+                sessionID = preview.sessionID
+                key = nextKey
+                prepare(preview, key: nextKey)
+            }
+            guard let background, let foreground else {
+                guard allowReplay else { return nil }
+                guard let image = WatchBitmapRenderer.render(document: preview.document, size: nextKey.size,
+                    scale: nextKey.scale, cache: layers, selection: preview) else { return nil }
+                return ScreenFrame(background: image, tiles: [])
+            }
+            // Publish the two immutable textures once. The view applies the live
+            // matrix without allocating/resampling a full canvas bitmap per update.
+            return ScreenFrame(background: background, tiles: [], selection: SelectionTexture(
+                image: foreground, rect: region, sessionID: preview.sessionID,
+                key: nextKey, transform: preview.transform, layerBelow: layerBelow,
+                layerAbove: layerAbove, upperLayers: upperLayers, opacity: opacity))
+        }
+
+        private func prepare(_ preview: WatchSelectionPreview, key: CacheKey) {
+            let visible = preview.document.layers.filter { $0.isVisible && $0.opacity > 0 }
+            guard let index = visible.firstIndex(where: { $0.id == preview.layerID }) else { return }
+            let layer = visible[index]
+            guard let start = layer.strokes.firstIndex(where: { preview.selectedIDs.contains($0.id) }),
+                  let end = layer.strokes.lastIndex(where: { preview.selectedIDs.contains($0.id) }),
+                  layer.strokes[start...end].allSatisfy({ preview.selectedIDs.contains($0.id) }) else { return }
+            func independent(_ stroke: Stroke) -> Bool {
+                !stroke.locksTransparency && stroke.style.instrument != .eraser &&
+                    ((stroke.style.instrument != .marker && stroke.style.instrument != .watercolor) ||
+                     stroke.style.blendingMode == .normal)
+            }
+            // Later dependent blends must see the moved ink: those use exact replay.
+            guard layer.strokes[start...].allSatisfy(independent) else { return }
+            var extent = preview.bounds
+            for stroke in layer.strokes[start...end] {
+                guard !Task.isCancelled, let geometry = try? StrokeGeometry(stroke) else { return }
+                extent = extent.union(geometry.bounds)
+            }
+            guard !extent.isNull, !extent.isEmpty, extent.width.isFinite, extent.height.isFinite,
+                  key.size.width > 0, key.size.height > 0 else { return }
+            // Interaction needs a screen-sized bitmap, not export/zoom resolution.
+            // Cap each retained image at roughly 1 MiB in 8-bit RGBA.
+            let largestArea = max(extent.width * extent.height, key.size.width * key.size.height)
+            let longestSide = max(max(extent.width, extent.height), max(key.size.width, key.size.height))
+            let scale = min(key.scale, 2, sqrt(262_144 / largestArea), 2048 / longestSide)
+            guard scale.isFinite, scale > 0 else { return }
+            let pixels = extent.insetBy(dx: -2 / scale, dy: -2 / scale)
+                .applying(CGAffineTransform(scaleX: scale, y: scale)).integral
+            let region = pixels.applying(CGAffineTransform(scaleX: 1 / scale, y: 1 / scale))
+            let local = layer.strokes[start...end].map { source in
+                var stroke = source
+                stroke.transform = StrokeTransform(source.transform.affine.concatenating(
+                    CGAffineTransform(translationX: -region.minX, y: -region.minY)))
+                return stroke
+            }
+            // Keep float buffers only during preparation; upload compact textures.
+            func compact(_ image: CGImage?) -> CGImage? {
+                guard let image, let context = makeDisplayContext(width: image.width, height: image.height) else { return nil }
+                context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+                return context.makeImage()
+            }
+            guard let foreground = compact(layerThumbnail(strokes: local, size: region.size, scale: scale)) else { return }
+            var below: CGImage?
+            if start > 0 {
+                guard let image = compact(layerThumbnail(strokes: Array(layer.strokes[..<start]), size: key.size, scale: scale)) else { return }
+                below = image
+            }
+            var above: CGImage?
+            if end + 1 < layer.strokes.count {
+                guard let image = compact(layerThumbnail(strokes: Array(layer.strokes[(end + 1)...]), size: key.size, scale: scale)) else { return }
+                above = image
+            }
+            var lower = preview.document
+            lower.layers = Array(visible[..<index])
+            guard let background = WatchBitmapRenderer.render(document: lower, size: key.size, scale: scale) else { return }
+            var upper: CGImage?
+            if index + 1 < visible.count {
+                var document = preview.document
+                document.layers = Array(visible[(index + 1)...])
+                document.backgroundIsVisible = false
+                guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: scale) else { return }
+                upper = image
+            }
+            guard !Task.isCancelled else { return }
+            self.region = region
+            self.background = background
+            self.foreground = foreground
+            self.layerBelow = below
+            self.layerAbove = above
+            self.upperLayers = upper
+            self.opacity = layer.opacity
+        }
+    }
+
+    private static func renderInk(strokes: [Stroke], size: CGSize, scale: CGFloat,
+                                  base: InkSnapshot? = nil, geometry: [UUID: StrokeGeometry] = [:],
+                                  selection: WatchSelectionPreview? = nil) -> InkSnapshot? {
+        guard size.width.isFinite, size.height.isFinite, scale.isFinite,
+              size.width > 0, size.height > 0, scale > 0 else { return nil }
+        let width = ceil(size.width * scale)
+        let height = ceil(size.height * scale)
+        guard width <= 8192, height <= 8192,
+              let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = makeFloatContext(width: Int(width), height: Int(height))
+        else { return nil }
+        if let base {
+            context.draw(base.image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        }
+        context.translateBy(x: 0, y: height)
+        context.scaleBy(x: scale, y: -scale)
+        for source in strokes {
+            guard !Task.isCancelled else { return nil }
+            var stroke = source
+            if let selection, selection.selectedIDs.contains(source.id) {
+                stroke.transform = StrokeTransform(source.transform.affine.concatenating(selection.transform))
+            }
+            context.saveGState()
+            defer { context.restoreGState() }
+            var erasure: CGContext?
+            if !stroke.erasures.isEmpty {
+                guard let maskContext = erasureMask(for: stroke, size: size, scale: scale),
+                      let mask = maskContext.makeImage() else { return nil }
+                erasure = maskContext
+                // CGImage rows run down from the top, while CGContext image
+                // drawing uses a bottom-left origin. Flip only to install the clip.
+                let imageHeight = height / scale
+                context.translateBy(x: 0, y: imageHeight)
+                context.scaleBy(x: 1, y: -1)
+                context.clip(to: CGRect(x: 0, y: 0, width: width / scale, height: imageHeight), mask: mask)
+                context.scaleBy(x: 1, y: -1)
+                context.translateBy(x: 0, y: -imageHeight)
+            }
+            if let raster = stroke.raster {
+                guard let source = CGImageSourceCreateWithData(raster.png as CFData, nil),
+                      let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
+                context.saveGState()
+                exclude(WatchStrokeDrawing.exclusionPaths(for: stroke), from: context)
+                context.concatenate(stroke.transform.affine)
+                context.translateBy(x: raster.bounds.minX, y: raster.bounds.maxY)
+                context.scaleBy(x: 1, y: -1)
+                context.interpolationQuality = .high
+                context.draw(image, in: CGRect(origin: .zero, size: raster.bounds.size))
+                context.restoreGState()
+                continue
+            }
+            // Paint on opaque straight RGB, then restore the original alpha mask.
+            // This preserves even partially transparent edges across repeated strokes.
+            // Evaluate translucent fill overlap against the ink rendered at this
+            // exact scale, rather than baking a correction at the flood-fill scale.
+            let fillAlpha = min(1, max(0, stroke.style.color.w * stroke.style.effectiveOpacity))
+            var fillBaseAlpha: [Float] = []
+            if stroke.style.instrument == .fill, fillAlpha > 0, fillAlpha < 1,
+               !stroke.locksTransparency, let data = context.data {
+                let pixels = data.assumingMemoryBound(to: Float.self)
+                let stride = context.bytesPerRow / MemoryLayout<Float>.size
+                let color = [stroke.style.color.x, stroke.style.color.y, stroke.style.color.z]
+                fillBaseAlpha.reserveCapacity(context.width * context.height)
+                for y in 0..<context.height { for x in 0..<context.width {
+                    let i = y * stride + x * 4
+                    let alpha = pixels[i + 3]
+                    let matches = (0..<3).allSatisfy {
+                        abs(pixels[i + $0] - color[$0] * alpha) <= 2 / 255.0
+                    }
+                    fillBaseAlpha.append(matches ? alpha : -1)
+                } }
+            }
+            var lockedAlpha: [Float] = []
+            if stroke.locksTransparency, let data = context.data {
+                if stroke.style.instrument == .eraser { continue }
+                let pixels = data.assumingMemoryBound(to: Float.self)
+                let stride = context.bytesPerRow / MemoryLayout<Float>.size
+                lockedAlpha.reserveCapacity(context.width * context.height)
+                for y in 0..<context.height { for x in 0..<context.width {
+                    let i = y * stride + x * 4
+                    let alpha = pixels[i + 3]
+                    lockedAlpha.append(alpha)
+                    for c in 0..<3 { pixels[i + c] = alpha > 0 ? pixels[i + c] / alpha : 0 }
+                    pixels[i + 3] = 1
+                } }
+            }
+            // Also tolerate separately edited copies with a shared ID.
+            let cached = geometry[stroke.id].flatMap {
+                $0.revision == stroke.geometryRevision ? $0 : nil
+            }
+            if stroke.style.instrument == .marker || stroke.style.instrument == .watercolor {
+                let coverage = WatchStrokeCoverage(style: stroke.style, width: Int(width),
+                                                   height: Int(height), scale: scale)
+                let dirty: CGRect
+                do {
+                    if let shapes = cached?.coverage {
+                        dirty = try coverage.replay(shapes)
+                    } else {
+                        dirty = try coverage.append(stroke)
+                    }
+                } catch { return nil }
+                coverage.composite(dirty: dirty, over: context, into: context, erasure: erasure)
+            } else {
+                // Fade the complete stroke once, preserving texture and avoiding
+                // darker overlaps within a single translucent gesture.
+                let opacity = stroke.style.instrument == .eraser ? 1 : stroke.style.effectiveOpacity
+                if opacity < 1 {
+                    context.saveGState()
+                    context.setAlpha(CGFloat(opacity))
+                    context.beginTransparencyLayer(auxiliaryInfo: nil)
+                }
+                let commands = cached?.commands ?? WatchStrokeDrawing.commands(for: stroke)
+                guard !Task.isCancelled else { return nil }
+                for command in commands {
+                    guard !Task.isCancelled else { return nil }
+                    draw(command, in: context, space: space)
+                }
+                if opacity < 1 {
+                    context.endTransparencyLayer()
+                    context.restoreGState()
+                }
+            }
+            if !fillBaseAlpha.isEmpty, let data = context.data {
+                let pixels = data.assumingMemoryBound(to: Float.self)
+                let stride = context.bytesPerRow / MemoryLayout<Float>.size
+                for y in 0..<context.height { for x in 0..<context.width {
+                    let i = y * stride + x * 4
+                    let before = fillBaseAlpha[y * context.width + x]
+                    let after = pixels[i + 3]
+                    guard before > 0, before < 1, after > before else { continue }
+                    let added = max(0, (after - before) / (1 - before))
+                    // Sum edge coverage, capped at the intended opacity. This
+                    // closes the seam without applying a second coat to the ink.
+                    let alpha = max(before, min(fillAlpha, before + added))
+                    for channel in 0..<3 { pixels[i + channel] *= alpha / after }
+                    pixels[i + 3] = alpha
+                } }
+            }
+            if !lockedAlpha.isEmpty, let data = context.data {
+                let pixels = data.assumingMemoryBound(to: Float.self)
+                let stride = context.bytesPerRow / MemoryLayout<Float>.size
+                for y in 0..<context.height { for x in 0..<context.width {
+                    let i = y * stride + x * 4
+                    let alpha = lockedAlpha[y * context.width + x]
+                    for c in 0..<3 { pixels[i + c] *= alpha }
+                    pixels[i + 3] = alpha
+                } }
+            }
+        }
+        guard let image = context.makeImage() else { return nil }
+        return InkSnapshot(image: image)
+    }
+
+    private static func erasureMask(for stroke: Stroke, size: CGSize, scale: CGFloat) -> CGContext? {
+        guard let background = makeFloatContext(width: Int(ceil(size.width * scale)),
+                                                height: Int(ceil(size.height * scale))) else { return nil }
+        background.setFillColor(CGColor(gray: 1, alpha: 1))
+        background.fill(CGRect(x: 0, y: 0, width: background.width, height: background.height))
+        guard let image = background.makeImage() else { return nil }
+        let erasers = stroke.erasures.map { local in
+            var eraser = local
+            eraser.transform = StrokeTransform(local.transform.affine.concatenating(stroke.transform.affine))
+            return eraser
+        }
+        guard let mask = renderInk(strokes: erasers, size: size, scale: scale, base: InkSnapshot(image: image))?.image
+        else { return nil }
+        background.setBlendMode(.copy)
+        background.draw(mask, in: CGRect(x: 0, y: 0, width: background.width, height: background.height))
+        return background
+    }
+
+    private static func makeFloatContext(width: Int, height: Int) -> CGContext? {
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+        return CGContext(data: nil, width: width, height: height, bitsPerComponent: 32,
+                         bytesPerRow: 0, space: space,
+                         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue |
+                            CGBitmapInfo.floatComponents.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
+    }
+
+    private static func snapshot(_ source: CGContext, rect: CGRect, floating: Bool) -> CGImage? {
+        guard let input = source.data else { return nil }
+        let width = Int(rect.width), height = Int(rect.height)
+        guard width > 0, height > 0,
+              let target = floating ? makeFloatContext(width: width, height: height)
+                  : makeDisplayContext(width: width, height: height), let output = target.data else { return nil }
+        let bytesPerPixel = floating ? 16 : 4
+        for row in 0..<height {
+            let sourceOffset = (Int(rect.minY) + row) * source.bytesPerRow + Int(rect.minX) * bytesPerPixel
+            output.advanced(by: row * target.bytesPerRow)
+                .copyMemory(from: input.advanced(by: sourceOffset), byteCount: width * bytesPerPixel)
+        }
+        return target.makeImage()
+    }
+
+    private static func makeDisplayContext(width: Int, height: Int) -> CGContext? {
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+        return CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                         bytesPerRow: 0, space: space,
+                         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+    }
+
+    private static func flatten(_ ink: InkSnapshot, paperWhite: CGFloat) -> CGImage? {
+        // Paper is added only for display/export, so an eraser can still remove cached ink.
+        let width = ink.image.width
+        let height = ink.image.height
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let output = CGContext(data: nil, width: width, height: height,
+                                     bitsPerComponent: 8, bytesPerRow: 0, space: space,
+                                     bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        let bounds = CGRect(x: 0, y: 0, width: width, height: height)
+        output.setFillColor(CGColor(gray: paperWhite, alpha: 1))
+        output.fill(bounds)
+        output.draw(ink.image, in: bounds)
+        return output.makeImage()
+    }
+
+    private static func draw(_ command: WatchDrawingCommand, in context: CGContext,
+                             space: CGColorSpace, normalBlend: Bool = false) {
+        context.saveGState()
+        exclude(command.exclusionPaths, from: context)
+        let c = command.rgba
+        let color = CGColor(colorSpace: space, components: [
+            CGFloat(c.x), CGFloat(c.y), CGFloat(c.z), (normalBlend || command.usesOpacityLayer) ? 1 : CGFloat(c.w)])!
+        context.setFillColor(color)
+        context.setStrokeColor(color)
+        context.setAlpha(command.opacity)
+        if !normalBlend && command.blendMode == .multiply { context.setBlendMode(.multiply) }
+        else if command.blendMode == .destinationOut { context.setBlendMode(.destinationOut) }
+        if command.usesOpacityLayer {
+            // Core Graphics may split long stroked paths into overlapping batches.
+            // Draw those batches opaquely, then composite their combined coverage once.
+            context.setAlpha(command.opacity * (normalBlend ? 1 : Double(c.w)))
+            context.beginTransparencyLayer(auxiliaryInfo: nil)
+        }
+        switch command.shape {
+        case let .fill(path):
+            context.addPath(path.cgPath)
+            context.fillPath()
+        case let .stroke(path, style):
+            context.setLineWidth(style.lineWidth)
+            context.setLineCap(style.lineCap)
+            context.setLineJoin(style.lineJoin)
+            context.setMiterLimit(style.miterLimit)
+            context.addPath(path.cgPath)
+            context.strokePath()
+        }
+        if command.usesOpacityLayer { context.endTransparencyLayer() }
+        context.restoreGState()
+    }
+
+    static func exclude(_ paths: [Path], from context: CGContext) {
+        for path in paths {
+            // The enclosing rectangle supplies the inverse of the lasso contour.
+            context.addRect(context.boundingBoxOfClipPath)
+            context.addPath(path.cgPath)
+            context.clip(using: .evenOdd)
+        }
+    }
+
+}
+
+/// Serial ownership keeps mutable bitmap contexts off the UI actor and prevents
+/// overlapping requests from modifying the same incremental cache.
+actor WatchArtworkRenderer {
+    private let cache = WatchBitmapRenderer.Cache()
+    private let layers = WatchBitmapRenderer.LayerCache()
+    private let selection = WatchBitmapRenderer.SelectionRenderCache()
+
+    func prepareSelectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
+        selection.render(preview, key: key, allowReplay: false)
+    }
+
+    func selectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
+        selection.render(preview, key: key)
+    }
+
+    func layeredFrame(document: CanvasDocument, activeStroke: Stroke?, selectedLayerID: UUID?,
+                      key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
+        selection.clear()
+        guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: key.scale,
+            activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers) else { return nil }
+        return WatchBitmapRenderer.ScreenFrame(background: image, tiles: [])
+    }
+
+
+    func screenFrame(strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
+                     activeStrokeID: UInt64) -> WatchBitmapRenderer.ScreenFrame? {
+        guard !Task.isCancelled else { return nil }
+        selection.clear()
+        let frame = cache.screenFrame(strokes: strokes, activeStroke: activeStroke,
+                                      key: key, activeStrokeID: activeStrokeID)
+        return Task.isCancelled ? nil : frame
+    }
+
+    func render(strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
+                activeStrokeID: UInt64) -> CGImage? {
+        assert(!Thread.isMainThread, "Bitmap rendering must stay off the main thread")
+        guard !Task.isCancelled, key.size.width > 0, key.size.height > 0 else { return nil }
+        let image = cache.render(strokes: strokes, activeStroke: activeStroke,
+                                 key: key, activeStrokeID: activeStrokeID)
+        return Task.isCancelled ? nil : image
+    }
+}
+
+// Resolve connectivity once at tap time and persist compact horizontal spans.
+// Replaying a saved fill never re-evaluates boundaries after later layer edits.
+extension WatchBitmapRenderer {
+    nonisolated static func floodFill(layer: CanvasLayer, size: CGSize, point: CGPoint,
+                                     style: PencilStyle) -> Stroke? {
+        let scale: CGFloat = 2
+        guard layer.isVisible, point.x.isFinite, point.y.isFinite,
+              point.x >= 0, point.y >= 0, point.x < size.width, point.y < size.height,
+              style.effectiveOpacity > 0,
+              let image = layerThumbnail(strokes: layer.strokes, size: size, scale: scale) else { return nil }
+        // Layer opacity and paper color affect presentation, not ink connectivity.
+        return floodFill(image: image, scale: scale, point: point, style: style)
+    }
+
+    nonisolated static func floodFill(document: CanvasDocument, size: CGSize, point: CGPoint,
+                          style: PencilStyle) -> Stroke? {
+        let scale: CGFloat = 2
+        guard point.x.isFinite, point.y.isFinite, point.x >= 0, point.y >= 0,
+              point.x < size.width, point.y < size.height, style.effectiveOpacity > 0,
+              let image = render(document: document, size: size, scale: scale) else { return nil }
+        return floodFill(image: image, scale: scale, point: point, style: style)
+    }
+
+    // Shared by the canvas and the sensitivity preview so their boundaries agree.
+    nonisolated static func floodFill(image: CGImage, scale: CGFloat, point: CGPoint,
+                          style: PencilStyle) -> Stroke? {
+        let width = image.width, height = image.height
+        guard point.x.isFinite, point.y.isFinite, point.x >= 0, point.y >= 0,
+              Int(point.x * scale) < width, Int(point.y * scale) < height else { return nil }
+        guard let context = CGContext(data: nil, width: width, height: height,
+            bitsPerComponent: 8, bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue),
+              let data = context.data else { return nil }
+        // Copy the renderer's already top-down bitmap rows without flipping them again.
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        let pixels = data.assumingMemoryBound(to: UInt8.self)
+        let seed = Int(point.y * scale) * width + Int(point.x * scale)
+        let target = (0..<4).map { Int(pixels[seed * 4 + $0]) }
+        let tolerance = Int((style.effectiveFillSensitivity * 255).rounded())
+        var visited = [Bool](repeating: false, count: width * height)
+        func matches(_ index: Int) -> Bool {
+            !visited[index] && (0..<4).allSatisfy {
+                abs(Int(pixels[index * 4 + $0]) - target[$0]) <= tolerance
+            }
+        }
+        var pending = [seed]
+        var rectangles: [SIMD4<Float>] = []
+        while let index = pending.popLast() {
+            guard matches(index) else { continue }
+            let y = index / width
+            var left = index % width, right = left
+            while left > 0 && matches(y * width + left - 1) { left -= 1 }
+            while right + 1 < width && matches(y * width + right + 1) { right += 1 }
+            for x in left...right { visited[y * width + x] = true }
+            rectangles.append(SIMD4(Float(left) / Float(scale), Float(y) / Float(scale),
+                                    Float(right - left + 1) / Float(scale), 1 / Float(scale)))
+            for nextY in [y - 1, y + 1] where nextY >= 0 && nextY < height {
+                var insideRun = false
+                for x in left...right {
+                    let next = nextY * width + x
+                    let match = matches(next)
+                    if match && !insideRun { pending.append(next) }
+                    insideRun = match
+                }
+            }
+        }
+        if target[3] == 0 {
+            // Overlap the antialiased contour by one source pixel. Only existing
+            // ink can be added, and added pixels never propagate the fill further.
+            var covered = visited
+            for index in visited.indices where visited[index] {
+                let x = index % width, y = index / width
+                for nextY in max(0, y - 1)...min(height - 1, y + 1) {
+                    for nextX in max(0, x - 1)...min(width - 1, x + 1) {
+                        let next = nextY * width + nextX
+                        if pixels[next * 4 + 3] > 0 { covered[next] = true }
+                    }
+                }
+            }
+            rectangles.removeAll(keepingCapacity: true)
+            for y in 0..<height {
+                var x = 0
+                while x < width {
+                    guard covered[y * width + x] else { x += 1; continue }
+                    let left = x
+                    while x < width && covered[y * width + x] { x += 1 }
+                    rectangles.append(SIMD4(Float(left) / Float(scale), Float(y) / Float(scale),
+                                            Float(x - left) / Float(scale), 1 / Float(scale)))
+                }
+            }
+            visited = covered
+        }
+        var fillStyle = style
+        fillStyle.instrument = .fill
+        fillStyle.blendingMode = .normal
+        var stroke = Stroke(points: [PointerSample(position: SIMD2(Float(point.x), Float(point.y)),
+                                                   pressure: 1, timestamp: 0)], style: fillStyle)
+        stroke.fillRects = rectangles
+        return stroke
+    }
+}

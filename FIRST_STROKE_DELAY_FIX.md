@@ -59,8 +59,8 @@
 
 ## Основные файлы
 
-- `Paint All the Time (Watch) Watch App/WatchDrawingCommands.swift` — общие команды и прямой растровый рендерер.
-- `Paint All the Time (Watch) Watch App/WatchStrokeDrawing.swift` — формирование геометрии кистей и воспроизведение команд для прежнего пути рисования.
-- `Paint All the Time (Watch) Watch App/WatchRasterArtwork.swift` — подготовка и показ картинки живого холста.
-- `Paint All the Time (Watch) Watch App/WatchCanvasView.swift` — подключение нового способа отображения.
-- `Paint All the Time (Watch) Watch App/TutorialDebug.swift` — диагностические сообщения, включённые только в Debug.
+- `Paint Anytime (Watch) Watch App/WatchDrawingCommands.swift` — общие команды и прямой растровый рендерер.
+- `Paint Anytime (Watch) Watch App/WatchStrokeDrawing.swift` — формирование геометрии кистей и воспроизведение команд для прежнего пути рисования.
+- `Paint Anytime (Watch) Watch App/WatchRasterArtwork.swift` — подготовка и показ картинки живого холста.
+- `Paint Anytime (Watch) Watch App/WatchCanvasView.swift` — подключение нового способа отображения.
+- `Paint Anytime (Watch) Watch App/TutorialDebug.swift` — диагностические сообщения, включённые только в Debug.

@@ -11,6 +11,7 @@ extension DrawingInstrument {
         case .fountainPen: L10n.text("A rounded calligraphy nib varies line width with stroke direction.")
         case .reed: L10n.text("A flat calligraphy nib creates sharp edges. Adjust its angle on the Angle page.")
         case .watercolor: L10n.text("Creates soft, translucent strokes. Layer strokes to deepen the color.")
+        case .fill: L10n.text("Tap to fill a connected area with the selected color and opacity.")
         case .eraser: L10n.text("Removes marks. Choose Pixel eraser or Object eraser on the Mode page.")
         }
     }

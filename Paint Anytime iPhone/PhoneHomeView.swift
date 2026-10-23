@@ -9,11 +9,11 @@ struct PhoneHomeView: View {
                 .font(.system(size: 52))
             Text("Paint Anytime")
                 .font(.largeTitle.bold())
-            Text("Рисунки, сохранённые на Apple Watch, появляются в приложении «Фото» на этом iPhone.")
+            Text("Drawings saved on Apple Watch appear in Photos on this iPhone.")
                 .multilineTextAlignment(.center)
 
             if photoInbox.needsPhotoPermission {
-                Button("Разрешить сохранение в Фото") {
+                Button("Allow saving to Photos") {
                     if photoInbox.photoPermissionRequiresSettings {
                         if let settings = URL(string: UIApplication.openSettingsURLString) {
                             UIApplication.shared.open(settings)
@@ -24,27 +24,27 @@ struct PhoneHomeView: View {
                 }
                 .buttonStyle(.borderedProminent)
             } else if photoInbox.pendingCount > 0 {
-                ProgressView("Сохраняем рисунки в Фото…")
+                ProgressView("Saving drawings to Photos…")
             } else {
-                Label("Готово к приёму рисунков", systemImage: "checkmark.circle.fill")
+                Label("Ready to receive drawings", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             }
 
-            Link("Политика конфиденциальности", destination: URL(string: "https://github.com/denis-kolchev/Paint-Anytime/blob/main/docs/PRIVACY.md")!)
+            Link("Privacy Policy", destination: URL(string: "https://github.com/denis-kolchev/Paint-Anytime/blob/main/docs/PRIVACY.md")!)
                 .font(.footnote)
 
             if photoInbox.pendingCount > 0 {
-                Text("Ожидают сохранения: \(photoInbox.pendingCount)")
+                Text("Waiting to save: \(photoInbox.pendingCount)")
                     .font(.footnote)
             }
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .alert("Ошибка сохранения", isPresented: Binding(
+        .alert("Could not save", isPresented: Binding(
             get: { photoInbox.errorMessage != nil },
             set: { if !$0 { photoInbox.clearError() } }
         )) {
-            Button("ОК") { photoInbox.clearError() }
+            Button("OK") { photoInbox.clearError() }
         } message: {
             Text(photoInbox.errorMessage ?? "")
         }

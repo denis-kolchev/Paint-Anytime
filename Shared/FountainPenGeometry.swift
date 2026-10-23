@@ -3,7 +3,7 @@ import simd
 
 // A fixed elliptical calligraphy nib, swept along the stroke.
 // This is our own approximation, not Apple's PencilKit ink engine.
-enum FountainPenGeometry {
+nonisolated enum FountainPenGeometry {
     static func polygons(for stroke: Stroke) -> [[SIMD2<Float>]] {
         let major = max(stroke.style.width, 0.1) / 2
         let minor = major * (stroke.style.instrument == .reed ? 0.12 : 0.24)

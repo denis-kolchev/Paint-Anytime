@@ -1,0 +1,320 @@
+import SwiftUI
+import WatchKit
+
+/// A floating coach card that leaves the exercise's layout unchanged.
+struct TutorialLessonView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @ObservedObject var tutorial: TutorialSession
+    let onFinish: () -> Void
+    let screenWidth: CGFloat
+    let screenHeight: CGFloat
+    var maximumCardHeight: CGFloat? = nil
+    @Binding var confirmsFinish: Bool
+    @State private var completionProgress: CGFloat = 0
+    @State private var showsCompletionCheckmark = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .body) private var instructionFontSize: CGFloat = 11
+
+    var body: some View {
+        TutorialHintLayout(maximumHeight: min(screenHeight * 0.32, maximumCardHeight ?? .infinity)) {
+            // Keep one layout child while the old and new copy crossfade.
+            // The independent measurement below sizes the card for the new copy.
+            ZStack {
+                TutorialInstructionText(
+                    text: tutorial.instruction,
+                    isPaused: confirmsFinish,
+                    fontSize: instructionFontSize
+                )
+                .id(tutorial.instruction)
+                .transition(.opacity)
+            }
+
+            Button(role: showsCompletionCheckmark ? nil : .destructive) {
+                if showsCompletionCheckmark {
+                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                        onFinish()
+                    }
+                } else {
+                    tutorial.pauseReminders()
+                    confirmsFinish = true
+                }
+            } label: {
+                ZStack {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(.red)
+                        .opacity(showsCompletionCheckmark ? 0 : 1)
+                        .scaleEffect(showsCompletionCheckmark && !reduceMotion ? 0.6 : 1)
+                    // Completion uses the neutral tint of the other toolbar controls.
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.white)
+                        .opacity(showsCompletionCheckmark ? 1 : 0)
+                        .scaleEffect(showsCompletionCheckmark || reduceMotion ? 1 : 0.6)
+                        .tutorialHint(tutorial, steps: [.finished], isSuggested: showsCompletionCheckmark)
+                }
+                .font(.system(size: 11, weight: .semibold))
+            }
+            .tint(showsCompletionCheckmark ? .white : .red)
+            .buttonStyle(TutorialOverlayButtonStyle(diameter: 24, hitDiameter: 32))
+            .overlay {
+                TutorialProgressRing(completedLessons: completedLessons, completionProgress: completionProgress)
+                    .frame(width: 32, height: 32)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+            .accessibilityLabel(L10n.text("Finish tutorial"))
+            .accessibilityValue(L10n.format("%d of %d lessons completed", completedLessons, TutorialStep.lessonCount))
+
+            // Measure the full copy independently of the scroll viewport.
+            Text(tutorial.instruction)
+                .font(.system(size: instructionFontSize, weight: .medium))
+                .fixedSize(horizontal: false, vertical: true)
+                .hidden()
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .background(.regularMaterial, in: cardShape)
+        .overlay {
+            cardShape.stroke(.white.opacity(0.16), lineWidth: 0.5)
+                .allowsHitTesting(false)
+        }
+        .environment(\.colorScheme, .dark)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: tutorial.instruction)
+        .padding(edgeGap)
+        .task(id: tutorial.step) {
+            await animateCompletion()
+        }
+        .onChange(of: showsCompletionCheckmark) { _, isShowing in
+            if isShowing {
+                WKInterfaceDevice.current().play(.success)
+            }
+        }
+
+    }
+
+    @MainActor
+    private func animateCompletion() async {
+        guard tutorial.step == .finished else {
+            completionProgress = 0
+            showsCompletionCheckmark = false
+            return
+        }
+        guard !showsCompletionCheckmark else { return }
+        if reduceMotion {
+            completionProgress = 1
+            showsCompletionCheckmark = true
+            return
+        }
+        do {
+            withAnimation(.linear(duration: 0.7)) {
+                completionProgress = 1
+            }
+            // Keep the completed green ring visible before revealing Done.
+            try await Task.sleep(for: .milliseconds(800))
+            try Task.checkCancellation()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showsCompletionCheckmark = true
+            }
+        } catch {
+            // Leaving the card or changing lessons cancels the sequence.
+        }
+    }
+
+    private var completedLessons: Int {
+        tutorial.step == .finished ? TutorialStep.lessonCount : tutorial.step.completedLessonCount
+    }
+
+    private let edgeGap: CGFloat = 10
+
+    private var cardShape: TutorialHintShape {
+        TutorialHintShape(expandedRadius: screenWidth * 0.09)
+    }
+}
+
+private struct TutorialProgressRing: View {
+    let completedLessons: Int
+    let completionProgress: CGFloat
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var progress: CGFloat {
+        min(1, max(0, CGFloat(completedLessons) / CGFloat(max(1, TutorialStep.lessonCount))))
+    }
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color(white: 0.3), lineWidth: 2.5)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(Color(white: 0.8), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: progress)
+            Circle()
+                .trim(from: 0, to: completionProgress)
+                .stroke(.green, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+        .padding(2)
+    }
+}
+
+private struct TutorialHintShape: Shape {
+    let expandedRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        // Blend out of the capsule as the card grows, without a corner jump
+        // when an animated height crosses the compact-card threshold.
+        let expansion = min(1, max(0, (rect.height - 52) / 20))
+        let radius = (rect.height / 2) * (1 - expansion) + expandedRadius * expansion
+        return RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect)
+    }
+}
+
+/// Shrink to the actual text; only overflowing lessons use the full height budget.
+private struct TutorialHintLayout: Layout {
+    let maximumHeight: CGFloat
+    private let leadingInset: CGFloat = 18
+    private let trailingInset: CGFloat = 8
+    private let verticalInset: CGFloat = 10
+    private let buttonDiameter: CGFloat = 32
+    private let buttonSpacing: CGFloat = 8
+
+    private func textWidth(_ width: CGFloat) -> CGFloat {
+        max(1, width - leadingInset - trailingInset - buttonDiameter - buttonSpacing)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 180
+        guard subviews.count == 3 else { return CGSize(width: width, height: 0) }
+        let textProposal = ProposedViewSize(width: textWidth(width), height: nil)
+        let textHeight = subviews[2].sizeThatFits(textProposal).height
+        let naturalHeight = max(buttonDiameter + trailingInset * 2,
+                                textHeight + verticalInset * 2)
+        return CGSize(width: width, height: min(naturalHeight, maximumHeight))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        guard subviews.count == 3 else { return }
+        let width = textWidth(bounds.width)
+        let textProposal = ProposedViewSize(width: width, height: nil)
+        let instructionHeight = min(subviews[2].sizeThatFits(textProposal).height,
+                                    max(1, bounds.height - verticalInset * 2))
+        let top = bounds.midY - instructionHeight / 2
+        subviews[0].place(at: CGPoint(x: bounds.minX + leadingInset, y: top),
+                          anchor: .topLeading,
+                          proposal: ProposedViewSize(width: width, height: instructionHeight))
+        subviews[1].place(at: CGPoint(x: bounds.maxX - trailingInset - buttonDiameter / 2, y: bounds.midY),
+                          anchor: .center,
+                          proposal: ProposedViewSize(width: buttonDiameter, height: buttonDiameter))
+        subviews[2].place(at: bounds.origin, anchor: .topLeading, proposal: textProposal)
+    }
+}
+
+/// Scroll the copy with offsets, not a native ScrollView. On watchOS 10 a
+/// newly inserted ScrollView can become a Crown target even with focusable(false).
+/// The lesson card is recreated for every instruction, so it must never compete
+/// with the canvas or the tool editor for Crown input.
+private struct TutorialInstructionText: View {
+    let text: String
+    let isPaused: Bool
+    let fontSize: CGFloat
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
+    @State private var contentHeight: CGFloat = 0
+    @State private var isManualScrolling = false
+    @State private var scrollOffset: CGFloat = 0
+    @State private var dragOrigin: CGFloat?
+    @GestureState private var isDragging = false
+
+    private struct Playback: Equatable {
+        let overflow: CGFloat
+        let isEnabled: Bool
+    }
+
+    var body: some View {
+        GeometryReader { viewport in
+            let overflow = max(0, contentHeight - viewport.size.height)
+            let playback = Playback(
+                overflow: overflow,
+                isEnabled: !isPaused && scenePhase == .active && !reduceMotion
+                    && !voiceOverEnabled && !isManualScrolling
+            )
+            Text(text)
+                .font(.system(size: fontSize, weight: .medium))
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background {
+                    GeometryReader { content in
+                        Color.clear.preference(key: TutorialInstructionHeight.self,
+                                               value: content.size.height)
+                    }
+                }
+                .offset(y: -min(overflow, max(0, scrollOffset)))
+                .frame(width: viewport.size.width, height: viewport.size.height, alignment: .topLeading)
+                .clipped()
+                .contentShape(Rectangle())
+                .onPreferenceChange(TutorialInstructionHeight.self) { contentHeight = $0 }
+                .gesture(DragGesture(minimumDistance: 3)
+                    .updating($isDragging) { _, dragging, _ in dragging = true }
+                    .onChanged { value in
+                        isManualScrolling = true
+                        if dragOrigin == nil { dragOrigin = scrollOffset }
+                        scrollOffset = min(overflow, max(0, (dragOrigin ?? 0) - value.translation.height))
+                    }
+                    .onEnded { _ in dragOrigin = nil })
+                .onChange(of: isDragging) { _, dragging in
+                    if !dragging { dragOrigin = nil }
+                }
+                .onChange(of: fontSize) { _, _ in
+                    // A new text size changes wrapping. Start at the first line
+                    // and let the updated measurement restart overflow playback.
+                    scrollOffset = 0
+                    dragOrigin = nil
+                    isManualScrolling = false
+                }
+                .task(id: playback) {
+                    guard playback.isEnabled, playback.overflow > 1 else { return }
+                    do {
+                        while !Task.isCancelled {
+                            try await Task.sleep(for: .seconds(1.5))
+                            // Small offset updates keep manual dragging aligned
+                            // with the visible text if it interrupts playback.
+                            while scrollOffset < playback.overflow {
+                                try await Task.sleep(for: .milliseconds(50))
+                                try Task.checkCancellation()
+                                guard !isManualScrolling else { return }
+                                scrollOffset = min(playback.overflow, scrollOffset + 0.4)
+                            }
+                            try await Task.sleep(for: .seconds(1.5))
+                            try Task.checkCancellation()
+                            guard !isManualScrolling else { return }
+                            scrollOffset = 0
+                        }
+                    } catch {
+                        // Disappearance, a new lesson or manual scrolling cancels playback.
+                    }
+                }
+        }
+    }
+}
+
+private struct TutorialInstructionHeight: PreferenceKey {
+    static var defaultValue: CGFloat { 0 }
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+// Reserve space for controls without resizing the canvas or its artwork.
+private struct TutorialHintReservedHeightKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues {
+    var tutorialHintReservedHeight: CGFloat {
+        get { self[TutorialHintReservedHeightKey.self] }
+        set { self[TutorialHintReservedHeightKey.self] = newValue }
+    }
+}

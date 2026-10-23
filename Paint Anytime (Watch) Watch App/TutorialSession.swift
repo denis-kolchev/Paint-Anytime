@@ -1,0 +1,236 @@
+import Foundation
+import Combine
+
+/// The inactive instance keeps the normal editor free of tutorial restrictions.
+@MainActor
+final class TutorialSession: ObservableObject {
+    static let inactive = TutorialSession()
+    @Published private var progress = TutorialProgress()
+    var step: TutorialStep { progress.step }
+    @Published private(set) var toolPage = 1
+    @Published private var toolIsEraser = false
+    @Published private var releasedCircleEarly = false
+    private var failedCircleAttempts = 0
+    @Published var isFadingCircleAttempt = false
+    var isPaletteLesson: Bool {
+        [.openPalettes, .findNewPalette, .createPalette, .addPaletteColor,
+         .adjustPaletteColor, .savePaletteColor].contains(step)
+    }
+    @Published var galleryIsOpen = false
+    @Published var galleryIsFullscreen = false
+    var instruction: String {
+        switch step {
+        case .holdCircle where releasedCircleEarly: return L10n.text("Hold your finger at the end.")
+        case .selectColor where toolPage != 1: return L10n.text("Open Color, then turn the Crown.")
+        case .openWidth where toolPage != 1: return L10n.text("Open Width.")
+        case .setWidth where toolPage != 0: return L10n.text("Open Width, then turn the Crown.")
+        case .openOpacity where toolIsEraser, .setOpacity where toolIsEraser:
+            return L10n.text("Choose a drawing tool to change opacity.")
+        case .openOpacity where toolPage != 0: return L10n.text("Open Opacity.")
+        case .setOpacity where toolPage != 5: return L10n.text("Open Opacity, then turn the Crown.")
+        case .openTool where toolPage != 5: return L10n.text("Open Tool.")
+        case .selectReed where toolPage != 2: return L10n.text("Choose any tool and explore its settings.")
+        case .openAngle where toolPage != 2: return L10n.text("Open Angle.")
+        case .setAngle where toolPage != 4: return L10n.text("Open Angle, then turn the Crown.")
+        case .galleryFullscreen where !galleryIsOpen, .deleteDrawing where !galleryIsOpen: return L10n.text("Tap Gallery to see your pictures.")
+        case .deleteDrawing where !galleryIsFullscreen:
+            return L10n.text("Turn the Crown or double-tap a picture.")
+        default: return TutorialLesson.compactInstruction(for: step)
+        }
+    }
+    @Published var showsInstruction = false
+    @Published private(set) var remindersPaused = false
+    private var lastActivity = Date()
+    private var advanceTask: Task<Void, Never>?
+    private var pendingAdvanceStep: TutorialStep?
+    @Published private(set) var showsResult = false
+    var isActive: Bool { step != .inactive }
+    var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .history, .saveDrawing, .shareDrawing, .openMenu]) }
+    var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
+    var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
+    var allowsCanvasPan: Bool { allowsCanvasZoom }
+    var allowsGalleryZoom: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsGalleryPaging: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsGalleryDelete: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsGalleryBack: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsToolInfo: Bool { acceptsActions }
+
+    @Published private(set) var crownPracticedSteps: Set<TutorialStep> = []
+    var crownHintIsSubtle: Bool { !crownPracticedSteps.isEmpty }
+    var showsCrownHint: Bool {
+        suggestsCrownRotation && !crownPracticedSteps.contains(step) && (step == .selectReed || crownPracticedSteps.count < 3)
+    }
+
+    func usedCrown(in expectedStep: TutorialStep, velocity: Double) {
+        guard velocity.isFinite, velocity != 0, step == expectedStep, suggestsCrownRotation else { return }
+        if !crownPracticedSteps.contains(step) { crownPracticedSteps.insert(step) }
+        activity()
+    }
+
+    var suggestsCrownRotation: Bool {
+        guard acceptsActions else { return false }
+        switch step {
+        case .zoomCanvas: return true
+        case .selectColor: return toolPage == 1
+        case .setWidth: return toolPage == 0
+        case .setOpacity: return toolPage == 5 && !toolIsEraser
+        case .selectReed: return toolPage == 2
+        case .setAngle: return toolPage == 4
+        case .galleryFullscreen, .deleteDrawing: return galleryIsOpen && !galleryIsFullscreen
+        default: return false
+        }
+    }
+
+    var visibleToolPages: Set<Int> { progress.visibleToolPages }
+
+    func permits(_ steps: Set<TutorialStep>) -> Bool {
+        !isActive || (acceptsActions && steps.contains(step))
+    }
+
+    func allowsToolAdjustment(page: Int) -> Bool {
+        !isActive || (acceptsActions && progress.allowsToolAdjustment(page: page))
+    }
+
+    func allowsToolPage(_ page: Int) -> Bool {
+        !isActive || (acceptsActions && progress.allowsToolPage(page))
+    }
+
+    var debugState: String {
+        "session=\(ObjectIdentifier(self)) step=\(step) instruction=\(showsInstruction) result=\(showsResult) paused=\(remindersPaused) acceptsActions=\(acceptsActions) allowsDrawing=\(allowsDrawing) count=\(progress.count)"
+    }
+
+    func start() {
+        cancelPendingAdvance()
+        progress.start()
+        releasedCircleEarly = false
+        failedCircleAttempts = 0
+        crownPracticedSteps = []
+        toolPage = 1
+        toolIsEraser = false
+        galleryIsOpen = false
+        galleryIsFullscreen = false
+        remindersPaused = false
+        showsInstruction = false
+        lastActivity = Date()
+    }
+
+    /// Retained for callers that explicitly resume an exercise; never skips a step.
+    func beginExercise() {
+        TutorialDebug.trace("beginExercise.beforeHide", debugState)
+        showsInstruction = false
+        TutorialDebug.trace("beginExercise.afterHide", debugState)
+        activity()
+        TutorialDebug.trace("beginExercise.exit", debugState)
+    }
+
+    func finishedCircleAttempt(kind: ShapeRecognizer.Kind?, isStrokeComplete: Bool = true) {
+        guard step == .holdCircle, acceptsActions else { return }
+        // A finger-drawn circle can snap as an ellipse; both demonstrate the hold gesture.
+        if kind == .circle || kind == .ellipse {
+            record(.heldCircle)
+        } else if isStrokeComplete {
+            failedCircleAttempts += 1
+            if failedCircleAttempts >= 3 {
+                advance()
+                return
+            }
+            releasedCircleEarly = kind == nil
+            activity()
+        }
+    }
+
+    func activity() { if isActive { lastActivity = Date() } }
+
+    func pauseReminders() {
+        guard isActive else { return }
+        remindersPaused = true
+        advanceTask?.cancel()
+    }
+
+    func resumeReminders() {
+        guard isActive else { return }
+        remindersPaused = false
+        activity()
+        if pendingAdvanceStep == step {
+            advanceAfterResult(lockInput: showsResult)
+        }
+    }
+
+    typealias Event = TutorialProgress.Event
+
+    func record(_ event: Event) {
+        guard isActive, acceptsActions else { return }
+        activity()
+        switch progress.record(event) {
+        case .none: break
+        case .advance: advance()
+        case .showResult: advanceAfterResult(lockInput: true)
+        case .pauseReminders: pauseReminders()
+        case .resumeReminders(let shouldAdvance):
+            resumeReminders()
+            if shouldAdvance { advance() }
+        }
+    }
+
+    var canFinishCamera: Bool { !isActive || (step != .zoomCanvas && step != .panCanvas) }
+    var showsPanGuide: Bool { step == .panCanvas && !progress.hasPanned }
+
+    func changedPage(_ page: Int) {
+        guard isActive, allowsToolPage(page) else { return }
+        activity()
+        toolPage = page
+        if progress.completesPageChange(page) { advance() }
+    }
+
+    func changedStyle(from old: PencilStyle, to style: PencilStyle, page: Int) {
+        guard isActive, acceptsActions else { return }
+        activity()
+        toolIsEraser = style.instrument == .eraser
+        if progress.changedStyle(from: old, to: style, page: page) { advance() }
+    }
+
+    func changedZoom() {
+        guard isActive, allowsCanvasZoom else { return }
+        activity()
+        if step == .zoomCanvas { advance() }
+    }
+
+    /// Leave the result visible long enough for animations and visual feedback.
+    private func advanceAfterResult(lockInput: Bool) {
+        advanceTask?.cancel()
+        pendingAdvanceStep = step
+        showsResult = lockInput
+        activity()
+        guard !remindersPaused else { return }
+        let completedStep = step
+        advanceTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: .milliseconds(1200)) } catch { return }
+            guard let self, !Task.isCancelled, self.step == completedStep,
+                  self.pendingAdvanceStep == completedStep,
+                  !self.showsInstruction, !self.remindersPaused else { return }
+            self.advance()
+        }
+    }
+
+    private func cancelPendingAdvance() {
+        advanceTask?.cancel()
+        advanceTask = nil
+        pendingAdvanceStep = nil
+        showsResult = false
+    }
+
+    private func advance() {
+        guard step != .inactive, step != .finished else { return }
+        cancelPendingAdvance()
+        progress.advance()
+        showsInstruction = false
+        activity()
+    }
+
+    func stop() {
+        cancelPendingAdvance()
+        progress.stop()
+        showsInstruction = false
+    }
+}

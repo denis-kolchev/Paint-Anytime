@@ -1,0 +1,72 @@
+import Combine
+import SwiftUI
+
+@MainActor
+final class DrawingSessionController: ObservableObject {
+    let canvas: CanvasController
+    private var canvasChanges: AnyCancellable?
+    @Published var isPreparingCanvas = false
+    @Published var canvasPreparationError: String?
+    @Published var canvasSessionID = UUID()
+    @Published var savedDrawing: CanvasExport?
+    @Published var pendingCanvasAction: PendingCanvasAction?
+    @Published var exportError: String?
+
+    init(canvas: CanvasController? = nil) {
+        self.canvas = canvas ?? CanvasController()
+        canvasChanges = self.canvas.objectWillChange.sink { [weak self] _ in
+            self?.objectWillChange.send()
+        }
+    }
+
+    func saveDrawing(size: CGSize, scale: CGFloat) {
+        do {
+            let drawing = try CanvasExporter.save(
+                document: canvas.document, size: size, scale: scale)
+            canvas.markSaved()
+            _ = WatchPhotoTransfer.shared.queue(drawing.url)
+            savedDrawing = drawing
+        } catch { exportError = error.localizedDescription }
+    }
+
+    func requestCanvasAction(_ action: PendingCanvasAction) {
+        canvas.cancelStroke()
+        if canvas.needsDiscardConfirmation {
+            pendingCanvasAction = action
+        } else {
+            performCanvasAction(action)
+        }
+    }
+
+    func performCanvasAction(_ action: PendingCanvasAction) {
+        switch action {
+        case .clear:
+            canvas.clear()
+        case .open(let document):
+            canvasPreparationError = nil
+            isPreparingCanvas = true
+            canvas.load(document)
+            // Reset zoom, offset, and gesture state whenever a saved drawing opens.
+            canvasSessionID = UUID()
+        }
+    }
+
+    enum PendingCanvasAction: Identifiable {
+        case clear
+        case open(CanvasDocument)
+
+        var id: Int {
+            switch self {
+            case .clear: 0
+            case .open: 1
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .clear: L10n.text("Clear the canvas?")
+            case .open: L10n.text("Discard the previous unsaved canvas?")
+            }
+        }
+    }
+}
