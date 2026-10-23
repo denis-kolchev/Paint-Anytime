@@ -25,6 +25,15 @@ struct ToolStrokePreview: View {
                         context.draw(Image(decorative: image, scale: displayScale),
                                      in: CGRect(origin: .zero, size: size))
                     }
+                    if style.instrument == .eraser, style.eraserMode == .pixels,
+                       let stroke = strokes.last, let endpoint = stroke.points.last?.position {
+                        let diameter = CGFloat(stroke.style.width)
+                        let ring = Path(ellipseIn: CGRect(
+                            x: CGFloat(endpoint.x) - diameter / 2,
+                            y: CGFloat(endpoint.y) - diameter / 2,
+                            width: diameter, height: diameter))
+                        context.stroke(ring, with: .color(.black.opacity(0.65)), lineWidth: 1.5)
+                    }
                 }
             }
         }

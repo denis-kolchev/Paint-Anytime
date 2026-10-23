@@ -132,6 +132,32 @@ struct WatchCanvasView: View {
                 }
             }
             .overlay {
+                if rendersArtwork, acceptsInput, isDragging, acceptsCurrentGesture == true,
+                   !isMovingCanvas, !isEyedropperActive, !lasso.isActive,
+                   let stroke = controller.activeStroke,
+                   stroke.style.instrument == .eraser,
+                   let point = stroke.points.last?.position {
+                    // Match the actual erasing radius and follow the paper's
+                    // zoom and pan, keeping the outline itself 1.5 screen points.
+                    let scale = zoom * fit
+                    let diameter = CGFloat(stroke.style.width) * scale
+                    let center = CGPoint(
+                        x: (CGFloat(point.x) - paperSize.width / 2) * scale
+                            + geometry.size.width / 2 + offset.width,
+                        y: (CGFloat(point.y) - paperSize.height / 2) * scale
+                            + geometry.size.height / 2 + offset.height)
+                    Canvas { context, _ in
+                        let ring = Path(ellipseIn: CGRect(
+                            x: center.x - diameter / 2, y: center.y - diameter / 2,
+                            width: diameter, height: diameter))
+                        context.stroke(ring, with: .color(.black.opacity(0.65)), lineWidth: 1.5)
+                    }
+                    .clipped()
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                }
+            }
+            .overlay {
                 if isEyedropperActive, let loupeImage, let loupePoint {
                     Image(decorative: loupeImage, scale: 1)
                         .resizable().interpolation(.none)
