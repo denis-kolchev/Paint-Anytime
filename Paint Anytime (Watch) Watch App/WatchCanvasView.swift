@@ -174,6 +174,11 @@ struct WatchCanvasView: View {
                         .allowsHitTesting(false)
                 }
             }
+            .overlay {
+                if rendersArtwork && acceptsInput {
+                    WatchLassoModeNotice(lasso: lasso)
+                }
+            }
             .onChange(of: isEyedropperActive) { _, active in
                 if active { prepareSampler(size: geometry.size) }
                 else { samplingImage = nil; loupeImage = nil }
