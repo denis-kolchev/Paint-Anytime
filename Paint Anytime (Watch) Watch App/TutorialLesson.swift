@@ -13,7 +13,7 @@ enum TutorialLesson {
         case .selectColor: return L10n.text("Turn the Crown to + to add a color.")
         case .tapAddColor, .addPaletteColor: return L10n.text("Tap + to add a color.")
         case .openPalettes: return L10n.text("Tap the palette button above.")
-        case .findNewPalette: return L10n.text("Swipe to New palette.")
+        case .findNewPalette: return L10n.text("Swipe Left to New palette.")
         case .createPalette: return L10n.text("Tap New palette.")
         case .adjustPaletteColor: return L10n.text("Move a slider to set a color.")
         case .savePaletteColor: return L10n.text("Tap ✓ to use this color.")
