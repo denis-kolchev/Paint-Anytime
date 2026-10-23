@@ -13,6 +13,8 @@ struct ToolStrokePreview: View {
         Group {
             if style.instrument == .fill {
                 ToolFillPreview(style: style, size: fillPreviewSize)
+            } else if style.instrument == .eraser && style.eraserMode == .objects {
+                ToolObjectEraserPreview()
             } else if style.instrument == .pencil || style.instrument == .crayon {
                 deferredPreview
             } else {
@@ -59,6 +61,59 @@ struct ToolStrokePreview: View {
                 }
             }
         }
+    }
+}
+
+private struct ToolObjectEraserPreview: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var startedAt = Date()
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30,
+                                paused: reduceMotion || scenePhase != .active)) { timeline in
+            let elapsed = reduceMotion ? 2.2
+                : max(0, timeline.date.timeIntervalSince(startedAt)).truncatingRemainder(dividingBy: 5.2)
+            let progress = min(1, max(0, (elapsed - 0.6) / 3.2))
+            // After the sweep, briefly hold the empty paper and restore the lines.
+            let restoration = min(1, max(0, (elapsed - 4.4) / 0.8))
+            let cursorOpacity = min(1, max(0, elapsed / 0.2))
+                * min(1, max(0, (4.0 - elapsed) / 0.2))
+
+            Canvas { context, size in
+                let radius = min(9.0, size.height * 0.07)
+                let center = CGPoint(
+                    x: size.width * (0.5 + 0.16 * sin(progress * .pi * 2)),
+                    y: size.height * (0.04 + 0.92 * progress))
+                let blue = Color(.sRGB, red: 0.15, green: 0.35, blue: 0.95)
+                for row in 1...7 {
+                    let y = size.height * CGFloat(row) / 8
+                    // Object erasing removes the entire stroke at first contact,
+                    // rather than cutting a hole along the cursor's path.
+                    let touched = elapsed >= 0.6 && center.y + radius >= y - 2.5
+                    var lineContext = context
+                    lineContext.opacity = touched ? restoration : 1
+                    var line = Path()
+                    line.move(to: CGPoint(x: size.width * 0.1, y: y))
+                    line.addLine(to: CGPoint(x: size.width * 0.9, y: y))
+                    lineContext.stroke(line, with: .color(blue),
+                                       style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                }
+
+                let cursor = Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius,
+                                                    width: radius * 2, height: radius * 2))
+                var cursorContext = context
+                cursorContext.opacity = cursorOpacity
+                cursorContext.fill(cursor, with: .color(Color(white: 0.88)))
+                cursorContext.stroke(cursor, with: .color(.black.opacity(0.65)), lineWidth: 1.5)
+            }
+        }
+        .onAppear { startedAt = Date() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { startedAt = Date() }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
