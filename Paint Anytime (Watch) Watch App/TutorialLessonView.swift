@@ -13,6 +13,7 @@ struct TutorialLessonView: View {
     @State private var completionProgress: CGFloat = 0
     @State private var showsCompletionCheckmark = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .body) private var instructionFontSize: CGFloat = 11
 
     var body: some View {
         TutorialHintLayout(maximumHeight: min(screenHeight * 0.32, maximumCardHeight ?? .infinity)) {
@@ -21,7 +22,8 @@ struct TutorialLessonView: View {
             ZStack {
                 TutorialInstructionText(
                     text: tutorial.instruction,
-                    isPaused: confirmsFinish
+                    isPaused: confirmsFinish,
+                    fontSize: instructionFontSize
                 )
                 .id(tutorial.instruction)
                 .transition(.opacity)
@@ -64,7 +66,7 @@ struct TutorialLessonView: View {
 
             // Measure the full copy independently of the scroll viewport.
             Text(tutorial.instruction)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: instructionFontSize, weight: .medium))
                 .fixedSize(horizontal: false, vertical: true)
                 .hidden()
                 .allowsHitTesting(false)
@@ -214,6 +216,7 @@ private struct TutorialHintLayout: Layout {
 private struct TutorialInstructionText: View {
     let text: String
     let isPaused: Bool
+    let fontSize: CGFloat
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.accessibilityVoiceOverEnabled) private var voiceOverEnabled
@@ -237,7 +240,7 @@ private struct TutorialInstructionText: View {
                     && !voiceOverEnabled && !isManualScrolling
             )
             Text(text)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: fontSize, weight: .medium))
                 .foregroundStyle(.white)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -262,6 +265,13 @@ private struct TutorialInstructionText: View {
                     .onEnded { _ in dragOrigin = nil })
                 .onChange(of: isDragging) { _, dragging in
                     if !dragging { dragOrigin = nil }
+                }
+                .onChange(of: fontSize) { _, _ in
+                    // A new text size changes wrapping. Start at the first line
+                    // and let the updated measurement restart overflow playback.
+                    scrollOffset = 0
+                    dragOrigin = nil
+                    isManualScrolling = false
                 }
                 .task(id: playback) {
                     guard playback.isEnabled, playback.overflow > 1 else { return }
