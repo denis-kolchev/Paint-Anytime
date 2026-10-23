@@ -74,7 +74,7 @@ struct WatchLassoToolbarTouchRegion: View {
 }
 
 nonisolated enum WatchLassoMode: CaseIterable, Hashable, Sendable {
-    case strokes, area
+    case area, strokes
 
     var title: String { self == .strokes ? "Select whole strokes" : "Select area" }
     var symbol: String { self == .strokes ? "scribble" : "square.dashed" }
@@ -93,7 +93,7 @@ nonisolated struct WatchLassoSelection {
 @MainActor
 final class WatchLassoController: ObservableObject {
     @Published private(set) var isActive = false
-    @Published private(set) var mode: WatchLassoMode = .strokes
+    @Published private(set) var mode: WatchLassoMode = .area
     @Published private(set) var outline: [CGPoint] = []
     @Published private(set) var rotation: CGFloat = 0
     @Published private(set) var bounds: CGRect?
