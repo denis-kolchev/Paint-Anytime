@@ -52335,176 +52335,176 @@
         }
       }
     },
-    "Well done! Tutorial complete." : {
+    "Well done! Tutorial complete. Tap ✓ below to finish." : {
       "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "أحسنت! اكتمل الشرح."
+            "value" : "أحسنت! اكتمل الشرح. اضغط على ✓ أدناه للإنهاء."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Výborně! Výuka dokončena."
+            "value" : "Výborně! Výuka dokončena. Dokončete klepnutím na ✓ dole."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Godt klaret! Vejledningen er færdig."
+            "value" : "Godt klaret! Vejledningen er færdig. Tryk på ✓ nedenfor for at afslutte."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geschafft! Einführung abgeschlossen."
+            "value" : "Geschafft! Einführung abgeschlossen. Tippe zum Beenden unten auf ✓."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Μπράβο! Η εκμάθηση ολοκληρώθηκε."
+            "value" : "Μπράβο! Η εκμάθηση ολοκληρώθηκε. Πάτησε το ✓ παρακάτω για έξοδο."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Well done! Tutorial complete."
+            "value" : "Well done! Tutorial complete. Tap ✓ below to finish."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¡Muy bien! Tutorial completado."
+            "value" : "¡Muy bien! Tutorial completado. Toca ✓ abajo para terminar."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hienoa! Opastus on valmis."
+            "value" : "Hienoa! Opastus on valmis. Lopeta napauttamalla alla olevaa ✓-merkkiä."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bravo ! Tutoriel terminé."
+            "value" : "Bravo ! Tutoriel terminé. Touchez ✓ en bas pour terminer."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "כל הכבוד! ההדרכה הושלמה."
+            "value" : "כל הכבוד! ההדרכה הושלמה. לסיום, הקישו על ✓ למטה."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ügyes vagy! Az útmutató véget ért."
+            "value" : "Ügyes vagy! Az útmutató véget ért. A befejezéshez koppints lent a ✓ jelre."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bagus! Tutorial selesai."
+            "value" : "Bagus! Tutorial selesai. Ketuk ✓ di bawah untuk mengakhiri."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ottimo! Tutorial completato."
+            "value" : "Ottimo! Tutorial completato. Tocca ✓ in basso per terminare."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "おめでとう！チュートリアル完了です。"
+            "value" : "おめでとう！チュートリアル完了です。下の✓をタップして終了します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "잘했어요! 튜토리얼을 마쳤어요."
+            "value" : "잘했어요! 튜토리얼을 마쳤어요. 아래 ✓를 눌러 종료하세요."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bra jobbet! Opplæringen er fullført."
+            "value" : "Bra jobbet! Opplæringen er fullført. Trykk på ✓ nedenfor for å avslutte."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Goed gedaan! De uitleg is voltooid."
+            "value" : "Goed gedaan! De uitleg is voltooid. Tik onderaan op ✓ om af te sluiten."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brawo! Samouczek ukończony."
+            "value" : "Brawo! Samouczek ukończony. Stuknij ✓ na dole, aby zakończyć."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Muito bem! Tutorial concluído."
+            "value" : "Muito bem! Tutorial concluído. Toque em ✓ abaixo para finalizar."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Muito bem! Tutorial concluído."
+            "value" : "Muito bem! Tutorial concluído. Toque em ✓ em baixo para terminar."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отлично! Обучение завершено."
+            "value" : "Отлично! Обучение завершено. Нажмите ✓ внизу, чтобы закончить."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bra jobbat! Guiden är klar."
+            "value" : "Bra jobbat! Guiden är klar. Tryck på ✓ nedan för att avsluta."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "เยี่ยมมาก! จบบทสอนแล้ว"
+            "value" : "เยี่ยมมาก! จบบทสอนแล้ว แตะ ✓ ด้านล่างเพื่อจบ"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tebrikler! Eğitim tamamlandı."
+            "value" : "Tebrikler! Eğitim tamamlandı. Bitirmek için aşağıdaki ✓ işaretine dokun."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Чудово! Навчання завершено."
+            "value" : "Чудово! Навчання завершено. Натисніть ✓ внизу, щоб завершити."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tuyệt lắm! Đã hoàn thành hướng dẫn."
+            "value" : "Tuyệt lắm! Đã hoàn thành hướng dẫn. Chạm ✓ bên dưới để kết thúc."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "做得好！教程已完成。"
+            "value" : "做得好！教程已完成。轻点下方✓以结束。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "做得好！教學已完成。"
+            "value" : "做得好！教學已完成。點一下下方✓以結束。"
           }
         }
       }

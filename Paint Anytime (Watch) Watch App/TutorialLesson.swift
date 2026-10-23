@@ -40,7 +40,7 @@ enum TutorialLesson {
         case .deleteDrawing: return L10n.text("Tap the trash to delete a picture.")
         case .returnToCanvas: return L10n.text("Tap Back to leave the gallery.")
         case .clearCanvas: return L10n.text("Tap the broom to clear the canvas.")
-        case .finished: return L10n.text("Well done! Tutorial complete.")
+        case .finished: return L10n.text("Well done! Tutorial complete. Tap ✓ below to finish.")
         }
     }
     static func description(for step: TutorialStep) -> String { compactInstruction(for: step) }
