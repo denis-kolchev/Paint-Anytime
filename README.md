@@ -122,7 +122,7 @@
 
 Paint Anytime is a drawing app made specifically for Apple Watch. Sketch a quick idea or create a tiny piece of art right from your wrist.
 
-Choose from a variety of brushes, сustomize colors, stroke width, angle, and opacity. Organize your artwork with layers, lock transparency to paint within existing boundaries, and use the Lasso to select, move, and rearrange parts of your drawing. Draw and hold to create cleaner shapes, or use the Fill tool to color larger areas in seconds.
+Choose from a variety of brushes and customize colors, stroke width, angle, and opacity. Organize your artwork with layers, lock transparency to paint within existing boundaries, and use the Lasso to select, move, and rearrange parts of your drawing. Draw and hold to create cleaner shapes, or use the Fill tool to color larger areas in seconds.
 
 Create custom colors with HSB and RGB sliders, organize them into palettes, and switch between color collections to match your mood. Explore different blending modes and see how colors interact on the canvas.
 
@@ -143,7 +143,7 @@ Save your drawings to your personal gallery and continue editing whenever inspir
 - Personal gallery with editable saved drawings;
 - Apple Watch widgets for artwork and quick access;
 - Compact, interactive drawing tutorial;
-- Creations sharing through iMessage or email.
+- Sharing creations through iMessage or email.
 
 ## What's New in 1.1.0
 
@@ -158,7 +158,7 @@ Save your drawings to your personal gallery and continue editing whenever inspir
 - Color blending. Yellow plus blue doesn't always equal green anymore;
 - Watercolor brush is a great addition to Marker for exploring color blending;
 - New Fill tool helps you spend less time covering large areas;
-- Widgets to display your favorite artwork, jump back into drawing, and open gallery;
+- Widgets to display your favorite artwork, jump back into drawing, and open the gallery;
 - Updated tutorial is quicker to complete and comes in a more compact form;
 - All brushes and layers now have opacity settings to adjust transparency.
 
