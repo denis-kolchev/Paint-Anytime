@@ -110,9 +110,10 @@ nonisolated private enum ToolPreviewStroke {
             var demoStyle = PencilStyle.initial(for: .monoline)
             demoStyle.color = SIMD4(0.15, 0.35, 0.95, 1)
             demoStyle.width = 5
-            for row in 1...3 {
-                if style.eraserMode == .objects && row == 2 { continue }
-                let y = Float(size.height) * Float(row) / 4
+            let rowCount = 7
+            for row in 1...rowCount {
+                if style.eraserMode == .objects && row == (rowCount + 1) / 2 { continue }
+                let y = Float(size.height) * Float(row) / Float(rowCount + 1)
                 let line = [PointerSample(position: SIMD2(Float(size.width) * 0.1, y), pressure: 1, timestamp: 0),
                             PointerSample(position: SIMD2(Float(size.width) * 0.9, y), pressure: 1, timestamp: 1)]
                 strokes.append(Stroke(points: line, style: demoStyle))
