@@ -51,7 +51,8 @@ struct SavedDrawingsView: View {
             let thumbnailPixels = Int(ceil(width * displayScale / 32)) * 32
             let hasClosingBitmap = transitionRequest == .closing
                 && transitionBitmap != nil && transitionBitmap?.url == selectedDrawing?.url
-            let transitionImageRequest = transitionRequest == nil || hasClosingBitmap ? nil : selectedDrawing.map {
+            let transitionImageRequest = transitionRequest == nil || hasClosingBitmap
+                || (reduceMotion && transitionRequest == .closing) ? nil : selectedDrawing.map {
                 GalleryImageRequest(url: $0.url, shortSidePixels: thumbnailPixels, displayScale: displayScale)
             }
             ZStack(alignment: .topLeading) {
@@ -142,7 +143,7 @@ struct SavedDrawingsView: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
             .overlay(alignment: .bottomLeading) {
-                if showsFullscreen && !isTransitioning && !tutorial.isActive,
+                if showsFullscreen && (!isTransitioning || transitionRequest == .closing) && !tutorial.isActive,
                    let selectedDrawing {
                     GalleryMorphActions(state: morphState,
                                         canvasOrigin: geometry.frame(in: .global).origin,
@@ -158,9 +159,20 @@ struct SavedDrawingsView: View {
                                         })
                         .opacity(isCleanViewing || !showsFullscreenActions ? 0 : 1)
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
-                        .allowsHitTesting(!isCleanViewing && showsFullscreenActions)
-                        .accessibilityHidden(isCleanViewing || !showsFullscreenActions)
-                        .task {
+                        .allowsHitTesting(!isCleanViewing && showsFullscreenActions && !isTransitioning)
+                        .accessibilityHidden(isCleanViewing || !showsFullscreenActions || isTransitioning)
+                        .task(id: transitionRequest == .closing) {
+                            if transitionRequest == .closing {
+                                withAnimation(.easeOut(duration: reduceMotion ? 0.15 : 0.25)) {
+                                    showsFullscreenActions = false
+                                }
+                                if reduceMotion {
+                                    do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+                                    guard !Task.isCancelled else { return }
+                                    withoutAnimation { returnToGrid() }
+                                }
+                                return
+                            }
                             // The photo transition ends with animations disabled.
                             // Start the controls' fade in a separate update.
                             do { try await Task.sleep(for: .milliseconds(20)) } catch { return }
@@ -218,11 +230,11 @@ struct SavedDrawingsView: View {
         // Its SDK exposes status-bar visibility through this underscored modifier.
         ._statusBarHidden(isCleanViewing)
         .toolbar {
-            if showsFullscreen && !isTransitioning && !tutorial.isActive {
+            if showsFullscreen && (!isTransitioning || transitionRequest == .closing) && !tutorial.isActive {
                 ToolbarItemGroup(placement: .bottomBar) {
                     GalleryMorphToolbarButton(state: morphState)
-                        .disabled(isCleanViewing || isLoading)
-                        .accessibilityHidden(isCleanViewing)
+                        .disabled(isCleanViewing || isLoading || isTransitioning)
+                        .accessibilityHidden(isCleanViewing || isTransitioning)
                     Spacer(minLength: 0)
                 }
             }
@@ -369,7 +381,7 @@ struct SavedDrawingsView: View {
             if fullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
         }
         .onChange(of: isTransitioning) { _, transitioning in
-            if transitioning { morphState.isExpanded = false }
+            if transitioning && transitionRequest != .closing { morphState.isExpanded = false }
             if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
         }
     }
@@ -428,7 +440,12 @@ struct SavedDrawingsView: View {
         isCleanViewing = false
         if showsFullscreen && level < 2 {
             if reduceMotion {
-                withoutAnimation { returnToGrid() }
+                if tutorial.isActive {
+                    withoutAnimation { returnToGrid() }
+                } else {
+                    // Keep the controls mounted until their short fade completes.
+                    transitionRequest = .closing
+                }
             } else {
                 // Hand the exact visible image to the shrinking overlay. Keep the
                 // pager alive until that overlay is ready, including tile layout.
@@ -470,6 +487,7 @@ struct SavedDrawingsView: View {
     }
 
     private func prepareImageTransition(size: CGSize, topInset: CGFloat) {
+        guard !(reduceMotion && transitionRequest == .closing) else { return }
         guard imageTransition == nil, let direction = transitionRequest,
               let drawing = selectedDrawing,
               let bitmap = transitionBitmap, bitmap.url == drawing.url,
