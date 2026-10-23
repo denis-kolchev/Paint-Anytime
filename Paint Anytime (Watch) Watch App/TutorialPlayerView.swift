@@ -584,13 +584,13 @@ private struct TutorialCircleGuide: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
             let elapsed = max(0, timeline.date.timeIntervalSince(startedAt))
             let phase = elapsed.truncatingRemainder(dividingBy: 4.4)
-            let drawn = reduceMotion ? 1 : min(1, max(0, (phase - 0.4) / 1.8))
+            let drawn = min(1, max(0, (phase - 0.4) / 1.8))
             // Match the real recognizer's half-second hold before straightening.
-            let straightened = reduceMotion ? 1 : min(1, max(0, (phase - 2.7) / 0.25))
-            let visibility = reduceMotion ? 1 : min(1, max(0, (4.4 - phase) / 0.4))
+            let straightened = min(1, max(0, (phase - 2.7) / 0.25))
+            let visibility = min(1, max(0, (4.4 - phase) / 0.4))
             Canvas { context, size in
                 // Keep the entire loop and contact marker below the clock and
                 // above the coach card, even on the smallest watch viewport.
@@ -614,7 +614,7 @@ private struct TutorialCircleGuide: View {
                 let finger = point(at: drawn, radiusX: radiusX, radiusY: radiusY, center: center,
                                    straightened: straightened)
                 // A stationary contact marker makes the hold visible after the loop closes.
-                if reduceMotion || (phase >= 0.4 && phase < 3.15) {
+                if phase >= 0.4 && phase < 3.15 {
                     let holding = drawn == 1 && straightened == 0
                     let pulse = holding && !reduceMotion ? 1 + 0.15 * sin((phase - 2.2) * .pi * 4) : 1
                     let marker = CGRect(x: finger.x - 8 * pulse, y: finger.y - 8 * pulse,
@@ -681,12 +681,12 @@ private struct TutorialLassoGuide: View {
     }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
+        TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
             let phase = max(0, timeline.date.timeIntervalSince(startedAt)).truncatingRemainder(dividingBy: 6)
-            let drawn = reduceMotion ? 1 : eased((phase - 0.5) / 1.8)
-            let selected = reduceMotion ? 1 : eased((phase - 2.5) / 0.3)
-            let moved = reduceMotion ? 0.5 : eased((phase - 3.2) / 1.2)
-            let visibility = reduceMotion ? 1 : eased(phase / 0.3) * (1 - eased((phase - 5.3) / 0.7))
+            let drawn = eased((phase - 0.5) / 1.8)
+            let selected = eased((phase - 2.5) / 0.3)
+            let moved = eased((phase - 3.2) / 1.2)
+            let visibility = eased(phase / 0.3) * (1 - eased((phase - 5.3) / 0.7))
             Canvas { context, size in
                 let top = min(50.0, size.height * 0.5)
                 let availableHeight = max(0, size.height - top - 16)
@@ -737,7 +737,7 @@ private struct TutorialLassoGuide: View {
                     selectionContext.fill(handle, with: .color(Color(red: 0.16, green: 0.67, blue: 0.87)))
                     selectionContext.stroke(handle, with: .color(.white), lineWidth: 1)
                 }
-                if !reduceMotion && phase >= 3.2 && phase < 4.6 {
+                if phase >= 3.2 && phase < 4.6 {
                     let finger = center.applying(translation)
                     let marker = Path(ellipseIn: CGRect(x: finger.x - 7, y: finger.y - 7, width: 14, height: 14))
                     context.fill(marker, with: .color(.white.opacity(0.5)))
