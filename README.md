@@ -16,12 +16,32 @@
   Sketch an idea, doodle while you're waiting, or create a tiny piece of art right from your wrist.
 </p>
 
+<!-- <p align="center">
+  <a href="https://apps.apple.com/app/paint-anytime/id6816100087?platform=watch">
+    <img
+      src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83"
+      alt="Download on the App Store"
+      width="170"
+    >
+  </a>
+</p> -->
+
 <p align="center">
   <a href="https://apps.apple.com/app/paint-anytime/id6816100087?platform=watch">
     <img
       src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83"
       alt="Download on the App Store"
       width="170"
+      height="57"
+    >
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://testflight.apple.com/join/ByhPwH11">
+    <img
+      src="https://raw.githubusercontent.com/jellyfin/Swiftfin/main/Resources/testflight.svg"
+      alt="Get the Beta on TestFlight"
+      width="170"
+      height="57"
     >
   </a>
 </p>
@@ -110,6 +130,7 @@ Save your drawings to your personal gallery and continue editing whenever inspir
 
 ## Features
 
+- 6 brush presets with unique drawing behaviors;
 - Custom colors, stroke width, angle, and opacity;
 - Layers with transparency lock;
 - Lasso tool for arranging your artwork;
@@ -180,11 +201,8 @@ Source archives for each release are generated automatically by GitHub.
 ## Documentation
 
 - [Privacy Policy](docs/PRIVACY.md) — local data, sharing, Photos, and support
-- [Localization](docs/LOCALIZATION.md) — language selection and translation workflow
 - [Contributing](docs/CONTRIBUTING.md) — pull requests and contributor agreement
 - [Licensing](docs/LICENSING.md) — source code and official App Store builds
-- [Blend Modes](docs/BLEND_MODES.md) — blending behavior and implementation details
-- [Shape Recognition](docs/shape-recognition.md) — supported shapes and recognition behavior
 
 ## License
 
