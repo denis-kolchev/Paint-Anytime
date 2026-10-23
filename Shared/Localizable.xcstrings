@@ -40364,178 +40364,179 @@
         }
       }
     },
-    "Higher fill tolerance includes more colors and opacity levels on the current layer. Use the plus and minus buttons for 1% steps. Hold a button to repeat, or turn the Digital Crown." : {
+    "Higher fill tolerance includes more colors and opacity levels on the current layer. Use the plus and minus buttons for %@ steps. Hold a button to repeat, or turn the Digital Crown." : {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Higher fill tolerance includes more colors and opacity levels on the current layer. Use the plus and minus buttons for 1% steps. Hold a button to repeat, or turn the Digital Crown."
+            "value": "Higher fill tolerance includes more colors and opacity levels on the current layer. Use the plus and minus buttons for %@ steps. Hold a button to repeat, or turn the Digital Crown."
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Более высокий допуск заливки включает больше цветов и уровней прозрачности на текущем слое. Кнопки «+» и «−» меняют допуск с шагом 1%. Удерживайте кнопку для повторения или вращайте Digital Crown."
+            "value": "Более высокий допуск заливки включает больше цветов и уровней прозрачности на текущем слое. Кнопки «+» и «−» меняют допуск с шагом %@. Удерживайте кнопку для повторения или вращайте Digital Crown."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تسمح زيادة سماحية التعبئة بتضمين المزيد من الألوان ومستويات العتامة في الطبقة الحالية. استخدم زرّي الجمع والطرح للتغيير بخطوات قدرها 1%. اضغط مطولًا على أحد الزرّين للتكرار، أو أدر Digital Crown."
+            "value": "تسمح زيادة سماحية التعبئة بتضمين المزيد من الألوان ومستويات العتامة في الطبقة الحالية. استخدم زرّي الجمع والطرح للتغيير بخطوات قدرها %@. اضغط مطولًا على أحد الزرّين للتكرار، أو أدر Digital Crown."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Une tolérance de remplissage plus élevée inclut davantage de couleurs et de niveaux d’opacité sur le calque actuel. Utilisez les boutons plus et moins pour ajuster par pas de 1 %. Maintenez un bouton pour répéter, ou tournez la Digital Crown."
+            "value": "Une tolérance de remplissage plus élevée inclut davantage de couleurs et de niveaux d’opacité sur le calque actuel. Utilisez les boutons plus et moins pour ajuster par pas de %@. Maintenez un bouton pour répéter, ou tournez la Digital Crown."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Eine höhere Fülltoleranz schließt mehr Farben und Deckkraftstufen auf der aktuellen Ebene ein. Mit Plus und Minus änderst du den Wert in Schritten von 1 %. Halte eine Taste gedrückt, um die Änderung zu wiederholen, oder drehe die Digital Crown."
+            "value": "Eine höhere Fülltoleranz schließt mehr Farben und Deckkraftstufen auf der aktuellen Ebene ein. Mit Plus und Minus änderst du den Wert in Schritten von %@. Halte eine Taste gedrückt, um die Änderung zu wiederholen, oder drehe die Digital Crown."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Una tolleranza di riempimento più alta include più colori e livelli di opacità sul livello attuale. Usa i pulsanti più e meno per variazioni dell’1%. Tieni premuto un pulsante per ripetere oppure ruota la Digital Crown."
+            "value": "Una tolleranza di riempimento più alta include più colori e livelli di opacità sul livello attuale. Usa i pulsanti più e meno per variazioni dell’%@. Tieni premuto un pulsante per ripetere oppure ruota la Digital Crown."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "塗りつぶしの許容値を上げると、現在のレイヤーで対象となる色と不透明度の範囲が広がります。プラスとマイナスのボタンで1%ずつ調整できます。ボタンを長押しすると連続して調整できます。またはDigital Crownを回してください。"
+            "value": "塗りつぶしの許容値を上げると、現在のレイヤーで対象となる色と不透明度の範囲が広がります。プラスとマイナスのボタンで%@ずつ調整できます。ボタンを長押しすると連続して調整できます。またはDigital Crownを回してください。"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "채우기 허용치를 높이면 현재 레이어에서 더 많은 색상과 불투명도 수준이 포함됩니다. 더하기와 빼기 버튼으로 1%씩 조절하세요. 버튼을 길게 누르면 반복해서 조절하거나 Digital Crown을 돌릴 수 있습니다."
+            "value": "채우기 허용치를 높이면 현재 레이어에서 더 많은 색상과 불투명도 수준이 포함됩니다. 더하기와 빼기 버튼으로 %@씩 조절하세요. 버튼을 길게 누르면 반복해서 조절하거나 Digital Crown을 돌릴 수 있습니다."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uma tolerância de preenchimento mais alta inclui mais cores e níveis de opacidade na camada atual. Use os botões mais e menos para ajustar em passos de 1%. Mantenha um botão premido para repetir ou rode a Digital Crown."
+            "value": "Uma tolerância de preenchimento mais alta inclui mais cores e níveis de opacidade na camada atual. Use os botões mais e menos para ajustar em passos de %@. Mantenha um botão premido para repetir ou rode a Digital Crown."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uma tolerância de preenchimento mais alta inclui mais cores e níveis de opacidade na camada atual. Use os botões mais e menos para ajustar em passos de 1%. Mantenha um botão pressionado para repetir ou gire a Digital Crown."
+            "value": "Uma tolerância de preenchimento mais alta inclui mais cores e níveis de opacidade na camada atual. Use os botões mais e menos para ajustar em passos de %@. Mantenha um botão pressionado para repetir ou gire a Digital Crown."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "提高填充容差可涵盖当前图层中更多颜色和不透明度级别。使用加号和减号按钮以1%为步长调整。按住按钮可连续调整，也可以转动数码表冠。"
+            "value": "提高填充容差可涵盖当前图层中更多颜色和不透明度级别。使用加号和减号按钮以%@为步长调整。按住按钮可连续调整，也可以转动数码表冠。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Una tolerancia de relleno mayor incluye más colores y niveles de opacidad en la capa actual. Usa los botones más y menos para ajustar en pasos del 1 %. Mantén pulsado un botón para repetir o gira la Digital Crown."
+            "value": "Una tolerancia de relleno mayor incluye más colores y niveles de opacidad en la capa actual. Usa los botones más y menos para ajustar en pasos del %@. Mantén pulsado un botón para repetir o gira la Digital Crown."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Daha yüksek dolgu toleransı, geçerli katmanda daha fazla renk ve opaklık düzeyini kapsar. %1’lik adımlar için artı ve eksi düğmelerini kullanın. Tekrarlamak için bir düğmeyi basılı tutun veya Digital Crown’u çevirin."
+            "value": "Daha yüksek dolgu toleransı, geçerli katmanda daha fazla renk ve opaklık düzeyini kapsar. %@’lik adımlar için artı ve eksi düğmelerini kullanın. Tekrarlamak için bir düğmeyi basılı tutun veya Digital Crown’u çevirin."
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "提高填色容許值可涵蓋目前圖層中更多顏色和不透明度等級。使用加號和減號按鈕以1%為單位調整。按住按鈕可連續調整，也可以轉動數位錶冠。"
+            "value": "提高填色容許值可涵蓋目前圖層中更多顏色和不透明度等級。使用加號和減號按鈕以%@為單位調整。按住按鈕可連續調整，也可以轉動數位錶冠。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wyższa tolerancja wypełnienia obejmuje więcej kolorów i poziomów krycia na bieżącej warstwie. Używaj przycisków plus i minus, aby zmieniać wartość co 1%. Przytrzymaj przycisk, aby powtarzać zmianę, lub obracaj Digital Crown."
+            "value": "Wyższa tolerancja wypełnienia obejmuje więcej kolorów i poziomów krycia na bieżącej warstwie. Używaj przycisków plus i minus, aby zmieniać wartość co %@. Przytrzymaj przycisk, aby powtarzać zmianę, lub obracaj Digital Crown."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Een hogere vultolerantie omvat meer kleuren en dekkingsniveaus op de huidige laag. Gebruik de plus- en minknoppen voor stappen van 1%. Houd een knop ingedrukt om te herhalen of draai aan de Digital Crown."
+            "value": "Een hogere vultolerantie omvat meer kleuren en dekkingsniveaus op de huidige laag. Gebruik de plus- en minknoppen voor stappen van %@. Houd een knop ingedrukt om te herhalen of draai aan de Digital Crown."
           }
         },
         "sv": {
           "stringUnit": {
             "state": "translated",
-            "value": "En högre fyllningstolerans omfattar fler färger och opacitetsnivåer på det aktuella lagret. Använd plus- och minusknapparna för steg om 1 %. Håll en knapp intryckt för att upprepa eller vrid på Digital Crown."
+            "value": "En högre fyllningstolerans omfattar fler färger och opacitetsnivåer på det aktuella lagret. Använd plus- och minusknapparna för steg om %@. Håll en knapp intryckt för att upprepa eller vrid på Digital Crown."
           }
         },
         "da": {
           "stringUnit": {
             "state": "translated",
-            "value": "En højere udfyldningstolerance omfatter flere farver og opacitetsniveauer på det aktuelle lag. Brug plus- og minusknapperne til trin på 1 %. Hold en knap nede for at gentage, eller drej Digital Crown."
+            "value": "En højere udfyldningstolerance omfatter flere farver og opacitetsniveauer på det aktuelle lag. Brug plus- og minusknapperne til trin på %@. Hold en knap nede for at gentage, eller drej Digital Crown."
           }
         },
         "nb": {
           "stringUnit": {
             "state": "translated",
-            "value": "En høyere fylltoleranse omfatter flere farger og opasitetsnivåer på det gjeldende laget. Bruk pluss- og minusknappene for trinn på 1 %. Hold en knapp inne for å gjenta, eller vri på Digital Crown."
+            "value": "En høyere fylltoleranse omfatter flere farger og opasitetsnivåer på det gjeldende laget. Bruk pluss- og minusknappene for trinn på %@. Hold en knapp inne for å gjenta, eller vri på Digital Crown."
           }
         },
         "fi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Suurempi täytön toleranssi kattaa enemmän värejä ja peittävyystasoja nykyisellä tasolla. Muuta arvoa plus- ja miinuspainikkeilla 1 % kerrallaan. Toista muutos pitämällä painiketta painettuna tai kierrä Digital Crownia."
+            "value": "Suurempi täytön toleranssi kattaa enemmän värejä ja peittävyystasoja nykyisellä tasolla. Muuta arvoa plus- ja miinuspainikkeilla %@ kerrallaan. Toista muutos pitämällä painiketta painettuna tai kierrä Digital Crownia."
           }
         },
         "id": {
           "stringUnit": {
             "state": "translated",
-            "value": "Toleransi isian yang lebih tinggi mencakup lebih banyak warna dan tingkat opasitas pada lapisan saat ini. Gunakan tombol plus dan minus untuk perubahan sebesar 1%. Tahan tombol untuk mengulang, atau putar Digital Crown."
+            "value": "Toleransi isian yang lebih tinggi mencakup lebih banyak warna dan tingkat opasitas pada lapisan saat ini. Gunakan tombol plus dan minus untuk perubahan sebesar %@. Tahan tombol untuk mengulang, atau putar Digital Crown."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dung sai tô màu cao hơn bao gồm nhiều màu và mức độ mờ đục hơn trên lớp hiện tại. Dùng nút cộng và trừ để điều chỉnh mỗi lần 1%. Giữ nút để lặp lại hoặc xoay Digital Crown."
+            "value": "Dung sai tô màu cao hơn bao gồm nhiều màu và mức độ mờ đục hơn trên lớp hiện tại. Dùng nút cộng và trừ để điều chỉnh mỗi lần %@. Giữ nút để lặp lại hoặc xoay Digital Crown."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "ค่าความคลาดเคลื่อนในการเติมสีที่สูงขึ้นจะครอบคลุมสีและระดับความทึบมากขึ้นในเลเยอร์ปัจจุบัน ใช้ปุ่มบวกและลบเพื่อปรับครั้งละ 1% กดปุ่มค้างไว้เพื่อปรับซ้ำ หรือหมุน Digital Crown"
+            "value": "ค่าความคลาดเคลื่อนในการเติมสีที่สูงขึ้นจะครอบคลุมสีและระดับความทึบมากขึ้นในเลเยอร์ปัจจุบัน ใช้ปุ่มบวกและลบเพื่อปรับครั้งละ %@ กดปุ่มค้างไว้เพื่อปรับซ้ำ หรือหมุน Digital Crown"
           }
         },
         "uk": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вищий допуск заливки охоплює більше кольорів і рівнів непрозорості на поточному шарі. Кнопки «+» і «−» змінюють значення з кроком 1%. Утримуйте кнопку для повторення або обертайте Digital Crown."
+            "value": "Вищий допуск заливки охоплює більше кольорів і рівнів непрозорості на поточному шарі. Кнопки «+» і «−» змінюють значення з кроком %@. Утримуйте кнопку для повторення або обертайте Digital Crown."
           }
         },
         "cs": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vyšší tolerance výplně zahrnuje více barev a úrovní krytí v aktuální vrstvě. Tlačítky plus a minus měňte hodnotu po 1 %. Podržením tlačítka změnu opakujte nebo otáčejte korunkou Digital Crown."
+            "value": "Vyšší tolerance výplně zahrnuje více barev a úrovní krytí v aktuální vrstvě. Tlačítky plus a minus měňte hodnotu po %@. Podržením tlačítka změnu opakujte nebo otáčejte korunkou Digital Crown."
           }
         },
         "hu": {
           "stringUnit": {
             "state": "translated",
-            "value": "A nagyobb kitöltési tűrés több színt és fedettségi szintet foglal magában az aktuális rétegen. A plusz és mínusz gombokkal 1%-os lépésekben módosíthatod az értéket. Tartsd nyomva a gombot az ismétléshez, vagy forgasd a Digital Crownt."
+            "value": "A nagyobb kitöltési tűrés több színt és fedettségi szintet foglal magában az aktuális rétegen. A plusz és mínusz gombokkal %@-os lépésekben módosíthatod az értéket. Tartsd nyomva a gombot az ismétléshez, vagy forgasd a Digital Crownt."
           }
         },
         "el": {
           "stringUnit": {
             "state": "translated",
-            "value": "Η υψηλότερη ανοχή γεμίσματος περιλαμβάνει περισσότερα χρώματα και επίπεδα αδιαφάνειας στην τρέχουσα στρώση. Χρησιμοποιήστε τα κουμπιά συν και πλην για βήματα του 1%. Κρατήστε πατημένο ένα κουμπί για επανάληψη ή περιστρέψτε το Digital Crown."
+            "value": "Η υψηλότερη ανοχή γεμίσματος περιλαμβάνει περισσότερα χρώματα και επίπεδα αδιαφάνειας στην τρέχουσα στρώση. Χρησιμοποιήστε τα κουμπιά συν και πλην για βήματα του %@. Κρατήστε πατημένο ένα κουμπί για επανάληψη ή περιστρέψτε το Digital Crown."
           }
         },
         "he": {
           "stringUnit": {
             "state": "translated",
-            "value": "סבילות מילוי גבוהה יותר כוללת יותר צבעים ורמות אטימות בשכבה הנוכחית. השתמשו בכפתורי הפלוס והמינוס לשינוי בצעדים של 1%. לחצו לחיצה ממושכת על כפתור כדי לחזור על השינוי, או סובבו את ה-Digital Crown."
+            "value": "סבילות מילוי גבוהה יותר כוללת יותר צבעים ורמות אטימות בשכבה הנוכחית. השתמשו בכפתורי הפלוס והמינוס לשינוי בצעדים של %@. לחצו לחיצה ממושכת על כפתור כדי לחזור על השינוי, או סובבו את ה-Digital Crown."
           }
         }
-      }
+      },
+      "comment": "Fill tolerance help. %@ is a percentage formatted for the selected app language (one percent)."
     },
     "Sets paint coverage: %1$@ is invisible, %2$@ gives the brush its full coverage. Textured and translucent brushes retain their character. For the pixel eraser, this sets erasing strength." : {
       "extractionState" : "manual",

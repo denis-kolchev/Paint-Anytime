@@ -46,9 +46,13 @@ struct WatchAppSettingsView: View {
             .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 if let onClose {
-                    ToolbarItem(placement: .cancellationAction) {
+                    ToolbarItem(placement: .topBarLeading) {
                         Button(action: onClose) {
                             Image(systemName: "xmark")
+                                // Keep the symbol centered when the navigation host
+                                // restores this item after showing a back button.
+                                .frame(width: 32, height: 32, alignment: .center)
+                                .contentShape(Circle())
                         }
                         .watchToolbarButtonStyle()
                         .accessibilityLabel(L10n.text("Close"))
