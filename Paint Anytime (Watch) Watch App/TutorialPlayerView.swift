@@ -234,14 +234,16 @@ struct TutorialPlayerView: View {
                                         .frame(width: 18, height: 18)
                                         .opacity(primaryControlIsDone ? 0 : 1)
                                     Image(systemName: "checkmark")
+                                        .font(.system(size: 17, weight: .semibold))
                                         .foregroundStyle(.green)
                                         .opacity(primaryControlIsDone ? 1 : 0)
                                 }
                                 .tutorialHint(tutorial, steps: [.openTools, .closeTools, .finishCamera, .finishLasso])
-                                .frame(width: 32, height: 32)
+                                .frame(width: MorphPanelGeometry.buttonDiameter,
+                                       height: MorphPanelGeometry.buttonDiameter)
                                 .contentShape(Circle())
                             }
-                            .watchToolbarButtonStyle(diameter: 32, usesCanvasMaterial: true)
+                            .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter, usesCanvasMaterial: true)
                             .accessibilityLabel(L10n.text(primaryControlIsDone ? "Done" : "Tool settings"))
                             .trackCanvasControl(.tools, frames: $controls)
                             .opacity(showsPrimaryControl ? 1 : 0)
