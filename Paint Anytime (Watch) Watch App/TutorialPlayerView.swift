@@ -527,7 +527,8 @@ struct TutorialPlayerView: View {
                     Button {
                         player.requestClear()
                     } label: { BroomIcon().tutorialHint(tutorial, steps: [.clearCanvas]) }
-                    .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
+                    .buttonStyle(TutorialOverlayButtonStyle(diameter: GalleryMorphState.buttonDiameter,
+                                                           hitDiameter: hitDiameter))
                     .disabled(!tutorial.permits([.clearCanvas]))
                     .accessibilityLabel(L10n.text("Clear canvas"))
                     .trackCanvasControl(.clear, frames: $controls)
