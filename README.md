@@ -143,7 +143,7 @@ Save your drawings to your personal gallery and continue editing whenever inspir
 - Personal gallery with editable saved drawings;
 - Apple Watch widgets for artwork and quick access;
 - Compact, interactive drawing tutorial;
-- Share your creations through iMessage or email.
+- Creations sharing through iMessage or email.
 
 ## What's New in 1.1.0
 
