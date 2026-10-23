@@ -70,52 +70,37 @@ struct PhotoInboxChecks {
         let receiver = TestReceiver()
         let inbox = WatchPhotoInbox(store: store, writer: writer, receiver: receiver)
         inbox.start()
-        precondition(inbox.needsPhotoPermission && inbox.pendingCount == 2 && writer.calls.isEmpty)
-        writer.permissionRequiresSettings = true
-        inbox.refresh()
-        precondition(inbox.photoPermissionRequiresSettings)
-        inbox.requestPhotoPermission()
+        precondition(inbox.images.count == 2 && writer.calls.isEmpty)
+        let selected = inbox.images[0]
+        inbox.saveToPhotos(selected)
         try await waitUntil { writer.pending != nil }
-        precondition(!inbox.needsPhotoPermission && writer.calls.count == 1)
-        inbox.refresh()
-        inbox.refresh()
-        try receive()
-        receiver.onReceive?(.success(()))
-        precondition(inbox.pendingCount == 3 && writer.calls.count == 1, "No overlapping saves")
+        inbox.saveToPhotos(selected)
+        precondition(writer.calls.count == 1, "No overlapping writes")
         writer.finish(.failure(CocoaError(.fileWriteUnknown)))
         try await waitUntil { inbox.errorMessage != nil }
         let afterFailure = try store.pendingImages()
-        precondition(afterFailure.count == 3, "Failed images stay queued")
+        precondition(afterFailure.count == 2, "Failure preserves gallery")
         inbox.clearError()
+        inbox.saveToPhotos(selected)
+        try await waitUntil { writer.pending != nil }
+        writer.finish(.success(()))
+        try await waitUntil { inbox.savedToPhotos }
+        let afterExport = try store.pendingImages()
+        precondition(afterExport.count == 2, "Export preserves gallery")
+        let source = base.appendingPathComponent("transfer")
+        try Data([4]).write(to: source)
+        try store.receive(source, name: "drawing.png")
+        try Data([5]).write(to: source)
+        try store.receive(source, name: "drawing.png")
+        let afterSync = try store.pendingImages()
+        precondition(afterSync.count == 3, "Repeated sync replaces the same drawing")
+        try Data([6]).write(to: source)
+        do {
+            try store.receive(source, name: "../escape.png")
+            preconditionFailure("Unsafe name accepted")
+        } catch {}
         inbox.refresh()
-        try await waitUntil { writer.calls.count == 2 && writer.pending != nil }
-        // The newly arrived UUID may sort before the failed file, as in the existing queue.
-        writer.finish(.success(()))
-        try await waitUntil { writer.calls.count == 3 && writer.pending != nil }
-        writer.finish(.success(()))
-        try await waitUntil { writer.calls.count == 4 && writer.pending != nil }
-        writer.finish(.success(()))
-        try await waitUntil { inbox.pendingCount == 0 }
-        let remaining = try store.pendingImages()
-        precondition(remaining.isEmpty && writer.calls.count == 4)
-        receiver.onReceive?(.failure(CocoaError(.fileReadUnknown)))
-        precondition(inbox.errorMessage?.contains("получить") == true)
-        try receive()
-        let cleanupWriter = TestPhotoWriter()
-        cleanupWriter.canSave = true
-        let cleanupInbox = WatchPhotoInbox(store: FailingStore(base: store), writer: cleanupWriter,
-                                          receiver: TestReceiver())
-        cleanupInbox.refresh()
-        try await waitUntil { cleanupWriter.pending != nil }
-        cleanupWriter.finish(.success(()))
-        try await waitUntil { cleanupInbox.errorMessage != nil }
-        precondition(cleanupInbox.errorMessage?.contains("временный файл") == true)
-        let afterCleanupFailure = try store.pendingImages()
-        precondition(afterCleanupFailure.count == 1 && cleanupWriter.calls.count == 1)
-        let readInbox = WatchPhotoInbox(store: FailingStore(base: store, failsRead: true), writer: cleanupWriter,
-                                       receiver: TestReceiver())
-        readInbox.refresh()
-        precondition(readInbox.errorMessage?.contains("прочитать") == true)
-        print("PASS: incoming file ownership, queue ordering, permission, serial writes, retry, receive/read/cleanup errors")
+        precondition(inbox.images.count == 3)
+        print("PASS: persistent gallery, explicit export, serial writes, failed export retention, sync deduplication")
     }
 }

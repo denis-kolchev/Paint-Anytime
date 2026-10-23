@@ -14,7 +14,7 @@ The app contains no advertising, third-party analytics, or tracking SDKs, and do
 
 When you choose to share a drawing, the selected image is passed to the app or service you choose in the system sharing interface. That service handles the image under its own terms and privacy policy. The developer does not receive a copy unless you send one to the developer yourself.
 
-Where the iPhone photo-transfer feature is available, drawings you choose to transfer are sent from your Apple Watch to the companion iPhone app using Apple's WatchConnectivity framework. The iPhone app requests permission to add images to Photos; it does not request access to read your existing photo library. Received images are kept in a local queue until successfully saved to Photos, after which the app removes the queued copy. If permission is denied or saving fails, images can remain queued locally.
+Where the iPhone photo-transfer feature is available, drawings you choose to transfer are sent from your Apple Watch to the companion iPhone app using Apple's WatchConnectivity framework. The iPhone app requests permission to add images to Photos; it does not request access to read your existing photo library. Received images remain in the companion app’s local gallery. Saving to Photos, exporting PNG files, and sharing are user-initiated actions. Deleting a drawing on the watch does not delete its iPhone copy.
 
 Your device backups and iCloud Photos settings may cause Apple to back up app data or synchronize exported images. These services are controlled by your Apple settings, not by a Paint Anytime server.
 

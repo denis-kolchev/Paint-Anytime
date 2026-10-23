@@ -4,20 +4,24 @@ import Foundation
 @MainActor
 protocol WatchDrawingReceiving {
     func start(onReceive: @escaping @MainActor (Result<Void, Error>) -> Void)
+    func requestSync()
 }
 
-/// Coordinates permission, a persistent queue, and one-at-a-time library writes.
+extension WatchDrawingReceiving {
+    func requestSync() {}
+}
+
 @MainActor
 final class WatchPhotoInbox: ObservableObject {
-    @Published private(set) var needsPhotoPermission = false
-    @Published private(set) var photoPermissionRequiresSettings = false
-    @Published private(set) var pendingCount = 0
+    @Published private(set) var images: [URL] = []
+    @Published private(set) var isSaving = false
     @Published private(set) var errorMessage: String?
+    @Published private(set) var savedToPhotos = false
+    @Published private(set) var photoPermissionRequiresSettings = false
 
     private let store: any IncomingDrawingStoring
     private let writer: any PhotoLibraryWriting
     private let receiver: any WatchDrawingReceiving
-    private var isSaving = false
 
     init(store: any IncomingDrawingStoring, writer: any PhotoLibraryWriting,
          receiver: any WatchDrawingReceiving) {
@@ -31,50 +35,36 @@ final class WatchPhotoInbox: ObservableObject {
         receiver.start { [weak self] result in
             switch result {
             case .success: self?.refresh()
-            case .failure(let error):
-                self?.errorMessage = String(localized: "Could not receive the drawing from your watch: \(error.localizedDescription)")
+            case .failure(let error): self?.errorMessage = error.localizedDescription
             }
         }
     }
 
-    func requestPhotoPermission() {
-        Task {
-            await writer.requestPermission()
-            refresh()
-        }
-    }
-
+    func synchronize() { receiver.requestSync() }
     func clearError() { errorMessage = nil }
+    func clearConfirmation() { savedToPhotos = false }
 
     func refresh() {
-        needsPhotoPermission = !writer.canSave
+        do { images = try store.pendingImages().sorted { $0.lastPathComponent > $1.lastPathComponent } }
+        catch { errorMessage = error.localizedDescription }
         photoPermissionRequiresSettings = writer.permissionRequiresSettings
-        do {
-            let images = try store.pendingImages()
-            pendingCount = images.count
-            if writer.canSave, let next = images.first { save(next) }
-        } catch {
-            errorMessage = String(localized: "Could not read the received drawings: \(error.localizedDescription)")
-        }
     }
 
-    private func save(_ image: URL) {
+    func saveToPhotos(_ image: URL) {
         guard !isSaving else { return }
         isSaving = true
         Task {
-            do { try await writer.save(image) }
-            catch {
-                isSaving = false
-                errorMessage = String(localized: "Could not save the drawing to Photos: \(error.localizedDescription)")
+            defer { isSaving = false }
+            if !writer.canSave { await writer.requestPermission() }
+            photoPermissionRequiresSettings = writer.permissionRequiresSettings
+            guard writer.canSave else {
+                errorMessage = String(localized: "Allow access in Settings to save drawings to Photos.")
                 return
             }
-            isSaving = false
-            do { try store.remove(image) }
-            catch {
-                errorMessage = String(localized: "The drawing was saved to Photos, but the temporary file could not be deleted: \(error.localizedDescription)")
-                return
-            }
-            refresh()
+            do {
+                try await writer.save(image)
+                savedToPhotos = true
+            } catch { errorMessage = error.localizedDescription }
         }
     }
 }

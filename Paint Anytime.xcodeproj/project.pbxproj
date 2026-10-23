@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F60000000000000000000001 /* Paint-Anytime.icon in Resources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000002 /* Paint-Anytime.icon */; };
 		257D4058305EA358002072CB /* Paint Anytime (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
 		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -53,6 +54,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		F60000000000000000000002 /* Paint-Anytime.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.icon; path = "Paint Anytime (Watch) Watch App/Paint-Anytime.icon"; sourceTree = SOURCE_ROOT; };
 		257D4052305EA358002072CB /* Paint Anytime (Watch).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		25AC8197305D90C700C8F69E /* Paint Anytime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -124,6 +126,7 @@
 				B20000020000000000000002 /* Preset Photos */,
 				25AC8199305D90C700C8F69E /* Paint Anytime */,
 				A10000050000000000000005 /* Paint Anytime iPhone */,
+				F60000000000000000000002 /* Paint-Anytime.icon */,
 				257D405B305EA358002072CB /* Paint Anytime (Watch) Watch App */,
 				25AC8198305D90C700C8F69E /* Products */,
 				2523992A3060233F00774395 /* Shared */,
@@ -150,6 +153,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 257D4068305EA359002072CB /* Build configuration list for PBXNativeTarget "Paint Anytime (Watch)" */;
 			buildPhases = (
+				A10000060000000000000006 /* Sources */,
 				257D4050305EA358002072CB /* Resources */,
 				257D4064305EA359002072CB /* Embed Watch Content */,
 			);
@@ -158,10 +162,11 @@
 			dependencies = (
 				257D405A305EA358002072CB /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (A10000050000000000000005 /* Paint Anytime iPhone */);
 			name = "Paint Anytime (Watch)";
 			productName = "Paint Anytime (Watch)";
 			productReference = 257D4052305EA358002072CB /* Paint Anytime (Watch).app */;
-			productType = "com.apple.product-type.application.watchapp2-container";
+			productType = "com.apple.product-type.application";
 		};
 		257D4056305EA358002072CB /* Paint Anytime (Watch) Watch App */ = {
 			isa = PBXNativeTarget;
@@ -297,7 +302,7 @@
 		257D4050305EA358002072CB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
-				E50000000000000000000001 /* Shared/Localizable.xcstrings in Resources */,
+				F60000000000000000000001 /* Paint-Anytime.icon in Resources */,
 			);
 		};
 		257D4055305EA358002072CB /* Resources */ = {
@@ -319,6 +324,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		A10000060000000000000006 /* Sources */ = { isa = PBXSourcesBuildPhase; files = (); };
 		257D4053305EA358002072CB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -361,7 +367,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SWIFT_VERSION = 5.0;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -381,7 +391,11 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				SWIFT_VERSION = 5.0;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -400,7 +414,7 @@
 				CODE_SIGN_ENTITLEMENTS = WatchApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_PREVIEWS = YES;
 				EXECUTABLE_NAME = PaintAnytimeWatch;
@@ -409,12 +423,13 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKWatchOnly = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.deniskolchev.paintanytime;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -438,7 +453,7 @@
 				CODE_SIGN_ENTITLEMENTS = WatchApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_PREVIEWS = YES;
 				EXECUTABLE_NAME = PaintAnytimeWatch;
@@ -447,12 +462,13 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKWatchOnly = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.deniskolchev.paintanytime;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;

@@ -11,7 +11,7 @@ struct PaintAnytimeiPhoneApp: App {
         WindowGroup {
             PhoneHomeView(photoInbox: photoInbox)
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { photoInbox.refresh() }
+                    if phase == .active { photoInbox.refresh(); photoInbox.synchronize() }
                 }
         }
     }

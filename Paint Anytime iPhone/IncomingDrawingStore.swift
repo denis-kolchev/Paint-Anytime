@@ -25,8 +25,17 @@ struct IncomingDrawingStore: IncomingDrawingStoring {
     }
 
     nonisolated func receive(_ temporaryFile: URL) throws {
-        let destination = try directory().appendingPathComponent(UUID().uuidString).appendingPathExtension("png")
-        try FileManager.default.moveItem(at: temporaryFile, to: destination)
+        try receive(temporaryFile, name: UUID().uuidString + ".png")
+    }
+
+    nonisolated func receive(_ temporaryFile: URL, name: String) throws {
+        let safeName = URL(fileURLWithPath: name).lastPathComponent
+        guard safeName == name, safeName.lowercased().hasSuffix(".png") else {
+            throw CocoaError(.fileReadInvalidFileName)
+        }
+        let destination = try directory().appendingPathComponent(safeName)
+        try Data(contentsOf: temporaryFile).write(to: destination, options: .atomic)
+        try FileManager.default.removeItem(at: temporaryFile)
     }
 
     nonisolated func pendingImages() throws -> [URL] {
