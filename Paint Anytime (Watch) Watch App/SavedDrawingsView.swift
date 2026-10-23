@@ -26,6 +26,7 @@ struct SavedDrawingsView: View {
     @State private var pendingDeletion: CanvasExport?
     @State private var showsFullscreen = false
     @State private var isCleanViewing = false
+    @State private var showsFullscreenActions = false
     @State private var morphState = GalleryMorphState()
     @State private var pageVisibility: [URL: Double] = [:]
     @State private var galleryScrollTarget: URL?
@@ -155,10 +156,20 @@ struct SavedDrawingsView: View {
                                             crownFocused = false
                                             pendingDeletion = selectedDrawing
                                         })
-                        .opacity(isCleanViewing ? 0 : 1)
+                        .opacity(isCleanViewing || !showsFullscreenActions ? 0 : 1)
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
-                        .allowsHitTesting(!isCleanViewing)
-                        .accessibilityHidden(isCleanViewing)
+                        .allowsHitTesting(!isCleanViewing && showsFullscreenActions)
+                        .accessibilityHidden(isCleanViewing || !showsFullscreenActions)
+                        .task {
+                            // The photo transition ends with animations disabled.
+                            // Start the controls' fade in a separate update.
+                            do { try await Task.sleep(for: .milliseconds(20)) } catch { return }
+                            guard !Task.isCancelled else { return }
+                            withAnimation(.easeOut(duration: reduceMotion ? 0.15 : 0.25)) {
+                                showsFullscreenActions = true
+                            }
+                        }
+                        .onDisappear { showsFullscreenActions = false }
                 }
             }
             .overlay {
