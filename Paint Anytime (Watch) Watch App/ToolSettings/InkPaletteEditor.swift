@@ -742,6 +742,7 @@ private struct InkComponentsEditor: View {
 
 /// Keeps the palette draft alive while sampling the composited canvas.
 private struct PaletteEyedropperView: View {
+    @Environment(\.dismiss) private var dismiss
     @ObservedObject var controller: CanvasController
     let onConfirm: (SIMD4<Float>) -> Void
     @State private var isMoving = true
@@ -757,6 +758,14 @@ private struct PaletteEyedropperView: View {
                 .ignoresSafeArea()
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
+                        Button { dismiss() } label: {
+                            Image(systemName: "xmark")
+                        }
+                        .watchToolbarButtonStyle()
+                        .accessibilityLabel(L10n.text("Cancel"))
+                        .trackCanvasControl(.more, frames: $controls)
+                    }
+                    ToolbarItem(placement: .bottomBar) {
                         Button { isSampling.toggle() } label: {
                             Image(systemName: "eyedropper")
                                 .foregroundStyle(isSampling ? .green : .primary)
@@ -764,7 +773,7 @@ private struct PaletteEyedropperView: View {
                         .watchToolbarButtonStyle()
                         .accessibilityLabel(L10n.text("Eyedropper"))
                         .accessibilityAddTraits(isSampling ? [.isSelected] : [])
-                        .trackCanvasControl(.more, frames: $controls)
+                        .trackCanvasControl(.canvasToolsMorph, frames: $controls)
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button { if let color { onConfirm(color) } } label: {
