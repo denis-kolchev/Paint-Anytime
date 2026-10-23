@@ -82,8 +82,8 @@ struct WatchToolSettingsView: View {
     private var availableSettings: [ToolSetting] {
         let pages: [ToolSetting]
         if isEraser { pages = controller.pencilStyle.eraserMode == .pixels
-            ? (tutorial.isActive ? [.color, .width, .opacity, .instrument, .mode] : [.width, .opacity, .instrument, .mode])
-            : (tutorial.isActive ? [.color, .width, .instrument, .mode] : [.width, .instrument, .mode]) }
+            ? [.width, .opacity, .instrument, .mode]
+            : [.width, .instrument, .mode] }
         else if controller.pencilStyle.instrument == .fill { pages = [.color, .sensitivity, .opacity, .instrument] }
         else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .opacity, .instrument, .direction] }
         else { pages = [.color, .width, .opacity, .instrument] }
