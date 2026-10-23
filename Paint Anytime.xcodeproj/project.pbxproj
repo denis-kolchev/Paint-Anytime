@@ -371,6 +371,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SWIFT_VERSION = 5.0;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
@@ -395,6 +396,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				SWIFT_VERSION = 5.0;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
 				MARKETING_VERSION = 1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
