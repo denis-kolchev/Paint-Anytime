@@ -47,6 +47,7 @@ final class TutorialSession: ObservableObject {
     var isActive: Bool { step != .inactive }
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
     var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .history, .saveDrawing, .shareDrawing, .openMenu]) }
+    var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
     var allowsGalleryZoom: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }

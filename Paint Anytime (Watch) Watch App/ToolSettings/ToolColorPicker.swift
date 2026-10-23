@@ -42,7 +42,6 @@ struct ToolColorPicker: View {
                                     }
                                     .frame(width: swatchSize, height: swatchSize)
                                     .overlay { Circle().strokeBorder(.gray.opacity(0.5), lineWidth: 1) }
-                                    .tutorialHint(tutorial, steps: [.tapAddColor], isSuggested: index == presets.count)
                                     .padding(3)
                                     .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
                                                  : colorIndex == index ? 1 : 0.72)

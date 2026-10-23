@@ -366,13 +366,18 @@ final class WatchLassoController: ObservableObject {
         }
     }
 
-    func end(at point: CGPoint, controller: CanvasController, size: CGSize, scale: CGFloat) {
+    func end(at point: CGPoint, controller: CanvasController, size: CGSize, scale: CGFloat,
+             onSelectionFinished: @escaping (Bool) -> Void = { _ in }) {
         guard let drag else { return }
         update(at: point, pointSpacing: 0)
         self.drag = nil
         switch drag {
         case .outline:
-            guard outline.count >= 3 else { outline = []; return }
+            guard outline.count >= 3 else {
+                outline = []
+                onSelectionFinished(false)
+                return
+            }
             let polygon = outline
             let document = controller.document
             let layerID = controller.selectedLayer.id
@@ -389,11 +394,13 @@ final class WatchLassoController: ObservableObject {
                     guard controller.document == document, controller.selectedLayer.id == layerID else { return }
                     selection = result
                     bounds = result?.bounds
+                    onSelectionFinished(result != nil)
                 } catch {
                     guard !Task.isCancelled, generation == token else { return }
                     isPreparing = false
                     outline = []
                     errorMessage = "Could not create selection"
+                    onSelectionFinished(false)
                 }
             }
         case .move, .resize, .rotate:

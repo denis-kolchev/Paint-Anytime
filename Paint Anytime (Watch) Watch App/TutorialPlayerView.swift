@@ -44,7 +44,7 @@ struct TutorialPlayerView: View {
                 ZStack {
                     GeometryReader { geometry in
                         ZStack {
-                            WatchCanvasView(controller: controller, tutorial: tutorial,
+                            WatchCanvasView(controller: controller, lasso: player.lasso, tutorial: tutorial,
                                             rendersArtwork: page == .canvas || page == .saved,
                                             acceptsInput: page == .canvas && tutorial.acceptsActions,
                                             acceptsZoomOnlyInput: page == .saved && tutorial.acceptsActions,
@@ -57,6 +57,12 @@ struct TutorialPlayerView: View {
                                 TutorialCirclePresentation(guideHeight: max(0, geometry.size.height - hintReservedHeight),
                                                            isFadingAttempt: tutorial.isFadingCircleAttempt)
                                     .transition(.identity)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                            }
+
+                            if showsLassoGuide {
+                                TutorialLassoPresentation(guideHeight: max(0, geometry.size.height - hintReservedHeight))
                                     .allowsHitTesting(false)
                                     .accessibilityHidden(true)
                             }
@@ -214,6 +220,8 @@ struct TutorialPlayerView: View {
                                     withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
                                         player.closeTools()
                                     }
+                                } else if player.lasso.isActive {
+                                    player.finishLasso()
                                 } else if isMovingCanvas {
                                     isMovingCanvas = false
                                     tutorial.record(.finishedCamera)
@@ -229,7 +237,7 @@ struct TutorialPlayerView: View {
                                         .foregroundStyle(.green)
                                         .opacity(primaryControlIsDone ? 1 : 0)
                                 }
-                                .tutorialHint(tutorial, steps: [.openTools, .closeTools, .finishCamera])
+                                .tutorialHint(tutorial, steps: [.openTools, .closeTools, .finishCamera, .finishLasso])
                                 .frame(width: 32, height: 32)
                                 .contentShape(Circle())
                             }
@@ -352,6 +360,7 @@ struct TutorialPlayerView: View {
             player.startOrResume()
         }
         .onChange(of: tutorial.step) { _, step in
+            if step == .history { player.lasso.deactivate() }
             guard step == .holdCircle,
                   let red = InkPreset.all.first(where: { $0.nameKey == "Red" }) else { return }
             var style = controller.pencilStyle
@@ -416,10 +425,17 @@ struct TutorialPlayerView: View {
             && controller.activeStroke == nil && scenePhase == .active
     }
 
-    private var primaryControlIsDone: Bool { page == .tools || isMovingCanvas }
+    private var showsLassoGuide: Bool {
+        page == .canvas && [.selectLasso, .transformLasso].contains(tutorial.step)
+            && tutorial.acceptsActions && !tutorial.remindersPaused
+            && !player.lasso.hidesControls && player.lasso.bounds == nil && scenePhase == .active
+    }
+
+    private var primaryControlIsDone: Bool { page == .tools || isMovingCanvas || player.lasso.isActive }
 
     private var showsPrimaryControl: Bool {
         (page == .tools && tutorial.permits([.closeTools])) ||
+        (page == .canvas && tutorial.permits([.finishLasso]) && !player.lasso.hidesControls) ||
         (page == .canvas && (isMovingCanvas
             ? tutorial.acceptsActions && tutorial.canFinishCamera
             : tutorial.permits([.openTools])))
@@ -431,7 +447,8 @@ struct TutorialPlayerView: View {
         // may not be reported again when only the button's label changes.
         return controls.filter { control, _ in
             switch control {
-            case .morph, .contentMorph, .canvasToolsMorph: return false
+            case .morph, .contentMorph: return false
+            case .canvasToolsMorph: return tutorial.permits([.openLasso])
             case .tools: return showsPrimaryControl
             case .more: return tutorial.permits([.openMenu])
             case .undo, .redo: return tutorial.permits([.history])
@@ -485,6 +502,21 @@ struct TutorialPlayerView: View {
                 .accessibilityHidden(tutorial.step != .saveDrawing)
                 .accessibilityLabel(L10n.text("Save drawing"))
                 .trackCanvasControl(.save, frames: $controls)
+            }
+        }
+        if page == .canvas && tutorial.step == .openLasso {
+            HStack {
+                Button {
+                    isMovingCanvas = false
+                    player.openLasso()
+                } label: {
+                    Image(systemName: "lasso").tutorialHint(tutorial, steps: [.openLasso])
+                }
+                .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
+                .disabled(!tutorial.permits([.openLasso]))
+                .accessibilityLabel(L10n.text("Lasso"))
+                .trackCanvasControl(.canvasToolsMorph, frames: $controls)
+                Spacer()
             }
         }
         if page == .canvas && (tutorial.step == .clearCanvas || tutorial.step == .finished) {
@@ -608,5 +640,115 @@ private struct TutorialCircleGuide: View {
             * (0.065 * sin(angle * 3 + 0.7) + 0.035 * sin(angle * 7 - 0.4))
         return CGPoint(x: center.x + radiusX * wobble * cos(angle),
                        y: center.y + radiusY * wobble * sin(angle))
+    }
+}
+
+/// The guide is separate from the document and disappears when the user touches the canvas.
+private struct TutorialLassoPresentation: View {
+    let guideHeight: CGFloat
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var paperOpacity = 0.0
+    @State private var showsGuide = false
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            Color.white.opacity(paperOpacity)
+            if showsGuide {
+                TutorialLassoGuide()
+                    .frame(height: guideHeight)
+                    .transition(.opacity)
+            }
+        }
+        .task {
+            do {
+                try await Task.sleep(for: .milliseconds(20))
+                withAnimation(.easeInOut(duration: 0.25)) { paperOpacity = 0.6 }
+                try await Task.sleep(for: .milliseconds(250))
+                try Task.checkCancellation()
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { showsGuide = true }
+            } catch {}
+        }
+    }
+}
+
+private struct TutorialLassoGuide: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var startedAt = Date()
+
+    private func eased(_ value: Double) -> Double {
+        let t = min(1, max(0, value))
+        return t * t * (3 - 2 * t)
+    }
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
+            let phase = max(0, timeline.date.timeIntervalSince(startedAt)).truncatingRemainder(dividingBy: 6)
+            let drawn = reduceMotion ? 1 : eased((phase - 0.5) / 1.8)
+            let selected = reduceMotion ? 1 : eased((phase - 2.5) / 0.3)
+            let moved = reduceMotion ? 0.5 : eased((phase - 3.2) / 1.2)
+            let visibility = reduceMotion ? 1 : eased(phase / 0.3) * (1 - eased((phase - 5.3) / 0.7))
+            Canvas { context, size in
+                let top = min(50.0, size.height * 0.5)
+                let availableHeight = max(0, size.height - top - 16)
+                let radiusX = min(size.width * 0.24, availableHeight * 0.65)
+                let radiusY = min(radiusX * 0.7, availableHeight * 0.34)
+                let center = CGPoint(x: size.width * 0.43, y: top + availableHeight * 0.55)
+                let translation = CGAffineTransform(translationX: moved * size.width * 0.17,
+                                                    y: -moved * availableHeight * 0.16)
+                let ink = Color(red: 0.20, green: 0.43, blue: 1)
+                context.opacity = visibility
+
+                // A small wave is the imaginary artwork being selected and moved.
+                var artwork = Path()
+                for index in 0...60 {
+                    let t = CGFloat(index) / 60
+                    let point = CGPoint(x: center.x + (t - 0.5) * radiusX * 1.3,
+                                        y: center.y + sin(t * .pi * 3) * radiusY * 0.35)
+                    if index == 0 { artwork.move(to: point) } else { artwork.addLine(to: point) }
+                }
+                context.stroke(artwork.applying(translation), with: .color(ink),
+                               style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+
+                var loop = Path()
+                for index in 0...120 {
+                    let fraction = min(drawn, Double(index) / 120)
+                    let angle = fraction * .pi * 2 - .pi / 2
+                    let wobble = 1 + 0.035 * sin(angle * 3)
+                    let point = CGPoint(x: center.x + cos(angle) * radiusX * wobble,
+                                        y: center.y + sin(angle) * radiusY * wobble)
+                    if index == 0 { loop.move(to: point) } else { loop.addLine(to: point) }
+                    if fraction == drawn { break }
+                }
+                var outlineContext = context
+                outlineContext.opacity *= 1 - selected
+                // Match the real lasso's dotted white underlay and gray trail.
+                outlineContext.stroke(loop, with: .color(.white.opacity(0.8)),
+                    style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round, dash: [0.1, 4]))
+                outlineContext.stroke(loop, with: .color(.gray),
+                    style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round, dash: [0.1, 4]))
+
+                let bounds = CGRect(x: center.x - radiusX * 0.72, y: center.y - radiusY * 0.5,
+                                    width: radiusX * 1.44, height: radiusY).applying(translation)
+                var selectionContext = context
+                selectionContext.opacity *= selected
+                selectionContext.stroke(Path(bounds), with: .color(ink), lineWidth: 1)
+                for point in WatchLassoGeometry.handles(bounds) {
+                    let handle = Path(ellipseIn: CGRect(x: point.x - 2.5, y: point.y - 2.5, width: 5, height: 5))
+                    selectionContext.fill(handle, with: .color(Color(red: 0.16, green: 0.67, blue: 0.87)))
+                    selectionContext.stroke(handle, with: .color(.white), lineWidth: 1)
+                }
+                if !reduceMotion && phase >= 3.2 && phase < 4.6 {
+                    let finger = center.applying(translation)
+                    let marker = Path(ellipseIn: CGRect(x: finger.x - 7, y: finger.y - 7, width: 14, height: 14))
+                    context.fill(marker, with: .color(.white.opacity(0.5)))
+                    context.stroke(marker, with: .color(.gray.opacity(0.7)), lineWidth: 1.5)
+                }
+            }
+            .onChange(of: phase >= 3.2 && phase < 4.6) { _, isGrabbing in
+                guard isGrabbing, !reduceMotion else { return }
+                WKInterfaceDevice.current().play(.click)
+            }
+        }
+        .onAppear { startedAt = Date() }
     }
 }

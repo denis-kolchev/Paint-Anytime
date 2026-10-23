@@ -37,6 +37,7 @@ struct WatchCanvasView: View {
     @State private var offset = CGSize.zero
     @State private var panOrigin: CGSize?
     @State private var acceptsCurrentGesture: Bool?
+    @State private var lassoGestureStartBounds: CGRect?
     @State private var blockedEraserLayerID: UUID?
     @GestureState private var isDragging = false
     @State private var shapeHoldTask: Task<Void, Never>?
@@ -164,7 +165,7 @@ struct WatchCanvasView: View {
             .onChange(of: WatchLassoToolbarInput.Mapping(
                 frame: geometry.frame(in: .global), paperSize: paperSize, offset: offset,
                 zoomScale: zoom * fit, rasterScale: min(4, max(1, displayScale)),
-                enabled: acceptsInput && tutorial.acceptsActions && tutorial.allowsDrawing
+                enabled: acceptsInput && tutorial.acceptsActions && (lasso.isActive ? tutorial.allowsLassoInput : tutorial.allowsDrawing)
                     && !tutorial.isFadingCircleAttempt && scenePhase == .active), initial: true) { _, mapping in
                 lassoToolbarInput?.mapping = mapping
             }
@@ -174,7 +175,7 @@ struct WatchCanvasView: View {
                     .updating($isDragging) { _, state, _ in state = true }
                     .onChanged { value in
                         guard acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt && blockedEraserLayerID == nil else { return }
-                        guard (isMovingCanvas ? tutorial.allowsCanvasPan : tutorial.allowsDrawing) else { return }
+                        guard (lasso.isActive ? tutorial.allowsLassoInput : isMovingCanvas ? tutorial.allowsCanvasPan : tutorial.allowsDrawing) else { return }
                         tutorial.activity()
                         if acceptsCurrentGesture == nil {
                             acceptsCurrentGesture = !isProtectedStart(value.startLocation,
@@ -182,6 +183,7 @@ struct WatchCanvasView: View {
                             if acceptsCurrentGesture == true {
                                 onCanvasInteraction()
                                 if lasso.isActive {
+                                    lassoGestureStartBounds = lasso.bounds
                                     lasso.begin(at: canvasPoint(value.startLocation, size: geometry.size),
                                         tolerance: WatchLassoGeometry.handleHitRadius / (zoom * fit), controller: controller)
                                 }
@@ -239,11 +241,18 @@ struct WatchCanvasView: View {
                     }
                     .onEnded { value in
                         cancelShapeHold()
-                        defer { acceptsCurrentGesture = nil; panOrigin = nil }
+                        defer { acceptsCurrentGesture = nil; panOrigin = nil; lassoGestureStartBounds = nil }
                         guard acceptsInput && acceptsCurrentGesture == true else { return }
                         if lasso.isActive {
+                            let previousRevision = controller.documentRevision
                             lasso.end(at: canvasPoint(value.location, size: geometry.size), controller: controller,
-                                size: paperSize, scale: min(4, max(1, displayScale)))
+                                size: paperSize, scale: min(4, max(1, displayScale))) { selected in
+                                    tutorial.record(selected ? .selectedLasso : .failedLassoSelection)
+                                }
+                            if controller.documentRevision != previousRevision,
+                               lassoGestureStartBounds != nil, lasso.bounds != lassoGestureStartBounds {
+                                tutorial.record(.transformedLasso)
+                            }
                             return
                         }
                         if isMovingCanvas {

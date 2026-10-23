@@ -7,6 +7,7 @@ enum TutorialStep: Int, CaseIterable {
     case addPaletteColor, adjustPaletteColor, savePaletteColor
     case openWidth, setWidth, openOpacity, setOpacity, openTool
     case selectReed, openAngle, setAngle, closeTools, reedStrokes
+    case openLasso, selectLasso, transformLasso, finishLasso
     case history, saveDrawing, shareDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas, finished
 
@@ -26,6 +27,7 @@ struct TutorialProgress {
     private var unlockedToolPages: Set<Int> = [1]
 
     enum Event {
+        case openedLasso, selectedLasso, failedLassoSelection, transformedLasso, finishedLasso
         case heldCircle, stroke, filled, openedTools, closedTools, openedInfo, closedInfo, browsedTools
         case panned, finishedCamera, history, saved, closedSave, openedMenu, openedGallery
         case galleryFullscreen, deleted, returnedToCanvas, cleared
@@ -74,6 +76,15 @@ struct TutorialProgress {
              (.openPalettes, .browsedPalettes), (.findNewPalette, .foundNewPalette),
              (.createPalette, .createdPalette), (.addPaletteColor, .openedColorEditor),
              (.adjustPaletteColor, .adjustedColor), (.savePaletteColor, .savedColor): return .advance
+        case (.selectLasso, .failedLassoSelection), (.transformLasso, .failedLassoSelection):
+            count += 1
+            if count >= 3 {
+                count = 0
+                step = .history
+            }
+            return .none
+        case (.openLasso, .openedLasso), (.selectLasso, .selectedLasso),
+             (.transformLasso, .transformedLasso), (.finishLasso, .finishedLasso): return .advance
         case (.clearCanvas, .cleared): return .showResult
         case (.openTools, .openedTools), (.closeTools, .closedTools), (.reedStrokes, .stroke), (.reedStrokes, .filled),
              (.saveDrawing, .saved), (.shareDrawing, .closedSave), (.openMenu, .openedMenu),

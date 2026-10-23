@@ -7,6 +7,7 @@ final class TutorialPlayerController: ObservableObject {
     enum Page { case canvas, tools, saved, menu, gallery }
 
     let tutorial = TutorialSession()
+    let lasso = WatchLassoController()
     let canvas = CanvasController(persistsPreferences: false)
     @Published private(set) var page: Page = .canvas
     @Published private(set) var savedDrawing: CanvasExport?
@@ -20,6 +21,8 @@ final class TutorialPlayerController: ObservableObject {
         self.folder = folder
         // The view observes this controller; nested objects still drive all UI updates.
         tutorial.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &subscriptions)
+        lasso.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &subscriptions)
         canvas.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &subscriptions)
@@ -38,6 +41,20 @@ final class TutorialPlayerController: ObservableObject {
     func setActive(_ active: Bool) {
         if active { tutorial.resumeReminders() }
         else { tutorial.pauseReminders(); canvas.cancelStroke() }
+    }
+
+    func openLasso() {
+        guard page == .canvas, tutorial.permits([.openLasso]) else { return }
+        canvas.cancelStroke()
+        lasso.setMode(.area)
+        lasso.activate()
+        tutorial.record(.openedLasso)
+    }
+
+    func finishLasso() {
+        guard page == .canvas, tutorial.permits([.finishLasso]) else { return }
+        lasso.deactivate()
+        tutorial.record(.finishedLasso)
     }
 
     func openTools() {
