@@ -174,7 +174,11 @@ struct InkPaletteEditor: View {
         .fullScreenCover(isPresented: $showsEyedropper, onDismiss: {
             if sampledColor != nil { showsColorEditor = true }
         }) {
-            PaletteEyedropperView(controller: controller) { color in
+            PaletteEyedropperView(controller: controller, onCancel: {
+                sampledColor = nil
+                showsColorEditor = false
+                showsEyedropper = false
+            }) { color in
                 sampledColor = color
                 showsEyedropper = false
             }
@@ -742,39 +746,20 @@ private struct InkComponentsEditor: View {
 
 /// Keeps the palette draft alive while sampling the composited canvas.
 private struct PaletteEyedropperView: View {
-    @Environment(\.dismiss) private var dismiss
     @ObservedObject var controller: CanvasController
+    let onCancel: () -> Void
     let onConfirm: (SIMD4<Float>) -> Void
     @State private var isMoving = true
-    @State private var isSampling = true
     @State private var color: SIMD4<Float>?
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
 
     var body: some View {
         NavigationStack {
             WatchCanvasView(controller: controller, protectedControls: controls,
-                isMovingCanvas: $isMoving, isEyedropperActive: isSampling,
+                isMovingCanvas: $isMoving, isEyedropperActive: true,
                 onSampleColor: { color = $0 })
                 .ignoresSafeArea()
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button { dismiss() } label: {
-                            Image(systemName: "xmark")
-                        }
-                        .watchToolbarButtonStyle()
-                        .accessibilityLabel(L10n.text("Cancel"))
-                        .trackCanvasControl(.more, frames: $controls)
-                    }
-                    ToolbarItem(placement: .bottomBar) {
-                        Button { isSampling.toggle() } label: {
-                            Image(systemName: "eyedropper")
-                                .foregroundStyle(isSampling ? .green : .primary)
-                        }
-                        .watchToolbarButtonStyle()
-                        .accessibilityLabel(L10n.text("Eyedropper"))
-                        .accessibilityAddTraits(isSampling ? [.isSelected] : [])
-                        .trackCanvasControl(.canvasToolsMorph, frames: $controls)
-                    }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button { if let color { onConfirm(color) } } label: {
                             Image(systemName: "checkmark").foregroundStyle(.green)
@@ -786,7 +771,26 @@ private struct PaletteEyedropperView: View {
                     }
                 }
         }
+        // A full-screen cover can suppress the native leading toolbar slot on
+        // older watchOS. Place Cancel explicitly and align it with Done.
+        .overlay {
+            GeometryReader { geometry in
+                let origin = geometry.frame(in: .global).origin
+                let doneFrame = controls[.tools]
+                Button(action: onCancel) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 17, weight: .semibold))
+                        .frame(width: 32, height: 32)
+                }
+                .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                .accessibilityLabel(L10n.text("Cancel"))
+                .trackCanvasControl(.more, frames: $controls)
+                .position(x: doneFrame.map { geometry.size.width - ($0.midX - origin.x) } ?? 30,
+                          y: doneFrame.map { $0.midY - origin.y } ?? 30)
+            }
+        }
     }
+
 }
 
 /// Shared track for color channels and layer opacity.
