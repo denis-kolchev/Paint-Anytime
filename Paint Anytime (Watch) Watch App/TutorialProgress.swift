@@ -32,6 +32,7 @@ struct TutorialProgress {
         case panned, finishedCamera, history, saved, closedSave, openedMenu, openedGallery
         case galleryFullscreen, deleted, returnedToCanvas, cleared
         case reachedAddColor, returnedToColorSelection, openedColorList, browsedPalettes, foundNewPalette
+        case returnedToPalettes
         case createdPalette, openedColorEditor, adjustedColor, savedColor
     }
     enum Effect: Equatable {
@@ -59,6 +60,10 @@ struct TutorialProgress {
         case (.selectReed, .browsedTools): return .advance
         case (.tapAddColor, .returnedToColorSelection):
             step = .selectColor
+            count = 0
+            return .none
+        case (.createPalette, .returnedToPalettes):
+            step = .findNewPalette
             count = 0
             return .none
         case (.firstStrokes, .stroke), (.history, .history):

@@ -677,10 +677,15 @@ struct InkPaletteBrowser: View {
     }
 
     private func selectPage(by step: Int) {
-        guard pendingDeletionID == nil, movingID == nil, tutorial.permits([.findNewPalette]) else { return }
+        guard pendingDeletionID == nil, movingID == nil, tutorial.permits([.findNewPalette, .createPalette]) else { return }
+        let wasNewPalette = currentID == addID
         let target = min(pageIDs.count - 1, max(0, pageIndex + step))
         withAnimation(pageAnimation) { currentID = pageIDs[target] }
-        if currentID == addID { tutorial.record(.foundNewPalette) }
+        if wasNewPalette && currentID != addID {
+            tutorial.record(.returnedToPalettes)
+        } else if currentID == addID {
+            tutorial.record(.foundNewPalette)
+        }
     }
 
     private func adjustPage(_ direction: AccessibilityAdjustmentDirection) {
@@ -694,7 +699,7 @@ struct InkPaletteBrowser: View {
     private func pageGesture(stride: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 10)
             .updating($carouselTranslation) { value, translation, transaction in
-                guard pendingDeletionID == nil, movingID == nil, tutorial.permits([.findNewPalette]) else { return }
+                guard pendingDeletionID == nil, movingID == nil, tutorial.permits([.findNewPalette, .createPalette]) else { return }
                 transaction.animation = nil
                 if abs(value.translation.height) > abs(value.translation.width) {
                     if canDeletePalette, currentID != addID {
@@ -707,7 +712,7 @@ struct InkPaletteBrowser: View {
                 translation.width = value.translation.width * (atEdge ? 0.2 : 1)
             }
             .onEnded { value in
-                guard pendingDeletionID == nil, movingID == nil, tutorial.permits([.findNewPalette]) else { return }
+                guard pendingDeletionID == nil, movingID == nil, tutorial.permits([.findNewPalette, .createPalette]) else { return }
                 if abs(value.translation.height) > abs(value.translation.width) {
                     if canDeletePalette, currentID != addID, value.translation.height < -30 {
                         withAnimation(pageAnimation) { pendingDeletionID = currentID }
