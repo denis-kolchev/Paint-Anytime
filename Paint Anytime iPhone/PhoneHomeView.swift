@@ -1,12 +1,20 @@
 import SwiftUI
 import UniformTypeIdentifiers
 import ImageIO
+import WatchConnectivity
+
+extension UTType {
+    static let paintAnytimeProject = UTType(exportedAs: PaintProject.typeIdentifier)
+}
 
 struct PhoneHomeView: View {
     @ObservedObject var photoInbox: WatchPhotoInbox
 
     @AppStorage("phoneGalleryColumnCount") private var storedColumnCount = 3
     @State private var pinchStartIndex: Int?
+    @State private var importingProject = false
+    @State private var showingInboxError = false
+    @State private var projectMessage: String?
     private let columnOptions = [1, 3, 5]
     private var columnCount: Int { columnOptions.contains(storedColumnCount) ? storedColumnCount : 3 }
 
@@ -64,21 +72,51 @@ struct PhoneHomeView: View {
             }
             .navigationTitle("Watch Gallery")
             .toolbar {
+                Button { importingProject = true } label: { Label("Import Project", systemImage: "square.and.arrow.down") }
                 Button { photoInbox.synchronize() } label: { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
             }
             .refreshable { photoInbox.synchronize() }
-            .alert("Could not complete action", isPresented: Binding(
-                get: { photoInbox.errorMessage != nil },
-                set: { if !$0 { photoInbox.clearError() } }
-            )) {
+            .fileImporter(isPresented: $importingProject, allowedContentTypes: [.paintAnytimeProject]) { result in
+                switch result {
+                case .success(let url): importProject(url)
+                case .failure(let error): projectMessage = error.localizedDescription
+                }
+            }
+            .onOpenURL { importProject($0) }
+            .alert("Project", isPresented: Binding(get: { projectMessage != nil }, set: { if !$0 { projectMessage = nil } })) {
+                Button("OK") { projectMessage = nil }
+            } message: { Text(projectMessage ?? "") }
+            // Alert bindings only update local presentation state. Clear the model
+            // from onChange, outside SwiftUI's presentation binding update.
+            .onChange(of: photoInbox.errorMessage, initial: true) { _, error in
+                showingInboxError = error != nil
+            }
+            .onChange(of: showingInboxError) { _, presented in
+                if !presented { photoInbox.clearError() }
+            }
+            .alert("Could not complete action", isPresented: $showingInboxError) {
                 if photoInbox.photoPermissionRequiresSettings {
                     Button("Open Settings") {
                         if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
                     }
                 }
-                Button("OK", role: .cancel) { photoInbox.clearError() }
+                Button("OK", role: .cancel) { showingInboxError = false }
             } message: { Text(photoInbox.errorMessage ?? "") }
         }
+    }
+
+    private func importProject(_ url: URL) {
+        let access = url.startAccessingSecurityScopedResource()
+        defer { if access { url.stopAccessingSecurityScopedResource() } }
+        do {
+            let project = try PaintProject.read(url)
+            let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString).appendingPathExtension(PaintProject.fileExtension)
+            defer { try? FileManager.default.removeItem(at: temporary) }
+            try project.write(to: temporary)
+            try IncomingDrawingStore().receive(temporary, name: "Imported_" + UUID().uuidString + "." + PaintProject.fileExtension)
+            photoInbox.refresh()
+            projectMessage = "Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch."
+        } catch { projectMessage = error.localizedDescription }
     }
 
     private func setColumnCount(_ count: Int) {
@@ -93,6 +131,11 @@ private struct PhoneDrawingView: View {
     let url: URL
     @ObservedObject var inbox: WatchPhotoInbox
     @State private var exporting = false
+    @State private var showingPhotoConfirmation = false
+    @State private var exportingProject = false
+    @State private var transferMessage: String?
+    private var projectURL: URL { url.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension) }
+    private var hasProject: Bool { FileManager.default.fileExists(atPath: projectURL.path) }
     @State private var exportError: String?
 
     var body: some View {
@@ -100,23 +143,71 @@ private struct PhoneDrawingView: View {
             DrawingPreview(url: url, maximumSize: 2400)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             HStack(spacing: 24) {
-                ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
+                Menu {
+                    ShareLink(item: url) { Label("Image (.png)", systemImage: "photo") }
+                    ShareLink(item: projectURL) { Label("Project (.paintanytime)", systemImage: "doc") }
+                        .disabled(!hasProject)
+                    if !hasProject {
+                        Button("Sync project from Apple Watch") { inbox.synchronize() }
+                    }
+                } label: { Label("Share", systemImage: "square.and.arrow.up") }
                 Button { inbox.saveToPhotos(url) } label: { Label("Photos", systemImage: "photo.badge.plus") }
                     .disabled(inbox.isSaving)
-                Button { exporting = true } label: { Label("Save File", systemImage: "folder") }
+                Menu {
+                    Button("Image (.png)") { exporting = true }
+                    Button("Project (.paintanytime)") { exportingProject = true }
+                        .disabled(!hasProject)
+                    if !hasProject {
+                        Button("Sync project from Apple Watch") { inbox.synchronize() }
+                    }
+                } label: { Label("Save File", systemImage: "folder") }
             }
-            .labelStyle(.iconOnly).font(.title2)
+            .labelStyle(.titleAndIcon).font(.subheadline)
+            if hasProject {
+                Menu {
+                    ShareLink(item: projectURL) { Label("Share Project", systemImage: "square.and.arrow.up") }
+                    Button("Save Project to Files") { exportingProject = true }
+                    Button("Send to Apple Watch") {
+                        let session = WCSession.default
+                        guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
+                            exportError = "Connect your Apple Watch and install Paint Anytime before sending a project."
+                            return
+                        }
+                        session.transferFile(projectURL, metadata: ["project": true])
+                        transferMessage = "Project queued. It will appear in your watch gallery when the transfer finishes. Open it there to edit."
+                    }
+                } label: { Label("Project", systemImage: "doc.badge.gearshape") }
+            } else {
+                VStack(spacing: 8) {
+                    Text("Only the PNG preview is on this iPhone. Open the updated Paint Anytime app on your Apple Watch, then sync to receive the editable project.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                    Button("Sync project from Apple Watch") { inbox.synchronize() }
+                }
+            }
             if inbox.isSaving { ProgressView("Saving…") }
         }
         .padding()
         .navigationTitle("Drawing")
         .navigationBarTitleDisplayMode(.inline)
-        .fileExporter(isPresented: $exporting, document: DrawingPNG(url: url), contentType: .png,
+        .fileExporter(isPresented: $exporting, document: DrawingFile(url: url), contentType: .png,
                       defaultFilename: url.deletingPathExtension().lastPathComponent) { result in
             if case .failure(let error) = result { exportError = error.localizedDescription }
         }
-        .alert("Saved to Photos", isPresented: Binding(get: { inbox.savedToPhotos }, set: { if !$0 { inbox.clearConfirmation() } })) {
-            Button("OK") { inbox.clearConfirmation() }
+        .fileExporter(isPresented: $exportingProject, document: DrawingFile(url: projectURL), contentType: .paintAnytimeProject,
+                      defaultFilename: projectURL.deletingPathExtension().lastPathComponent) { result in
+            if case .failure(let error) = result { exportError = error.localizedDescription }
+        }
+        .alert("Project queued", isPresented: Binding(get: { transferMessage != nil }, set: { if !$0 { transferMessage = nil } })) {
+            Button("OK") { transferMessage = nil }
+        } message: { Text(transferMessage ?? "") }
+        .onChange(of: inbox.savedToPhotos, initial: true) { _, saved in
+            showingPhotoConfirmation = saved
+        }
+        .onChange(of: showingPhotoConfirmation) { _, presented in
+            if !presented { inbox.clearConfirmation() }
+        }
+        .alert("Saved to Photos", isPresented: $showingPhotoConfirmation) {
+            Button("OK") { showingPhotoConfirmation = false }
         }
         .alert("Could not export", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
             Button("OK") { exportError = nil }
@@ -124,8 +215,8 @@ private struct PhoneDrawingView: View {
     }
 }
 
-private struct DrawingPNG: FileDocument {
-    static var readableContentTypes: [UTType] { [.png] }
+private struct DrawingFile: FileDocument {
+    static var readableContentTypes: [UTType] { [.png, .paintAnytimeProject] }
     let url: URL?
     let data: Data?
     init(url: URL) { self.url = url; data = nil }

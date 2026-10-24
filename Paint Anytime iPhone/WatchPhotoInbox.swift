@@ -19,6 +19,8 @@ final class WatchPhotoInbox: ObservableObject {
     @Published private(set) var savedToPhotos = false
     @Published private(set) var photoPermissionRequiresSettings = false
 
+    private var hasStarted = false
+
     private let store: any IncomingDrawingStoring
     private let writer: any PhotoLibraryWriting
     private let receiver: any WatchDrawingReceiving
@@ -31,6 +33,8 @@ final class WatchPhotoInbox: ObservableObject {
     }
 
     func start() {
+        guard !hasStarted else { return }
+        hasStarted = true
         refresh()
         receiver.start { [weak self] result in
             switch result {
@@ -41,8 +45,14 @@ final class WatchPhotoInbox: ObservableObject {
     }
 
     func synchronize() { receiver.requestSync() }
-    func clearError() { errorMessage = nil }
-    func clearConfirmation() { savedToPhotos = false }
+    func clearError() {
+        guard errorMessage != nil else { return }
+        errorMessage = nil
+    }
+    func clearConfirmation() {
+        guard savedToPhotos else { return }
+        savedToPhotos = false
+    }
 
     func refresh() {
         do { images = try store.pendingImages().sorted { $0.lastPathComponent > $1.lastPathComponent } }

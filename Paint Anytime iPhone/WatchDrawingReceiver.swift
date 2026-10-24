@@ -23,7 +23,10 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
         let session = WCSession.default
         guard session.activationState == .activated else { return }
         do {
-            let names = try store.pendingImages().map(\.lastPathComponent)
+            let names = try store.pendingImages().flatMap { image -> [String] in
+                let project = image.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
+                return [image.lastPathComponent] + (FileManager.default.fileExists(atPath: project.path) ? [project.lastPathComponent] : [])
+            }
             try session.updateApplicationContext(["galleryRequest": UUID().uuidString, "knownDrawings": names])
         } catch { onReceive?(.failure(error)) }
     }
@@ -36,6 +39,18 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
     }
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
     nonisolated func sessionDidDeactivate(_ session: WCSession) { session.activate() }
+
+    nonisolated func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer, error: Error?) {
+        guard let error else { return }
+        Task { @MainActor in onReceive?(.failure(error)) }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        guard let message = userInfo["projectImportError"] as? String else { return }
+        let error = NSError(domain: "PaintAnytime.ProjectImport", code: 1,
+                            userInfo: [NSLocalizedDescriptionKey: message])
+        Task { @MainActor in onReceive?(.failure(error)) }
+    }
 
     nonisolated func session(_ session: WCSession, didReceive file: WCSessionFile) {
         // Capture the file synchronously: the system deletes it after this delegate call returns.

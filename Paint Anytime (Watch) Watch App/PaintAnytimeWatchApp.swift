@@ -13,6 +13,9 @@ struct PaintAnytimeWatchApp: App {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
 
     init() {
+        #if targetEnvironment(simulator)
+        SimulatorGallerySeed.installIfNeeded()
+        #endif
         WatchPhotoTransfer.shared.start()
         // Remove the retired activity history and publish existing gallery previews.
         for defaults in [UserDefaults.standard, UserDefaults(suiteName: GalleryWidgetStore.groupID)] {

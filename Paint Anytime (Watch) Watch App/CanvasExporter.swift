@@ -53,7 +53,9 @@ enum CanvasExporter {
         else { throw ExportError.encoding }
         CGImageDestinationAddImage(destination, image, properties as CFDictionary)
         guard CGImageDestinationFinalize(destination) else { throw ExportError.encoding }
-        return try CanvasExportStore.save(document: document,
+        var savedDocument = document
+        savedDocument.canvasSize = size
+        return try CanvasExportStore.save(document: savedDocument,
                                           imageData: data as Data, name: name, in: folder)
     }
 

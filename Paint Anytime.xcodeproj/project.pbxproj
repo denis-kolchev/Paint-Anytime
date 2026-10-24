@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		F60000000000000000000001 /* Paint-Anytime.icon in Resources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000002 /* Paint-Anytime.icon */; };
 		257D4058305EA358002072CB /* Paint Anytime (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AB1000000000000000000001 /* Shared/PaintProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1000000000000000000002 /* Shared/PaintProject.swift */; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
 		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D40000000000000000000001 /* Shared/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */; };
-		E50000000000000000000001 /* Shared/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E50000000000000000000002 /* Shared/Localizable.xcstrings */; };
+		F60000000000000000000001 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon in Resources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,14 +54,15 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		F60000000000000000000002 /* Paint-Anytime.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.icon; path = "Paint Anytime (Watch) Watch App/Paint-Anytime.icon"; sourceTree = SOURCE_ROOT; };
 		257D4052305EA358002072CB /* Paint Anytime (Watch).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		25AC8197305D90C700C8F69E /* Paint Anytime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB1000000000000000000002 /* Shared/PaintProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/PaintProject.swift; sourceTree = SOURCE_ROOT; };
 		B20000020000000000000002 /* Preset Photos */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preset Photos"; sourceTree = "<group>"; };
 		C30000000000000000000002 /* PaintAnytimeComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
 		E50000000000000000000002 /* Shared/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Shared/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.icon; path = "Paint Anytime (Watch) Watch App/Paint-Anytime.icon"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -115,6 +116,7 @@
 			isa = PBXGroup;
 			children = (
 				D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */,
+				AB1000000000000000000002 /* Shared/PaintProject.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -126,7 +128,7 @@
 				B20000020000000000000002 /* Preset Photos */,
 				25AC8199305D90C700C8F69E /* Paint Anytime */,
 				A10000050000000000000005 /* Paint Anytime iPhone */,
-				F60000000000000000000002 /* Paint-Anytime.icon */,
+				F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */,
 				257D405B305EA358002072CB /* Paint Anytime (Watch) Watch App */,
 				25AC8198305D90C700C8F69E /* Products */,
 				2523992A3060233F00774395 /* Shared */,
@@ -162,7 +164,9 @@
 			dependencies = (
 				257D405A305EA358002072CB /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (A10000050000000000000005 /* Paint Anytime iPhone */);
+			fileSystemSynchronizedGroups = (
+				A10000050000000000000005 /* Paint Anytime iPhone */,
+			);
 			name = "Paint Anytime (Watch)";
 			productName = "Paint Anytime (Watch)";
 			productReference = 257D4052305EA358002072CB /* Paint Anytime (Watch).app */;
@@ -302,7 +306,7 @@
 		257D4050305EA358002072CB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
-				F60000000000000000000001 /* Paint-Anytime.icon in Resources */,
+				F60000000000000000000001 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon in Resources */,
 			);
 		};
 		257D4055305EA358002072CB /* Resources */ = {
@@ -324,7 +328,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		A10000060000000000000006 /* Sources */ = { isa = PBXSourcesBuildPhase; files = (); };
 		257D4053305EA358002072CB /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -333,6 +336,12 @@
 		25AC8193305D90C700C8F69E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+			);
+		};
+		A10000060000000000000006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+				AB1000000000000000000001 /* Shared/PaintProject.swift in Sources */,
 			);
 		};
 		C30000000000000000000007 /* Sources */ = {
@@ -360,24 +369,25 @@
 		257D4062305EA359002072CB /* Debug configuration for PBXNativeTarget "Paint Anytime (Watch)" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				EXECUTABLE_NAME = PaintAnytime;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PhoneApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				SWIFT_VERSION = 5.0;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
-				MARKETING_VERSION = 1.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = NO;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -385,24 +395,25 @@
 		257D4063305EA359002072CB /* Release configuration for PBXNativeTarget "Paint Anytime (Watch)" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				EXECUTABLE_NAME = PaintAnytime;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PhoneApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				SWIFT_VERSION = 5.0;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
-				MARKETING_VERSION = 1.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = NO;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -617,7 +628,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -631,7 +642,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -652,7 +663,7 @@
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -666,7 +677,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -685,7 +696,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Complications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Complications-Info.plist";
@@ -696,7 +707,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp.complications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -714,7 +725,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Complications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Complications-Info.plist";
@@ -725,7 +736,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp.complications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;

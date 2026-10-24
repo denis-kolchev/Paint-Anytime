@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 @MainActor
 private final class TestPhotoWriter: PhotoLibraryWriting {
@@ -21,8 +22,10 @@ private final class TestPhotoWriter: PhotoLibraryWriting {
 
 @MainActor
 private final class TestReceiver: WatchDrawingReceiving {
+    var startCount = 0
     var onReceive: (@MainActor (Result<Void, Error>) -> Void)?
     func start(onReceive: @escaping @MainActor (Result<Void, Error>) -> Void) {
+        startCount += 1
         self.onReceive = onReceive
     }
 }
@@ -69,7 +72,16 @@ struct PhotoInboxChecks {
         let writer = TestPhotoWriter()
         let receiver = TestReceiver()
         let inbox = WatchPhotoInbox(store: store, writer: writer, receiver: receiver)
+        var publications = 0
+        let observation = inbox.objectWillChange.sink { publications += 1 }
+        defer { observation.cancel() }
+        inbox.clearError()
+        inbox.clearConfirmation()
+        precondition(publications == 0, "Dismissing inactive alerts must not publish")
         inbox.start()
+        let afterStart = publications
+        inbox.start()
+        precondition(receiver.startCount == 1 && publications == afterStart, "Repeated view tasks must not restart the receiver")
         precondition(inbox.images.count == 2 && writer.calls.isEmpty)
         let selected = inbox.images[0]
         inbox.saveToPhotos(selected)
@@ -81,10 +93,17 @@ struct PhotoInboxChecks {
         let afterFailure = try store.pendingImages()
         precondition(afterFailure.count == 2, "Failure preserves gallery")
         inbox.clearError()
+        let afterClear = publications
+        inbox.clearError()
+        precondition(publications == afterClear, "Repeated error dismissal must not publish")
         inbox.saveToPhotos(selected)
         try await waitUntil { writer.pending != nil }
         writer.finish(.success(()))
         try await waitUntil { inbox.savedToPhotos }
+        inbox.clearConfirmation()
+        let afterConfirmation = publications
+        inbox.clearConfirmation()
+        precondition(publications == afterConfirmation, "Repeated confirmation dismissal must not publish")
         let afterExport = try store.pendingImages()
         precondition(afterExport.count == 2, "Export preserves gallery")
         let source = base.appendingPathComponent("transfer")

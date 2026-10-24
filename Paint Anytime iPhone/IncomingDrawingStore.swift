@@ -30,11 +30,17 @@ struct IncomingDrawingStore: IncomingDrawingStoring {
 
     nonisolated func receive(_ temporaryFile: URL, name: String) throws {
         let safeName = URL(fileURLWithPath: name).lastPathComponent
-        guard safeName == name, safeName.lowercased().hasSuffix(".png") else {
+        guard safeName == name, ["png", PaintProject.fileExtension].contains(URL(fileURLWithPath: safeName).pathExtension.lowercased()) else {
             throw CocoaError(.fileReadInvalidFileName)
         }
         let destination = try directory().appendingPathComponent(safeName)
-        try Data(contentsOf: temporaryFile).write(to: destination, options: .atomic)
+        if destination.pathExtension == PaintProject.fileExtension {
+            let project = try PaintProject.read(temporaryFile)
+            try project.write(to: destination)
+            try project.preview.write(to: destination.deletingPathExtension().appendingPathExtension("png"), options: .atomic)
+        } else {
+            try Data(contentsOf: temporaryFile).write(to: destination, options: .atomic)
+        }
         try FileManager.default.removeItem(at: temporaryFile)
     }
 

@@ -99,6 +99,8 @@ enum CanvasExportStore {
         favorites.remove(file.lastPathComponent)
         try writeFavorites(favorites, in: folder)
         if destination == nil { try? refreshWidgets() }
+        let project = file.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
+        if FileManager.default.fileExists(atPath: project.path) { try FileManager.default.removeItem(at: project) }
         let source = file.deletingPathExtension().appendingPathExtension("json")
         if FileManager.default.fileExists(atPath: source.path) {
             try FileManager.default.removeItem(at: source)

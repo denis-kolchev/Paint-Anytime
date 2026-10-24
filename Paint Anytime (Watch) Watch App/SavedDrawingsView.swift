@@ -375,6 +375,9 @@ struct SavedDrawingsView: View {
             get: { controller.errorMessage != nil }, set: { if !$0 { controller.errorMessage = nil } }
         )) { Button(L10n.text("OK"), role: .cancel) { controller.errorMessage = nil } }
         message: { Text(controller.errorMessage ?? "") }
+        .onReceive(NotificationCenter.default.publisher(for: .paintProjectImported)) { _ in
+            controller.reload(in: galleryFolder)
+        }
          .onAppear {
             crownFocused = tutorial.allowsGalleryZoom
             controller.reload(in: galleryFolder)
