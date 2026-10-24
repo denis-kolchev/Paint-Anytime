@@ -6,6 +6,7 @@ struct PhoneHomeView: View {
     @ObservedObject var photoInbox: WatchPhotoInbox
 
     @AppStorage("phoneGalleryColumnCount") private var storedColumnCount = 3
+    @State private var pinchStartIndex: Int?
     private let columnOptions = [1, 3, 5]
     private var columnCount: Int { columnOptions.contains(storedColumnCount) ? storedColumnCount : 3 }
 
@@ -40,14 +41,21 @@ struct PhoneHomeView: View {
                             }
                         }
                         .simultaneousGesture(
-                            MagnifyGesture().onEnded { value in
-                                guard let index = columnOptions.firstIndex(of: columnCount) else { return }
-                                if value.magnification > 1.2 {
-                                    setColumnCount(columnOptions[max(0, index - 1)])
-                                } else if value.magnification < 0.8 {
-                                    setColumnCount(columnOptions[min(columnOptions.count - 1, index + 1)])
+                            MagnifyGesture()
+                                .onChanged { value in
+                                    if pinchStartIndex == nil {
+                                        pinchStartIndex = columnOptions.firstIndex(of: columnCount)
+                                    }
+                                    guard let index = pinchStartIndex else { return }
+                                    if value.magnification > 1.2 {
+                                        setColumnCount(columnOptions[max(0, index - 1)])
+                                    } else if value.magnification < 0.8 {
+                                        setColumnCount(columnOptions[min(columnOptions.count - 1, index + 1)])
+                                    }
                                 }
-                            }
+                                .onEnded { _ in
+                                    pinchStartIndex = nil
+                                }
                         )
                         Text("Drawings are copied from your Apple Watch and kept on this iPhone.")
                             .font(.footnote).foregroundStyle(.secondary).padding()
@@ -56,16 +64,6 @@ struct PhoneHomeView: View {
             }
             .navigationTitle("Watch Gallery")
             .toolbar {
-                Menu {
-                    Picker("Columns", selection: Binding(get: { columnCount }, set: { setColumnCount($0) })) {
-                        ForEach(columnOptions, id: \.self) { count in
-                            Text("\(count) columns").tag(count)
-                        }
-                    }
-                } label: {
-                    Label("Gallery layout", systemImage: "square.grid.3x3")
-                }
-                .accessibilityValue(Text("\(columnCount) columns"))
                 Button { photoInbox.synchronize() } label: { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
             }
             .refreshable { photoInbox.synchronize() }
@@ -84,6 +82,7 @@ struct PhoneHomeView: View {
     }
 
     private func setColumnCount(_ count: Int) {
+        guard storedColumnCount != count else { return }
         withAnimation(.easeInOut(duration: 0.2)) {
             storedColumnCount = count
         }
