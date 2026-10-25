@@ -725,6 +725,18 @@ nonisolated enum WatchBitmapRenderer {
         private var upperLayers: CGImage?
         private var opacity: Float = 1
         private let layers = LayerCache()
+        private struct StaticSelectionKey: Equatable {
+            let document: CanvasDocument
+            let layerID: UUID
+            let insertionIndex: Int
+            let size: CGSize
+            let scale: CGFloat
+        }
+        private var staticKey: StaticSelectionKey?
+        private var staticBackground: CGImage?
+        private var staticBelow: CGImage?
+        private var staticAbove: CGImage?
+        private var staticUpper: CGImage?
 
         func clear() {
             sessionID = nil
@@ -802,6 +814,31 @@ nonisolated enum WatchBitmapRenderer {
                 return context.makeImage()
             }
             guard let foreground = compact(layerThumbnail(strokes: local, size: region.size, scale: scale)) else { return }
+            // Only the selected objects change during successive moves. Reuse
+            // the expensive static artwork even when the document revision and
+            // selection session advance after committing a transform.
+            var staticDocument = preview.document
+            if let layerIndex = staticDocument.layers.firstIndex(where: { $0.id == preview.layerID }) {
+                staticDocument.layers[layerIndex].strokes.removeSubrange(start...end)
+            }
+            let nextStaticKey = StaticSelectionKey(document: staticDocument,
+                layerID: preview.layerID, insertionIndex: start, size: key.size, scale: scale)
+            if staticKey == nextStaticKey, let staticBackground {
+                self.region = region
+                self.background = staticBackground
+                self.foreground = foreground
+                self.layerBelow = staticBelow
+                self.layerAbove = staticAbove
+                self.upperLayers = staticUpper
+                self.opacity = layer.opacity
+                return
+            }
+            // Drop the old textures before allocating a different static scene.
+            staticKey = nil
+            staticBackground = nil
+            staticBelow = nil
+            staticAbove = nil
+            staticUpper = nil
             var below: CGImage?
             if start > 0 {
                 guard let image = compact(layerThumbnail(strokes: Array(layer.strokes[..<start]), size: key.size, scale: scale)) else { return }
@@ -831,6 +868,11 @@ nonisolated enum WatchBitmapRenderer {
             self.layerAbove = above
             self.upperLayers = upper
             self.opacity = layer.opacity
+            staticKey = nextStaticKey
+            staticBackground = background
+            staticBelow = below
+            staticAbove = above
+            staticUpper = upper
         }
     }
 

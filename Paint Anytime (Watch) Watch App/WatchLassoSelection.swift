@@ -794,7 +794,10 @@ private actor WatchLassoBuilder {
         let selected = try rasterStroke(selectedImage, bounds: bounds)
         // Keep each remaining stroke editable instead of flattening the rest
         // of the layer. The cutout travels with it in later object selections.
-        let remaining = layer.strokes.map { original in
+        let cutBounds = path.boundingBoxOfPath
+        let remaining = try layer.strokes.map { original in
+            try Task.checkCancellation()
+            guard try cachedBounds(original).intersects(cutBounds) else { return original }
             var stroke = original
             let inverse = original.transform.affine.inverted()
             stroke.excludedAreas.append(polygon.map { point in

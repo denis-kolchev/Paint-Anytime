@@ -79,8 +79,13 @@ enum CanvasExportStore {
 
     nonisolated static func loadDocument(at imageURL: URL) throws -> CanvasDocument {
         let url = imageURL.deletingPathExtension().appendingPathExtension("json")
-        let data = try Data(contentsOf: url)
+        let originalData = try Data(contentsOf: url)
+        let preview = (try? Data(contentsOf: imageURL)) ?? Data()
+        let data = PaintProject.restoringCanvasSize(in: originalData, preview: preview)
         let document = try JSONDecoder().decode(CanvasDocument.self, from: data)
+        if data != originalData {
+            try data.write(to: url, options: .atomic)
+        }
         // Migrate legacy files once so even drawings without layer IDs retain their identity.
         if let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
            object["id"] == nil {

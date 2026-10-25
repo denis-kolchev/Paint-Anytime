@@ -43,6 +43,24 @@ struct PaintProjectChecks {
             _ = try PaintProject.decode(Data("{}".utf8))
             preconditionFailure("Invalid files must be rejected")
         } catch {}
+        let legacyURL = URL(fileURLWithPath: "Paint Anytime (Watch) Watch App/SimulatorGallerySample.paintanytime")
+        let legacy = try PaintProject.read(legacyURL)
+        let migrated = try JSONDecoder().decode(CanvasDocument.self, from: legacy.document)
+        precondition(migrated.canvasSize == CGSize(width: 205, height: 251), "Legacy canvas size must come from PNG metadata")
+        let migratedURL = folder.appendingPathComponent("Migrated.paintanytime")
+        try legacy.write(to: migratedURL)
+        let reopened = try PaintProject.read(migratedURL)
+        let reopenedDocument = try JSONDecoder().decode(CanvasDocument.self, from: reopened.document)
+        precondition(reopenedDocument == migrated, "Recovered size must persist")
+        var resized = migrated
+        resized.canvasSize = CGSize(width: 100, height: 120)
+        let explicitSize = PaintProject(document: try JSONEncoder().encode(resized), preview: legacy.preview)
+        let explicitDocument = try JSONDecoder().decode(CanvasDocument.self, from: explicitSize.document)
+        precondition(explicitDocument == resized, "Existing canvas size must take precedence over preview metadata")
+        let rawLegacy = try JSONDecoder().decode(PaintProject.self, from: Data(contentsOf: legacyURL))
+        precondition(PaintProject.restoringCanvasSize(in: rawLegacy.document, preview: png) == rawLegacy.document,
+                     "Missing metadata must not invent a canvas size")
+        print("PASS: canvas size recovery, persistence, explicit size precedence, missing metadata;")
         print("PASS: editable project round trip, phone import, preview, invalid and future version rejection")
     }
 }

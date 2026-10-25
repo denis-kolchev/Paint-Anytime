@@ -510,6 +510,27 @@ struct RenderCheck {
         func key(_ revision: UInt64, scale: CGFloat = 2, size: CGSize = CGSize(width: 100, height: 100)) -> WatchBitmapRenderer.CacheKey {
             .init(documentID: cacheID, documentRevision: revision, size: size, scale: scale)
         }
+        // Committing a lasso move must reuse the static layer, but editing
+        // unselected ink must invalidate it.
+        let selectionCache = WatchBitmapRenderer.SelectionRenderCache()
+        var selectionDocument = CanvasDocument(strokes: [ink, border])
+        func preview() -> WatchSelectionPreview {
+            WatchSelectionPreview(sessionID: UUID(), document: selectionDocument,
+                layerID: selectionDocument.layers[0].id, selectedIDs: [border.id],
+                bounds: CGRect(x: 5, y: 5, width: 50, height: 40))
+        }
+        let firstSelection = selectionCache.render(preview(), key: key(100))!
+        selectionDocument.layers[0].strokes[1].transform = StrokeTransform(
+            CGAffineTransform(translationX: 10, y: 10))
+        let movedSelection = selectionCache.render(preview(), key: key(101))!
+        precondition(firstSelection.selection != nil && movedSelection.selection != nil)
+        precondition(firstSelection.selection!.layerBelow === movedSelection.selection!.layerBelow,
+                     "Moving selected ink must reuse the static texture")
+        selectionDocument.layers[0].strokes[0].transform = StrokeTransform(
+            CGAffineTransform(translationX: 5, y: 0))
+        let editedSelection = selectionCache.render(preview(), key: key(102))!
+        precondition(movedSelection.selection!.layerBelow !== editedSelection.selection!.layerBelow,
+                     "Editing unselected ink must rebuild the static texture")
         func assertSame(_ cached: CGImage?, _ full: CGImage?, _ message: String) {
             guard let cached, let full else { fatalError("Missing image: \(message)") }
             precondition(cached.width == full.width && cached.height == full.height)
