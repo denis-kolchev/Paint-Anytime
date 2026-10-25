@@ -8,6 +8,13 @@ xcrun swiftc -parse-as-library \
   Shared/BrushGeometry.swift Shared/FountainPenGeometry.swift Shared/PencilTool.swift Shared/ShapeRecognizer.swift \
   "Paint Anytime (Watch) Watch App/WatchStrokeDrawing.swift" \
   "Paint Anytime (Watch) Watch App/WatchDrawingCommands.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchFloodFill.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchFillWorker.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchArtworkRenderer.swift" \
   "Paint Anytime (Watch) Watch App/WatchStrokeCoverage.swift" \
   Tests/FillOptimizationChecks.swift -o "$check_dir/check"
 "$check_dir/check"
