@@ -48,3 +48,7 @@ xcuserdata/
 
 # Duplicate of the app icon in Assets.xcassets
 /Pasted 2026-09-21 at 11.18.41 PM.png
+
+# Local agent skills, instructions, working notes and intermediate artifacts
+/.agents/
+/AGENTS.md
