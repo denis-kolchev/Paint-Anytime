@@ -55,13 +55,16 @@ nonisolated enum WatchStrokeDrawing {
             let left = Int((rect.x / step).rounded())
             let right = Int(((rect.x + rect.z) / step).rounded())
             let y = Int((rect.y / step).rounded())
-            guard right > left else { continue }
+            let bottom = Int(((rect.y + rect.w) / step).rounded())
+            guard right > left, bottom > y else { continue }
             for x in left..<right {
                 edge(Vertex(x: x, y: y), Vertex(x: x + 1, y: y))
-                edge(Vertex(x: x + 1, y: y + 1), Vertex(x: x, y: y + 1))
+                edge(Vertex(x: x + 1, y: bottom), Vertex(x: x, y: bottom))
             }
-            edge(Vertex(x: right, y: y), Vertex(x: right, y: y + 1))
-            edge(Vertex(x: left, y: y + 1), Vertex(x: left, y: y))
+            for row in y..<bottom {
+                edge(Vertex(x: right, y: row), Vertex(x: right, y: row + 1))
+                edge(Vertex(x: left, y: row + 1), Vertex(x: left, y: row))
+            }
         }
         var outgoing: [Vertex: Set<Vertex>] = [:]
         for edge in edges { outgoing[edge.start, default: []].insert(edge.end) }

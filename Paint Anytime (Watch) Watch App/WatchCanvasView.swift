@@ -29,6 +29,9 @@ struct WatchCanvasView: View {
     var isEyedropperActive = false
     var onSampleColor: (SIMD4<Float>) -> Void = { _ in }
     @Environment(\.displayScale) private var displayScale
+    @State private var fillWorker = WatchFillWorker()
+    @State private var fillTask: Task<Void, Never>?
+    @State private var fillRequestID: UUID?
     @State private var samplingImage: CGImage?
     @State private var loupePoint: CGPoint?
     @State private var loupeImage: CGImage?
@@ -175,6 +178,9 @@ struct WatchCanvasView: View {
                 }
             }
             .overlay {
+                if fillRequestID != nil { ProgressView().allowsHitTesting(false) }
+            }
+            .overlay {
                 if rendersArtwork && acceptsInput {
                     WatchLassoModeNotice(lasso: lasso)
                 }
@@ -205,7 +211,7 @@ struct WatchCanvasView: View {
                 DragGesture(minimumDistance: 0)
                     .updating($isDragging) { _, state, _ in state = true }
                     .onChanged { value in
-                        guard acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt && blockedEraserLayerID == nil else { return }
+                        guard fillRequestID == nil, acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt && blockedEraserLayerID == nil else { return }
                         guard (lasso.isActive ? tutorial.allowsLassoInput : isMovingCanvas ? tutorial.allowsCanvasPan : tutorial.allowsDrawing) else { return }
                         tutorial.activity()
                         if acceptsCurrentGesture == nil {
@@ -292,12 +298,7 @@ struct WatchCanvasView: View {
                         }
                         if controller.pencilStyle.instrument == .fill {
                             let point = canvasPoint(value.startLocation, size: geometry.size)
-                            if controller.selectedLayer.isVisible,
-                               let fill = WatchBitmapRenderer.floodFill(layer: controller.selectedLayer,
-                                   size: controller.document.size(fallback: geometry.size), point: point, style: controller.pencilStyle) {
-                                controller.commitFill(fill)
-                                tutorial.record(.filled)
-                            }
+                            startFill(at: point, size: controller.document.size(fallback: geometry.size))
                             return
                         }
                         guard controller.activeStroke != nil else { return }
@@ -401,22 +402,48 @@ struct WatchCanvasView: View {
         .onChange(of: acceptsInput) { _, enabled in
             TutorialDebug.trace("canvas.enabled.enter", "value=\(enabled)")
             defer { TutorialDebug.trace("canvas.enabled.exit", "focused=\(crownFocused)") }
-            if !enabled { cancelShapeHold(); controller.cancelStroke(); lasso.cancelGesture() }
+            if !enabled { cancelFill(); cancelShapeHold(); controller.cancelStroke(); lasso.cancelGesture() }
         }
-        .onChange(of: controller.documentRevision) { _, _ in lasso.documentChanged(controller) }
-        .onChange(of: controller.selectedLayerID) { _, _ in lasso.documentChanged(controller) }
+        .onChange(of: controller.documentRevision) { _, _ in cancelFill(); lasso.documentChanged(controller) }
+        .onChange(of: controller.selectedLayerID) { _, _ in cancelFill(); lasso.documentChanged(controller) }
         .alert(L10n.text("Could not create selection"), isPresented: Binding(
             get: { lasso.errorMessage != nil }, set: { if !$0 { lasso.errorMessage = nil } }
         )) {
             Button(L10n.text("OK"), role: .cancel) { lasso.errorMessage = nil }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase != .active { cancelShapeHold(); controller.cancelStroke(); lasso.cancelGesture() }
+            if phase != .active { cancelFill(); cancelShapeHold(); controller.cancelStroke(); lasso.cancelGesture() }
         }
         .onDisappear {
+            cancelFill()
             cancelShapeHold()
             controller.cancelStroke()
             lasso.deactivate()
+        }
+    }
+
+    private func cancelFill() {
+        fillTask?.cancel()
+        fillTask = nil
+        fillRequestID = nil
+    }
+
+    private func startFill(at point: CGPoint, size: CGSize) {
+        guard fillRequestID == nil, controller.selectedLayer.isVisible else { return }
+        let layer = controller.selectedLayer
+        let revision = controller.documentRevision
+        let style = controller.pencilStyle
+        let requestID = UUID()
+        fillRequestID = requestID
+        fillTask = Task { @MainActor in
+            let result = await fillWorker.fill(layer: layer, size: size, point: point, style: style)
+            guard fillRequestID == requestID else { return }
+            fillTask = nil
+            fillRequestID = nil
+            guard !Task.isCancelled, controller.documentRevision == revision,
+                  controller.selectedLayer.id == layer.id, let result else { return }
+            controller.commitFill(result)
+            tutorial.record(.filled)
         }
     }
 
