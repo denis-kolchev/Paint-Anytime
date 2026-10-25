@@ -35,7 +35,7 @@ nonisolated enum AuthoredNibBrush {
             #if os(macOS)
             // Standalone renderer checks have no application resource bundle.
             if url == nil {
-                url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+                url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
                     .appendingPathComponent("BrushMasks/\(name).png")
             }
             #endif
