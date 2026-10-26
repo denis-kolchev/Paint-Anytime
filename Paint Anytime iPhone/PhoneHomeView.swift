@@ -10,13 +10,15 @@ extension UTType {
 struct PhoneHomeView: View {
     @ObservedObject var photoInbox: WatchPhotoInbox
 
-    @AppStorage("phoneGalleryColumnCount") private var storedColumnCount = 3
-    @State private var pinchStartIndex: Int?
+    @AppStorage("phoneGalleryColumnCount") private var storedColumnCount = 5
+    @State private var pinchReferenceMagnification: CGFloat = 1
+    @GestureState private var isPinching = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var importingProject = false
     @State private var showingInboxError = false
     @State private var projectMessage: String?
     private let columnOptions = [1, 3, 5]
-    private var columnCount: Int { columnOptions.contains(storedColumnCount) ? storedColumnCount : 3 }
+    private var columnCount: Int { columnOptions.contains(storedColumnCount) ? storedColumnCount : 5 }
 
     var body: some View {
         NavigationStack {
@@ -50,21 +52,14 @@ struct PhoneHomeView: View {
                         }
                         .simultaneousGesture(
                             MagnifyGesture()
-                                .onChanged { value in
-                                    if pinchStartIndex == nil {
-                                        pinchStartIndex = columnOptions.firstIndex(of: columnCount)
-                                    }
-                                    guard let index = pinchStartIndex else { return }
-                                    if value.magnification > 1.2 {
-                                        setColumnCount(columnOptions[max(0, index - 1)])
-                                    } else if value.magnification < 0.8 {
-                                        setColumnCount(columnOptions[min(columnOptions.count - 1, index + 1)])
-                                    }
-                                }
-                                .onEnded { _ in
-                                    pinchStartIndex = nil
-                                }
+                                .updating($isPinching) { _, active, _ in active = true }
+                                .onChanged { updateGalleryZoom($0.magnification) }
+                                .onEnded { _ in pinchReferenceMagnification = 1 }
                         )
+                        .onChange(of: isPinching) { _, active in
+                            // GestureState also resets when the gesture is cancelled.
+                            if !active { pinchReferenceMagnification = 1 }
+                        }
                         Text("Deleting a drawing removes it from both Apple Watch and iPhone. Save a copy to Photos, Files, or another app before deleting.")
                             .font(.footnote).foregroundStyle(.secondary).padding()
                     }
@@ -119,9 +114,25 @@ struct PhoneHomeView: View {
         } catch { projectMessage = error.localizedDescription }
     }
 
+    private func updateGalleryZoom(_ magnification: CGFloat) {
+        guard let index = columnOptions.firstIndex(of: columnCount) else { return }
+        let relativeScale = magnification / pinchReferenceMagnification
+        let nextIndex: Int
+        if relativeScale >= 1.25 {
+            nextIndex = max(0, index - 1)
+        } else if relativeScale <= 0.8 {
+            nextIndex = min(columnOptions.count - 1, index + 1)
+        } else {
+            return
+        }
+        // Each threshold starts another step, including reversals in the same pinch.
+        pinchReferenceMagnification = magnification
+        setColumnCount(columnOptions[nextIndex])
+    }
+
     private func setColumnCount(_ count: Int) {
         guard storedColumnCount != count else { return }
-        withAnimation(.easeInOut(duration: 0.2)) {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
             storedColumnCount = count
         }
     }

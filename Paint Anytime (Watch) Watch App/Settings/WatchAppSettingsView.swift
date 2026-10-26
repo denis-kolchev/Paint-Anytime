@@ -5,6 +5,7 @@ struct WatchAppSettingsView: View {
     @Environment(\.openURL) private var openURL
     private let supportEmail = "paintanytime.app@gmail.com"
     @ObservedObject var controller: CanvasController
+    let viewportSize: CGSize
     var onOpenDrawings: () -> Void
     var onStartTutorial: () -> Void
     var onClose: (() -> Void)? = nil
@@ -27,7 +28,7 @@ struct WatchAppSettingsView: View {
                         Label(L10n.text("Tutorial"), systemImage: "graduationcap")
                     }
                     NavigationLink {
-                        DrawingSettingsView(controller: controller)
+                        DrawingSettingsView(controller: controller, viewportSize: viewportSize)
                     } label: {
                         Label(L10n.text("Drawing"), systemImage: "paintbrush")
                     }
@@ -92,9 +93,20 @@ private struct CenteredMenuLabelStyle: LabelStyle {
 private struct DrawingSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
+    let viewportSize: CGSize
+    @Environment(\.displayScale) private var displayScale
+    @State private var showsCanvasSize = false
 
     var body: some View {
         List {
+            if AppReleaseFeatures.current.showsCanvasSizeControls {
+                Button {
+                    controller.cancelStroke()
+                    showsCanvasSize = true
+                } label: {
+                    Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
+                }
+            }
             NavigationLink {
                 ToolSynchronizationView(controller: controller)
             } label: {
@@ -119,6 +131,9 @@ private struct DrawingSettingsView: View {
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Drawing"))
         .toolbarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showsCanvasSize) {
+            WatchCanvasSizeView(controller: controller, viewportSize: viewportSize, displayScale: displayScale)
+        }
     }
 }
 

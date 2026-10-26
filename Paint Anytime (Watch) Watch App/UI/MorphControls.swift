@@ -291,7 +291,6 @@ struct CanvasMorphPanels: View {
     let isEyedropperActive: Bool
     @Binding var showsToolSettings: Bool
     @Binding var showsAppSettings: Bool
-    @Binding var showsCanvasSize: Bool
     @Binding var showsLayers: Bool
     var onStartLasso: () -> Void
     var onFinishLasso: () -> Void
@@ -347,7 +346,7 @@ struct CanvasMorphPanels: View {
                 // Native toolbar buttons handle taps in their slots; other rows stay interactive.
 
                 let contentTop = leading.y - 18
-                let contentRowCount: CGFloat = AppReleaseFeatures.current.showsCanvasSizeControls ? 6 : 5
+                let contentRowCount: CGFloat = 5
                 let contentRowHeight = panelGeometry.rowHeight(count: contentRowCount, panelTop: contentTop)
                 let contentHeight = showsContentActions ? contentRowHeight * contentRowCount : diameter
                 morphContentActions(diameter: diameter, rowHeight: contentRowHeight)
@@ -457,13 +456,6 @@ struct CanvasMorphPanels: View {
                     showsContentActions = false
                     session.saveDrawing(size: size, scale: displayScale)
                 } label: { Image(systemName: "square.and.arrow.down") }
-                if AppReleaseFeatures.current.showsCanvasSizeControls {
-                    morphButton("Canvas size", height: rowHeight) {
-                        controller.cancelStroke()
-                        showsContentActions = false
-                        showsCanvasSize = true
-                    } label: { Image(systemName: "arrow.up.left.and.arrow.down.right") }
-                }
                 morphButton("Lasso", height: rowHeight, action: onStartLasso) {
                     Image(systemName: "lasso")
                 }

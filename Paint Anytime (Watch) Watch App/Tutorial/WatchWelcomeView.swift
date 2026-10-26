@@ -119,11 +119,12 @@ private struct WelcomeQuestion: View {
 /// Present the menu and prepare a repeat tutorial before handing it to the editor.
 struct TutorialMenuPresentation: View {
     @ObservedObject var controller: CanvasController
+    let viewportSize: CGSize
     @ObservedObject var onboarding: OnboardingController
     let onOpenDrawings: () -> Void
     let onFinish: () -> Void
     var body: some View {
-        WatchAppSettingsView(controller: controller, onOpenDrawings: onOpenDrawings,
+        WatchAppSettingsView(controller: controller, viewportSize: viewportSize, onOpenDrawings: onOpenDrawings,
                              onStartTutorial: { onboarding.requestTutorial() }, onClose: onFinish)
         // Block repeated taps without dimming every menu row before dismissal.
         .allowsHitTesting(!onboarding.preparesTutorial)

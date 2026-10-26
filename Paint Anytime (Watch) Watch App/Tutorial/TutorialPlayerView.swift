@@ -172,7 +172,7 @@ struct TutorialPlayerView: View {
                     }
 
                     if page == .menu {
-                        WatchAppSettingsView(controller: controller,
+                        WatchAppSettingsView(controller: controller, viewportSize: screen.size,
                                              onOpenDrawings: { player.openGallery() },
                                              onStartTutorial: {},
                                              tutorial: tutorial)

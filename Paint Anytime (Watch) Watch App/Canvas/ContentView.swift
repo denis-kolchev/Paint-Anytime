@@ -19,7 +19,6 @@ struct ContentView: View {
         get { morphState.showsContentActions }
         nonmutating set { morphState.showsContentActions = newValue }
     }
-    @State private var showsCanvasSize = false
     @State private var showsLayers = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsToolSettings = false
@@ -93,7 +92,7 @@ struct ContentView: View {
                                   usesMorphToolbar: usesMorphToolbar, isMovingCanvas: isMovingCanvas,
                                   isEyedropperActive: isEyedropperActive,
                                   showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
-                                  showsCanvasSize: $showsCanvasSize, showsLayers: $showsLayers,
+                                  showsLayers: $showsLayers,
                                   onStartLasso: startLasso, onFinishLasso: finishLasso,
                                   onMoveSelectionLayer: moveSelectionLayer,
                                   onClearLayerMoveName: { layerMoveName = nil })
@@ -327,9 +326,6 @@ struct ContentView: View {
             }
             .environment(\.colorScheme, .dark)
         }
-        .sheet(isPresented: $showsCanvasSize) {
-            WatchCanvasSizeView(controller: controller, viewportSize: canvasSize, displayScale: displayScale)
-        }
         .sheet(isPresented: $showsLayers) {
             WatchLayersView(controller: controller, canvasSize: controller.document.size(fallback: canvasSize))
         }
@@ -353,7 +349,7 @@ struct ContentView: View {
                 }
             }
         )) {
-            TutorialMenuPresentation(controller: controller, onboarding: menuOnboarding, onOpenDrawings: {
+            TutorialMenuPresentation(controller: controller, viewportSize: canvasSize, onboarding: menuOnboarding, onOpenDrawings: {
                 showsAppSettings = false
                 savedNoticeID = nil
                 galleryArtworkFilename = nil
@@ -465,9 +461,8 @@ struct ContentView: View {
     private func openComplication(_ request: WatchLaunchRequest) async {
         guard request.destination != .app else { return }
         controller.cancelStroke()
-        let hasPresentation = showsCanvasSize || showsLayers || showsAppSettings
+        let hasPresentation = showsLayers || showsAppSettings
             || session.savedDrawing != nil || session.pendingCanvasAction != nil || session.exportError != nil
-        showsCanvasSize = false
         showsLayers = false
         showsAppSettings = false
         session.savedDrawing = nil
@@ -572,7 +567,7 @@ struct ContentView: View {
             } else {
                 session.canvasPreparationError = L10n.text("Could not open the image.")
             }
-        }, acceptsInput: isActive && !showsCanvasSize && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
+        }, acceptsInput: isActive && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
             cameraSampledColor = color
         }, onCanvasInteraction: {
             if showsContentActions {
