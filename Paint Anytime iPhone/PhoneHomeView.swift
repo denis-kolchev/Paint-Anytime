@@ -13,6 +13,13 @@ struct PhoneHomeView: View {
     @AppStorage("phoneGalleryColumnCount") private var storedColumnCount = 5
     @State private var pinchScale: CGFloat = 1
     @State private var pinchAnchor: UnitPoint = .center
+    @State private var gridFrame: CGRect = .zero
+    @State private var pinchTarget: URL?
+    @State private var pinchTargetFractionY: CGFloat = 0.5
+    @State private var pinchViewportY: CGFloat = 0
+    @State private var pendingZoomAnchor: UnitPoint?
+    @State private var pendingZoomTarget: URL?
+    @State private var pendingZoomColumns: Int?
     @GestureState private var isPinching = false
     @State private var navigationPath: [URL] = []
     @State private var suppressOpeningUntil = Date.distantPast
@@ -26,6 +33,7 @@ struct PhoneHomeView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             GeometryReader { geometry in
+                ScrollViewReader { scrollProxy in
                 ScrollView {
                     if photoInbox.images.isEmpty {
                         ContentUnavailableView {
@@ -50,7 +58,15 @@ struct PhoneHomeView: View {
                                         .clipped()
                                 }
                                 .buttonStyle(.plain)
+                                .id(url)
                                 .accessibilityLabel(Text(url.deletingPathExtension().lastPathComponent))
+                            }
+                        }
+                        .background {
+                            GeometryReader { grid in
+                                Color.clear.preference(key: PhoneGalleryFrameKey.self,
+                                    value: PhoneGalleryLayout(columns: columnCount,
+                                        frame: grid.frame(in: .named("phoneGalleryViewport"))))
                             }
                         }
                         .scaleEffect(pinchScale, anchor: pinchAnchor)
@@ -59,17 +75,24 @@ struct PhoneHomeView: View {
                                 .updating($isPinching) { _, active, _ in active = true }
                                 .onChanged { value in
                                     suppressOpeningUntil = .distantFuture
-                                    pinchAnchor = value.startAnchor
+                                    if pinchTarget == nil {
+                                        beginGalleryZoom(anchor: value.startAnchor, width: geometry.size.width)
+                                    }
                                     updateGalleryZoom(value.magnification, width: geometry.size.width)
                                 }
                                 .onEnded { value in
                                     suppressOpeningUntil = Date().addingTimeInterval(0.3)
-                                    finishGalleryZoom(value.magnification, width: geometry.size.width)
+                                    if pinchTarget == nil {
+                                        beginGalleryZoom(anchor: value.startAnchor, width: geometry.size.width)
+                                    }
+                                    finishGalleryZoom(value.magnification, width: geometry.size.width,
+                                                      viewportHeight: geometry.size.height)
                                 }
                         )
                         .onChange(of: isPinching) { _, active in
                             if !active {
                                 suppressOpeningUntil = Date().addingTimeInterval(0.3)
+                                if pendingZoomAnchor == nil { pinchTarget = nil }
                             }
                             // Cancellation restores the saved layout as well.
                             if !active && pinchScale != 1 {
@@ -81,6 +104,24 @@ struct PhoneHomeView: View {
                         Text("Deleting a drawing removes it from both Apple Watch and iPhone. Save a copy to Photos, Files, or another app before deleting.")
                             .font(.footnote).foregroundStyle(.secondary).padding()
                     }
+                }
+                .coordinateSpace(name: "phoneGalleryViewport")
+                .scrollDisabled(isPinching)
+                .onPreferenceChange(PhoneGalleryFrameKey.self) { layout in
+                    guard layout.columns > 0 else { return }
+                    gridFrame = layout.frame
+                    guard layout.columns == pendingZoomColumns,
+                          let target = pendingZoomTarget,
+                          let anchor = pendingZoomAnchor else { return }
+                    // The preference is emitted by the newly laid-out grid. A
+                    // column-state onChange runs too early for scrollTo's geometry.
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) { scrollProxy.scrollTo(target, anchor: anchor) }
+                    pendingZoomAnchor = nil
+                    pendingZoomTarget = nil
+                    pendingZoomColumns = nil
+                }
                 }
             }
             .navigationDestination(for: URL.self) { url in
@@ -153,6 +194,23 @@ struct PhoneHomeView: View {
                    max(tileSide(columns: 5, width: width) / initialSide, magnification))
     }
 
+    private func beginGalleryZoom(anchor: UnitPoint, width: CGFloat) {
+        guard !photoInbox.images.isEmpty, gridFrame.height > 0 else { return }
+        pinchAnchor = anchor
+        let side = tileSide(columns: columnCount, width: width)
+        let stride = side + 2
+        let point = CGPoint(x: anchor.x * gridFrame.width, y: anchor.y * gridFrame.height)
+        // Choose the nearest tile if the midpoint falls in the spacing or the
+        // empty cells of the last row. Keep that identity for the entire gesture.
+        let row = max(0, Int(((point.y - side / 2) / stride).rounded()))
+        let column = min(columnCount - 1, max(0, Int(((point.x - side / 2) / stride).rounded())))
+        let index = min(photoInbox.images.count - 1, row * columnCount + column)
+        pinchTarget = photoInbox.images[index]
+        let tileTop = CGFloat(index / columnCount) * stride
+        pinchTargetFractionY = min(1, max(0, (point.y - tileTop) / side))
+        pinchViewportY = gridFrame.minY + point.y
+    }
+
     private func updateGalleryZoom(_ magnification: CGFloat, width: CGFloat) {
         // Keep the layout fixed until release. Preview size tracks the original
         // finger distance directly, without repeated thresholds or timed animation.
@@ -163,7 +221,7 @@ struct PhoneHomeView: View {
         }
     }
 
-    private func finishGalleryZoom(_ magnification: CGFloat, width: CGFloat) {
+    private func finishGalleryZoom(_ magnification: CGFloat, width: CGFloat, viewportHeight: CGFloat) {
         let side = tileSide(columns: columnCount, width: width)
             * clampedGalleryScale(magnification, width: width)
         // Compare proportional distances so zooming in and out are symmetric.
@@ -171,9 +229,34 @@ struct PhoneHomeView: View {
             abs(log(tileSide(columns: $0, width: width) / side))
                 < abs(log(tileSide(columns: $1, width: width) / side))
         } ?? columnCount
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-            storedColumnCount = nearest
-            pinchScale = 1
+        if nearest != columnCount, pinchTarget != nil {
+            let newSide = tileSide(columns: nearest, width: width)
+            // scrollTo aligns the same fractional point in the item and viewport.
+            // Solve for that fraction to preserve the point between the fingers.
+            let denominator = viewportHeight - newSide
+            let anchorY = abs(denominator) > 1
+                ? (pinchViewportY - pinchTargetFractionY * newSide) / denominator
+                : 0.5
+            pendingZoomAnchor = UnitPoint(x: 0.5, y: min(1, max(0, anchorY)))
+            pendingZoomTarget = pinchTarget
+            pendingZoomColumns = nearest
+        } else {
+            pendingZoomAnchor = nil
+            pendingZoomTarget = nil
+            pendingZoomColumns = nil
+        }
+        pinchTarget = nil
+        if nearest != columnCount {
+            // Commit reflow without an implicit animation that would continue
+            // moving item frames after the anchored scroll has been calculated.
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                storedColumnCount = nearest
+                pinchScale = 1
+            }
+        } else {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { pinchScale = 1 }
         }
     }
 
