@@ -186,17 +186,18 @@ private struct PhoneDrawingView: View {
                     Button("Sync project from Apple Watch") { inbox.synchronize() }
                 }
             }
+            Button(role: .destructive) { confirmingDeletion = true } label: {
+                Label("Delete", systemImage: "trash")
+                    .frame(maxWidth: .infinity, minHeight: 44)
+            }
+            .buttonStyle(.bordered)
+            .tint(.red)
+            .disabled(inbox.isSaving)
             if inbox.isSaving { ProgressView("Saving…") }
         }
         .padding()
         .navigationTitle("Drawing")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            Button(role: .destructive) { confirmingDeletion = true } label: {
-                Label("Delete", systemImage: "trash")
-            }
-            .disabled(inbox.isSaving)
-        }
         .confirmationDialog("Delete from Apple Watch and iPhone?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 if inbox.delete(url) { dismiss() }
