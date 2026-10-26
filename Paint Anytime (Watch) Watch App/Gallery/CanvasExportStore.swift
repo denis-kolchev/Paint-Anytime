@@ -29,6 +29,8 @@ enum CanvasExportStore {
     static func all(in folder: URL? = nil) throws -> [CanvasExport] {
         let targetFolder = try (folder ?? directory())
         if folder == nil { try removeLegacyTutorialPreviews(in: targetFolder) }
+        let deleted = try GalleryDeletionStore.names(in: targetFolder)
+        for name in deleted { try GalleryDeletionStore.removeFiles(for: name, in: targetFolder) }
         let favorites = try favoriteNames(in: targetFolder)
         return try FileManager.default.contentsOfDirectory(at: targetFolder, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension.lowercased() == "png" }
@@ -99,17 +101,15 @@ enum CanvasExportStore {
         let file = drawing.url.resolvingSymlinksInPath().standardizedFileURL
         guard file.deletingLastPathComponent() == folder, file.pathExtension.lowercased() == "png"
         else { throw CocoaError(.fileWriteNoPermission) }
-        try FileManager.default.removeItem(at: file)
+        if destination == nil {
+            try GalleryDeletionStore.merge([file.lastPathComponent], in: folder)
+        }
+        try GalleryDeletionStore.removeFiles(for: file.lastPathComponent, in: folder)
         var favorites = try favoriteNames(in: folder)
         favorites.remove(file.lastPathComponent)
         try writeFavorites(favorites, in: folder)
         if destination == nil { try? refreshWidgets() }
-        let project = file.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
-        if FileManager.default.fileExists(atPath: project.path) { try FileManager.default.removeItem(at: project) }
-        let source = file.deletingPathExtension().appendingPathExtension("json")
-        if FileManager.default.fileExists(atPath: source.path) {
-            try FileManager.default.removeItem(at: source)
-        }
+
     }
 
     static func save(document: CanvasDocument, imageData: Data, name: String,

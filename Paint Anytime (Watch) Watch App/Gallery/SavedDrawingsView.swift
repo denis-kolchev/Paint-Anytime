@@ -50,7 +50,7 @@ struct SavedDrawingsView: View {
     private var columnCount: Int { zoomLevel == 0 ? 5 : 3 }
     private var isTransitioning: Bool { transitionRequest != nil || imageTransition != nil }
 
-    var body: some View {
+    private var galleryContent: some View {
         GeometryReader { geometry in
             let spacing: CGFloat = zoomLevel == 0 ? 2 : 4
             let width = (geometry.size.width - spacing * CGFloat(columnCount - 1) - 6) / CGFloat(columnCount)
@@ -315,6 +315,10 @@ struct SavedDrawingsView: View {
                 }
             }
         }
+    }
+
+    private var galleryWithConfirmations: some View {
+        galleryContent
         .disabled(isLoading)
         .focusable(!isLoading && pendingDeletion == nil && tutorial.allowsGalleryZoom)
         .focused($crownFocused)
@@ -360,7 +364,7 @@ struct SavedDrawingsView: View {
             tutorial.resumeReminders()
             crownFocused = tutorial.allowsGalleryZoom
         }) { drawing in
-            DestructiveConfirmationView(title: L10n.text("Delete the image?"), confirmTitle: L10n.text("Delete")) {
+            DestructiveConfirmationView(title: deletionConfirmationTitle, confirmTitle: L10n.text("Delete")) {
                 pendingDeletion = nil
             } onConfirm: {
                 // Prepare the updated 3-column grid while confirmation still
@@ -371,10 +375,17 @@ struct SavedDrawingsView: View {
                 }
             }
         }
+    }
+
+    var body: some View {
+        galleryWithConfirmations
         .alert(L10n.text("Error"), isPresented: Binding(
             get: { controller.errorMessage != nil }, set: { if !$0 { controller.errorMessage = nil } }
         )) { Button(L10n.text("OK"), role: .cancel) { controller.errorMessage = nil } }
         message: { Text(controller.errorMessage ?? "") }
+        .onReceive(NotificationCenter.default.publisher(for: .galleryDrawingsDeleted)) { _ in
+            handleRemoteDeletions()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .paintProjectImported)) { _ in
             controller.reload(in: galleryFolder)
         }
@@ -408,6 +419,25 @@ struct SavedDrawingsView: View {
         .onChange(of: isTransitioning) { _, transitioning in
             if transitioning && transitionRequest != .closing { morphState.isExpanded = false }
             if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
+        }
+    }
+
+    private var deletionConfirmationTitle: String {
+        let key = galleryFolder == nil
+            ? "Delete from Apple Watch and iPhone? Export it first to keep a copy."
+            : "Delete the image?"
+        return L10n.text(key)
+    }
+
+    private func handleRemoteDeletions() {
+        guard galleryFolder == nil else { return }
+        controller.reload()
+        if let pendingDeletion, !drawings.contains(where: { $0.id == pendingDeletion.id }) {
+            self.pendingDeletion = nil
+        }
+        if let focusedDrawing, !drawings.contains(where: { $0.id == focusedDrawing.id }) {
+            self.focusedDrawing = nil
+            returnToGrid()
         }
     }
 

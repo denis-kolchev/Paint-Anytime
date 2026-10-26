@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AC1000000000000000000001 /* GalleryDeletionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1000000000000000000002; };
 		257D4058305EA358002072CB /* Paint Anytime (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AB1000000000000000000001 /* Shared/PaintProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1000000000000000000002 /* Shared/PaintProject.swift */; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
@@ -54,6 +55,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AC1000000000000000000002 /* GalleryDeletionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryDeletionStore.swift; sourceTree = SOURCE_ROOT; };
 		257D4052305EA358002072CB /* Paint Anytime (Watch).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		25AC8197305D90C700C8F69E /* Paint Anytime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -342,6 +344,7 @@
 			isa = PBXSourcesBuildPhase;
 			files = (
 				AB1000000000000000000001 /* Shared/PaintProject.swift in Sources */,
+				AC1000000000000000000001 /* GalleryDeletionStore.swift in Sources */,
 			);
 		};
 		C30000000000000000000007 /* Sources */ = {

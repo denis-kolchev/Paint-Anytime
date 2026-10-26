@@ -65,7 +65,7 @@ struct PhoneHomeView: View {
                                     pinchStartIndex = nil
                                 }
                         )
-                        Text("Drawings are copied from your Apple Watch and kept on this iPhone.")
+                        Text("Deleting a drawing removes it from both Apple Watch and iPhone. Save a copy to Photos, Files, or another app before deleting.")
                             .font(.footnote).foregroundStyle(.secondary).padding()
                     }
                 }
@@ -130,6 +130,8 @@ struct PhoneHomeView: View {
 private struct PhoneDrawingView: View {
     let url: URL
     @ObservedObject var inbox: WatchPhotoInbox
+    @Environment(\.dismiss) private var dismiss
+    @State private var confirmingDeletion = false
     @State private var exporting = false
     @State private var showingPhotoConfirmation = false
     @State private var exportingProject = false
@@ -189,6 +191,23 @@ private struct PhoneDrawingView: View {
         .padding()
         .navigationTitle("Drawing")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            Button(role: .destructive) { confirmingDeletion = true } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            .disabled(inbox.isSaving)
+        }
+        .confirmationDialog("Delete from Apple Watch and iPhone?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                if inbox.delete(url) { dismiss() }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Save a copy to Photos, Files, or another app first. Deletion will sync when your devices reconnect.")
+        }
+        .onChange(of: inbox.images) { _, images in
+            if !images.contains(url) { dismiss() }
+        }
         .fileExporter(isPresented: $exporting, document: DrawingFile(url: url), contentType: .png,
                       defaultFilename: url.deletingPathExtension().lastPathComponent) { result in
             if case .failure(let error) = result { exportError = error.localizedDescription }

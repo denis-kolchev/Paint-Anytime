@@ -27,16 +27,33 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
                 let project = image.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
                 return [image.lastPathComponent] + (FileManager.default.fileExists(atPath: project.path) ? [project.lastPathComponent] : [])
             }
-            try session.updateApplicationContext(["galleryRequest": UUID().uuidString, "knownDrawings": names])
+            try session.updateApplicationContext(["galleryRequest": UUID().uuidString, "knownDrawings": names,
+                                                  GalleryDeletionStore.contextKey: try (store as? IncomingDrawingStore)?.deletedNames() ?? []])
         } catch { onReceive?(.failure(error)) }
     }
 
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         Task { @MainActor in
             if let error { onReceive?(.failure(error)) }
-            else { requestSync() }
+            else {
+                receiveDeletions(session.receivedApplicationContext)
+                requestSync()
+            }
         }
     }
+    private func receiveDeletions(_ context: [String: Any]) {
+        guard let names = context[GalleryDeletionStore.contextKey] as? [String],
+              let gallery = store as? IncomingDrawingStore else { return }
+        do {
+            try gallery.applyDeletions(names)
+            onReceive?(.success(()))
+        } catch { onReceive?(.failure(error)) }
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        Task { @MainActor in receiveDeletions(applicationContext) }
+    }
+
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
     nonisolated func sessionDidDeactivate(_ session: WCSession) { session.activate() }
 

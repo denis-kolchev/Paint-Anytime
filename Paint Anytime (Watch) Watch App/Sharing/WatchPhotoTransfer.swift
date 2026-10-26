@@ -13,8 +13,13 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         session.activate()
     }
 
+    @MainActor
     func queue(_ imageURL: URL) -> Bool {
         guard WCSession.isSupported() else { return false }
+        do {
+            let deleted = try GalleryDeletionStore.names(in: CanvasExportStore.directory())
+            guard !deleted.contains(imageURL.deletingPathExtension().appendingPathExtension("png").lastPathComponent) else { return false }
+        } catch { return false }
         let session = WCSession.default
         guard session.activationState == .activated, session.isCompanionAppInstalled else { return false }
         guard !session.outstandingFileTransfers.contains(where: { $0.file.metadata?["drawingName"] as? String == imageURL.lastPathComponent }) else { return true }
@@ -56,15 +61,48 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         } catch { session.transferUserInfo(["projectImportError": error.localizedDescription]) }
     }
 
-    private func synchronize(_ context: [String: Any]) {
-        guard context["galleryRequest"] != nil else { return }
-        let known = Set(context["knownDrawings"] as? [String] ?? [])
-        // Gallery access stays on the same actor as watch saves and deletions.
-        Task { @MainActor in
-            guard let drawings = try? CanvasExportStore.all() else { return }
-            for drawing in drawings where !known.contains(drawing.url.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension).lastPathComponent) {
-                _ = queue(drawing.url)
+    @MainActor
+    func publishDeletions() {
+        let session = WCSession.default
+        guard session.activationState == .activated else { return }
+        do {
+            let names = try GalleryDeletionStore.names(in: CanvasExportStore.directory())
+            for transfer in session.outstandingFileTransfers {
+                guard let name = transfer.file.metadata?["drawingName"] as? String else { continue }
+                let imageName = URL(fileURLWithPath: name).deletingPathExtension().appendingPathExtension("png").lastPathComponent
+                if names.contains(imageName) { transfer.cancel() }
             }
+            try session.updateApplicationContext([GalleryDeletionStore.contextKey: names.sorted()])
+        } catch { NSLog("Gallery deletion sync failed: %@", error.localizedDescription) }
+    }
+
+    private func synchronize(_ context: [String: Any]) {
+        let known = Set(context["knownDrawings"] as? [String] ?? [])
+        // Serialize deletions and transfers with watch gallery saves.
+        Task { @MainActor in
+            do {
+                let folder = try CanvasExportStore.directory()
+                try GalleryDeletionStore.merge(context[GalleryDeletionStore.contextKey] as? [String] ?? [], in: folder)
+                let deleted = try GalleryDeletionStore.names(in: folder)
+                for name in deleted {
+                    let url = folder.appendingPathComponent(name)
+                    try CanvasExportStore.delete(CanvasExport(url: url), in: folder)
+                    await GalleryImageCache.shared.remove(url)
+                }
+                if !deleted.isEmpty {
+                    try CanvasExportStore.refreshWidgets()
+                    NotificationCenter.default.post(name: .galleryDrawingsDeleted, object: nil)
+                }
+                publishDeletions()
+                guard context["galleryRequest"] != nil else { return }
+                for drawing in try CanvasExportStore.all() where !known.contains(drawing.url.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension).lastPathComponent) {
+                    _ = queue(drawing.url)
+                }
+            } catch { NSLog("Gallery synchronization failed: %@", error.localizedDescription) }
         }
     }
+}
+
+extension Notification.Name {
+    static let galleryDrawingsDeleted = Notification.Name("galleryDrawingsDeleted")
 }

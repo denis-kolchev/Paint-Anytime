@@ -44,6 +44,21 @@ final class WatchPhotoInbox: ObservableObject {
         }
     }
 
+    @discardableResult
+    func delete(_ image: URL) -> Bool {
+        do {
+            try store.remove(image)
+            refresh()
+            receiver.requestSync()
+            return true
+        } catch {
+            errorMessage = error.localizedDescription
+            refresh()
+            receiver.requestSync()
+            return false
+        }
+    }
+
     func synchronize() { receiver.requestSync() }
     func clearError() {
         guard errorMessage != nil else { return }
