@@ -11,8 +11,11 @@ struct PhoneHomeView: View {
     @ObservedObject var photoInbox: WatchPhotoInbox
 
     @AppStorage("phoneGalleryColumnCount") private var storedColumnCount = 5
-    @State private var pinchReferenceMagnification: CGFloat = 1
+    @State private var pinchScale: CGFloat = 1
+    @State private var pinchAnchor: UnitPoint = .center
     @GestureState private var isPinching = false
+    @State private var navigationPath: [URL] = []
+    @State private var suppressOpeningUntil = Date.distantPast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var importingProject = false
     @State private var showingInboxError = false
@@ -21,7 +24,7 @@ struct PhoneHomeView: View {
     private var columnCount: Int { columnOptions.contains(storedColumnCount) ? storedColumnCount : 5 }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             GeometryReader { geometry in
                 ScrollView {
                     if photoInbox.images.isEmpty {
@@ -38,8 +41,8 @@ struct PhoneHomeView: View {
                         let tileSize = max(1, (geometry.size.width - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount))
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnCount), spacing: spacing) {
                             ForEach(photoInbox.images, id: \.self) { url in
-                                NavigationLink {
-                                    PhoneDrawingView(url: url, inbox: photoInbox)
+                                Button {
+                                    openDrawing(url)
                                 } label: {
                                     DrawingPreview(url: url, maximumSize: 1600, fillsFrame: true)
                                         .frame(width: tileSize, height: tileSize)
@@ -50,20 +53,38 @@ struct PhoneHomeView: View {
                                 .accessibilityLabel(Text(url.deletingPathExtension().lastPathComponent))
                             }
                         }
-                        .simultaneousGesture(
+                        .scaleEffect(pinchScale, anchor: pinchAnchor)
+                        .highPriorityGesture(
                             MagnifyGesture()
                                 .updating($isPinching) { _, active, _ in active = true }
-                                .onChanged { updateGalleryZoom($0.magnification) }
-                                .onEnded { _ in pinchReferenceMagnification = 1 }
+                                .onChanged { value in
+                                    suppressOpeningUntil = .distantFuture
+                                    pinchAnchor = value.startAnchor
+                                    updateGalleryZoom(value.magnification, width: geometry.size.width)
+                                }
+                                .onEnded { value in
+                                    suppressOpeningUntil = Date().addingTimeInterval(0.3)
+                                    finishGalleryZoom(value.magnification, width: geometry.size.width)
+                                }
                         )
                         .onChange(of: isPinching) { _, active in
-                            // GestureState also resets when the gesture is cancelled.
-                            if !active { pinchReferenceMagnification = 1 }
+                            if !active {
+                                suppressOpeningUntil = Date().addingTimeInterval(0.3)
+                            }
+                            // Cancellation restores the saved layout as well.
+                            if !active && pinchScale != 1 {
+                                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+                                    pinchScale = 1
+                                }
+                            }
                         }
                         Text("Deleting a drawing removes it from both Apple Watch and iPhone. Save a copy to Photos, Files, or another app before deleting.")
                             .font(.footnote).foregroundStyle(.secondary).padding()
                     }
                 }
+            }
+            .navigationDestination(for: URL.self) { url in
+                PhoneDrawingView(url: url, inbox: photoInbox)
             }
             .navigationTitle("Watch Gallery")
             .toolbar {
@@ -100,6 +121,14 @@ struct PhoneHomeView: View {
         }
     }
 
+    private func openDrawing(_ url: URL) {
+        // A recognized pinch owns the touch sequence, including release events.
+        // A single route also prevents multiple tiles from opening together.
+        guard !isPinching, Date() >= suppressOpeningUntil,
+              navigationPath.isEmpty, photoInbox.images.contains(url) else { return }
+        navigationPath = [url]
+    }
+
     private func importProject(_ url: URL) {
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
@@ -114,28 +143,40 @@ struct PhoneHomeView: View {
         } catch { projectMessage = error.localizedDescription }
     }
 
-    private func updateGalleryZoom(_ magnification: CGFloat) {
-        guard let index = columnOptions.firstIndex(of: columnCount) else { return }
-        let relativeScale = magnification / pinchReferenceMagnification
-        let nextIndex: Int
-        if relativeScale >= 1.25 {
-            nextIndex = max(0, index - 1)
-        } else if relativeScale <= 0.8 {
-            nextIndex = min(columnOptions.count - 1, index + 1)
-        } else {
-            return
-        }
-        // Each threshold starts another step, including reversals in the same pinch.
-        pinchReferenceMagnification = magnification
-        setColumnCount(columnOptions[nextIndex])
+    private func tileSide(columns: Int, width: CGFloat) -> CGFloat {
+        max(1, (width - 2 * CGFloat(columns - 1)) / CGFloat(columns))
     }
 
-    private func setColumnCount(_ count: Int) {
-        guard storedColumnCount != count else { return }
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) {
-            storedColumnCount = count
+    private func clampedGalleryScale(_ magnification: CGFloat, width: CGFloat) -> CGFloat {
+        let initialSide = tileSide(columns: columnCount, width: width)
+        return min(tileSide(columns: 1, width: width) / initialSide,
+                   max(tileSide(columns: 5, width: width) / initialSide, magnification))
+    }
+
+    private func updateGalleryZoom(_ magnification: CGFloat, width: CGFloat) {
+        // Keep the layout fixed until release. Preview size tracks the original
+        // finger distance directly, without repeated thresholds or timed animation.
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            pinchScale = clampedGalleryScale(magnification, width: width)
         }
     }
+
+    private func finishGalleryZoom(_ magnification: CGFloat, width: CGFloat) {
+        let side = tileSide(columns: columnCount, width: width)
+            * clampedGalleryScale(magnification, width: width)
+        // Compare proportional distances so zooming in and out are symmetric.
+        let nearest = columnOptions.min {
+            abs(log(tileSide(columns: $0, width: width) / side))
+                < abs(log(tileSide(columns: $1, width: width) / side))
+        } ?? columnCount
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            storedColumnCount = nearest
+            pinchScale = 1
+        }
+    }
+
 }
 
 private struct PhoneDrawingView: View {
