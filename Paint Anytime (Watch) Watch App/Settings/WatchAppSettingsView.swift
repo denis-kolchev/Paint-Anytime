@@ -95,14 +95,14 @@ private struct DrawingSettingsView: View {
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
     @Environment(\.displayScale) private var displayScale
-    @State private var showsCanvasSize = false
 
     var body: some View {
         List {
             if AppReleaseFeatures.current.showsCanvasSizeControls {
-                Button {
-                    controller.cancelStroke()
-                    showsCanvasSize = true
+                NavigationLink {
+                    WatchCanvasSizeView(controller: controller, viewportSize: viewportSize,
+                                        displayScale: displayScale)
+                        .onAppear { controller.cancelStroke() }
                 } label: {
                     Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
                 }
@@ -131,9 +131,6 @@ private struct DrawingSettingsView: View {
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Drawing"))
         .toolbarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showsCanvasSize) {
-            WatchCanvasSizeView(controller: controller, viewportSize: viewportSize, displayScale: displayScale)
-        }
     }
 }
 
