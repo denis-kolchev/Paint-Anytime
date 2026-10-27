@@ -7,10 +7,12 @@ extension UTType {
     static let paintAnytimeProject = UTType(exportedAs: PaintProject.typeIdentifier)
 }
 
+@MainActor
 struct PhoneHomeView: View {
     @ObservedObject var photoInbox: WatchPhotoInbox
 
     @AppStorage("phoneGalleryColumnCount") private var storedColumnCount = 5
+    @State private var previewCache = PhoneGalleryPreviewCache()
     @State private var pinchScale: CGFloat = 1
     @State private var zoomColumns = 5
     @State private var zoomFromColumns = 5
@@ -50,6 +52,8 @@ struct PhoneHomeView: View {
                             Button("Sync with Apple Watch") { photoInbox.synchronize() }
                         }
                         .padding(.top, 80)
+                        Text("Deleting a drawing removes it from both Apple Watch and iPhone. Save a copy to Photos, Files, or another app before deleting.")
+                            .font(.footnote).foregroundStyle(.secondary).padding()
                     } else {
                         let spacing = gallerySpacing
                         let tileSize = max(1, (geometry.size.width - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount))
@@ -59,7 +63,7 @@ struct PhoneHomeView: View {
                                     openDrawing(url)
                                 } label: {
                                     PhoneGalleryZoomTile(source: url, destination: nil,
-                                                         blend: 0, side: tileSize)
+                                                         blend: 0, side: tileSize, cache: previewCache)
                                 }
                                 .buttonStyle(.plain)
                                 .id(url)
@@ -78,7 +82,7 @@ struct PhoneHomeView: View {
                                             PhoneGalleryZoomTile(
                                                 source: zoomImage(row: row, column: column, density: zoomFromColumns),
                                                 destination: zoomImage(row: row, column: column, density: zoomColumns),
-                                                blend: zoomBlend, side: tileSize)
+                                                blend: zoomBlend, side: tileSize, cache: previewCache)
                                                 .scaleEffect(pinchScale)
                                                 .offset(zoomTileOffset(row: row, column: column, side: tileSize))
                                                 .offset(x: CGFloat(column) * (tileSize + spacing),
@@ -130,11 +134,11 @@ struct PhoneHomeView: View {
                                                   viewportHeight: geometry.size.height)
                             }
                         }
-                        Text("Deleting a drawing removes it from both Apple Watch and iPhone. Save a copy to Photos, Files, or another app before deleting.")
-                            .font(.footnote).foregroundStyle(.secondary).padding()
                     }
                 }
                 .coordinateSpace(name: "phoneGalleryViewport")
+                // Let scrolling artwork remain visible through the header material.
+                .scrollClipDisabled()
                 .scrollDisabled(isPinching || settlingZoom)
                 .onPreferenceChange(PhoneGalleryFrameKey.self) { layout in
                     guard layout.columns > 0 else { return }
@@ -156,10 +160,16 @@ struct PhoneHomeView: View {
             .navigationDestination(for: URL.self) { url in
                 PhoneDrawingView(url: url, inbox: photoInbox)
             }
+            .onReceive(photoInbox.$images) { _ in
+                // A sync can replace PNG contents without changing its URL.
+                previewCache = PhoneGalleryPreviewCache()
+            }
             .navigationTitle("Watch Gallery")
-            .toolbar {
-                Button { importingProject = true } label: { Label("Import Project", systemImage: "square.and.arrow.down") }
-                Button { photoInbox.synchronize() } label: { Label("Sync", systemImage: "arrow.triangle.2.circlepath") }
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                PhoneGalleryHeader(
+                    importProject: { importingProject = true },
+                    synchronize: { photoInbox.synchronize() })
             }
             .refreshable { photoInbox.synchronize() }
             .fileImporter(isPresented: $importingProject, allowedContentTypes: [.paintAnytimeProject]) { result in
@@ -438,6 +448,7 @@ private struct PhoneDrawingView: View {
         }
         .padding()
         .navigationTitle("Drawing")
+        .toolbar(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Delete from Apple Watch and iPhone?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
@@ -488,20 +499,30 @@ private struct DrawingFile: FileDocument {
     }
 }
 
+@MainActor
 struct DrawingPreview: View {
     let url: URL
     let maximumSize: Int
     var fillsFrame = false
+    var cache: PhoneGalleryPreviewCache? = nil
     @State private var preview: UIImage?
     @State private var failed = false
 
     var body: some View {
         Group {
-            if let preview { Image(uiImage: preview).resizable().aspectRatio(contentMode: fillsFrame ? .fill : .fit) }
+            if let image = preview ?? cache?.image(for: url, maximumSize: maximumSize) { Image(uiImage: image).resizable().aspectRatio(contentMode: fillsFrame ? .fill : .fit) }
             else if failed { Label("Preview unavailable", systemImage: "photo") }
             else { ProgressView() }
         }
-        .task(id: url) {
+        .task(id: "\(url.absoluteString)|\(maximumSize)|\(cache?.id.uuidString ?? "detail")") {
+            failed = false
+            if let cache {
+                let image = await cache.load(url, maximumSize: maximumSize)
+                guard !Task.isCancelled else { return }
+                preview = image
+                failed = image == nil
+                return
+            }
             let sourceURL = url
             let size = maximumSize
             let image = await Task.detached(priority: .userInitiated) {
