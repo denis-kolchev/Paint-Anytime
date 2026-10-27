@@ -18,7 +18,9 @@ struct PhoneHomeView: View {
     @State private var zoomFromColumns = 5
     @State private var zoomBlend: Double = 0
     @State private var zoomOffsetX: CGFloat = 0
+    @State private var zoomOffsetY: CGFloat = 0
     @State private var settlingZoom = false
+    @State private var zoomSettlementID: UUID?
     @State private var pinchAnchor: UnitPoint = .center
     @State private var gridFrame: CGRect = .zero
     @State private var pinchTarget: URL?
@@ -91,6 +93,7 @@ struct PhoneHomeView: View {
                                     }
                                 }
                                 .frame(width: geometry.size.width, height: gridFrame.height, alignment: .topLeading)
+                                .offset(x: zoomOffsetX, y: zoomOffsetY)
                                 .allowsHitTesting(false)
                                 .accessibilityHidden(true)
                             }
@@ -102,44 +105,52 @@ struct PhoneHomeView: View {
                                         frame: grid.frame(in: .named("phoneGalleryViewport"))))
                             }
                         }
-                        .offset(x: zoomOffsetX)
-                        .highPriorityGesture(
-                            MagnifyGesture()
-                                .updating($isPinching) { _, active, _ in active = true }
-                                .onChanged { value in
-                                    guard !settlingZoom else { return }
-                                    suppressOpeningUntil = .distantFuture
-                                    if pinchTarget == nil {
-                                        beginGalleryZoom(anchor: value.startAnchor, width: geometry.size.width)
-                                    }
-                                    updateGalleryZoom(value.magnification, width: geometry.size.width)
-                                }
-                                .onEnded { value in
-                                    guard !settlingZoom else { return }
-                                    suppressOpeningUntil = Date().addingTimeInterval(0.3)
-                                    if pinchTarget == nil {
-                                        beginGalleryZoom(anchor: value.startAnchor, width: geometry.size.width)
-                                    }
-                                    updateGalleryZoom(value.magnification, width: geometry.size.width)
-                                    finishGalleryZoom(width: geometry.size.width,
-                                                      viewportHeight: geometry.size.height)
-                                }
-                        )
-                        .onChange(of: isPinching) { _, active in
-                            guard !active else { return }
-                            // onEnded must get a chance to start its settlement first.
-                            DispatchQueue.main.async {
-                                guard !isPinching, !settlingZoom, pinchTarget != nil else { return }
-                                finishGalleryZoom(width: geometry.size.width,
-                                                  viewportHeight: geometry.size.height)
+
+                    }
+                }
+                .highPriorityGesture(
+                    MagnifyGesture()
+                        .updating($isPinching) { _, active, _ in active = true }
+                        .onChanged { value in
+                            guard !settlingZoom else { return }
+                            suppressOpeningUntil = .distantFuture
+                            if pinchTarget == nil {
+                                beginGalleryZoom(anchor: value.startAnchor, width: geometry.size.width,
+                                                 viewportHeight: geometry.size.height)
                             }
+                            updateGalleryZoom(value.magnification, width: geometry.size.width)
                         }
+                        .onEnded { value in
+                            guard !settlingZoom else { return }
+                            suppressOpeningUntil = Date().addingTimeInterval(0.3)
+                            if pinchTarget == nil {
+                                beginGalleryZoom(anchor: value.startAnchor, width: geometry.size.width,
+                                                 viewportHeight: geometry.size.height)
+                            }
+                            updateGalleryZoom(value.magnification, width: geometry.size.width)
+                            finishGalleryZoom(width: geometry.size.width,
+                                              viewportHeight: geometry.size.height)
+                        }
+                )
+                .onChange(of: isPinching) { _, active in
+                    guard !active else { return }
+                    // onEnded must get a chance to start its settlement first.
+                    DispatchQueue.main.async {
+                        guard !isPinching, !settlingZoom else { return }
+                        guard pinchTarget != nil else {
+                            suppressOpeningUntil = Date().addingTimeInterval(0.3)
+                            return
+                        }
+                        finishGalleryZoom(width: geometry.size.width,
+                                          viewportHeight: geometry.size.height)
                     }
                 }
                 .coordinateSpace(name: "phoneGalleryViewport")
                 // Let scrolling artwork remain visible through the header material.
                 .scrollClipDisabled()
-                .scrollDisabled(isPinching || settlingZoom)
+                // The high-priority magnification gesture owns the pinch. Changing
+                // scrollEnabled mid-gesture can interrupt its recognizer.
+                .scrollDisabled(settlingZoom)
                 .onPreferenceChange(PhoneGalleryFrameKey.self) { layout in
                     guard layout.columns > 0 else { return }
                     gridFrame = layout.frame
@@ -163,7 +174,11 @@ struct PhoneHomeView: View {
             .onReceive(photoInbox.$images) { _ in
                 // A sync can replace PNG contents without changing its URL.
                 previewCache = PhoneGalleryPreviewCache()
+                if let target = pinchTarget, !photoInbox.images.contains(target) {
+                    resetGalleryZoom()
+                }
             }
+            .onDisappear { resetGalleryZoom() }
             .navigationTitle("Watch Gallery")
             .toolbar(.hidden, for: .navigationBar)
             .safeAreaInset(edge: .top, spacing: 0) {
@@ -227,13 +242,19 @@ struct PhoneHomeView: View {
         max(1, (width - gallerySpacing * CGFloat(columns - 1)) / CGFloat(columns))
     }
 
-    private func beginGalleryZoom(anchor: UnitPoint, width: CGFloat) {
+    private func beginGalleryZoom(anchor viewportAnchor: UnitPoint, width: CGFloat,
+                                  viewportHeight: CGFloat) {
         guard !photoInbox.images.isEmpty, gridFrame.height > 0 else { return }
+        // The recognizer lives on the viewport, not on the disappearing grid.
+        let anchor = UnitPoint(
+            x: viewportAnchor.x,
+            y: (viewportAnchor.y * viewportHeight - gridFrame.minY) / gridFrame.height)
         pinchAnchor = anchor
         zoomColumns = columnCount
         zoomFromColumns = columnCount
         zoomBlend = 0
         zoomOffsetX = 0
+        zoomOffsetY = 0
         let side = tileSide(columns: columnCount, width: width)
         let stride = side + gallerySpacing
         let point = CGPoint(x: anchor.x * gridFrame.width, y: anchor.y * gridFrame.height)
@@ -324,9 +345,12 @@ struct PhoneHomeView: View {
     private func settleGalleryZoom(columns nearest: Int, width: CGFloat, viewportHeight: CGFloat) {
         guard !settlingZoom else { return }
         settlingZoom = true
+        let settlementID = UUID()
+        zoomSettlementID = settlementID
         suppressOpeningUntil = .distantFuture
         let finalScale = tileSide(columns: nearest, width: width) / tileSide(columns: columnCount, width: width)
         var offsetX: CGFloat = 0
+        var offsetY: CGFloat = 0
         if let target = pinchTarget, let index = photoInbox.images.firstIndex(of: target) {
             let oldCenter = CGFloat(index % columnCount) * (tileSide(columns: columnCount, width: width) + gallerySpacing)
                 + tileSide(columns: columnCount, width: width) / 2
@@ -334,28 +358,75 @@ struct PhoneHomeView: View {
                 + tileSide(columns: nearest, width: width) / 2
             offsetX = newCenter - (pinchAnchor.x * width + (oldCenter - pinchAnchor.x * width) * finalScale)
         }
+        if nearest != columnCount,
+           let placement = settledGalleryPlacement(columns: nearest, width: width,
+                                                   viewportHeight: viewportHeight) {
+            let anchoredTop = pinchViewportY - pinchTargetFractionY * tileSide(columns: nearest, width: width)
+            offsetY = placement.viewportTop - anchoredTop
+        }
         // m*x'' = -k*x - b*x'; b = 2*sqrt(m*k) gives critical damping.
         let animation: Animation? = reduceMotion ? nil
             : .interpolatingSpring(mass: 1, stiffness: 225, damping: 30)
-        withAnimation(animation, completionCriteria: .removed) {
+        // A no-op or reduced-motion settlement needs no animation callback.
+        if animation == nil || (pinchScale == finalScale &&
+            zoomBlend == (nearest == zoomColumns ? 1 : 0) &&
+            zoomOffsetX == offsetX && zoomOffsetY == offsetY) {
+            commitGalleryZoom(columns: nearest, width: width, viewportHeight: viewportHeight)
+            return
+        }
+        withAnimation(animation, completionCriteria: .logicallyComplete) {
             pinchScale = finalScale
             zoomBlend = nearest == zoomColumns ? 1 : 0
             zoomOffsetX = offsetX
+            zoomOffsetY = offsetY
         } completion: {
+            guard zoomSettlementID == settlementID else { return }
             commitGalleryZoom(columns: nearest, width: width, viewportHeight: viewportHeight)
         }
     }
 
+    private func resetGalleryZoom() {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            zoomSettlementID = nil
+            settlingZoom = false
+            pinchTarget = nil
+            pinchScale = 1
+            zoomBlend = 0
+            zoomOffsetX = 0
+            zoomOffsetY = 0
+            pendingZoomAnchor = nil
+            pendingZoomTarget = nil
+            pendingZoomColumns = nil
+            suppressOpeningUntil = .distantPast
+        }
+    }
+
+    /// Predict the same bounded scroll position used by the committed grid.
+    /// Near either end, the focal image must move because there are no more rows.
+    private func settledGalleryPlacement(columns: Int, width: CGFloat,
+                                         viewportHeight: CGFloat) -> (anchor: UnitPoint, viewportTop: CGFloat)? {
+        guard let target = pinchTarget,
+              let index = photoInbox.images.firstIndex(of: target) else { return nil }
+        let side = tileSide(columns: columns, width: width)
+        let targetTop = CGFloat(index / columns) * (side + gallerySpacing)
+        let rows = (photoInbox.images.count + columns - 1) / columns
+        let contentHeight = CGFloat(rows) * side + CGFloat(max(0, rows - 1)) * gallerySpacing
+        let denominator = viewportHeight - side
+        let anchorY = abs(denominator) > 1
+            ? min(1, max(0, (pinchViewportY - pinchTargetFractionY * side) / denominator))
+            : 0.5
+        let desiredScroll = targetTop - anchorY * denominator
+        let scroll = min(max(0, contentHeight - viewportHeight), max(0, desiredScroll))
+        return (UnitPoint(x: 0.5, y: anchorY), targetTop - scroll)
+    }
+
     private func commitGalleryZoom(columns nearest: Int, width: CGFloat, viewportHeight: CGFloat) {
-        if nearest != columnCount, pinchTarget != nil {
-            let newSide = tileSide(columns: nearest, width: width)
-            // scrollTo aligns the same fractional point in the item and viewport.
-            // Solve for that fraction to preserve the point between the fingers.
-            let denominator = viewportHeight - newSide
-            let anchorY = abs(denominator) > 1
-                ? (pinchViewportY - pinchTargetFractionY * newSide) / denominator
-                : 0.5
-            pendingZoomAnchor = UnitPoint(x: 0.5, y: min(1, max(0, anchorY)))
+        if nearest != columnCount,
+           let placement = settledGalleryPlacement(columns: nearest, width: width,
+                                                   viewportHeight: viewportHeight) {
+            pendingZoomAnchor = placement.anchor
             pendingZoomTarget = pinchTarget
             pendingZoomColumns = nearest
         } else {
@@ -370,8 +441,10 @@ struct PhoneHomeView: View {
             pinchScale = 1
             zoomBlend = 0
             zoomOffsetX = 0
+            zoomOffsetY = 0
             pinchTarget = nil
             settlingZoom = false
+            zoomSettlementID = nil
             suppressOpeningUntil = Date().addingTimeInterval(0.3)
         }
     }
