@@ -7,6 +7,7 @@ final class PhoneGalleryPreviewCache {
     let id = UUID()
     static let sizes = [320, 640, 1600]
     private let images: [Int: NSCache<NSString, UIImage>]
+    private var displayed: [UUID: (url: URL, image: UIImage)] = [:]
     private var pending: [String: Task<UIImage?, Never>] = [:]
     private let decoder = Decoder()
 
@@ -29,6 +30,11 @@ final class PhoneGalleryPreviewCache {
 
     func availableImage(for url: URL, maximumSize: Int) -> UIImage? {
         if let exact = image(for: url, maximumSize: maximumSize) { return exact }
+        // A live tile can still display an image evicted from NSCache. Share
+        // that same instance with the new overlay instead of decoding it again.
+        if let retained = displayed.values.first(where: { $0.url == url }) {
+            return retained.image
+        }
         // Keep a prepared image on screen while the requested tier is missing.
         for size in Self.sizes where size > maximumSize {
             if let image = image(for: url, maximumSize: size) { return image }
@@ -37,6 +43,14 @@ final class PhoneGalleryPreviewCache {
             if let image = image(for: url, maximumSize: size) { return image }
         }
         return nil
+    }
+
+    func retainDisplayed(_ image: UIImage, for url: URL, owner: UUID) {
+        displayed[owner] = (url, image)
+    }
+
+    func releaseDisplayed(owner: UUID) {
+        displayed[owner] = nil
     }
 
     func load(_ url: URL, maximumSize: Int) async -> UIImage? {
@@ -72,6 +86,7 @@ final class PhoneGalleryPreviewCache {
     func invalidate() {
         for task in pending.values { task.cancel() }
         pending.removeAll()
+        displayed.removeAll()
         for cache in images.values { cache.removeAllObjects() }
     }
 

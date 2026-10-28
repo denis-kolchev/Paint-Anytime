@@ -16,29 +16,35 @@ struct PhoneGalleryZoomTile: View {
         PhoneGalleryPreviewCache.size(for: side * renderedScale * displayScale)
     }
 
+    private var imageURLs: [URL] {
+        var urls: [URL] = []
+        if let source { urls.append(source) }
+        if let destination, destination != source { urls.append(destination) }
+        return urls
+    }
+
     var body: some View {
         ZStack {
-            // An empty slot is an opaque background-colored tile, so it takes
-            // part in the same dissolve as an ordinary image in either direction.
             Color(uiColor: .systemBackground)
-            if let source {
-                DrawingPreview(url: source, maximumSize: previewSize, fillsFrame: true, cache: cache,
-                               preparesOtherSizes: preparesOtherSizes)
-                    .id(source)
+            // Keep the same view and loaded preview when a photograph changes
+            // from destination to source at the three-column boundary (or back).
+            ForEach(imageURLs, id: \.self) { url in
+                let isDestination = url == destination && destination != source
+                DrawingPreview(url: url, maximumSize: previewSize, fillsFrame: true, cache: cache,
+                               preparesOtherSizes: preparesOtherSizes,
+                               isTransitionDestination: isDestination)
+                    .compositingGroup()
+                    .opacity(isDestination ? blend : 1)
+                    .zIndex(isDestination ? 1 : 0)
+                    .transition(.identity)
             }
-            if destination != source {
-                ZStack {
-                    Color(uiColor: .systemBackground)
-                    if let destination {
-                        DrawingPreview(url: destination, maximumSize: previewSize, fillsFrame: true, cache: cache,
-                                       preparesOtherSizes: preparesOtherSizes)
-                            .id(destination)
-                    }
-                }
-                // Composite the destination once, including its opaque backing.
-                // This also covers source -> empty and empty -> destination.
-                .compositingGroup()
-                .opacity(blend)
+            if destination == nil, source != nil {
+                // Actual empty slots dissolve to the theme background, while
+                // a pending image keeps showing the already loaded source.
+                Color(uiColor: .systemBackground)
+                    .opacity(blend)
+                    .zIndex(2)
+                    .transition(.identity)
             }
         }
         .frame(width: side, height: side)

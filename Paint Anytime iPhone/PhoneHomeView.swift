@@ -653,15 +653,21 @@ struct DrawingPreview: View {
     var fillsFrame = false
     var cache: PhoneGalleryPreviewCache? = nil
     var preparesOtherSizes = false
+    var isTransitionDestination = false
+    @State private var previewOwner = UUID()
     @State private var preview: UIImage?
     @State private var failed = false
 
     var body: some View {
         Group {
-            if let image = cache?.availableImage(for: url, maximumSize: maximumSize) ?? preview {
+            if let image = cache?.image(for: url, maximumSize: maximumSize)
+                ?? preview ?? cache?.availableImage(for: url, maximumSize: maximumSize) {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: fillsFrame ? .fill : .fit)
+                    .background {
+                        if isTransitionDestination { Color(uiColor: .systemBackground) }
+                    }
                     #if DEBUG
                     .overlay {
                         if let cache, let pixels = image.cgImage {
@@ -682,15 +688,26 @@ struct DrawingPreview: View {
                     }
                     #endif
             }
+            else if isTransitionDestination { Color.clear }
             else if failed { Label("Preview unavailable", systemImage: "photo") }
             else { ProgressView() }
         }
+        .onAppear {
+            if let cache, let image = cache.availableImage(for: url, maximumSize: maximumSize) ?? preview {
+                preview = image
+                cache.retainDisplayed(image, for: url, owner: previewOwner)
+            }
+        }
+        .onDisappear { cache?.releaseDisplayed(owner: previewOwner) }
         .task(id: "\(url.absoluteString)|\(maximumSize)|\(cache?.id.uuidString ?? "detail")|\(preparesOtherSizes)") {
             failed = false
             if let cache {
                 let image = await cache.load(url, maximumSize: maximumSize)
                 guard !Task.isCancelled else { return }
-                preview = image
+                if let image {
+                    cache.retainDisplayed(image, for: url, owner: previewOwner)
+                    preview = image
+                }
                 failed = image == nil
                 if preparesOtherSizes, image != nil {
                     await cache.prepareOtherSizes(for: url, excluding: maximumSize)
