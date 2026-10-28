@@ -122,7 +122,8 @@ struct PhoneHomeView: View {
                                                 source: zoomImage(row: row, column: column, density: zoomFromColumns),
                                                 destination: zoomImage(row: row, column: column, density: zoomColumns),
                                                 blend: zoomBlend, side: tileSize, cache: previewCache,
-                                                renderedScale: pinchScale)
+                                                renderedScale: pinchScale,
+                                                preservesSource: preservesOuterZoomColumn(column))
                                                 .scaleEffect(pinchScale)
                                                 .offset(zoomTileOffset(row: row, column: column, side: tileSize))
                                                 .offset(x: CGFloat(column) * (tileSize + spacing),
@@ -348,6 +349,19 @@ struct PhoneHomeView: View {
         return CGSize(
             width: delta * (center.x - anchor.x - gallerySpacing * CGFloat(column - (anchorIndex + zoomBaseLeadingSlots) % zoomBaseColumns)),
             height: delta * (center.y - anchor.y - gallerySpacing * CGFloat(row - (anchorIndex + zoomBaseLeadingSlots) / zoomBaseColumns)))
+    }
+
+    private func preservesOuterZoomColumn(_ column: Int) -> Bool {
+        guard pinchScale > 1, let target = pinchTarget,
+              let index = photoInbox.images.firstIndex(of: target) else { return false }
+        let relativeColumn = column - (index + zoomBaseLeadingSlots) % zoomBaseColumns
+        let sourceColumn = (index + slots(for: zoomFromColumns)) % zoomFromColumns + relativeColumn
+        let destinationColumn = (index + slots(for: zoomColumns)) % zoomColumns + relativeColumn
+        // Outgoing edge columns slide outside the narrower grid at full opacity.
+        // A column that remains inside the destination still needs its final
+        // images, otherwise committing the grid would introduce a visible swap.
+        return (sourceColumn == 0 || sourceColumn == zoomFromColumns - 1)
+            && !(0..<zoomColumns).contains(destinationColumn)
     }
 
     private func zoomImage(row: Int, column: Int, density: Int) -> URL? {

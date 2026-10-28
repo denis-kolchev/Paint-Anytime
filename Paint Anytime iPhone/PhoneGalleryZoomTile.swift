@@ -10,6 +10,7 @@ struct PhoneGalleryZoomTile: View {
     let cache: PhoneGalleryPreviewCache
     var renderedScale: CGFloat = 1
     var preparesOtherSizes = false
+    var preservesSource = false
     @Environment(\.displayScale) private var displayScale
 
     private var previewSize: Int {
@@ -34,11 +35,11 @@ struct PhoneGalleryZoomTile: View {
                                preparesOtherSizes: preparesOtherSizes,
                                isTransitionDestination: isDestination)
                     .compositingGroup()
-                    .opacity(isDestination ? blend : 1)
+                    .opacity(isDestination ? (preservesSource ? 0 : blend) : 1)
                     .zIndex(isDestination ? 1 : 0)
                     .transition(.identity)
             }
-            if destination == nil, source != nil {
+            if destination == nil, source != nil, !preservesSource {
                 // Actual empty slots dissolve to the theme background, while
                 // a pending image keeps showing the already loaded source.
                 Color(uiColor: .systemBackground)
