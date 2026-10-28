@@ -682,25 +682,6 @@ struct DrawingPreview: View {
                     .background {
                         if isTransitionDestination { Color(uiColor: .systemBackground) }
                     }
-                    #if DEBUG
-                    .overlay {
-                        if let cache, let pixels = image.cgImage {
-                            let tier = PhoneGalleryPreviewCache.sizes.first {
-                                cache.image(for: url, maximumSize: $0) === image
-                            }
-                            VStack(spacing: 2) {
-                                Text(verbatim: "cache \(tier.map(String.init) ?? "held") / req \(maximumSize)")
-                                Text(verbatim: "\(pixels.width)×\(pixels.height) · \(pixels.bytesPerRow * pixels.height / 1024) KB")
-                            }
-                            .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.white)
-                            .padding(4)
-                            .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 4))
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                        }
-                    }
-                    #endif
             }
             else if isTransitionDestination { Color.clear }
             else if failed { Label("Preview unavailable", systemImage: "photo") }
