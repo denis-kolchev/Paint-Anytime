@@ -191,6 +191,11 @@ struct PhoneHomeView: View {
                     }
                 }
                 #if DEBUG
+                .overlay {
+                    PhoneGalleryTouchOverlay()
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
                 .overlay(alignment: .bottomTrailing) {
                     Text(verbatim: debugInteraction)
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
