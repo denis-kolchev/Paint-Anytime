@@ -1,43 +1,59 @@
 import UIKit
 import ImageIO
 
-/// Shared by the resting grid and gesture overlay, including newly created slots.
+/// Shared, decoded preview pyramid for the resting grid and pinch overlay.
 @MainActor
 final class PhoneGalleryPreviewCache {
     let id = UUID()
-    private let images = NSCache<NSString, UIImage>()
+    static let sizes = [320, 640, 1600]
+    private let images: [Int: NSCache<NSString, UIImage>]
     private var pending: [String: Task<UIImage?, Never>] = [:]
+    private let decoder = Decoder()
 
     init() {
-        images.totalCostLimit = 64 * 1024 * 1024
+        // Separate budgets keep full-width previews from evicting every small tile.
+        images = Dictionary(uniqueKeysWithValues: zip(Self.sizes, [8, 16, 40]).map { size, megabytes in
+            let cache = NSCache<NSString, UIImage>()
+            cache.totalCostLimit = megabytes * 1024 * 1024
+            return (size, cache)
+        })
+    }
+
+    static func size(for pixelSide: CGFloat) -> Int {
+        sizes.first { CGFloat($0) >= pixelSide } ?? sizes[sizes.count - 1]
     }
 
     func image(for url: URL, maximumSize: Int) -> UIImage? {
-        images.object(forKey: key(url, maximumSize) as NSString)
+        images[maximumSize]?.object(forKey: url.absoluteString as NSString)
+    }
+
+    func availableImage(for url: URL, maximumSize: Int) -> UIImage? {
+        if let exact = image(for: url, maximumSize: maximumSize) { return exact }
+        // Keep a prepared image on screen while the requested tier is missing.
+        for size in Self.sizes where size > maximumSize {
+            if let image = image(for: url, maximumSize: size) { return image }
+        }
+        for size in Self.sizes.reversed() where size < maximumSize {
+            if let image = image(for: url, maximumSize: size) { return image }
+        }
+        return nil
     }
 
     func load(_ url: URL, maximumSize: Int) async -> UIImage? {
-        let key = key(url, maximumSize)
-        if let image = images.object(forKey: key as NSString) { return image }
+        guard !Task.isCancelled, let cache = images[maximumSize] else { return nil }
+        if let image = image(for: url, maximumSize: maximumSize) { return image }
+        let key = "\(url.absoluteString)|\(maximumSize)"
         if let task = pending[key] { return await task.value }
 
-        // Owned by the cache: removing one tile must not cancel another tile's load.
+        // Cache-owned work is shared: one disappearing tile must not cancel
+        // another tile's request. A serial decoder bounds the in-flight memory.
+        let decoder = decoder
         let task = Task { @MainActor in
-            let decoded = await Task.detached(priority: .userInitiated) {
-                guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else {
-                    return Optional<CGImage>.none
-                }
-                return CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                    kCGImageSourceCreateThumbnailFromImageAlways: true,
-                    kCGImageSourceCreateThumbnailWithTransform: true,
-                    kCGImageSourceShouldCacheImmediately: true,
-                    kCGImageSourceThumbnailMaxPixelSize: maximumSize
-                ] as CFDictionary)
-            }.value
-            guard let decoded else { return Optional<UIImage>.none }
+            guard let decoded = await decoder.decode(url, maximumSize: maximumSize),
+                  !Task.isCancelled else { return Optional<UIImage>.none }
             let image = UIImage(cgImage: decoded)
-            images.setObject(image, forKey: key as NSString,
-                             cost: decoded.bytesPerRow * decoded.height)
+            cache.setObject(image, forKey: url.absoluteString as NSString,
+                            cost: decoded.bytesPerRow * decoded.height)
             return image
         }
         pending[key] = task
@@ -46,7 +62,32 @@ final class PhoneGalleryPreviewCache {
         return image
     }
 
-    private func key(_ url: URL, _ maximumSize: Int) -> String {
-        "\(url.absoluteString)|\(maximumSize)"
+    func prepareOtherSizes(for url: URL, excluding maximumSize: Int) async {
+        for size in Self.sizes where size != maximumSize {
+            guard !Task.isCancelled else { return }
+            _ = await load(url, maximumSize: size)
+        }
+    }
+
+    func invalidate() {
+        for task in pending.values { task.cancel() }
+        pending.removeAll()
+        for cache in images.values { cache.removeAllObjects() }
+    }
+
+    /// ImageIO runs off the main actor, one decode at a time, including prewarming.
+    private actor Decoder {
+        func decode(_ url: URL, maximumSize: Int) -> CGImage? {
+            guard !Task.isCancelled else { return nil }
+            return autoreleasepool {
+                guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+                return CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                    kCGImageSourceCreateThumbnailFromImageAlways: true,
+                    kCGImageSourceCreateThumbnailWithTransform: true,
+                    kCGImageSourceShouldCacheImmediately: true,
+                    kCGImageSourceThumbnailMaxPixelSize: maximumSize
+                ] as CFDictionary)
+            }
+        }
     }
 }

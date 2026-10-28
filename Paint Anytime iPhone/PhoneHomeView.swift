@@ -69,18 +69,26 @@ struct PhoneHomeView: View {
                         let tileSize = max(1, (geometry.size.width - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount))
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnCount), spacing: spacing) {
                             ForEach(0..<leadingSlots, id: \.self) { _ in
-                                Color.clear.frame(height: tileSize).accessibilityHidden(true)
+                                Color(uiColor: .systemBackground).frame(height: tileSize).accessibilityHidden(true)
                             }
                             ForEach(photoInbox.images, id: \.self) { url in
                                 Button {
                                     openDrawing(url)
                                 } label: {
                                     PhoneGalleryZoomTile(source: url, destination: nil,
-                                                         blend: 0, side: tileSize, cache: previewCache)
+                                                         blend: 0, side: tileSize, cache: previewCache,
+                                                         preparesOtherSizes: pinchTarget == nil)
                                 }
                                 .buttonStyle(.plain)
                                 .id(url)
                                 .accessibilityLabel(Text(url.deletingPathExtension().lastPathComponent))
+                            }
+                            let trailingSlots = (columnCount - (leadingSlots + photoInbox.images.count) % columnCount) % columnCount
+                            ForEach(0..<trailingSlots, id: \.self) { _ in
+                                Color(uiColor: .systemBackground)
+                                    .frame(height: tileSize)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
                             }
                         }
                         // Keep the scroll layout and gesture host alive, but draw
@@ -113,7 +121,8 @@ struct PhoneHomeView: View {
                                             PhoneGalleryZoomTile(
                                                 source: zoomImage(row: row, column: column, density: zoomFromColumns),
                                                 destination: zoomImage(row: row, column: column, density: zoomColumns),
-                                                blend: zoomBlend, side: tileSize, cache: previewCache)
+                                                blend: zoomBlend, side: tileSize, cache: previewCache,
+                                                renderedScale: pinchScale)
                                                 .scaleEffect(pinchScale)
                                                 .offset(zoomTileOffset(row: row, column: column, side: tileSize))
                                                 .offset(x: CGFloat(column) * (tileSize + spacing),
@@ -192,6 +201,7 @@ struct PhoneHomeView: View {
             }
             .onReceive(photoInbox.$images) { _ in
                 // A sync can replace PNG contents without changing its URL.
+                previewCache.invalidate()
                 previewCache = PhoneGalleryPreviewCache()
                 if let target = pinchTarget, !photoInbox.images.contains(target) {
                     resetGalleryZoom()
@@ -642,22 +652,49 @@ struct DrawingPreview: View {
     let maximumSize: Int
     var fillsFrame = false
     var cache: PhoneGalleryPreviewCache? = nil
+    var preparesOtherSizes = false
     @State private var preview: UIImage?
     @State private var failed = false
 
     var body: some View {
         Group {
-            if let image = preview ?? cache?.image(for: url, maximumSize: maximumSize) { Image(uiImage: image).resizable().aspectRatio(contentMode: fillsFrame ? .fill : .fit) }
+            if let image = cache?.availableImage(for: url, maximumSize: maximumSize) ?? preview {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: fillsFrame ? .fill : .fit)
+                    #if DEBUG
+                    .overlay {
+                        if let cache, let pixels = image.cgImage {
+                            let tier = PhoneGalleryPreviewCache.sizes.first {
+                                cache.image(for: url, maximumSize: $0) === image
+                            }
+                            VStack(spacing: 2) {
+                                Text(verbatim: "cache \(tier.map(String.init) ?? "held") / req \(maximumSize)")
+                                Text(verbatim: "\(pixels.width)×\(pixels.height) · \(pixels.bytesPerRow * pixels.height / 1024) KB")
+                            }
+                            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.white)
+                            .padding(4)
+                            .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 4))
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                        }
+                    }
+                    #endif
+            }
             else if failed { Label("Preview unavailable", systemImage: "photo") }
             else { ProgressView() }
         }
-        .task(id: "\(url.absoluteString)|\(maximumSize)|\(cache?.id.uuidString ?? "detail")") {
+        .task(id: "\(url.absoluteString)|\(maximumSize)|\(cache?.id.uuidString ?? "detail")|\(preparesOtherSizes)") {
             failed = false
             if let cache {
                 let image = await cache.load(url, maximumSize: maximumSize)
                 guard !Task.isCancelled else { return }
                 preview = image
                 failed = image == nil
+                if preparesOtherSizes, image != nil {
+                    await cache.prepareOtherSizes(for: url, excluding: maximumSize)
+                }
                 return
             }
             let sourceURL = url
