@@ -17,6 +17,8 @@ struct PhoneHomeView: View {
     @State private var zoomBaseLeadingSlots = 0
     @State private var zoomBaseFrame: CGRect = .zero
     @State private var pendingZoomOriginY: CGFloat?
+    @State private var pendingScrollIssued = false
+    @State private var measuredGridColumns = 0
     @State private var pinchScale: CGFloat = 1
     // Leading slots change row alignment without changing document order.
     @State private var leadingSlots = 0
@@ -37,6 +39,18 @@ struct PhoneHomeView: View {
     @State private var pendingZoomTarget: URL?
     @State private var pendingZoomColumns: Int?
     @GestureState private var isPinching = false
+    #if DEBUG
+    @State private var debugScrollMoving = false
+
+    private var debugInteraction: String {
+        if pendingZoomColumns != nil { return "Zoom: restoring position" }
+        if settlingZoom { return "Zoom: settling" }
+        if isPinching { return "Gesture: pinch" }
+        if pinchTarget != nil { return "Zoom: finishing" }
+        if debugScrollMoving { return "Scroll: moving" }
+        return "Gesture: idle"
+    }
+    #endif
     @State private var navigationPath: [URL] = []
     @State private var suppressOpeningUntil = Date.distantPast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -176,10 +190,82 @@ struct PhoneHomeView: View {
                                           viewportHeight: geometry.size.height)
                     }
                 }
+                #if DEBUG
+                .overlay(alignment: .bottomTrailing) {
+                    Text(verbatim: debugInteraction)
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 6))
+                        .padding(8)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                .task(id: gridFrame.minY) {
+                    guard debugScrollMoving else { return }
+                    do {
+                        try await Task.sleep(for: .milliseconds(150))
+                        guard !Task.isCancelled else { return }
+                        debugScrollMoving = false
+                    } catch { /* A newer scroll position restarts the idle delay. */ }
+                }
+                #endif
                 .coordinateSpace(name: "phoneGalleryViewport")
+                .task(id: pendingZoomColumns) {
+                    guard pendingZoomColumns != nil else { return }
+                    let settlementID = zoomSettlementID
+                    var previousFrame: CGRect?
+                    var stableSamples = 0
+                    // A bounded observation window also handles scrollTo being a
+                    // no-op: no further preference callback is required to unlock.
+                    for _ in 0..<12 {
+                        do { try await Task.sleep(for: .milliseconds(50)) }
+                        catch { return }
+                        guard !Task.isCancelled, zoomSettlementID == settlementID,
+                              pendingZoomColumns != nil else { return }
+                        if pendingScrollIssued, measuredGridColumns == pendingZoomColumns {
+                            if let previousFrame,
+                               abs(previousFrame.minY - gridFrame.minY) < 0.5,
+                               abs(previousFrame.height - gridFrame.height) < 0.5 {
+                                stableSamples += 1
+                            } else {
+                                stableSamples = 0
+                            }
+                            previousFrame = gridFrame
+                            if stableSamples >= 2 { break }
+                        }
+                    }
+                    guard !Task.isCancelled, zoomSettlementID == settlementID,
+                          pendingZoomColumns != nil else { return }
+                    if measuredGridColumns == pendingZoomColumns,
+                       let expectedOrigin = pendingZoomOriginY,
+                       abs(gridFrame.minY - expectedOrigin) >= 0.5, !reduceMotion {
+                        // Reconcile the frozen overlay with the position actually
+                        // accepted by ScrollView before exposing the real grid.
+                        withAnimation(.easeOut(duration: 0.12), completionCriteria: .removed) {
+                            zoomOffsetY += gridFrame.minY - expectedOrigin
+                        } completion: {
+                            guard zoomSettlementID == settlementID,
+                                  pendingZoomColumns != nil else { return }
+                            completeGalleryZoom()
+                        }
+                    } else {
+                        completeGalleryZoom()
+                    }
+                }
                 .onPreferenceChange(PhoneGalleryFrameKey.self) { layout in
                     guard layout.columns > 0 else { return }
+                    #if DEBUG
+                    // Observe movement without adding a competing drag recognizer.
+                    // This includes inertial scrolling, not just finger dragging.
+                    if gridFrame != .zero, gridFrame.minY != layout.frame.minY,
+                       pinchTarget == nil, !isPinching, !settlingZoom {
+                        debugScrollMoving = true
+                    }
+                    #endif
                     gridFrame = layout.frame
+                    measuredGridColumns = layout.columns
                     guard layout.columns == pendingZoomColumns,
                           let target = pendingZoomTarget,
                           let anchor = pendingZoomAnchor else { return }
@@ -190,7 +276,10 @@ struct PhoneHomeView: View {
                         completeGalleryZoom()
                         return
                     }
-                    // The new column layout must exist before scrollTo can use it.
+                    // Issue once after the destination layout exists. Repeating
+                    // scrollTo from its own geometry feedback can prevent settling.
+                    guard !pendingScrollIssued else { return }
+                    pendingScrollIssued = true
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
                     withTransaction(transaction) { scrollProxy.scrollTo(target, anchor: anchor) }
@@ -484,6 +573,7 @@ struct PhoneHomeView: View {
             pendingZoomTarget = nil
             pendingZoomColumns = nil
             pendingZoomOriginY = nil
+            pendingScrollIssued = false
             suppressOpeningUntil = .distantPast
         }
     }
@@ -518,6 +608,7 @@ struct PhoneHomeView: View {
                let index = photoInbox.images.firstIndex(of: target) {
                 let side = tileSide(columns: nearest, width: width)
                 let targetTop = CGFloat((index + slots(for: nearest)) / nearest) * (side + gallerySpacing)
+                pendingScrollIssued = false
                 pendingZoomAnchor = placement.anchor
                 pendingZoomTarget = target
                 pendingZoomColumns = nearest
