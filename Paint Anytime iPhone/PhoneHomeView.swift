@@ -38,6 +38,7 @@ struct PhoneHomeView: View {
     @State private var pendingZoomAnchor: UnitPoint?
     @State private var pendingZoomTarget: URL?
     @State private var pendingZoomColumns: Int?
+    @State private var hasTwoFingerContact = false
     @GestureState private var isPinching = false
     #if DEBUG
     @State private var debugScrollMoving = false
@@ -46,6 +47,7 @@ struct PhoneHomeView: View {
         if pendingZoomColumns != nil { return "Zoom: restoring position" }
         if settlingZoom { return "Zoom: settling" }
         if isPinching { return "Gesture: pinch" }
+        if hasTwoFingerContact { return "Zoom: two fingers" }
         if pinchTarget != nil { return "Zoom: finishing" }
         if debugScrollMoving { return "Scroll: moving" }
         return "Gesture: idle"
@@ -120,7 +122,7 @@ struct PhoneHomeView: View {
                 }
                 // Disable only the scrolling child. The pinch recognizer lives
                 // on the stable wrapper, outside the disabled scroll environment.
-                .scrollDisabled(isPinching || pinchTarget != nil || settlingZoom)
+                .scrollDisabled(hasTwoFingerContact || isPinching || pinchTarget != nil || settlingZoom)
                 // Let scrolling artwork remain visible through the header material.
                 .scrollClipDisabled()
                 }
@@ -152,7 +154,7 @@ struct PhoneHomeView: View {
                             }
                         }
                 .highPriorityGesture(
-                    MagnifyGesture()
+                    MagnifyGesture(minimumScaleDelta: 0)
                         .updating($isPinching) { _, active, _ in active = true }
                         .onChanged { value in
                             guard !settlingZoom else { return }
@@ -190,9 +192,44 @@ struct PhoneHomeView: View {
                                           viewportHeight: geometry.size.height)
                     }
                 }
-                #if DEBUG
                 .overlay {
-                    PhoneGalleryTouchOverlay()
+                    PhoneGalleryTouchOverlay { positions in
+                        hasTwoFingerContact = positions.count >= 2
+                        if hasTwoFingerContact {
+                            guard !settlingZoom, pinchTarget == nil,
+                                  geometry.size.width > 0, geometry.size.height > 0 else { return }
+                            let center = positions.reduce(CGPoint.zero) {
+                                CGPoint(x: $0.x + $1.x, y: $0.y + $1.y)
+                            }
+                            let count = CGFloat(positions.count)
+                            suppressOpeningUntil = .distantFuture
+                            beginGalleryZoom(
+                                anchor: UnitPoint(x: center.x / count / geometry.size.width,
+                                                  y: center.y / count / geometry.size.height),
+                                width: geometry.size.width, viewportHeight: geometry.size.height)
+                        } else {
+                            // Give MagnifyGesture.onEnded priority if scale was
+                            // recognized. Also finish two-finger taps with no zoom.
+                            DispatchQueue.main.async {
+                                guard !hasTwoFingerContact, !isPinching, !settlingZoom,
+                                      pinchTarget != nil else { return }
+                                if zoomFromColumns == zoomColumns, pinchScale == 1 {
+                                    completeGalleryZoom()
+                                    return
+                                }
+                                finishGalleryZoom(width: geometry.size.width,
+                                                  viewportHeight: geometry.size.height)
+                            }
+                        }
+                    }
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                #if DEBUG
+                .overlay(alignment: .topTrailing) {
+                    PhoneGalleryFPSOverlay()
+                        .frame(width: 80, height: 28)
+                        .padding(8)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
@@ -568,6 +605,7 @@ struct PhoneHomeView: View {
         transaction.disablesAnimations = true
         withTransaction(transaction) {
             zoomSettlementID = nil
+            hasTwoFingerContact = false
             settlingZoom = false
             pinchTarget = nil
             pinchScale = 1

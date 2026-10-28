@@ -1,11 +1,18 @@
-#if DEBUG
 import SwiftUI
 import UIKit
 
 /// Passive, raw touch visualization. It never recognizes or consumes a gesture.
 struct PhoneGalleryTouchOverlay: UIViewRepresentable {
-    func makeUIView(context: Context) -> TouchView { TouchView() }
-    func updateUIView(_ uiView: TouchView, context: Context) {}
+    var onContactChange: ([CGPoint]) -> Void
+
+    func makeUIView(context: Context) -> TouchView {
+        let view = TouchView()
+        view.onContactChange = onContactChange
+        return view
+    }
+    func updateUIView(_ uiView: TouchView, context: Context) {
+        uiView.onContactChange = onContactChange
+    }
 
     static func dismantleUIView(_ uiView: TouchView, coordinator: ()) {
         uiView.detach()
@@ -13,8 +20,13 @@ struct PhoneGalleryTouchOverlay: UIViewRepresentable {
 
     final class TouchView: UIView {
         private var observer: TouchObserver?
+        var onContactChange: (([CGPoint]) -> Void)?
         var positions: [CGPoint] = [] {
-            didSet { setNeedsDisplay() }
+            didSet {
+                #if DEBUG
+                setNeedsDisplay()
+                #endif
+            }
         }
 
         init() {
@@ -45,6 +57,7 @@ struct PhoneGalleryTouchOverlay: UIViewRepresentable {
         }
 
         override func draw(_ rect: CGRect) {
+            #if DEBUG
             for position in positions {
                 let circle = UIBezierPath(ovalIn: CGRect(x: position.x - 18, y: position.y - 18,
                                                         width: 36, height: 36))
@@ -57,6 +70,7 @@ struct PhoneGalleryTouchOverlay: UIViewRepresentable {
                 circle.lineWidth = 1
                 circle.stroke()
             }
+            #endif
         }
     }
 
@@ -109,14 +123,16 @@ struct PhoneGalleryTouchOverlay: UIViewRepresentable {
 
         private func publish() {
             guard let overlay else { return }
-            overlay.positions = tracked.map { $0.location(in: overlay) }
+            let positions = tracked.map { $0.location(in: overlay) }
+            let changed = positions.count != overlay.positions.count
+            overlay.positions = positions
+            if changed { overlay.onContactChange?(positions) }
         }
 
         override func reset() {
             super.reset()
             tracked.removeAll()
-            overlay?.positions = []
+            publish()
         }
     }
 }
-#endif
