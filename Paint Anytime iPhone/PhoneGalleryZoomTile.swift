@@ -11,10 +11,12 @@ struct PhoneGalleryZoomTile: View {
     var renderedScale: CGFloat = 1
     var preparesOtherSizes = false
     var preservesSource = false
+    var fixedPreviewSize: Int? = nil
+    var frozenPreviews: [URL: UIImage] = [:]
     @Environment(\.displayScale) private var displayScale
 
     private var previewSize: Int {
-        PhoneGalleryPreviewCache.size(for: side * renderedScale * displayScale)
+        fixedPreviewSize ?? PhoneGalleryPreviewCache.size(for: side * renderedScale * displayScale)
     }
 
     private var imageURLs: [URL] {
@@ -33,7 +35,8 @@ struct PhoneGalleryZoomTile: View {
                 let isDestination = url == destination && destination != source
                 DrawingPreview(url: url, maximumSize: previewSize, fillsFrame: true, cache: cache,
                                preparesOtherSizes: preparesOtherSizes,
-                               isTransitionDestination: isDestination)
+                               isTransitionDestination: isDestination,
+                               frozenPreview: frozenPreviews[url])
                     .compositingGroup()
                     .opacity(isDestination ? (preservesSource ? 0 : blend) : 1)
                     .zIndex(isDestination ? 1 : 0)

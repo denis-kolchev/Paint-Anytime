@@ -5,10 +5,19 @@ import ImageIO
 @MainActor
 final class PhoneGalleryPreviewCache {
     let id = UUID()
+    var preparationPaused = false {
+        didSet {
+            if preparationPaused {
+                for key in preparationKeys { pending[key]?.cancel() }
+            }
+        }
+    }
     static let sizes = [320, 640, 1600]
     private let images: [Int: NSCache<NSString, UIImage>]
     private var displayed: [UUID: (url: URL, image: UIImage)] = [:]
     private var pending: [String: Task<UIImage?, Never>] = [:]
+    private var pendingIDs: [String: UUID] = [:]
+    private var preparationKeys = Set<String>()
     private let decoder = Decoder()
 
     init() {
@@ -53,16 +62,33 @@ final class PhoneGalleryPreviewCache {
         displayed[owner] = nil
     }
 
-    func load(_ url: URL, maximumSize: Int) async -> UIImage? {
-        guard !Task.isCancelled, let cache = images[maximumSize] else { return nil }
+    func load(_ url: URL, maximumSize: Int, preparing: Bool = false) async -> UIImage? {
+        guard !Task.isCancelled, !preparing || !preparationPaused,
+              let cache = images[maximumSize] else { return nil }
         if let image = image(for: url, maximumSize: maximumSize) { return image }
         let key = "\(url.absoluteString)|\(maximumSize)"
-        if let task = pending[key] { return await task.value }
+        if let task = pending[key] {
+            let requestID = pendingIDs[key]
+            let image = await task.value
+            if task.isCancelled, !preparing, !Task.isCancelled {
+                // A visible request may have joined speculative work just before
+                // pinch paused it. Retry as foreground work rather than go blank.
+                if pendingIDs[key] == requestID {
+                    pending[key] = nil
+                    pendingIDs[key] = nil
+                    preparationKeys.remove(key)
+                }
+                return await load(url, maximumSize: maximumSize)
+            }
+            return image
+        }
 
         // Cache-owned work is shared: one disappearing tile must not cancel
         // another tile's request. A serial decoder bounds the in-flight memory.
         let decoder = decoder
+        let requestID = UUID()
         let task = Task { @MainActor in
+            guard !preparing || !self.preparationPaused else { return Optional<UIImage>.none }
             guard let decoded = await decoder.decode(url, maximumSize: maximumSize),
                   !Task.isCancelled else { return Optional<UIImage>.none }
             let image = UIImage(cgImage: decoded)
@@ -71,21 +97,30 @@ final class PhoneGalleryPreviewCache {
             return image
         }
         pending[key] = task
+        pendingIDs[key] = requestID
+        if preparing { preparationKeys.insert(key) }
         let image = await task.value
-        pending[key] = nil
+        // Cancellation and retry can replace this request across the await.
+        if pendingIDs[key] == requestID {
+            pending[key] = nil
+            pendingIDs[key] = nil
+            preparationKeys.remove(key)
+        }
         return image
     }
 
     func prepareOtherSizes(for url: URL, excluding maximumSize: Int) async {
         for size in Self.sizes where size != maximumSize {
-            guard !Task.isCancelled else { return }
-            _ = await load(url, maximumSize: size)
+            guard !Task.isCancelled, !preparationPaused else { return }
+            _ = await load(url, maximumSize: size, preparing: true)
         }
     }
 
     func invalidate() {
         for task in pending.values { task.cancel() }
         pending.removeAll()
+        pendingIDs.removeAll()
+        preparationKeys.removeAll()
         displayed.removeAll()
         for cache in images.values { cache.removeAllObjects() }
     }
