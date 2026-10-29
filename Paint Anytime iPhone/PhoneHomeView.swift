@@ -19,6 +19,8 @@ struct PhoneHomeView: View {
     @State private var zoomSlots: [PhoneGalleryZoomSlot] = []
     @State private var zoomPreviews: [URL: UIImage] = [:]
     @State private var zoomPreviewSize = 640
+    @State private var zoomSideBackdrop: UIImage?
+    @State private var zoomSideBackdropFrame: CGRect = .zero
     @State private var imageLayout = PhoneGalleryImageLayout()
     @Environment(\.displayScale) private var displayScale
     @State private var zoomBaseColumns = 5
@@ -133,7 +135,8 @@ struct PhoneHomeView: View {
                                 PhoneGalleryZoomOverlay(
                                     presentation: zoomPresentation, slots: zoomSlots,
                                     frame: zoomBaseFrame, cache: previewCache,
-                                    previews: zoomPreviews, previewSize: zoomPreviewSize)
+                                    previews: zoomPreviews, previewSize: zoomPreviewSize,
+                                    sideBackdrop: zoomSideBackdrop, sideBackdropFrame: zoomSideBackdropFrame)
                             }
                         }
                 .highPriorityGesture(
@@ -497,6 +500,45 @@ struct PhoneHomeView: View {
             }
         }
         zoomSlots = prepared
+        prepareZoomSideBackdrop(width: width, viewportHeight: viewportHeight)
+    }
+
+    /// Bake only prepared previews; no decoding or repeated rasterization while pinching.
+    private func prepareZoomSideBackdrop(width: CGFloat, viewportHeight: CGFloat) {
+        let side = tileSide(columns: 5, width: width)
+        let stride = side + gallerySpacing
+        let tiles = zoomSlots.filter { slot in
+            guard let column = slot.columns[5], let rect = slot.frames[5] else { return false }
+            return (0..<5).contains(column) && rect.maxY >= -3 * stride
+                && rect.minY <= viewportHeight + 3 * stride
+        }
+        guard let top = tiles.compactMap({ $0.frames[5]?.minY }).min(),
+              let bottom = tiles.compactMap({ $0.frames[5]?.maxY }).max() else {
+            zoomSideBackdrop = nil
+            return
+        }
+        // Five full column strides keep the seam identical to internal spacing.
+        let bounds = CGRect(x: 0, y: top, width: width + gallerySpacing, height: bottom - top)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = min(displayScale, 2)
+        format.opaque = true
+        zoomSideBackdrop = UIGraphicsImageRenderer(size: bounds.size, format: format).image { renderer in
+            UIColor.systemBackground.setFill()
+            renderer.fill(CGRect(origin: .zero, size: bounds.size))
+            for slot in tiles {
+                guard let url = slot.images[5], let image = zoomPreviews[url],
+                      let rect = slot.frames[5], image.size.width > 0, image.size.height > 0 else { continue }
+                let tile = rect.offsetBy(dx: 0, dy: -top)
+                let scale = max(tile.width / image.size.width, tile.height / image.size.height)
+                let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+                renderer.cgContext.saveGState()
+                renderer.cgContext.clip(to: tile)
+                image.draw(in: CGRect(x: tile.midX - size.width / 2, y: tile.midY - size.height / 2,
+                                      width: size.width, height: size.height))
+                renderer.cgContext.restoreGState()
+            }
+        }
+        zoomSideBackdropFrame = bounds
     }
 
     private func updateGalleryZoom(_ magnification: CGFloat, width: CGFloat, viewportHeight: CGFloat) {
@@ -516,7 +558,7 @@ struct PhoneHomeView: View {
             // resistance and normal zoom on the same animation coordinate.
             if requestedSide < minimumSide {
                 let offset = galleryRubberBandOffset(minimumSide - requestedSide, dimension: width)
-                zoomPresentation.position = -offset / minimumSide
+                zoomPresentation.position = -offset / minimumSide / 5
             } else if requestedSide > maximumSide {
                 let offset = galleryRubberBandOffset(requestedSide - maximumSide, dimension: width)
                 zoomPresentation.position = 2 + offset / maximumSide
@@ -606,6 +648,8 @@ struct PhoneHomeView: View {
             previewCache.preparationPaused = false
             zoomSlots = []
             zoomPreviews = [:]
+            zoomSideBackdrop = nil
+            zoomSideBackdropFrame = .zero
             zoomSnapshot = []
             zoomAnchorIndex = nil
             hasTwoFingerContact = false

@@ -8,11 +8,14 @@ struct PhoneGalleryZoomOverlay: View {
     let cache: PhoneGalleryPreviewCache
     let previews: [URL: UIImage]
     let previewSize: Int
+    let sideBackdrop: UIImage?
+    let sideBackdropFrame: CGRect
 
     var body: some View {
         PhoneGalleryZoomFrame(
             slots: slots, frame: frame, cache: cache, previews: previews,
-            previewSize: previewSize, elasticAnchor: presentation.elasticAnchor,
+            previewSize: previewSize, sideBackdrop: sideBackdrop,
+            sideBackdropFrame: sideBackdropFrame, elasticAnchor: presentation.elasticAnchor,
             position: presentation.position,
             offsetY: presentation.offsetY)
     }
@@ -27,6 +30,8 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
     let cache: PhoneGalleryPreviewCache
     let previews: [URL: UIImage]
     let previewSize: Int
+    let sideBackdrop: UIImage?
+    let sideBackdropFrame: CGRect
     let elasticAnchor: CGPoint
     // Animatable's accessors are nonisolated. Only these value-type scalars
     // participate in interpolation; UI and cache access stay on MainActor.
@@ -52,7 +57,21 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
         let blend = Double(progress * progress * (3 - 2 * progress))
 
         ZStack(alignment: .topLeading) {
+            if position < 0, let sideBackdrop {
+                // Repeat the baked five-column strip diagonally by one row.
+                // Both offsets are whole grid strides, so the seams line up.
+                let rowStride = sideBackdropFrame.width / 5
+                ForEach([-1, 1], id: \.self) { direction in
+                    Image(uiImage: sideBackdrop)
+                        .resizable()
+                        .frame(width: sideBackdropFrame.width, height: sideBackdropFrame.height)
+                        .offset(x: CGFloat(direction) * sideBackdropFrame.width,
+                                y: sideBackdropFrame.minY + CGFloat(direction) * rowStride)
+                }
+            }
             ForEach(slots) { slot in
+                // Empty offscreen transition slots must not cover the baked copies.
+                if position >= 0 || (0..<5).contains(slot.columns[5] ?? -1) {
                 let sourceFrame = slot.frames[fromColumns] ?? .zero
                 let destinationFrame = slot.frames[toColumns] ?? sourceFrame
                 let width = sourceFrame.width + (destinationFrame.width - sourceFrame.width) * progress
@@ -66,6 +85,7 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
                     fixedPreviewSize: previewSize, frozenPreviews: previews)
                     .offset(x: sourceFrame.minX + (destinationFrame.minX - sourceFrame.minX) * progress,
                             y: sourceFrame.minY + (destinationFrame.minY - sourceFrame.minY) * progress)
+                }
             }
         }
         .frame(width: frame.width, height: frame.height, alignment: .topLeading)
