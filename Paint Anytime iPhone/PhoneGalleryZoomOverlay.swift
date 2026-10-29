@@ -12,7 +12,8 @@ struct PhoneGalleryZoomOverlay: View {
     var body: some View {
         PhoneGalleryZoomFrame(
             slots: slots, frame: frame, cache: cache, previews: previews,
-            previewSize: previewSize, position: presentation.position,
+            previewSize: previewSize, elasticAnchor: presentation.elasticAnchor,
+            position: presentation.position,
             offsetY: presentation.offsetY)
     }
 }
@@ -26,6 +27,7 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
     let cache: PhoneGalleryPreviewCache
     let previews: [URL: UIImage]
     let previewSize: Int
+    let elasticAnchor: CGPoint
     // Animatable's accessors are nonisolated. Only these value-type scalars
     // participate in interpolation; UI and cache access stay on MainActor.
     nonisolated var position: CGFloat
@@ -43,6 +45,7 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
         // Select both the image pair and its geometry from the interpolated
         // position, never from discrete endpoint state supplied by the parent.
         let boundedPosition = min(2, max(0, position))
+        let elasticScale = 1 + position - boundedPosition
         let fromColumns = boundedPosition <= 1 ? 5 : 3
         let toColumns = boundedPosition <= 1 ? 3 : 1
         let progress = boundedPosition <= 1 ? boundedPosition : boundedPosition - 1
@@ -66,6 +69,11 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
             }
         }
         .frame(width: frame.width, height: frame.height, alignment: .topLeading)
+        // Transform the whole rendered grid, including spacing and clips, so
+        // rubber-banding cannot separate an image from its tile boundaries.
+        .scaleEffect(elasticScale, anchor: UnitPoint(
+            x: elasticAnchor.x / max(frame.width, 1),
+            y: elasticAnchor.y / max(frame.height, 1)))
         .offset(y: offsetY)
         .allowsHitTesting(false)
         .accessibilityHidden(true)

@@ -202,7 +202,8 @@ struct PhoneHomeView: View {
                             DispatchQueue.main.async {
                                 guard !hasTwoFingerContact, !isPinching, !settlingZoom,
                                       pinchTarget != nil else { return }
-                                if zoomPresentation.scale == 1 {
+                                if zoomPresentation.scale == 1,
+                                   zoomPresentation.position == PhoneGalleryZoomPresentation.position(for: zoomBaseColumns) {
                                     completeGalleryZoom()
                                     return
                                 }
@@ -378,6 +379,8 @@ struct PhoneHomeView: View {
             y: (viewportAnchor.y * viewportHeight - gridFrame.minY) / gridFrame.height)
         zoomPresentation.position = PhoneGalleryZoomPresentation.position(for: columnCount)
         zoomPresentation.offsetY = 0
+        zoomPresentation.elasticAnchor = CGPoint(
+            x: viewportAnchor.x * width, y: viewportAnchor.y * viewportHeight)
         let side = tileSide(columns: columnCount, width: width)
         let stride = side + gallerySpacing
         let point = CGPoint(x: anchor.x * gridFrame.width, y: anchor.y * gridFrame.height)
@@ -498,8 +501,10 @@ struct PhoneHomeView: View {
 
     private func updateGalleryZoom(_ magnification: CGFloat, width: CGFloat, viewportHeight: CGFloat) {
         let initialSide = tileSide(columns: zoomBaseColumns, width: width)
-        let side = min(tileSide(columns: 1, width: width),
-                       max(tileSide(columns: 5, width: width), initialSide * magnification))
+        let minimumSide = tileSide(columns: 5, width: width)
+        let maximumSide = tileSide(columns: 1, width: width)
+        let requestedSide = initialSide * magnification
+        let side = min(maximumSide, max(minimumSide, requestedSide))
         let middleSide = tileSide(columns: 3, width: width)
         var transaction = Transaction()
         transaction.disablesAnimations = true
@@ -507,7 +512,15 @@ struct PhoneHomeView: View {
             // One continuous value owns the entire 5 ↔ 3 ↔ 1 transition.
             // Crossing three columns cannot pair a new grid with old progress.
             zoomPresentation.scale = side / initialSide
-            if side <= middleSide {
+            // Convert rubber-band distance back to a relative scale, keeping
+            // resistance and normal zoom on the same animation coordinate.
+            if requestedSide < minimumSide {
+                let offset = galleryRubberBandOffset(minimumSide - requestedSide, dimension: width)
+                zoomPresentation.position = -offset / minimumSide
+            } else if requestedSide > maximumSide {
+                let offset = galleryRubberBandOffset(requestedSide - maximumSide, dimension: width)
+                zoomPresentation.position = 2 + offset / maximumSide
+            } else if side <= middleSide {
                 let smallSide = tileSide(columns: 5, width: width)
                 zoomPresentation.position = (side - smallSide) / (middleSide - smallSide)
             } else {
@@ -515,6 +528,14 @@ struct PhoneHomeView: View {
                 zoomPresentation.position = 1 + (side - middleSide) / (largeSide - middleSide)
             }
         }
+    }
+
+    private func galleryRubberBandOffset(_ distance: CGFloat, dimension: CGFloat) -> CGFloat {
+        let x = max(0, distance)
+        let d = max(1, dimension)
+        let c: CGFloat = 0.55
+        // Pinch changes tile width, so d is the gallery viewport width.
+        return (1 - 1 / (c * x / d + 1)) * d
     }
 
     private func slots(for columns: Int) -> Int {
@@ -553,7 +574,9 @@ struct PhoneHomeView: View {
         // Scrolling stays locked until the overlay hands off to the real grid.
         // Use a finite ease-out so a spring's imperceptible tail cannot prolong
         // that lock after the visible zoom has already stopped.
-        let animation: Animation? = reduceMotion ? nil : .easeOut(duration: 0.18)
+        let isRubberBanding = zoomPresentation.position < 0 || zoomPresentation.position > 2
+        let animation: Animation? = reduceMotion ? nil
+            : .easeOut(duration: isRubberBanding ? 0.24 : 0.18)
         // A no-op or reduced-motion settlement needs no animation callback.
         if animation == nil || (zoomPresentation.scale == finalScale &&
             zoomPresentation.position == finalPosition) {
