@@ -9,6 +9,6 @@ final class PhoneGalleryZoomPresentation {
     var fromColumns = 5
     var toColumns = 5
     var blend: Double = 0
-    var offsetX: CGFloat = 0
+    var geometryProgress: CGFloat = 0
     var offsetY: CGFloat = 0
 }

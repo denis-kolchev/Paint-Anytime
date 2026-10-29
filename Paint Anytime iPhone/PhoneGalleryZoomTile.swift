@@ -8,6 +8,7 @@ struct PhoneGalleryZoomTile: View {
     let blend: Double
     let side: CGFloat
     let cache: PhoneGalleryPreviewCache
+    var height: CGFloat? = nil
     var renderedScale: CGFloat = 1
     var preparesOtherSizes = false
     var preservesSource = false
@@ -16,7 +17,7 @@ struct PhoneGalleryZoomTile: View {
     @Environment(\.displayScale) private var displayScale
 
     private var previewSize: Int {
-        fixedPreviewSize ?? PhoneGalleryPreviewCache.size(for: side * renderedScale * displayScale)
+        fixedPreviewSize ?? PhoneGalleryPreviewCache.size(for: max(side, height ?? side) * renderedScale * displayScale)
     }
 
     private var imageURLs: [URL] {
@@ -51,7 +52,7 @@ struct PhoneGalleryZoomTile: View {
                     .transition(.identity)
             }
         }
-        .frame(width: side, height: side)
+        .frame(width: side, height: height ?? side)
         .clipped()
     }
 }

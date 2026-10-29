@@ -4,7 +4,6 @@ import SwiftUI
 struct PhoneGalleryZoomOverlay: View {
     let presentation: PhoneGalleryZoomPresentation
     let slots: [PhoneGalleryZoomSlot]
-    let side: CGFloat
     let frame: CGRect
     let cache: PhoneGalleryPreviewCache
     let previews: [URL: UIImage]
@@ -13,20 +12,24 @@ struct PhoneGalleryZoomOverlay: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             ForEach(slots) { slot in
+                let sourceFrame = slot.frames[presentation.fromColumns] ?? .zero
+                let destinationFrame = slot.frames[presentation.toColumns] ?? sourceFrame
+                let progress = presentation.geometryProgress
+                let width = sourceFrame.width + (destinationFrame.width - sourceFrame.width) * progress
+                let height = sourceFrame.height + (destinationFrame.height - sourceFrame.height) * progress
                 PhoneGalleryZoomTile(
                     source: slot.images[presentation.fromColumns],
                     destination: slot.images[presentation.toColumns],
-                    blend: presentation.blend, side: side, cache: cache,
+                    blend: presentation.blend, side: width, cache: cache, height: height,
                     preservesSource: slot.preservesSource(
                         from: presentation.fromColumns, to: presentation.toColumns),
                     fixedPreviewSize: previewSize, frozenPreviews: previews)
-                    .scaleEffect(presentation.scale)
-                    .offset(x: slot.origin.x + (presentation.scale - 1) * slot.scaleOffset.width,
-                            y: slot.origin.y + (presentation.scale - 1) * slot.scaleOffset.height)
+                    .offset(x: sourceFrame.minX + (destinationFrame.minX - sourceFrame.minX) * progress,
+                            y: sourceFrame.minY + (destinationFrame.minY - sourceFrame.minY) * progress)
             }
         }
         .frame(width: frame.width, height: frame.height, alignment: .topLeading)
-        .offset(x: presentation.offsetX, y: frame.minY + presentation.offsetY)
+        .offset(y: presentation.offsetY)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }

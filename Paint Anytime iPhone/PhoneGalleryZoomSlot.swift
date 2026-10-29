@@ -3,8 +3,7 @@ import SwiftUI
 /// Immutable correspondence and geometry captured at the start of a pinch.
 struct PhoneGalleryZoomSlot: Identifiable {
     let id: Int
-    let origin: CGPoint
-    let scaleOffset: CGSize
+    let frames: [Int: CGRect]
     let images: [Int: URL]
     let columns: [Int: Int]
 
