@@ -243,10 +243,11 @@ struct PhoneHomeView: View {
                     let settlementID = zoomSettlementID
                     var previousFrame: CGRect?
                     var stableSamples = 0
-                    // A bounded observation window also handles scrollTo being a
-                    // no-op: no further preference callback is required to unlock.
-                    for _ in 0..<12 {
-                        do { try await Task.sleep(for: .milliseconds(50)) }
+                    // Sample near frame cadence: three stable observations take
+                    // about 60 ms, rather than holding scrolling for 150 ms.
+                    // Keep the 600 ms fallback for delayed layout or a no-op scrollTo.
+                    for _ in 0..<30 {
+                        do { try await Task.sleep(for: .milliseconds(20)) }
                         catch { return }
                         guard !Task.isCancelled, zoomSettlementID == settlementID,
                               pendingZoomColumns != nil else { return }
@@ -269,7 +270,7 @@ struct PhoneHomeView: View {
                        abs(gridFrame.minY - expectedOrigin) >= 0.5, !reduceMotion {
                         // Reconcile the frozen overlay with the position actually
                         // accepted by ScrollView before exposing the real grid.
-                        withAnimation(.easeOut(duration: 0.12), completionCriteria: .removed) {
+                        withAnimation(.easeOut(duration: 0.08), completionCriteria: .removed) {
                             zoomPresentation.offsetY += gridFrame.minY - expectedOrigin
                         } completion: {
                             guard zoomSettlementID == settlementID,
@@ -554,9 +555,10 @@ struct PhoneHomeView: View {
         let offset = zoomEndpointOffsets[nearest] ?? .zero
         let offsetX = offset.width
         let offsetY = offset.height
-        // m*x'' = -k*x - b*x'; b = 2*sqrt(m*k) gives critical damping.
-        let animation: Animation? = reduceMotion ? nil
-            : .interpolatingSpring(mass: 1, stiffness: 225, damping: 30)
+        // Scrolling stays locked until the overlay hands off to the real grid.
+        // Use a finite ease-out so a spring's imperceptible tail cannot prolong
+        // that lock after the visible zoom has already stopped.
+        let animation: Animation? = reduceMotion ? nil : .easeOut(duration: 0.18)
         // A no-op or reduced-motion settlement needs no animation callback.
         if animation == nil || (zoomPresentation.scale == finalScale &&
             zoomPresentation.blend == (nearest == zoomPresentation.toColumns ? 1 : 0) &&
