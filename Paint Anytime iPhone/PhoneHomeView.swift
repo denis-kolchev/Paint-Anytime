@@ -620,7 +620,13 @@ struct PhoneHomeView: View {
             : 0.5
         let desiredScroll = targetTop - anchorY * denominator
         let scroll = min(max(0, contentHeight - viewportHeight), max(0, desiredScroll))
-        return (UnitPoint(x: 0.5, y: anchorY), targetTop - scroll)
+        let viewportTop = targetTop - scroll
+        // scrollTo must request the same bounded position as the zoom overlay.
+        // Reusing the finger's anchor after clamping the scroll offset can place
+        // short content below the viewport top; re-enabling scrolling then
+        // bounces it back, creating a second movement after the pinch settles.
+        let settledAnchorY = abs(denominator) > 1 ? viewportTop / denominator : anchorY
+        return (UnitPoint(x: 0.5, y: settledAnchorY), viewportTop)
     }
 
     private func commitGalleryZoom(columns nearest: Int, width: CGFloat, viewportHeight: CGFloat) {
