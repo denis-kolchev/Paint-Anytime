@@ -202,7 +202,7 @@ struct PhoneHomeView: View {
                             DispatchQueue.main.async {
                                 guard !hasTwoFingerContact, !isPinching, !settlingZoom,
                                       pinchTarget != nil else { return }
-                                if zoomPresentation.fromColumns == zoomPresentation.toColumns, zoomPresentation.scale == 1 {
+                                if zoomPresentation.scale == 1 {
                                     completeGalleryZoom()
                                     return
                                 }
@@ -376,10 +376,7 @@ struct PhoneHomeView: View {
         let anchor = UnitPoint(
             x: viewportAnchor.x,
             y: (viewportAnchor.y * viewportHeight - gridFrame.minY) / gridFrame.height)
-        zoomPresentation.toColumns = columnCount
-        zoomPresentation.fromColumns = columnCount
-        zoomPresentation.blend = 0
-        zoomPresentation.geometryProgress = 0
+        zoomPresentation.position = PhoneGalleryZoomPresentation.position(for: columnCount)
         zoomPresentation.offsetY = 0
         let side = tileSide(columns: columnCount, width: width)
         let stride = side + gallerySpacing
@@ -507,18 +504,16 @@ struct PhoneHomeView: View {
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
-            // Magnification always refers to the original finger distance.
-            // Only the content pair changes at 3 columns, never the geometry
-            // or focal image, so crossing the boundary needs no rebase.
-            zoomPresentation.fromColumns = side <= middleSide ? 5 : 3
-            zoomPresentation.toColumns = side <= middleSide ? 3 : 1
+            // One continuous value owns the entire 5 ↔ 3 ↔ 1 transition.
+            // Crossing three columns cannot pair a new grid with old progress.
             zoomPresentation.scale = side / initialSide
-            let fromSide = tileSide(columns: zoomPresentation.fromColumns, width: width)
-            let toSide = tileSide(columns: zoomPresentation.toColumns, width: width)
-            let progress = (side - fromSide) / (toSide - fromSide)
-            let blend = min(1, max(0, progress))
-            zoomPresentation.blend = Double(blend * blend * (3 - 2 * blend))
-            zoomPresentation.geometryProgress = blend
+            if side <= middleSide {
+                let smallSide = tileSide(columns: 5, width: width)
+                zoomPresentation.position = (side - smallSide) / (middleSide - smallSide)
+            } else {
+                let largeSide = tileSide(columns: 1, width: width)
+                zoomPresentation.position = 1 + (side - middleSide) / (largeSide - middleSide)
+            }
         }
     }
 
@@ -554,29 +549,26 @@ struct PhoneHomeView: View {
         zoomSettlementID = settlementID
         suppressOpeningUntil = .distantFuture
         let finalScale = tileSide(columns: nearest, width: width) / tileSide(columns: zoomBaseColumns, width: width)
-        let finalProgress: CGFloat = nearest == zoomPresentation.toColumns ? 1 : 0
+        let finalPosition = PhoneGalleryZoomPresentation.position(for: nearest)
         // Scrolling stays locked until the overlay hands off to the real grid.
         // Use a finite ease-out so a spring's imperceptible tail cannot prolong
         // that lock after the visible zoom has already stopped.
         let animation: Animation? = reduceMotion ? nil : .easeOut(duration: 0.18)
         // A no-op or reduced-motion settlement needs no animation callback.
         if animation == nil || (zoomPresentation.scale == finalScale &&
-            zoomPresentation.blend == (nearest == zoomPresentation.toColumns ? 1 : 0) &&
-            zoomPresentation.geometryProgress == finalProgress) {
+            zoomPresentation.position == finalPosition) {
             var transaction = Transaction()
             transaction.disablesAnimations = true
             withTransaction(transaction) {
                 zoomPresentation.scale = finalScale
-                zoomPresentation.blend = Double(finalProgress)
-                zoomPresentation.geometryProgress = finalProgress
+                zoomPresentation.position = finalPosition
                 commitGalleryZoom(columns: nearest, width: width, viewportHeight: viewportHeight)
             }
             return
         }
         withAnimation(animation, completionCriteria: .removed) {
             zoomPresentation.scale = finalScale
-            zoomPresentation.blend = nearest == zoomPresentation.toColumns ? 1 : 0
-            zoomPresentation.geometryProgress = finalProgress
+            zoomPresentation.position = finalPosition
         } completion: {
             guard zoomSettlementID == settlementID else { return }
             commitGalleryZoom(columns: nearest, width: width, viewportHeight: viewportHeight)
@@ -597,8 +589,7 @@ struct PhoneHomeView: View {
             settlingZoom = false
             pinchTarget = nil
             zoomPresentation.scale = 1
-            zoomPresentation.blend = 0
-            zoomPresentation.geometryProgress = 0
+            zoomPresentation.position = PhoneGalleryZoomPresentation.position(for: columnCount)
             zoomPresentation.offsetY = 0
             pendingZoomAnchor = nil
             pendingZoomTarget = nil

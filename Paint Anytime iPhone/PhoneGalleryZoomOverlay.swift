@@ -12,9 +12,8 @@ struct PhoneGalleryZoomOverlay: View {
     var body: some View {
         PhoneGalleryZoomFrame(
             slots: slots, frame: frame, cache: cache, previews: previews,
-            previewSize: previewSize, fromColumns: presentation.fromColumns,
-            toColumns: presentation.toColumns, progress: presentation.geometryProgress,
-            blend: presentation.blend, offsetY: presentation.offsetY)
+            previewSize: previewSize, position: presentation.position,
+            offsetY: presentation.offsetY)
     }
 }
 
@@ -27,22 +26,28 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
     let cache: PhoneGalleryPreviewCache
     let previews: [URL: UIImage]
     let previewSize: Int
-    let fromColumns: Int
-    let toColumns: Int
-    var progress: CGFloat
-    var blend: Double
-    var offsetY: CGFloat
+    // Animatable's accessors are nonisolated. Only these value-type scalars
+    // participate in interpolation; UI and cache access stay on MainActor.
+    nonisolated var position: CGFloat
+    nonisolated var offsetY: CGFloat
 
-    var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>, Double> {
-        get { AnimatablePair(AnimatablePair(progress, offsetY), blend) }
+    nonisolated var animatableData: AnimatablePair<CGFloat, CGFloat> {
+        get { AnimatablePair(position, offsetY) }
         set {
-            progress = newValue.first.first
-            offsetY = newValue.first.second
-            blend = newValue.second
+            position = newValue.first
+            offsetY = newValue.second
         }
     }
 
     var body: some View {
+        // Select both the image pair and its geometry from the interpolated
+        // position, never from discrete endpoint state supplied by the parent.
+        let boundedPosition = min(2, max(0, position))
+        let fromColumns = boundedPosition <= 1 ? 5 : 3
+        let toColumns = boundedPosition <= 1 ? 3 : 1
+        let progress = boundedPosition <= 1 ? boundedPosition : boundedPosition - 1
+        let blend = Double(progress * progress * (3 - 2 * progress))
+
         ZStack(alignment: .topLeading) {
             ForEach(slots) { slot in
                 let sourceFrame = slot.frames[fromColumns] ?? .zero
