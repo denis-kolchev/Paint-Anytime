@@ -514,10 +514,9 @@ struct PhoneHomeView: View {
             return
         }
         let originY = anchorFrame.minY - CGFloat((anchorIndex + leading) / 5) * stride
-        // Decorative columns extend only complete destination rows. Incomplete
-        // first/last rows must retain their actual beginning/end of content.
-        let firstFullRow = leading == 0 ? 0 : 1
-        let fullRowEnd = (zoomSnapshot.count + leading) / 5
+        // Bound destination rows, not source rows: partial rows still need
+        // side copies, but nothing may extend vertically beyond real content.
+        let rowCount = (zoomSnapshot.count + leading + 4) / 5
         let tiles = zoomSlots.filter { slot in
             guard let column = slot.columns[5], let rect = slot.frames[5] else { return false }
             return (0..<5).contains(column) && rect.maxY >= -3 * stride
@@ -536,23 +535,39 @@ struct PhoneHomeView: View {
         var backdrops: [Int: UIImage] = [:]
         for direction in [-1, 1] {
             backdrops[direction] = UIGraphicsImageRenderer(size: bounds.size, format: format).image { renderer in
-            UIColor.systemBackground.setFill()
-            renderer.fill(CGRect(origin: .zero, size: bounds.size))
-            for slot in tiles {
-                guard let url = slot.images[5], let image = zoomPreviews[url],
-                      let rect = slot.frames[5], image.size.width > 0, image.size.height > 0 else { continue }
-                let destinationRow = Int(((rect.minY - originY) / stride).rounded()) + direction
-                guard destinationRow >= firstFullRow, destinationRow < fullRowEnd else { continue }
-                let tile = rect.offsetBy(dx: 0, dy: CGFloat(direction) * stride - top)
-                let scale = max(tile.width / image.size.width, tile.height / image.size.height)
-                let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-                renderer.cgContext.saveGState()
-                renderer.cgContext.clip(to: tile)
-                image.draw(in: CGRect(x: tile.midX - size.width / 2, y: tile.midY - size.height / 2,
-                                      width: size.width, height: size.height))
-                renderer.cgContext.restoreGState()
+                UIColor.systemBackground.setFill()
+                renderer.fill(CGRect(origin: .zero, size: bounds.size))
+                for slot in tiles {
+                    guard let rect = slot.frames[5], let column = slot.columns[5] else { continue }
+                    let destinationRow = Int(((rect.minY - originY) / stride).rounded())
+                    guard (0..<rowCount).contains(destinationRow) else { continue }
+                    // A partial final row ends at its last real photo; do not
+                    // restart that row in the decorative strip on the right.
+                    if direction > 0, destinationRow == rowCount - 1,
+                       (zoomSnapshot.count + leading) % 5 != 0 { continue }
+                    // Repeat the same row horizontally: ... 4 5 | 1 2 3 4 5 | 1 2 ...
+                    let sourceRow = destinationRow
+                    let firstIndex = max(0, sourceRow * 5 - leading)
+                    let endIndex = min(zoomSnapshot.count, (sourceRow + 1) * 5 - leading)
+                    guard firstIndex < endIndex else { continue }
+                    // Repeat the available photos of a partial source row only
+                    // in the decorative copies; real empty cells stay empty.
+                    let count = endIndex - firstIndex
+                    let repeatedColumn = direction < 0 ? column - 5 : column
+                    let wrappedColumn = (repeatedColumn % count + count) % count
+                    let url = zoomSnapshot[firstIndex + wrappedColumn]
+                    guard let image = zoomPreviews[url] ?? previewCache.availableImage(for: url, maximumSize: zoomPreviewSize),
+                          image.size.width > 0, image.size.height > 0 else { continue }
+                    let tile = rect.offsetBy(dx: 0, dy: -top)
+                    let scale = max(tile.width / image.size.width, tile.height / image.size.height)
+                    let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+                    renderer.cgContext.saveGState()
+                    renderer.cgContext.clip(to: tile)
+                    image.draw(in: CGRect(x: tile.midX - size.width / 2, y: tile.midY - size.height / 2,
+                                          width: size.width, height: size.height))
+                    renderer.cgContext.restoreGState()
+                }
             }
-        }
         }
         zoomSideBackdrops = backdrops
         zoomSideBackdropFrame = bounds

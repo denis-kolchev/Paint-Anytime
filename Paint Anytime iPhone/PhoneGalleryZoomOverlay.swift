@@ -58,8 +58,7 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
 
         ZStack(alignment: .topLeading) {
             if position < 0 {
-                // Diagonal shifts and destination-row limits are baked together.
-                // Do not shift again here: that could expose out-of-list rows.
+                // Repeat each row horizontally, within the real list's row bounds.
                 ForEach([-1, 1], id: \.self) { direction in
                     if let backdrop = sideBackdrops[direction] {
                         Image(uiImage: backdrop)
