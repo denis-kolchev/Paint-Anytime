@@ -634,7 +634,23 @@ struct PhoneHomeView: View {
             abs(log(tileSide(columns: $0, width: width) / side))
                 < abs(log(tileSide(columns: $1, width: width) / side))
         } ?? zoomBaseColumns
-        settleGalleryZoom(columns: nearest, width: width, viewportHeight: viewportHeight)
+        let basePosition = PhoneGalleryZoomPresentation.position(for: zoomBaseColumns)
+        let position = min(2, max(0, zoomPresentation.position))
+        let nearestPosition = PhoneGalleryZoomPresentation.position(for: nearest)
+        var destination = nearest
+        if nearest != zoomBaseColumns {
+            // Once the gesture qualifies for a new grid, settlement must not
+            // reverse it. If that grid is already behind the rendered scale,
+            // continue to the next grid in the same direction instead.
+            if position > basePosition, nearestPosition < position {
+                let forwardPosition = Int(position.rounded(.up))
+                destination = [5, 3, 1][forwardPosition]
+            } else if position < basePosition, nearestPosition > position {
+                let forwardPosition = Int(position.rounded(.down))
+                destination = [5, 3, 1][forwardPosition]
+            }
+        }
+        settleGalleryZoom(columns: destination, width: width, viewportHeight: viewportHeight)
     }
 
     private func settleGalleryZoom(columns nearest: Int, width: CGFloat, viewportHeight: CGFloat) {
@@ -645,12 +661,30 @@ struct PhoneHomeView: View {
         suppressOpeningUntil = .distantFuture
         let finalScale = tileSide(columns: nearest, width: width) / tileSide(columns: zoomBaseColumns, width: width)
         let finalPosition = PhoneGalleryZoomPresentation.position(for: nearest)
-        // Scrolling stays locked until the overlay hands off to the real grid.
-        // Use a finite ease-out so a spring's imperceptible tail cannot prolong
-        // that lock after the visible zoom has already stopped.
+        // Use a finite spring-like deceleration without an asymptotic tail
+        // that would keep scrolling locked after the visible motion ends.
         let isRubberBanding = zoomPresentation.position < 0 || zoomPresentation.position > 2
-        let animation: Animation? = reduceMotion ? nil
-            : .easeOut(duration: isRubberBanding ? 0.24 : 0.18)
+        let baseDuration = isRubberBanding ? 0.24 : 0.18
+        // Slow only a return to the starting grid; grid-to-grid settlement
+        // retains its existing timing. Lower speed means longer duration.
+        let isBeyondFiveColumns = zoomPresentation.position < 0
+        let returnDurationMultiplier = nearest == zoomBaseColumns && !isBeyondFiveColumns
+            ? Double(nearest) : 1
+        let animation: Animation?
+        if reduceMotion {
+            animation = nil
+        } else if nearest != zoomBaseColumns, !isRubberBanding {
+            // A long grid transition should not cover most of its remaining
+            // distance in the first frames of the short rebound curve.
+            let remainingDistance = min(2, abs(finalPosition - zoomPresentation.position))
+            let duration = 0.22 + 0.12 * Double(remainingDistance)
+            animation = .timingCurve(0.25, 0.25, 0.55, 1, duration: duration)
+        } else {
+            // Keep the accepted rebound behavior, including its density timing.
+            // Both control points have y = 1, giving a soft endpoint.
+            animation = .timingCurve(0.33, 1, 0.67, 1,
+                                     duration: baseDuration * returnDurationMultiplier)
+        }
         // A no-op or reduced-motion settlement needs no animation callback.
         if animation == nil || (zoomPresentation.scale == finalScale &&
             zoomPresentation.position == finalPosition) {
