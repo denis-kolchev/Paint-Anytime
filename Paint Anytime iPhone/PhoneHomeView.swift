@@ -26,7 +26,6 @@ struct PhoneHomeView: View {
     @State private var zoomBaseFrame: CGRect = .zero
     @State private var pendingZoomOriginY: CGFloat?
     @State private var pendingScrollIssued = false
-    @State private var measuredGridColumns = 0
     // Leading slots change row alignment without changing document order.
     @State private var leadingSlots = 0
     @State private var zoomLeadingSlots: [Int: Int] = [:]
@@ -122,9 +121,10 @@ struct PhoneHomeView: View {
 
                     }
                 }
-                // Disable only the scrolling child. The pinch recognizer lives
-                // on the stable wrapper, outside the disabled scroll environment.
-                .scrollDisabled(hasTwoFingerContact || isPinching || pinchTarget != nil || settlingZoom)
+                // Keep scrolling available during position restoration so a new
+                // touch can start a pan instead of losing the entire sequence.
+                .scrollDisabled(hasTwoFingerContact || isPinching ||
+                                (pendingZoomColumns == nil && (pinchTarget != nil || settlingZoom)))
                 // Let scrolling artwork remain visible through the header material.
                 .scrollClipDisabled()
                 }
@@ -177,6 +177,12 @@ struct PhoneHomeView: View {
                 }
                 .overlay {
                     PhoneGalleryTouchOverlay { positions in
+                        if pendingZoomColumns != nil, !positions.isEmpty {
+                            // User input takes precedence over a pending scrollTo.
+                            // Reset cancels restoration and prevents late callbacks
+                            // from changing the position during the new gesture.
+                            completeGalleryZoom()
+                        }
                         hasTwoFingerContact = positions.count >= 2
                         if hasTwoFingerContact {
                             guard !settlingZoom, pinchTarget == nil,
@@ -240,45 +246,14 @@ struct PhoneHomeView: View {
                 .task(id: pendingZoomColumns) {
                     guard pendingZoomColumns != nil else { return }
                     let settlementID = zoomSettlementID
-                    var previousFrame: CGRect?
-                    var stableSamples = 0
-                    // Sample near frame cadence: three stable observations take
-                    // about 60 ms, rather than holding scrolling for 150 ms.
-                    // Keep the 600 ms fallback for delayed layout or a no-op scrollTo.
-                    for _ in 0..<30 {
-                        do { try await Task.sleep(for: .milliseconds(20)) }
-                        catch { return }
-                        guard !Task.isCancelled, zoomSettlementID == settlementID,
-                              pendingZoomColumns != nil else { return }
-                        if pendingScrollIssued, measuredGridColumns == pendingZoomColumns {
-                            if let previousFrame,
-                               abs(previousFrame.minY - gridFrame.minY) < 0.5,
-                               abs(previousFrame.height - gridFrame.height) < 0.5 {
-                                stableSamples += 1
-                            } else {
-                                stableSamples = 0
-                            }
-                            previousFrame = gridFrame
-                            if stableSamples >= 2 { break }
-                        }
-                    }
+                    // Geometry feedback normally completes the handoff. A no-op
+                    // scrollTo may emit no preference, so retain a short fallback
+                    // without polling or blocking a new scroll gesture.
+                    do { try await Task.sleep(for: .milliseconds(120)) }
+                    catch { return }
                     guard !Task.isCancelled, zoomSettlementID == settlementID,
                           pendingZoomColumns != nil else { return }
-                    if measuredGridColumns == pendingZoomColumns,
-                       let expectedOrigin = pendingZoomOriginY,
-                       abs(gridFrame.minY - expectedOrigin) >= 0.5, !reduceMotion {
-                        // Reconcile the frozen overlay with the position actually
-                        // accepted by ScrollView before exposing the real grid.
-                        withAnimation(.easeOut(duration: 0.08), completionCriteria: .removed) {
-                            zoomPresentation.offsetY += gridFrame.minY - expectedOrigin
-                        } completion: {
-                            guard zoomSettlementID == settlementID,
-                                  pendingZoomColumns != nil else { return }
-                            completeGalleryZoom()
-                        }
-                    } else {
-                        completeGalleryZoom()
-                    }
+                    completeGalleryZoom()
                 }
                 .onPreferenceChange(PhoneGalleryFrameKey.self) { layout in
                     guard layout.columns > 0 else { return }
@@ -291,12 +266,17 @@ struct PhoneHomeView: View {
                     }
                     #endif
                     gridFrame = layout.frame
-                    measuredGridColumns = layout.columns
                     guard layout.columns == pendingZoomColumns,
                           let target = pendingZoomTarget,
                           let anchor = pendingZoomAnchor else { return }
-                    // Keep the viewport overlay until layout reports the actual
-                    // restored offset, including the case where no scroll is needed.
+                    // The first geometry update after scrollTo is the accepted
+                    // position, including offsets clamped by ScrollView. Do not
+                    // wait for repeated identical samples or animate a correction.
+                    if pendingScrollIssued {
+                        completeGalleryZoom()
+                        return
+                    }
+                    // No scroll is needed when layout already matches the target.
                     if let originY = pendingZoomOriginY,
                        abs(layout.frame.minY - originY) < 0.5 {
                         completeGalleryZoom()
@@ -304,7 +284,6 @@ struct PhoneHomeView: View {
                     }
                     // Issue once after the destination layout exists. Repeating
                     // scrollTo from its own geometry feedback can prevent settling.
-                    guard !pendingScrollIssued else { return }
                     pendingScrollIssued = true
                     var transaction = Transaction()
                     transaction.disablesAnimations = true
