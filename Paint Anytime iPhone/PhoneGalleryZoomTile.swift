@@ -37,7 +37,8 @@ struct PhoneGalleryZoomTile: View {
                 DrawingPreview(url: url, maximumSize: previewSize, fillsFrame: true, cache: cache,
                                preparesOtherSizes: preparesOtherSizes,
                                isTransitionDestination: isDestination,
-                               frozenPreview: frozenPreviews[url])
+                               frozenPreview: frozenPreviews[url],
+                               viewportSize: CGSize(width: side, height: height ?? side))
                     .compositingGroup()
                     .opacity(isDestination ? (preservesSource ? 0 : blend) : 1)
                     .zIndex(isDestination ? 1 : 0)

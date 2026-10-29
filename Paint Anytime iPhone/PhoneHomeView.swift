@@ -820,6 +820,7 @@ struct DrawingPreview: View {
     var preparesOtherSizes = false
     var isTransitionDestination = false
     var frozenPreview: UIImage? = nil
+    var viewportSize: CGSize? = nil
     @State private var previewOwner = UUID()
     @State private var preview: UIImage?
     @State private var failed = false
@@ -828,12 +829,28 @@ struct DrawingPreview: View {
         Group {
             if let image = frozenPreview ?? cache?.image(for: url, maximumSize: maximumSize)
                 ?? preview ?? cache?.availableImage(for: url, maximumSize: maximumSize) {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: fillsFrame ? .fill : .fit)
-                    .background {
-                        if isTransitionDestination { Color(uiColor: .systemBackground) }
-                    }
+                if let viewportSize {
+                    // Use the same dimensions as the tile's clip. A fixed inner
+                    // frame also prevents an oversized aspect-fill image from
+                    // changing the ZStack's layout and centering during a pinch.
+                    let scale = max(viewportSize.width / max(image.size.width, 1),
+                                    viewportSize.height / max(image.size.height, 1))
+                    Image(uiImage: image)
+                        .resizable()
+                        .frame(width: image.size.width * scale, height: image.size.height * scale)
+                        .frame(width: viewportSize.width, height: viewportSize.height)
+                        .background {
+                            if isTransitionDestination { Color(uiColor: .systemBackground) }
+                        }
+                        .clipped()
+                } else {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: fillsFrame ? .fill : .fit)
+                        .background {
+                            if isTransitionDestination { Color(uiColor: .systemBackground) }
+                        }
+                }
             }
             else if isTransitionDestination { Color.clear }
             else if failed { Label("Preview unavailable", systemImage: "photo") }
