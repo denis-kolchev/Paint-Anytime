@@ -19,7 +19,7 @@ struct PhoneHomeView: View {
     @State private var zoomSlots: [PhoneGalleryZoomSlot] = []
     @State private var zoomPreviews: [URL: UIImage] = [:]
     @State private var zoomPreviewSize = 640
-    @State private var zoomSideBackdrop: UIImage?
+    @State private var zoomSideBackdrops: [Int: UIImage] = [:]
     @State private var zoomSideBackdropFrame: CGRect = .zero
     @State private var imageLayout = PhoneGalleryImageLayout()
     @Environment(\.displayScale) private var displayScale
@@ -136,7 +136,7 @@ struct PhoneHomeView: View {
                                     presentation: zoomPresentation, slots: zoomSlots,
                                     frame: zoomBaseFrame, cache: previewCache,
                                     previews: zoomPreviews, previewSize: zoomPreviewSize,
-                                    sideBackdrop: zoomSideBackdrop, sideBackdropFrame: zoomSideBackdropFrame)
+                                    sideBackdrops: zoomSideBackdrops, sideBackdropFrame: zoomSideBackdropFrame)
                             }
                         }
                 .highPriorityGesture(
@@ -507,6 +507,17 @@ struct PhoneHomeView: View {
     private func prepareZoomSideBackdrop(width: CGFloat, viewportHeight: CGFloat) {
         let side = tileSide(columns: 5, width: width)
         let stride = side + gallerySpacing
+        let leading = slots(for: 5)
+        guard let anchorIndex = zoomAnchorIndex,
+              let anchorFrame = zoomSlots.first(where: { $0.images[5] == zoomSnapshot[anchorIndex] })?.frames[5] else {
+            zoomSideBackdrops = [:]
+            return
+        }
+        let originY = anchorFrame.minY - CGFloat((anchorIndex + leading) / 5) * stride
+        // Decorative columns extend only complete destination rows. Incomplete
+        // first/last rows must retain their actual beginning/end of content.
+        let firstFullRow = leading == 0 ? 0 : 1
+        let fullRowEnd = (zoomSnapshot.count + leading) / 5
         let tiles = zoomSlots.filter { slot in
             guard let column = slot.columns[5], let rect = slot.frames[5] else { return false }
             return (0..<5).contains(column) && rect.maxY >= -3 * stride
@@ -514,7 +525,7 @@ struct PhoneHomeView: View {
         }
         guard let top = tiles.compactMap({ $0.frames[5]?.minY }).min(),
               let bottom = tiles.compactMap({ $0.frames[5]?.maxY }).max() else {
-            zoomSideBackdrop = nil
+            zoomSideBackdrops = [:]
             return
         }
         // Five full column strides keep the seam identical to internal spacing.
@@ -522,13 +533,17 @@ struct PhoneHomeView: View {
         let format = UIGraphicsImageRendererFormat()
         format.scale = min(displayScale, 2)
         format.opaque = true
-        zoomSideBackdrop = UIGraphicsImageRenderer(size: bounds.size, format: format).image { renderer in
+        var backdrops: [Int: UIImage] = [:]
+        for direction in [-1, 1] {
+            backdrops[direction] = UIGraphicsImageRenderer(size: bounds.size, format: format).image { renderer in
             UIColor.systemBackground.setFill()
             renderer.fill(CGRect(origin: .zero, size: bounds.size))
             for slot in tiles {
                 guard let url = slot.images[5], let image = zoomPreviews[url],
                       let rect = slot.frames[5], image.size.width > 0, image.size.height > 0 else { continue }
-                let tile = rect.offsetBy(dx: 0, dy: -top)
+                let destinationRow = Int(((rect.minY - originY) / stride).rounded()) + direction
+                guard destinationRow >= firstFullRow, destinationRow < fullRowEnd else { continue }
+                let tile = rect.offsetBy(dx: 0, dy: CGFloat(direction) * stride - top)
                 let scale = max(tile.width / image.size.width, tile.height / image.size.height)
                 let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
                 renderer.cgContext.saveGState()
@@ -538,6 +553,8 @@ struct PhoneHomeView: View {
                 renderer.cgContext.restoreGState()
             }
         }
+        }
+        zoomSideBackdrops = backdrops
         zoomSideBackdropFrame = bounds
     }
 
@@ -648,7 +665,7 @@ struct PhoneHomeView: View {
             previewCache.preparationPaused = false
             zoomSlots = []
             zoomPreviews = [:]
-            zoomSideBackdrop = nil
+            zoomSideBackdrops = [:]
             zoomSideBackdropFrame = .zero
             zoomSnapshot = []
             zoomAnchorIndex = nil

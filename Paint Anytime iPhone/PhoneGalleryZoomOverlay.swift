@@ -8,13 +8,13 @@ struct PhoneGalleryZoomOverlay: View {
     let cache: PhoneGalleryPreviewCache
     let previews: [URL: UIImage]
     let previewSize: Int
-    let sideBackdrop: UIImage?
+    let sideBackdrops: [Int: UIImage]
     let sideBackdropFrame: CGRect
 
     var body: some View {
         PhoneGalleryZoomFrame(
             slots: slots, frame: frame, cache: cache, previews: previews,
-            previewSize: previewSize, sideBackdrop: sideBackdrop,
+            previewSize: previewSize, sideBackdrops: sideBackdrops,
             sideBackdropFrame: sideBackdropFrame, elasticAnchor: presentation.elasticAnchor,
             position: presentation.position,
             offsetY: presentation.offsetY)
@@ -30,7 +30,7 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
     let cache: PhoneGalleryPreviewCache
     let previews: [URL: UIImage]
     let previewSize: Int
-    let sideBackdrop: UIImage?
+    let sideBackdrops: [Int: UIImage]
     let sideBackdropFrame: CGRect
     let elasticAnchor: CGPoint
     // Animatable's accessors are nonisolated. Only these value-type scalars
@@ -57,16 +57,17 @@ private struct PhoneGalleryZoomFrame: View, Animatable {
         let blend = Double(progress * progress * (3 - 2 * progress))
 
         ZStack(alignment: .topLeading) {
-            if position < 0, let sideBackdrop {
-                // Repeat the baked five-column strip diagonally by one row.
-                // Both offsets are whole grid strides, so the seams line up.
-                let rowStride = sideBackdropFrame.width / 5
+            if position < 0 {
+                // Diagonal shifts and destination-row limits are baked together.
+                // Do not shift again here: that could expose out-of-list rows.
                 ForEach([-1, 1], id: \.self) { direction in
-                    Image(uiImage: sideBackdrop)
-                        .resizable()
-                        .frame(width: sideBackdropFrame.width, height: sideBackdropFrame.height)
-                        .offset(x: CGFloat(direction) * sideBackdropFrame.width,
-                                y: sideBackdropFrame.minY + CGFloat(direction) * rowStride)
+                    if let backdrop = sideBackdrops[direction] {
+                        Image(uiImage: backdrop)
+                            .resizable()
+                            .frame(width: sideBackdropFrame.width, height: sideBackdropFrame.height)
+                            .offset(x: CGFloat(direction) * sideBackdropFrame.width,
+                                    y: sideBackdropFrame.minY)
+                    }
                 }
             }
             ForEach(slots) { slot in
