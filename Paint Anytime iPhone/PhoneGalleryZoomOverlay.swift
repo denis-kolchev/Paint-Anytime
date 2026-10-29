@@ -17,7 +17,7 @@ struct PhoneGalleryZoomOverlay: View {
                     source: slot.images[presentation.fromColumns],
                     destination: slot.images[presentation.toColumns],
                     blend: presentation.blend, side: side, cache: cache,
-                    preservesSource: presentation.scale > 1 && slot.preservesSource(
+                    preservesSource: slot.preservesSource(
                         from: presentation.fromColumns, to: presentation.toColumns),
                     fixedPreviewSize: previewSize, frozenPreviews: previews)
                     .scaleEffect(presentation.scale)
