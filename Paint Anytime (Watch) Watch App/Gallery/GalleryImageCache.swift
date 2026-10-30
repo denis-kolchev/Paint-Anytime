@@ -34,6 +34,10 @@ actor GalleryImageCache {
     static let shared = GalleryImageCache()
     private let thumbnails = NSCache<NSURL, GalleryThumbnailVariants>()
     private let originals = NSCache<NSURL, GalleryBitmap>()
+    #if DEBUG
+    private var debugMetrics = GalleryDecodeDiagnostics()
+    func debugSnapshot() -> GalleryDecodeDiagnostics { debugMetrics }
+    #endif
 
     init() {
         thumbnails.totalCostLimit = 6 * 1024 * 1024
@@ -44,10 +48,38 @@ actor GalleryImageCache {
 
     func load(_ request: GalleryImageRequest) -> GalleryBitmap? {
         guard !Task.isCancelled else { return nil }
+        #if DEBUG
+        let debugStarted = GalleryDebug.isEnabled ? ProcessInfo.processInfo.systemUptime : 0
+        var debugHit = false
+        var debugDecoded = false
+        defer {
+            if GalleryDebug.isEnabled {
+                debugMetrics.requests += 1
+                if debugHit {
+                    debugMetrics.cacheHits += 1
+                } else if debugDecoded {
+                    let elapsed = (ProcessInfo.processInfo.systemUptime - debugStarted) * 1000
+                    debugMetrics.decodes += 1
+                    debugMetrics.decodeMS += elapsed
+                    debugMetrics.maximumDecodeMS = max(debugMetrics.maximumDecodeMS, elapsed)
+                } else if !Task.isCancelled {
+                    debugMetrics.failures += 1
+                }
+            }
+        }
+        #endif
         let key = request.url as NSURL
         if request.shortSidePixels != nil {
-            if let cached = thumbnails.object(forKey: key)?.images[request] { return cached }
+            if let cached = thumbnails.object(forKey: key)?.images[request] {
+                #if DEBUG
+                debugHit = true
+                #endif
+                return cached
+            }
         } else if let cached = originals.object(forKey: key), cached.request == request {
+            #if DEBUG
+            debugHit = true
+            #endif
             return cached
         }
 
@@ -85,6 +117,9 @@ actor GalleryImageCache {
         } else {
             originals.setObject(bitmap, forKey: key, cost: bitmap.memoryCost)
         }
+        #if DEBUG
+        debugDecoded = true
+        #endif
         return bitmap
     }
 
@@ -175,10 +210,11 @@ enum GalleryFavoriteThumbnailRenderer {
 struct GalleryThumbnailView: View {
     let request: GalleryImageRequest
     var loadsImage: Bool
+    let visibility: GalleryThumbnailVisibility
     var isFavorite = false
     var onDisplayedBitmap: (GalleryBitmap) -> Void = { _ in }
     @State private var bitmap: GalleryBitmap?
-    @State private var isNearViewport = false
+    @State private var isMounted = false
 
     private struct LoadRequest: Equatable {
         let image: GalleryImageRequest
@@ -186,44 +222,56 @@ struct GalleryThumbnailView: View {
     }
 
     var body: some View {
+        let isNearViewport = visibility.isNearViewport
+        let loadRequest = isMounted && loadsImage && isNearViewport
+            ? LoadRequest(image: request, isFavorite: isFavorite) : nil
+        let displayed = bitmap ?? visibility.fallback
         Group {
-            if let bitmap {
-                Image(decorative: bitmap.image, scale: 1).resizable().scaledToFill()
+            if let displayed {
+                Image(decorative: displayed.image, scale: 1).resizable().scaledToFill()
             } else {
                 Rectangle().fill(.white.opacity(0.12))
             }
         }
-        .onGeometryChange(for: Bool.self) { geometry in
-            let screen = WKInterfaceDevice.current().screenBounds
-            // A 5-column viewport exposes almost three times as many tiles as
-            // a 3-column viewport; prepare those images before zooming out.
-            let prefetchBounds = screen.insetBy(dx: -screen.width, dy: -screen.height * 2)
-            return geometry.frame(in: .global).intersects(prefetchBounds)
-        } action: { nearViewport in
-            isNearViewport = nearViewport
-        }
-        .task(id: loadsImage && isNearViewport ? LoadRequest(image: request, isFavorite: isFavorite) : nil) {
-            guard isNearViewport else { bitmap = nil; return }
-            guard loadsImage else { return }
-            // Decode real source detail before compositing, rather than enlarging
-            // an already small thumbnail. Keep the same point size for the badge.
+        .onAppear { isMounted = true }
+        .task(id: loadRequest) {
+            guard let loadRequest else {
+                if !isNearViewport { bitmap = nil }
+                return
+            }
+            #if DEBUG
+            if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.beganLoad() }
+            defer {
+                if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.endedLoad(cancelled: Task.isCancelled) }
+            }
+            #endif
+            // Use the captured request across suspension. Visibility is supplied
+            // by the gallery's named coordinate space, not global screen bounds.
             let imageRequest: GalleryImageRequest
-            if isFavorite, let pixels = request.shortSidePixels {
-                imageRequest = GalleryImageRequest(url: request.url,
-                    shortSidePixels: pixels * 2, displayScale: request.displayScale * 2)
+            if loadRequest.isFavorite, let pixels = loadRequest.image.shortSidePixels {
+                imageRequest = GalleryImageRequest(url: loadRequest.image.url,
+                    shortSidePixels: pixels * 2, displayScale: loadRequest.image.displayScale * 2)
             } else {
-                imageRequest = request
+                imageRequest = loadRequest.image
             }
             let loaded = await GalleryImageCache.shared.load(imageRequest)
             guard !Task.isCancelled else { return }
-            if isFavorite, let loaded {
+            if loadRequest.isFavorite, let loaded {
                 bitmap = GalleryFavoriteThumbnailRenderer.render(loaded) ?? loaded
             } else {
                 bitmap = loaded
             }
-            if let bitmap { onDisplayedBitmap(bitmap) }
+            if let bitmap {
+                visibility.fallback = bitmap
+                onDisplayedBitmap(bitmap)
+            }
         }
-        .onDisappear { bitmap = nil }
+        .onDisappear {
+            // Reappearance must restart loading even if URL, size and proximity
+            // have not changed since SwiftUI cancelled the previous task.
+            isMounted = false
+            bitmap = nil
+        }
     }
 }
 

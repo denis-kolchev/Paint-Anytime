@@ -23,7 +23,10 @@ struct SavedDrawingsView: View {
     @State private var returnGridLevel = 1
     @State private var crownPosition = 0.0
     @State private var selectedDrawing: CanvasExport?
-    @State private var focusedDrawing: CanvasExport?
+    private var focusedDrawing: CanvasExport? {
+        get { gridStorage.focusedDrawing }
+        nonmutating set { gridStorage.focusedDrawing = newValue }
+    }
     @State private var pendingDeletion: CanvasExport?
     @State private var showsFullscreen = false
     @State private var isCleanViewing = false
@@ -31,8 +34,12 @@ struct SavedDrawingsView: View {
     @State private var morphState = GalleryMorphState()
     @State private var pageVisibility: [URL: Double] = [:]
     @State private var galleryScrollTarget: URL?
-    @State private var thumbnailFrames: [URL: CGRect] = [:]
-    @State private var thumbnailBitmaps: [URL: GalleryBitmap] = [:]
+    @State private var gridStorage = GalleryGridStorage()
+    private var thumbnailFrames: [URL: CGRect] { gridStorage.frames }
+    private var thumbnailBitmaps: [URL: GalleryBitmap] {
+        get { gridStorage.bitmaps }
+        nonmutating set { gridStorage.bitmaps = newValue }
+    }
     @State private var gridZoom = GalleryGridZoom()
     @State private var galleryViewport: CGSize = .zero
     @State private var galleryTopInset: CGFloat = 0
@@ -162,6 +169,15 @@ struct SavedDrawingsView: View {
                     .contentShape(Rectangle())
                 }
             }
+            #if DEBUG
+            .overlay(alignment: .bottomTrailing) {
+                if GalleryDebug.isEnabled {
+                    WatchGalleryDebugOverlay()
+                        .padding(.trailing, 4)
+                        .padding(.bottom, max(4, tutorialHintReservedHeight))
+                }
+            }
+            #endif
             .allowsHitTesting(!isLoading)
             .coordinateSpace(name: "drawingGallery")
             .onAppear {
@@ -179,7 +195,7 @@ struct SavedDrawingsView: View {
             }
             .onDisappear {
                 gridZoom.reset()
-                thumbnailBitmaps = [:]
+                gridStorage.clearBitmaps()
             }
             .task(id: gridZoom.loadingID) {
                 await gridZoom.loadImages(scale: displayScale)
@@ -188,12 +204,18 @@ struct SavedDrawingsView: View {
                 if let message { controller.errorMessage = message }
             }
             .onPreferenceChange(GalleryThumbnailFramesKey.self) { frames in
-                thumbnailFrames = frames
-                let retainedArea = CGRect(origin: .zero, size: geometry.size)
-                    .insetBy(dx: -geometry.size.width, dy: -geometry.size.height * 2)
-                thumbnailBitmaps = thumbnailBitmaps.filter { url, _ in
-                    frames[url]?.intersects(retainedArea) == true
+                #if DEBUG
+                let debugStarted = GalleryDebug.isEnabled ? ProcessInfo.processInfo.systemUptime : 0
+                defer {
+                    if GalleryDebug.isEnabled {
+                        let elapsed = (ProcessInfo.processInfo.systemUptime - debugStarted) * 1000
+                        WatchGalleryDiagnostics.shared.geometry(elapsedMS: elapsed, frames: frames,
+                            viewport: geometry.size, bitmaps: thumbnailBitmaps,
+                            columns: columnCount, zooming: gridZoom.active)
+                    }
                 }
+                #endif
+                gridStorage.update(frames: frames, viewport: geometry.size)
                 if !showsFullscreen && !isTransitioning,
                    let nearest = frames.filter({ $0.value.maxY > navigationHeight && $0.value.minY < geometry.size.height })
                     .min(by: {
@@ -393,7 +415,7 @@ struct SavedDrawingsView: View {
             imageLayout = GalleryImageLayout(images: urls)
             if gridZoom.active, urls != gridZoom.snapshot { gridZoom.reset() }
             leadingSlots = 0
-            thumbnailBitmaps = thumbnailBitmaps.filter { urls.contains($0.key) }
+            gridStorage.retain(urls: Set(urls))
         }
         .onChange(of: tutorial.showsInstruction) { _, showing in
             crownFocused = !showing && tutorial.allowsGalleryZoom && pendingDeletion == nil
@@ -450,24 +472,35 @@ struct SavedDrawingsView: View {
                     } label: {
                         GalleryThumbnailView(request: GalleryImageRequest(
                             url: drawing.url, shortSidePixels: thumbnailPixels, displayScale: displayScale),
-                            loadsImage: !gridZoom.active || gridZoom.pendingCommit != nil, isFavorite: drawing.isFavorite,
+                            loadsImage: !gridZoom.active || gridZoom.pendingCommit != nil,
+                            visibility: gridStorage.visibility(for: drawing.id),
+                            isFavorite: drawing.isFavorite,
                             onDisplayedBitmap: { bitmap in
                                 thumbnailBitmaps[drawing.id] = bitmap
                             })
                             .frame(width: width, height: width)
                             .clipped()
-                            .background {
-                                GeometryReader { tileGeometry in
-                                    Color.clear.preference(key: GalleryThumbnailFramesKey.self,
-                                        value: [drawing.id: tileGeometry.frame(in: .named("drawingGallery"))])
-                                }
-                            }
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .disabled(!tutorial.allowsGalleryZoom)
                     .accessibilityLabel(L10n.text("Open drawing"))
                     .id(drawing.id)
+                }
+            }
+            .background {
+                GeometryReader { gridGeometry in
+                    // The layout is regular: one measured origin is enough for
+                    // every tile, including offscreen zoom destinations.
+                    let origin = gridGeometry.frame(in: .named("drawingGallery")).origin
+                    Color.clear.preference(key: GalleryThumbnailFramesKey.self,
+                        value: Dictionary(uniqueKeysWithValues: drawings.enumerated().map { index, drawing in
+                            let slot = index + leadingSlots
+                            return (drawing.id, CGRect(
+                                x: origin.x + CGFloat(slot % columnCount) * (width + spacing),
+                                y: origin.y + CGFloat(slot / columnCount) * (width + spacing),
+                                width: width, height: width))
+                        }))
                 }
             }
             .padding(.bottom, 12)
