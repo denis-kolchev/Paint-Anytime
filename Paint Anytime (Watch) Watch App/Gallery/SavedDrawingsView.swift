@@ -94,6 +94,7 @@ struct SavedDrawingsView: View {
                     .contentMargins(.bottom, tutorialHintReservedHeight, for: .scrollContent)
                     .contentMargins(.top, contentTopInset, for: .scrollContent)
                     .scrollIndicators(.hidden)
+                    .galleryCustomHeaderEdge()
                     .scrollDisabled(gridZoom.active || showsFullscreen)
                     // Observe native scrolling without competing with its swipe gesture.
                     .onTutorialScrollActivity { tutorial.activity() }

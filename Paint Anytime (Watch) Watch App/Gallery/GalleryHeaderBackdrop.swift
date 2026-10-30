@@ -10,6 +10,10 @@ struct GalleryHeaderBackdrop: View {
     var body: some View {
         Rectangle()
             .fill(.ultraThinMaterial)
+            // Explicit contrast replaces the native scroller's edge treatment,
+            // which is absent when the same artwork is drawn by Canvas.
+            .overlay(Color.black.opacity(0.4))
+            .environment(\.colorScheme, .dark)
             .frame(height: height)
             .mask {
                 LinearGradient(stops: [
@@ -24,5 +28,17 @@ struct GalleryHeaderBackdrop: View {
                 : (showsFullscreen ? 0 : 1))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func galleryCustomHeaderEdge() -> some View {
+        if #available(watchOS 26.0, *) {
+            // GalleryHeaderBackdrop owns this edge for both presentations.
+            scrollEdgeEffectHidden(true, for: .top)
+        } else {
+            self
+        }
     }
 }
