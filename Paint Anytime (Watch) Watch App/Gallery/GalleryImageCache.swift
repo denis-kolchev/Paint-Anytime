@@ -113,7 +113,7 @@ actor GalleryImageCache {
 /// Only grid thumbnails receive this decoration; originals and exported files stay untouched.
 /// Rasterizing the artwork, blur and heart together gives zoom a single image to animate.
 @MainActor
-private enum GalleryFavoriteThumbnailRenderer {
+enum GalleryFavoriteThumbnailRenderer {
     private static let cache: NSCache<NSURL, GalleryThumbnailVariants> = {
         let cache = NSCache<NSURL, GalleryThumbnailVariants>()
         cache.totalCostLimit = 3 * 1024 * 1024
@@ -176,6 +176,7 @@ struct GalleryThumbnailView: View {
     let request: GalleryImageRequest
     var loadsImage: Bool
     var isFavorite = false
+    var onDisplayedBitmap: (GalleryBitmap) -> Void = { _ in }
     @State private var bitmap: GalleryBitmap?
     @State private var isNearViewport = false
 
@@ -220,6 +221,7 @@ struct GalleryThumbnailView: View {
             } else {
                 bitmap = loaded
             }
+            if let bitmap { onDisplayedBitmap(bitmap) }
         }
         .onDisappear { bitmap = nil }
     }

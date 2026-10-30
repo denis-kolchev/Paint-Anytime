@@ -7,16 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		AF1030000000000000000042 /* DebugGallerySamples in Resources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000031 /* DebugGallerySamples */; };
-		AF1030000000000000000041 /* DebugGallerySamples in Resources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000031 /* DebugGallerySamples */; };
-		AF1030000000000000000022 /* DebugGallerySamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000021 /* DebugGallerySamples.swift */; };
-		AF1030000000000000000012 /* GalleryDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000011 /* GalleryDebug.swift */; };
-		AE1030000000000000000001 /* GalleryImageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1030000000000000000002 /* GalleryImageLayout.swift */; };
+		AF1030010000000000000012 /* GalleryZoomRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000002 /* GalleryZoomRules.swift */; };
+		AF1030010000000000000011 /* GalleryZoomSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000001 /* GalleryZoomSlot.swift */; };
 		257D4058305EA358002072CB /* Paint Anytime (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AB1000000000000000000001 /* Shared/PaintProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1000000000000000000002 /* Shared/PaintProject.swift */; };
 		AC1000000000000000000001 /* Shared/GalleryDeletionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1000000000000000000002 /* Shared/GalleryDeletionStore.swift */; };
+		AE1030000000000000000001 /* Shared/GalleryImageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1030000000000000000002 /* Shared/GalleryImageLayout.swift */; };
+		AF1030000000000000000012 /* Shared/GalleryDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000011 /* Shared/GalleryDebug.swift */; };
+		AF1030000000000000000022 /* Shared/DebugGallerySamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000021 /* Shared/DebugGallerySamples.swift */; };
+		AF1030000000000000000041 /* DebugGallerySamples in Resources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000031 /* DebugGallerySamples */; };
+		AF1030000000000000000042 /* DebugGallerySamples in Resources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000031 /* DebugGallerySamples */; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
-		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D40000000000000000000001 /* Shared/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */; };
 		F60000000000000000000001 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon in Resources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */; };
 /* End PBXBuildFile section */
@@ -48,27 +50,29 @@
 			);
 			name = "Embed Watch Content";
 		};
-		C3000000000000000000000C /* Embed App Extensions */ = {
+		C3000000000000000000000C /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "";
 			dstSubfolder = PlugIns;
 			files = (
-				C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */,
+				C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		AF1030000000000000000031 /* DebugGallerySamples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DebugGallerySamples; sourceTree = SOURCE_ROOT; };
-		AF1030000000000000000021 /* DebugGallerySamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/DebugGallerySamples.swift; sourceTree = SOURCE_ROOT; };
-		AF1030000000000000000011 /* GalleryDebug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryDebug.swift; sourceTree = SOURCE_ROOT; };
-		AE1030000000000000000002 /* GalleryImageLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryImageLayout.swift; sourceTree = SOURCE_ROOT; };
+		AF1030010000000000000002 /* GalleryZoomRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryZoomRules.swift; sourceTree = SOURCE_ROOT; };
+		AF1030010000000000000001 /* GalleryZoomSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryZoomSlot.swift; sourceTree = SOURCE_ROOT; };
 		257D4052305EA358002072CB /* Paint Anytime (Watch).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		25AC8197305D90C700C8F69E /* Paint Anytime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB1000000000000000000002 /* Shared/PaintProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/PaintProject.swift; sourceTree = SOURCE_ROOT; };
 		AC1000000000000000000002 /* Shared/GalleryDeletionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryDeletionStore.swift; sourceTree = SOURCE_ROOT; };
+		AE1030000000000000000002 /* Shared/GalleryImageLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryImageLayout.swift; sourceTree = SOURCE_ROOT; };
+		AF1030000000000000000011 /* Shared/GalleryDebug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryDebug.swift; sourceTree = SOURCE_ROOT; };
+		AF1030000000000000000021 /* Shared/DebugGallerySamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/DebugGallerySamples.swift; sourceTree = SOURCE_ROOT; };
+		AF1030000000000000000031 /* DebugGallerySamples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DebugGallerySamples; sourceTree = SOURCE_ROOT; };
 		B20000020000000000000002 /* Preset Photos */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preset Photos"; sourceTree = "<group>"; };
 		C30000000000000000000002 /* PaintAnytimeComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
@@ -129,10 +133,12 @@
 				D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */,
 				AB1000000000000000000002 /* Shared/PaintProject.swift */,
 				AC1000000000000000000002 /* Shared/GalleryDeletionStore.swift */,
-				AE1030000000000000000002 /* GalleryImageLayout.swift */,
+				AE1030000000000000000002 /* Shared/GalleryImageLayout.swift */,
+				AF1030010000000000000001 /* GalleryZoomSlot.swift */,
+				AF1030010000000000000002 /* GalleryZoomRules.swift */,
 				AF1030000000000000000031 /* DebugGallerySamples */,
-				AF1030000000000000000021 /* DebugGallerySamples.swift */,
-				AF1030000000000000000011 /* GalleryDebug.swift */,
+				AF1030000000000000000021 /* Shared/DebugGallerySamples.swift */,
+				AF1030000000000000000011 /* Shared/GalleryDebug.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -195,7 +201,7 @@
 				257D4053305EA358002072CB /* Sources */,
 				257D4054305EA358002072CB /* Frameworks */,
 				257D4055305EA358002072CB /* Resources */,
-				C3000000000000000000000C /* Embed App Extensions */,
+				C3000000000000000000000C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -256,7 +262,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2700;
-				LastUpgradeCheck = 2700;
+				LastUpgradeCheck = 2720;
 				TargetAttributes = {
 					257D4051305EA358002072CB = {
 						CreatedOnToolsVersion = 27.0;
@@ -361,9 +367,11 @@
 			files = (
 				AB1000000000000000000001 /* Shared/PaintProject.swift in Sources */,
 				AC1000000000000000000001 /* Shared/GalleryDeletionStore.swift in Sources */,
-				AE1030000000000000000001 /* GalleryImageLayout.swift in Sources */,
-				AF1030000000000000000022 /* DebugGallerySamples.swift in Sources */,
-				AF1030000000000000000012 /* GalleryDebug.swift in Sources */,
+				AE1030000000000000000001 /* Shared/GalleryImageLayout.swift in Sources */,
+				AF1030010000000000000011 /* GalleryZoomSlot.swift in Sources */,
+				AF1030010000000000000012 /* GalleryZoomRules.swift in Sources */,
+				AF1030000000000000000022 /* Shared/DebugGallerySamples.swift in Sources */,
+				AF1030000000000000000012 /* Shared/GalleryDebug.swift in Sources */,
 			);
 		};
 		C30000000000000000000007 /* Sources */ = {
@@ -525,6 +533,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -555,6 +564,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -580,6 +590,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -590,6 +601,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -620,6 +632,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -638,6 +651,7 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 			};
 			name = Release;
@@ -651,6 +665,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -686,6 +701,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;

@@ -21,15 +21,15 @@ final class PhoneGalleryZoomPresentation {
     @ObservationIgnored private var completion: (() -> Void)?
 
     static func position(for columns: Int) -> CGFloat {
-        columns == 1 ? 2 : (columns == 3 ? 1 : 0)
+        GalleryZoomRules.position(columns)
     }
 
     private static func sizeProgress(_ position: CGFloat) -> CGFloat {
-        position <= 1 ? position / 6 : 1.0 / 6 + (position - 1) * 5 / 6
+        GalleryZoomRules.sizeProgress(position)
     }
 
     private static func positionFromSize(_ size: CGFloat) -> CGFloat {
-        size <= 1.0 / 6 ? size * 6 : 1 + (size - 1.0 / 6) * 6 / 5
+        GalleryZoomRules.positionFromSize(size)
     }
 
     func stopAnimation() {
@@ -60,22 +60,7 @@ final class PhoneGalleryZoomPresentation {
 
     private func tick(_ link: CADisplayLink) {
         let time = min(1, max(0, (link.targetTimestamp - startedAt) / duration))
-        let progress: Double
-        if gridTransition {
-            // Smoothstep: the existing cubic curve with linear time coordinates.
-            progress = time * time * (3 - 2 * time)
-        } else {
-            // Preserve the rebound's (0.33, 1, 0.67, 1) timing curve.
-            var low = 0.0
-            var high = 1.0
-            for _ in 0..<14 {
-                let t = (low + high) / 2
-                let x = 3 * (1 - t) * (1 - t) * t * 0.33 + 3 * (1 - t) * t * t * 0.67 + t * t * t
-                if x < time { low = t } else { high = t }
-            }
-            let t = (low + high) / 2
-            progress = 1 - pow(1 - t, 3)
-        }
+        let progress = GalleryZoomRules.easing(time, gridTransition: gridTransition)
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {

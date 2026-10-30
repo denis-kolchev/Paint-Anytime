@@ -31,11 +31,17 @@ enum CanvasExportStore {
         if folder == nil { try removeLegacyTutorialPreviews(in: targetFolder) }
         let deleted = try GalleryDeletionStore.names(in: targetFolder)
         for name in deleted { try GalleryDeletionStore.removeFiles(for: name, in: targetFolder) }
-        let favorites = try favoriteNames(in: targetFolder)
-        return try FileManager.default.contentsOfDirectory(at: targetFolder, includingPropertiesForKeys: nil)
+        let images = try FileManager.default.contentsOfDirectory(at: targetFolder, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension.lowercased() == "png" }
             .sorted { drawingSortKey($0) > drawingSortKey($1) }
-            .map { CanvasExport(url: $0, isFavorite: favorites.contains($0.lastPathComponent)) }
+        return try exports(for: images, in: targetFolder)
+    }
+
+    /// Attach Watch metadata to an authoritative image list, including the
+    /// shared debug fixtures used by the iPhone gallery.
+    static func exports(for images: [URL], in folder: URL) throws -> [CanvasExport] {
+        let favorites = try favoriteNames(in: folder)
+        return images.map { CanvasExport(url: $0, isFavorite: favorites.contains($0.lastPathComponent)) }
     }
 
     /// Persistent metadata API for a future favorite toggle. Existing drawings default to false.

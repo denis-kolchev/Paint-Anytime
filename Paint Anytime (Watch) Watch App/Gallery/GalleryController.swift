@@ -10,9 +10,13 @@ final class GalleryController: ObservableObject {
         do {
             var loaded = try CanvasExportStore.all(in: folder)
             drawings = loaded
-            if folder == nil && GalleryDebug.isEnabled {
-                _ = try DebugGallerySamples.images()
-                loaded += try CanvasExportStore.all(in: DebugGallerySamples.directory())
+            if folder == nil {
+                // The same switch, bundled fixtures, installation rules and image
+                // list as WatchPhotoInbox on iPhone. Only Watch metadata is added.
+                let samples = try DebugGallerySamples.images()
+                if !samples.isEmpty {
+                    loaded += try CanvasExportStore.exports(for: samples, in: DebugGallerySamples.directory())
+                }
             }
             drawings = loaded.sorted { DebugGallerySamples.orderedBefore($0.url, $1.url) }
             if folder == nil { try? CanvasExportStore.refreshWidgets() }

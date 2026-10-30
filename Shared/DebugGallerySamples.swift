@@ -53,7 +53,7 @@ enum DebugGallerySamples {
 
     /// Tutorial fixtures precede the project fixtures, regardless of their older dates.
     /// Keep the ordinary descending filename order within each group.
-    static func orderedBefore(_ lhs: URL, _ rhs: URL) -> Bool {
+    nonisolated static func orderedBefore(_ lhs: URL, _ rhs: URL) -> Bool {
         func isTutorial(_ url: URL) -> Bool {
             GalleryDebug.isEnabled
                 && url.deletingLastPathComponent().lastPathComponent.hasPrefix("DebugGallerySamples")
