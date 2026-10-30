@@ -24,7 +24,7 @@ struct PhoneHomeView: View {
     @State private var zoomPreviewSize = 640
     @State private var zoomSideBackdrops: [Int: UIImage] = [:]
     @State private var zoomSideBackdropFrame: CGRect = .zero
-    @State private var imageLayout = PhoneGalleryImageLayout()
+    @State private var imageLayout = GalleryImageLayout()
     @Environment(\.displayScale) private var displayScale
     @Environment(\.colorScheme) private var colorScheme
     @State private var zoomBaseColumns = 5
@@ -65,6 +65,9 @@ struct PhoneHomeView: View {
         return "Gesture: idle"
     }
     #endif
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    @State private var selectedDrawing: URL?
     @State private var navigationPath: [URL] = []
     @State private var suppressOpeningUntil = Date.distantPast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -76,7 +79,12 @@ struct PhoneHomeView: View {
     private var columnCount: Int { columnOptions.contains(storedColumnCount) ? storedColumnCount : 5 }
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        GeometryReader { container in
+            let divisionX = bookDivisionX(in: container)
+            let showsBook = divisionX != nil
+            let showsDrawing = showsBook && selectedDrawing != nil
+            HStack(spacing: 0) {
+                NavigationStack(path: $navigationPath) {
             GeometryReader { geometry in
                 ScrollViewReader { scrollProxy in
                 ZStack {
@@ -101,7 +109,7 @@ struct PhoneHomeView: View {
                             }
                             ForEach(photoInbox.images, id: \.self) { url in
                                 Button {
-                                    openDrawing(url)
+                                    openDrawing(url, besideGallery: showsBook)
                                 } label: {
                                     PhoneGalleryZoomTile(source: url, destination: nil,
                                                          blend: 0, side: tileSize, cache: previewCache,
@@ -388,14 +396,21 @@ struct PhoneHomeView: View {
                 }
                 }
             }
-            // Measure the full screen width for both grid tiles and zoom geometry.
-            .ignoresSafeArea(.container, edges: .horizontal)
+            // Artwork may extend beneath every system safe area; the header
+            // keeps its own safe-area placement and material backdrop.
+            .ignoresSafeArea(.container, edges: .all)
+            .onChange(of: selectedDrawing != nil) { _, _ in
+                resetGalleryZoom()
+            }
             .navigationDestination(for: URL.self) { url in
                 PhoneDrawingView(url: url, inbox: photoInbox)
             }
             .onReceive(photoInbox.$images) { images in
                 // A sync can replace PNG contents without changing its URL.
-                imageLayout = PhoneGalleryImageLayout(images: images)
+                if let selectedDrawing, !images.contains(selectedDrawing) {
+                    self.selectedDrawing = nil
+                }
+                imageLayout = GalleryImageLayout(images: images)
                 previewCache.invalidate()
                 previewCache = PhoneGalleryPreviewCache()
                 if pinchTarget != nil, images != zoomSnapshot { resetGalleryZoom() }
@@ -436,15 +451,76 @@ struct PhoneHomeView: View {
                 }
                 Button("OK", role: .cancel) { showingInboxError = false }
             } message: { Text(photoInbox.errorMessage ?? "") }
+                }
+                .frame(width: showsDrawing ? (divisionX ?? container.size.width) : container.size.width)
+                .ignoresSafeArea(.container, edges: .vertical)
+                .clipped()
+                if let divisionX, let url = selectedDrawing {
+                    NavigationStack {
+                        PhoneDrawingView(url: url, inbox: photoInbox, closeDrawing: {
+                            selectedDrawing = nil
+                        })
+                        .id(url)
+                    }
+                    .frame(width: container.size.width - divisionX)
+                    .ignoresSafeArea(.container, edges: .bottom)
+                    .clipped()
+                    .overlay(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color(uiColor: .separator))
+                            .frame(width: 1 / displayScale)
+                            .allowsHitTesting(false)
+                    }
+                }
+            }
+            .onChange(of: showsBook) { _, expanded in
+                resetGalleryZoom()
+                if expanded {
+                    selectedDrawing = navigationPath.last
+                    navigationPath = []
+                } else {
+                    navigationPath = selectedDrawing.map { [$0] } ?? []
+                    selectedDrawing = nil
+                }
+            }
+            .onChange(of: container.size) { _, _ in
+                resetGalleryZoom()
+            }
         }
+        // Measure through the bottom inset too, so both clipped panes reach
+        // the display edge instead of ending above the home-indicator area.
+        .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
     }
 
-    private func openDrawing(_ url: URL) {
+    private func bookDivisionX(in geometry: GeometryProxy) -> CGFloat? {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return nil }
+        if #available(iOS 27.1, *) {
+            // The active division remains authoritative when partially folded.
+            let divisions = geometry.reservedRegions(kind: .division)
+            if let fold = divisions.first(where: {
+                $0.isActive && $0.frame.height > $0.frame.width
+            }) {
+                let middle = fold.frame.midX
+                if middle > 0, middle < geometry.size.width { return middle }
+            }
+            // A horizontal hinge is not the requested book arrangement.
+            if divisions.contains(where: { $0.isActive }) { return nil }
+        }
+        guard horizontalSizeClass == .regular, verticalSizeClass == .regular,
+              geometry.size.width > geometry.size.height else { return nil }
+        return geometry.size.width / 2
+    }
+
+    private func openDrawing(_ url: URL, besideGallery: Bool) {
         // A recognized pinch owns the touch sequence, including release events.
         // A single route also prevents multiple tiles from opening together.
         guard !isPinching, !settlingZoom, Date() >= suppressOpeningUntil,
               navigationPath.isEmpty, photoInbox.images.contains(url) else { return }
-        navigationPath = [url]
+        if besideGallery {
+            selectedDrawing = url
+        } else {
+            navigationPath = [url]
+        }
     }
 
     private func importProject(_ url: URL) {
@@ -1016,6 +1092,7 @@ struct PhoneHomeView: View {
 private struct PhoneDrawingView: View {
     let url: URL
     @ObservedObject var inbox: WatchPhotoInbox
+    var closeDrawing: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var confirmingDeletion = false
     @State private var exporting = false
@@ -1027,9 +1104,12 @@ private struct PhoneDrawingView: View {
     @State private var exportError: String?
 
     var body: some View {
+        GeometryReader { geometry in
+        ScrollView {
         VStack(spacing: 20) {
             DrawingPreview(url: url, maximumSize: 2400)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity)
+                .frame(height: max(160, geometry.size.height * 0.5))
             HStack(spacing: 24) {
                 Menu {
                     ShareLink(item: url) { Label("Image (.png)", systemImage: "photo") }
@@ -1051,6 +1131,7 @@ private struct PhoneDrawingView: View {
                 } label: { Label("Save File", systemImage: "folder") }
             }
             .labelStyle(.titleAndIcon).font(.subheadline)
+            .frame(maxWidth: .infinity)
             if hasProject {
                 Menu {
                     ShareLink(item: projectURL) { Label("Share Project", systemImage: "square.and.arrow.up") }
@@ -1082,19 +1163,32 @@ private struct PhoneDrawingView: View {
             if inbox.isSaving { ProgressView("Saving…") }
         }
         .padding()
+        .frame(minHeight: geometry.size.height)
+        }
+        }
+        .ignoresSafeArea(.container, edges: .bottom)
         .navigationTitle("Drawing")
         .toolbar(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let closeDrawing {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: closeDrawing) {
+                        Label("Back", systemImage: "chevron.backward")
+                    }
+                }
+            }
+        }
         .confirmationDialog("Delete from Apple Watch and iPhone?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
-                if inbox.delete(url) { dismiss() }
+                if inbox.delete(url) { close() }
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Save a copy to Photos, Files, or another app first. Deletion will sync when your devices reconnect.")
         }
         .onChange(of: inbox.images) { _, images in
-            if !images.contains(url) { dismiss() }
+            if !images.contains(url) { close() }
         }
         .fileExporter(isPresented: $exporting, document: DrawingFile(url: url), contentType: .png,
                       defaultFilename: url.deletingPathExtension().lastPathComponent) { result in
@@ -1119,6 +1213,14 @@ private struct PhoneDrawingView: View {
         .alert("Could not export", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
             Button("OK") { exportError = nil }
         } message: { Text(exportError ?? "") }
+    }
+
+    private func close() {
+        if let closeDrawing {
+            closeDrawing()
+        } else {
+            dismiss()
+        }
     }
 }
 
