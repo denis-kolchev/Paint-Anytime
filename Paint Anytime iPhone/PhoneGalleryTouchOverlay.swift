@@ -3,14 +3,17 @@ import UIKit
 
 /// Passive, raw touch visualization. It never recognizes or consumes a gesture.
 struct PhoneGalleryTouchOverlay: UIViewRepresentable {
+    var onMovement: ([CGPoint]) -> Void = { _ in }
     var onContactChange: ([CGPoint]) -> Void
 
     func makeUIView(context: Context) -> TouchView {
         let view = TouchView()
+        view.onMovement = onMovement
         view.onContactChange = onContactChange
         return view
     }
     func updateUIView(_ uiView: TouchView, context: Context) {
+        uiView.onMovement = onMovement
         uiView.onContactChange = onContactChange
     }
 
@@ -21,6 +24,7 @@ struct PhoneGalleryTouchOverlay: UIViewRepresentable {
     final class TouchView: UIView {
         private var observer: TouchObserver?
         var onContactChange: (([CGPoint]) -> Void)?
+        var onMovement: (([CGPoint]) -> Void)?
         var positions: [CGPoint] = [] {
             didSet {
                 #if DEBUG
@@ -127,6 +131,7 @@ struct PhoneGalleryTouchOverlay: UIViewRepresentable {
             let changed = positions.count != overlay.positions.count
             overlay.positions = positions
             if changed { overlay.onContactChange?(positions) }
+            else { overlay.onMovement?(positions) }
         }
 
         override func reset() {

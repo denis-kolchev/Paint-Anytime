@@ -30,8 +30,12 @@ struct PhoneHomeView: View {
     @State private var zoomGestureBaseSide: CGFloat?
     @State private var zoomBaseLeadingSlots = 0
     @State private var zoomBaseFrame: CGRect = .zero
-    @State private var pendingZoomOriginY: CGFloat?
-    @State private var pendingScrollIssued = false
+    @State private var pendingZoomViewportTop: CGFloat?
+    @State private var pendingZoomMeasuredFrame: PhoneGalleryLayout?
+    @State private var zoomPanLastY: CGFloat?
+    @State private var zoomSettledColumns: Int?
+    @State private var zoomAnchorTops: [Int: CGFloat] = [:]
+    @State private var zoomPreparedPanRange: CGFloat = 0
     // Leading slots change row alignment without changing document order.
     @State private var leadingSlots = 0
     @State private var zoomLeadingSlots: [Int: Int] = [:]
@@ -104,6 +108,15 @@ struct PhoneHomeView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .id(url)
+                                .background {
+                                    if url == pendingZoomTarget {
+                                        GeometryReader { tile in
+                                            Color.clear.preference(key: PhoneGalleryTargetFrameKey.self,
+                                                value: PhoneGalleryLayout(columns: columnCount,
+                                                    frame: tile.frame(in: .named("phoneGalleryViewport"))))
+                                        }
+                                    }
+                                }
                                 .accessibilityLabel(Text(url.deletingPathExtension().lastPathComponent))
                             }
                             let trailingSlots = (columnCount - (leadingSlots + photoInbox.images.count) % columnCount) % columnCount
@@ -127,10 +140,10 @@ struct PhoneHomeView: View {
 
                     }
                 }
-                // Keep scrolling available during position restoration so a new
-                // touch can start a pan instead of losing the entire sequence.
-                .scrollDisabled(hasTwoFingerContact || isPinching ||
-                                (pendingZoomColumns == nil && (pinchTarget != nil || settlingZoom)))
+                // While Canvas is visible it owns both scale and translation.
+                // Raw one-finger movement below pans it immediately; the hidden
+                // native grid must not scroll in a different coordinate system.
+                .scrollDisabled(pinchTarget != nil || hasTwoFingerContact || isPinching)
                 // Let scrolling artwork remain visible through the header material.
                 .scrollClipDisabled()
                 }
@@ -186,7 +199,16 @@ struct PhoneHomeView: View {
                     }
                 }
                 .overlay {
-                    PhoneGalleryTouchOverlay { positions in
+                    PhoneGalleryTouchOverlay(onMovement: { positions in
+                        guard positions.count == 1, pinchTarget != nil else { return }
+                        moveGalleryZoomPan(to: positions[0].y, width: geometry.size.width,
+                                           viewportHeight: geometry.size.height)
+                    }) { positions in
+                        if positions.count == 1, pinchTarget != nil {
+                            beginGalleryZoomPan(at: positions[0].y)
+                        } else {
+                            zoomPanLastY = nil
+                        }
                         if pendingZoomColumns != nil, positions.count >= 2 {
                             // Reuse the prepared overlay while the hidden grid is
                             // being restored. A second pinch must not rebuild from
@@ -194,14 +216,15 @@ struct PhoneHomeView: View {
                             pendingZoomColumns = nil
                             pendingZoomTarget = nil
                             pendingZoomAnchor = nil
-                            pendingZoomOriginY = nil
-                            pendingScrollIssued = false
+                            pendingZoomViewportTop = nil
+                            pendingZoomMeasuredFrame = nil
                             interruptGalleryZoom(width: geometry.size.width)
-                        } else if let pendingColumns = pendingZoomColumns, positions.count == 1,
-                                  measuredGridColumns == pendingColumns {
-                            completeGalleryZoom()
                         }
                         hasTwoFingerContact = positions.count >= 2
+                        if positions.isEmpty, let columns = zoomSettledColumns {
+                            commitGalleryZoom(columns: columns, width: geometry.size.width,
+                                              viewportHeight: geometry.size.height)
+                        }
                         if hasTwoFingerContact, settlingZoom, pendingZoomColumns == nil {
                             interruptGalleryZoom(width: geometry.size.width)
                         }
@@ -224,7 +247,8 @@ struct PhoneHomeView: View {
                                 guard !hasTwoFingerContact, !isPinching, !settlingZoom,
                                       pinchTarget != nil else { return }
                                 if zoomPresentation.scale == 1,
-                                   zoomPresentation.position == PhoneGalleryZoomPresentation.position(for: zoomBaseColumns) {
+                                   zoomPresentation.position == PhoneGalleryZoomPresentation.position(for: zoomBaseColumns),
+                                   zoomPresentation.offsetY == 0, zoomPanLastY == nil {
                                     completeGalleryZoom()
                                     return
                                 }
@@ -280,28 +304,44 @@ struct PhoneHomeView: View {
                     }
                 }
                 .task(id: pendingZoomColumns) {
-                    guard pendingZoomColumns != nil else { return }
+                    guard let columns = pendingZoomColumns,
+                          let target = pendingZoomTarget,
+                          let anchor = pendingZoomAnchor,
+                          let viewportTop = pendingZoomViewportTop else { return }
                     let settlementID = zoomSettlementID
-                    // An unchanged destination layout may emit no preference.
-                    if measuredGridColumns == pendingZoomColumns, !pendingScrollIssued,
-                       let target = pendingZoomTarget, let anchor = pendingZoomAnchor {
-                        if let origin = pendingZoomOriginY, abs(gridFrame.minY - origin) < 0.5 {
+                    var attempts = 0
+                    // Scroll only after layout has returned to the run loop.
+                    // Lazy rows may need a second pass after materialization.
+                    while !Task.isCancelled {
+                        do { try await Task.sleep(for: .milliseconds(32)) }
+                        catch { return }
+                        guard !Task.isCancelled, zoomSettlementID == settlementID,
+                              pendingZoomColumns == columns, pendingZoomTarget == target else { return }
+                        guard measuredGridColumns == columns else { continue }
+                        if let measured = pendingZoomMeasuredFrame, measured.columns == columns,
+                           abs(measured.frame.minY - viewportTop) < 1 {
                             completeGalleryZoom()
                             return
                         }
-                        pendingScrollIssued = true
+                        // If exact alignment is unavailable (for example at a
+                        // content edge), retain the focal photo rather than
+                        // exposing an unconfirmed grid at its initial offset.
+                        if attempts >= 4, let measured = pendingZoomMeasuredFrame,
+                           measured.columns == columns,
+                           measured.frame.maxY > 0, measured.frame.minY < geometry.size.height {
+                            completeGalleryZoom()
+                            return
+                        }
                         var transaction = Transaction()
                         transaction.disablesAnimations = true
-                        withTransaction(transaction) { scrollProxy.scrollTo(target, anchor: anchor) }
+                        withTransaction(transaction) {
+                            scrollProxy.scrollTo(target, anchor: attempts < 4 ? anchor : .center)
+                        }
+                        attempts += 1
                     }
-                    // Geometry feedback normally completes the handoff. A no-op
-                    // scrollTo may emit no preference, so retain a short fallback
-                    // without polling or blocking a new scroll gesture.
-                    do { try await Task.sleep(for: .milliseconds(120)) }
-                    catch { return }
-                    guard !Task.isCancelled, zoomSettlementID == settlementID,
-                          pendingZoomColumns != nil else { return }
-                    completeGalleryZoom()
+                }
+                .onPreferenceChange(PhoneGalleryTargetFrameKey.self) { layout in
+                    pendingZoomMeasuredFrame = layout
                 }
                 .onPreferenceChange(PhoneGalleryFrameKey.self) { layout in
                     guard layout.columns > 0 else { return }
@@ -315,28 +355,6 @@ struct PhoneHomeView: View {
                     #endif
                     gridFrame = layout.frame
                     measuredGridColumns = layout.columns
-                    guard layout.columns == pendingZoomColumns,
-                          let target = pendingZoomTarget,
-                          let anchor = pendingZoomAnchor else { return }
-                    // The first geometry update after scrollTo is the accepted
-                    // position, including offsets clamped by ScrollView. Do not
-                    // wait for repeated identical samples or animate a correction.
-                    if pendingScrollIssued {
-                        completeGalleryZoom()
-                        return
-                    }
-                    // No scroll is needed when layout already matches the target.
-                    if let originY = pendingZoomOriginY,
-                       abs(layout.frame.minY - originY) < 0.5 {
-                        completeGalleryZoom()
-                        return
-                    }
-                    // Issue once after the destination layout exists. Repeating
-                    // scrollTo from its own geometry feedback can prevent settling.
-                    pendingScrollIssued = true
-                    var transaction = Transaction()
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) { scrollProxy.scrollTo(target, anchor: anchor) }
                 }
                 }
             }
@@ -423,6 +441,10 @@ struct PhoneHomeView: View {
         zoomBaseColumns = columnCount
         zoomBaseLeadingSlots = leadingSlots
         zoomBaseFrame = gridFrame
+        zoomAnchorTops = [:]
+        zoomPreparedPanRange = 0
+        zoomSettledColumns = nil
+        zoomPanLastY = nil
         // The recognizer lives on the viewport, not on the disappearing grid.
         let anchor = UnitPoint(
             x: viewportAnchor.x,
@@ -484,20 +506,21 @@ struct PhoneHomeView: View {
         let side = tileSide(columns: zoomBaseColumns, width: width)
         let anchorRow = (index + zoomBaseLeadingSlots) / zoomBaseColumns
         let anchorColumn = (index + zoomBaseLeadingSlots) % zoomBaseColumns
-        var radius = Int(ceil(viewportHeight / (tileSide(columns: 5, width: width) + gallerySpacing))) + 2
-        let anchorTops = Dictionary(uniqueKeysWithValues: columnOptions.map { density in
+        var radius = Int(ceil((viewportHeight + zoomPreparedPanRange) / (tileSide(columns: 5, width: width) + gallerySpacing))) + 2
+        let anchorTops = zoomAnchorTops.isEmpty ? Dictionary(uniqueKeysWithValues: columnOptions.map { density in
             let top = density == zoomBaseColumns
                 ? zoomBaseFrame.minY + galleryItemTop(index: index, columns: density, width: width, leading: zoomBaseLeadingSlots)
                 : settledGalleryPlacement(columns: density, width: width, viewportHeight: viewportHeight)?.viewportTop ?? 0
             return (density, top)
-        })
+        }) : zoomAnchorTops
+        zoomAnchorTops = anchorTops
         // Very wide images can expose more rows than the square grid would.
         let singleAnchorTop = imageLayout.top(at: index, width: width, spacing: gallerySpacing)
         for candidate in zoomSnapshot.indices {
             let top = (anchorTops[1] ?? 0)
                 + imageLayout.top(at: candidate, width: width, spacing: gallerySpacing) - singleAnchorTop
             let bottom = top + imageLayout.height(for: zoomSnapshot[candidate], width: width)
-            if top <= viewportHeight, bottom >= 0 {
+            if top <= viewportHeight + zoomPreparedPanRange, bottom >= -zoomPreparedPanRange {
                 radius = max(radius, abs(candidate - index) + 2)
             }
         }
@@ -681,6 +704,53 @@ struct PhoneHomeView: View {
             : CGFloat((index + leading) / columns) * (side + gallerySpacing)
     }
 
+    private func beginGalleryZoomPan(at y: CGFloat) {
+        zoomPanLastY = y
+        // Cancels the restoration task without stopping the scale animation.
+        pendingZoomColumns = nil
+        pendingZoomTarget = nil
+        pendingZoomAnchor = nil
+        pendingZoomViewportTop = nil
+        pendingZoomMeasuredFrame = nil
+    }
+
+    private func moveGalleryZoomPan(to y: CGFloat, width: CGFloat, viewportHeight: CGFloat) {
+        guard let previousY = zoomPanLastY else {
+            beginGalleryZoomPan(at: y)
+            return
+        }
+        zoomPanLastY = y
+        guard let index = zoomAnchorIndex else { return }
+        let bounded = min(2, max(0, zoomPresentation.position))
+        let from = bounded <= 1 ? 5 : 3
+        let to = bounded <= 1 ? 3 : 1
+        let progress = bounded <= 1 ? bounded : bounded - 1
+        func bounds(for columns: Int) -> (top: CGFloat, bottom: CGFloat) {
+            let side = tileSide(columns: columns, width: width)
+            let top = (zoomAnchorTops[columns] ?? 0)
+                - galleryItemTop(index: index, columns: columns, width: width, leading: slots(for: columns))
+            let rows = (zoomSnapshot.count + slots(for: columns) + columns - 1) / columns
+            let height = columns == 1
+                ? imageLayout.top(at: zoomSnapshot.count, width: side, spacing: gallerySpacing) - gallerySpacing
+                : CGFloat(rows) * side + CGFloat(max(0, rows - 1)) * gallerySpacing
+            return (top, top + height)
+        }
+        let start = bounds(for: from)
+        let end = bounds(for: to)
+        let scale = 1 + zoomPresentation.position - bounded
+        let anchorY = zoomPresentation.elasticAnchor.y
+        let top = anchorY + (start.top + (end.top - start.top) * progress - anchorY) * scale
+        let bottom = anchorY + (start.bottom + (end.bottom - start.bottom) * progress - anchorY) * scale
+        guard bottom - top > viewportHeight else { return }
+        zoomPresentation.offsetY = min(-top, max(viewportHeight - bottom,
+            zoomPresentation.offsetY + y - previousY))
+        // Keep enough prepared rows for a long drag while scale is settling.
+        if abs(zoomPresentation.offsetY) > zoomPreparedPanRange {
+            zoomPreparedPanRange = abs(zoomPresentation.offsetY) + viewportHeight
+            prepareZoomSlots(width: width, viewportHeight: viewportHeight)
+        }
+    }
+
     private func finishGalleryZoom(width: CGFloat, viewportHeight: CGFloat) {
         let side = tileSide(columns: zoomBaseColumns, width: width) * zoomPresentation.scale
         // Compare proportional distances so zooming in and out are symmetric.
@@ -715,8 +785,8 @@ struct PhoneHomeView: View {
         suppressOpeningUntil = .distantFuture
         let finalScale = tileSide(columns: nearest, width: width) / tileSide(columns: zoomBaseColumns, width: width)
         let finalPosition = PhoneGalleryZoomPresentation.position(for: nearest)
-        // Use a finite spring-like deceleration without an asymptotic tail
-        // that would keep scrolling locked after the visible motion ends.
+        // Preserve the finite spring-like deceleration while scrolling can run
+        // independently of the scale animation.
         let isRubberBanding = zoomPresentation.position < 0 || zoomPresentation.position > 2
         let baseDuration = isRubberBanding ? 0.24 : 0.18
         // Slow only a return to the starting grid; grid-to-grid settlement
@@ -733,6 +803,7 @@ struct PhoneHomeView: View {
                                  gridTransition: gridTransition) {
             guard zoomSettlementID == settlementID else { return }
             zoomPresentation.scale = finalScale
+            zoomSettledColumns = nearest
             commitGalleryZoom(columns: nearest, width: width, viewportHeight: viewportHeight)
         }
     }
@@ -741,6 +812,7 @@ struct PhoneHomeView: View {
         // Keep the current drawing and its focal image. Rebase the new gesture
         // from the displayed size, not the previous animation's endpoint.
         zoomPresentation.stopAnimation()
+        zoomSettledColumns = nil
         zoomSettlementID = nil
         settlingZoom = false
         let position = zoomPresentation.position
@@ -771,6 +843,10 @@ struct PhoneHomeView: View {
             zoomPresentation.stopAnimation()
             zoomGestureBaseSide = nil
             zoomSettlementID = nil
+            zoomPanLastY = nil
+            zoomSettledColumns = nil
+            zoomAnchorTops = [:]
+            zoomPreparedPanRange = 0
             previewCache.preparationPaused = false
             zoomSessionID = nil
             zoomMissingPreviews = []
@@ -789,8 +865,8 @@ struct PhoneHomeView: View {
             pendingZoomAnchor = nil
             pendingZoomTarget = nil
             pendingZoomColumns = nil
-            pendingZoomOriginY = nil
-            pendingScrollIssued = false
+            pendingZoomViewportTop = nil
+            pendingZoomMeasuredFrame = nil
             suppressOpeningUntil = .distantPast
         }
     }
@@ -812,8 +888,12 @@ struct PhoneHomeView: View {
         let anchorY = abs(denominator) > 1
             ? min(1, max(0, (pinchViewportY - pinchTargetFractionY * height) / denominator))
             : 0.5
-        let desiredScroll = targetTop - anchorY * denominator
-        let scroll = min(max(0, contentHeight - viewportHeight), max(0, desiredScroll))
+        let maximumScroll = max(0, contentHeight - viewportHeight)
+        // The overlay's destination was already bounded when its slots were
+        // captured. Apply subsequent scrolling to that same bounded position.
+        let capturedTop = zoomAnchorTops[columns] ?? (anchorY * denominator)
+        let settledScroll = min(maximumScroll, max(0, targetTop - capturedTop))
+        let scroll = min(maximumScroll, max(0, settledScroll - zoomPresentation.offsetY))
         let viewportTop = targetTop - scroll
         // scrollTo must request the same bounded position as the zoom overlay.
         // Reusing the finger's anchor after clamping the scroll offset can place
@@ -824,18 +904,43 @@ struct PhoneHomeView: View {
     }
 
     private func commitGalleryZoom(columns nearest: Int, width: CGFloat, viewportHeight: CGFloat) {
+        // A finger always owns the visible position. Defer only the invisible
+        // grid handoff, never movement of the images under that finger.
+        guard zoomPanLastY == nil else { return }
+        // An unchanged layout with no Canvas pan already has the right offset.
+        // Once Canvas has moved, even this layout needs a position handoff.
+        if zoomPresentation.offsetY == 0, nearest == zoomBaseColumns, columnCount == nearest,
+           leadingSlots == slots(for: nearest) {
+            completeGalleryZoom()
+            return
+        }
         let placement = settledGalleryPlacement(columns: nearest, width: width, viewportHeight: viewportHeight)
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
-            if let placement, let target = pinchTarget,
-               let index = photoInbox.images.firstIndex(of: target) {
-                let targetTop = galleryItemTop(index: index, columns: nearest, width: width, leading: slots(for: nearest))
-                pendingScrollIssued = false
-                pendingZoomAnchor = placement.anchor
-                pendingZoomTarget = target
+            if let placement, let original = pinchTarget,
+               let originalIndex = photoInbox.images.firstIndex(of: original) {
+                let scroll = galleryItemTop(index: originalIndex, columns: nearest,
+                    width: width, leading: slots(for: nearest)) - placement.viewportTop
+                let center = scroll + viewportHeight / 2
+                let side = tileSide(columns: nearest, width: width)
+                let index: Int
+                if nearest == 1 {
+                    index = photoInbox.images.indices.first {
+                        imageLayout.top(at: $0 + 1, width: side, spacing: gallerySpacing) > center
+                    } ?? (photoInbox.images.count - 1)
+                } else {
+                    let row = max(0, Int(center / (side + gallerySpacing)))
+                    index = min(photoInbox.images.count - 1, max(0, row * nearest - slots(for: nearest)))
+                }
+                let top = galleryItemTop(index: index, columns: nearest, width: width,
+                                         leading: slots(for: nearest)) - scroll
+                let denominator = viewportHeight - galleryItemHeight(index: index, columns: nearest, width: width)
+                pendingZoomAnchor = UnitPoint(x: 0.5, y: abs(denominator) > 1 ? top / denominator : 0.5)
+                pendingZoomTarget = photoInbox.images[index]
                 pendingZoomColumns = nearest
-                pendingZoomOriginY = placement.viewportTop - targetTop
+                pendingZoomViewportTop = top
+                pendingZoomMeasuredFrame = nil
                 leadingSlots = slots(for: nearest)
                 storedColumnCount = nearest
                 // The overlay still uses the captured source geometry. Relayout
