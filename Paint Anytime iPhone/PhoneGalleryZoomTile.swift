@@ -34,11 +34,29 @@ struct PhoneGalleryZoomTile: View {
             // from destination to source at the three-column boundary (or back).
             ForEach(imageURLs, id: \.self) { url in
                 let isDestination = url == destination && destination != source
-                DrawingPreview(url: url, maximumSize: previewSize, fillsFrame: true, cache: cache,
-                               preparesOtherSizes: preparesOtherSizes,
-                               isTransitionDestination: isDestination,
-                               frozenPreview: frozenPreviews[url],
-                               viewportSize: CGSize(width: side, height: height ?? side))
+                Group {
+                    if let image = frozenPreviews[url] {
+                        // The gesture snapshot already owns this image. Render it
+                        // directly without loader tasks or displayed-cache state.
+                        let viewport = CGSize(width: side, height: height ?? side)
+                        let scale = max(viewport.width / max(image.size.width, 1),
+                                        viewport.height / max(image.size.height, 1))
+                        Image(uiImage: image)
+                            .resizable()
+                            .frame(width: image.size.width * scale, height: image.size.height * scale)
+                            .frame(width: viewport.width, height: viewport.height)
+                            .background {
+                                if isDestination { Color(uiColor: .systemBackground) }
+                            }
+                            .clipped()
+                    } else {
+                        DrawingPreview(url: url, maximumSize: previewSize, fillsFrame: true, cache: cache,
+                                       preparesOtherSizes: preparesOtherSizes,
+                                       isTransitionDestination: isDestination,
+                                       frozenPreview: frozenPreviews[url],
+                                       viewportSize: CGSize(width: side, height: height ?? side))
+                    }
+                }
                     .compositingGroup()
                     .opacity(isDestination ? (preservesSource ? 0 : blend) : 1)
                     .zIndex(isDestination ? 1 : 0)

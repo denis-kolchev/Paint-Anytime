@@ -1,105 +1,89 @@
 import SwiftUI
 
+/// One synchronous drawing surface owns images, clipping and geometry together.
 @MainActor
 struct PhoneGalleryZoomOverlay: View {
     let presentation: PhoneGalleryZoomPresentation
     let slots: [PhoneGalleryZoomSlot]
-    let frame: CGRect
-    let cache: PhoneGalleryPreviewCache
     let previews: [URL: UIImage]
-    let previewSize: Int
     let sideBackdrops: [Int: UIImage]
     let sideBackdropFrame: CGRect
+    let viewportInsets: EdgeInsets
 
     var body: some View {
-        PhoneGalleryZoomFrame(
-            slots: slots, frame: frame, cache: cache, previews: previews,
-            previewSize: previewSize, sideBackdrops: sideBackdrops,
-            sideBackdropFrame: sideBackdropFrame, elasticAnchor: presentation.elasticAnchor,
-            position: presentation.position,
-            offsetY: presentation.offsetY)
-    }
-}
-
-/// Interpolate one presentation frame, then lay out every image and clip using
-/// that frame. Child frames must not run independent endpoint animations.
-@MainActor
-private struct PhoneGalleryZoomFrame: View, Animatable {
-    let slots: [PhoneGalleryZoomSlot]
-    let frame: CGRect
-    let cache: PhoneGalleryPreviewCache
-    let previews: [URL: UIImage]
-    let previewSize: Int
-    let sideBackdrops: [Int: UIImage]
-    let sideBackdropFrame: CGRect
-    let elasticAnchor: CGPoint
-    // Animatable's accessors are nonisolated. Only these value-type scalars
-    // participate in interpolation; UI and cache access stay on MainActor.
-    nonisolated var position: CGFloat
-    nonisolated var offsetY: CGFloat
-
-    nonisolated var animatableData: AnimatablePair<CGFloat, CGFloat> {
-        get { AnimatablePair(position, offsetY) }
-        set {
-            position = newValue.first
-            offsetY = newValue.second
-        }
-    }
-
-    var body: some View {
-        // Select both the image pair and its geometry from the interpolated
-        // position, never from discrete endpoint state supplied by the parent.
-        let boundedPosition = min(2, max(0, position))
-        let elasticScale = 1 + position - boundedPosition
-        let fromColumns = boundedPosition <= 1 ? 5 : 3
-        let toColumns = boundedPosition <= 1 ? 3 : 1
-        let progress = boundedPosition <= 1 ? boundedPosition : boundedPosition - 1
+        let position = presentation.position
+        let bounded = min(2, max(0, position))
+        let scale = 1 + position - bounded
+        let from = bounded <= 1 ? 5 : 3
+        let to = bounded <= 1 ? 3 : 1
+        let progress = bounded <= 1 ? bounded : bounded - 1
         let blend = Double(progress * progress * (3 - 2 * progress))
-
-        ZStack(alignment: .topLeading) {
+        let anchor = presentation.elasticAnchor
+        let offsetY = presentation.offsetY
+        Canvas { context, size in
+            // Extend under the header and home indicator, keeping slot and
+            // gesture coordinates relative to the original scroll viewport.
+            context.translateBy(x: 0, y: viewportInsets.top)
+            context.translateBy(x: anchor.x, y: anchor.y + offsetY)
+            context.scaleBy(x: scale, y: scale)
+            context.translateBy(x: -anchor.x, y: -anchor.y)
+            let visible = CGRect(x: anchor.x - anchor.x / scale,
+                                 y: anchor.y - (anchor.y + offsetY + viewportInsets.top) / scale,
+                                 width: size.width / scale, height: size.height / scale)
             if position < 0 {
-                // Repeat each row horizontally, within the real list's row bounds.
-                ForEach([-1, 1], id: \.self) { direction in
-                    if let backdrop = sideBackdrops[direction] {
-                        Image(uiImage: backdrop)
-                            .resizable()
-                            .frame(width: sideBackdropFrame.width, height: sideBackdropFrame.height)
-                            .offset(x: CGFloat(direction) * sideBackdropFrame.width,
-                                    y: sideBackdropFrame.minY)
+                for direction in [-1, 1] {
+                    if let image = sideBackdrops[direction] {
+                        context.draw(Image(uiImage: image), in: sideBackdropFrame.offsetBy(
+                            dx: CGFloat(direction) * sideBackdropFrame.width, dy: 0))
                     }
                 }
             }
-            ForEach(slots) { slot in
-                // Empty offscreen transition slots must not cover the baked copies.
-                if position >= 0 || (0..<5).contains(slot.columns[5] ?? -1) {
-                let sourceFrame = slot.frames[fromColumns] ?? .zero
-                let destinationFrame = slot.frames[toColumns] ?? sourceFrame
-                let width = sourceFrame.width + (destinationFrame.width - sourceFrame.width) * progress
-                let height = sourceFrame.height + (destinationFrame.height - sourceFrame.height) * progress
-                PhoneGalleryZoomTile(
-                    source: slot.images[fromColumns],
-                    destination: slot.images[toColumns],
-                    blend: blend, side: width, cache: cache, height: height,
-                    preservesSource: slot.preservesSource(
-                        from: fromColumns, to: toColumns),
-                    fixedPreviewSize: previewSize, frozenPreviews: previews)
-                    .offset(x: sourceFrame.minX + (destinationFrame.minX - sourceFrame.minX) * progress,
-                            y: sourceFrame.minY + (destinationFrame.minY - sourceFrame.minY) * progress)
+            for slot in slots {
+                if position < 0, !(0..<5).contains(slot.columns[5] ?? -1) { continue }
+                guard let start = slot.frames[from] else { continue }
+                let end = slot.frames[to] ?? start
+                let rect = CGRect(x: start.minX + (end.minX - start.minX) * progress,
+                                  y: start.minY + (end.minY - start.minY) * progress,
+                                  width: start.width + (end.width - start.width) * progress,
+                                  height: start.height + (end.height - start.height) * progress)
+                guard rect.intersects(visible), rect.width > 0, rect.height > 0 else { continue }
+                let background = Color(uiColor: .systemBackground)
+                context.fill(Path(rect), with: .color(background))
+                if let url = slot.images[from], let image = previews[url] {
+                    Self.draw(image, in: rect, context: context)
+                }
+                let preservesSource = slot.preservesSource(from: from, to: to)
+                if !preservesSource, slot.images[to] != slot.images[from] {
+                    if let url = slot.images[to], let image = previews[url] {
+                        var destination = context
+                        destination.opacity = blend
+                        // Composite background and image as one fading layer.
+                        destination.drawLayer { layer in
+                            layer.fill(Path(rect), with: .color(background))
+                            Self.draw(image, in: rect, context: layer)
+                        }
+                    } else if slot.images[to] == nil {
+                        var empty = context
+                        empty.opacity = blend
+                        empty.fill(Path(rect), with: .color(background))
+                    }
                 }
             }
         }
-        .frame(width: frame.width, height: frame.height, alignment: .topLeading)
-        // Transform the whole rendered grid, including spacing and clips, so
-        // rubber-banding cannot separate an image from its tile boundaries.
-        .scaleEffect(elasticScale, anchor: UnitPoint(
-            x: elasticAnchor.x / max(frame.width, 1),
-            y: elasticAnchor.y / max(frame.height, 1)))
-        .offset(y: offsetY)
+        .padding(.top, -viewportInsets.top)
+        .padding(.bottom, -viewportInsets.bottom)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .transaction {
-            $0.animation = nil
-            $0.disablesAnimations = true
-        }
+    }
+
+    nonisolated private static func draw(_ image: UIImage, in rect: CGRect, context: GraphicsContext) {
+        guard image.size.width > 0, image.size.height > 0 else { return }
+        let scale = max(rect.width / image.size.width, rect.height / image.size.height)
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        var clipped = context
+        clipped.clip(to: Path(rect))
+        clipped.draw(Image(uiImage: image), in: CGRect(
+            x: rect.midX - size.width / 2, y: rect.midY - size.height / 2,
+            width: size.width, height: size.height))
     }
 }
