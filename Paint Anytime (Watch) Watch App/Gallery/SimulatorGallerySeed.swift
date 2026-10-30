@@ -5,6 +5,7 @@ import Foundation
 @MainActor
 enum SimulatorGallerySeed {
     static func installIfNeeded() {
+        guard GalleryDebug.isEnabled else { return }
         do {
             let folder = try CanvasExportStore.directory()
             let marker = folder.appendingPathComponent(".simulator-gallery-sample-v1")

@@ -47,6 +47,11 @@ final class WatchPhotoInbox: ObservableObject {
     @discardableResult
     func delete(_ image: URL) -> Bool {
         do {
+            if DebugGallerySamples.contains(image) {
+                try DebugGallerySamples.remove(image)
+                refresh()
+                return true
+            }
             try store.remove(image)
             refresh()
             receiver.requestSync()
@@ -70,7 +75,12 @@ final class WatchPhotoInbox: ObservableObject {
     }
 
     func refresh() {
-        do { images = try store.pendingImages().sorted { $0.lastPathComponent > $1.lastPathComponent } }
+        do {
+            let received = try store.pendingImages()
+            images = received.sorted { $0.lastPathComponent > $1.lastPathComponent }
+            let samples = try DebugGallerySamples.images()
+            images = (received + samples).sorted(by: DebugGallerySamples.orderedBefore)
+        }
         catch { errorMessage = error.localizedDescription }
         photoPermissionRequiresSettings = writer.permissionRequiresSettings
     }

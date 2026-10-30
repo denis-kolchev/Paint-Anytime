@@ -8,7 +8,13 @@ final class GalleryController: ObservableObject {
 
     func reload(in folder: URL? = nil) {
         do {
-            drawings = try CanvasExportStore.all(in: folder)
+            var loaded = try CanvasExportStore.all(in: folder)
+            drawings = loaded
+            if folder == nil && GalleryDebug.isEnabled {
+                _ = try DebugGallerySamples.images()
+                loaded += try CanvasExportStore.all(in: DebugGallerySamples.directory())
+            }
+            drawings = loaded.sorted { DebugGallerySamples.orderedBefore($0.url, $1.url) }
             if folder == nil { try? CanvasExportStore.refreshWidgets() }
             errorMessage = nil
         } catch { errorMessage = error.localizedDescription }
@@ -17,7 +23,7 @@ final class GalleryController: ObservableObject {
     func delete(_ drawing: CanvasExport, in folder: URL? = nil) -> Bool {
         defer { if folder == nil { WatchPhotoTransfer.shared.publishDeletions() } }
         do {
-            try CanvasExportStore.delete(drawing, in: folder)
+            try CanvasExportStore.delete(drawing, in: DebugGallerySamples.contains(drawing.url) ? DebugGallerySamples.directory() : folder)
             Task { await GalleryImageCache.shared.remove(drawing.url) }
             drawings.removeAll { $0.id == drawing.id }
             return true
@@ -29,7 +35,7 @@ final class GalleryController: ObservableObject {
 
     func setFavorite(_ isFavorite: Bool, for drawing: CanvasExport, in folder: URL? = nil) {
         do {
-            try CanvasExportStore.setFavorite(isFavorite, for: drawing, in: folder)
+            try CanvasExportStore.setFavorite(isFavorite, for: drawing, in: DebugGallerySamples.contains(drawing.url) ? DebugGallerySamples.directory() : folder)
             if let index = drawings.firstIndex(where: { $0.id == drawing.id }) {
                 drawings[index].isFavorite = isFavorite
             }
