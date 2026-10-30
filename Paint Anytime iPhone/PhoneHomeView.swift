@@ -278,13 +278,16 @@ struct PhoneHomeView: View {
                 }
                 #if DEBUG
                 .overlay(alignment: .topTrailing) {
+                    if PhoneGalleryDebug.showsDiagnostics {
                     PhoneGalleryFPSOverlay()
                         .frame(width: 140, height: 48)
                         .padding(8)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
+                    }
                 }
                 .overlay(alignment: .bottomTrailing) {
+                    if PhoneGalleryDebug.showsDiagnostics {
                     Text(verbatim: debugInteraction + "\n" + zoomDiagnostics.text)
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
                         .foregroundStyle(.white)
@@ -294,6 +297,7 @@ struct PhoneHomeView: View {
                         .padding(8)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
+                    }
                 }
                 .task(id: gridFrame.minY) {
                     guard debugScrollMoving else { return }

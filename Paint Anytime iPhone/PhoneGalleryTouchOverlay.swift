@@ -28,7 +28,7 @@ struct PhoneGalleryTouchOverlay: UIViewRepresentable {
         var positions: [CGPoint] = [] {
             didSet {
                 #if DEBUG
-                setNeedsDisplay()
+                if PhoneGalleryDebug.showsDiagnostics { setNeedsDisplay() }
                 #endif
             }
         }
@@ -62,6 +62,7 @@ struct PhoneGalleryTouchOverlay: UIViewRepresentable {
 
         override func draw(_ rect: CGRect) {
             #if DEBUG
+            guard PhoneGalleryDebug.showsDiagnostics else { return }
             for position in positions {
                 let circle = UIBezierPath(ovalIn: CGRect(x: position.x - 18, y: position.y - 18,
                                                         width: 36, height: 36))
