@@ -3,7 +3,7 @@ import SwiftUI
 /// The phone's slot compositor, using CGImage on watch instead of UIKit images.
 struct GalleryGridZoomOverlay: View {
     let zoom: GalleryGridZoom
-    let headerHeight: CGFloat
+    @GestureState private var dragging = false
 
     var body: some View {
         let bounded = min(2, max(0, zoom.position))
@@ -61,23 +61,16 @@ struct GalleryGridZoomOverlay: View {
                 }
             }
         }
-        .overlay(alignment: .top) {
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .frame(height: headerHeight)
-                .mask(LinearGradient(stops: [
-                    .init(color: .black, location: 0),
-                    .init(color: .black, location: 0.5),
-                    .init(color: .black.opacity(0.75), location: 0.7),
-                    .init(color: .clear, location: 1)
-                ], startPoint: .top, endPoint: .bottom))
-                .opacity(Double(min(1, max(0, 2 - zoom.position))))
-                .allowsHitTesting(false)
-        }
         .contentShape(Rectangle())
+        // This recognizer exists only while the compositor owns scrolling.
+        // A recognizer on the permanent ancestor competes with watchOS ScrollView.
         .gesture(DragGesture(minimumDistance: 1)
+            .updating($dragging) { _, active, _ in active = true }
             .onChanged { zoom.pan(to: $0.translation.height) }
-            .onEnded { _ in zoom.endPan() })
+            .onEnded { _ in if zoom.isPanning { zoom.endPan() } })
+        .onChange(of: dragging) { _, active in
+            if !active, zoom.isPanning { zoom.endPan() }
+        }
         .accessibilityHidden(true)
     }
 

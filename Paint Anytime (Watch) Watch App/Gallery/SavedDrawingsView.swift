@@ -48,7 +48,13 @@ struct SavedDrawingsView: View {
     @State private var suppressOpeningUntil = Date.distantPast
     @State private var transitionBitmap: GalleryBitmap?
     @State private var displayedBitmap: GalleryBitmap?
-    @FocusState private var crownFocused: Bool
+    @FocusState private var crownTarget: GalleryCrownInput.Target?
+    private var crownFocused: Bool {
+        get { crownTarget != nil }
+        nonmutating set {
+            crownTarget = newValue ? (isTransitioning || showsFullscreen ? .presentation : .grid) : nil
+        }
+    }
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.displayScale) private var displayScale
 
@@ -70,9 +76,10 @@ struct SavedDrawingsView: View {
             let spacing: CGFloat = 2
             let width = (geometry.size.width - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
             let navigationHeight: CGFloat = max(60, geometry.safeAreaInsets.top + 38)
-            // Artwork extends behind the toolbar. Only the guided tutorial
-            // reserves space above the first row for its interaction targets.
-            let contentTopInset: CGFloat = tutorial.isActive ? navigationHeight + 4 : 0
+            // The first row starts below the back button and clock. This is a
+            // scroll-content inset, so subsequent rows can pass behind the header.
+            // Share it with zoom geometry to keep both layouts aligned.
+            let contentTopInset: CGFloat = navigationHeight + 4
             let thumbnailPixels = Int(ceil(width * displayScale / 32)) * 32
             ZStack(alignment: .topLeading) {
                 Color.black
@@ -81,6 +88,7 @@ struct SavedDrawingsView: View {
                         galleryGrid(spacing: spacing, width: width, thumbnailPixels: thumbnailPixels)
                             .reportLegacyScrollPosition()
                     }
+                    .modifier(crownInput(for: .grid))
                     // Let photos scroll behind the tutorial card while allowing
                     // the final row to scroll fully above it.
                     .contentMargins(.bottom, tutorialHintReservedHeight, for: .scrollContent)
@@ -89,6 +97,7 @@ struct SavedDrawingsView: View {
                     .scrollDisabled(gridZoom.active || showsFullscreen)
                     // Observe native scrolling without competing with its swipe gesture.
                     .onTutorialScrollActivity { tutorial.activity() }
+                    .galleryInputScrollDiagnostics()
                     .allowsHitTesting(!showsFullscreen && !isTransitioning && tutorial.allowsGalleryZoom)
                     .accessibilityHidden(showsFullscreen || gridZoom.active)
                     .onChange(of: zoomLevel) { previousLevel, level in
@@ -111,19 +120,6 @@ struct SavedDrawingsView: View {
                 // Keep native layout mounted underneath the captured zoom slots.
                 .opacity(gridZoom.active || showsFullscreen ? 0 : 1)
 
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                    .frame(height: navigationHeight + 24)
-                    .mask {
-                        LinearGradient(stops: [
-                            .init(color: .black, location: 0),
-                            .init(color: .black, location: 0.5),
-                            .init(color: .black.opacity(0.75), location: 0.7),
-                            .init(color: .clear, location: 1)
-                        ], startPoint: .top, endPoint: .bottom)
-                    }
-                    .allowsHitTesting(false)
-
                 if showsFullscreen {
                     Color.black.allowsHitTesting(false)
                     fullscreenGallery(size: geometry.size, canvasOriginX: geometry.frame(in: .global).minX, canvasOriginY: geometry.frame(in: .global).minY,
@@ -133,8 +129,10 @@ struct SavedDrawingsView: View {
                 }
 
                 if gridZoom.active {
-                    GalleryGridZoomOverlay(zoom: gridZoom, headerHeight: navigationHeight + 24)
+                    GalleryGridZoomOverlay(zoom: gridZoom)
                 }
+                GalleryHeaderBackdrop(height: navigationHeight + 24,
+                                      zoom: gridZoom, showsFullscreen: showsFullscreen)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
@@ -172,7 +170,10 @@ struct SavedDrawingsView: View {
             #if DEBUG
             .overlay(alignment: .bottomTrailing) {
                 if GalleryDebug.isEnabled {
-                    WatchGalleryDebugOverlay()
+                    WatchGalleryDebugOverlay {
+                        WatchGalleryDiagnostics.shared.inputText(zoom: gridZoom,
+                            focus: crownTarget.map { $0 == .grid ? "grid" : "zoom" } ?? "none", dragging: gridZoom.isPanning)
+                    }
                         .padding(.trailing, 4)
                         .padding(.bottom, max(4, tutorialHintReservedHeight))
                 }
@@ -336,18 +337,40 @@ struct SavedDrawingsView: View {
         }
     }
 
+    private func crownInput(for target: GalleryCrownInput.Target) -> GalleryCrownInput {
+        let owner: GalleryCrownInput.Target = isTransitioning || showsFullscreen ? .presentation : .grid
+        return GalleryCrownInput(target: target,
+            enabled: owner == target && !isLoading && pendingDeletion == nil && tutorial.allowsGalleryZoom,
+            focus: $crownTarget,
+            position: Binding(get: { crownPosition }, set: { value in
+                // A disabled host can still deliver a queued event at handoff.
+                let current: GalleryCrownInput.Target = isTransitioning || showsFullscreen ? .presentation : .grid
+                guard current == target else { return }
+                gridStorage.lastCrownInputTarget = target
+                updateCrownZoom(value)
+            }),
+            onChange: { [step = tutorial.step] event in
+                tutorial.usedCrown(in: step, velocity: event.velocity)
+                #if DEBUG
+                if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.crownVelocity = event.velocity }
+                #endif
+            }, onIdle: {
+                // A short turn may end immediately after changing focus. Its
+                // original host must still settle unless newer input superseded it.
+                guard gridStorage.lastCrownInputTarget == target else { return }
+                settleCrownZoom()
+            })
+    }
+
     private var galleryWithConfirmations: some View {
         galleryContent
         .disabled(isLoading)
-        .focusable(!isLoading && pendingDeletion == nil && tutorial.allowsGalleryZoom)
-        .focused($crownFocused)
-        .digitalCrownRotation(Binding(get: { crownPosition }, set: updateCrownZoom),
-                              from: -1000, through: 1000,
-                              sensitivity: .low, isContinuous: false,
-                              isHapticFeedbackEnabled: false,
-                              onChange: { [step = tutorial.step] event in
-                tutorial.usedCrown(in: step, velocity: event.velocity)
-            }, onIdle: settleCrownZoom)
+        .modifier(crownInput(for: .presentation))
+        .onChange(of: isTransitioning || showsFullscreen) { _, _ in
+            // Transfer ownership only when the presentation changes, never on
+            // drag samples or scroll phases (which can interrupt native inertia).
+            crownFocused = !isLoading && pendingDeletion == nil && tutorial.allowsGalleryZoom
+        }
         .fullScreenCover(item: $pendingEdit, onDismiss: {
             // Start file loading only after Yes and dismissal of the confirmation.
             if let drawing = confirmedEdit {
@@ -520,6 +543,14 @@ struct SavedDrawingsView: View {
     @MainActor
     private func restoreGridZoom(using proxy: ScrollViewProxy, size: CGSize, navigationHeight: CGFloat) async {
         guard let commit = gridZoom.pendingCommit else { return }
+        #if DEBUG
+        if GalleryDebug.isEnabled {
+            WatchGalleryDiagnostics.shared.restoreAt = ProcessInfo.processInfo.systemUptime
+            WatchGalleryDiagnostics.shared.restoreAttempts = 0
+            WatchGalleryDiagnostics.shared.restoreReady = false
+            WatchGalleryDiagnostics.shared.restoreError = 0
+        }
+        #endif
         if commit.columns == 1 {
             guard let drawing = drawings.first(where: { $0.id == gridZoom.target }) else {
                 gridZoom.reset()
@@ -560,6 +591,9 @@ struct SavedDrawingsView: View {
             guard !Task.isCancelled, gridZoom.pendingCommit?.id == commit.id else { return }
             withoutAnimation { proxy.scrollTo(commit.target, anchor: UnitPoint(x: 0.5, y: attempt < 4 ? anchorY : 0.5)) }
             attempt += 1
+            #if DEBUG
+            if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.restoreAttempts = attempt }
+            #endif
             do { try await Task.sleep(for: .milliseconds(16)) } catch { return }
             guard gridZoom.pendingCommit?.id == commit.id,
                   let frame = thumbnailFrames[commit.target] else { continue }
@@ -569,6 +603,12 @@ struct SavedDrawingsView: View {
                 $0.value.maxY > 0 && $0.value.minY < size.height
             }
             let prepared = gridZoom.loadingComplete || visible.keys.allSatisfy { thumbnailBitmaps[$0] != nil }
+            #if DEBUG
+            if GalleryDebug.isEnabled {
+                WatchGalleryDiagnostics.shared.restoreError = frame.minY - commit.viewportTop
+                WatchGalleryDiagnostics.shared.restoreReady = prepared
+            }
+            #endif
             if abs(frame.minY - commit.viewportTop) < 1, prepared {
                 completeGridZoom()
                 return
@@ -604,6 +644,13 @@ struct SavedDrawingsView: View {
     }
 
     private func updateCrownZoom(_ value: Double) {
+        #if DEBUG
+        if GalleryDebug.isEnabled {
+            let reason = isLoading ? "loading" : pendingDeletion != nil ? "delete" :
+                !tutorial.allowsGalleryZoom ? "tutorial" : "accepted"
+            WatchGalleryDiagnostics.shared.crown(value, result: reason)
+        }
+        #endif
         guard !isLoading, pendingDeletion == nil, tutorial.allowsGalleryZoom else { return }
         tutorial.activity()
         if !gridZoom.active {
@@ -615,6 +662,9 @@ struct SavedDrawingsView: View {
     }
 
     private func settleCrownZoom() {
+        #if DEBUG
+        if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.crownIdleEvents += 1 }
+        #endif
         gridZoom.settle(reduceMotion: reduceMotion)
     }
 

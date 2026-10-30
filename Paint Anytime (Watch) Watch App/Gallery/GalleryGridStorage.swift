@@ -7,6 +7,7 @@ final class GalleryGridStorage {
     private(set) var frames: [URL: CGRect] = [:]
     var bitmaps: [URL: GalleryBitmap] = [:]
     var focusedDrawing: CanvasExport?
+    var lastCrownInputTarget: GalleryCrownInput.Target?
     private var visibilityByURL: [URL: GalleryThumbnailVisibility] = [:]
 
     func visibility(for url: URL) -> GalleryThumbnailVisibility {

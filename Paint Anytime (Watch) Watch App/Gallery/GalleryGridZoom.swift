@@ -36,6 +36,16 @@ final class GalleryGridZoom {
     @ObservationIgnored private var animation: Task<Void, Never>?
     @ObservationIgnored private var animationID: UUID?
 
+    #if DEBUG
+    var debugPhase: String {
+        if !active { return "native" }
+        if pendingCommit != nil { return "restore" }
+        if settledColumns != nil { return "wait-pan" }
+        if animationID != nil { return "settle" }
+        return "input"
+    }
+    #endif
+
     var target: URL? { snapshot.indices.contains(index) ? snapshot[index] : nil }
     var active: Bool { sessionID != nil }
     var presentationOffsetY: CGFloat { offsetY * min(1, max(0, 2 - position)) }
