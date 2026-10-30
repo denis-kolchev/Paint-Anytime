@@ -26,6 +26,7 @@ struct PhoneHomeView: View {
     @State private var zoomSideBackdropFrame: CGRect = .zero
     @State private var imageLayout = PhoneGalleryImageLayout()
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.colorScheme) private var colorScheme
     @State private var zoomBaseColumns = 5
     @State private var zoomGestureBaseSide: CGFloat?
     @State private var zoomBaseLeadingSlots = 0
@@ -52,6 +53,7 @@ struct PhoneHomeView: View {
     @GestureState private var isPinching = false
     #if DEBUG
     @State private var debugScrollMoving = false
+    @State private var zoomDiagnostics = PhoneGalleryZoomDiagnostics()
 
     private var debugInteraction: String {
         if pendingZoomColumns != nil { return "Zoom: restoring position" }
@@ -160,6 +162,12 @@ struct PhoneHomeView: View {
                     MagnifyGesture(minimumScaleDelta: 0)
                         .updating($isPinching) { _, active, _ in active = true }
                         .onChanged { value in
+                            #if DEBUG
+                            if zoomDiagnostics.startedAt == nil { zoomDiagnostics.begin() }
+                            if zoomDiagnostics.recognizedMS == nil {
+                                zoomDiagnostics.recognizedMS = zoomDiagnostics.elapsedMS()
+                            }
+                            #endif
                             if settlingZoom, pendingZoomColumns == nil {
                                 interruptGalleryZoom(width: geometry.size.width)
                             }
@@ -200,10 +208,18 @@ struct PhoneHomeView: View {
                 }
                 .overlay {
                     PhoneGalleryTouchOverlay(onMovement: { positions in
+                        #if DEBUG
+                        if positions.count >= 2, zoomDiagnostics.movementMS == nil {
+                            zoomDiagnostics.movementMS = zoomDiagnostics.elapsedMS()
+                        }
+                        #endif
                         guard positions.count == 1, pinchTarget != nil else { return }
                         moveGalleryZoomPan(to: positions[0].y, width: geometry.size.width,
                                            viewportHeight: geometry.size.height)
                     }) { positions in
+                        #if DEBUG
+                        if positions.count >= 2, !hasTwoFingerContact { zoomDiagnostics.begin() }
+                        #endif
                         if positions.count == 1, pinchTarget != nil {
                             beginGalleryZoomPan(at: positions[0].y)
                         } else {
@@ -263,13 +279,13 @@ struct PhoneHomeView: View {
                 #if DEBUG
                 .overlay(alignment: .topTrailing) {
                     PhoneGalleryFPSOverlay()
-                        .frame(width: 80, height: 28)
+                        .frame(width: 140, height: 48)
                         .padding(8)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
                 .overlay(alignment: .bottomTrailing) {
-                    Text(verbatim: debugInteraction)
+                    Text(verbatim: debugInteraction + "\n" + zoomDiagnostics.text)
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
@@ -291,10 +307,15 @@ struct PhoneHomeView: View {
                 .coordinateSpace(name: "phoneGalleryViewport")
                 .task(id: zoomSessionID) {
                     guard let sessionID = zoomSessionID else { return }
-                    // Let the initial gesture frame display before baking side strips.
-                    await Task.yield()
-                    guard !Task.isCancelled, zoomSessionID == sessionID else { return }
-                    prepareZoomSideBackdrop(width: geometry.size.width, viewportHeight: geometry.size.height)
+                    await prepareZoomSideBackdrop(width: geometry.size.width,
+                        viewportHeight: geometry.size.height, sessionID: sessionID)
+                }
+                .task(id: zoomSessionID) {
+                    guard let sessionID = zoomSessionID else { return }
+                    #if DEBUG
+                    let loadingStarted = CACurrentMediaTime()
+                    let diagnosticSession = zoomDiagnostics.session
+                    #endif
                     let cache = previewCache
                     for url in zoomMissingPreviews {
                         guard !Task.isCancelled, zoomSessionID == sessionID else { return }
@@ -302,6 +323,11 @@ struct PhoneHomeView: View {
                         guard !Task.isCancelled, zoomSessionID == sessionID else { return }
                         if let image { zoomPreviews[url] = image }
                     }
+                    #if DEBUG
+                    if zoomDiagnostics.session == diagnosticSession {
+                        zoomDiagnostics.loadingMS = (CACurrentMediaTime() - loadingStarted) * 1000
+                    }
+                    #endif
                 }
                 .task(id: pendingZoomColumns) {
                     guard let columns = pendingZoomColumns,
@@ -438,6 +464,10 @@ struct PhoneHomeView: View {
     private func beginGalleryZoom(anchor viewportAnchor: UnitPoint, width: CGFloat,
                                   viewportHeight: CGFloat) {
         guard !photoInbox.images.isEmpty, gridFrame.height > 0 else { return }
+        #if DEBUG
+        let preparationStarted = CACurrentMediaTime()
+        defer { zoomDiagnostics.preparationMS = (CACurrentMediaTime() - preparationStarted) * 1000 }
+        #endif
         zoomPresentation.stopAnimation()
         zoomGestureBaseSide = nil
         zoomBaseColumns = columnCount
@@ -505,6 +535,14 @@ struct PhoneHomeView: View {
 
     private func prepareZoomSlots(width: CGFloat, viewportHeight: CGFloat) {
         guard let index = zoomAnchorIndex else { return }
+        #if DEBUG
+        let slotsStarted = CACurrentMediaTime()
+        defer {
+            zoomDiagnostics.slotsMS = (CACurrentMediaTime() - slotsStarted) * 1000
+            zoomDiagnostics.slotCount = zoomSlots.count
+            zoomDiagnostics.missingCount = zoomMissingPreviews.count
+        }
+        #endif
         let side = tileSide(columns: zoomBaseColumns, width: width)
         let anchorRow = (index + zoomBaseLeadingSlots) / zoomBaseColumns
         let anchorColumn = (index + zoomBaseLeadingSlots) % zoomBaseColumns
@@ -582,8 +620,14 @@ struct PhoneHomeView: View {
         zoomSessionID = UUID()
     }
 
-    /// Bake only prepared previews; no decoding or repeated rasterization while pinching.
-    private func prepareZoomSideBackdrop(width: CGFloat, viewportHeight: CGFloat) {
+    /// Capture prepared previews on the main actor, then rasterize independently
+    /// of gesture delivery and missing-preview loading.
+    private func prepareZoomSideBackdrop(width: CGFloat, viewportHeight: CGFloat, sessionID: UUID) async {
+        guard !Task.isCancelled, zoomSessionID == sessionID else { return }
+        #if DEBUG
+        let backdropStarted = CACurrentMediaTime()
+        let diagnosticSession = zoomDiagnostics.session
+        #endif
         let side = tileSide(columns: 5, width: width)
         let stride = side + gallerySpacing
         let leading = slots(for: 5)
@@ -608,14 +652,8 @@ struct PhoneHomeView: View {
         }
         // Five full column strides keep the seam identical to internal spacing.
         let bounds = CGRect(x: 0, y: top, width: width + gallerySpacing, height: bottom - top)
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = min(displayScale, 2)
-        format.opaque = true
-        var backdrops: [Int: UIImage] = [:]
+        var drawTiles: [Int: [PhoneGalleryBackdropRenderer.Tile]] = [:]
         for direction in [-1, 1] {
-            backdrops[direction] = UIGraphicsImageRenderer(size: bounds.size, format: format).image { renderer in
-                UIColor.systemBackground.setFill()
-                renderer.fill(CGRect(origin: .zero, size: bounds.size))
                 for slot in tiles {
                     guard let rect = slot.frames[5], let column = slot.columns[5] else { continue }
                     let destinationRow = Int(((rect.minY - originY) / stride).rounded())
@@ -638,21 +676,32 @@ struct PhoneHomeView: View {
                     guard let image = zoomPreviews[url] ?? previewCache.availableImage(for: url, maximumSize: zoomPreviewSize),
                           image.size.width > 0, image.size.height > 0 else { continue }
                     let tile = rect.offsetBy(dx: 0, dy: -top)
-                    let scale = max(tile.width / image.size.width, tile.height / image.size.height)
-                    let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
-                    renderer.cgContext.saveGState()
-                    renderer.cgContext.clip(to: tile)
-                    image.draw(in: CGRect(x: tile.midX - size.width / 2, y: tile.midY - size.height / 2,
-                                          width: size.width, height: size.height))
-                    renderer.cgContext.restoreGState()
+                    drawTiles[direction, default: []].append(.init(image: image, rect: tile))
                 }
-            }
         }
+        // Resolve dynamic colors here: a background actor has no view trait environment.
+        let background = UIColor.systemBackground.resolvedColor(with:
+            UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light))
+        guard let backdrops = await PhoneGalleryBackdropRenderer.shared.render(
+            tiles: drawTiles, size: bounds.size, scale: min(displayScale, 2), background: background),
+            !Task.isCancelled, zoomSessionID == sessionID else { return }
         zoomSideBackdrops = backdrops
         zoomSideBackdropFrame = bounds
+        #if DEBUG
+        if zoomDiagnostics.session == diagnosticSession {
+            zoomDiagnostics.backdropMS = (CACurrentMediaTime() - backdropStarted) * 1000
+        }
+        #endif
     }
 
     private func updateGalleryZoom(_ magnification: CGFloat, width: CGFloat, viewportHeight: CGFloat) {
+        #if DEBUG
+        defer {
+            if zoomDiagnostics.appliedMS == nil {
+                zoomDiagnostics.appliedMS = zoomDiagnostics.elapsedMS()
+            }
+        }
+        #endif
         let initialSide = tileSide(columns: zoomBaseColumns, width: width)
         let minimumSide = tileSide(columns: 5, width: width)
         let maximumSide = tileSide(columns: 1, width: width)

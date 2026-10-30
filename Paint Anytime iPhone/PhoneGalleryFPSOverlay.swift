@@ -15,10 +15,13 @@ struct PhoneGalleryFPSOverlay: UIViewRepresentable {
         private var displayLink: CADisplayLink?
         private var sampleStart: CFTimeInterval?
         private var frames = 0
+        private var lastCallback: CFTimeInterval?
+        private var peakGapMS: Double = 0
 
         init() {
             super.init(frame: .zero)
             text = "FPS: —"
+            numberOfLines = 2
             font = .monospacedDigitSystemFont(ofSize: 12, weight: .semibold)
             textColor = .white
             textAlignment = .center
@@ -46,14 +49,22 @@ struct PhoneGalleryFPSOverlay: UIViewRepresentable {
             displayLink = nil
             sampleStart = nil
             frames = 0
+            lastCallback = nil
+            peakGapMS = 0
         }
 
         func tick(_ link: CADisplayLink) {
             guard UIApplication.shared.applicationState == .active else {
                 sampleStart = nil
                 frames = 0
+                lastCallback = nil
                 return
             }
+            let now = CACurrentMediaTime()
+            if let lastCallback {
+                peakGapMS = max(peakGapMS, (now - lastCallback) * 1000)
+            }
+            lastCallback = now
             guard let sampleStart else {
                 self.sampleStart = link.timestamp
                 return
@@ -61,7 +72,7 @@ struct PhoneGalleryFPSOverlay: UIViewRepresentable {
             frames += 1
             let elapsed = link.timestamp - sampleStart
             guard elapsed >= 0.5 else { return }
-            text = "FPS: \(Int((Double(frames) / elapsed).rounded()))"
+            text = "FPS: \(Int((Double(frames) / elapsed).rounded()))\npeak gap: \(Int(peakGapMS.rounded())) ms"
             self.sampleStart = link.timestamp
             frames = 0
         }
