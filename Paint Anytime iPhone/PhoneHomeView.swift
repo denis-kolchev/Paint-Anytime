@@ -358,6 +358,8 @@ struct PhoneHomeView: View {
                 }
                 }
             }
+            // Measure the full screen width for both grid tiles and zoom geometry.
+            .ignoresSafeArea(.container, edges: .horizontal)
             .navigationDestination(for: URL.self) { url in
                 PhoneDrawingView(url: url, inbox: photoInbox)
             }

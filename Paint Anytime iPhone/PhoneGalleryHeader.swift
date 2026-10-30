@@ -44,7 +44,7 @@ struct PhoneGalleryHeader: View {
                 // Extend only the backdrop, preserving the header's layout and
                 // fading across the artwork instead of ending at its top edge.
                 .padding(.bottom, -40)
-                .ignoresSafeArea(edges: .top)
+                .ignoresSafeArea(.container, edges: [.top, .horizontal])
                 .allowsHitTesting(false)
         }
     }
