@@ -43,6 +43,8 @@ struct PhoneHomeView: View {
     @State private var settlingZoom = false
     @State private var zoomSettlementID: UUID?
     @State private var gridFrame: CGRect = .zero
+    @State private var galleryHeaderHeight: CGFloat = 0
+    private var galleryScrollTopInset: CGFloat { galleryHeaderHeight + 40 }
     @State private var pinchTarget: URL?
     @State private var pinchTargetFractionY: CGFloat = 0.5
     @State private var pinchViewportY: CGFloat = 0
@@ -203,6 +205,9 @@ struct PhoneHomeView: View {
 
                     }
                 }
+                // Extend the resting scroll range past the header and its fade.
+                // Tile coordinates remain relative to the unpadded grid.
+                .contentMargins(.top, galleryScrollTopInset, for: .scrollContent)
                 // While Canvas is visible it owns both scale and translation.
                 // Raw one-finger movement below pans it immediately; the hidden
                 // native grid must not scroll in a different coordinate system.
@@ -481,10 +486,22 @@ struct PhoneHomeView: View {
             .onDisappear { resetGalleryZoom() }
             .navigationTitle("Watch Gallery")
             .toolbar(.hidden, for: .navigationBar)
-            .safeAreaInset(edge: .top, spacing: 0) {
+            // Keep artwork beneath the status area and header. An inset
+            // reserves a separate top region and shifts the gallery viewport.
+            .overlay(alignment: .top) {
                 PhoneGalleryHeader(
                     importProject: { importingProject = true },
                     synchronize: { photoInbox.synchronize() })
+                    .padding(.top, container.safeAreaInsets.top)
+                    .background {
+                        GeometryReader { header in
+                            Color.clear.preference(key: PhoneGalleryHeaderHeightKey.self,
+                                                   value: header.size.height)
+                        }
+                    }
+            }
+            .onPreferenceChange(PhoneGalleryHeaderHeightKey.self) { height in
+                if galleryHeaderHeight != height { galleryHeaderHeight = height }
             }
             .refreshable { photoInbox.synchronize() }
             .fileImporter(isPresented: $importingProject, allowedContentTypes: [.paintAnytimeProject]) { result in
@@ -548,9 +565,9 @@ struct PhoneHomeView: View {
                 resetGalleryZoom()
             }
         }
-        // Measure through the bottom inset too, so both clipped panes reach
-        // the display edge instead of ending above the home-indicator area.
-        .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
+        // The clipped panes must include the status-bar region as well as the
+        // home-indicator region; otherwise their top edge leaves a blank strip.
+        .ignoresSafeArea(.container, edges: .all)
         .onOpenURL(perform: openURL)
         .accessibilityHidden(watchDestination != nil)
         .overlay {
@@ -925,8 +942,9 @@ struct PhoneHomeView: View {
         let anchorY = zoomPresentation.elasticAnchor.y
         let top = anchorY + (start.top + (end.top - start.top) * progress - anchorY) * scale
         let bottom = anchorY + (start.bottom + (end.bottom - start.bottom) * progress - anchorY) * scale
-        guard bottom - top > viewportHeight else { return }
-        zoomPresentation.offsetY = min(-top, max(viewportHeight - bottom,
+        let maximumOffset = galleryScrollTopInset - top
+        let minimumOffset = min(maximumOffset, viewportHeight - bottom)
+        zoomPresentation.offsetY = min(maximumOffset, max(minimumOffset,
             zoomPresentation.offsetY + y - previousY))
         // Keep enough prepared rows for a long drag while scale is settling.
         if abs(zoomPresentation.offsetY) > zoomPreparedPanRange {
@@ -1021,7 +1039,8 @@ struct PhoneHomeView: View {
         let placement = GalleryZoomRules.placement(index: index, images: photoInbox.images,
             columns: columns, leading: slots(for: columns), width: width, height: viewportHeight,
             layout: imageLayout, fractionY: pinchTargetFractionY, viewportY: pinchViewportY,
-            capturedTop: zoomAnchorTops[columns], offsetY: zoomPresentation.offsetY)
+            capturedTop: zoomAnchorTops[columns], offsetY: zoomPresentation.offsetY,
+            topInset: galleryScrollTopInset)
         return (UnitPoint(x: 0.5, y: placement.anchorY), placement.top)
     }
 
@@ -1057,8 +1076,10 @@ struct PhoneHomeView: View {
                 }
                 let top = galleryItemTop(index: index, columns: nearest, width: width,
                                          leading: slots(for: nearest)) - scroll
-                let denominator = viewportHeight - galleryItemHeight(index: index, columns: nearest, width: width)
-                pendingZoomAnchor = UnitPoint(x: 0.5, y: abs(denominator) > 1 ? top / denominator : 0.5)
+                let denominator = viewportHeight - galleryScrollTopInset
+                    - galleryItemHeight(index: index, columns: nearest, width: width)
+                pendingZoomAnchor = UnitPoint(x: 0.5,
+                    y: abs(denominator) > 1 ? (top - galleryScrollTopInset) / denominator : 0.5)
                 pendingZoomTarget = photoInbox.images[index]
                 pendingZoomColumns = nearest
                 pendingZoomViewportTop = top

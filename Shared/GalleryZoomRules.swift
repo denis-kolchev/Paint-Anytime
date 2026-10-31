@@ -79,7 +79,8 @@ enum GalleryZoomRules {
     }
     static func placement(index: Int, images: [URL], columns: Int, leading: Int, width: CGFloat,
                           height: CGFloat, layout: GalleryImageLayout, fractionY: CGFloat,
-                          viewportY: CGFloat, capturedTop: CGFloat? = nil, offsetY: CGFloat = 0) -> (top: CGFloat, anchorY: CGFloat) {
+                          viewportY: CGFloat, capturedTop: CGFloat? = nil, offsetY: CGFloat = 0,
+                          topInset: CGFloat = 0) -> (top: CGFloat, anchorY: CGFloat) {
         let tileSide = side(columns, width: width)
         let tileHeight = columns == 1 ? layout.height(for: images[index], width: tileSide) : tileSide
         let top = itemTop(index: index, columns: columns, leading: leading, width: width, layout: layout)
@@ -88,9 +89,10 @@ enum GalleryZoomRules {
             : CGFloat(rows) * tileSide + CGFloat(max(0, rows - 1)) * spacing
         let denominator = height - tileHeight
         let anchor = abs(denominator) > 1 ? min(1, max(0, (viewportY - fractionY * tileHeight) / denominator)) : 0.5
-        let maximum = max(0, contentHeight - height)
-        let settled = min(maximum, max(0, top - (capturedTop ?? anchor * denominator)))
-        let scroll = min(maximum, max(0, settled - offsetY))
+        let minimum = -max(0, topInset)
+        let maximum = max(minimum, contentHeight - height)
+        let settled = min(maximum, max(minimum, top - (capturedTop ?? anchor * denominator)))
+        let scroll = min(maximum, max(minimum, settled - offsetY))
         let viewportTop = top - scroll
         return (viewportTop, abs(denominator) > 1 ? viewportTop / denominator : anchor)
     }

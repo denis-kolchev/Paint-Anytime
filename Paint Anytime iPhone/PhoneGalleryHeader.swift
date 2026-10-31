@@ -66,7 +66,8 @@ struct PhoneGalleryHeader: View {
             }
         }
         .labelStyle(.iconOnly)
-        .font(.title2)
+        .font(.body)
+        .controlSize(.large)
         .buttonBorderShape(.circle)
         .tint(.primary)
         .fixedSize()
@@ -76,11 +77,9 @@ struct PhoneGalleryHeader: View {
         HStack(spacing: 8) {
             Button(action: importProject) {
                 Label("Import Project", systemImage: "square.and.arrow.down")
-                    .frame(minWidth: 44, minHeight: 44)
             }
             Button(action: synchronize) {
                 Label("Sync", systemImage: "arrow.triangle.2.circlepath")
-                    .frame(minWidth: 44, minHeight: 44)
             }
         }
     }
