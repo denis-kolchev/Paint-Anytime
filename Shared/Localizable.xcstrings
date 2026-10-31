@@ -1,6 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Autosaving…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autosaving…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Автосохранение…"
+          }
+        }
+      }
+    },
     "Saves artwork to the gallery at the selected interval while the app is active.": {
       "extractionState": "manual",
       "localizations": {
