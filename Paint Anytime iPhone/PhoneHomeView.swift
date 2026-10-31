@@ -132,7 +132,9 @@ struct PhoneHomeView: View {
             let divisionX = bookDivisionX(in: container)
             let showsBook = divisionX != nil
             let showsDrawing = showsBook && selectedDrawing != nil
-            HStack(spacing: 0) {
+            // Keep both panes in one stable container while the gallery width
+            // changes. The detail pane slides independently from the right edge.
+            ZStack(alignment: .leading) {
                 NavigationStack(path: $navigationPath) {
             GeometryReader { geometry in
                 ScrollViewReader { scrollProxy in
@@ -540,7 +542,9 @@ struct PhoneHomeView: View {
                 if let divisionX, let url = selectedDrawing {
                     NavigationStack {
                         PhoneDrawingView(url: url, inbox: photoInbox, closeDrawing: {
-                            selectedDrawing = nil
+                            withAnimation(drawingPresentationAnimation) {
+                                selectedDrawing = nil
+                            }
                         })
                         .id(url)
                     }
@@ -553,16 +557,27 @@ struct PhoneHomeView: View {
                             .frame(width: 1 / displayScale)
                             .allowsHitTesting(false)
                     }
+                    .offset(x: divisionX)
+                    .transition(reduceMotion ? .opacity : .move(edge: .trailing))
+                    .zIndex(1)
                 }
             }
+            .frame(width: container.size.width, height: container.size.height, alignment: .leading)
+            .clipped()
             .onChange(of: showsBook) { _, expanded in
                 resetGalleryZoom()
-                if expanded {
-                    selectedDrawing = navigationPath.last
-                    navigationPath = []
-                } else {
-                    navigationPath = selectedDrawing.map { [$0] } ?? []
-                    selectedDrawing = nil
+                // Moving an existing selection between layouts is not a new
+                // presentation. Suppress inherited navigation animations too.
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    if expanded {
+                        selectedDrawing = navigationPath.last
+                        navigationPath = []
+                    } else {
+                        navigationPath = selectedDrawing.map { [$0] } ?? []
+                        selectedDrawing = nil
+                    }
                 }
             }
             .onChange(of: container.size) { _, _ in
@@ -602,13 +617,19 @@ struct PhoneHomeView: View {
         return geometry.size.width / 2
     }
 
+    private var drawingPresentationAnimation: Animation {
+        reduceMotion ? .easeInOut(duration: 0.18) : .smooth(duration: 0.38)
+    }
+
     private func openDrawing(_ url: URL, besideGallery: Bool) {
         // A recognized pinch owns the touch sequence, including release events.
         // A single route also prevents multiple tiles from opening together.
         guard !isPinching, !settlingZoom, Date() >= suppressOpeningUntil,
               navigationPath.isEmpty, photoInbox.images.contains(url) else { return }
         if besideGallery {
-            selectedDrawing = url
+            withAnimation(drawingPresentationAnimation) {
+                selectedDrawing = url
+            }
         } else {
             navigationPath = [url]
         }
@@ -1124,19 +1145,31 @@ private struct PhoneDrawingView: View {
     private var hasProject: Bool { FileManager.default.fileExists(atPath: projectURL.path) }
     @State private var exportError: String?
 
-    var body: some View {
+    private var drawingContent: some View {
         GeometryReader { geometry in
             DrawingPreview(url: url, maximumSize: 2400)
                 .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .ignoresSafeArea(.container)
         .overlay(alignment: .bottom) {
-            VStack(spacing: 12) {
-                if inbox.isSaving {
-                    ProgressView("Saving…")
-                        .padding(12)
-                        .background(.regularMaterial, in: Capsule())
-                }
+            if inbox.isSaving {
+                ProgressView("Saving…")
+                    .padding(12)
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.bottom, 12)
+            }
+        }
+    }
+
+    private var drawingNavigation: some View {
+        drawingContent
+        .toolbarBackground(.hidden, for: .bottomBar)
+        .toolbar(.visible, for: .bottomBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .navigationTitle("Drawing")
+        .toolbar(.visible, for: .navigationBar)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
                 PhoneDrawingActions(
                     url: url,
                     projectURL: projectURL,
@@ -1149,15 +1182,7 @@ private struct PhoneDrawingView: View {
                     sendToWatch: sendToWatch,
                     delete: { confirmingDeletion = true }
                 )
-            }
-            .padding(.horizontal)
-            .padding(.bottom, 12)
-        }
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .navigationTitle("Drawing")
-        .toolbar(.visible, for: .navigationBar)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
+
             if let closeDrawing {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: closeDrawing) {
@@ -1166,6 +1191,10 @@ private struct PhoneDrawingView: View {
                 }
             }
         }
+    }
+
+    private var drawingExports: some View {
+        drawingNavigation
         .confirmationDialog("Delete from Apple Watch and iPhone?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
             Button("Delete", role: .destructive) {
                 if inbox.delete(url) { close() }
@@ -1185,7 +1214,11 @@ private struct PhoneDrawingView: View {
                       defaultFilename: projectURL.deletingPathExtension().lastPathComponent) { result in
             if case .failure(let error) = result { exportError = error.localizedDescription }
         }
-        .alert("Project queued", isPresented: Binding(get: { transferMessage != nil }, set: { if !$0 { transferMessage = nil } })) {
+    }
+
+    var body: some View {
+        drawingExports
+        .alert("Project queued", isPresented: showingTransferMessage) {
             Button("OK") { transferMessage = nil }
         } message: { Text(transferMessage ?? "") }
         .onChange(of: inbox.savedToPhotos, initial: true) { _, saved in
@@ -1197,9 +1230,17 @@ private struct PhoneDrawingView: View {
         .alert("Saved to Photos", isPresented: $showingPhotoConfirmation) {
             Button("OK") { showingPhotoConfirmation = false }
         }
-        .alert("Could not export", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
+        .alert("Could not export", isPresented: showingExportError) {
             Button("OK") { exportError = nil }
         } message: { Text(exportError ?? "") }
+    }
+
+    private var showingTransferMessage: Binding<Bool> {
+        Binding(get: { transferMessage != nil }, set: { if !$0 { transferMessage = nil } })
+    }
+
+    private var showingExportError: Binding<Bool> {
+        Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })
     }
 
     private func sendToWatch() {

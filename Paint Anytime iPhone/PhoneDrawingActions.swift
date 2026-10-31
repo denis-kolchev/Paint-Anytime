@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PhoneDrawingActions: View {
+struct PhoneDrawingActions: ToolbarContent {
     let url: URL
     let projectURL: URL
     let hasProject: Bool
@@ -12,24 +12,8 @@ struct PhoneDrawingActions: View {
     let sendToWatch: () -> Void
     let delete: () -> Void
 
-    var body: some View {
-        Group {
-            if #available(iOS 26.0, *) {
-                actions.buttonStyle(.glass)
-            } else {
-                actions.buttonStyle(.bordered)
-                    .background(.regularMaterial, in: Capsule())
-            }
-        }
-        .labelStyle(.iconOnly)
-        .font(.body)
-        .controlSize(.large)
-        .buttonBorderShape(.circle)
-        .tint(.primary)
-    }
-
-    private var actions: some View {
-        HStack(spacing: 20) {
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .bottomBar) {
             Menu {
                 ShareLink(item: url) {
                     Label("Image (.png)", systemImage: "photo")
@@ -43,6 +27,11 @@ struct PhoneDrawingActions: View {
                     .frame(minWidth: 24, minHeight: 24)
             }
 
+        }
+        if #available(iOS 26.0, *) {
+            ToolbarSpacer(.fixed, placement: .bottomBar)
+        }
+        ToolbarItem(placement: .bottomBar) {
             Menu {
                 Button(action: saveToPhotos) {
                     Label("Photos", systemImage: "photo.badge.plus")
@@ -60,6 +49,11 @@ struct PhoneDrawingActions: View {
                     .frame(minWidth: 24, minHeight: 24)
             }
 
+        }
+        if #available(iOS 26.0, *) {
+            ToolbarSpacer(.fixed, placement: .bottomBar)
+        }
+        ToolbarItem(placement: .bottomBar) {
             Menu {
                 if hasProject {
                     Button(action: sendToWatch) {
