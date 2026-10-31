@@ -1126,68 +1126,34 @@ private struct PhoneDrawingView: View {
 
     var body: some View {
         GeometryReader { geometry in
-        ScrollView {
-        VStack(spacing: 20) {
             DrawingPreview(url: url, maximumSize: 2400)
-                .frame(maxWidth: .infinity)
-                .frame(height: max(160, geometry.size.height * 0.5))
-            HStack(spacing: 24) {
-                Menu {
-                    ShareLink(item: url) { Label("Image (.png)", systemImage: "photo") }
-                    ShareLink(item: projectURL) { Label("Project (.paintanytime)", systemImage: "doc") }
-                        .disabled(!hasProject)
-                    if !hasProject {
-                        Button("Sync project from Apple Watch") { inbox.synchronize() }
-                    }
-                } label: { Label("Share", systemImage: "square.and.arrow.up") }
-                Button { inbox.saveToPhotos(url) } label: { Label("Photos", systemImage: "photo.badge.plus") }
-                    .disabled(inbox.isSaving)
-                Menu {
-                    Button("Image (.png)") { exporting = true }
-                    Button("Project (.paintanytime)") { exportingProject = true }
-                        .disabled(!hasProject)
-                    if !hasProject {
-                        Button("Sync project from Apple Watch") { inbox.synchronize() }
-                    }
-                } label: { Label("Save File", systemImage: "folder") }
-            }
-            .labelStyle(.titleAndIcon).font(.subheadline)
-            .frame(maxWidth: .infinity)
-            if hasProject {
-                Menu {
-                    ShareLink(item: projectURL) { Label("Share Project", systemImage: "square.and.arrow.up") }
-                    Button("Save Project to Files") { exportingProject = true }
-                    Button("Send to Apple Watch") {
-                        let session = WCSession.default
-                        guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
-                            exportError = "Connect your Apple Watch and install Paint Anytime before sending a project."
-                            return
-                        }
-                        session.transferFile(projectURL, metadata: ["project": true])
-                        transferMessage = "Project queued. It will appear in your watch gallery when the transfer finishes. Open it there to edit."
-                    }
-                } label: { Label("Project", systemImage: "doc.badge.gearshape") }
-            } else {
-                VStack(spacing: 8) {
-                    Text("Only the PNG preview is on this iPhone. Open the updated Paint Anytime app on your Apple Watch, then sync to receive the editable project.")
-                        .font(.footnote).foregroundStyle(.secondary)
-                    Button("Sync project from Apple Watch") { inbox.synchronize() }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+        .ignoresSafeArea(.container)
+        .overlay(alignment: .bottom) {
+            VStack(spacing: 12) {
+                if inbox.isSaving {
+                    ProgressView("Saving…")
+                        .padding(12)
+                        .background(.regularMaterial, in: Capsule())
                 }
+                PhoneDrawingActions(
+                    url: url,
+                    projectURL: projectURL,
+                    hasProject: hasProject,
+                    isSaving: inbox.isSaving,
+                    saveToPhotos: { inbox.saveToPhotos(url) },
+                    exportImage: { exporting = true },
+                    exportProject: { exportingProject = true },
+                    synchronize: { inbox.synchronize() },
+                    sendToWatch: sendToWatch,
+                    delete: { confirmingDeletion = true }
+                )
             }
-            Button(role: .destructive) { confirmingDeletion = true } label: {
-                Label("Delete", systemImage: "trash")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .buttonStyle(.bordered)
-            .tint(.red)
-            .disabled(inbox.isSaving)
-            if inbox.isSaving { ProgressView("Saving…") }
+            .padding(.horizontal)
+            .padding(.bottom, 12)
         }
-        .padding()
-        .frame(minHeight: geometry.size.height)
-        }
-        }
-        .ignoresSafeArea(.container, edges: .bottom)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle("Drawing")
         .toolbar(.visible, for: .navigationBar)
         .navigationBarTitleDisplayMode(.inline)
@@ -1234,6 +1200,16 @@ private struct PhoneDrawingView: View {
         .alert("Could not export", isPresented: Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })) {
             Button("OK") { exportError = nil }
         } message: { Text(exportError ?? "") }
+    }
+
+    private func sendToWatch() {
+        let session = WCSession.default
+        guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
+            exportError = "Connect your Apple Watch and install Paint Anytime before sending a project."
+            return
+        }
+        session.transferFile(projectURL, metadata: ["project": true])
+        transferMessage = "Project queued. It will appear in your watch gallery when the transfer finishes. Open it there to edit."
     }
 
     private func close() {
