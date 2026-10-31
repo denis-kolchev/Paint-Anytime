@@ -5,6 +5,9 @@ struct ContentView: View {
     var isActive = true
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @StateObject private var session = DrawingSessionController()
+    @AppStorage(AutosaveSettings.enabledKey) private var autosaveEnabled = false
+    @AppStorage(AutosaveSettings.intervalKey) private var autosaveMinutes = AutosaveSettings.defaultMinutes
+    @State private var autosaveTimerRange: ClosedRange<Date>?
     @StateObject private var menuOnboarding = OnboardingController()
     private var controller: CanvasController { session.canvas }
     @AppStorage("experimental.morphToolbar") private var prefersMorphToolbar = true
@@ -50,6 +53,7 @@ struct ContentView: View {
     @State private var galleryArtworkFilename: String?
     @State private var galleryInitialBitmap: GalleryBitmap?
     @State private var savedNoticeID: UUID?
+    @State private var savedNoticeIsAutomatic = false
     @State private var galleryLaunchID = UUID()
     @State private var canvasSize: CGSize = .zero
     @State private var morphState = CanvasMorphState()
@@ -142,7 +146,7 @@ struct ContentView: View {
                 }
 
                 if let savedNoticeID, !showsGallery {
-                    Text(L10n.text("Artwork saved to gallery"))
+                    Text(L10n.text(savedNoticeIsAutomatic ? "Autosaved" : "Artwork saved to gallery"))
                         .font(.headline)
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
@@ -178,6 +182,16 @@ struct ContentView: View {
         }
         // Establish full-screen bounds before applying any presentation effects.
         .ignoresSafeArea()
+        .overlay(alignment: .topTrailing) {
+            if autosaveEnabled, isActive, scenePhase == .active,
+               !showsGallery, !showsAppSettings, !showsToolSettings, !showsLayers,
+               !showsSampledPalette, quickSettings == nil,
+               let autosaveTimerRange {
+                AutosaveCountdownView(timerRange: autosaveTimerRange)
+                    .padding(.top, 2)
+                    .padding(.trailing, 8)
+            }
+        }
         // Reinstall toolbar items when returning from onboarding so watchOS
         // recalculates the clock position around the trailing tool button.
         .toolbar {
@@ -442,7 +456,17 @@ struct ContentView: View {
                 session.savedDrawing = nil
             }
             withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.8)) {
+                savedNoticeIsAutomatic = false
                 savedNoticeID = UUID()
+            }
+        }
+        .onChange(of: session.autosaveNoticeID) { _, noticeID in
+            guard let noticeID else { return }
+            galleryInitialBitmap = nil
+            galleryLaunchID = UUID()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                savedNoticeIsAutomatic = true
+                savedNoticeID = noticeID
             }
         }
         .fullScreenCover(item: $session.pendingCanvasAction) { action in
@@ -504,6 +528,41 @@ struct ContentView: View {
                 controller.cancelStroke()
                 controller.flushStylePreferences()
             }
+        }
+        .task(id: autosaveTaskID) {
+            await runAutosave()
+        }
+    }
+
+    private var autosaveTaskID: String {
+        "\(autosaveEnabled && isActive && scenePhase == .active)-\(AutosaveSettings.minutes(autosaveMinutes))-\(session.canvasSessionID)"
+    }
+
+    @MainActor
+    private func runAutosave() async {
+        guard autosaveEnabled, isActive, scenePhase == .active else { return }
+        let seconds = AutosaveSettings.minutes(autosaveMinutes) * 60
+        let interval = Duration.seconds(seconds)
+        do {
+            while !Task.isCancelled {
+                let start = Date()
+                autosaveTimerRange = start...start.addingTimeInterval(TimeInterval(seconds))
+                try await Task.sleep(for: interval)
+                // Wait for interaction and presentations to finish without cancelling a stroke
+                // or saving a temporary selection state. Retry promptly once the canvas is idle.
+                while controller.activeStroke != nil || lasso.isActive || lasso.isPreparing
+                    || showsGallery || showsAppSettings || showsLayers || showsToolSettings
+                    || showsSampledPalette || quickSettings != nil || isMovingCanvas
+                    || session.isPreparingCanvas || session.pendingCanvasAction != nil
+                    || session.savedDrawing != nil || session.exportError != nil {
+                    try await Task.sleep(for: .seconds(1))
+                }
+                try Task.checkCancellation()
+                guard autosaveEnabled, isActive, scenePhase == .active else { return }
+                session.saveDrawing(size: canvasSize, scale: displayScale, automatically: true)
+            }
+        } catch {
+            // The view owns this timer; leaving the app or changing settings cancels it.
         }
     }
 

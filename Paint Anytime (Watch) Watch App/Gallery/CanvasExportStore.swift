@@ -122,13 +122,24 @@ enum CanvasExportStore {
                      in folder: URL? = nil) throws -> CanvasExport {
         let url = try (folder ?? directory()).appendingPathComponent(name).appendingPathExtension("png")
         let documentData = try JSONEncoder().encode(document)
-        try documentData.write(to: url.deletingPathExtension().appendingPathExtension("json"), options: .atomic)
+        let documentURL = url.deletingPathExtension().appendingPathExtension("json")
+        let previousDocument = FileManager.default.fileExists(atPath: documentURL.path)
+            ? try Data(contentsOf: documentURL) : nil
+        try documentData.write(to: documentURL, options: .atomic)
         do { try imageData.write(to: url, options: .atomic) }
         catch {
-            try? FileManager.default.removeItem(at: url.deletingPathExtension().appendingPathExtension("json"))
+            if let previousDocument {
+                try previousDocument.write(to: documentURL, options: .atomic)
+            } else {
+                try? FileManager.default.removeItem(at: documentURL)
+            }
             throw error
         }
         if folder == nil { try? refreshWidgets() }
         return CanvasExport(url: url)
     }
+}
+
+extension Notification.Name {
+    static let galleryDrawingSaved = Notification.Name("galleryDrawingSaved")
 }

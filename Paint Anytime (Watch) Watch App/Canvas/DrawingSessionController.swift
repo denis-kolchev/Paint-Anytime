@@ -5,10 +5,12 @@ import SwiftUI
 final class DrawingSessionController: ObservableObject {
     let canvas: CanvasController
     private var canvasChanges: AnyCancellable?
+    private var autosavedDrawing: CanvasExport?
     @Published var isPreparingCanvas = false
     @Published var canvasPreparationError: String?
     @Published var canvasSessionID = UUID()
     @Published var savedDrawing: CanvasExport?
+    @Published private(set) var autosaveNoticeID: UUID?
     @Published var pendingCanvasAction: PendingCanvasAction?
     @Published var exportError: String?
 
@@ -19,13 +21,36 @@ final class DrawingSessionController: ObservableObject {
         }
     }
 
-    func saveDrawing(size: CGSize, scale: CGFloat) {
+    func saveDrawing(size: CGSize, scale: CGFloat, automatically: Bool = false) {
+        if automatically {
+            // Autosave is periodic even when the previous tick marked this canvas saved.
+            // Keep updating the same working copy until the user explicitly saves it.
+            guard canvas.activeStroke == nil, canvas.canClear,
+                  !isPreparingCanvas, pendingCanvasAction == nil,
+                  savedDrawing == nil, exportError == nil else { return }
+        }
         do {
+            // A deleted autosave must not be recreated under a tombstoned filename.
+            if let previous = autosavedDrawing,
+               !FileManager.default.fileExists(atPath: previous.url.path) {
+                autosavedDrawing = nil
+            }
             let drawing = try CanvasExporter.save(
-                document: canvas.document, size: size, scale: scale)
+                document: canvas.document, size: size, scale: scale,
+                replacing: autosavedDrawing)
             canvas.markSaved()
-            _ = WatchPhotoTransfer.shared.queue(drawing.url)
-            savedDrawing = drawing
+            GalleryFavoriteThumbnailRenderer.remove(drawing.url)
+            Task { await GalleryImageCache.shared.remove(drawing.url) }
+            NotificationCenter.default.post(name: .galleryDrawingSaved, object: drawing.url)
+            _ = WatchPhotoTransfer.shared.queue(drawing.url, replacingPending: autosavedDrawing != nil)
+            if automatically {
+                autosavedDrawing = drawing
+                autosaveNoticeID = UUID()
+            } else {
+                // Explicit Save finalizes this copy. Future autosaves get a new filename.
+                autosavedDrawing = nil
+                savedDrawing = drawing
+            }
         } catch { exportError = error.localizedDescription }
     }
 
@@ -39,6 +64,7 @@ final class DrawingSessionController: ObservableObject {
     }
 
     func performCanvasAction(_ action: PendingCanvasAction) {
+        autosavedDrawing = nil
         switch action {
         case .clear:
             canvas.clear()

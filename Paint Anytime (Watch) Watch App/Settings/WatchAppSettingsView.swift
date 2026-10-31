@@ -132,6 +132,11 @@ private struct DrawingSettingsView: View {
             } label: {
                 Label(L10n.text("Canvas editor"), systemImage: "slider.horizontal.3")
             }
+            NavigationLink {
+                AutosaveSettingsView()
+            } label: {
+                Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+            }
         }
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Drawing"))

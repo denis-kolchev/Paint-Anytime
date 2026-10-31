@@ -25,7 +25,11 @@ nonisolated final class GalleryBitmap: @unchecked Sendable {
 
 nonisolated private final class GalleryThumbnailVariants {
     var images: [GalleryImageRequest: GalleryBitmap] = [:]
-    var memoryCost: Int { images.values.reduce(0) { $0 + $1.memoryCost } }
+    var sourceImages: [GalleryImageRequest: CGImage] = [:]
+    var memoryCost: Int {
+        images.values.reduce(0) { $0 + $1.memoryCost }
+            + sourceImages.values.reduce(0) { $0 + $1.bytesPerRow * $1.height }
+    }
 }
 
 // File access, metadata parsing, and decompression run off the main actor.
@@ -34,6 +38,7 @@ actor GalleryImageCache {
     static let shared = GalleryImageCache()
     private let thumbnails = NSCache<NSURL, GalleryThumbnailVariants>()
     private let originals = NSCache<NSURL, GalleryBitmap>()
+    private var fileVersions: [URL: Date] = [:]
     #if DEBUG
     private var debugMetrics = GalleryDecodeDiagnostics()
     func debugSnapshot() -> GalleryDecodeDiagnostics { debugMetrics }
@@ -48,6 +53,13 @@ actor GalleryImageCache {
 
     func load(_ request: GalleryImageRequest) -> GalleryBitmap? {
         guard !Task.isCancelled else { return nil }
+        // Autosave replaces the image at the same URL. Check the file itself rather
+        // than depending on a fire-and-forget invalidation task winning the race.
+        let modified = (try? FileManager.default.attributesOfItem(atPath: request.url.path))?[.modificationDate] as? Date
+        if modified == nil || fileVersions[request.url] != modified {
+            remove(request.url)
+            fileVersions[request.url] = modified
+        }
         #if DEBUG
         let debugStarted = GalleryDebug.isEnabled ? ProcessInfo.processInfo.systemUptime : 0
         var debugHit = false
@@ -124,6 +136,7 @@ actor GalleryImageCache {
     }
 
     func remove(_ url: URL) {
+        fileVersions.removeValue(forKey: url)
         thumbnails.removeObject(forKey: url as NSURL)
         originals.removeObject(forKey: url as NSURL)
     }
@@ -149,6 +162,10 @@ actor GalleryImageCache {
 /// Rasterizing the artwork, blur and heart together gives zoom a single image to animate.
 @MainActor
 enum GalleryFavoriteThumbnailRenderer {
+    static func remove(_ url: URL) {
+        cache.removeObject(forKey: url as NSURL)
+    }
+
     private static let cache: NSCache<NSURL, GalleryThumbnailVariants> = {
         let cache = NSCache<NSURL, GalleryThumbnailVariants>()
         cache.totalCostLimit = 3 * 1024 * 1024
@@ -159,7 +176,9 @@ enum GalleryFavoriteThumbnailRenderer {
     static func render(_ bitmap: GalleryBitmap) -> GalleryBitmap? {
         let request = bitmap.request
         let key = bitmap.url as NSURL
-        if let cached = cache.object(forKey: key)?.images[request] { return cached }
+        if let variants = cache.object(forKey: key),
+           let cached = variants.images[request],
+           variants.sourceImages[request] === bitmap.image { return cached }
         guard let pixels = request.shortSidePixels else { return nil }
         let scale = max(1, request.displayScale)
         let side = CGFloat(pixels) / scale
@@ -201,6 +220,7 @@ enum GalleryFavoriteThumbnailRenderer {
         guard let image = renderer.cgImage else { return nil }
         let result = GalleryBitmap(request: request, image: image, originalSize: bitmap.originalSize)
         let variants = cache.object(forKey: key) ?? GalleryThumbnailVariants()
+        variants.sourceImages[request] = bitmap.image
         variants.images[request] = result
         cache.setObject(variants, forKey: key, cost: variants.memoryCost)
         return result
@@ -219,12 +239,14 @@ struct GalleryThumbnailView: View {
     private struct LoadRequest: Equatable {
         let image: GalleryImageRequest
         let isFavorite: Bool
+        let contentRevision: UUID
     }
 
     var body: some View {
         let isNearViewport = visibility.isNearViewport
         let loadRequest = isMounted && loadsImage && isNearViewport
-            ? LoadRequest(image: request, isFavorite: isFavorite) : nil
+            ? LoadRequest(image: request, isFavorite: isFavorite,
+                          contentRevision: visibility.contentRevision) : nil
         let displayed = bitmap ?? visibility.fallback
         Group {
             if let displayed {

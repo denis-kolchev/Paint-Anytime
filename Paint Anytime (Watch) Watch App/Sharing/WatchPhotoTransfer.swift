@@ -14,7 +14,7 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
     }
 
     @MainActor
-    func queue(_ imageURL: URL) -> Bool {
+    func queue(_ imageURL: URL, replacingPending: Bool = false) -> Bool {
         guard WCSession.isSupported() else { return false }
         do {
             let deleted = try GalleryDeletionStore.names(in: CanvasExportStore.directory())
@@ -22,13 +22,21 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         } catch { return false }
         let session = WCSession.default
         guard session.activationState == .activated, session.isCompanionAppInstalled else { return false }
-        guard !session.outstandingFileTransfers.contains(where: { $0.file.metadata?["drawingName"] as? String == imageURL.lastPathComponent }) else { return true }
+        if replacingPending {
+            let stem = imageURL.deletingPathExtension().lastPathComponent
+            for transfer in session.outstandingFileTransfers {
+                guard let name = transfer.file.metadata?["drawingName"] as? String,
+                      URL(fileURLWithPath: name).deletingPathExtension().lastPathComponent == stem else { continue }
+                transfer.cancel()
+            }
+        }
+        guard replacingPending || !session.outstandingFileTransfers.contains(where: { $0.file.metadata?["drawingName"] as? String == imageURL.lastPathComponent }) else { return true }
         if imageURL.pathExtension == "png" {
             let projectURL = imageURL.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
             do {
                 let document = try CanvasExportStore.loadDocument(at: imageURL)
                 try PaintProject(document: JSONEncoder().encode(document), preview: Data(contentsOf: imageURL)).write(to: projectURL)
-                if !session.outstandingFileTransfers.contains(where: { $0.file.fileURL == projectURL }) {
+                if replacingPending || !session.outstandingFileTransfers.contains(where: { $0.file.fileURL == projectURL }) {
                     session.transferFile(projectURL, metadata: ["drawingName": projectURL.lastPathComponent])
                 }
             } catch { NSLog("Project transfer preparation failed: %@", error.localizedDescription) }

@@ -425,7 +425,15 @@ struct SavedDrawingsView: View {
         .onReceive(NotificationCenter.default.publisher(for: .paintProjectImported)) { _ in
             controller.reload(in: galleryFolder)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .galleryDrawingSaved)) { notification in
+            guard let url = notification.object as? URL else { return }
+            gridStorage.invalidateImage(at: url)
+            controller.reload(in: galleryFolder)
+        }
          .onAppear {
+            // The view can survive a presentation while its files change in place.
+            // Refresh mounted cells even when their URLs and grid sizes are unchanged.
+            gridStorage.clearBitmaps()
             crownFocused = tutorial.allowsGalleryZoom
             controller.reload(in: galleryFolder)
             if let filename = initialArtworkFilename,

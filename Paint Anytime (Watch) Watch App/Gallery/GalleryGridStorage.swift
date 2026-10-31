@@ -41,6 +41,16 @@ final class GalleryGridStorage {
 
     func clearBitmaps() {
         bitmaps.removeAll()
-        for visibility in visibilityByURL.values { visibility.fallback = nil }
+        for visibility in visibilityByURL.values {
+            visibility.fallback = nil
+            visibility.contentRevision = UUID()
+        }
+    }
+
+    func invalidateImage(at url: URL) {
+        bitmaps.removeValue(forKey: url)
+        guard let visibility = visibilityByURL[url] else { return }
+        visibility.fallback = nil
+        visibility.contentRevision = UUID()
     }
 }

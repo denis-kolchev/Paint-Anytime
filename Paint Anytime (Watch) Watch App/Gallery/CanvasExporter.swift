@@ -10,7 +10,8 @@ enum CanvasExporter {
     }
 
     @MainActor
-    static func save(document: CanvasDocument, size: CGSize, scale: CGFloat, in folder: URL? = nil) throws -> CanvasExport {
+    static func save(document: CanvasDocument, size: CGSize, scale: CGFloat, in folder: URL? = nil,
+                     replacing previous: CanvasExport? = nil) throws -> CanvasExport {
         let size = document.size(fallback: size)
         let strokes = document.strokes
         guard size.width > 0, size.height > 0 else { throw ExportError.render }
@@ -21,7 +22,8 @@ enum CanvasExporter {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss_SSS"
-        let name = "Paint-Anytime_\(formatter.string(from: now))_\(UUID().uuidString.prefix(8))"
+        let name = previous?.url.deletingPathExtension().lastPathComponent
+            ?? "Paint-Anytime_\(formatter.string(from: now))_\(UUID().uuidString.prefix(8))"
         let device = WKInterfaceDevice.current()
         let details: [String: Any] = [
             "application": "Paint Anytime",
