@@ -5,7 +5,7 @@ import SwiftUI
 struct CanvasResizeCarousel: View {
     @Binding var selection: Int
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    private let titles = ["Percentage", "Canvas width", "Height", "Resolution"]
+    var titles = ["Percentage", "Canvas width", "Height", "Resolution"]
 
     var body: some View {
         GeometryReader { geometry in

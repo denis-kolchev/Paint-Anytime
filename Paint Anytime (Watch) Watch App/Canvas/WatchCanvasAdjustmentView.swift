@@ -18,6 +18,7 @@ struct WatchCanvasAdjustmentView: View {
     let mode: Int
     @FocusState private var focusedAdjustment: String?
     @State private var preview: CGImage?
+    @State private var cropPage = 0
     @State private var resizePage = 0
     @State private var resizePercent = 100.0
     @State private var initialized = false
@@ -45,15 +46,7 @@ struct WatchCanvasAdjustmentView: View {
                 if mode == 0 {
                     resizeEditor(height: geometry.size.height)
                 } else if mode == 1 {
-                page("Crop", mode: 1, height: geometry.size.height) { _ in
-                    adjustment("Keep", value: $cropPercent, range: 10...100, step: 5, suffix: "%")
-                    adjustment("Horizontal", value: $cropX, range: 0...100, step: 10, suffix: "%")
-                    adjustment("Vertical", value: $cropY, range: 0...100, step: 10, suffix: "%")
-                    Text(L10n.text("Trim canvas edges. Hidden strokes remain editable."))
-                        .font(.system(size: 10)).foregroundStyle(.secondary)
-                        .lineLimit(2).minimumScaleFactor(0.8)
-                        .frame(maxHeight: .infinity)
-                }
+                    cropEditor(height: geometry.size.height)
                 } else {
                 page("Rotate", mode: 2, height: geometry.size.height) { _ in
                     ForEach(0...3, id: \.self) { turn in
@@ -91,7 +84,7 @@ struct WatchCanvasAdjustmentView: View {
             width = (original.width * displayScale).rounded()
             height = (original.height * displayScale).rounded()
             resolution = controller.document.resolution
-            focusedAdjustment = mode == 0 ? "Resize" : mode == 1 ? "Keep" : nil
+            focusedAdjustment = mode == 0 ? "Resize" : mode == 1 ? "Crop" : nil
         }
     }
 
@@ -141,48 +134,6 @@ struct WatchCanvasAdjustmentView: View {
         .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
     }
 
-    private func adjustment(_ title: String, value: Binding<Double>, range: ClosedRange<Double>,
-                            step: Double, suffix: String) -> some View {
-        HStack(spacing: 4) {
-            Text(L10n.text(title)).lineLimit(1).minimumScaleFactor(0.65)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            compactButton("−") {
-                focusedAdjustment = title
-                value.wrappedValue = max(range.lowerBound, value.wrappedValue - step)
-            }
-                .frame(width: 25).disabled(value.wrappedValue <= range.lowerBound)
-                .accessibilityLabel("− " + L10n.text(title))
-            Text(verbatim: suffix == "%" ? L10n.percent(value.wrappedValue / 100)
-                 : "\(Int(value.wrappedValue)) \(suffix)")
-                .monospacedDigit().lineLimit(1).minimumScaleFactor(0.7)
-                .frame(width: 53)
-                .foregroundStyle(range.contains(value.wrappedValue) ? Color.primary : .orange)
-            compactButton("+") {
-                focusedAdjustment = title
-                value.wrappedValue = min(range.upperBound, value.wrappedValue + step)
-            }
-                .frame(width: 25).disabled(value.wrappedValue >= range.upperBound)
-                .accessibilityLabel("+ " + L10n.text(title))
-        }
-        .frame(maxHeight: .infinity)
-        .background(focusedAdjustment == title ? Color.accentColor.opacity(0.18) : .clear,
-                    in: RoundedRectangle(cornerRadius: 8))
-        .contentShape(Rectangle())
-        .onTapGesture { focusedAdjustment = title }
-        .focusable(mode == (title == "Width" || title == "Height" || title == "Resolution" ? 0 : 1))
-        .focused($focusedAdjustment, equals: title)
-        .modifier(SteppedCrownModifier(
-            value: Binding(get: { (value.wrappedValue - range.lowerBound) / step }, set: { position in
-                guard focusedAdjustment == title else { return }
-                value.wrappedValue = min(range.upperBound, max(range.lowerBound,
-                    range.lowerBound + position * step))
-            }),
-            range: 0...((range.upperBound - range.lowerBound) / step).rounded(.up),
-            sensitivity: .low, crownUnitsPerStep: 1, context: mode
-        ))
-        .accessibilityElement(children: .contain)
-    }
-
     private func applyChanges() {
         switch mode {
         case 0:
@@ -228,6 +179,71 @@ struct WatchCanvasAdjustmentView: View {
         .padding(.top, 40)
         .padding(.bottom, 22)
         .frame(height: height)
+    }
+
+    private var cropTitle: String { ["Keep", "Horizontal", "Vertical"][cropPage] }
+    private var cropValue: Double {
+        switch cropPage {
+        case 0: cropPercent
+        case 1: cropX
+        default: cropY
+        }
+    }
+
+    // Preserve the existing 5% size and 10% position increments.
+    private var cropStep: Double { cropPage == 0 ? 5 : 10 }
+    private var cropMinimum: Double { cropPage == 0 ? 10 : 0 }
+    private var cropStepRange: ClosedRange<Double> { 0...((100 - cropMinimum) / cropStep) }
+    private var cropStepValue: Binding<Double> {
+        Binding(get: { (cropValue - cropMinimum) / cropStep }, set: { position in
+            let value = min(100, max(cropMinimum, cropMinimum + position.rounded() * cropStep))
+            switch cropPage {
+            case 0: cropPercent = value
+            case 1: cropX = value
+            default: cropY = value
+            }
+        })
+    }
+
+    private func cropEditor(height availableHeight: CGFloat) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                canvasPreview(mode: 1)
+                    .padding(5)
+                    .background(.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
+                ToolValueControl(value: cropStepValue, range: cropStepRange,
+                                 valueTitle: L10n.percent(cropValue / 100),
+                                 title: L10n.text(cropTitle), isEnabled: true)
+            }
+            .frame(maxHeight: .infinity)
+            Text("\(Int(cropSize.width * displayScale)) × \(Int(cropSize.height * displayScale)) px")
+                .font(.caption2).monospacedDigit().foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.65)
+            CanvasResizeCarousel(selection: $cropPage, titles: ["Keep", "Horizontal", "Vertical"])
+                .frame(height: 28)
+            Text(L10n.text("Trim canvas edges. Hidden strokes remain editable."))
+                .font(.system(size: 10)).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2).minimumScaleFactor(0.8)
+                .frame(height: 30)
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 42)
+        .padding(.bottom, 8)
+        .frame(height: availableHeight)
+        .contentShape(Rectangle())
+        .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
+            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+            let forward = (value.translation.width < 0) == (layoutDirection == .leftToRight)
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                cropPage = min(2, max(0, cropPage + (forward ? 1 : -1)))
+            }
+        })
+        .focusable()
+        .focused($focusedAdjustment, equals: "Crop")
+        .modifier(SteppedCrownModifier(value: cropStepValue, range: cropStepRange,
+                                      sensitivity: .low, crownUnitsPerStep: 1, context: cropPage))
+        .onChange(of: cropPage) { _, _ in focusedAdjustment = "Crop" }
     }
 
     private var resizeTitle: String {
