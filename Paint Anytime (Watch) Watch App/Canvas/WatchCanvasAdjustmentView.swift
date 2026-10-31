@@ -18,6 +18,11 @@ struct WatchCanvasAdjustmentView: View {
     let mode: Int
     @FocusState private var focusedAdjustment: String?
     @State private var preview: CGImage?
+    @State private var resizePage = 0
+    @State private var resizePercent = 100.0
+    @State private var initialized = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
 
     private var original: CGSize { controller.document.size(fallback: viewportSize) }
     private var ratio: Double { original.width / original.height }
@@ -38,27 +43,7 @@ struct WatchCanvasAdjustmentView: View {
         GeometryReader { geometry in
             Group {
                 if mode == 0 {
-                page("Adjust size", mode: 0, height: geometry.size.height) { rowHeight in
-                    adjustment("Width", value: Binding(get: { width }, set: {
-                        width = $0
-                        if proportional { height = ($0 / ratio).rounded() }
-                    }), range: 1...maximumPixels, step: 1, suffix: "px")
-                    adjustment("Height", value: Binding(get: { height }, set: {
-                        height = $0
-                        if proportional { width = ($0 * ratio).rounded() }
-                    }), range: 1...maximumPixels, step: 1, suffix: "px")
-                    adjustment("Resolution", value: Binding(get: { resolution }, set: { next in
-                        if resample {
-                            width = (width * next / resolution).rounded()
-                            height = (height * next / resolution).rounded()
-                        }
-                        resolution = next
-                    }), range: 18...300, step: 18, suffix: "DPI")
-                    HStack(spacing: 4) {
-                        option("Scale proportionally", value: $proportional)
-                        option("Resample image", value: $resample)
-                    }.frame(height: rowHeight)
-                }
+                    resizeEditor(height: geometry.size.height)
                 } else if mode == 1 {
                 page("Crop", mode: 1, height: geometry.size.height) { _ in
                     adjustment("Keep", value: $cropPercent, range: 10...100, step: 5, suffix: "%")
@@ -99,12 +84,14 @@ struct WatchCanvasAdjustmentView: View {
         }
         .ignoresSafeArea()
         .task {
+            guard !initialized else { return }
+            initialized = true
             preview = WatchBitmapRenderer.render(document: controller.document, size: original,
                 scale: min(1, 160 / max(original.width, original.height)))
             width = (original.width * displayScale).rounded()
             height = (original.height * displayScale).rounded()
             resolution = controller.document.resolution
-            focusedAdjustment = mode == 0 ? "Width" : mode == 1 ? "Keep" : nil
+            focusedAdjustment = mode == 0 ? "Resize" : mode == 1 ? "Keep" : nil
         }
     }
 
@@ -114,8 +101,11 @@ struct WatchCanvasAdjustmentView: View {
                 ? CGSize(width: width / displayScale, height: height / displayScale)
                 : mode == 2 && turns % 2 != 0
                     ? CGSize(width: original.height, height: original.width) : original
-            let scale = min(geometry.size.width / max(1, target.width),
-                            geometry.size.height / max(1, target.height))
+            let previewBounds = mode == 0
+                ? CGSize(width: max(original.width, target.width), height: max(original.height, target.height))
+                : target
+            let scale = min(geometry.size.width / max(1, previewBounds.width),
+                            geometry.size.height / max(1, previewBounds.height))
             ZStack {
                 ZStack(alignment: .topLeading) {
                     Rectangle().fill(.gray.opacity(0.3))
@@ -149,22 +139,6 @@ struct WatchCanvasAdjustmentView: View {
         }
         .buttonStyle(.plain)
         .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    private func option(_ title: String, value: Binding<Bool>) -> some View {
-        Button { value.wrappedValue.toggle() } label: {
-            HStack(spacing: 3) {
-                Image(systemName: value.wrappedValue ? "checkmark.circle.fill" : "circle")
-                Text(L10n.text(title)).lineLimit(2).minimumScaleFactor(0.75)
-            }.font(.system(size: 10))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(value.wrappedValue ? Color.accentColor : .secondary)
-        .accessibilityLabel(L10n.text(title))
-        .accessibilityValue(Text(value.wrappedValue ? "✓" : "−"))
-        .accessibilityAddTraits(value.wrappedValue ? .isSelected : [])
     }
 
     private func adjustment(_ title: String, value: Binding<Double>, range: ClosedRange<Double>,
@@ -243,12 +217,7 @@ struct WatchCanvasAdjustmentView: View {
                          : "\(Int((turns % 2 == 0 ? original.width : original.height) * displayScale)) × \(Int((turns % 2 == 0 ? original.height : original.width) * displayScale)) px")
                         .font(.system(size: 9)).foregroundStyle(.secondary)
                         .lineLimit(1).minimumScaleFactor(0.7)
-                    if mode == 0 {
-                        HStack(spacing: 4) {
-                            compactButton(L10n.percent(0.5)) { setScale(0.5) }
-                            compactButton(L10n.percent(1)) { setScale(1) }
-                        }.frame(height: 18)
-                    }
+
                 }.frame(maxWidth: .infinity, alignment: .leading)
                 canvasPreview(mode: mode).frame(width: 52, height: 44)
             }.frame(height: 52)
@@ -261,9 +230,113 @@ struct WatchCanvasAdjustmentView: View {
         .frame(height: height)
     }
 
-    private func setScale(_ factor: Double) {
-        width = max(1, (original.width * displayScale * factor).rounded())
-        height = max(1, (original.height * displayScale * factor).rounded())
+    private var resizeTitle: String {
+        ["Percentage", "Canvas width", "Height", "Resolution"][resizePage]
+    }
+
+    private var resizeRange: ClosedRange<Double> {
+        switch resizePage {
+        case 0:
+            let largest = max(original.width, original.height) * displayScale
+            return 1...max(1, floor(maximumPixels / max(1, largest) * 100))
+        case 3: return 18...300
+        default: return 1...maximumPixels
+        }
+    }
+
+    private var resizeValue: Binding<Double> {
+        Binding(get: {
+            switch resizePage {
+            case 0: resizePercent
+            case 1: width
+            case 2: height
+            default: resolution
+            }
+        }, set: { next in
+            let value = min(resizeRange.upperBound, max(resizeRange.lowerBound, next.rounded()))
+            switch resizePage {
+            case 0:
+                resizePercent = value
+                width = max(1, (original.width * displayScale * value / 100).rounded())
+                height = max(1, (original.height * displayScale * value / 100).rounded())
+            case 1:
+                width = value
+                if proportional { height = max(1, (value / ratio).rounded()) }
+                resizePercent = width / max(1, original.width * displayScale) * 100
+            case 2:
+                height = value
+                if proportional { width = max(1, (value * ratio).rounded()) }
+                resizePercent = height / max(1, original.height * displayScale) * 100
+            default:
+                if resample {
+                    width = max(1, (width * value / resolution).rounded())
+                    height = max(1, (height * value / resolution).rounded())
+                    resizePercent = width / max(1, original.width * displayScale) * 100
+                }
+                resolution = value
+            }
+        })
+    }
+
+    private var resizeValueTitle: String {
+        if resizePage == 0 { return L10n.percent(resizePercent / 100) }
+        return "\(Int(resizeValue.wrappedValue)) " + (resizePage == 3 ? "DPI" : "px")
+    }
+
+    private func resizeEditor(height availableHeight: CGFloat) -> some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 8) {
+                canvasPreview(mode: 0)
+                    .padding(5)
+                    .background(.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
+                ToolValueControl(value: resizeValue, range: resizeRange,
+                                 valueTitle: resizeValueTitle, title: L10n.text(resizeTitle),
+                                 isEnabled: true)
+            }
+            .frame(maxHeight: .infinity)
+            Text("\(Int(width)) × \(Int(height)) px · \(Int(resolution)) DPI")
+                .font(.caption2).monospacedDigit()
+                .foregroundStyle(validSize ? Color.secondary : .orange)
+                .lineLimit(1).minimumScaleFactor(0.65)
+            CanvasResizeCarousel(selection: $resizePage)
+                .frame(height: 28)
+            HStack(spacing: 18) {
+                resizeOption("Scale proportionally", symbol: proportional ? "link" : "link.slash", value: $proportional)
+                resizeOption("Resample image", symbol: "arrow.up.left.and.arrow.down.right", value: $resample)
+            }
+            .frame(height: 30)
+        }
+        .padding(.horizontal, 10)
+        .padding(.top, 42)
+        .padding(.bottom, 8)
+        .frame(height: availableHeight)
+        .contentShape(Rectangle())
+        .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
+            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+            let forward = (value.translation.width < 0) == (layoutDirection == .leftToRight)
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
+                resizePage = min(3, max(0, resizePage + (forward ? 1 : -1)))
+            }
+        })
+        .focusable()
+        .focused($focusedAdjustment, equals: "Resize")
+        .modifier(SteppedCrownModifier(value: resizeValue, range: resizeRange,
+                                      sensitivity: .low, crownUnitsPerStep: 1, context: resizePage))
+        .onChange(of: resizePage) { _, _ in focusedAdjustment = "Resize" }
+    }
+
+    private func resizeOption(_ title: String, symbol: String, value: Binding<Bool>) -> some View {
+        Button { value.wrappedValue.toggle() } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 15, weight: .semibold))
+                .frame(width: 36, height: 30)
+                .background(value.wrappedValue ? Color.accentColor.opacity(0.3) : Color.white.opacity(0.08),
+                            in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(value.wrappedValue ? Color.accentColor : Color.secondary)
+        .accessibilityLabel(L10n.text(title))
+        .accessibilityAddTraits(value.wrappedValue ? .isSelected : [])
     }
 
 }
