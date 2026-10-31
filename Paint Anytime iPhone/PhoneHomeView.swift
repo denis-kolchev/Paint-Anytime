@@ -43,8 +43,9 @@ struct PhoneHomeView: View {
     @State private var settlingZoom = false
     @State private var zoomSettlementID: UUID?
     @State private var gridFrame: CGRect = .zero
-    @State private var galleryHeaderHeight: CGFloat = 0
-    private var galleryScrollTopInset: CGFloat { galleryHeaderHeight + 40 }
+    @State private var galleryHeaderBottom: CGFloat = 0
+    // The header's material fade extends 40 pt below its bottom edge.
+    private var galleryScrollTopInset: CGFloat { galleryHeaderBottom + 40 }
     @State private var pinchTarget: URL?
     @State private var pinchTargetFractionY: CGFloat = 0.5
     @State private var pinchViewportY: CGFloat = 0
@@ -205,7 +206,8 @@ struct PhoneHomeView: View {
 
                     }
                 }
-                // Extend the resting scroll range past the header and its fade.
+                // Rest the grid below the header and its blur fade, so the first
+                // row is never covered by the title, buttons or material.
                 // Tile coordinates remain relative to the unpadded grid.
                 .contentMargins(.top, galleryScrollTopInset, for: .scrollContent)
                 // While Canvas is visible it owns both scale and translation.
@@ -494,14 +496,16 @@ struct PhoneHomeView: View {
                     synchronize: { photoInbox.synchronize() })
                     .padding(.top, container.safeAreaInsets.top)
                     .background {
+                        // The header's bottom edge in window space, which includes
+                        // the status bar; the gallery viewport starts at the window top.
                         GeometryReader { header in
                             Color.clear.preference(key: PhoneGalleryHeaderHeightKey.self,
-                                                   value: header.size.height)
+                                                   value: header.frame(in: .global).maxY)
                         }
                     }
             }
-            .onPreferenceChange(PhoneGalleryHeaderHeightKey.self) { height in
-                if galleryHeaderHeight != height { galleryHeaderHeight = height }
+            .onPreferenceChange(PhoneGalleryHeaderHeightKey.self) { bottom in
+                if galleryHeaderBottom != bottom { galleryHeaderBottom = bottom }
             }
             .refreshable { photoInbox.synchronize() }
             .fileImporter(isPresented: $importingProject, allowedContentTypes: [.paintAnytimeProject]) { result in
