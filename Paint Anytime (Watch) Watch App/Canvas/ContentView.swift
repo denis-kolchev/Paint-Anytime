@@ -443,7 +443,7 @@ struct ContentView: View {
         }
         .task(id: isActive ? launchRequest?.id : nil) {
             guard isActive, let request = launchRequest else { return }
-            await openComplication(request)
+            await openDeepLink(request)
         }
         .onChange(of: scenePhase) { _, phase in
             if phase != .active {
@@ -458,11 +458,12 @@ struct ContentView: View {
     }
 
     @MainActor
-    private func openComplication(_ request: WatchLaunchRequest) async {
+    private func openDeepLink(_ request: WatchLaunchRequest) async {
         guard request.destination != .app else { return }
         controller.cancelStroke()
-        let hasPresentation = showsLayers || showsAppSettings
+        let hasPresentation = showsSampledPalette || showsLayers || showsAppSettings
             || session.savedDrawing != nil || session.pendingCanvasAction != nil || session.exportError != nil
+        showsSampledPalette = false
         showsLayers = false
         showsAppSettings = false
         session.savedDrawing = nil
@@ -485,8 +486,10 @@ struct ContentView: View {
         }
         guard !Task.isCancelled, isActive, launchRequest?.id == request.id else { return }
         switch request.destination {
-        case .app:
+        case .app, .canvas:
             break
+        case .settings:
+            showsAppSettings = true
         case .newCanvas:
             session.requestCanvasAction(.open(CanvasDocument()))
         case .gallery:

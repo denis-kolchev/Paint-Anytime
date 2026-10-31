@@ -74,6 +74,7 @@ struct PhoneHomeView: View {
     @State private var importingProject = false
     @State private var showingInboxError = false
     @State private var projectMessage: String?
+    @State private var watchDestination: PaintDeepLink?
     private let columnOptions = [1, 3, 5]
     private let gallerySpacing: CGFloat = 2
     private var columnCount: Int { columnOptions.contains(storedColumnCount) ? storedColumnCount : 5 }
@@ -431,7 +432,6 @@ struct PhoneHomeView: View {
                 case .failure(let error): projectMessage = error.localizedDescription
                 }
             }
-            .onOpenURL { importProject($0) }
             .alert("Project", isPresented: Binding(get: { projectMessage != nil }, set: { if !$0 { projectMessage = nil } })) {
                 Button("OK") { projectMessage = nil }
             } message: { Text(projectMessage ?? "") }
@@ -490,6 +490,15 @@ struct PhoneHomeView: View {
         // Measure through the bottom inset too, so both clipped panes reach
         // the display edge instead of ending above the home-indicator area.
         .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
+        .onOpenURL(perform: openURL)
+        .accessibilityHidden(watchDestination != nil)
+        .overlay {
+            if let watchDestination {
+                PhoneWatchDestinationView(destination: watchDestination) {
+                    self.watchDestination = nil
+                }
+            }
+        }
     }
 
     private func bookDivisionX(in geometry: GeometryProxy) -> CGFloat? {
@@ -521,6 +530,21 @@ struct PhoneHomeView: View {
         } else {
             navigationPath = [url]
         }
+    }
+
+    private func openURL(_ url: URL) {
+        if url.isFileURL {
+            importProject(url)
+            return
+        }
+        guard let destination = PaintDeepLink(url: url), destination != .app else { return }
+        importingProject = false
+        projectMessage = nil
+        showingInboxError = false
+        navigationPath = []
+        selectedDrawing = nil
+        resetGalleryZoom()
+        watchDestination = destination == .gallery ? nil : destination
     }
 
     private func importProject(_ url: URL) {
