@@ -449,7 +449,7 @@ struct TutorialPlayerView: View {
         // may not be reported again when only the button's label changes.
         return controls.filter { control, _ in
             switch control {
-            case .morph, .contentMorph: return false
+            case .morph, .contentMorph, .custom: return false
             case .canvasToolsMorph: return tutorial.permits([.openLasso])
             case .tools: return showsPrimaryControl
             case .more: return tutorial.permits([.openMenu])

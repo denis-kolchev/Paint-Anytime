@@ -9,6 +9,7 @@ import SwiftUI
 import WatchKit
 
 enum CanvasToolbarControl: Hashable {
+    case custom(Int)
     case more, tools, clear, undo, redo, save, morph, contentMorph, canvasToolsMorph
 }
 
@@ -530,7 +531,7 @@ struct WatchCanvasView: View {
             let dx: CGFloat
             let dy: CGFloat
             switch control {
-            case .morph, .contentMorph, .canvasToolsMorph:
+            case .morph, .contentMorph, .canvasToolsMorph, .custom:
                 if frame.contains(screenPoint) { return true }
                 continue
             case .more, .tools:

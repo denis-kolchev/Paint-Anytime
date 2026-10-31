@@ -7,7 +7,15 @@ struct ContentView: View {
     @StateObject private var session = DrawingSessionController()
     @StateObject private var menuOnboarding = OnboardingController()
     private var controller: CanvasController { session.canvas }
-    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
+    @AppStorage("experimental.morphToolbar") private var prefersMorphToolbar = true
+    @AppStorage(CanvasControlLayout.storageKey) private var controlLayoutData = Data()
+    @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
+    @State private var quickSettings: CanvasQuickAction?
+    @Environment(\.openURL) private var openURL
+    private var customLayout: CanvasControlLayout? {
+        customLayoutEnabled ? CanvasControlLayout.decode(controlLayoutData) : nil
+    }
+    private var usesMorphToolbar: Bool { customLayout == nil && prefersMorphToolbar }
     private var canvasToolbarDiameter: CGFloat {
         usesMorphToolbar ? 32 : MorphPanelGeometry.buttonDiameter
     }
@@ -88,7 +96,8 @@ struct ContentView: View {
                 CanvasMorphPanels(state: morphState, regions: controlRegions,
                                   session: session, lasso: lasso, size: geometry.size,
                                   canvasOrigin: geometry.frame(in: .global).origin,
-                                  isVisible: isActive && !showsGallery && !showsToolSettings,
+                                  isVisible: isActive && !showsGallery && !showsToolSettings &&
+                                      (customLayout == nil || isMovingCanvas || lasso.isActive),
                                   usesMorphToolbar: usesMorphToolbar, isMovingCanvas: isMovingCanvas,
                                   isEyedropperActive: isEyedropperActive,
                                   showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
@@ -98,6 +107,17 @@ struct ContentView: View {
                                   onClearLayerMoveName: { layerMoveName = nil })
                     .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))
                     .zIndex(3)
+
+                if let customLayout, isActive, !showsGallery, !showsToolSettings,
+                   !isMovingCanvas, !lasso.isActive, controller.activeStroke == nil {
+                    CustomCanvasControls(layout: customLayout, state: morphState,
+                                         regions: controlRegions, controller: controller,
+                                         size: geometry.size,
+                                         canvasOrigin: geometry.frame(in: .global).origin,
+                                         onAction: performQuickAction)
+                        .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
+                        .zIndex(3)
+                }
 
                 if showsGallery {
                     SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap,
@@ -161,7 +181,22 @@ struct ContentView: View {
         // Reinstall toolbar items when returning from onboarding so watchOS
         // recalculates the clock position around the trailing tool button.
         .toolbar {
-            if !usesMorphToolbar && isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive && controller.activeStroke == nil {
+            if let customLayout, isActive, menuOnboarding.tutorialFolder == nil,
+               !showsGallery, !showsToolSettings, !isMovingCanvas, !lasso.isActive {
+                ToolbarItem(placement: .topBarTrailing) {
+                    customToolbarAnchor(0, layout: customLayout)
+                }
+                ToolbarItemGroup(placement: .bottomBar) {
+                    customToolbarAnchor(1, layout: customLayout)
+                    Spacer(minLength: 0)
+                    customToolbarAnchor(2, layout: customLayout)
+                    Spacer(minLength: 0)
+                    customToolbarAnchor(3, layout: customLayout)
+                    Spacer(minLength: 0)
+                    customToolbarAnchor(4, layout: customLayout)
+                }
+            }
+            if customLayout == nil && !usesMorphToolbar && isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive && controller.activeStroke == nil {
                 ToolbarItemGroup(placement: .bottomBar) {
                     MorphControlsScope {
                         Button {
@@ -263,7 +298,8 @@ struct ContentView: View {
                     }
                 }
             }
-            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery {
+            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery &&
+                (customLayout == nil || showsToolSettings || isMovingCanvas || lasso.isActive) {
                 ToolbarItem(placement: .topBarTrailing) {
                     MorphControlsScope {
                         Button {
@@ -326,6 +362,17 @@ struct ContentView: View {
             }
             .environment(\.colorScheme, .dark)
         }
+        .sheet(item: $quickSettings) { action in
+            CanvasQuickSettingsView(action: action, controller: controller, viewportSize: canvasSize)
+        }
+        .onChange(of: customLayoutEnabled) { _, _ in
+            morphState.customExpandedSlot = nil
+        }
+        .onChange(of: controlLayoutData) { _, _ in
+            morphState.customExpandedSlot = nil
+            showsMorphToolbar = false
+            showsContentActions = false
+        }
         .sheet(isPresented: $showsLayers) {
             WatchLayersView(controller: controller, canvasSize: controller.document.size(fallback: canvasSize))
         }
@@ -336,6 +383,7 @@ struct ContentView: View {
             if shows { showsContentActions = false }
         }
         .onChange(of: showsAppSettings) { _, shows in
+            if shows { morphState.customExpandedSlot = nil }
             if shows { showsContentActions = false }
             else if menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
         }
@@ -421,9 +469,11 @@ struct ContentView: View {
             showsMorphToolbar = false
         }
         .onChange(of: isActive) { _, active in
+            if !active { morphState.customExpandedSlot = nil }
             if !active { showsMorphToolbar = false; showsContentActions = false }
         }
         .onChange(of: isMovingCanvas) { _, moving in
+            morphState.customExpandedSlot = nil
             if moving { showsMorphToolbar = false; showsContentActions = false; cameraSampledColor = nil }
             else {
                 lasso.deactivate()
@@ -525,6 +575,63 @@ struct ContentView: View {
             (!lasso.isActive && usesMorphToolbar))
     }
 
+    private func customToolbarAnchor(_ index: Int, layout: CanvasControlLayout) -> some View {
+        CustomCanvasToolbarAnchor(index: index, assignment: layout.slots[index],
+                                  state: morphState, onAction: performQuickAction)
+            .trackCanvasControl(CustomCanvasControls.anchors[index], frames: controlFramesBinding)
+            .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
+            .opacity(controller.activeStroke == nil ? 1 : 0)
+            .allowsHitTesting(controller.activeStroke == nil)
+    }
+
+    private func performQuickAction(_ action: CanvasQuickAction) {
+        guard isActive, controller.activeStroke == nil, !showsAppSettings,
+              quickSettings == nil, !showsGallery, !showsToolSettings,
+              !isMovingCanvas, !lasso.isActive else { return }
+        morphState.customExpandedSlot = nil
+        showsMorphToolbar = false
+        showsContentActions = false
+        controller.cancelStroke()
+        switch action {
+        case .brush: showsToolSettings = true
+        case .clear:
+            if controller.canClear { session.requestCanvasAction(.clear) }
+        case .save: session.saveDrawing(size: canvasSize, scale: displayScale)
+        case .lasso: startLasso()
+        case .undo:
+            if controller.canUndo { controller.undo() }
+        case .redo:
+            if controller.canRedo { controller.redo() }
+        case .layers: showsLayers = true
+        case .gallery:
+            savedNoticeID = nil
+            galleryArtworkFilename = nil
+            galleryInitialBitmap = nil
+            galleryLaunchID = UUID()
+            showsGallery = true
+        case .language, .canvasSize, .toolSynchronization, .visiblePalettes, .blending, .privacy:
+            quickSettings = action
+        case .tutorial:
+            // Reuse the existing preparation, failure alert and tutorial handoff.
+            showsAppSettings = true
+            menuOnboarding.requestTutorial()
+        case .reportBug:
+            var components = URLComponents()
+            components.scheme = "mailto"
+            components.path = "paintanytime.app@gmail.com"
+            components.queryItems = [URLQueryItem(name: "subject", value: "Paint Anytime — " + L10n.text("Report a bug"))]
+            if let url = components.url { openURL(url) }
+        case .eyedropper, .camera:
+            cameraSampledColor = nil
+            hasEyedropperSession = action == .eyedropper
+            isEyedropperActive = action == .eyedropper
+            isMovingCanvas = true
+        case .palettes:
+            cameraSampledColor = nil
+            showsSampledPalette = true
+        }
+    }
+
     private func finishCameraTool() {
         let shouldEditColor = hasEyedropperSession && cameraSampledColor != nil
         controller.cancelStroke()
@@ -570,9 +677,14 @@ struct ContentView: View {
             } else {
                 session.canvasPreparationError = L10n.text("Could not open the image.")
             }
-        }, acceptsInput: isActive && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
+        }, acceptsInput: isActive && quickSettings == nil && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
             cameraSampledColor = color
         }, onCanvasInteraction: {
+            if morphState.customExpandedSlot != nil {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+                    morphState.customExpandedSlot = nil
+                }
+            }
             if showsContentActions {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { showsContentActions = false }
             }
@@ -590,6 +702,11 @@ struct ContentView: View {
         return canvasControlFrames.filter { control, _ in
             if lasso.isActive { return (!showsSelectionActions && control == .tools) || control == .canvasToolsMorph || (showsSelectionActions && control == .morph) }
             if isMovingCanvas { return control == .tools || control == .more }
+            if customLayout != nil {
+                if case .custom = control { return true }
+                return control == .more || CustomCanvasControls.anchors.contains(control)
+            }
+            if case .custom = control { return false }
             if usesMorphToolbar { return control == .morph || control == .contentMorph }
             return control != .morph && control != .canvasToolsMorph && control != .clear
         }

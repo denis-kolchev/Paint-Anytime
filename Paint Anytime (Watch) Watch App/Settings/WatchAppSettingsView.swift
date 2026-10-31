@@ -127,6 +127,11 @@ private struct DrawingSettingsView: View {
             } label: {
                 Label(L10n.text("Everything at hand"), systemImage: "rectangle.compress.vertical")
             }
+            NavigationLink {
+                CanvasLayoutEditorView()
+            } label: {
+                Label(L10n.text("Canvas editor"), systemImage: "slider.horizontal.3")
+            }
         }
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Drawing"))
@@ -134,7 +139,7 @@ private struct DrawingSettingsView: View {
     }
 }
 
-private struct PaletteVisibilitySettingsView: View {
+struct PaletteVisibilitySettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
     @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
@@ -204,7 +209,7 @@ private struct PaletteVisibilitySettingsView: View {
     }
 }
 
-private struct ToolSynchronizationView: View {
+struct ToolSynchronizationView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
 
@@ -305,7 +310,7 @@ struct AppLanguageSelectionView: View {
     }
 }
 
-private struct WatchLegalDocumentView: View {
+struct WatchLegalDocumentView: View {
     let title: String
     let paragraphs: [String]
 
@@ -326,7 +331,7 @@ private struct WatchLegalDocumentView: View {
     }
 }
 
-private struct ColorBlendingSelectionView: View {
+struct ColorBlendingSelectionView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
 
@@ -463,13 +468,17 @@ private struct ColorBlendingIllustration: View {
 private struct DrawingControlsSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
+    @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
 
     var body: some View {
         List {
             Section {
                 Toggle(L10n.text("Always show buttons"), isOn: Binding(
-                    get: { !usesMorphToolbar },
-                    set: { usesMorphToolbar = !$0 }
+                    get: { customLayoutEnabled || !usesMorphToolbar },
+                    set: {
+                        customLayoutEnabled = false
+                        usesMorphToolbar = !$0
+                    }
                 ))
             } footer: {
                 Text(L10n.text("Show drawing buttons directly on the canvas for quick access. When off, buttons are grouped in expandable menus."))

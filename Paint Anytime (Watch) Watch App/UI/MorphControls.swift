@@ -5,6 +5,7 @@ import Observation
 /// The canvas owner keeps a reference for dismissal and lifecycle events.
 @Observable
 final class CanvasMorphState {
+    var customExpandedSlot: Int?
     var showsMorphToolbar = false
     var showsContentActions = false
     var showsSelectionActions = false
@@ -18,7 +19,7 @@ final class CanvasControlRegions {
 
     func updateToolbarFrames(_ frames: [CanvasToolbarControl: CGRect]) {
         self.frames = frames
-        let anchors = frames.filter { [.more, .tools, .clear].contains($0.key) }
+        let anchors = frames.filter { [.more, .tools, .clear, .undo, .redo, .save].contains($0.key) }
         if toolbarAnchors != anchors { toolbarAnchors = anchors }
     }
 }
