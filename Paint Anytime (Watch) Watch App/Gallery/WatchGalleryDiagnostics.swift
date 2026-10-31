@@ -47,6 +47,45 @@ final class WatchGalleryDiagnostics {
             zoom.pendingCommit == nil ? 0 : restoreError, restoreReady ? 1 : 0)
     }
 
+    // Keep the last captured grids visible after the compositor resets.
+    private var lastGridText = "captured grids —"
+
+    func gridText(zoom: GalleryGridZoom, urls: [URL], selected: URL?, focused: URL?,
+                  displayed: URL?, frames: [URL: CGRect], columns: Int, leading: Int,
+                  topInset: CGFloat) -> String {
+        func label(_ url: URL?) -> String {
+            guard let url else { return "—" }
+            return urls.firstIndex(of: url).map { "#\($0)" } ?? "missing"
+        }
+        func number(_ value: CGFloat) -> String { String(format: "%.1f", Double(value)) }
+        let reference = frames.first { urls.contains($0.key) }
+        let originY: String
+        if let (url, frame) = reference, let index = urls.firstIndex(of: url) {
+            let row = (index + leading) / columns
+            originY = number(frame.minY - CGFloat(row) * (frame.width + GalleryZoomRules.spacing))
+        } else {
+            originY = "—"
+        }
+        if zoom.active {
+            let rows = GalleryZoomRules.densities.map { density -> String in
+                let padding = zoom.leading[density] ?? 0
+                let slot = zoom.index + padding
+                let top = zoom.tops[density] ?? 0
+                let stride = GalleryZoomRules.side(density, width: zoom.viewport.width) + GalleryZoomRules.spacing
+                let scroll = density == 1 ? "—" : number(CGFloat(slot / density) * stride - top)
+                return "\(density)c L\(padding) r\(slot / density)c\(slot % density) y\(number(top)) s\(scroll)"
+            }
+            lastGridText = "target \(label(zoom.target)) base \(zoom.baseColumns)c\n" + rows.joined(separator: "\n")
+        }
+        let commit = zoom.pendingCommit.map {
+            "commit \(label($0.target)) \($0.columns)c L\($0.leading)\ny\(number($0.viewportTop)) anchor \(number($0.anchorY))"
+        } ?? "commit —"
+        return "sel \(label(selected)) focus \(label(focused)) img \(label(displayed))\n" +
+            "native \(columns)c L\(leading) y\(originY) inset \(number(topInset))\n" +
+            (zoom.active ? "LIVE " : "LAST ") + lastGridText + "\n" +
+            "pan \(number(zoom.offsetY)) shown \(number(zoom.presentationOffsetY))\n" + commit
+    }
+
     private var lastDetails = -Double.infinity
 
     func geometry(elapsedMS: Double, frames: [URL: CGRect], viewport: CGSize,

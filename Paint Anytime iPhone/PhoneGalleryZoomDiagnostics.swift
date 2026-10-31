@@ -5,6 +5,8 @@ import QuartzCore
 /// Milestones are retained after release; synchronous stalls cannot display
 /// their intermediate state while the main thread is busy.
 struct PhoneGalleryZoomDiagnostics {
+    var sourceText = "source —"
+    var completedGeometry = "geometry —"
     var session = 0
     var startedAt: CFTimeInterval?
     var movementMS: Double?

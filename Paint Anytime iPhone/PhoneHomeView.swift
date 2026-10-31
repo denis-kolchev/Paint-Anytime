@@ -51,9 +51,54 @@ struct PhoneHomeView: View {
     @State private var pendingZoomColumns: Int?
     @State private var hasTwoFingerContact = false
     @GestureState private var isPinching = false
+    @State private var measuredTiles = PhoneGalleryMeasuredTiles()
     #if DEBUG
     @State private var debugScrollMoving = false
     @State private var zoomDiagnostics = PhoneGalleryZoomDiagnostics()
+
+    private func debugNumber(_ value: CGFloat) -> String {
+        String(format: "%.1f", Double(value))
+    }
+
+    private func debugRect(_ frame: CGRect) -> String {
+        "\(debugNumber(frame.minX)),\(debugNumber(frame.minY)) \(debugNumber(frame.width))x\(debugNumber(frame.height))"
+    }
+
+    private func debugZoomGeometry(width: CGFloat) -> String {
+        func identity(_ url: URL?) -> String {
+            guard let url else { return "—" }
+            return photoInbox.images.firstIndex(of: url).map { "#\($0)" } ?? "missing"
+        }
+        var lines = ["target \(identity(pinchTarget)) captured #\(zoomAnchorIndex.map(String.init) ?? "—")",
+                     "native \(columnCount)c measured \(measuredGridColumns)c L\(leadingSlots)",
+                     "grid \(debugRect(gridFrame))",
+                     "pos \(debugNumber(zoomPresentation.position)) pan \(debugNumber(zoomPresentation.offsetY))"]
+        if let index = zoomAnchorIndex, photoInbox.images.indices.contains(index) {
+            for density in columnOptions {
+                let leading = slots(for: density)
+                let top = zoomAnchorTops[density] ?? 0
+                let itemTop = galleryItemTop(index: index, columns: density, width: width, leading: leading)
+                lines.append("\(density)c L\(leading) r\((index + leading) / density)c\((index + leading) % density) y\(debugNumber(top)) scroll\(debugNumber(itemTop - top))")
+            }
+        }
+        if let target = pinchTarget, let index = photoInbox.images.firstIndex(of: target),
+           let measured = measuredTiles.frames[target], measured.columns == columnCount {
+            let predicted = gridFrame.minY + galleryItemTop(index: index, columns: columnCount,
+                width: width, leading: leadingSlots)
+            lines.append("native tile \(debugRect(measured.frame))")
+            lines.append("native dy \(debugNumber(measured.frame.minY - predicted)) (actual-calc)")
+        } else {
+            lines.append("native tile — (not measured)")
+        }
+        lines.append("return \(identity(pendingZoomTarget)) \(pendingZoomColumns.map(String.init) ?? "—")c y\(pendingZoomViewportTop.map(debugNumber) ?? "—")")
+        if let measured = pendingZoomMeasuredFrame {
+            lines.append("measured \(measured.columns)c \(debugRect(measured.frame))")
+            if let top = pendingZoomViewportTop {
+                lines.append("return dy \(debugNumber(measured.frame.minY - top))")
+            }
+        }
+        return lines.joined(separator: "\n")
+    }
 
     private var debugInteraction: String {
         if pendingZoomColumns != nil { return "Zoom: restoring position" }
@@ -126,6 +171,13 @@ struct PhoneHomeView: View {
                                                 value: PhoneGalleryLayout(columns: columnCount,
                                                     frame: tile.frame(in: .named("phoneGalleryViewport"))))
                                         }
+                                    }
+                                }
+                                .background {
+                                    GeometryReader { tile in
+                                        Color.clear.preference(key: PhoneGalleryMeasuredTilesKey.self,
+                                            value: [url: PhoneGalleryLayout(columns: columnCount,
+                                                frame: tile.frame(in: .named("phoneGalleryViewport")))])
                                     }
                                 }
                                 .accessibilityLabel(Text(url.deletingPathExtension().lastPathComponent))
@@ -297,7 +349,12 @@ struct PhoneHomeView: View {
                 }
                 .overlay(alignment: .bottomTrailing) {
                     if PhoneGalleryDebug.showsDiagnostics {
-                    Text(verbatim: debugInteraction + "\n" + zoomDiagnostics.text)
+                    PhoneGalleryGeometryDebugOverlay {
+                        debugInteraction + "\n" + zoomDiagnostics.text + "\n"
+                            + zoomDiagnostics.sourceText + "\n"
+                            + (pinchTarget == nil ? "LAST\n" + zoomDiagnostics.completedGeometry
+                               : "LIVE\n" + debugZoomGeometry(width: geometry.size.width))
+                    }
                         .font(.system(size: 11, weight: .semibold, design: .monospaced))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 8)
@@ -378,6 +435,10 @@ struct PhoneHomeView: View {
                         }
                         attempts += 1
                     }
+                }
+                .onPreferenceChange(PhoneGalleryMeasuredTilesKey.self) { frames in
+                    measuredTiles.frames = frames
+                    measuredTiles.updatedAt = ProcessInfo.processInfo.systemUptime
                 }
                 .onPreferenceChange(PhoneGalleryTargetFrameKey.self) { layout in
                     pendingZoomMeasuredFrame = layout
@@ -596,8 +657,28 @@ struct PhoneHomeView: View {
         // empty cells of the last row. Keep that identity for the entire gesture.
         let row = max(0, Int(((point.y - side / 2) / stride).rounded()))
         let column = min(columnCount - 1, max(0, Int(((point.x - side / 2) / stride).rounded())))
+        let touch = CGPoint(x: viewportAnchor.x * width, y: viewportAnchor.y * viewportHeight)
+        let viewport = CGRect(x: 0, y: 0, width: width, height: viewportHeight)
+        // LazyVGrid's estimated origin can disagree with its materialized rows.
+        // Pick by distance to actual tile bounds (zero inside a tile), so a
+        // portrait under the fingers wins over a neighboring tile's center.
+        let measuredSource = measuredTiles.frames.filter {
+            $0.value.columns == columnCount && abs($0.value.frame.width - side) < 1
+                && $0.value.frame.height > 0 && $0.value.frame.intersects(viewport)
+                && photoInbox.images.contains($0.key)
+        }.min { lhs, rhs in
+            func distance(_ frame: CGRect) -> CGFloat {
+                let dx = max(frame.minX - touch.x, max(0, touch.x - frame.maxX))
+                let dy = max(frame.minY - touch.y, max(0, touch.y - frame.maxY))
+                return dx * dx + dy * dy
+            }
+            let left = distance(lhs.value.frame), right = distance(rhs.value.frame)
+            return left == right ? lhs.key.absoluteString < rhs.key.absoluteString : left < right
+        }
         let index: Int
-        if columnCount == 1 {
+        if let measuredSource, let measuredIndex = photoInbox.images.firstIndex(of: measuredSource.key) {
+            index = measuredIndex
+        } else if columnCount == 1 {
             // Use the containing tile, not its center: a tall portrait can
             // contain the touch even when a neighboring short tile is nearer.
             index = photoInbox.images.indices.first {
@@ -613,8 +694,13 @@ struct PhoneHomeView: View {
         pinchTarget = photoInbox.images[index]
         let tileTop = galleryItemTop(index: index, columns: columnCount, width: width, leading: leadingSlots)
         let tileHeight = galleryItemHeight(index: index, columns: columnCount, width: width)
-        pinchTargetFractionY = min(1, max(0, (point.y - tileTop) / tileHeight))
-        pinchViewportY = gridFrame.minY + point.y
+        let sourceTop = measuredSource?.value.frame.minY ?? (gridFrame.minY + tileTop)
+        let sourceHeight = measuredSource?.value.frame.height ?? tileHeight
+        // Translate the captured model to the visible row, then freeze it for
+        // this session. Subsequent pan/zoom keeps using that same coordinate space.
+        zoomBaseFrame.origin.y = sourceTop - tileTop
+        pinchTargetFractionY = min(1, max(0, (touch.y - sourceTop) / sourceHeight))
+        pinchViewportY = touch.y
         zoomLeadingSlots = [columnCount: leadingSlots]
         for density in columnOptions where density != columnCount {
             // Zooming out reveals neighbors around the focal tile. Zooming in
@@ -631,6 +717,33 @@ struct PhoneHomeView: View {
                 zoomLeadingSlots[density] = 0
             }
         }
+        #if DEBUG
+        if PhoneGalleryDebug.showsDiagnostics {
+            zoomDiagnostics.sourceText = "start \(columnCount)c L\(leadingSlots) grid \(debugRect(gridFrame))\n"
+                + "touch screen \(debugNumber(viewportAnchor.x * width)),\(debugNumber(pinchViewportY))\n"
+                + "touch grid \(debugNumber(point.x)),\(debugNumber(point.y)) frac \(debugNumber(pinchTargetFractionY))\n"
+                + "pick #\(index) \(photoInbox.images[index].lastPathComponent)\n"
+                + "tile screen y \(debugNumber(gridFrame.minY + tileTop)) h \(debugNumber(tileHeight))"
+                + "\nsource \(measuredSource == nil ? "fallback" : "measured") y \(debugNumber(sourceTop))"
+                + " shift \(debugNumber(zoomBaseFrame.minY - gridFrame.minY))"
+            let touched = measuredTiles.frames.filter {
+                $0.value.columns == columnCount && $0.value.frame.contains(touch)
+            }.min { $0.key.absoluteString < $1.key.absoluteString }
+            let touchedIndex = touched.flatMap { photoInbox.images.firstIndex(of: $0.key) }
+            zoomDiagnostics.sourceText += "\nactual hit \(touchedIndex.map { "#\($0)" } ?? "— (gap/unmeasured)")"
+            if let measured = measuredTiles.frames[photoInbox.images[index]],
+               measured.columns == columnCount {
+                let expectedY = gridFrame.minY + tileTop
+                zoomDiagnostics.sourceText += "\nactual pick \(debugRect(measured.frame))"
+                    + "\nstart dy \(debugNumber(measured.frame.minY - expectedY)) dh \(debugNumber(measured.frame.height - tileHeight))"
+            } else {
+                zoomDiagnostics.sourceText += "\nactual pick — (not measured)"
+            }
+            let age = (ProcessInfo.processInfo.systemUptime - measuredTiles.updatedAt) * 1000
+            zoomDiagnostics.sourceText += "\ngeometry age \(String(format: "%.0f", age))ms"
+
+        }
+        #endif
         prepareZoomSlots(width: width, viewportHeight: viewportHeight)
     }
 
@@ -961,6 +1074,11 @@ struct PhoneHomeView: View {
     }
 
     private func completeGalleryZoom() {
+        #if DEBUG
+        if PhoneGalleryDebug.showsDiagnostics {
+            zoomDiagnostics.completedGeometry = debugZoomGeometry(width: zoomBaseFrame.width)
+        }
+        #endif
         resetGalleryZoom()
         suppressOpeningUntil = Date().addingTimeInterval(0.3)
     }

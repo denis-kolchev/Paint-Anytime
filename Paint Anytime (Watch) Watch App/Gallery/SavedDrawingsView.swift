@@ -173,7 +173,12 @@ struct SavedDrawingsView: View {
                 if GalleryDebug.isEnabled {
                     WatchGalleryDebugOverlay {
                         WatchGalleryDiagnostics.shared.inputText(zoom: gridZoom,
-                            focus: crownTarget.map { $0 == .grid ? "grid" : "zoom" } ?? "none", dragging: gridZoom.isPanning)
+                            focus: crownTarget.map { $0 == .grid ? "grid" : "zoom" } ?? "none", dragging: gridZoom.isPanning) + "\n" +
+                        WatchGalleryDiagnostics.shared.gridText(zoom: gridZoom,
+                            urls: drawings.map(\.url), selected: selectedDrawing?.url,
+                            focused: focusedDrawing?.url, displayed: displayedBitmap?.url,
+                            frames: thumbnailFrames, columns: columnCount,
+                            leading: leadingSlots, topInset: galleryTopInset)
                     }
                         .padding(.trailing, 4)
                         .padding(.bottom, max(4, tutorialHintReservedHeight))
