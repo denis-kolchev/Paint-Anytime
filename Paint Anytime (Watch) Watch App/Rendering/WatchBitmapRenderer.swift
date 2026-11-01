@@ -140,6 +140,10 @@ nonisolated enum WatchBitmapRenderer {
                 context.restoreGState()
                 continue
             }
+            if stroke.style.instrument == .blur {
+                guard applyBlur(stroke, in: context, scale: scale, erasure: erasure) else { return nil }
+                continue
+            }
             // Paint on opaque straight RGB, then restore the original alpha mask.
             // This preserves even partially transparent edges across repeated strokes.
             // Evaluate translucent fill overlap against the ink rendered at this

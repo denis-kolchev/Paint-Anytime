@@ -85,6 +85,13 @@ struct ToolIcon: View {
                 c.stroke(brush, with: ink, lineWidth: 1.6)
                 outline([CGPoint(x: 8, y: 17), CGPoint(x: 10, y: 26), CGPoint(x: 14, y: 26), CGPoint(x: 16, y: 17)])
                 line(9, 20, 15, 20)
+            case .blur:
+                for radius in [CGFloat(3), 6, 9] {
+                    var ring = c
+                    ring.opacity = Double(12 - radius) / 10
+                    ring.stroke(Path(ellipseIn: CGRect(x: 12 - radius, y: 14 - radius,
+                        width: radius * 2, height: radius * 2)), with: ink, lineWidth: 1.6)
+                }
             case .fill:
                 outline([CGPoint(x: 3, y: 13), CGPoint(x: 12, y: 4), CGPoint(x: 21, y: 13), CGPoint(x: 12, y: 22)], closed: true)
                 line(3, 13, 21, 13)

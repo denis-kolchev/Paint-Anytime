@@ -84,6 +84,7 @@ struct WatchToolSettingsView: View {
         if isEraser { pages = controller.pencilStyle.eraserMode == .pixels
             ? [.width, .opacity, .instrument, .mode]
             : [.width, .instrument, .mode] }
+        else if controller.pencilStyle.instrument == .blur { pages = [.width, .blurStrength, .blurRadius, .instrument] }
         else if controller.pencilStyle.instrument == .fill { pages = [.color, .sensitivity, .opacity, .instrument] }
         else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .opacity, .instrument, .direction] }
         else { pages = [.color, .width, .opacity, .instrument] }
@@ -112,6 +113,8 @@ struct WatchToolSettingsView: View {
 
     private var valueTitle: String {
         switch selection {
+        case .blurStrength: L10n.percent(Double(controller.pencilStyle.effectiveBlurStrength))
+        case .blurRadius: L10n.format("%d pt", Int(controller.pencilStyle.effectiveBlurRadius))
         case .sensitivity: L10n.percent(Double(controller.pencilStyle.effectiveFillSensitivity))
         case .opacity: L10n.percent(Double(controller.pencilStyle.effectiveOpacity))
         case .width: L10n.format("%d pt", Int(controller.pencilStyle.width))
@@ -123,19 +126,20 @@ struct WatchToolSettingsView: View {
     }
 
     private var usesValueControl: Bool {
-        selection == .sensitivity || selection == .opacity || selection == .width
+        selection == .sensitivity || selection == .opacity || selection == .width || selection == .blurStrength || selection == .blurRadius
     }
 
     private func valueControl() -> some View {
         ToolValueControl(value: crownValue,
-                         range: (selection == .width ? 1 : 0)...crownMaximum,
+                         range: (selection == .width || selection == .blurRadius ? 1 : 0)...crownMaximum,
                          valueTitle: valueTitle, title: selection.title,
                          isEnabled: tutorial.allowsToolAdjustment(page: selection.rawValue))
     }
 
     private var crownMaximum: Double {
         switch selection {
-        case .opacity, .sensitivity: 100
+        case .opacity, .sensitivity, .blurStrength: 100
+        case .blurRadius: 30
         case .width: Double(controller.maximumWidth)
         case .color: Double(colors.count)
         case .instrument: Double(instruments.count - 1)
@@ -153,6 +157,8 @@ struct WatchToolSettingsView: View {
     private var crownValue: Binding<Double> {
         Binding {
             switch selection {
+            case .blurStrength: Double((controller.pencilStyle.effectiveBlurStrength * 100).rounded())
+            case .blurRadius: Double(controller.pencilStyle.effectiveBlurRadius)
             case .sensitivity: Double((controller.pencilStyle.effectiveFillSensitivity * 100).rounded())
             case .opacity: Double((controller.pencilStyle.effectiveOpacity * 100).rounded())
             case .width: Double(controller.pencilStyle.width)
@@ -173,6 +179,10 @@ struct WatchToolSettingsView: View {
             }
             var style = controller.pencilStyle
             switch selection {
+            case .blurStrength:
+                style.blurStrength = Float(min(100, max(0, value.rounded()))) / 100
+            case .blurRadius:
+                style.blurRadius = Float(min(30, max(1, value.rounded())))
             case .sensitivity:
                 style.fillSensitivity = Float(min(100, max(0, value.rounded()))) / 100
             case .opacity:
@@ -426,7 +436,7 @@ struct WatchToolSettingsView: View {
         .focused($crownFocused)
         .modifier(SteppedCrownModifier(
             value: crownValue,
-            range: (selection == .width ? 1 : selection == .direction ? -90 : 0)...crownMaximum,
+            range: (selection == .width || selection == .blurRadius ? 1 : selection == .direction ? -90 : 0)...crownMaximum,
             sensitivity: selection == .opacity || selection == .sensitivity || selection == .direction ? .high : .low,
             crownUnitsPerStep: selection == .opacity || selection == .sensitivity || selection == .direction ? 4 : 1,
             context: selectedPage,

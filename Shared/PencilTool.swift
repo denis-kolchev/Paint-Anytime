@@ -63,7 +63,7 @@ final class PencilTool {
     @discardableResult
     func recognizeShape(adjustmentTolerance: Float = 2) -> Bool {
         guard recognizedShape == nil, var stroke = activeStroke,
-              stroke.style.instrument != .eraser, let last = stroke.points.last,
+              stroke.style.instrument != .eraser, stroke.style.instrument != .blur, let last = stroke.points.last,
               let result = ShapeRecognizer.recognize(stroke.points) else { return false }
         holdPosition = last.position
         self.adjustmentTolerance = adjustmentTolerance

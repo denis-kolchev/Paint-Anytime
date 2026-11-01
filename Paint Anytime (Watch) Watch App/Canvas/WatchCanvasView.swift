@@ -139,7 +139,7 @@ struct WatchCanvasView: View {
                 if rendersArtwork, acceptsInput, isDragging, acceptsCurrentGesture == true,
                    !isMovingCanvas, !isEyedropperActive, !lasso.isActive,
                    let stroke = controller.activeStroke,
-                   stroke.style.instrument == .eraser,
+                   (stroke.style.instrument == .eraser || stroke.style.instrument == .blur),
                    let point = stroke.points.last?.position {
                     // Match the actual erasing radius and follow the paper's
                     // zoom and pan, keeping the outline itself 1.5 screen points.

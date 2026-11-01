@@ -8,6 +8,7 @@ struct ContentView: View {
     @AppStorage(AutosaveSettings.enabledKey) private var autosaveEnabled = false
     @AppStorage(AutosaveSettings.intervalKey) private var autosaveMinutes = AutosaveSettings.defaultMinutes
     @State private var autosaveTimerRange: ClosedRange<Date>?
+    @State private var autosaveScheduleID: String?
     @State private var showsAutosaveProgress = false
     @State private var autosaveCompleted = false
     @StateObject private var menuOnboarding = OnboardingController()
@@ -542,20 +543,37 @@ struct ContentView: View {
         .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.22), value: showsAutosaveProgress)
     }
 
+    private var autosaveConfigurationID: String {
+        "\(autosaveEnabled)-\(isActive)-\(AutosaveSettings.minutes(autosaveMinutes))-\(session.canvasSessionID)"
+    }
+
     private var autosaveTaskID: String {
-        "\(autosaveEnabled && isActive && scenePhase == .active)-\(AutosaveSettings.minutes(autosaveMinutes))-\(session.canvasSessionID)"
+        "\(autosaveConfigurationID)-\(scenePhase == .active)"
     }
 
     @MainActor
     private func runAutosave() async {
+        guard !Task.isCancelled else { return }
+        if autosaveScheduleID != autosaveConfigurationID {
+            autosaveScheduleID = autosaveConfigurationID
+            autosaveTimerRange = nil
+        }
         guard autosaveEnabled, isActive, scenePhase == .active else { return }
         let seconds = AutosaveSettings.minutes(autosaveMinutes) * 60
-        let interval = Duration.seconds(seconds)
         do {
             while !Task.isCancelled {
-                let start = Date()
-                autosaveTimerRange = start...start.addingTimeInterval(TimeInterval(seconds))
-                try await Task.sleep(for: interval)
+                // Preserve the deadline across wrist-down and background transitions.
+                // An overdue save runs on activation once the canvas is idle.
+                if autosaveTimerRange == nil {
+                    let start = Date()
+                    autosaveTimerRange = start...start.addingTimeInterval(TimeInterval(seconds))
+                }
+                if let deadline = autosaveTimerRange?.upperBound {
+                    let remaining = deadline.timeIntervalSinceNow
+                    if remaining > 0 {
+                        try await Task.sleep(for: .seconds(remaining))
+                    }
+                }
                 // Wait for interaction and presentations to finish without cancelling a stroke
                 // or saving a temporary selection state. Retry promptly once the canvas is idle.
                 while controller.activeStroke != nil || lasso.isActive || lasso.isPreparing
@@ -568,9 +586,10 @@ struct ContentView: View {
                 try Task.checkCancellation()
                 guard autosaveEnabled, isActive, scenePhase == .active else { return }
                 try await saveWithProgress()
+                autosaveTimerRange = nil
             }
         } catch {
-            // The view owns this timer; leaving the app or changing settings cancels it.
+            // Cancellation stops execution, but keeps the deadline for activation.
         }
     }
 
@@ -591,6 +610,8 @@ struct ContentView: View {
         let previousNotice = session.autosaveNoticeID
         session.saveDrawing(size: canvasSize, scale: displayScale, automatically: true)
         guard session.autosaveNoticeID != previousNotice else { return }
+        // The save is complete even if sleep cancels the checkmark animation.
+        autosaveTimerRange = nil
         autosaveCompleted = true
         try await Task.sleep(for: .milliseconds(300))
     }

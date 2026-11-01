@@ -1,6 +1,108 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+  "Blur": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Blur"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Размытие"
+        }
+      }
+    }
+  },
+  "Blur strength": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Blur strength"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Сила размытия"
+        }
+      }
+    }
+  },
+  "Blur radius": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Blur radius"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Радиус размытия"
+        }
+      }
+    }
+  },
+  "Softens existing marks on the current layer. Adjust size, strength and blur radius.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Softens existing marks on the current layer. Adjust size, strength and blur radius."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Размывает существующие штрихи на текущем слое. Настройте размер, силу и радиус размытия."
+        }
+      }
+    }
+  },
+  "Sets how strongly the brush softens existing marks.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Sets how strongly the brush softens existing marks."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Задаёт силу размытия существующих штрихов."
+        }
+      }
+    }
+  },
+  "Sets how far nearby pixels are mixed. Larger radii produce softer details.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Sets how far nearby pixels are mixed. Larger radii produce softer details."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Задаёт расстояние смешивания соседних пикселей. Чем больше радиус, тем мягче детали."
+        }
+      }
+    }
+  },
     "Autosaving…": {
       "extractionState": "manual",
       "localizations": {

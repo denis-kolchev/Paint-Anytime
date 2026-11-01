@@ -10,10 +10,10 @@ nonisolated struct PointerSample: Codable, Equatable {
 
 nonisolated enum DrawingInstrument: Int, CaseIterable, Codable {
     // Preserve the raw values of the original monoline and fountain pen.
-    case monoline = 0, fountainPen = 1, pen, marker, pencil, crayon, reed, watercolor, eraser, fill
+    case monoline = 0, fountainPen = 1, pen, marker, pencil, crayon, reed, watercolor, eraser, fill, blur
 
     @MainActor static var displayOrder: [Self] {
-        let order: [Self] = [.monoline, .pen, .marker, .pencil, .crayon, .fountainPen, .reed, .watercolor, .fill, .eraser]
+        let order: [Self] = [.monoline, .pen, .marker, .pencil, .crayon, .fountainPen, .reed, .watercolor, .blur, .fill, .eraser]
         return order.filter { AppReleaseFeatures.current.allows($0) }
     }
 
@@ -27,6 +27,7 @@ nonisolated enum DrawingInstrument: Int, CaseIterable, Codable {
         case .fountainPen: L10n.text("Fountain pen")
         case .reed: L10n.text("Reed pen")
         case .watercolor: L10n.text("Watercolor")
+        case .blur: L10n.text("Blur")
         case .fill: L10n.text("Fill")
         case .eraser: L10n.text("Eraser")
         }
@@ -39,7 +40,7 @@ nonisolated enum DrawingInstrument: Int, CaseIterable, Codable {
         case .pencil: 3
         case .marker, .eraser: 12
         case .crayon, .reed: 8
-        case .watercolor: 16
+        case .watercolor, .blur: 16
         }
     }
 
@@ -184,6 +185,10 @@ nonisolated struct PencilStyle: Codable, Equatable {
     var color = SIMD4<Float>(0, 0, 0, 1)
     var width: Float = 4
     var opacity: Float = 1
+    var blurStrength: Float = 0.5
+    var blurRadius: Float = 4
+    var effectiveBlurStrength: Float { blurStrength.isFinite ? min(1, max(0, blurStrength)) : 0.5 }
+    var effectiveBlurRadius: Float { blurRadius.isFinite ? min(30, max(1, blurRadius)) : 4 }
     var smoothFill = false
     var fillSensitivity: Float = 16.0 / 255.0
 
@@ -202,7 +207,7 @@ nonisolated struct PencilStyle: Codable, Equatable {
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case instrument, color, width, opacity, eraserMode, reedAngle, blendingMode, fillSensitivity, smoothFill
+        case blurStrength, blurRadius, instrument, color, width, opacity, eraserMode, reedAngle, blendingMode, fillSensitivity, smoothFill
     }
 
     init(from decoder: Decoder) throws {
@@ -212,6 +217,10 @@ nonisolated struct PencilStyle: Codable, Equatable {
         width = try values.decodeIfPresent(Float.self, forKey: .width) ?? instrument.defaultWidth
         let decodedOpacity = try values.decodeIfPresent(Float.self, forKey: .opacity) ?? 1
         opacity = decodedOpacity.isFinite ? min(1, max(0, decodedOpacity)) : 1
+        blurStrength = try values.decodeIfPresent(Float.self, forKey: .blurStrength) ?? 0.5
+        blurRadius = try values.decodeIfPresent(Float.self, forKey: .blurRadius) ?? 4
+        blurStrength = effectiveBlurStrength
+        blurRadius = effectiveBlurRadius
         smoothFill = try values.decodeIfPresent(Bool.self, forKey: .smoothFill) ?? false
         fillSensitivity = try values.decodeIfPresent(Float.self, forKey: .fillSensitivity) ?? 16.0 / 255.0
         fillSensitivity = effectiveFillSensitivity

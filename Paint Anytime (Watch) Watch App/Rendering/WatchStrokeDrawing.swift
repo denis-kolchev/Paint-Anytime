@@ -126,6 +126,12 @@ nonisolated enum WatchStrokeDrawing {
                 }
             }
             paint.fill(path, with: .color(ink))
+        case .blur:
+            // Opaque coverage mask; the bitmap renderer supplies the filtered ink.
+            let mask = SIMD4<Float>(0, 0, 0, 1)
+            paint.stroke(centerline(stroke), with: .color(mask), style: StrokeStyle(
+                lineWidth: CGFloat(stroke.style.width), lineCap: .round, lineJoin: .round))
+            drawDotIfNeeded(stroke, ink: mask, in: &paint)
         case .monoline:
             paint.stroke(centerline(stroke), with: .color(ink), style: StrokeStyle(
                 lineWidth: CGFloat(stroke.style.width), lineCap: .round, lineJoin: .round))

@@ -25,7 +25,7 @@ struct ToolStrokePreview: View {
                         context.draw(Image(decorative: image, scale: displayScale),
                                      in: CGRect(origin: .zero, size: size))
                     }
-                    if style.instrument == .eraser, style.eraserMode == .pixels,
+                    if (style.instrument == .eraser && style.eraserMode == .pixels) || style.instrument == .blur,
                        let stroke = strokes.last, let endpoint = stroke.points.last?.position {
                         let diameter = CGFloat(stroke.style.width)
                         let ring = Path(ellipseIn: CGRect(
@@ -170,13 +170,13 @@ nonisolated private enum ToolPreviewStroke {
             return PointerSample(position: position, pressure: 1, timestamp: Double(t))
         }
         var strokes: [Stroke] = []
-        if style.instrument == .eraser {
+        if style.instrument == .eraser || style.instrument == .blur {
             var demoStyle = PencilStyle.initial(for: .monoline)
             demoStyle.color = SIMD4(0.15, 0.35, 0.95, 1)
             demoStyle.width = 5
             let rowCount = 7
             for row in 1...rowCount {
-                if style.eraserMode == .objects && row == (rowCount + 1) / 2 { continue }
+                if style.instrument == .eraser && style.eraserMode == .objects && row == (rowCount + 1) / 2 { continue }
                 let y = Float(size.height) * Float(row) / Float(rowCount + 1)
                 let line = [PointerSample(position: SIMD2(Float(size.width) * 0.1, y), pressure: 1, timestamp: 0),
                             PointerSample(position: SIMD2(Float(size.width) * 0.9, y), pressure: 1, timestamp: 1)]

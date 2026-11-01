@@ -54,10 +54,10 @@ final class ToolSettings: ObservableObject {
         guard synchronization.width || synchronization.color || synchronization.opacity else { return }
         var updated = synchronization
         if updated.width { updated.sharedWidth = pencilStyle.width }
-        if updated.color && pencilStyle.instrument != .eraser {
+        if updated.color && pencilStyle.instrument != .eraser && pencilStyle.instrument != .blur {
             updated.sharedColor = pencilStyle.color
         }
-        if updated.opacity && pencilStyle.instrument != .eraser {
+        if updated.opacity && pencilStyle.instrument != .eraser && pencilStyle.instrument != .blur {
             updated.sharedOpacity = pencilStyle.effectiveOpacity
         }
         // Publish once, and only if shared values actually changed.
@@ -65,8 +65,8 @@ final class ToolSettings: ObservableObject {
         for instrument in DrawingInstrument.allCases {
             var style = savedStyles[instrument.rawValue] ?? .initial(for: instrument)
             if synchronization.width { style.width = synchronization.sharedWidth }
-            if synchronization.color && instrument != .eraser { style.color = synchronization.sharedColor }
-            if synchronization.opacity && instrument != .eraser { style.opacity = synchronization.sharedOpacity }
+            if synchronization.color && instrument != .eraser && instrument != .blur { style.color = synchronization.sharedColor }
+            if synchronization.opacity && instrument != .eraser && instrument != .blur { style.opacity = synchronization.sharedOpacity }
             savedStyles[instrument.rawValue] = style
         }
     }
@@ -119,8 +119,8 @@ final class ToolSettings: ObservableObject {
         if !restored.width.isFinite { restored.width = instrument.defaultWidth }
         restored.width = min(instrument.maximumWidth, max(1, restored.width))
         if restoredSynchronization.width { restored.width = restoredSynchronization.sharedWidth }
-        if restoredSynchronization.color && instrument != .eraser { restored.color = restoredSynchronization.sharedColor }
-        if restoredSynchronization.opacity && instrument != .eraser { restored.opacity = restoredSynchronization.sharedOpacity }
+        if restoredSynchronization.color && instrument != .eraser && instrument != .blur { restored.color = restoredSynchronization.sharedColor }
+        if restoredSynchronization.opacity && instrument != .eraser && instrument != .blur { restored.opacity = restoredSynchronization.sharedOpacity }
         synchronization = restoredSynchronization
         pencilStyle = AppReleaseFeatures.current.availableStyle(restored)
     }
@@ -130,8 +130,8 @@ final class ToolSettings: ObservableObject {
         var style = savedStyles[instrument.rawValue] ?? .initial(for: instrument)
         if synchronization.width { style.width = synchronization.sharedWidth }
         else { style.width = min(instrument.maximumWidth, max(1, style.width)) }
-        if synchronization.color && instrument != .eraser { style.color = synchronization.sharedColor }
-        if synchronization.opacity && instrument != .eraser { style.opacity = synchronization.sharedOpacity }
+        if synchronization.color && instrument != .eraser && instrument != .blur { style.color = synchronization.sharedColor }
+        if synchronization.opacity && instrument != .eraser && instrument != .blur { style.opacity = synchronization.sharedOpacity }
         style.blendingMode = blendingMode
         pencilStyle = AppReleaseFeatures.current.availableStyle(style)
     }
