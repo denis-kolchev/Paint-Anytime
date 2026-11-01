@@ -370,6 +370,8 @@ struct ContentView: View {
             }
         }
         }
+        .modifier(CanvasClockVisibility(isHidden: isActive && menuOnboarding.tutorialFolder == nil
+            && !showsGallery && !showsToolSettings && !showsAppSettings))
         .fullScreenCover(isPresented: $showsSampledPalette) {
             InkPaletteBrowser(library: InkPaletteLibrary.decode(palettesData, legacy: paletteData),
                               controller: controller, initialColor: cameraSampledColor) { library in
