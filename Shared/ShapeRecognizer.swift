@@ -59,6 +59,7 @@ nonisolated enum ShapeRecognizer {
             if polygonFit.map({ $0.points.count < 6 }) ?? true,
                let ellipse = ellipse(resample(loop.points, count: 80), diagonal: diagonal) { closed.append(ellipse) }
             closed += templateCandidates(outline, diagonal: diagonal)
+            if let cloud = cloud(resample(outline, count: 128), diagonal: diagonal) { closed.append(cloud) }
             let penalty = max(0, loop.gap / diagonal - 0.08) * 0.05
             candidates += closed.map { Candidate(kind: $0.kind, error: $0.error + penalty, points: $0.points, anchor: $0.anchor) }
         }
@@ -253,6 +254,68 @@ nonisolated enum ShapeRecognizer {
         return Candidate(kind: .arrow, error: error.rms / diagonal, points: ideal, anchor: start)
     }
 
+
+    /// Scalloped outlines: four to ten outward bumps meeting at inward cusps.
+    /// Hand-drawn bumps are deep and uneven, which a wavy template cannot follow.
+    private static func cloud(_ ring: [SIMD2<Float>], diagonal: Float) -> Candidate? {
+        let p = Array(ring.dropLast()), n = p.count
+        guard n >= 48 else { return nil }
+        var area: Float = 0
+        for i in 0..<n { let a = p[i], b = p[(i + 1) % n]; area += a.x * b.y - a.y * b.x }
+        let orientation: Float = area >= 0 ? 1 : -1
+        // Positive turns follow the outline's winding; cusps turn sharply against it.
+        let turns = (0..<n).map { i -> Float in
+            let a = p[i] - p[(i + n - 2) % n], b = p[(i + 2) % n] - p[i]
+            return orientation * atan2(a.x * b.y - a.y * b.x, simd_dot(a, b))
+        }
+        let cusps = (0..<n).filter { i in
+            turns[i] < -0.5 && (1...3).allSatisfy { turns[(i + n - $0) % n] > turns[i] && turns[(i + $0) % n] >= turns[i] }
+        }
+        guard (4...10).contains(cusps.count) else { return nil }
+        var ideal: [SIMD2<Float>] = []
+        for (k, first) in cusps.enumerated() {
+            let count = (cusps[(k + 1) % cusps.count] - first + n) % n
+            let lobe = (0...count).map { p[(first + $0) % n] }
+            guard lobe.count >= 6 else { return nil }
+            let a = lobe[0], c = lobe[lobe.count - 1], chord = c - a
+            let inner = lobe.indices.dropFirst(2).dropLast(2)
+            // A lobe bulges outward and stays round, unlike a star's pointed tip.
+            guard let peak = inner.max(by: { distance(lobe[$0], a, c) < distance(lobe[$1], a, c) }),
+                  distance(lobe[peak], a, c) > simd_length(chord) * 0.2,
+                  orientation * (chord.x * (lobe[peak].y - a.y) - chord.y * (lobe[peak].x - a.x)) < 0,
+                  inner.allSatisfy({ turns[(first + $0) % n] < 1.6 }),
+                  let bump = arc(from: a, through: lobe[peak], to: c, count: 16) else { return nil }
+            ideal += bump.dropLast()
+        }
+        ideal.append(ideal[0])
+        let error = fitError(ring, polyline: ideal)
+        guard error.rms < diagonal * 0.04, error.maximum < diagonal * 0.1 else { return nil }
+        let center = p.reduce(SIMD2<Float>.zero, +) / Float(n)
+        return Candidate(kind: .cloud, error: error.rms / diagonal, points: ideal, anchor: center)
+    }
+
+    /// The circular arc from `a` through `b` to `c`; nil when they are nearly collinear.
+    private static func arc(from a: SIMD2<Float>, through b: SIMD2<Float>, to c: SIMD2<Float>, count: Int) -> [SIMD2<Float>]? {
+        let u = b - a, v = c - a
+        let determinant = 2 * (u.x * v.y - u.y * v.x)
+        guard abs(determinant) > 0.001 * simd_length_squared(v) else { return nil }
+        let uu = simd_length_squared(u), vv = simd_length_squared(v)
+        let center = a + SIMD2((v.y * uu - u.y * vv) / determinant,
+                              (u.x * vv - v.x * uu) / determinant)
+        let radius = simd_distance(a, center)
+        func angle(_ p: SIMD2<Float>) -> Float { atan2(p.y - center.y, p.x - center.x) }
+        func counterClockwise(_ from: Float, _ to: Float) -> Float {
+            let d = (to - from).truncatingRemainder(dividingBy: 2 * .pi)
+            return d < 0 ? d + 2 * .pi : d
+        }
+        let start = angle(a), toB = counterClockwise(start, angle(b)), toC = counterClockwise(start, angle(c))
+        // Go the way that passes through `b`.
+        let sweep = toB < toC ? toC : toC - 2 * .pi
+        return (0...count).map { i -> SIMD2<Float> in
+            let t = start + sweep * Float(i) / Float(count)
+            return center + SIMD2(cos(t), sin(t)) * radius
+        }
+    }
 
     /// Fit an open circular arc, preserving direction and rejecting reversals.
     private static func arc(_ p: [SIMD2<Float>], diagonal: Float) -> Candidate? {

@@ -106,6 +106,19 @@ struct ShapeRecognitionChecks {
         let wobbly = loop(hexagon).enumerated().map { i, p in p + SIMD2(sin(Float(i) * 0.9), cos(Float(i) * 1.3)) * 0.6 }
         expect(wobbly, .hexagon)
         expect(heart.map { SIMD2(60 + ($0.x - 60) * 1.4, $0.y) }, .heart)
+        // A hand-drawn cloud: uneven, deep semicircular bumps between cusps on an oval.
+        let cusps = [0, 0.9, 2.0, 3.1, 4.1, 5.2].map { (t: Float) in SIMD2<Float>(60 + 40 * cos(t), 60 + 25 * sin(t)) }
+        var scalloped: [SIMD2<Float>] = []
+        for (a, c) in zip(cusps, cusps.dropFirst() + [cusps[0]]) {
+            let middle = (a + c) / 2, radius = simd_distance(a, c) / 2
+            let along = (a - middle) / radius, outward = SIMD2(c.y - a.y, a.x - c.x) / (2 * radius)
+            scalloped += (0..<20).map { i -> SIMD2<Float> in
+                let phi = Float(i) * .pi / 20
+                return middle + (along * cos(phi) + outward * sin(phi)) * radius
+            }
+        }
+        scalloped.append(scalloped[0])
+        expect(scalloped, .cloud)
         let rejected = [
             [SIMD2<Float>(10, 10), SIMD2(10.2, 10), SIMD2(10.1, 10.1)],
 
