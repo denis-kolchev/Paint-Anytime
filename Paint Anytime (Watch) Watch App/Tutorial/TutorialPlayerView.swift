@@ -211,9 +211,12 @@ struct TutorialPlayerView: View {
                     // Keep one native toolbar item and Button alive when Done
                     // becomes Tool settings; replacing animated toolbar hosts
                     // during their own action is fragile on watchOS 10.
-                    // Keep both top slots installed throughout canvas/tools/share lessons
-                    // so the native system clock stays centered between them.
-                    if (page == .canvas || page == .tools || page == .saved) && !tutorial.isPaletteLesson {
+                    // Keep both top slots installed on the tools page so the native
+                    // system clock stays centered between them. Canvas and share pages
+                    // hide the clock, and an installed slot swallows touch-down even
+                    // when its button is transparent, so unavailable controls leave them.
+                    if (page == .canvas || page == .tools || page == .saved) && !tutorial.isPaletteLesson
+                        && installsPrimaryControl {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 if page == .tools {
@@ -274,7 +277,7 @@ struct TutorialPlayerView: View {
                             .accessibilityHidden(!tutorial.permits([.shareDrawing]))
                         }
                     }
-                    if page == .canvas {
+                    if page == .canvas && tutorial.permits([.openMenu]) {
                         ToolbarItem(placement: .topBarLeading) {
                             Button { player.openMenu() } label: {
                                 Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openMenu])
@@ -357,7 +360,7 @@ struct TutorialPlayerView: View {
         // its exit opacity; otherwise the lesson can show through fading children.
         .compositingGroup()
         .toolbar(confirmsFinish ? .hidden : .automatic, for: .navigationBar, .bottomBar)
-        .requestsHiddenClock(page == .canvas && !confirmsFinish)
+        .requestsHiddenClock((page == .canvas || page == .saved) && !confirmsFinish)
         .modifier(TutorialCrownHint(tutorial: tutorial))
         .onAppear {
             player.startOrResume()
@@ -442,6 +445,12 @@ struct TutorialPlayerView: View {
         (page == .canvas && (isMovingCanvas
             ? tutorial.acceptsActions && tutorial.canFinishCamera
             : tutorial.permits([.openTools])))
+    }
+
+    // Lasso drags hide the control only briefly; keep its slot so the toolbar
+    // does not reinsert the item around every selection gesture.
+    private var installsPrimaryControl: Bool {
+        page == .tools || showsPrimaryControl || player.lasso.hidesControls
     }
 
     private var canvasProtectedControls: [CanvasToolbarControl: CGRect] {
