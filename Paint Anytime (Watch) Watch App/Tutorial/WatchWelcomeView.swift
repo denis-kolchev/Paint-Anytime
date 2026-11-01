@@ -41,6 +41,9 @@ struct WatchWelcomeView: View {
             // A colorScheme environment override on a button only affects its
             // content; declare the scheme for the system bars here as well.
             .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
+            // The editor, tutorial and gallery only request a hidden clock;
+            // one host applies it so their requests cannot override each other.
+            .modifier(ClockVisibilityHost())
             // Each tutorial page owns its top background; forcing a native
             // background here overrides the settings preview’s bounded material.
         }

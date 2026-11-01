@@ -247,9 +247,7 @@ struct SavedDrawingsView: View {
         }
         .disabled(isLoading)
         .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
-        // watchOS keeps its clock visible with persistentSystemOverlays(.hidden).
-        // Its SDK exposes status-bar visibility through this underscored modifier.
-        ._statusBarHidden(isCleanViewing)
+        .requestsHiddenClock(isCleanViewing)
         .toolbar {
             if showsFullscreen && !isTransitioning && !tutorial.isActive {
                 ToolbarItemGroup(placement: .bottomBar) {

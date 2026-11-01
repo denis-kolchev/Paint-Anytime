@@ -357,6 +357,7 @@ struct TutorialPlayerView: View {
         // its exit opacity; otherwise the lesson can show through fading children.
         .compositingGroup()
         .toolbar(confirmsFinish ? .hidden : .automatic, for: .navigationBar, .bottomBar)
+        .requestsHiddenClock(page == .canvas && !confirmsFinish)
         .modifier(TutorialCrownHint(tutorial: tutorial))
         .onAppear {
             player.startOrResume()
