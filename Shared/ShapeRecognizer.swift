@@ -31,10 +31,11 @@ nonisolated enum ShapeRecognizer {
         guard diagonal >= 12, length >= 16, length < diagonal * 7 else { return nil }
         let points = resample(raw, count: 80)
         let start = raw[0], end = raw[raw.count - 1]
-        let closed = simd_distance(start, end) <= max(3, diagonal * 0.18) && length > diagonal * 2
+        let loop = closedLoop(raw, diagonal: diagonal)
         var candidates: [Candidate] = []
 
-        if !closed {
+        // A wide seam may still be an intentional arc, so both readings compete.
+        if loop.map({ $0.gap > diagonal * 0.12 }) ?? true {
             let span = simd_distance(start, end)
             if span > diagonal * 0.75, length / max(1, span) < 1.15 {
                 let error = rms(points.map { distance($0, start, end) }) / diagonal
@@ -46,13 +47,20 @@ nonisolated enum ShapeRecognizer {
             if let arc = arc(points, diagonal: diagonal) { candidates.append(arc) }
             if let curved = curvedArrow(raw, diagonal: diagonal) { candidates.append(curved) }
             if let arrow = arrow(raw.count > 256 ? resample(raw, count: 256) : raw, diagonal: diagonal) { candidates.append(arrow) }
-        } else {
+        }
+        if let loop {
             // Explicit closure removes a small hand-drawn seam for polygon fitting.
-            var ring = points
-            ring[ring.count - 1] = ring[0]
-            if let polygon = polygon(ring, diagonal: diagonal) { candidates.append(polygon) }
-            if let ellipse = ellipse(points, diagonal: diagonal) { candidates.append(ellipse) }
-            candidates += templateCandidates(raw + (raw.last! == raw[0] ? [] : [raw[0]]), diagonal: diagonal)
+            let outline = loop.points + [loop.points[0]]
+            let ring = resample(outline, count: 80)
+            var closed: [Candidate] = []
+            let polygonFit = polygon(ring, diagonal: diagonal)
+            if let polygonFit { closed.append(polygonFit) }
+            // Five or more sharp corners make a polygon even when a circle fits within tolerance.
+            if polygonFit.map({ $0.points.count < 6 }) ?? true,
+               let ellipse = ellipse(resample(loop.points, count: 80), diagonal: diagonal) { closed.append(ellipse) }
+            closed += templateCandidates(outline, diagonal: diagonal)
+            let penalty = max(0, loop.gap / diagonal - 0.08) * 0.05
+            candidates += closed.map { Candidate(kind: $0.kind, error: $0.error + penalty, points: $0.points, anchor: $0.anchor) }
         }
         let sorted = candidates.sorted { $0.error < $1.error }
         guard let best = sorted.first, best.error < 0.045 else { return nil }
@@ -61,6 +69,51 @@ nonisolated enum ShapeRecognizer {
            other.error - best.error < 0.002 { return nil }
         return Result(kind: best.kind, confidence: max(0, 1 - best.error * 4),
                       points: best.points, anchor: best.anchor)
+    }
+
+    /// Finds the drawn loop where the stroke's end comes closest to its beginning,
+    /// cutting an overshoot past the start, so the end need not land on it exactly.
+    private static func closedLoop(_ raw: [SIMD2<Float>], diagonal: Float) -> (points: [SIMD2<Float>], gap: Float)? {
+        let dense = resample(raw, count: 160)
+        let n = dense.count
+        guard n >= 20 else { return nil }
+        let head = 0..<(n / 4), tail = (n * 3 / 5)..<n
+        var gap = Float.infinity
+        for i in head { for j in tail { gap = min(gap, simd_distance(dense[i], dense[j])) } }
+        guard gap <= max(3, diagonal * 0.25) else { return nil }
+        // Among near-closest pairs keep the longest loop, so an outline that
+        // revisits a point is not cut short.
+        let slack = max(0.5, diagonal * 0.01)
+        var best = (0, n - 1), span = -1
+        for i in head {
+            for j in tail where j - i > span && simd_distance(dense[i], dense[j]) <= gap + slack {
+                best = (i, j); span = j - i
+            }
+        }
+        // Cut the original samples, keeping their detail for vertex counting.
+        var cumulative: [Float] = [0]
+        for (a, b) in zip(raw, raw.dropFirst()) { cumulative.append(cumulative[cumulative.count - 1] + simd_distance(a, b)) }
+        let step = cumulative[cumulative.count - 1] / Float(n - 1)
+        func rawIndex(_ k: Int) -> Int { cumulative.firstIndex { $0 >= Float(k) * step - 0.001 } ?? raw.count - 1 }
+        let lower = rawIndex(best.0), upper = max(lower, rawIndex(best.1))
+        let points: [SIMD2<Float>] = [dense[best.0]] + raw[lower..<upper] + [dense[best.1]]
+        guard pathLength(points) > diagonal * 2 else { return nil }
+        return (points, simd_distance(points[0], points[points.count - 1]))
+    }
+
+    /// Counts direction changes sharper than about 31° over three-sample chords.
+    /// Light smoothing keeps hand jitter on a circle from reading as corners.
+    private static func sharpCorners(_ ring: [SIMD2<Float>]) -> Int {
+        let raw = Array(ring.dropLast()), n = raw.count
+        guard n >= 16 else { return 0 }
+        let p = (0..<n).map { i -> SIMD2<Float> in (raw[(i + n - 1) % n] + raw[i] * 2 + raw[(i + 1) % n]) / 4 }
+        let turns = (0..<n).map { i -> Float in
+            let a = p[i] - p[(i + n - 3) % n], b = p[(i + 3) % n] - p[i]
+            return abs(atan2(a.x * b.y - a.y * b.x, simd_dot(a, b)))
+        }
+        return (0..<n).filter { i in
+            turns[i] > 0.55 && (1...4).allSatisfy { turns[(i + n - $0) % n] < turns[i] && turns[(i + $0) % n] <= turns[i] }
+        }.count
     }
 
     private static func ellipse(_ p: [SIMD2<Float>], diagonal: Float) -> Candidate? {
@@ -115,23 +168,30 @@ nonisolated enum ShapeRecognizer {
             for i in corners.indices {
                 let before = corners[(i + corners.count - 1) % corners.count]
                 let after = corners[(i + 1) % corners.count]
-                if distance(corners[i], before, after) < tolerance {
+                // A rounded hand-drawn corner can leave two vertices close together.
+                if distance(corners[i], before, after) < tolerance
+                    || simd_distance(corners[i], after) < diagonal * 0.05 {
                     corners.remove(at: i); changed = true; break
                 }
             }
         }
-        guard corners.count == 3 || corners.count == 4 else { return nil }
+        guard (3...8).contains(corners.count) else { return nil }
+        // RDP alone cuts a wobbly circle into five to seven sides; a polygon
+        // must also turn sharply at (nearly) every vertex.
+        if corners.count >= 5, sharpCorners(ring) < corners.count - 1 { return nil }
+        let minimumSide = diagonal * (corners.count > 4 ? 0.08 : 0.15)
         var crossSign: Float = 0
         for i in corners.indices {
             let a = corners[(i + 1) % corners.count] - corners[i]
             let b = corners[(i + 2) % corners.count] - corners[(i + 1) % corners.count]
-            guard simd_length(a) > diagonal * 0.15 else { return nil }
+            guard simd_length(a) > minimumSide else { return nil }
             let cross = a.x * b.y - a.y * b.x
             if crossSign == 0 { crossSign = cross }
             guard cross * crossSign > 0 else { return nil }
         }
         let center = corners.reduce(SIMD2<Float>.zero, +) / Float(corners.count)
-        var kind: Kind = .triangle
+        var kind: Kind = corners.count == 3 ? .triangle : corners.count == 5 ? .pentagon
+            : corners.count == 6 ? .hexagon : .regularPolygon
         if corners.count == 4 {
             let rectangular = corners.indices.allSatisfy { i in
                 let a = simd_normalize(corners[(i + 1) % 4] - corners[i])
@@ -154,14 +214,21 @@ nonisolated enum ShapeRecognizer {
         let ideal = corners + [corners[0]]
         let error = fitError(ring, polyline: ideal)
         guard error.maximum < diagonal * 0.09,
-              pathLength(ring) / max(1, pathLength(ideal)) < 1.2 else { return nil }
+              pathLength(ring) / max(1, pathLength(ideal)) < 1.25 else { return nil }
         return Candidate(kind: kind, error: error.rms / diagonal, points: ideal, anchor: center)
     }
 
     /// Single-gesture arrows: shaft -> tip -> wing -> tip -> opposite wing.
     private static func arrow(_ points: [SIMD2<Float>], diagonal: Float) -> Candidate? {
-        let vertices = simplify(points, tolerance: max(1, diagonal * 0.025))
-        guard vertices.count == 5 else { return nil }
+        // Coarser retries let a wobbly shaft or wing still reduce to five vertices.
+        for tolerance: Float in [0.025, 0.04, 0.06] {
+            let vertices = simplify(points, tolerance: max(1, diagonal * tolerance))
+            if vertices.count == 5, let arrow = arrow(points, vertices: vertices, diagonal: diagonal) { return arrow }
+        }
+        return nil
+    }
+
+    private static func arrow(_ points: [SIMD2<Float>], vertices: [SIMD2<Float>], diagonal: Float) -> Candidate? {
         let start = vertices[0], tip = vertices[1]
         let length = simd_distance(start, tip)
         guard length > diagonal * 0.65 else { return nil }
@@ -216,8 +283,14 @@ nonisolated enum ShapeRecognizer {
     }
 
     private static func curvedArrow(_ p: [SIMD2<Float>], diagonal: Float) -> Candidate? {
-        let vertices = simplify(p, tolerance: max(1, diagonal * 0.025))
-        guard vertices.count >= 6 else { return nil }
+        for tolerance: Float in [0.025, 0.04] {
+            let vertices = simplify(p, tolerance: max(1, diagonal * tolerance))
+            if vertices.count >= 6, let arrow = curvedArrow(p, vertices: vertices, diagonal: diagonal) { return arrow }
+        }
+        return nil
+    }
+
+    private static func curvedArrow(_ p: [SIMD2<Float>], vertices: [SIMD2<Float>], diagonal: Float) -> Candidate? {
         let tip = vertices[vertices.count - 4]
         guard let index = p.indices.first(where: { simd_distance(p[$0], tip) < 0.01 }), index >= 3,
               let shaft = arc(resample(Array(p[...index]), count: 80), diagonal: diagonal) else { return nil }
@@ -234,13 +307,14 @@ nonisolated enum ShapeRecognizer {
     }
 
     /// Closed outlines are matched in stroke order, in both directions and at
-    /// every seam. A similarity fit allows translation, rotation and uniform scale.
-    /// Ordered distance prevents a scribble crossing a template from snapping.
+    /// every seam. An affine fit allows a hand-drawn shape to be wider, narrower
+    /// or slanted than its template, but not flattened.
     private static func templateCandidates(_ ring: [SIMD2<Float>], diagonal: Float) -> [Candidate] {
         let count = 64
         let input = Array(resample(ring, count: count + 1).dropLast())
         let center = input.reduce(.zero, +) / Float(count)
         let centered = input.map { $0 - center }
+        let inputEnergy = centered.reduce(Float(0)) { $0 + simd_length_squared($1) }
         var results: [Candidate] = []
         let split = ring.indices.max { simd_distance(ring[$0], ring[0]) < simd_distance(ring[$1], ring[0]) } ?? 0
         var vertices = Array(simplify(Array(ring[...split]), tolerance: diagonal * 0.009).dropLast())
@@ -263,26 +337,38 @@ nonisolated enum ShapeRecognizer {
             let template = Array(resample(outline, count: count + 1).dropLast())
             let mean = template.reduce(SIMD2<Float>.zero, +) / Float(count)
             let base = template.map { $0 - mean }
-            let energy = base.reduce(Float(0)) { $0 + simd_length_squared($1) }
-            var best: Candidate?
+            // Affine least squares: the template's own moments do not depend on
+            // the seam, so only the cross moments change per ordering.
+            var bxx: Float = 0, bxy: Float = 0, byy: Float = 0
+            for b in base { bxx += b.x * b.x; bxy += b.x * b.y; byy += b.y * b.y }
+            let determinant = bxx * byy - bxy * bxy
+            guard determinant > 0 else { continue }
+            let inverse = simd_float2x2(SIMD2(byy, -bxy) / determinant, SIMD2(-bxy, bxx) / determinant)
+            var bestResidual = Float.infinity
+            var bestFit: (ordered: [SIMD2<Float>], transform: simd_float2x2)?
             for direction in [-1, 1] {
                 for offset in 0..<count {
                     let ordered = (0..<count).map { base[(offset + direction * $0 + count) % count] }
-                    var dot: Float = 0, cross: Float = 0
-                    for (a, b) in zip(ordered, centered) {
-                        dot += simd_dot(a, b); cross += a.x * b.y - a.y * b.x
-                    }
-                    let x = dot / energy, y = cross / energy
-                    var ideal = ordered.map { center + SIMD2(x * $0.x - y * $0.y, y * $0.x + x * $0.y) }
-                    let errors = zip(input, ideal).map { simd_distance($0, $1) }
-                    let error = rms(errors) / diagonal
-                    guard error < 0.035, (errors.max() ?? 0) < diagonal * 0.085,
-                          best == nil || error < best!.error else { continue }
-                    ideal.append(ideal[0])
-                    best = Candidate(kind: kind, error: error, points: ideal, anchor: center)
+                    var cx = SIMD2<Float>.zero, cy = SIMD2<Float>.zero
+                    for (b, c) in zip(ordered, centered) { cx += c * b.x; cy += c * b.y }
+                    let transform = simd_float2x2(cx, cy) * inverse
+                    let residual = inputEnergy - simd_dot(transform.columns.0, cx) - simd_dot(transform.columns.1, cy)
+                    guard residual < bestResidual, isMildStretch(transform) else { continue }
+                    bestResidual = residual
+                    bestFit = (ordered, transform)
                 }
             }
-            if let best { results.append(best) }
+            guard let fit = bestFit else { continue }
+            let ideal = fit.ordered.map { center + fit.transform * $0 }
+            // Ordered distance rejects a scribble crossing the outline; distance
+            // between the outlines then scores uneven pacing along it fairly.
+            let pointwise = zip(input, ideal).map { simd_distance($0, $1) }
+            guard rms(pointwise) < diagonal * 0.08 else { continue }
+            let forward = fitError(input, polyline: ideal + [ideal[0]])
+            let backward = fitError(ideal, polyline: input + [input[0]])
+            let error = max(forward.rms, backward.rms) / diagonal
+            guard error < 0.04, max(forward.maximum, backward.maximum) < diagonal * 0.1 else { continue }
+            results.append(Candidate(kind: kind, error: error, points: ideal + [ideal[0]], anchor: center))
         }
         return results
     }
@@ -329,6 +415,15 @@ nonisolated enum ShapeRecognizer {
         closed(.speechBubble, bubble)
         return result
     }()
+
+    /// Rejects transforms that flatten a template or stretch one axis beyond 1.8×.
+    private static func isMildStretch(_ t: simd_float2x2) -> Bool {
+        let p = t.columns.0, q = t.columns.1
+        let trace = simd_dot(p, p) + simd_dot(q, q), area = p.x * q.y - p.y * q.x
+        let root = sqrt(max(0, trace * trace / 4 - area * area))
+        let low = trace / 2 - root, high = trace / 2 + root
+        return low > 0 && high < low * 3.24
+    }
 
     private static func fitError(_ p: [SIMD2<Float>], polyline: [SIMD2<Float>]) -> (rms: Float, maximum: Float) {
         let errors = p.map { point in

@@ -86,6 +86,26 @@ struct ShapeRecognitionChecks {
             }
             expect(transformed, kind)
         }
+        // Hand-drawn input: a seam short of the start, an overshoot past it,
+        // an irregular polygon and a proportion unlike the template.
+        func ring(_ turns: Float, count: Int = 100) -> [SIMD2<Float>] {
+            (0...count).map { i -> SIMD2<Float> in
+                let t = Float(i) * 2 * .pi * turns / Float(count)
+                let r: Float = 35 + sin(t * 5) * 0.8
+                return SIMD2(60 + cos(t) * r, 60 + sin(t) * r)
+            }
+        }
+        expect(ring(0.9), .circle)
+        expect(ring(1.12), .circle)
+        expect(polyline([SIMD2(20, 20), SIMD2(80, 20), SIMD2(80, 60), SIMD2(20, 60), SIMD2(20, 20), SIMD2(40, 22)]), .rectangle)
+        let hexagon = (0..<6).map { i -> SIMD2<Float> in
+            let t = Float(i) * .pi / 3 + 0.2
+            let r: Float = 40 + [0, 3, -2, 2, -3, 1][i]
+            return SIMD2(60 + r * cos(t), 60 + r * sin(t))
+        }
+        let wobbly = loop(hexagon).enumerated().map { i, p in p + SIMD2(sin(Float(i) * 0.9), cos(Float(i) * 1.3)) * 0.6 }
+        expect(wobbly, .hexagon)
+        expect(heart.map { SIMD2(60 + ($0.x - 60) * 1.4, $0.y) }, .heart)
         let rejected = [
             [SIMD2<Float>(10, 10), SIMD2(10.2, 10), SIMD2(10.1, 10.1)],
 
