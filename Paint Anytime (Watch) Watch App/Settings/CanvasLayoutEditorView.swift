@@ -11,13 +11,20 @@ struct CanvasLayoutEditorView: View {
     @State private var draft = CanvasControlLayout.standard
     @State private var editingSlot: Int?
     @State private var topControlMidY: CGFloat?
+    /// Global frames of the slot circles, for drawing morph contents beside them.
+    @State private var slotFrames: [Int: CGRect] = [:]
     @State private var loaded = false
 
     var body: some View {
         NavigationStack {
             Color.white
                 .ignoresSafeArea()
-                .overlay { saveButton }
+                .overlay {
+                    ZStack {
+                        morphPreviews
+                        saveButton
+                    }
+                }
                 // Native toolbar slots, as on the canvas: the system clock
                 // centres between the top buttons before it is hidden.
                 .toolbar {
@@ -93,8 +100,83 @@ struct CanvasLayoutEditorView: View {
                                   isMorph: assignment.isMorph, morphIcon: assignment.icon)
         }
         .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter, usesCanvasMaterial: true)
+        // Toolbar items live in another coordinate space.
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { slotFrames[index] = $0 }
         .accessibilityLabel(slotLabel(index))
-        .accessibilityValue(assignment.isMorph ? "Morph" : L10n.text(assignment.actions[0].title))
+        .accessibilityValue(assignment.isMorph
+            ? "Morph: " + assignment.actions.map { L10n.text($0.title) }.joined(separator: ", ")
+            : L10n.text(assignment.actions[0].title))
+    }
+
+    /// A small column of each morph's actions, on the side it opens towards on the
+    /// canvas: below the top circles and above the bottom row.
+    private var morphPreviews: some View {
+        GeometryReader { proxy in
+            let origin = proxy.frame(in: .global).origin
+            ForEach(draft.slots.indices.filter { draft.slots[$0].isMorph }, id: \.self) { index in
+                if let frame = slotFrames[index], let layout = previewLayout(for: index) {
+                    let height = layout.height(count: draft.slots[index].actions.count)
+                    let isTop = CustomCanvasControls.isTop(index)
+                    let gap = MorphPreviewLayout.gap
+                    morphPreview(draft.slots[index], layout: layout)
+                        .position(x: frame.midX - origin.x,
+                                  y: (isTop ? frame.maxY + gap + height / 2 : frame.minY - gap - height / 2) - origin.y)
+                }
+            }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    /// One layout per column, so a top and a bottom morph that share it never
+    /// overlap. Icons wrap into two columns before they get too small to read.
+    private func previewLayout(for index: Int) -> MorphPreviewLayout? {
+        guard let frame = slotFrames[index] else { return nil }
+        let isTop = CustomCanvasControls.isTop(index)
+        // The circle across the canvas in the same column, if any.
+        let opposite = draft.slots.indices
+            .filter { CustomCanvasControls.isTop($0) != isTop }
+            .compactMap { other in slotFrames[other].map { (other, $0) } }
+            .filter { abs($0.1.midX - frame.midX) < frame.width / 2 }
+            .min { abs($0.1.midX - frame.midX) < abs($1.1.midX - frame.midX) }
+        guard let opposite else { return MorphPreviewLayout(row: MorphPreviewLayout.maximumRow, columns: 1) }
+        let top = isTop ? frame : opposite.1
+        let bottom = isTop ? opposite.1 : frame
+        var counts = [draft.slots[index].actions.count]
+        if draft.slots[opposite.0].isMorph { counts.append(draft.slots[opposite.0].actions.count) }
+        let room = bottom.minY - top.maxY - MorphPreviewLayout.gap * 3
+            - MorphPreviewLayout.padding * 2 * CGFloat(counts.count)
+        func layout(columns: Int) -> MorphPreviewLayout {
+            let lines = counts.reduce(0) { $0 + ($1 + columns - 1) / columns }
+            return MorphPreviewLayout(row: max(0, min(MorphPreviewLayout.maximumRow, room / CGFloat(lines))),
+                                      columns: columns)
+        }
+        let single = layout(columns: 1)
+        return single.row >= MorphPreviewLayout.minimumSingleColumnRow ? single : layout(columns: 2)
+    }
+
+    private func morphPreview(_ assignment: CanvasControlAssignment, layout: MorphPreviewLayout) -> some View {
+        let lines = stride(from: 0, to: assignment.actions.count, by: layout.columns).map {
+            Array(assignment.actions[$0..<min($0 + layout.columns, assignment.actions.count)])
+        }
+        return VStack(spacing: 0) {
+            ForEach(lines.indices, id: \.self) { line in
+                HStack(spacing: 0) {
+                    ForEach(lines[line]) { action in
+                        CanvasQuickActionIcon(action: action, instrument: instrument)
+                            .scaleEffect(layout.row / 26)
+                            .frame(width: layout.row + 4, height: layout.row)
+                    }
+                }
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(.vertical, MorphPreviewLayout.padding)
+        .padding(.horizontal, layout.columns > 1 ? MorphPreviewLayout.padding : 0)
+        .background(Color.black.opacity(0.3),
+                    in: RoundedRectangle(cornerRadius: (layout.row + MorphPreviewLayout.padding * 2) / 2))
+        .environment(\.colorScheme, .dark)
     }
 
     private func slotLabel(_ index: Int) -> String {
@@ -309,5 +391,19 @@ struct CanvasQuickActionLabel: View {
         }
         // Keeps the icon centred on titles that wrap to several lines.
         .labelStyle(CenteredMenuLabelStyle())
+    }
+}
+
+private struct MorphPreviewLayout {
+    static let gap: CGFloat = 4
+    static let padding: CGFloat = 3
+    static let maximumRow: CGFloat = 18
+    static let minimumSingleColumnRow: CGFloat = 14
+
+    let row: CGFloat
+    let columns: Int
+
+    func height(count: Int) -> CGFloat {
+        row * CGFloat((count + columns - 1) / columns) + Self.padding * 2
     }
 }
