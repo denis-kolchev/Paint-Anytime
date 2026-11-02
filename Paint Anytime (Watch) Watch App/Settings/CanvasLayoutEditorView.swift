@@ -46,9 +46,7 @@ struct CanvasLayoutEditorView: View {
             if let slot = editingSlot {
                 NavigationStack {
                     CanvasSlotEditorView(assignment: $draft.slots[slot],
-                                         keepsMore: !otherSlotsContainMore(slot)) {
-                        editingSlot = nil
-                    }
+                                         keepsMore: !otherSlotsContainMore(slot))
                 }
             }
         }
@@ -152,7 +150,6 @@ private struct CanvasSlotEditorView: View {
     @Binding var assignment: CanvasControlAssignment
     /// This slot holds the last More, so every choice here must keep it.
     let keepsMore: Bool
-    let onClose: () -> Void
 
     var body: some View {
         List {
@@ -163,20 +160,20 @@ private struct CanvasSlotEditorView: View {
                     Label("Morph", systemImage: "square.grid.2x2")
                     Spacer()
                     if assignment.isMorph {
-                        Image(systemName: "checkmark").foregroundStyle(.green)
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                     }
                 }
             }
             ForEach(CanvasQuickAction.allCases) { action in
                 Button {
+                    // Stays open to show the choice; the sheet's close button dismisses it.
                     assignment = .single(action)
-                    onClose()
                 } label: {
                     HStack {
                         CanvasQuickActionLabel(action: action)
                         Spacer()
                         if !assignment.isMorph && assignment.actions == [action] {
-                            Image(systemName: "checkmark").foregroundStyle(.green)
+                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
                         }
                     }
                 }
@@ -222,7 +219,7 @@ private struct CanvasMorphSelectionView: View {
                 .listRowBackground(Color.clear)
             }
             Section {
-                ForEach(CanvasQuickAction.allCases) { action in
+                ForEach(CanvasQuickAction.allCases.filter { $0 != .nothing }) { action in
                     Button {
                         if selection.contains(action) { selection.removeAll { $0 == action } }
                         else if selection.count < 4 { selection.append(action) }

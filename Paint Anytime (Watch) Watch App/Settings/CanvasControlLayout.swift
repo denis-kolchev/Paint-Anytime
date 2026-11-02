@@ -43,8 +43,11 @@ struct CanvasControlAssignment: Codable, Equatable {
         Self(isMorph: true, actions: actions, icon: icon)
     }
 
+    /// An empty slot shows no circle on the canvas.
+    var isEmpty: Bool { !isMorph && actions == [.nothing] }
+
     var isValid: Bool {
-        (isMorph ? (1...4).contains(actions.count) : actions.count == 1)
+        (isMorph ? (1...4).contains(actions.count) && !actions.contains(.nothing) : actions.count == 1)
             && Set(actions).count == actions.count
     }
 }
@@ -55,7 +58,7 @@ struct CanvasControlAssignment: Codable, Equatable {
 enum CanvasMorphIcon {
     static let standard = "square.grid.2x2"
     static let symbols = [
-        standard, "paintbrush.pointed", "circle.grid.cross", "plus", "star", "heart",
+        standard, "paintbrush.pointed", "doc.badge.gearshape", "circle.grid.cross", "plus", "star", "heart",
         "bolt", "sparkles", "wand.and.stars", "paintpalette", "scribble", "pencil.tip",
         "slider.horizontal.3", "gearshape", "folder", "square.stack", "list.bullet", "tray"
     ]
@@ -70,7 +73,7 @@ enum CanvasMorphIcon {
 enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
     case brush, clear, save, lasso, undo, redo, layers, gallery, language, tutorial
     case canvasSize, toolSynchronization, visiblePalettes, blending, privacy, reportBug
-    case eyedropper, camera, palettes, more
+    case eyedropper, camera, palettes, more, nothing
 
     var id: String { rawValue }
     var title: String {
@@ -95,6 +98,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .camera: "Free camera"
         case .palettes: "Palettes"
         case .more: "More"
+        case .nothing: "Nothing"
         }
     }
 
@@ -119,6 +123,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .eyedropper: "eyedropper"
         case .camera: "hand.draw"
         case .more: "ellipsis"
+        case .nothing: "circle.dashed"
         }
     }
 }

@@ -747,6 +747,7 @@ struct ContentView: View {
             cameraSampledColor = nil
             showsSampledPalette = true
         case .more: showsAppSettings = true
+        case .nothing: break
         }
     }
 

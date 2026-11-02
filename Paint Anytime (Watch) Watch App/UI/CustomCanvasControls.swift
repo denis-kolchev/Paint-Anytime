@@ -25,7 +25,7 @@ struct CustomCanvasControls: View {
     var body: some View {
         let geometry = MorphPanelGeometry(size: size, layoutDirection: layoutDirection)
         ZStack {
-            ForEach(layout.slots.indices, id: \.self) { index in
+            ForEach(layout.slots.indices.filter { !layout.slots[$0].isEmpty }, id: \.self) { index in
                 let assignment = layout.slots[index]
                 let expanded = assignment.isMorph && state.customExpandedSlot == index
                 let anchor = position(index, geometry: geometry)
@@ -141,6 +141,8 @@ struct CustomCanvasToolbarAnchor: View {
         } label: {
             Image(systemName: "ellipsis").frame(width: 18, height: 18).opacity(0)
         }
+        // Keep an empty slot installed so the clock and other items stay put.
+        .disabled(assignment.isEmpty)
         .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter,
                                  usesCanvasMaterial: true, hidesNativeChrome: true)
         .accessibilityHidden(true)
