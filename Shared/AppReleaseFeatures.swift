@@ -8,9 +8,12 @@ struct AppReleaseFeatures {
 
     let includesVersion11Tools: Bool
     let includesVersion12Tools: Bool
+    let includesVersion13Tools: Bool
     /// Keep canvas editing available for the same future release as Pencil and Crayon.
     var showsCanvasSizeControls: Bool { includesVersion12Tools }
     var showsNamedInkColors: Bool { includesVersion12Tools }
+    /// Apple Intelligence sketch completion through the iPhone app.
+    var showsSketchAssist: Bool { includesVersion13Tools }
     let showsPhotoTransferControls: Bool
 
     init(version: String) {
@@ -20,6 +23,7 @@ struct AppReleaseFeatures {
         let isVersion11OrLater = majorVersion > 1 || (majorVersion == 1 && minorVersion >= 1)
         includesVersion11Tools = isVersion11OrLater
         includesVersion12Tools = majorVersion > 1 || (majorVersion == 1 && minorVersion >= 2)
+        includesVersion13Tools = majorVersion > 1 || (majorVersion == 1 && minorVersion >= 3)
         showsPhotoTransferControls = isVersion11OrLater
     }
 

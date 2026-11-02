@@ -18,6 +18,7 @@
 		AF1030010000000000000011 /* Shared/GalleryZoomSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000001 /* Shared/GalleryZoomSlot.swift */; };
 		AF1030010000000000000012 /* Shared/GalleryZoomRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000002 /* Shared/GalleryZoomRules.swift */; };
 		AF1030100000000000000001 /* Shared/PaintDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030100000000000000002 /* Shared/PaintDeepLink.swift */; };
+		AF1030200000000000000001 /* Shared/SketchAssistProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030200000000000000002 /* Shared/SketchAssistProtocol.swift */; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
 		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D40000000000000000000001 /* Shared/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */; };
@@ -75,6 +76,7 @@
 		AF1030010000000000000001 /* Shared/GalleryZoomSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryZoomSlot.swift; sourceTree = SOURCE_ROOT; };
 		AF1030010000000000000002 /* Shared/GalleryZoomRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryZoomRules.swift; sourceTree = SOURCE_ROOT; };
 		AF1030100000000000000002 /* Shared/PaintDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/PaintDeepLink.swift; sourceTree = SOURCE_ROOT; };
+		AF1030200000000000000002 /* Shared/SketchAssistProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/SketchAssistProtocol.swift; sourceTree = SOURCE_ROOT; };
 		B20000020000000000000002 /* Preset Photos */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preset Photos"; sourceTree = "<group>"; };
 		C30000000000000000000002 /* PaintAnytimeComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
@@ -134,6 +136,7 @@
 			children = (
 				D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */,
 				AF1030100000000000000002 /* Shared/PaintDeepLink.swift */,
+				AF1030200000000000000002 /* Shared/SketchAssistProtocol.swift */,
 				AB1000000000000000000002 /* Shared/PaintProject.swift */,
 				AC1000000000000000000002 /* Shared/GalleryDeletionStore.swift */,
 				AE1030000000000000000002 /* Shared/GalleryImageLayout.swift */,
@@ -369,6 +372,7 @@
 			isa = PBXSourcesBuildPhase;
 			files = (
 				AF1030100000000000000001 /* Shared/PaintDeepLink.swift in Sources */,
+				AF1030200000000000000001 /* Shared/SketchAssistProtocol.swift in Sources */,
 				AB1000000000000000000001 /* Shared/PaintProject.swift in Sources */,
 				AC1000000000000000000001 /* Shared/GalleryDeletionStore.swift in Sources */,
 				AE1030000000000000000001 /* Shared/GalleryImageLayout.swift in Sources */,
@@ -417,6 +421,13 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.2;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-weak_framework",
+					ImagePlayground,
+					"-weak_framework",
+					FoundationModels,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -443,6 +454,13 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.2;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-weak_framework",
+					ImagePlayground,
+					"-weak_framework",
+					FoundationModels,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;

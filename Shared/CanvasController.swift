@@ -130,6 +130,14 @@ final class CanvasController: ObservableObject {
         selectedLayerID = targetID
     }
 
+    /// Replaces every layer with one layer holding `stroke` as a single undoable edit.
+    /// The paper and canvas size are kept.
+    func replaceContent(with stroke: Stroke) {
+        let layer = CanvasLayer(id: document.layers[0].id, strokes: [stroke])
+        editLayers { $0.layers = [layer] }
+        selectedLayerID = layer.id
+    }
+
     func setBackgroundColor(_ color: SIMD4<Float>) {
         editLayers { $0.backgroundColor = color }
     }

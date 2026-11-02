@@ -54,6 +54,16 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
     }
 
     func session(_ session: WCSession, didReceive file: WCSessionFile) {
+        if file.metadata?[SketchAssistProtocol.kindKey] as? String == SketchAssistProtocol.resultKind {
+            // Read now: the system deletes the file after this delegate call returns.
+            let imageData = try? Data(contentsOf: file.fileURL)
+            let label = file.metadata?[SketchAssistProtocol.labelKey] as? String
+            let requestID = file.metadata?[SketchAssistProtocol.requestIDKey] as? String ?? ""
+            Task { @MainActor in
+                WatchSketchAssist.shared.receive(imageData: imageData, label: label, requestID: requestID)
+            }
+            return
+        }
         do {
             let project = try PaintProject.read(file.fileURL)
             var document = try JSONDecoder().decode(CanvasDocument.self, from: project.document)
@@ -67,6 +77,25 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
                 } catch { session.transferUserInfo(["projectImportError": error.localizedDescription]) }
             }
         } catch { session.transferUserInfo(["projectImportError": error.localizedDescription]) }
+    }
+
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        guard let failure = userInfo[SketchAssistProtocol.failureKey] as? String else { return }
+        let requestID = userInfo[SketchAssistProtocol.requestIDKey] as? String ?? ""
+        let detail = userInfo[SketchAssistProtocol.detailKey] as? String
+        Task { @MainActor in WatchSketchAssist.shared.receive(failure: failure, detail: detail, requestID: requestID) }
+    }
+
+    func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer, error: Error?) {
+        guard fileTransfer.file.metadata?[SketchAssistProtocol.kindKey] as? String == SketchAssistProtocol.requestKind
+        else { return }
+        try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)
+        guard error != nil else { return }
+        let requestID = fileTransfer.file.metadata?[SketchAssistProtocol.requestIDKey] as? String ?? ""
+        Task { @MainActor in
+            WatchSketchAssist.shared.receive(failure: SketchAssistProtocol.Failure.failed.rawValue,
+                                             detail: error?.localizedDescription, requestID: requestID)
+        }
     }
 
     @MainActor

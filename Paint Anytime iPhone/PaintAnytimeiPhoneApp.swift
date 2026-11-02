@@ -8,6 +8,7 @@ struct PaintAnytimeiPhoneApp: App {
     var body: some Scene {
         WindowGroup {
             PhoneHomeView(photoInbox: photoInbox)
+                .modifier(SketchAssistSheet(assist: PhoneSketchAssist.shared))
                 .task { photoInbox.start() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { photoInbox.refresh(); photoInbox.synchronize() }

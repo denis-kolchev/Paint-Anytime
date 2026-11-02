@@ -122,6 +122,11 @@ struct ArchitectureChecks {
             }
             precondition(features.allows(.monoline) && features.allows(.eraser))
         }
+        for (version, enabled) in [("1.2", false), ("1.2.9", false), ("1.3", true), ("1.3.0", true),
+                                   ("1.10", true), ("2.0", true), ("0.9", false)] {
+            precondition(AppReleaseFeatures(version: version).showsSketchAssist == enabled,
+                         "Sketch assist threshold: \(version)")
+        }
         let suite = "PaintArchitectureChecks.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }

@@ -58,6 +58,10 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
     nonisolated func sessionDidDeactivate(_ session: WCSession) { session.activate() }
 
     nonisolated func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer, error: Error?) {
+        if fileTransfer.file.metadata?[SketchAssistProtocol.kindKey] as? String == SketchAssistProtocol.resultKind {
+            try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)
+            return
+        }
         guard let error else { return }
         Task { @MainActor in onReceive?(.failure(error)) }
     }
@@ -71,6 +75,15 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
 
     nonisolated func session(_ session: WCSession, didReceive file: WCSessionFile) {
         // Capture the file synchronously: the system deletes it after this delegate call returns.
+        if file.metadata?[SketchAssistProtocol.kindKey] as? String == SketchAssistProtocol.requestKind {
+            let requestID = file.metadata?[SketchAssistProtocol.requestIDKey] as? String ?? ""
+            let maximumPixels = file.metadata?[SketchAssistProtocol.maximumPixelsKey] as? Int ?? 512
+            let imageData = (try? Data(contentsOf: file.fileURL)) ?? Data()
+            Task { @MainActor in
+                PhoneSketchAssist.shared.handle(imageData: imageData, requestID: requestID, maximumPixels: maximumPixels)
+            }
+            return
+        }
         let result = Result {
             if let gallery = store as? IncomingDrawingStore, let name = file.metadata?["drawingName"] as? String {
                 try gallery.receive(file.fileURL, name: name)
