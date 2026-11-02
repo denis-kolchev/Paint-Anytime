@@ -14,6 +14,14 @@ struct CanvasControlLayout: Codable, Equatable {
         .single(.undo), .single(.redo), .single(.layers), .single(.more)
     ])
 
+    /// The canvas with Everything at hand off: two expandable menus and an
+    /// empty bottom row. Saving exactly this restores that mode itself.
+    static let original = CanvasControlLayout(slots: [
+        .group([.brush, .undo, .redo], icon: "paintbrush.pointed"),
+        .single(.nothing), .single(.nothing), .single(.nothing), .single(.nothing),
+        .group([.more, .clear, .save, .lasso, .layers], icon: "doc.badge.gearshape")
+    ])
+
     /// More is the only way into settings, so at least one slot must offer it.
     var containsMore: Bool { slots.contains { $0.actions.contains(.more) } }
 
@@ -46,8 +54,11 @@ struct CanvasControlAssignment: Codable, Equatable {
     /// An empty slot shows no circle on the canvas.
     var isEmpty: Bool { !isMorph && actions == [.nothing] }
 
+    /// Five matches the built-in canvas actions menu.
+    static let maxMorphActions = 5
+
     var isValid: Bool {
-        (isMorph ? (1...4).contains(actions.count) && !actions.contains(.nothing) : actions.count == 1)
+        (isMorph ? (1...Self.maxMorphActions).contains(actions.count) && !actions.contains(.nothing) : actions.count == 1)
             && Set(actions).count == actions.count
     }
 }

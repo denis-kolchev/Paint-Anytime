@@ -100,7 +100,6 @@ private struct DrawingSettingsView: View {
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
     @Environment(\.displayScale) private var displayScale
-    @State private var showsCanvasEditor = false
 
     var body: some View {
         List {
@@ -133,8 +132,8 @@ private struct DrawingSettingsView: View {
             } label: {
                 Label(L10n.text("Everything at hand"), systemImage: "rectangle.compress.vertical")
             }
-            Button {
-                showsCanvasEditor = true
+            NavigationLink {
+                CanvasEditorSettingsView()
             } label: {
                 Label(L10n.text("Canvas editor"), systemImage: "slider.horizontal.3")
             }
@@ -147,9 +146,6 @@ private struct DrawingSettingsView: View {
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Drawing"))
         .toolbarTitleDisplayMode(.inline)
-        .fullScreenCover(isPresented: $showsCanvasEditor) {
-            CanvasLayoutEditorView()
-        }
     }
 }
 
@@ -476,6 +472,41 @@ private struct ColorBlendingIllustration: View {
             }
         }
         .accessibilityElement(children: .ignore)
+    }
+}
+
+private struct CanvasEditorSettingsView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @AppStorage(CanvasControlLayout.storageKey) private var storedLayout = Data()
+    @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
+    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
+    @State private var showsEditor = false
+
+    var body: some View {
+        List {
+            Section {
+                Button {
+                    showsEditor = true
+                } label: {
+                    Label(L10n.text("Edit canvas"), systemImage: "square.and.pencil")
+                }
+                // Same original interface as the editor's reset preview.
+                Button {
+                    storedLayout = Data()
+                    customLayoutEnabled = false
+                    usesMorphToolbar = true
+                } label: {
+                    Label(L10n.text("Reset interface"), systemImage: "arrow.counterclockwise")
+                }
+            } footer: {
+                Text(L10n.text("Reset restores the original canvas with expandable menus."))
+            }
+        }
+        .labelStyle(CenteredMenuLabelStyle())
+        .navigationTitle(L10n.text("Canvas editor"))
+        .fullScreenCover(isPresented: $showsEditor) {
+            CanvasLayoutEditorView()
+        }
     }
 }
 

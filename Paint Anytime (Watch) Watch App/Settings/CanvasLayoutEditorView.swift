@@ -9,14 +9,14 @@ struct CanvasLayoutEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft = CanvasControlLayout.standard
     @State private var editingSlot: Int?
-    @State private var resetsToOriginal = false
+    @State private var topControlMidY: CGFloat?
     @State private var loaded = false
 
     var body: some View {
         NavigationStack {
-            center
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.ignoresSafeArea())
+            Color.white
+                .ignoresSafeArea()
+                .overlay { saveButton }
                 // Native toolbar slots, as on the canvas: the system clock
                 // centres between the top buttons before it is hidden.
                 .toolbar {
@@ -26,6 +26,10 @@ struct CanvasLayoutEditorView: View {
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         slotButton(0)
+                            // Toolbar items live in another coordinate space.
+                            .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).midY } action: {
+                                topControlMidY = $0
+                            }
                     }
                     ToolbarItemGroup(placement: .bottomBar) {
                         slotButton(1)
@@ -46,7 +50,8 @@ struct CanvasLayoutEditorView: View {
             if let slot = editingSlot {
                 NavigationStack {
                     CanvasSlotEditorView(assignment: $draft.slots[slot],
-                                         keepsMore: !otherSlotsContainMore(slot))
+                                         keepsMore: !otherSlotsContainMore(slot),
+                                         usedMorphIcons: morphIcons(excluding: slot))
                 }
             }
         }
@@ -55,31 +60,18 @@ struct CanvasLayoutEditorView: View {
         .modifier(ClockVisibilityHost())
         .onAppear {
             guard !loaded else { return }
-            draft = CanvasControlLayout.decode(storedLayout) ?? .standard
+            // Show the canvas as it is now: the custom layout, the always-visible
+            // buttons, or the menus used when Everything at hand is off.
+            draft = (customLayoutEnabled ? CanvasControlLayout.decode(storedLayout) : nil)
+                ?? (usesMorphToolbar ? .original : .standard)
             loaded = true
         }
     }
 
-    private var center: some View {
-        HStack(spacing: 10) {
-            Button(action: { dismiss() }) {
-                CanvasLayoutCircle {
-                    Image(systemName: "xmark")
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.text("Cancel"))
-            // Previews the original layout; the checkmark makes it permanent.
-            Button {
-                draft = .standard
-                resetsToOriginal = true
-            } label: {
-                CanvasLayoutCircle {
-                    Image(systemName: "arrow.counterclockwise")
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.text("Use standard layout"))
+    /// watchOS has no centre toolbar placement, so the checkmark sits in the
+    /// clock's place, level with the measured top buttons.
+    private var saveButton: some View {
+        GeometryReader { proxy in
             Button(action: save) {
                 CanvasLayoutCircle {
                     Image(systemName: "checkmark").foregroundStyle(.green)
@@ -87,7 +79,10 @@ struct CanvasLayoutEditorView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.text("Save and apply"))
+            .position(x: proxy.size.width / 2,
+                      y: (topControlMidY ?? MorphPanelGeometry.buttonDiameter) - proxy.frame(in: .global).minY)
         }
+        .ignoresSafeArea()
     }
 
     private func slotButton(_ index: Int) -> some View {
@@ -111,14 +106,19 @@ struct CanvasLayoutEditorView: View {
         }
     }
 
+    private func morphIcons(excluding index: Int) -> Set<String> {
+        Set(draft.slots.indices.filter { $0 != index && draft.slots[$0].isMorph }
+            .map { CanvasMorphIcon.resolve(draft.slots[$0].icon) })
+    }
+
     private func otherSlotsContainMore(_ index: Int) -> Bool {
         draft.slots.indices.contains { $0 != index && draft.slots[$0].actions.contains(.more) }
     }
 
     private func save() {
-        // Untouched after a reset: restore the original interface itself,
-        // not a custom layout that merely copies it.
-        if resetsToOriginal && draft == .standard {
+        // Restore the original interface itself, not a custom layout that
+        // merely copies it, so Everything at hand reads as off again.
+        if draft == .original {
             storedLayout = Data()
             customLayoutEnabled = false
             usesMorphToolbar = true
@@ -150,11 +150,13 @@ private struct CanvasSlotEditorView: View {
     @Binding var assignment: CanvasControlAssignment
     /// This slot holds the last More, so every choice here must keep it.
     let keepsMore: Bool
+    let usedMorphIcons: Set<String>
 
     var body: some View {
         List {
             NavigationLink {
-                CanvasMorphSelectionView(assignment: $assignment, keepsMore: keepsMore)
+                CanvasMorphSelectionView(assignment: $assignment, keepsMore: keepsMore,
+                                         usedMorphIcons: usedMorphIcons)
             } label: {
                 HStack {
                     Label("Morph", systemImage: "square.grid.2x2")
@@ -193,36 +195,19 @@ private struct CanvasSlotEditorView: View {
 private struct CanvasMorphSelectionView: View {
     @Binding var assignment: CanvasControlAssignment
     let keepsMore: Bool
+    /// Icons of the other morph slots, avoided when this one gets its first icon.
+    let usedMorphIcons: Set<String>
     @State private var selection: [CanvasQuickAction] = []
     @State private var icon = CanvasMorphIcon.standard
     @State private var loaded = false
 
     var body: some View {
         List {
-            Section(L10n.text("Icon")) {
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 6) {
-                    ForEach(CanvasMorphIcon.symbols, id: \.self) { symbol in
-                        Button {
-                            icon = symbol
-                            commit()
-                        } label: {
-                            Image(systemName: symbol)
-                                .font(.system(size: 15, weight: .semibold))
-                                .frame(width: 32, height: 32)
-                                .background(Circle().fill(icon == symbol ? Color.green : Color.gray.opacity(0.35)))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(symbol)
-                        .accessibilityAddTraits(icon == symbol ? .isSelected : [])
-                    }
-                }
-                .listRowBackground(Color.clear)
-            }
             Section {
                 ForEach(CanvasQuickAction.allCases.filter { $0 != .nothing }) { action in
                     Button {
                         if selection.contains(action) { selection.removeAll { $0 == action } }
-                        else if selection.count < 4 { selection.append(action) }
+                        else if selection.count < CanvasControlAssignment.maxMorphActions { selection.append(action) }
                         commit()
                     } label: {
                         HStack {
@@ -236,22 +221,35 @@ private struct CanvasMorphSelectionView: View {
                             }
                         }
                     }
-                    .disabled((selection.count == 4 && !selection.contains(action))
+                    .disabled((selection.count == CanvasControlAssignment.maxMorphActions && !selection.contains(action))
                               || (keepsMore && action == .more))
                     .accessibilityAddTraits(selection.contains(action) ? .isSelected : [])
                 }
             } header: {
-                Text("\(selection.count)/4")
+                Text("\(selection.count)/\(CanvasControlAssignment.maxMorphActions)")
             } footer: {
-                Text(L10n.text("Choose up to four actions. Their order follows your selection."))
+                Text(L10n.text("Choose up to five actions. Their order follows your selection."))
             }
         }
         .navigationTitle("Morph")
+        .toolbar {
+            // Shows the current icon and opens the full icon list.
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    CanvasMorphIconPicker(icon: $icon, onSelect: commit)
+                } label: {
+                    Image(systemName: icon)
+                }
+                .accessibilityLabel(L10n.text("Icon"))
+            }
+        }
         .onAppear {
             guard !loaded else { return }
             selection = assignment.actions
             if keepsMore && !selection.contains(.more) { selection.insert(.more, at: 0) }
-            icon = CanvasMorphIcon.resolve(assignment.icon)
+            icon = assignment.isMorph ? CanvasMorphIcon.resolve(assignment.icon)
+                : CanvasMorphIcon.symbols.filter { !usedMorphIcons.contains($0) }.randomElement()
+                    ?? CanvasMorphIcon.standard
             loaded = true
         }
     }
@@ -261,6 +259,34 @@ private struct CanvasMorphSelectionView: View {
     private func commit() {
         guard !selection.isEmpty, !keepsMore || selection.contains(.more) else { return }
         assignment = .group(selection, icon: icon == CanvasMorphIcon.standard ? nil : icon)
+    }
+}
+
+private struct CanvasMorphIconPicker: View {
+    @Binding var icon: String
+    let onSelect: () -> Void
+
+    var body: some View {
+        ScrollView {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 6) {
+                ForEach(CanvasMorphIcon.symbols, id: \.self) { symbol in
+                    Button {
+                        icon = symbol
+                        onSelect()
+                    } label: {
+                        Image(systemName: symbol)
+                            .font(.system(size: 15, weight: .semibold))
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(icon == symbol ? Color.green : Color.gray.opacity(0.35)))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(symbol)
+                    .accessibilityAddTraits(icon == symbol ? .isSelected : [])
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+        .navigationTitle(L10n.text("Icon"))
     }
 }
 

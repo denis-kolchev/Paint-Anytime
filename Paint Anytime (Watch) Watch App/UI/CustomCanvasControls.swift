@@ -30,7 +30,7 @@ struct CustomCanvasControls: View {
                 let expanded = assignment.isMorph && state.customExpandedSlot == index
                 let anchor = position(index, geometry: geometry)
                 let diameter = geometry.diameter
-                let rowHeight = min(diameter, max(24, (size.height - 64) / 4))
+                let rowHeight = min(diameter, max(24, (size.height - 64) / CGFloat(max(4, assignment.actions.count))))
                 let height = expanded ? rowHeight * CGFloat(assignment.actions.count) : diameter
                 CanvasMorphContent(isExpanded: expanded) {
                     VStack(spacing: 0) {
