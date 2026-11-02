@@ -9,7 +9,8 @@ struct CanvasResizeCarousel: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let itemWidth = min(90, geometry.size.width / 2 - 8)
+            // The first layout pass can propose a zero width.
+            let itemWidth = max(0, min(90, geometry.size.width / 2 - 8))
             ScrollViewReader { proxy in
                 ScrollView(.horizontal) {
                     HStack(spacing: 0) {

@@ -157,6 +157,7 @@ private struct CanvasSlotEditorView: View {
             } label: {
                 HStack {
                     Label("Morph", systemImage: "square.grid.2x2")
+                        .labelStyle(CenteredMenuLabelStyle())
                     Spacer()
                     if assignment.isMorph {
                         Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
@@ -291,6 +292,7 @@ private struct CanvasMorphIconPicker: View {
 struct CanvasQuickActionLabel: View {
     let action: CanvasQuickAction
     let instrument: DrawingInstrument
+    @AppStorage(WatchSketchAssist.phoneAvailabilityKey) private var sketchAssistOnPhone = false
 
     var body: some View {
         Label {
@@ -298,11 +300,14 @@ struct CanvasQuickActionLabel: View {
         } icon: {
             switch action {
             case .clear: BroomIcon()
-            case .brush: ToolIcon(instrument: instrument)
-            case .eraserToggle: ToolIcon(instrument: .eraser)
+            case .brush, .eraserToggle: ToolIcon(instrument: instrument)
             case .canvasEditor: CanvasLayoutIcon()
+            case .sketchAssist:
+                Image(systemName: action.symbol).modifier(SketchAssistLock(isLocked: !sketchAssistOnPhone))
             default: Image(systemName: action.symbol)
             }
         }
+        // Keeps the icon centred on titles that wrap to several lines.
+        .labelStyle(CenteredMenuLabelStyle())
     }
 }

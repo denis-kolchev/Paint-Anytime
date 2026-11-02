@@ -6,6 +6,9 @@ import WatchKit
 final class WatchLassoController: ObservableObject {
     @Published private(set) var isActive = false
     @Published private(set) var mode: WatchLassoMode = .area
+    /// Set when the lasso opens straight into one mode, such as Complete strokes,
+    /// so the mode picker stays hidden until the lasso closes.
+    @Published private(set) var isModeLocked = false
     @Published private(set) var outline: [CGPoint] = []
     @Published private(set) var rotation: CGFloat = 0
     @Published private(set) var bounds: CGRect?
@@ -133,8 +136,14 @@ final class WatchLassoController: ObservableObject {
     private var dragStart = CGPoint.zero
     private var dragBounds = CGRect.zero
 
-    func activate() { resetSelection(); clearHistory(); isActive = true }
-    func deactivate() { resetSelection(); clearHistory(); isActive = false }
+    func activate(lockedTo lockedMode: WatchLassoMode? = nil) {
+        resetSelection()
+        clearHistory()
+        if let lockedMode { mode = lockedMode }
+        isModeLocked = lockedMode != nil
+        isActive = true
+    }
+    func deactivate() { resetSelection(); clearHistory(); isModeLocked = false; isActive = false }
     func setMode(_ value: WatchLassoMode) {
         guard mode != value else { return }
         resetSelection()

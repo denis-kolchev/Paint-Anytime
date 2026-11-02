@@ -50,7 +50,6 @@ struct CustomCanvasControls: View {
                     } label: {
                         CanvasQuickActionIcon(action: assignment.actions[0],
                                               instrument: controller.pencilStyle.instrument,
-                                              eraserToggleTarget: controller.eraserToggleTarget,
                                               isMorph: assignment.isMorph,
                                               morphIcon: assignment.icon)
                             .frame(width: diameter, height: diameter)
@@ -74,8 +73,7 @@ struct CustomCanvasControls: View {
             state.customExpandedSlot = nil
             onAction(action)
         } label: {
-            CanvasQuickActionIcon(action: action, instrument: controller.pencilStyle.instrument,
-                                  eraserToggleTarget: controller.eraserToggleTarget)
+            CanvasQuickActionIcon(action: action, instrument: controller.pencilStyle.instrument)
                 .frame(width: MorphPanelGeometry.buttonDiameter, height: height)
         }
         .buttonStyle(.plain)
@@ -105,9 +103,8 @@ struct CustomCanvasControls: View {
 
 struct CanvasQuickActionIcon: View {
     let action: CanvasQuickAction
+    @AppStorage(WatchSketchAssist.phoneAvailabilityKey) private var sketchAssistOnPhone = false
     let instrument: DrawingInstrument
-    /// The tool the eraser toggle switches to, shown on its circle.
-    var eraserToggleTarget: DrawingInstrument = .eraser
     var isMorph = false
     var morphIcon: String? = nil
 
@@ -115,9 +112,12 @@ struct CanvasQuickActionIcon: View {
         Group {
             if isMorph { Image(systemName: CanvasMorphIcon.resolve(morphIcon)) }
             else if action == .clear { BroomIcon() }
-            else if action == .brush { ToolIcon(instrument: instrument) }
-            else if action == .eraserToggle { ToolIcon(instrument: eraserToggleTarget) }
+            // The eraser toggle shows the tool in hand: the eraser while erasing.
+            else if action == .brush || action == .eraserToggle { ToolIcon(instrument: instrument) }
             else if action == .canvasEditor { CanvasLayoutIcon() }
+            else if action == .sketchAssist {
+                Image(systemName: action.symbol).modifier(SketchAssistLock(isLocked: !sketchAssistOnPhone))
+            }
             else { Image(systemName: action.symbol) }
         }
         .font(.system(size: 17, weight: .semibold))

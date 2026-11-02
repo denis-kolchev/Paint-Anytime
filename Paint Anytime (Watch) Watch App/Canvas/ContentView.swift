@@ -17,6 +17,7 @@ struct ContentView: View {
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
     @State private var quickSettings: CanvasQuickAction?
     @AppStorage(WatchSketchAssist.phoneAvailabilityKey) private var sketchAssistOnPhone = false
+    @State private var showsSketchAssistRequirements = false
     @Environment(\.openURL) private var openURL
     private var customLayout: CanvasControlLayout? {
         customLayoutEnabled ? CanvasControlLayout.decode(controlLayoutData) : nil
@@ -70,118 +71,7 @@ struct ContentView: View {
     var body: some View {
         Group {
         GeometryReader { geometry in
-            ZStack {
-                Color.black
-
-                drawingPage
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .background(.white)
-                    .opacity(showsToolSettings || showsGallery ? 0 : 1)
-                    .allowsHitTesting(!showsToolSettings && !showsGallery)
-                    .accessibilityHidden(showsToolSettings)
-                    .zIndex(0)
-
-                if let layerMoveName, lasso.isActive, !showsGallery, !showsToolSettings {
-                    Text(layerMoveName)
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 9)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-                        .padding(.horizontal, 42)
-                        .id(layerMoveID)
-                        .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
-                        .allowsHitTesting(false)
-                        .zIndex(4)
-                        .task(id: layerMoveID) {
-                            do { try await Task.sleep(for: .seconds(1.2)) } catch { return }
-                            withAnimation(.easeOut(duration: 0.2)) { self.layerMoveName = nil }
-                        }
-                }
-
-                CanvasMorphPanels(state: morphState, regions: controlRegions,
-                                  session: session, lasso: lasso, size: geometry.size,
-                                  canvasOrigin: geometry.frame(in: .global).origin,
-                                  isVisible: isActive && !showsGallery && !showsToolSettings &&
-                                      (customLayout == nil || isMovingCanvas || lasso.isActive),
-                                  usesMorphToolbar: usesMorphToolbar, isMovingCanvas: isMovingCanvas,
-                                  isEyedropperActive: isEyedropperActive,
-                                  showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
-                                  showsLayers: $showsLayers,
-                                  onStartLasso: startLasso, onFinishLasso: finishLasso,
-                                  onMoveSelectionLayer: moveSelectionLayer,
-                                  onClearLayerMoveName: { layerMoveName = nil })
-                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
-                    .zIndex(3)
-
-                if let customLayout, isActive, !showsGallery, !showsToolSettings,
-                   !isMovingCanvas, !lasso.isActive, controller.activeStroke == nil {
-                    CustomCanvasControls(layout: customLayout, state: morphState,
-                                         regions: controlRegions, controller: controller,
-                                         size: geometry.size,
-                                         canvasOrigin: geometry.frame(in: .global).origin,
-                                         onAction: performQuickAction)
-                        .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil || showsAutosaveProgress))
-                        .zIndex(3)
-                }
-
-                if showsGallery {
-                    SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap,
-                        needsDiscardConfirmation: controller.needsDiscardConfirmation,
-                        isPreparingCanvas: session.isPreparingCanvas,
-                        preparationError: session.canvasPreparationError, onClose: {
-                        showsGallery = false
-                        galleryArtworkFilename = nil
-                        galleryInitialBitmap = nil
-                        savedNoticeID = nil
-                    }) { document in
-                        // Gallery confirms discard before it reads the saved project.
-                        session.performCanvasAction(.open(document))
-                    }
-                    .id(galleryLaunchID)
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    // Fade the gallery as one surface. Fading its overlapping
-                    // layers separately reveals the thumbnail grid underneath.
-                    .compositingGroup()
-                    .transition(.opacity)
-                    .zIndex(2)
-                }
-
-                if let savedNoticeID, !showsGallery {
-                    Text(L10n.text("Artwork saved to gallery"))
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(3)
-                        .minimumScaleFactor(0.5)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 9)
-                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-                        .padding(.horizontal, 42)
-                        .id(savedNoticeID)
-                        .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
-                        .allowsHitTesting(false)
-                        .zIndex(4)
-                        .task(id: savedNoticeID) {
-                            do { try await Task.sleep(for: .seconds(2)) } catch { return }
-                            withAnimation(.easeOut(duration: 0.2)) { self.savedNoticeID = nil }
-                        }
-                }
-
-                if showsToolSettings {
-                    WatchToolSettingsView(controller: controller)
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .background(.black)
-                    .transition(.opacity)
-                    .zIndex(1)
-                }
-            }
-            .animation(.easeInOut(duration: 0.25), value: showsToolSettings)
-            .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsGallery)
-            .frame(width: geometry.size.width, height: geometry.size.height)
-            .clipped()
-            .onAppear { canvasSize = geometry.size }
-            .onChange(of: geometry.size) { _, size in canvasSize = size }
+            canvasStack(geometry)
         }
         // Establish full-screen bounds before applying any presentation effects.
         .ignoresSafeArea()
@@ -200,129 +90,7 @@ struct ContentView: View {
         // Keep the toolbar slots installed during autosave: removing the trailing
         // item makes watchOS move its clock. CanvasMenuControlVisibility hides the
         // controls and disables their hit targets without changing the clock layout.
-        .toolbar {
-            if let customLayout, isActive, menuOnboarding.tutorialFolder == nil,
-               !showsGallery, !showsToolSettings, !isMovingCanvas, !lasso.isActive {
-                ToolbarItem(placement: .topBarTrailing) {
-                    customToolbarAnchor(0, layout: customLayout)
-                }
-                ToolbarItem(placement: .topBarLeading) {
-                    customToolbarAnchor(CanvasControlLayout.topLeadingSlot, layout: customLayout)
-                }
-                ToolbarItemGroup(placement: .bottomBar) {
-                    customToolbarAnchor(1, layout: customLayout)
-                    Spacer(minLength: 0)
-                    customToolbarAnchor(2, layout: customLayout)
-                    Spacer(minLength: 0)
-                    customToolbarAnchor(3, layout: customLayout)
-                    Spacer(minLength: 0)
-                    customToolbarAnchor(4, layout: customLayout)
-                }
-            }
-            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && lasso.isActive {
-                ToolbarItem(placement: .topBarLeading) {
-                    // Balance Done to center the system clock, and forward this
-                    // native toolbar region's drags to the same lasso controller.
-                    WatchLassoToolbarTouchRegion(input: lassoToolbarInput, lasso: lasso,
-                        controller: controller, diameter: canvasToolbarDiameter)
-                }
-            }
-            // A custom layout assigns the top-left slot itself, except while the
-            // free camera borrows it for the eyedropper.
-            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && !lasso.isActive &&
-                (customLayout == nil || isMovingCanvas) {
-                ToolbarItem(placement: .topBarLeading) {
-                    MorphControlsScope {
-                        Button {
-                            if lasso.isActive {
-                                if showsSelectionActions { moveSelectionLayer(1) }
-                                else { lasso.setMode(.strokes) }
-                            } else if isMovingCanvas {
-                                controller.cancelStroke()
-                                isEyedropperActive.toggle()
-                                hasEyedropperSession = true
-                            } else if usesMorphToolbar {
-                                if showsContentActions {
-                                    showsContentActions = false
-                                    showsAppSettings = true
-                                } else {
-                                    withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                                        showsMorphToolbar = false
-                                        showsContentActions = true
-                                    }
-                                }
-                            } else { showsAppSettings = true }
-                        } label: {
-                            Image(systemName: lasso.isActive ? "checkmark" : isMovingCanvas ? "eyedropper" : usesMorphToolbar ? "doc.badge.gearshape" : "ellipsis")
-                                .foregroundStyle(lasso.isActive || isEyedropperActive ? .green : .primary)
-                                .frame(width: 18, height: 18, alignment: .center)
-                                .opacity(lasso.isActive || isMovingCanvas || usesMorphToolbar ? 0 : 1)
-                                .contentShape(Rectangle())
-                        }
-                        .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: lasso.isActive ? true : (usesMorphToolbar || isMovingCanvas) || controller.activeStroke != nil)
-                        .accessibilityLabel(L10n.text(lasso.isActive ? (showsSelectionActions ? "Move to layer above" : WatchLassoMode.strokes.title) : isMovingCanvas ? "Eyedropper" : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
-                        .disabled(lasso.isActive && showsSelectionActions && !lasso.canMoveLayer(1, controller: controller))
-                        .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
-                        .trackCanvasControl(.more, frames: controlFramesBinding)
-                        .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
-                        .opacity(controller.activeStroke != nil ? 0 : 1)
-                        .allowsHitTesting(controller.activeStroke == nil)
-                        .accessibilityHidden(controller.activeStroke != nil)
-                    }
-                }
-            }
-            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery &&
-                (customLayout == nil || showsToolSettings || isMovingCanvas || lasso.isActive) {
-                ToolbarItem(placement: .topBarTrailing) {
-                    MorphControlsScope {
-                        Button {
-                            if lasso.isActive {
-                                finishLasso()
-                            } else if isMovingCanvas {
-                                finishCameraTool()
-                            }
-                            else if usesMorphToolbar && !showsToolSettings {
-                                if showsMorphToolbar {
-                                    showsMorphToolbar = false
-                                    showsToolSettings = true
-                                } else {
-                                    withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                                        showsContentActions = false
-                                        showsMorphToolbar = true
-                                    }
-                                }
-                            } else { showsToolSettings.toggle() }
-                        } label: {
-                            Group {
-                                if showsToolSettings || isMovingCanvas || lasso.isActive {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 17, weight: .semibold))
-                                        .foregroundStyle(.green)
-                                } else if usesMorphToolbar {
-                                    Image(systemName: "paintbrush.pointed")
-                                } else {
-                                    ToolIcon(instrument: controller.pencilStyle.instrument)
-                                }
-                            }
-                            // Keep the label bounds identical when switching to Done,
-                            // so the toolbar centers the checkmark like the tool icon.
-                            .frame(width: 18, height: 18, alignment: .center)
-                            .opacity(morphOwnsTrailingControl ? 0 : 1)
-                            .contentShape(Rectangle())
-                        }
-                        .watchToolbarButtonStyle(diameter: showsToolSettings ? 32 : canvasToolbarDiameter, usesCanvasMaterial: !showsToolSettings, hidesNativeChrome: morphOwnsTrailingControl || lasso.hidesControls || (!showsToolSettings && controller.activeStroke != nil))
-                        .accessibilityLabel(showsToolSettings || isMovingCanvas || lasso.isActive ? L10n.text("Done") : L10n.text(usesMorphToolbar && !showsMorphToolbar ? "Open drawing controls" : "Tool settings"))
-                        .trackCanvasControl(.tools, frames: controlFramesBinding)
-                        .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
-                        // Keep the toolbar slot installed so the system clock does not
-                        // move when drawing temporarily hides the button.
-                        .opacity((!showsToolSettings && controller.activeStroke != nil) || lasso.hidesControls ? 0 : 1)
-                        .allowsHitTesting((showsToolSettings || controller.activeStroke == nil) && !lasso.hidesControls)
-                        .accessibilityHidden((!showsToolSettings && controller.activeStroke != nil) || lasso.hidesControls)
-                    }
-                }
-            }
-        }
+        .toolbar { canvasToolbar }
         }
         .requestsHiddenClock(isActive && menuOnboarding.tutorialFolder == nil
             && !showsGallery && !showsToolSettings && !showsAppSettings)
@@ -340,6 +108,7 @@ struct ContentView: View {
         .sheet(item: $quickSettings) { action in
             CanvasQuickSettingsView(action: action, controller: controller, viewportSize: canvasSize)
         }
+        .modifier(SketchAssistRequirementsAlert(isPresented: $showsSketchAssistRequirements))
         .onChange(of: customLayoutEnabled) { _, _ in
             morphState.customExpandedSlot = nil
         }
@@ -640,6 +409,253 @@ struct ContentView: View {
             (!lasso.isActive && usesMorphToolbar))
     }
 
+    private func canvasStack(_ geometry: GeometryProxy) -> some View {
+        ZStack {
+            Color.black
+
+            drawingPage
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .background(.white)
+                .opacity(showsToolSettings || showsGallery ? 0 : 1)
+                .allowsHitTesting(!showsToolSettings && !showsGallery)
+                .accessibilityHidden(showsToolSettings)
+                .zIndex(0)
+
+            if let layerMoveName, lasso.isActive, !showsGallery, !showsToolSettings {
+                Text(layerMoveName)
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                    .padding(.horizontal, 42)
+                    .id(layerMoveID)
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
+                    .allowsHitTesting(false)
+                    .zIndex(4)
+                    .task(id: layerMoveID) {
+                        do { try await Task.sleep(for: .seconds(1.2)) } catch { return }
+                        withAnimation(.easeOut(duration: 0.2)) { self.layerMoveName = nil }
+                    }
+            }
+
+            CanvasMorphPanels(state: morphState, regions: controlRegions,
+                              session: session, lasso: lasso, size: geometry.size,
+                              canvasOrigin: geometry.frame(in: .global).origin,
+                              isVisible: isActive && !showsGallery && !showsToolSettings &&
+                                  (customLayout == nil || isMovingCanvas || lasso.isActive),
+                              usesMorphToolbar: usesMorphToolbar, isMovingCanvas: isMovingCanvas,
+                              isEyedropperActive: isEyedropperActive,
+                              showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
+                              showsLayers: $showsLayers,
+                              onStartLasso: { startLasso() }, onFinishLasso: finishLasso,
+                              onMoveSelectionLayer: moveSelectionLayer,
+                              onClearLayerMoveName: { layerMoveName = nil })
+                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
+                .zIndex(3)
+
+            if let customLayout, isActive, !showsGallery, !showsToolSettings,
+               !isMovingCanvas, !lasso.isActive, controller.activeStroke == nil {
+                CustomCanvasControls(layout: customLayout, state: morphState,
+                                     regions: controlRegions, controller: controller,
+                                     size: geometry.size,
+                                     canvasOrigin: geometry.frame(in: .global).origin,
+                                     onAction: performQuickAction)
+                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil || showsAutosaveProgress))
+                    .zIndex(3)
+            }
+
+            if showsGallery {
+                SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap,
+                    needsDiscardConfirmation: controller.needsDiscardConfirmation,
+                    isPreparingCanvas: session.isPreparingCanvas,
+                    preparationError: session.canvasPreparationError, onClose: {
+                    showsGallery = false
+                    galleryArtworkFilename = nil
+                    galleryInitialBitmap = nil
+                    savedNoticeID = nil
+                }) { document in
+                    // Gallery confirms discard before it reads the saved project.
+                    session.performCanvasAction(.open(document))
+                }
+                .id(galleryLaunchID)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                // Fade the gallery as one surface. Fading its overlapping
+                // layers separately reveals the thumbnail grid underneath.
+                .compositingGroup()
+                .transition(.opacity)
+                .zIndex(2)
+            }
+
+            if let savedNoticeID, !showsGallery {
+                Text(L10n.text("Artwork saved to gallery"))
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                    .padding(.horizontal, 42)
+                    .id(savedNoticeID)
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
+                    .allowsHitTesting(false)
+                    .zIndex(4)
+                    .task(id: savedNoticeID) {
+                        do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                        withAnimation(.easeOut(duration: 0.2)) { self.savedNoticeID = nil }
+                    }
+            }
+
+            if showsToolSettings {
+                WatchToolSettingsView(controller: controller)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .background(.black)
+                .transition(.opacity)
+                .zIndex(1)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: showsToolSettings)
+        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsGallery)
+        .frame(width: geometry.size.width, height: geometry.size.height)
+        .clipped()
+        .onAppear { canvasSize = geometry.size }
+        .onChange(of: geometry.size) { _, size in canvasSize = size }
+    }
+
+    /// Kept out of `body` so the view stays within type-checking limits.
+    @ToolbarContentBuilder
+    private var canvasToolbar: some ToolbarContent {
+        if let customLayout, isActive, menuOnboarding.tutorialFolder == nil,
+           !showsGallery, !showsToolSettings, !isMovingCanvas, !lasso.isActive {
+            ToolbarItem(placement: .topBarTrailing) {
+                customToolbarAnchor(0, layout: customLayout)
+            }
+            ToolbarItem(placement: .topBarLeading) {
+                customToolbarAnchor(CanvasControlLayout.topLeadingSlot, layout: customLayout)
+            }
+            ToolbarItemGroup(placement: .bottomBar) {
+                customToolbarAnchor(1, layout: customLayout)
+                Spacer(minLength: 0)
+                customToolbarAnchor(2, layout: customLayout)
+                Spacer(minLength: 0)
+                customToolbarAnchor(3, layout: customLayout)
+                Spacer(minLength: 0)
+                customToolbarAnchor(4, layout: customLayout)
+            }
+        }
+        if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && lasso.isActive {
+            ToolbarItem(placement: .topBarLeading) {
+                // Balance Done to center the system clock, and forward this
+                // native toolbar region's drags to the same lasso controller.
+                WatchLassoToolbarTouchRegion(input: lassoToolbarInput, lasso: lasso,
+                    controller: controller, diameter: canvasToolbarDiameter)
+            }
+        }
+        // A custom layout assigns the top-left slot itself, except while the
+        // free camera borrows it for the eyedropper.
+        if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && !lasso.isActive &&
+            (customLayout == nil || isMovingCanvas) {
+            ToolbarItem(placement: .topBarLeading) {
+                MorphControlsScope {
+                    Button {
+                        if lasso.isActive {
+                            if showsSelectionActions { moveSelectionLayer(1) }
+                            else { lasso.setMode(.strokes) }
+                        } else if isMovingCanvas {
+                            controller.cancelStroke()
+                            isEyedropperActive.toggle()
+                            hasEyedropperSession = true
+                        } else if usesMorphToolbar {
+                            if showsContentActions {
+                                showsContentActions = false
+                                showsAppSettings = true
+                            } else {
+                                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                                    showsMorphToolbar = false
+                                    showsContentActions = true
+                                }
+                            }
+                        } else { showsAppSettings = true }
+                    } label: {
+                        Image(systemName: lasso.isActive ? "checkmark" : isMovingCanvas ? "eyedropper" : usesMorphToolbar ? "doc.badge.gearshape" : "ellipsis")
+                            .foregroundStyle(lasso.isActive || isEyedropperActive ? .green : .primary)
+                            .frame(width: 18, height: 18, alignment: .center)
+                            .opacity(lasso.isActive || isMovingCanvas || usesMorphToolbar ? 0 : 1)
+                            .contentShape(Rectangle())
+                    }
+                    .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: lasso.isActive ? true : (usesMorphToolbar || isMovingCanvas) || controller.activeStroke != nil)
+                    .accessibilityLabel(L10n.text(lasso.isActive ? (showsSelectionActions ? "Move to layer above" : WatchLassoMode.strokes.title) : isMovingCanvas ? "Eyedropper" : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
+                    .disabled(lasso.isActive && showsSelectionActions && !lasso.canMoveLayer(1, controller: controller))
+                    .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
+                    .trackCanvasControl(.more, frames: controlFramesBinding)
+                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
+                    .opacity(controller.activeStroke != nil ? 0 : 1)
+                    .allowsHitTesting(controller.activeStroke == nil)
+                    .accessibilityHidden(controller.activeStroke != nil)
+                }
+            }
+        }
+        if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery &&
+            (customLayout == nil || showsToolSettings || isMovingCanvas || lasso.isActive) {
+            ToolbarItem(placement: .topBarTrailing) {
+                trailingToolControl
+            }
+        }
+    }
+
+    /// The trailing toolbar control: tool settings, Done or the drawing morph.
+    /// Kept apart from `body` so the toolbar stays within type-checking limits.
+    private var trailingToolControl: some View {
+        MorphControlsScope {
+            Button {
+                if lasso.isActive {
+                    finishLasso()
+                } else if isMovingCanvas {
+                    finishCameraTool()
+                }
+                else if usesMorphToolbar && !showsToolSettings {
+                    if showsMorphToolbar {
+                        showsMorphToolbar = false
+                        showsToolSettings = true
+                    } else {
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                            showsContentActions = false
+                            showsMorphToolbar = true
+                        }
+                    }
+                } else { showsToolSettings.toggle() }
+            } label: {
+                Group {
+                    if showsToolSettings || isMovingCanvas || lasso.isActive {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.green)
+                    } else if usesMorphToolbar {
+                        Image(systemName: "paintbrush.pointed")
+                    } else {
+                        ToolIcon(instrument: controller.pencilStyle.instrument)
+                    }
+                }
+                // Keep the label bounds identical when switching to Done,
+                // so the toolbar centers the checkmark like the tool icon.
+                .frame(width: 18, height: 18, alignment: .center)
+                .opacity(morphOwnsTrailingControl ? 0 : 1)
+                .contentShape(Rectangle())
+            }
+            .watchToolbarButtonStyle(diameter: showsToolSettings ? 32 : canvasToolbarDiameter, usesCanvasMaterial: !showsToolSettings, hidesNativeChrome: morphOwnsTrailingControl || lasso.hidesControls || (!showsToolSettings && controller.activeStroke != nil))
+            .accessibilityLabel(showsToolSettings || isMovingCanvas || lasso.isActive ? L10n.text("Done") : L10n.text(usesMorphToolbar && !showsMorphToolbar ? "Open drawing controls" : "Tool settings"))
+            .trackCanvasControl(.tools, frames: controlFramesBinding)
+            .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
+            // Keep the toolbar slot installed so the system clock does not
+            // move when drawing temporarily hides the button.
+            .opacity((!showsToolSettings && controller.activeStroke != nil) || lasso.hidesControls ? 0 : 1)
+            .allowsHitTesting((showsToolSettings || controller.activeStroke == nil) && !lasso.hidesControls)
+            .accessibilityHidden((!showsToolSettings && controller.activeStroke != nil) || lasso.hidesControls)
+        }
+    }
+
     private func customToolbarAnchor(_ index: Int, layout: CanvasControlLayout) -> some View {
         CustomCanvasToolbarAnchor(index: index, assignment: layout.slots[index],
                                   state: morphState, onAction: performQuickAction)
@@ -681,10 +697,10 @@ struct ContentView: View {
         // Every action collapses the open morph above; Close does only that.
         case .closeMorph: break
         case .sketchAssist:
-            // Without a capable iPhone the lasso opens as usual, and its locked
-            // Image Playground mode explains what is missing.
-            startLasso()
-            if sketchAssistOnPhone, AppReleaseFeatures.current.showsSketchAssist { lasso.setMode(.sketchAssist) }
+            // Opens straight into selecting strokes for Image Playground.
+            guard AppReleaseFeatures.current.showsSketchAssist else { break }
+            if sketchAssistOnPhone { startLasso(lockedTo: .sketchAssist) }
+            else { showsSketchAssistRequirements = true }
         case .tutorial:
             // Reuse the existing preparation, failure alert and tutorial handoff.
             showsAppSettings = true
@@ -718,7 +734,7 @@ struct ContentView: View {
         if shouldEditColor { showsSampledPalette = true }
     }
 
-    private func startLasso() {
+    private func startLasso(lockedTo lockedMode: WatchLassoMode? = nil) {
         controller.cancelStroke()
         isMovingCanvas = false
         isEyedropperActive = false
@@ -726,7 +742,7 @@ struct ContentView: View {
         showsContentActions = false
         showsMorphToolbar = false
         showsSelectionActions = false
-        lasso.activate()
+        lasso.activate(lockedTo: lockedMode)
     }
 
     private func finishLasso() {

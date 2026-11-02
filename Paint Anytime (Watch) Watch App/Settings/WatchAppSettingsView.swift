@@ -81,7 +81,7 @@ struct WatchAppSettingsView: View {
     }
 }
 
-private struct CenteredMenuLabelStyle: LabelStyle {
+struct CenteredMenuLabelStyle: LabelStyle {
     @ScaledMetric(relativeTo: .body) private var iconWidth = 24.0
 
     func makeBody(configuration: Configuration) -> some View {

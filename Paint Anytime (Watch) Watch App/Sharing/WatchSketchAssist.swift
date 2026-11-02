@@ -178,3 +178,33 @@ struct SketchAssistNotice: View {
         }
     }
 }
+
+/// Explains what Complete strokes needs, from the lasso and from canvas actions.
+struct SketchAssistRequirementsAlert: ViewModifier {
+    @Binding var isPresented: Bool
+
+    func body(content: Content) -> some View {
+        content.alert(L10n.text("Image Playground is unavailable"), isPresented: $isPresented) {
+            Button(L10n.text("OK"), role: .cancel) {}
+        } message: {
+            Text(L10n.text("To complete strokes, you need an iPhone that supports Apple Intelligence (iPhone 15 Pro or later) with iOS 18.4 or later, Apple Intelligence turned on in Settings, and Image Playground available. Install Paint Anytime on iPhone and open it once so your watch can check."))
+        }
+    }
+}
+
+/// Dims Complete strokes and adds a lock until the iPhone reports support.
+struct SketchAssistLock: ViewModifier {
+    let isLocked: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isLocked ? 0.45 : 1)
+            .overlay(alignment: .bottomTrailing) {
+                if isLocked {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .offset(x: 5, y: 3)
+                }
+            }
+    }
+}

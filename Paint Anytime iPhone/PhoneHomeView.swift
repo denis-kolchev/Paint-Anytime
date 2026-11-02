@@ -660,7 +660,7 @@ struct PhoneHomeView: View {
             try project.write(to: temporary)
             try IncomingDrawingStore().receive(temporary, name: "Imported_" + UUID().uuidString + "." + PaintProject.fileExtension)
             photoInbox.refresh()
-            projectMessage = "Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch."
+            projectMessage = String(localized: "Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch.")
         } catch { projectMessage = error.localizedDescription }
     }
 
@@ -1246,11 +1246,11 @@ private struct PhoneDrawingView: View {
     private func sendToWatch() {
         let session = WCSession.default
         guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
-            exportError = "Connect your Apple Watch and install Paint Anytime before sending a project."
+            exportError = String(localized: "Connect your Apple Watch and install Paint Anytime before sending a project.")
             return
         }
         session.transferFile(projectURL, metadata: ["project": true])
-        transferMessage = "Project queued. It will appear in your watch gallery when the transfer finishes. Open it there to edit."
+        transferMessage = String(localized: "Project queued. It will appear in your watch gallery when the transfer finishes. Open it there to edit.")
     }
 
     private func close() {
