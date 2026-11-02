@@ -2,7 +2,7 @@ import Combine
 import SwiftUI
 
 enum PerspectivePreset: Int, CaseIterable, Identifiable {
-    case one = 1, two, three
+    case one = 1, two
 
     var id: Int { rawValue }
 
@@ -10,7 +10,6 @@ enum PerspectivePreset: Int, CaseIterable, Identifiable {
         switch self {
         case .one: L10n.text("1-point perspective")
         case .two: L10n.text("2-point perspective")
-        case .three: L10n.text("3-point perspective")
         }
     }
 }
@@ -66,8 +65,6 @@ struct PerspectiveGuideLayout: Equatable {
             return [center]
         case .two:
             return [offset(center, axis, -d), offset(center, axis, d)]
-        case .three:
-            return [offset(center, axis, -d), offset(center, axis, d), offset(center, normal, d)]
         }
     }
 
@@ -134,10 +131,8 @@ struct PerspectiveGuideLayout: Equatable {
                 direction: CGPoint(x: dx / distance, y: dy / distance), kind: .ruler))
         }
         candidates.append(PerspectiveGuideLine(point: start, direction: axis, kind: .ruler))
-        if preset != .three {
-            // Verticals stay parallel without a third vanishing point.
-            candidates.append(PerspectiveGuideLine(point: start, direction: normal, kind: .ruler))
-        }
+        // Verticals stay parallel without a third vanishing point.
+        candidates.append(PerspectiveGuideLine(point: start, direction: normal, kind: .ruler))
         var best = candidates[0]
         var bestAlignment = -CGFloat.infinity
         for candidate in candidates {
@@ -210,12 +205,6 @@ final class PerspectiveGuides: ObservableObject {
         defaults.set(rotation, forKey: Key.rotation)
         defaults.set(Double(center.x), forKey: Key.centerX)
         defaults.set(Double(center.y), forKey: Key.centerY)
-    }
-
-    func resetPlacement() {
-        rotation = 0
-        center = CGPoint(x: 0.5, y: 0.5)
-        savePlacement()
     }
 
     static func normalizedRotation(_ radians: Double) -> Double {

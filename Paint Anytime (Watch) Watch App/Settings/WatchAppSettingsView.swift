@@ -123,7 +123,7 @@ private struct DrawingSettingsView: View {
                 Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
             }
             NavigationLink {
-                PerspectiveGuidesSettingsView()
+                PerspectiveGuidesSettingsView(controller: controller, viewportSize: viewportSize)
             } label: {
                 Label(L10n.text("Perspective guides"), systemImage: "perspective")
             }
