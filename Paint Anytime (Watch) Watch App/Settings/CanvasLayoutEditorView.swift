@@ -5,7 +5,6 @@ import SwiftUI
 struct CanvasLayoutEditorView: View {
     @AppStorage(CanvasControlLayout.storageKey) private var storedLayout = Data()
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
-    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
     @Environment(\.dismiss) private var dismiss
     @State private var draft = CanvasControlLayout.standard
     @State private var editingSlot: Int?
@@ -60,10 +59,8 @@ struct CanvasLayoutEditorView: View {
         .modifier(ClockVisibilityHost())
         .onAppear {
             guard !loaded else { return }
-            // Show the canvas as it is now: the custom layout, the always-visible
-            // buttons, or the menus used when Everything at hand is off.
-            draft = (customLayoutEnabled ? CanvasControlLayout.decode(storedLayout) : nil)
-                ?? (usesMorphToolbar ? .original : .standard)
+            // Show the canvas as it is now: the custom layout or the original menus.
+            draft = (customLayoutEnabled ? CanvasControlLayout.decode(storedLayout) : nil) ?? .original
             loaded = true
         }
     }
@@ -116,19 +113,16 @@ struct CanvasLayoutEditorView: View {
     }
 
     private func save() {
-        // Restore the original interface itself, not a custom layout that
-        // merely copies it, so Everything at hand reads as off again.
+        // Restore the original interface itself, not a custom layout that merely copies it.
         if draft == .original {
             storedLayout = Data()
             customLayoutEnabled = false
-            usesMorphToolbar = true
             dismiss()
             return
         }
         guard let data = try? JSONEncoder().encode(draft),
               CanvasControlLayout.decode(data) != nil else { return }
         storedLayout = data
-        usesMorphToolbar = false
         customLayoutEnabled = true
         dismiss()
     }

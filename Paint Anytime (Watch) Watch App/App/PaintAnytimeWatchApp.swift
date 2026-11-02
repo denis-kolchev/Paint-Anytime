@@ -23,6 +23,7 @@ struct PaintAnytimeWatchApp: App {
                 defaults?.removeObject(forKey: key)
             }
         }
+        CanvasControlLayout.migrateEverythingAtHand()
         try? CanvasExportStore.refreshWidgets()
     }
 

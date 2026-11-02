@@ -128,11 +128,6 @@ private struct DrawingSettingsView: View {
                 Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
             }
             NavigationLink {
-                DrawingControlsSettingsView()
-            } label: {
-                Label(L10n.text("Everything at hand"), systemImage: "rectangle.compress.vertical")
-            }
-            NavigationLink {
                 CanvasEditorSettingsView()
             } label: {
                 Label(L10n.text("Canvas editor"), systemImage: "slider.horizontal.3")
@@ -479,7 +474,6 @@ private struct CanvasEditorSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @AppStorage(CanvasControlLayout.storageKey) private var storedLayout = Data()
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
-    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
     @State private var showsEditor = false
 
     var body: some View {
@@ -494,7 +488,6 @@ private struct CanvasEditorSettingsView: View {
                 Button {
                     storedLayout = Data()
                     customLayoutEnabled = false
-                    usesMorphToolbar = true
                 } label: {
                     Label(L10n.text("Reset interface"), systemImage: "arrow.counterclockwise")
                 }
@@ -507,28 +500,5 @@ private struct CanvasEditorSettingsView: View {
         .fullScreenCover(isPresented: $showsEditor) {
             CanvasLayoutEditorView()
         }
-    }
-}
-
-private struct DrawingControlsSettingsView: View {
-    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
-    @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
-    @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
-
-    var body: some View {
-        List {
-            Section {
-                Toggle(L10n.text("Always show buttons"), isOn: Binding(
-                    get: { customLayoutEnabled || !usesMorphToolbar },
-                    set: {
-                        customLayoutEnabled = false
-                        usesMorphToolbar = !$0
-                    }
-                ))
-            } footer: {
-                Text(L10n.text("Show drawing buttons directly on the canvas for quick access. When off, buttons are grouped in expandable menus."))
-            }
-        }
-        .navigationTitle(L10n.text("Everything at hand"))
     }
 }

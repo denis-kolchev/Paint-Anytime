@@ -13,7 +13,6 @@ struct ContentView: View {
     @State private var autosaveCompleted = false
     @StateObject private var menuOnboarding = OnboardingController()
     private var controller: CanvasController { session.canvas }
-    @AppStorage("experimental.morphToolbar") private var prefersMorphToolbar = true
     @AppStorage(CanvasControlLayout.storageKey) private var controlLayoutData = Data()
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
     @State private var quickSettings: CanvasQuickAction?
@@ -21,7 +20,8 @@ struct ContentView: View {
     private var customLayout: CanvasControlLayout? {
         customLayoutEnabled ? CanvasControlLayout.decode(controlLayoutData) : nil
     }
-    private var usesMorphToolbar: Bool { customLayout == nil && prefersMorphToolbar }
+    /// The built-in controls are the morph menus; any other arrangement is a custom layout.
+    private var usesMorphToolbar: Bool { customLayout == nil }
     private var canvasToolbarDiameter: CGFloat {
         usesMorphToolbar ? 32 : MorphPanelGeometry.buttonDiameter
     }
@@ -218,59 +218,6 @@ struct ContentView: View {
                     customToolbarAnchor(4, layout: customLayout)
                 }
             }
-            if customLayout == nil && !usesMorphToolbar && isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive && controller.activeStroke == nil {
-                ToolbarItemGroup(placement: .bottomBar) {
-                    MorphControlsScope {
-                        Button {
-                            if showsContentActions {
-                                startLasso()
-                            } else {
-                                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                                    showsContentActions = true
-                                }
-                            }
-                        } label: {
-                            Image(systemName: "doc.badge.gearshape")
-                                .frame(width: 18, height: 18).opacity(0)
-                        }
-                        .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: true)
-                        .accessibilityLabel(L10n.text(showsContentActions ? "Lasso" : "Canvas actions"))
-                        .trackCanvasControl(.clear, frames: controlFramesBinding)
-                        .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
-                    }
-                    Spacer(minLength: 0)
-                    Button { controller.undo() } label: {
-                        Image(systemName: "arrow.uturn.backward")
-                    }
-                    .disabled(!controller.canUndo)
-                    .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true)
-                    .accessibilityLabel(L10n.text("Undo"))
-                    .trackCanvasControl(.undo, frames: controlFramesBinding)
-                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
-                    Spacer(minLength: 0)
-                    Button { controller.redo() } label: {
-                        Image(systemName: "arrow.uturn.forward")
-                    }
-                    .disabled(!controller.canRedo)
-                    .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true)
-                    .accessibilityLabel(L10n.text("Redo"))
-                    .trackCanvasControl(.redo, frames: controlFramesBinding)
-                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
-                    Spacer(minLength: 0)
-                    Button {
-                        controller.cancelStroke()
-                        showsContentActions = false
-                        showsLayers = true
-                    } label: {
-                        Image(systemName: "square.3.layers.3d")
-                    }
-                    .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true)
-                    .accessibilityLabel(L10n.text("Layers"))
-                    .trackCanvasControl(.save, frames: controlFramesBinding)
-                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
-                }
-            }
-
             if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && lasso.isActive {
                 ToolbarItem(placement: .topBarLeading) {
                     // Balance Done to center the system clock, and forward this

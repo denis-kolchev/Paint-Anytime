@@ -358,15 +358,6 @@ struct CanvasMorphPanels: View {
                     .zIndex(3)
             }
 
-            if !usesMorphToolbar && isVisible && !isMovingCanvas && !lasso.isActive && controller.activeStroke == nil {
-                let diameter = panelGeometry.diameter
-                let height = showsContentActions ? diameter * 3 : diameter
-                contentActions(diameter: diameter)
-                    .position(x: bottom.x,
-                              y: bottom.y + 18 - height / 2)
-                    .zIndex(3)
-            }
-
             if isVisible && lasso.isActive && !lasso.hidesControls {
                 let diameter = panelGeometry.diameter
                 let left = bottom.x - diameter / 2
@@ -410,35 +401,6 @@ struct CanvasMorphPanels: View {
             showsMorphToolbar = false
             showsContentActions = true
         }
-    }
-
-    private func contentActions(diameter: CGFloat) -> some View {
-        CanvasMorphContent(isExpanded: showsContentActions) {
-            VStack(spacing: 0) {
-                morphButton("Clear canvas", height: diameter) {
-                    showsContentActions = false
-                    session.requestCanvasAction(.clear)
-                } label: { BroomIcon() }
-                .disabled(!controller.canClear)
-                morphButton("Save drawing", height: diameter) {
-                    showsContentActions = false
-                    session.saveDrawing(size: size, scale: displayScale)
-                } label: { Image(systemName: "square.and.arrow.down") }
-                morphButton("Lasso", height: diameter, action: onStartLasso) { Image(systemName: "lasso") }
-                .accessibilityHidden(true)
-            }
-        } collapsed: {
-            VStack(spacing: 0) {
-                morphButton("Canvas actions", height: diameter, action: openContentActions) {
-                    Image(systemName: "doc.badge.gearshape")
-                }
-                .accessibilityHidden(true)
-
-            }
-        }
-        .frame(width: diameter)
-        .modifier(CanvasMorphGlass())
-        .trackCanvasControl(.contentMorph, frames: framesBinding)
     }
 
     private func morphContentActions(diameter: CGFloat, rowHeight: CGFloat) -> some View {

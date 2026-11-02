@@ -14,8 +14,8 @@ struct CanvasControlLayout: Codable, Equatable {
         .single(.undo), .single(.redo), .single(.layers), .single(.more)
     ])
 
-    /// The canvas with Everything at hand off: two expandable menus and an
-    /// empty bottom row. Saving exactly this restores that mode itself.
+    /// The built-in canvas: two expandable menus and an empty bottom row.
+    /// Saving exactly this restores the built-in controls themselves.
     static let original = CanvasControlLayout(slots: [
         .group([.brush, .undo, .redo], icon: "paintbrush.pointed"),
         .single(.nothing), .single(.nothing), .single(.nothing), .single(.nothing),
@@ -24,6 +24,19 @@ struct CanvasControlLayout: Codable, Equatable {
 
     /// More is the only way into settings, so at least one slot must offer it.
     var containsMore: Bool { slots.contains { $0.actions.contains(.more) } }
+
+    /// Everything at hand was retired in 1.2. Keep its always-visible buttons
+    /// for people who had it on by turning them into the same custom layout.
+    static func migrateEverythingAtHand(_ defaults: UserDefaults = .standard) {
+        let key = "experimental.morphToolbar"
+        guard let prefersMenus = defaults.object(forKey: key) as? Bool else { return }
+        if !prefersMenus && !defaults.bool(forKey: enabledKey),
+           let data = try? JSONEncoder().encode(standard) {
+            defaults.set(data, forKey: storageKey)
+            defaults.set(true, forKey: enabledKey)
+        }
+        defaults.removeObject(forKey: key)
+    }
 
     static func decode(_ data: Data) -> CanvasControlLayout? {
         guard var layout = try? JSONDecoder().decode(Self.self, from: data) else { return nil }
