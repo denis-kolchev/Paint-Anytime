@@ -1,103 +1,164 @@
 import SwiftUI
 
+/// Presented full screen: a white canvas preview whose circles sit where the
+/// real controls do. Changes stay in a draft until the checkmark is tapped.
 struct CanvasLayoutEditorView: View {
     @AppStorage(CanvasControlLayout.storageKey) private var storedLayout = Data()
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
     @AppStorage("experimental.morphToolbar") private var usesMorphToolbar = true
     @Environment(\.dismiss) private var dismiss
     @State private var draft = CanvasControlLayout.standard
+    @State private var editingSlot: Int?
     @State private var loaded = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                CanvasLayoutMap(slots: $draft.slots)
-                    .frame(height: 148)
-                Text(L10n.text("Tap a circle to choose its action. More stays at the top left."))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Button(L10n.text("Save and apply")) {
-                    guard let data = try? JSONEncoder().encode(draft),
-                          CanvasControlLayout.decode(data) != nil else { return }
-                    storedLayout = data
-                    usesMorphToolbar = false
-                    customLayoutEnabled = true
-                    dismiss()
+        NavigationStack {
+            center
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white.ignoresSafeArea())
+                // Native toolbar slots, as on the canvas: the system clock
+                // centres between the top buttons before it is hidden.
+                .toolbar {
+                    // Taking the cancellation slot also removes the cover's close button.
+                    ToolbarItem(placement: .cancellationAction) {
+                        slotButton(CanvasControlLayout.topLeadingSlot)
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        slotButton(0)
+                    }
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        slotButton(1)
+                        Spacer(minLength: 0)
+                        slotButton(2)
+                        Spacer(minLength: 0)
+                        slotButton(3)
+                        Spacer(minLength: 0)
+                        slotButton(4)
+                    }
                 }
-                .buttonStyle(.borderedProminent)
-                Button(L10n.text("Use standard layout")) {
-                    customLayoutEnabled = false
-                    dismiss()
+        }
+        // Slides up like Layers and the More menu instead of a zooming push.
+        .sheet(isPresented: Binding(
+            get: { editingSlot != nil },
+            set: { if !$0 { editingSlot = nil } }
+        )) {
+            if let slot = editingSlot {
+                NavigationStack {
+                    CanvasSlotEditorView(assignment: $draft.slots[slot],
+                                         keepsMore: !otherSlotsContainMore(slot)) {
+                        editingSlot = nil
+                    }
                 }
             }
-            .padding(.horizontal, 8)
         }
-        .navigationTitle(L10n.text("Canvas editor"))
+        .requestsHiddenClock(editingSlot == nil)
+        // The cover is its own presentation, so the root host never sees this request.
+        .modifier(ClockVisibilityHost())
         .onAppear {
             guard !loaded else { return }
             draft = CanvasControlLayout.decode(storedLayout) ?? .standard
             loaded = true
         }
     }
-}
 
-private struct CanvasLayoutMap: View {
-    @Binding var slots: [CanvasControlAssignment]
-    @Environment(\.layoutDirection) private var layoutDirection
-
-    var body: some View {
-        GeometryReader { geometry in
-            let map = MorphPanelGeometry(size: geometry.size, layoutDirection: layoutDirection)
-            let diameter = min(MorphPanelGeometry.buttonDiameter, (geometry.size.width - 16) / 4)
-            ZStack {
-                RoundedRectangle(cornerRadius: 24)
-                    .strokeBorder(.secondary.opacity(0.4))
-                Circle().fill(.gray.opacity(0.55))
-                    .frame(width: diameter, height: diameter)
-                    .position(x: map.leadingX, y: map.top + 18)
-                    .accessibilityLabel(L10n.text("More — fixed position"))
-                ForEach(0..<5) { index in
-                    NavigationLink {
-                        CanvasSlotEditorView(assignment: $slots[index])
-                    } label: {
-                        Circle().fill(.gray.opacity(0.55))
-                            .frame(width: diameter, height: diameter)
-                            .contentShape(Circle())
+    private var center: some View {
+        VStack(spacing: 6) {
+            HStack(spacing: 14) {
+                Button(action: { dismiss() }) {
+                    CanvasLayoutCircle {
+                        Image(systemName: "xmark")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L10n.text(index == 0 ? "Top right control" : "Bottom control") + " \(index == 0 ? 1 : index)")
-                    .accessibilityValue(slots[index].isMorph ? "Morph" : L10n.text(slots[index].actions[0].title))
-                    .position(position(index, map: map))
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.text("Cancel"))
+                Button(action: save) {
+                    CanvasLayoutCircle {
+                        Image(systemName: "checkmark").foregroundStyle(.green)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L10n.text("Save and apply"))
             }
+            Button(L10n.text("Use standard layout")) {
+                customLayoutEnabled = false
+                dismiss()
+            }
+            .buttonStyle(.plain)
+            .font(.caption2)
+            .foregroundStyle(.gray)
         }
     }
 
-    private func position(_ index: Int, map: MorphPanelGeometry) -> CGPoint {
-        if index == 0 { return CGPoint(x: map.trailingX, y: map.top + 18) }
-        // Four equal-width toolbar slots, without shrinking the gaps into
-        // overlapping circles on the smaller watches.
-        let column = layoutDirection == .rightToLeft ? 4 - index : index - 1
-        return CGPoint(x: (CGFloat(column) + 0.5) * map.size.width / 4,
-                       y: map.bottom - 18)
+    private func slotButton(_ index: Int) -> some View {
+        let assignment = draft.slots[index]
+        return Button {
+            editingSlot = index
+        } label: {
+            CanvasQuickActionIcon(action: assignment.actions[0], instrument: .monoline,
+                                  isMorph: assignment.isMorph, morphIcon: assignment.icon)
+        }
+        .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter, usesCanvasMaterial: true)
+        .accessibilityLabel(slotLabel(index))
+        .accessibilityValue(assignment.isMorph ? "Morph" : L10n.text(assignment.actions[0].title))
+    }
+
+    private func slotLabel(_ index: Int) -> String {
+        switch index {
+        case CanvasControlLayout.topLeadingSlot: L10n.text("Top left control")
+        case 0: L10n.text("Top right control") + " 1"
+        default: L10n.text("Bottom control") + " \(index)"
+        }
+    }
+
+    private func otherSlotsContainMore(_ index: Int) -> Bool {
+        draft.slots.indices.contains { $0 != index && draft.slots[$0].actions.contains(.more) }
+    }
+
+    private func save() {
+        guard let data = try? JSONEncoder().encode(draft),
+              CanvasControlLayout.decode(data) != nil else { return }
+        storedLayout = data
+        usesMorphToolbar = false
+        customLayoutEnabled = true
+        dismiss()
+    }
+}
+
+/// Same glass as the canvas controls, so the preview matches the real canvas.
+private struct CanvasLayoutCircle<Icon: View>: View {
+    @ViewBuilder let icon: Icon
+
+    var body: some View {
+        icon.font(.system(size: 17, weight: .semibold))
+            .frame(width: MorphPanelGeometry.buttonDiameter, height: MorphPanelGeometry.buttonDiameter)
+            .contentShape(Circle())
+            .modifier(CanvasMorphGlass(adaptsToCanvas: true))
     }
 }
 
 private struct CanvasSlotEditorView: View {
     @Binding var assignment: CanvasControlAssignment
-    @Environment(\.dismiss) private var dismiss
+    /// This slot holds the last More, so every choice here must keep it.
+    let keepsMore: Bool
+    let onClose: () -> Void
 
     var body: some View {
         List {
             NavigationLink {
-                CanvasMorphSelectionView(assignment: $assignment)
+                CanvasMorphSelectionView(assignment: $assignment, keepsMore: keepsMore)
             } label: {
-                Label("Morph", systemImage: "ellipsis.circle")
+                HStack {
+                    Label("Morph", systemImage: "square.grid.2x2")
+                    Spacer()
+                    if assignment.isMorph {
+                        Image(systemName: "checkmark").foregroundStyle(.green)
+                    }
+                }
             }
             ForEach(CanvasQuickAction.allCases) { action in
                 Button {
                     assignment = .single(action)
-                    dismiss()
+                    onClose()
                 } label: {
                     HStack {
                         CanvasQuickActionLabel(action: action)
@@ -107,6 +168,13 @@ private struct CanvasSlotEditorView: View {
                         }
                     }
                 }
+                .disabled(keepsMore && action != .more)
+            }
+            if keepsMore {
+                Text(L10n.text("This is the last More button. Keep it here or inside Morph."))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .listRowBackground(Color.clear)
             }
         }
         .navigationTitle(L10n.text("Action"))
@@ -115,26 +183,52 @@ private struct CanvasSlotEditorView: View {
 
 private struct CanvasMorphSelectionView: View {
     @Binding var assignment: CanvasControlAssignment
-    @Environment(\.dismiss) private var dismiss
+    let keepsMore: Bool
     @State private var selection: [CanvasQuickAction] = []
+    @State private var icon = CanvasMorphIcon.standard
     @State private var loaded = false
 
     var body: some View {
         List {
+            Section(L10n.text("Icon")) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 4), spacing: 6) {
+                    ForEach(CanvasMorphIcon.symbols, id: \.self) { symbol in
+                        Button {
+                            icon = symbol
+                            commit()
+                        } label: {
+                            Image(systemName: symbol)
+                                .font(.system(size: 15, weight: .semibold))
+                                .frame(width: 32, height: 32)
+                                .background(Circle().fill(icon == symbol ? Color.green : Color.gray.opacity(0.35)))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(symbol)
+                        .accessibilityAddTraits(icon == symbol ? .isSelected : [])
+                    }
+                }
+                .listRowBackground(Color.clear)
+            }
             Section {
                 ForEach(CanvasQuickAction.allCases) { action in
                     Button {
                         if selection.contains(action) { selection.removeAll { $0 == action } }
                         else if selection.count < 4 { selection.append(action) }
+                        commit()
                     } label: {
                         HStack {
                             CanvasQuickActionLabel(action: action)
                             Spacer()
-                            Image(systemName: selection.contains(action) ? "checkmark.circle.fill" : "circle")
-                                .foregroundStyle(selection.contains(action) ? Color.green : Color.secondary)
+                            // The number is the action's row in the opened morph, from the top.
+                            if let order = selection.firstIndex(of: action) {
+                                Image(systemName: "\(order + 1).circle.fill").foregroundStyle(.green)
+                            } else {
+                                Image(systemName: "circle").foregroundStyle(.secondary)
+                            }
                         }
                     }
-                    .disabled(selection.count == 4 && !selection.contains(action))
+                    .disabled((selection.count == 4 && !selection.contains(action))
+                              || (keepsMore && action == .more))
                     .accessibilityAddTraits(selection.contains(action) ? .isSelected : [])
                 }
             } header: {
@@ -142,18 +236,22 @@ private struct CanvasMorphSelectionView: View {
             } footer: {
                 Text(L10n.text("Choose up to four actions. Their order follows your selection."))
             }
-            Button(L10n.text("Done")) {
-                assignment = .group(selection)
-                dismiss()
-            }
-            .disabled(selection.isEmpty)
         }
         .navigationTitle("Morph")
         .onAppear {
             guard !loaded else { return }
             selection = assignment.actions
+            if keepsMore && !selection.contains(.more) { selection.insert(.more, at: 0) }
+            icon = CanvasMorphIcon.resolve(assignment.icon)
             loaded = true
         }
+    }
+
+    /// No Done button: each tap applies at once, so Back keeps it. An empty
+    /// selection keeps the previous assignment rather than an invalid morph.
+    private func commit() {
+        guard !selection.isEmpty, !keepsMore || selection.contains(.more) else { return }
+        assignment = .group(selection, icon: icon == CanvasMorphIcon.standard ? nil : icon)
     }
 }
 

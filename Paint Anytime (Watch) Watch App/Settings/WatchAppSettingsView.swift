@@ -100,6 +100,7 @@ private struct DrawingSettingsView: View {
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
     @Environment(\.displayScale) private var displayScale
+    @State private var showsCanvasEditor = false
 
     var body: some View {
         List {
@@ -132,8 +133,8 @@ private struct DrawingSettingsView: View {
             } label: {
                 Label(L10n.text("Everything at hand"), systemImage: "rectangle.compress.vertical")
             }
-            NavigationLink {
-                CanvasLayoutEditorView()
+            Button {
+                showsCanvasEditor = true
             } label: {
                 Label(L10n.text("Canvas editor"), systemImage: "slider.horizontal.3")
             }
@@ -146,6 +147,9 @@ private struct DrawingSettingsView: View {
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Drawing"))
         .toolbarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $showsCanvasEditor) {
+            CanvasLayoutEditorView()
+        }
     }
 }
 

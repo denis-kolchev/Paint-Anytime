@@ -205,6 +205,9 @@ struct ContentView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     customToolbarAnchor(0, layout: customLayout)
                 }
+                ToolbarItem(placement: .topBarLeading) {
+                    customToolbarAnchor(CanvasControlLayout.topLeadingSlot, layout: customLayout)
+                }
                 ToolbarItemGroup(placement: .bottomBar) {
                     customToolbarAnchor(1, layout: customLayout)
                     Spacer(minLength: 0)
@@ -276,7 +279,10 @@ struct ContentView: View {
                         controller: controller, diameter: canvasToolbarDiameter)
                 }
             }
-            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && !lasso.isActive {
+            // A custom layout assigns the top-left slot itself, except while the
+            // free camera borrows it for the eyedropper.
+            if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && !lasso.isActive &&
+                (customLayout == nil || isMovingCanvas) {
                 ToolbarItem(placement: .topBarLeading) {
                     MorphControlsScope {
                         Button {
@@ -740,6 +746,7 @@ struct ContentView: View {
         case .palettes:
             cameraSampledColor = nil
             showsSampledPalette = true
+        case .more: showsAppSettings = true
         }
     }
 

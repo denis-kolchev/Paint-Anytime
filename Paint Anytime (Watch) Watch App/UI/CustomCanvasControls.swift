@@ -11,7 +11,12 @@ struct CustomCanvasControls: View {
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    static let anchors: [CanvasToolbarControl] = [.tools, .clear, .undo, .redo, .save]
+    static let anchors: [CanvasToolbarControl] = [.tools, .clear, .undo, .redo, .save, .more]
+
+    /// Top slots expand downwards, the bottom row upwards.
+    static func isTop(_ index: Int) -> Bool {
+        index == 0 || index == CanvasControlLayout.topLeadingSlot
+    }
 
     private var frames: Binding<[CanvasToolbarControl: CGRect]> {
         Binding(get: { regions.frames }, set: { regions.frames = $0 })
@@ -20,7 +25,7 @@ struct CustomCanvasControls: View {
     var body: some View {
         let geometry = MorphPanelGeometry(size: size, layoutDirection: layoutDirection)
         ZStack {
-            ForEach(0..<5) { index in
+            ForEach(layout.slots.indices, id: \.self) { index in
                 let assignment = layout.slots[index]
                 let expanded = assignment.isMorph && state.customExpandedSlot == index
                 let anchor = position(index, geometry: geometry)
@@ -45,7 +50,8 @@ struct CustomCanvasControls: View {
                     } label: {
                         CanvasQuickActionIcon(action: assignment.actions[0],
                                               instrument: controller.pencilStyle.instrument,
-                                              isMorph: assignment.isMorph)
+                                              isMorph: assignment.isMorph,
+                                              morphIcon: assignment.icon)
                             .frame(width: diameter, height: diameter)
                     }
                     .buttonStyle(.plain)
@@ -55,7 +61,7 @@ struct CustomCanvasControls: View {
                 .frame(width: diameter)
                 .modifier(CanvasMorphGlass(adaptsToCanvas: true))
                 .trackCanvasControl(.custom(index), frames: frames)
-                .position(x: anchor.x, y: anchor.y + (index == 0 ? 1 : -1) * (height - diameter) / 2)
+                .position(x: anchor.x, y: anchor.y + (Self.isTop(index) ? 1 : -1) * (height - diameter) / 2)
                 .zIndex(expanded ? 1 : 0)
             }
         }
@@ -89,6 +95,7 @@ struct CustomCanvasControls: View {
             return CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
         }
         if index == 0 { return CGPoint(x: geometry.trailingX, y: geometry.top + 18) }
+        if index == CanvasControlLayout.topLeadingSlot { return CGPoint(x: geometry.leadingX, y: geometry.top + 18) }
         return CGPoint(x: geometry.leadingX + (geometry.trailingX - geometry.leadingX) * CGFloat(index - 1) / 3,
                        y: geometry.bottom - 18)
     }
@@ -98,10 +105,11 @@ struct CanvasQuickActionIcon: View {
     let action: CanvasQuickAction
     let instrument: DrawingInstrument
     var isMorph = false
+    var morphIcon: String? = nil
 
     var body: some View {
         Group {
-            if isMorph { Image(systemName: "ellipsis") }
+            if isMorph { Image(systemName: CanvasMorphIcon.resolve(morphIcon)) }
             else if action == .clear { BroomIcon() }
             else if action == .brush { ToolIcon(instrument: instrument) }
             else { Image(systemName: action.symbol) }
@@ -126,7 +134,7 @@ struct CustomCanvasToolbarAnchor: View {
                     state.customExpandedSlot = index
                 }
             } else {
-                let action = index == 0 ? assignment.actions.first : assignment.actions.last
+                let action = CustomCanvasControls.isTop(index) ? assignment.actions.first : assignment.actions.last
                 state.customExpandedSlot = nil
                 if let action { onAction(action) }
             }

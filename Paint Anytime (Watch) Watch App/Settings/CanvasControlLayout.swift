@@ -1,21 +1,30 @@
 import Foundation
 
-/// Only the five replaceable positions are stored. More is never configurable.
+/// Slots: 0 top right, 1...4 bottom row, 5 top left. Version 1 stored only
+/// the first five and kept More fixed at the top left.
 struct CanvasControlLayout: Codable, Equatable {
     static let storageKey = "watch.canvasControlLayout.v1"
     static let enabledKey = "watch.canvasControlLayout.enabled"
-    var version = 1
+    static let topLeadingSlot = 5
+    var version = 2
     var slots: [CanvasControlAssignment]
 
     static let standard = CanvasControlLayout(slots: [
         .single(.brush), .group([.clear, .save, .lasso]),
-        .single(.undo), .single(.redo), .single(.layers)
+        .single(.undo), .single(.redo), .single(.layers), .single(.more)
     ])
 
+    /// More is the only way into settings, so at least one slot must offer it.
+    var containsMore: Bool { slots.contains { $0.actions.contains(.more) } }
+
     static func decode(_ data: Data) -> CanvasControlLayout? {
-        guard let layout = try? JSONDecoder().decode(Self.self, from: data),
-              layout.version == 1, layout.slots.count == 5,
-              layout.slots.allSatisfy({ $0.isValid }) else { return nil }
+        guard var layout = try? JSONDecoder().decode(Self.self, from: data) else { return nil }
+        if layout.version == 1, layout.slots.count == 5 {
+            layout.version = 2
+            layout.slots.append(.single(.more))
+        }
+        guard layout.version == 2, layout.slots.count == 6,
+              layout.slots.allSatisfy({ $0.isValid }), layout.containsMore else { return nil }
         return layout
     }
 }
@@ -23,13 +32,15 @@ struct CanvasControlLayout: Codable, Equatable {
 struct CanvasControlAssignment: Codable, Equatable {
     var isMorph: Bool
     var actions: [CanvasQuickAction]
+    /// Optional so layouts saved before morph icons existed still decode.
+    var icon: String? = nil
 
     static func single(_ action: CanvasQuickAction) -> Self {
         Self(isMorph: false, actions: [action])
     }
 
-    static func group(_ actions: [CanvasQuickAction]) -> Self {
-        Self(isMorph: true, actions: actions)
+    static func group(_ actions: [CanvasQuickAction], icon: String? = nil) -> Self {
+        Self(isMorph: true, actions: actions, icon: icon)
     }
 
     var isValid: Bool {
@@ -38,11 +49,28 @@ struct CanvasControlAssignment: Codable, Equatable {
     }
 }
 
+/// Symbols offered for a morph circle. The list is closed so a stored layout
+/// can never reference a symbol missing from the watchOS 10 SDK. The ellipsis
+/// is left out: it now marks More.
+enum CanvasMorphIcon {
+    static let standard = "square.grid.2x2"
+    static let symbols = [
+        standard, "paintbrush.pointed", "circle.grid.cross", "plus", "star", "heart",
+        "bolt", "sparkles", "wand.and.stars", "paintpalette", "scribble", "pencil.tip",
+        "slider.horizontal.3", "gearshape", "folder", "square.stack", "list.bullet", "tray"
+    ]
+
+    /// Unknown or retired symbols fall back instead of invalidating the layout.
+    static func resolve(_ icon: String?) -> String {
+        icon.flatMap { symbols.contains($0) ? $0 : nil } ?? standard
+    }
+}
+
 /// Stable identifiers are independent of translated display names.
 enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
     case brush, clear, save, lasso, undo, redo, layers, gallery, language, tutorial
     case canvasSize, toolSynchronization, visiblePalettes, blending, privacy, reportBug
-    case eyedropper, camera, palettes
+    case eyedropper, camera, palettes, more
 
     var id: String { rawValue }
     var title: String {
@@ -66,6 +94,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .eyedropper: "Eyedropper"
         case .camera: "Free camera"
         case .palettes: "Palettes"
+        case .more: "More"
         }
     }
 
@@ -89,6 +118,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .reportBug: "envelope"
         case .eyedropper: "eyedropper"
         case .camera: "hand.draw"
+        case .more: "ellipsis"
         }
     }
 }
