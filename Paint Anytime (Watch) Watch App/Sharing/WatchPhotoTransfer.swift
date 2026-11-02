@@ -47,6 +47,15 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         if activationState == .activated { synchronize(session.receivedApplicationContext) }
+        if activationState == .activated && !session.isCompanionAppInstalled {
+            Task { @MainActor in WatchSketchAssist.shared.updatePhoneAvailability(false) }
+        }
+    }
+
+    func sessionCompanionAppInstalledDidChange(_ session: WCSession) {
+        // A reinstalled iPhone app reports availability again when it launches.
+        guard !session.isCompanionAppInstalled else { return }
+        Task { @MainActor in WatchSketchAssist.shared.updatePhoneAvailability(false) }
     }
 
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
@@ -80,6 +89,10 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
     }
 
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        if let available = userInfo[SketchAssistProtocol.availabilityKey] as? Bool {
+            Task { @MainActor in WatchSketchAssist.shared.updatePhoneAvailability(available) }
+            return
+        }
         guard let failure = userInfo[SketchAssistProtocol.failureKey] as? String else { return }
         let requestID = userInfo[SketchAssistProtocol.requestIDKey] as? String ?? ""
         let detail = userInfo[SketchAssistProtocol.detailKey] as? String

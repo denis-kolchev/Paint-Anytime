@@ -306,6 +306,9 @@ final class WatchLassoController: ObservableObject {
                     guard controller.document == document, controller.selectedLayer.id == layerID else { return }
                     selection = result
                     bounds = result?.bounds
+                    if mode == .sketchAssist, let result {
+                        requestSketchAssist(result, controller: controller, size: size, scale: scale)
+                    }
                     onSelectionFinished(result != nil)
                 } catch {
                     guard !Task.isCancelled, generation == token else { return }
@@ -373,6 +376,61 @@ final class WatchLassoController: ObservableObject {
         resetSelection()
         controller.replaceLayerStrokes(remaining, in: selection.layerID)
         record(before, controller: controller)
+    }
+
+    /// Sends only the selected strokes, rendered on the paper, to Image Playground on
+    /// the iPhone. The result replaces them if the drawing is unchanged by then.
+    private func requestSketchAssist(_ selection: WatchLassoSelection, controller: CanvasController,
+                                     size: CGSize, scale: CGFloat) {
+        guard let index = selection.document.layers.firstIndex(where: { $0.id == selection.layerID }) else { return }
+        var document = selection.document
+        var layer = document.layers[index]
+        layer.strokes = selection.strokes.filter { selection.selectedIDs.contains($0.id) }
+        layer.isVisible = true
+        layer.opacity = 1
+        document.layers = [layer]
+        // A margin keeps antialiased edges and gives Image Playground some context.
+        let region = selection.bounds.insetBy(dx: -8, dy: -8)
+            .intersection(CGRect(origin: .zero, size: size)).integral
+        guard !region.isEmpty,
+              let image = WatchBitmapRenderer.render(document: document, size: size, scale: scale),
+              let crop = image.cropping(to: CGRect(x: region.minX * scale, y: region.minY * scale,
+                                                   width: region.width * scale, height: region.height * scale))
+        else {
+            errorMessage = "Could not create selection"
+            return
+        }
+        let sentDocument = controller.document
+        let strokes = selection.strokes
+        let selectedIDs = selection.selectedIDs
+        let layerID = selection.layerID
+        WatchSketchAssist.shared.send(crop) { [weak self, weak controller] png, imageSize in
+            guard let controller, controller.document == sentDocument,
+                  let first = strokes.firstIndex(where: { selectedIDs.contains($0.id) }) else { return false }
+            let raster = WatchSketchAssist.rasterStroke(png: png, imageSize: imageSize, in: region)
+            var replaced = strokes.filter { !selectedIDs.contains($0.id) }
+            // Every stroke before the first selected one stays, so this keeps the stacking order.
+            replaced.insert(raster, at: first)
+            if let self {
+                self.applySketchAssist(raster, strokes: replaced, layerID: layerID, controller: controller)
+            } else {
+                controller.replaceLayerStrokes(replaced, in: layerID)
+            }
+            return true
+        }
+    }
+
+    /// One undoable edit; while the lasso is open the image stays selected for adjusting.
+    private func applySketchAssist(_ raster: Stroke, strokes: [Stroke], layerID: UUID,
+                                   controller: CanvasController) {
+        let before = state(controller)
+        resetSelection()
+        controller.replaceLayerStrokes(strokes, in: layerID)
+        guard isActive, let bounds = raster.raster?.bounds else { return }
+        record(before, controller: controller)
+        selection = WatchLassoSelection(document: controller.document, layerID: layerID, strokes: strokes,
+                                        selectedIDs: [raster.id], bounds: bounds)
+        self.bounds = bounds
     }
 
     func cancelGesture() {

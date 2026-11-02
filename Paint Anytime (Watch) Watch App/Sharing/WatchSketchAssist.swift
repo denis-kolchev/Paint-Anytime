@@ -4,34 +4,32 @@ import ImageIO
 import UniformTypeIdentifiers
 import WatchConnectivity
 
-/// Experimental round trip to the iPhone app, which recognizes and completes the
-/// sketch with Apple Intelligence (see `SketchAssistProtocol`). The watch has no
+/// Experimental round trip to the iPhone app, which recognizes the sketch and lets the
+/// user complete it in Image Playground (see `SketchAssistProtocol`). The watch has no
 /// on-device image generation or system language model.
 @MainActor
 final class WatchSketchAssist: ObservableObject {
     static let shared = WatchSketchAssist()
+    /// Last availability reported by the iPhone app; false until it has run once.
+    nonisolated static let phoneAvailabilityKey = "watch.sketchAssist.phoneAvailable"
 
     enum Phase: Equatable {
         case idle
         case waiting
-        /// `replacedCanvas` is false when the user switched drawings meanwhile.
-        case completed(UIImage, label: String?, replacedCanvas: Bool)
+        /// `applied` is false when the drawing changed while the user was on the phone.
+        case completed(applied: Bool)
         case failed(String, detail: String? = nil)
     }
 
     @Published private(set) var phase = Phase.idle
     private var requestID: String?
     private var timeout: Task<Void, Never>?
-    /// The canvas the request came from; the result replaces its content.
-    private weak var controller: CanvasController?
-    private var documentID: UUID?
-    private var canvasSize = CGSize.zero
+    /// Replaces the sent strokes with the PNG of the given pixel size; false if it no longer can.
+    private var apply: ((Data, CGSize) -> Bool)?
 
     private init() {}
 
-    func send(from controller: CanvasController, viewportSize: CGSize, scale: CGFloat) {
-        let document = controller.document
-        let size = document.size(fallback: viewportSize)
+    func send(_ image: CGImage, apply: @escaping (Data, CGSize) -> Bool) {
         let session = WCSession.default
         guard session.activationState == .activated, session.isCompanionAppInstalled else {
             return fail(L10n.text("Install Paint Anytime on your iPhone."))
@@ -41,18 +39,15 @@ final class WatchSketchAssist: ObservableObject {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("SketchAssist-\(id)").appendingPathExtension("png")
         do {
-            guard let image = WatchBitmapRenderer.render(document: document, size: size, scale: scale),
-                  let data = Self.png(image) else { return fail(Self.message(for: .unsupportedDrawing)) }
+            guard let data = Self.png(image) else { return fail(Self.message(for: .unsupportedDrawing)) }
             try data.write(to: url, options: .atomic)
         } catch { return fail(Self.message(for: .failed)) }
         requestID = id
-        self.controller = controller
-        documentID = document.id
-        canvasSize = size
+        self.apply = apply
         phase = .waiting
+        // Match the result to the sent pixels, capped to keep saved documents small.
+        let pixels = min(1024, max(image.width, image.height))
         // WatchPhotoTransfer removes the temporary file when the transfer finishes.
-        // Match the result to the canvas pixels, capped to keep saved documents small.
-        let pixels = min(1024, Int((max(size.width, size.height) * scale).rounded(.up)))
         session.transferFile(url, metadata: [SketchAssistProtocol.kindKey: SketchAssistProtocol.requestKind,
                                              SketchAssistProtocol.requestIDKey: id,
                                              SketchAssistProtocol.maximumPixelsKey: pixels])
@@ -69,20 +64,28 @@ final class WatchSketchAssist: ObservableObject {
         guard requestID == self.requestID else { return }
         guard let imageData, let image = UIImage(data: imageData), image.size.width > 0, image.size.height > 0
         else { return fail(Self.message(for: .failed)) }
-        var replaced = false
-        if let controller, controller.document.id == documentID {
-            // One undoable edit, stored like a lasso area selection.
-            controller.replaceContent(with: Self.rasterStroke(png: imageData, imageSize: image.size,
-                                                              canvasSize: canvasSize))
-            replaced = true
-        }
+        let applied = apply?(imageData, image.size) ?? false
         finish()
-        phase = .completed(image, label: label, replacedCanvas: replaced)
+        phase = .completed(applied: applied)
     }
 
     func receive(failure: String, detail: String?, requestID: String) {
         guard requestID == self.requestID else { return }
-        fail(Self.message(for: SketchAssistProtocol.Failure(rawValue: failure) ?? .failed), detail: detail)
+        let failure = SketchAssistProtocol.Failure(rawValue: failure) ?? .failed
+        fail(Self.message(for: failure), detail: detail)
+        if failure == .unavailable { updatePhoneAvailability(false) }
+    }
+
+    /// Locks the lasso mode button. Reports come from the iPhone app, from failed
+    /// requests and from the companion app being removed.
+    func updatePhoneAvailability(_ available: Bool) {
+        UserDefaults.standard.set(available, forKey: Self.phoneAvailabilityKey)
+    }
+
+    /// Clears a finished notice; a pending request stays visible.
+    func dismissNotice() {
+        guard phase != .waiting else { return }
+        phase = .idle
     }
 
     private func fail(_ message: String, detail: String? = nil) {
@@ -92,8 +95,7 @@ final class WatchSketchAssist: ObservableObject {
 
     private func finish() {
         requestID = nil
-        controller = nil
-        documentID = nil
+        apply = nil
         timeout?.cancel()
         timeout = nil
     }
@@ -107,11 +109,11 @@ final class WatchSketchAssist: ObservableObject {
         }
     }
 
-    /// Fits the whole image into the canvas, centered; the paper shows in any margin.
-    private static func rasterStroke(png: Data, imageSize: CGSize, canvasSize: CGSize) -> Stroke {
-        let scale = min(canvasSize.width / imageSize.width, canvasSize.height / imageSize.height)
+    /// Fits the whole image into `rect`, centered; existing paint shows in any margin.
+    static func rasterStroke(png: Data, imageSize: CGSize, in rect: CGRect) -> Stroke {
+        let scale = min(rect.width / imageSize.width, rect.height / imageSize.height)
         let size = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
-        let bounds = CGRect(x: (canvasSize.width - size.width) / 2, y: (canvasSize.height - size.height) / 2,
+        let bounds = CGRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2,
                             width: size.width, height: size.height)
         var style = PencilStyle()
         style.blendingMode = .normal
@@ -129,61 +131,50 @@ final class WatchSketchAssist: ObservableObject {
     }
 }
 
-struct SketchAssistView: View {
-    @ObservedObject var controller: CanvasController
-    let viewportSize: CGSize
+/// Canvas status for a sketch assist request, styled like the lasso mode notice.
+struct SketchAssistNotice: View {
     @ObservedObject private var assist = WatchSketchAssist.shared
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
-    @Environment(\.displayScale) private var displayScale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 10) {
-                switch assist.phase {
-                case .idle:
-                    Text(L10n.text("Image Playground on your iPhone completes this sketch. After sending, open Paint Anytime on iPhone and choose an image."))
+        ZStack {
+            if let text {
+                HStack(spacing: 6) {
+                    if assist.phase == .waiting { ProgressView().frame(width: 18, height: 18) }
+                    Text(text)
                         .font(.footnote)
-                        .fixedSize(horizontal: false, vertical: true)
-                case .waiting:
-                    ProgressView()
-                    Text(L10n.text("Open Paint Anytime on iPhone and choose an image…"))
-                        .font(.footnote)
-                case .completed(let image, let label, let replacedCanvas):
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .accessibilityLabel(label ?? L10n.text("Completed sketch"))
-                    if let label {
-                        Text(verbatim: label)
-                            .font(.headline)
-                    }
-                    Text(L10n.text(replacedCanvas
-                                   ? "The canvas was replaced. Use Undo to bring back your sketch."
-                                   : "You opened another drawing, so the canvas was not changed."))
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                case .failed(let message, let detail):
-                    Label(message, systemImage: "exclamationmark.triangle")
-                        .font(.footnote)
-                        .fixedSize(horizontal: false, vertical: true)
-                    if let detail {
-                        Text(verbatim: detail)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+                        .multilineTextAlignment(.center)
+                        .lineLimit(4)
+                        .minimumScaleFactor(0.6)
                 }
-                Button(L10n.text(assist.phase == .idle ? "Send to iPhone" : "Try again"),
-                       systemImage: "iphone.and.arrow.forward") {
-                    controller.cancelStroke()
-                    assist.send(from: controller, viewportSize: viewportSize, scale: displayScale)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                .padding(.horizontal, 24)
+                .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
+                .task(id: assist.phase) {
+                    guard assist.phase != .waiting else { return }
+                    do { try await Task.sleep(for: .seconds(3)) } catch { return }
+                    withAnimation(.easeOut(duration: 0.2)) { assist.dismissNotice() }
                 }
-                .disabled(assist.phase == .waiting || controller.document.strokes.isEmpty)
             }
-            .padding(.horizontal)
         }
-        .navigationTitle(L10n.text("Sketch assist"))
+        // Stay clear of the lasso controls at the bottom while the user keeps drawing.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .padding(.top, 28)
+        .allowsHitTesting(false)
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: assist.phase)
+    }
+
+    private var text: String? {
+        switch assist.phase {
+        case .idle: nil
+        case .waiting: L10n.text("Choose an image in Paint Anytime on iPhone")
+        case .completed(let applied):
+            L10n.text(applied ? "Strokes replaced. Use Undo to bring them back."
+                              : "The drawing changed, so the image was not added.")
+        case .failed(let message, _): message
+        }
     }
 }

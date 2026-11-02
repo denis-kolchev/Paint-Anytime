@@ -38,6 +38,8 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
             else {
                 receiveDeletions(session.receivedApplicationContext)
                 requestSync()
+                // Once per launch, in case the watch app was reinstalled meanwhile.
+                PhoneSketchAssist.shared.publishAvailability(force: true)
             }
         }
     }

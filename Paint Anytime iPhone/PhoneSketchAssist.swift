@@ -33,6 +33,7 @@ final class PhoneSketchAssist: ObservableObject {
     /// background wait here until the user opens the app.
     @Published private(set) var pending: Request?
     private var preparing: Task<Void, Never>?
+    private var publishedAvailability: Bool?
 
     private init() {}
 
@@ -72,6 +73,22 @@ final class PhoneSketchAssist: ObservableObject {
         guard let request = pending else { return }
         pending = nil
         fail(.cancelled, detail: nil, requestID: request.id)
+    }
+
+    /// Lets the watch show Sketch assist only when the phone can complete sketches.
+    /// Apple Intelligence can be turned off in Settings, so recheck on activation.
+    func publishAvailability(force: Bool = false) {
+        let session = WCSession.default
+        guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else { return }
+        let available = Self.isPlaygroundAvailable
+        guard force || available != publishedAvailability else { return }
+        // Only the latest value matters; drop queued ones.
+        for transfer in session.outstandingUserInfoTransfers
+        where transfer.userInfo[SketchAssistProtocol.availabilityKey] != nil {
+            transfer.cancel()
+        }
+        session.transferUserInfo([SketchAssistProtocol.availabilityKey: available])
+        publishedAvailability = available
     }
 
     private static var isPlaygroundAvailable: Bool {

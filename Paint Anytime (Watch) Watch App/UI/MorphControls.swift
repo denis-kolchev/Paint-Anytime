@@ -297,6 +297,8 @@ struct CanvasMorphPanels: View {
     var onFinishLasso: () -> Void
     var onMoveSelectionLayer: (Int) -> Void
     var onClearLayerMoveName: () -> Void
+    @AppStorage(WatchSketchAssist.phoneAvailabilityKey) private var sketchAssistOnPhone = false
+    @State private var showsSketchAssistRequirements = false
     @Environment(\.displayScale) private var displayScale
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.layoutDirection) private var layoutDirection
@@ -369,7 +371,7 @@ struct CanvasMorphPanels: View {
                 let diameter = panelGeometry.diameter
                 let left = bottom.x - diameter / 2
                 let availableWidth = max(0, size.width - left * 2)
-                let panelWidth = min(diameter * (showsSelectionActions ? 4 : 2), availableWidth)
+                let panelWidth = min(diameter * (showsSelectionActions ? 4 : CGFloat(lassoModes.count)), availableWidth)
                 lassoMorph(diameter: diameter, panelWidth: panelWidth)
                     .position(x: size.width / 2, y: bottom.y)
                     .zIndex(3)
@@ -546,6 +548,11 @@ struct CanvasMorphPanels: View {
         .trackCanvasControl(.morph, frames: framesBinding)
     }
 
+    /// Sketch assist ships with 1.3; it stays visible but locked until the iPhone reports support.
+    private var lassoModes: [WatchLassoMode] {
+        WatchLassoMode.allCases.filter { $0 != .sketchAssist || AppReleaseFeatures.current.showsSketchAssist }
+    }
+
     private var selectionForeground: AnyShapeStyle {
         if #available(watchOS 26, *) { return AnyShapeStyle(.primary) }
         return AnyShapeStyle(.white)
@@ -577,12 +584,24 @@ struct CanvasMorphPanels: View {
         } collapsed: {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
-                ForEach(WatchLassoMode.allCases, id: \.self) { mode in
-                    morphButton(mode.title, height: diameter, intrinsicWidth: true) { lasso.setMode(mode) } label: {
+                ForEach(lassoModes, id: \.self) { mode in
+                    let isLocked = mode == .sketchAssist && !sketchAssistOnPhone
+                    morphButton(mode.title, height: diameter, intrinsicWidth: true) {
+                        if isLocked { showsSketchAssistRequirements = true } else { lasso.setMode(mode) }
+                    } label: {
                         Image(systemName: mode.symbol)
                             .foregroundStyle(lasso.mode == mode ? AnyShapeStyle(.green) : selectionForeground)
+                            .opacity(isLocked ? 0.45 : 1)
+                            .overlay(alignment: .bottomTrailing) {
+                                if isLocked {
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .offset(x: 5, y: 3)
+                                }
+                            }
                     }
                     .accessibilityAddTraits(lasso.mode == mode ? [.isSelected] : [])
+                    .accessibilityValue(isLocked ? L10n.text("Unavailable") : "")
                     Spacer(minLength: 0)
 
                 }
@@ -591,6 +610,14 @@ struct CanvasMorphPanels: View {
         .frame(width: panelWidth, height: diameter)
         .modifier(CanvasMorphGlass(adaptsToCanvas: true))
         .trackCanvasControl(.canvasToolsMorph, frames: framesBinding)
+        .onChange(of: sketchAssistOnPhone) { _, available in
+            if !available && lasso.mode == .sketchAssist { lasso.setMode(.area) }
+        }
+        .alert(L10n.text("Image Playground is unavailable"), isPresented: $showsSketchAssistRequirements) {
+            Button(L10n.text("OK"), role: .cancel) {}
+        } message: {
+            Text(L10n.text("To complete strokes, you need an iPhone that supports Apple Intelligence (iPhone 15 Pro or later) with iOS 18.4 or later, Apple Intelligence turned on in Settings, and Image Playground available. Install Paint Anytime on iPhone and open it once so your watch can check."))
+        }
     }
 
     private func morphButton<Label: View>(_ title: String, height: CGFloat, intrinsicWidth: Bool = false, action: @escaping () -> Void,

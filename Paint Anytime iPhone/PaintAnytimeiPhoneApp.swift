@@ -11,7 +11,10 @@ struct PaintAnytimeiPhoneApp: App {
                 .modifier(SketchAssistSheet(assist: PhoneSketchAssist.shared))
                 .task { photoInbox.start() }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { photoInbox.refresh(); photoInbox.synchronize() }
+                    if phase == .active {
+                        photoInbox.refresh(); photoInbox.synchronize()
+                        PhoneSketchAssist.shared.publishAvailability()
+                    }
                 }
         }
     }

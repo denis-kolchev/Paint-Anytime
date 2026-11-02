@@ -32,14 +32,6 @@ struct WatchAppSettingsView: View {
                     } label: {
                         Label(L10n.text("Drawing"), systemImage: "paintbrush")
                     }
-                    // Experimental Apple Intelligence round trip through the iPhone app.
-                    if AppReleaseFeatures.current.showsSketchAssist {
-                        NavigationLink {
-                            SketchAssistView(controller: controller, viewportSize: viewportSize)
-                        } label: {
-                            Label(L10n.text("Sketch assist"), systemImage: "sparkles")
-                        }
-                    }
                     NavigationLink {
                         WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
                     } label: {

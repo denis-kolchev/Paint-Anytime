@@ -12,6 +12,9 @@ nonisolated enum SketchAssistProtocol {
     static let failureKey = "sketchAssistFailure"
     /// Free-form English diagnostics for the prototype; not localized.
     static let detailKey = "sketchAssistDetail"
+    /// Bool sent with `transferUserInfo`: Image Playground can run on the phone
+    /// (supported iPhone, Apple Intelligence on, image generation available).
+    static let availabilityKey = "sketchAssistAvailable"
     static let requestKind = "sketchAssistRequest"
     static let resultKind = "sketchAssistResult"
 
