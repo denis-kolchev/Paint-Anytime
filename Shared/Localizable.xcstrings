@@ -1,6 +1,193 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+  "1-point perspective": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "1-point perspective"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "1 точка схода"
+        }
+      }
+    }
+  },
+  "2-point perspective": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "2-point perspective"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "2 точки схода"
+        }
+      }
+    }
+  },
+  "3-point perspective": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "3-point perspective"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "3 точки схода"
+        }
+      }
+    }
+  },
+  "Show guides": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Show guides"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Показывать направляющие"
+        }
+      }
+    }
+  },
+  "A stroke that starts on a guide follows it or runs toward a vanishing point. Drag the round handles on the horizon to move or rotate the guides.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "A stroke that starts on a guide follows it or runs toward a vanishing point. Drag the round handles on the horizon to move or rotate the guides."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Штрих, начатый на направляющей, идёт по ней или к точке схода. Перетаскивайте круглые маркеры на горизонте, чтобы переместить или повернуть направляющие."
+        }
+      }
+    }
+  },
+  "View angle: %d°": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "View angle: %d°"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Угол обзора: %d°"
+        }
+      }
+    }
+  },
+  "A wider angle brings the vanishing points closer and makes the lines steeper. With one point, it sets the spacing between lines.": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "A wider angle brings the vanishing points closer and makes the lines steeper. With one point, it sets the spacing between lines."
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Чем шире угол, тем ближе точки схода и круче линии. С одной точкой схода он задаёт шаг между линиями."
+        }
+      }
+    }
+  },
+  "Tilt: %d°": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Tilt: %d°"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Наклон: %d°"
+        }
+      }
+    }
+  },
+  "Reset position": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Reset position"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Сбросить положение"
+        }
+      }
+    }
+  },
+  "Perspective": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Perspective"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Перспектива"
+        }
+      }
+    }
+  },
+  "Perspective guides": {
+    "extractionState": "manual",
+    "localizations": {
+      "en": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Perspective guides"
+        }
+      },
+      "ru": {
+        "stringUnit": {
+          "state": "translated",
+          "value": "Перспективные направляющие"
+        }
+      }
+    }
+  },
   "Blur": {
     "extractionState": "manual",
     "localizations": {

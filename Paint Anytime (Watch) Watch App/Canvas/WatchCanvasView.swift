@@ -49,7 +49,20 @@ struct WatchCanvasView: View {
     @State private var failedCircleImage: CGImage?
     @State private var failedCircleOpacity = 1.0
     @State private var failedCircleKind: ShapeRecognizer.Kind?
+    @ObservedObject var guides = PerspectiveGuides.shared
+    @State private var guideDrag: GuideDrag?
+    // A stroke that starts on a guide waits for its direction before choosing a ruler.
+    @State private var isRulerPending = false
     @Environment(\.scenePhase) private var scenePhase
+
+    private enum GuideDrag {
+        case rotate(startAngle: CGFloat, startRotation: Double, snappedQuarter: Int?)
+        case move(startCenter: CGPoint, isCentered: Bool)
+    }
+
+    private var showsGuides: Bool {
+        guides.isEnabled && rendersArtwork && !lasso.isActive && !tutorial.isActive
+    }
 
     private var needsLayerRendering: Bool {
         controller.document.layers.count != 1 || controller.document.effectiveBackgroundColor != SIMD4(1, 1, 1, 1)
@@ -128,11 +141,17 @@ struct WatchCanvasView: View {
                 }
             .clipped()
             .overlay {
+                if showsGuides {
+                    PerspectiveGuidesOverlay(layout: guides.layout(paperSize: paperSize),
+                        canvasToScreen: canvasToScreen(geometry.size), activeRuler: guides.activeRuler,
+                        showsHandles: acceptsInput && !isMovingCanvas && !isEyedropperActive
+                            && controller.activeStroke == nil && !isRulerPending)
+                        .clipped()
+                }
+            }
+            .overlay {
                 if lasso.isActive {
-                    WatchLassoOverlay(lasso: lasso, canvasToScreen: CGAffineTransform(
-                        a: zoom * fit, b: 0, c: 0, d: zoom * fit,
-                        tx: geometry.size.width / 2 + offset.width - paperSize.width * zoom * fit / 2,
-                        ty: geometry.size.height / 2 + offset.height - paperSize.height * zoom * fit / 2))
+                    WatchLassoOverlay(lasso: lasso, canvasToScreen: canvasToScreen(geometry.size))
                 }
             }
             .overlay {
@@ -225,6 +244,8 @@ struct WatchCanvasView: View {
                                     lassoGestureStartBounds = lasso.bounds
                                     lasso.begin(at: canvasPoint(value.startLocation, size: geometry.size),
                                         tolerance: WatchLassoGeometry.handleHitRadius / (zoom * fit), controller: controller)
+                                } else if showsGuides, !isMovingCanvas, !isEyedropperActive {
+                                    guideDrag = guideDragStart(at: value.startLocation, size: geometry.size)
                                 }
                             }
                         }
@@ -258,6 +279,11 @@ struct WatchCanvasView: View {
                             }
                             return
                         }
+                        if let guideDrag {
+                            cancelShapeHold()
+                            updateGuideDrag(guideDrag, from: value.startLocation, to: value.location, size: geometry.size)
+                            return
+                        }
                         guard controller.pencilStyle.instrument != .fill else { return }
                         if controller.pencilStyle.instrument == .eraser,
                            controller.selectedLayer.isVisible,
@@ -272,16 +298,33 @@ struct WatchCanvasView: View {
                         // Preserve off-canvas samples so a stroke can enter the paper naturally.
                         // The artwork view and exported bitmap clip ink to the canvas bounds.
                         if controller.activeStroke == nil {
-                            controller.beginStroke(at: sample(at: start, time: value.time))
+                            let scale = zoom * fit
+                            let tolerance = Self.rulerTolerance / scale
+                            if !isRulerPending, guides.activeRuler == nil, showsGuides,
+                               guides.layout(paperSize: paperSize).isNearGuide(start, tolerance: tolerance) {
+                                isRulerPending = true
+                            }
+                            if isRulerPending {
+                                // Choose the ruler from the initial direction, measured on screen.
+                                guard hypot(value.location.x - value.startLocation.x,
+                                            value.location.y - value.startLocation.y) >= Self.rulerDecisionDistance
+                                else { return }
+                                isRulerPending = false
+                                guides.activeRuler = guides.layout(paperSize: paperSize).ruler(from: start,
+                                    toward: canvasPoint(value.location, size: geometry.size), tolerance: tolerance)
+                            }
+                            controller.beginStroke(at: sample(at: ruled(start), time: value.time))
                         }
                         controller.continueStroke(at: sample(
-                            at: canvasPoint(value.location, size: geometry.size), time: value.time))
-                        scheduleShapeHold(at: value.location)
+                            at: ruled(canvasPoint(value.location, size: geometry.size)), time: value.time))
+                        // A ruled line is already exact; shape recognition would only distort it.
+                        if guides.activeRuler == nil { scheduleShapeHold(at: value.location) }
                     }
                     .onEnded { value in
                         cancelShapeHold()
-                        defer { acceptsCurrentGesture = nil; panOrigin = nil; lassoGestureStartBounds = nil }
+                        defer { acceptsCurrentGesture = nil; panOrigin = nil; lassoGestureStartBounds = nil; endGuideInteraction() }
                         guard acceptsInput && acceptsCurrentGesture == true else { return }
+                        if guideDrag != nil { return }
                         if lasso.isActive {
                             let previousRevision = controller.documentRevision
                             lasso.end(at: canvasPoint(value.location, size: geometry.size), controller: controller,
@@ -303,6 +346,11 @@ struct WatchCanvasView: View {
                             startFill(at: point, size: controller.document.size(fallback: geometry.size))
                             return
                         }
+                        if isRulerPending && controller.activeStroke == nil {
+                            // A tap on a guide still leaves a dot.
+                            controller.beginStroke(at: sample(
+                                at: canvasPoint(value.startLocation, size: geometry.size), time: value.time))
+                        }
                         guard controller.activeStroke != nil else { return }
                         let recognizedKind = controller.recognizedShapeKind
                         if tutorial.isActive, tutorial.step == .holdCircle, tutorial.acceptsActions,
@@ -323,7 +371,7 @@ struct WatchCanvasView: View {
                         }
                         let previousCount = controller.document.strokes.count
                         controller.endStroke(at: sample(
-                            at: canvasPoint(value.location, size: geometry.size), time: value.time))
+                            at: ruled(canvasPoint(value.location, size: geometry.size)), time: value.time))
                         if controller.document.strokes.count > previousCount {
                             tutorial.finishedCircleAttempt(kind: recognizedKind)
                             tutorial.record(.stroke)
@@ -393,6 +441,7 @@ struct WatchCanvasView: View {
                 lasso.cancelGesture()
                 panOrigin = nil
                 acceptsCurrentGesture = nil
+                endGuideInteraction()
             }
         }
         .onChange(of: isMovingCanvas) { _, moving in
@@ -550,6 +599,82 @@ struct WatchCanvasView: View {
             if normalizedX * normalizedX + normalizedY * normalizedY <= 1 { return true }
         }
         return false
+    }
+
+    // Screen points, so guides feel the same at every zoom level.
+    private static let rulerTolerance: CGFloat = 10
+    private static let rulerDecisionDistance: CGFloat = 6
+    private static let centerSnapRadius: CGFloat = 8
+    private static let rotationSnap = (capture: 5 * Double.pi / 180, release: 8 * Double.pi / 180)
+
+    private func ruled(_ point: CGPoint) -> CGPoint {
+        guides.activeRuler?.project(point) ?? point
+    }
+
+    private func guideDragStart(at location: CGPoint, size: CGSize) -> GuideDrag? {
+        let layout = guides.layout(paperSize: controller.document.size(fallback: size))
+        let handles = layout.handles(canvasToScreen(size))
+        let radius = PerspectiveGuideLayout.handleHitRadius
+        if hypot(location.x - handles.rotate.x, location.y - handles.rotate.y) <= radius {
+            let center = layout.center.applying(canvasToScreen(size))
+            // An already aligned guide does not click again until it leaves the magnet.
+            let quarter = Int((guides.rotation / (.pi / 2)).rounded())
+            let isAligned = abs(guides.rotation - Double(quarter) * .pi / 2) < 0.0001
+            return .rotate(startAngle: atan2(location.y - center.y, location.x - center.x),
+                           startRotation: guides.rotation, snappedQuarter: isAligned ? (quarter % 4 + 4) % 4 : nil)
+        }
+        if hypot(location.x - handles.move.x, location.y - handles.move.y) <= radius {
+            return .move(startCenter: guides.center, isCentered: guides.center == CGPoint(x: 0.5, y: 0.5))
+        }
+        return nil
+    }
+
+    private func updateGuideDrag(_ drag: GuideDrag, from start: CGPoint, to location: CGPoint, size: CGSize) {
+        let paper = controller.document.size(fallback: size)
+        switch drag {
+        case let .rotate(startAngle, startRotation, snappedQuarter):
+            let center = guides.layout(paperSize: paper).center.applying(canvasToScreen(size))
+            let angle = atan2(location.y - center.y, location.x - center.x)
+            let proposed = PerspectiveGuides.normalizedRotation(startRotation + Double(angle - startAngle))
+            // Magnetize horizontal and vertical orientations; a wider release radius prevents repeated clicks.
+            let quarter = Int((proposed / (.pi / 2)).rounded())
+            // Compare quadrants so crossing ±180° does not count as a new orientation.
+            let quadrant = (quarter % 4 + 4) % 4
+            let deviation = abs(proposed - Double(quarter) * .pi / 2)
+            let snapped = deviation <= (snappedQuarter == quadrant ? Self.rotationSnap.release : Self.rotationSnap.capture)
+            guides.rotation = snapped ? PerspectiveGuides.normalizedRotation(Double(quarter) * .pi / 2) : proposed
+            if snapped && snappedQuarter != quadrant { WKInterfaceDevice.current().play(.click) }
+            guideDrag = .rotate(startAngle: startAngle, startRotation: startRotation,
+                                snappedQuarter: snapped ? quadrant : nil)
+        case let .move(startCenter, wasCentered):
+            let scale = zoom * canvasFit(size)
+            var point = CGPoint(x: startCenter.x * paper.width + (location.x - start.x) / scale,
+                                y: startCenter.y * paper.height + (location.y - start.y) / scale)
+            // Keep the handles reachable on the paper.
+            point.x = min(paper.width, max(0, point.x))
+            point.y = min(paper.height, max(0, point.y))
+            let radius = (wasCentered ? 1.5 : 1) * Self.centerSnapRadius / scale
+            let isCentered = hypot(point.x - paper.width / 2, point.y - paper.height / 2) <= radius
+            if isCentered { point = CGPoint(x: paper.width / 2, y: paper.height / 2) }
+            guides.center = CGPoint(x: point.x / max(paper.width, 1), y: point.y / max(paper.height, 1))
+            if isCentered && !wasCentered { WKInterfaceDevice.current().play(.click) }
+            guideDrag = .move(startCenter: startCenter, isCentered: isCentered)
+        }
+    }
+
+    private func endGuideInteraction() {
+        if guideDrag != nil { guides.savePlacement() }
+        guideDrag = nil
+        isRulerPending = false
+        if guides.activeRuler != nil { guides.activeRuler = nil }
+    }
+
+    private func canvasToScreen(_ size: CGSize) -> CGAffineTransform {
+        let paper = controller.document.size(fallback: size)
+        let scale = zoom * canvasFit(size)
+        return CGAffineTransform(a: scale, b: 0, c: 0, d: scale,
+                                 tx: size.width / 2 + offset.width - paper.width * scale / 2,
+                                 ty: size.height / 2 + offset.height - paper.height * scale / 2)
     }
 
     private func canvasFit(_ size: CGSize) -> CGFloat {

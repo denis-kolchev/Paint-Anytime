@@ -33,6 +33,11 @@ struct WatchAppSettingsView: View {
                         Label(L10n.text("Drawing"), systemImage: "paintbrush")
                     }
                     NavigationLink {
+                        PerspectiveGuidesSettingsView()
+                    } label: {
+                        Label(L10n.text("Perspective guides"), systemImage: "perspective")
+                    }
+                    NavigationLink {
                         WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
                     } label: {
                         Label(L10n.text("Privacy Policy"), systemImage: "hand.raised")
