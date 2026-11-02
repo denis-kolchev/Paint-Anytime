@@ -3,6 +3,8 @@ import SwiftUI
 /// Presented full screen: a white canvas preview whose circles sit where the
 /// real controls do. Changes stay in a draft until the checkmark is tapped.
 struct CanvasLayoutEditorView: View {
+    /// The current tool, shown wherever Tool settings appears.
+    let instrument: DrawingInstrument
     @AppStorage(CanvasControlLayout.storageKey) private var storedLayout = Data()
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
     @Environment(\.dismiss) private var dismiss
@@ -48,7 +50,7 @@ struct CanvasLayoutEditorView: View {
         )) {
             if let slot = editingSlot {
                 NavigationStack {
-                    CanvasSlotEditorView(assignment: $draft.slots[slot],
+                    CanvasSlotEditorView(assignment: $draft.slots[slot], instrument: instrument,
                                          keepsMore: !otherSlotsContainMore(slot),
                                          usedMorphIcons: morphIcons(excluding: slot))
                 }
@@ -87,7 +89,7 @@ struct CanvasLayoutEditorView: View {
         return Button {
             editingSlot = index
         } label: {
-            CanvasQuickActionIcon(action: assignment.actions[0], instrument: .monoline,
+            CanvasQuickActionIcon(action: assignment.actions[0], instrument: instrument,
                                   isMorph: assignment.isMorph, morphIcon: assignment.icon)
         }
         .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter, usesCanvasMaterial: true)
@@ -142,6 +144,7 @@ private struct CanvasLayoutCircle<Icon: View>: View {
 
 private struct CanvasSlotEditorView: View {
     @Binding var assignment: CanvasControlAssignment
+    let instrument: DrawingInstrument
     /// This slot holds the last More, so every choice here must keep it.
     let keepsMore: Bool
     let usedMorphIcons: Set<String>
@@ -149,7 +152,7 @@ private struct CanvasSlotEditorView: View {
     var body: some View {
         List {
             NavigationLink {
-                CanvasMorphSelectionView(assignment: $assignment, keepsMore: keepsMore,
+                CanvasMorphSelectionView(assignment: $assignment, instrument: instrument, keepsMore: keepsMore,
                                          usedMorphIcons: usedMorphIcons)
             } label: {
                 HStack {
@@ -160,13 +163,13 @@ private struct CanvasSlotEditorView: View {
                     }
                 }
             }
-            ForEach(CanvasQuickAction.allCases) { action in
+            ForEach(CanvasQuickAction.menuOrder(inMorph: false)) { action in
                 Button {
                     // Stays open to show the choice; the sheet's close button dismisses it.
                     assignment = .single(action)
                 } label: {
                     HStack {
-                        CanvasQuickActionLabel(action: action)
+                        CanvasQuickActionLabel(action: action, instrument: instrument)
                         Spacer()
                         if !assignment.isMorph && assignment.actions == [action] {
                             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
@@ -188,6 +191,7 @@ private struct CanvasSlotEditorView: View {
 
 private struct CanvasMorphSelectionView: View {
     @Binding var assignment: CanvasControlAssignment
+    let instrument: DrawingInstrument
     let keepsMore: Bool
     /// Icons of the other morph slots, avoided when this one gets its first icon.
     let usedMorphIcons: Set<String>
@@ -198,14 +202,14 @@ private struct CanvasMorphSelectionView: View {
     var body: some View {
         List {
             Section {
-                ForEach(CanvasQuickAction.allCases.filter { $0 != .nothing }) { action in
+                ForEach(CanvasQuickAction.menuOrder(inMorph: true)) { action in
                     Button {
                         if selection.contains(action) { selection.removeAll { $0 == action } }
                         else if selection.count < CanvasControlAssignment.maxMorphActions { selection.append(action) }
                         commit()
                     } label: {
                         HStack {
-                            CanvasQuickActionLabel(action: action)
+                            CanvasQuickActionLabel(action: action, instrument: instrument)
                             Spacer()
                             // The number is the action's row in the opened morph, from the top.
                             if let order = selection.firstIndex(of: action) {
@@ -286,13 +290,19 @@ private struct CanvasMorphIconPicker: View {
 
 struct CanvasQuickActionLabel: View {
     let action: CanvasQuickAction
+    let instrument: DrawingInstrument
 
     var body: some View {
         Label {
             Text(L10n.text(action.title))
         } icon: {
-            if action == .clear { BroomIcon() }
-            else { Image(systemName: action.symbol) }
+            switch action {
+            case .clear: BroomIcon()
+            case .brush: ToolIcon(instrument: instrument)
+            case .eraserToggle: ToolIcon(instrument: .eraser)
+            case .canvasEditor: CanvasLayoutIcon()
+            default: Image(systemName: action.symbol)
+            }
         }
     }
 }

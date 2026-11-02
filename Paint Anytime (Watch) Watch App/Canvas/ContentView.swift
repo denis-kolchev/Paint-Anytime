@@ -16,6 +16,7 @@ struct ContentView: View {
     @AppStorage(CanvasControlLayout.storageKey) private var controlLayoutData = Data()
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
     @State private var quickSettings: CanvasQuickAction?
+    @AppStorage(WatchSketchAssist.phoneAvailabilityKey) private var sketchAssistOnPhone = false
     @Environment(\.openURL) private var openURL
     private var customLayout: CanvasControlLayout? {
         customLayoutEnabled ? CanvasControlLayout.decode(controlLayoutData) : nil
@@ -673,8 +674,17 @@ struct ContentView: View {
             galleryInitialBitmap = nil
             galleryLaunchID = UUID()
             showsGallery = true
-        case .language, .canvasSize, .toolSynchronization, .visiblePalettes, .blending, .privacy:
+        case .language, .canvasSize, .toolSynchronization, .visiblePalettes, .blending,
+             .perspectiveGuides, .canvasEditor, .autosave, .share:
             quickSettings = action
+        case .eraserToggle: controller.toggleEraser()
+        // Every action collapses the open morph above; Close does only that.
+        case .closeMorph: break
+        case .sketchAssist:
+            // Without a capable iPhone the lasso opens as usual, and its locked
+            // Image Playground mode explains what is missing.
+            startLasso()
+            if sketchAssistOnPhone, AppReleaseFeatures.current.showsSketchAssist { lasso.setMode(.sketchAssist) }
         case .tutorial:
             // Reuse the existing preparation, failure alert and tutorial handoff.
             showsAppSettings = true

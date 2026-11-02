@@ -96,8 +96,9 @@ enum CanvasMorphIcon {
 /// Stable identifiers are independent of translated display names.
 enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
     case brush, clear, save, lasso, undo, redo, layers, gallery, language, tutorial
-    case canvasSize, toolSynchronization, visiblePalettes, blending, privacy, reportBug
-    case eyedropper, camera, palettes, more, nothing
+    case canvasSize, toolSynchronization, visiblePalettes, blending, reportBug
+    case eyedropper, camera, palettes, perspectiveGuides, canvasEditor, autosave, sketchAssist
+    case eraserToggle, share, closeMorph, more, nothing
 
     var id: String { rawValue }
     var title: String {
@@ -116,11 +117,17 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .toolSynchronization: "Tool synchronization"
         case .visiblePalettes: "Visible palettes"
         case .blending: "Color blending"
-        case .privacy: "Privacy Policy"
         case .reportBug: "Report a bug"
         case .eyedropper: "Eyedropper"
         case .camera: "Free camera"
         case .palettes: "Palettes"
+        case .perspectiveGuides: "Perspective guides"
+        case .canvasEditor: "Canvas editor"
+        case .autosave: "Autosave"
+        case .sketchAssist: "Complete strokes"
+        case .eraserToggle: "Eraser ↔ tool"
+        case .share: "Share"
+        case .closeMorph: "Close"
         case .more: "More"
         case .nothing: "Nothing"
         }
@@ -142,12 +149,61 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .toolSynchronization: "arrow.triangle.2.circlepath"
         case .visiblePalettes, .palettes: "paintpalette"
         case .blending: "circle.lefthalf.filled"
-        case .privacy: "hand.raised"
         case .reportBug: "envelope"
         case .eyedropper: "eyedropper"
         case .camera: "hand.draw"
+        case .perspectiveGuides: "perspective"
+        case .canvasEditor: "pencil.and.ellipsis.rectangle"
+        case .autosave: "clock.arrow.circlepath"
+        case .sketchAssist: "sparkles"
+        case .eraserToggle: "eraser"
+        case .share: "square.and.arrow.up"
+        case .closeMorph: "xmark"
         case .more: "ellipsis"
         case .nothing: "circle.dashed"
+        }
+    }
+
+    /// Actions the editor offers, alphabetical in the app language with Nothing last.
+    /// Close only collapses a morph, so a single circle never offers it.
+    static func menuOrder(inMorph: Bool) -> [CanvasQuickAction] {
+        let locale = Locale(identifier: AppLanguage.currentCode)
+        let offered = allCases.filter { action in
+            switch action {
+            case .nothing: false
+            case .closeMorph: inMorph
+            case .sketchAssist: AppReleaseFeatures.current.showsSketchAssist
+            default: true
+            }
+        }
+        return offered.sorted {
+            L10n.text($0.title).compare(L10n.text($1.title), options: .caseInsensitive, locale: locale)
+                == .orderedAscending
+        } + (inMorph ? [] : [.nothing])
+    }
+}
+
+extension CanvasQuickAction {
+    /// Retired actions, such as the Privacy Policy, decode as Nothing so
+    /// layouts saved before their removal stay usable.
+    init(from decoder: Decoder) throws {
+        let rawValue = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: rawValue) ?? .nothing
+    }
+}
+
+extension CanvasControlAssignment {
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let isMorph = try container.decode(Bool.self, forKey: .isMorph)
+        var actions = try container.decode([CanvasQuickAction].self, forKey: .actions)
+        let icon = try container.decodeIfPresent(String.self, forKey: .icon)
+        if isMorph {
+            // A morph drops retired actions; one left with none becomes an empty slot.
+            actions.removeAll { $0 == .nothing }
+            self = actions.isEmpty ? .single(.nothing) : .group(actions, icon: icon)
+        } else {
+            self = Self(isMorph: false, actions: actions, icon: icon)
         }
     }
 }

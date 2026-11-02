@@ -1304,6 +1304,40 @@
         }
       }
     },
+    "Complete strokes" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Complete strokes"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Дорисовать штрихи"
+          }
+        }
+      }
+    },
+    "Eraser ↔ tool" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eraser ↔ tool"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ластик ↔ инструмент"
+          }
+        }
+      }
+    },
     "Guides help you draw in perspective. A stroke that starts on a guide follows it or runs toward a vanishing point. The number sets how many vanishing points there are; 0 hides the guides." : {
       "extractionState" : "manual",
       "localizations" : {

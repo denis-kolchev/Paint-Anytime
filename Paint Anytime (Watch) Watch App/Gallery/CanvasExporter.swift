@@ -61,6 +61,29 @@ enum CanvasExporter {
                                           imageData: data as Data, name: name, in: folder)
     }
 
+    /// A PNG of the current canvas for sharing, kept out of the gallery.
+    @MainActor
+    static func sharePNG(document: CanvasDocument, size: CGSize, scale: CGFloat) throws -> (url: URL, image: CGImage) {
+        let size = document.size(fallback: size)
+        guard size.width > 0, size.height > 0,
+              let image = WatchBitmapRenderer.render(document: document, size: size, scale: scale)
+        else { throw ExportError.render }
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("Share", isDirectory: true)
+        // Only the latest shared image is needed.
+        try? FileManager.default.removeItem(at: folder)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let url = folder.appendingPathComponent("Paint Anytime.png")
+        let properties: [CFString: Any] = [
+            kCGImagePropertyDPIWidth: document.resolution,
+            kCGImagePropertyDPIHeight: document.resolution
+        ]
+        guard let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)
+        else { throw ExportError.encoding }
+        CGImageDestinationAddImage(destination, image, properties as CFDictionary)
+        guard CGImageDestinationFinalize(destination) else { throw ExportError.encoding }
+        return (url, image)
+    }
+
     enum ExportError: LocalizedError {
         case render, encoding
         var errorDescription: String? { L10n.text("Could not save the canvas image. Please try again.") }

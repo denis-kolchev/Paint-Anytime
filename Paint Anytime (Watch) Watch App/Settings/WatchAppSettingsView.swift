@@ -128,7 +128,7 @@ private struct DrawingSettingsView: View {
                 Label(L10n.text("Perspective guides"), systemImage: "perspective")
             }
             NavigationLink {
-                CanvasEditorSettingsView()
+                CanvasEditorSettingsView(instrument: controller.pencilStyle.instrument)
             } label: {
                 Label {
                     Text(L10n.text("Canvas editor"))
@@ -474,8 +474,9 @@ private struct ColorBlendingIllustration: View {
     }
 }
 
-private struct CanvasEditorSettingsView: View {
+struct CanvasEditorSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    let instrument: DrawingInstrument
     @AppStorage(CanvasControlLayout.storageKey) private var storedLayout = Data()
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
     @State private var showsEditor = false
@@ -512,7 +513,7 @@ private struct CanvasEditorSettingsView: View {
             }
         }
         .fullScreenCover(isPresented: $showsEditor) {
-            CanvasLayoutEditorView()
+            CanvasLayoutEditorView(instrument: instrument)
         }
     }
 }

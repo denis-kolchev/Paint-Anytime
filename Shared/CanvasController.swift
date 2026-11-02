@@ -14,6 +14,8 @@ final class CanvasController: ObservableObject {
     func setBlendingMode(_ mode: ColorBlendingMode) { tools.setBlendingMode(mode) }
     var maximumWidth: Float { tools.maximumWidth }
     func selectInstrument(_ instrument: DrawingInstrument) { tools.selectInstrument(instrument) }
+    var eraserToggleTarget: DrawingInstrument { tools.eraserToggleTarget }
+    func toggleEraser() { tools.toggleEraser() }
     func setSynchronizeWidth(_ enabled: Bool) { tools.setSynchronizeWidth(enabled) }
     func setSynchronizeColor(_ enabled: Bool) { tools.setSynchronizeColor(enabled) }
     func setSynchronizeOpacity(_ enabled: Bool) { tools.setSynchronizeOpacity(enabled) }

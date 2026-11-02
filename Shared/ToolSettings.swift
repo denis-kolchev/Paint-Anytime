@@ -6,6 +6,7 @@ final class ToolSettings: ObservableObject {
         didSet {
             let availableStyle = AppReleaseFeatures.current.availableStyle(pencilStyle)
             if pencilStyle != availableStyle { pencilStyle = availableStyle }
+            rememberDrawingInstrument()
             guard pencilStyle != oldValue else { return }
             savedStyles[pencilStyle.instrument.rawValue] = pencilStyle
             propagateSynchronizedStyle()
@@ -16,6 +17,22 @@ final class ToolSettings: ObservableObject {
 
     @Published private(set) var blendingMode: ColorBlendingMode = .hybrid
     private static let blendingKey = "drawing.blending.v1"
+
+    /// The tool the eraser toggle returns to.
+    private(set) var lastDrawingInstrument: DrawingInstrument = .monoline
+    private static let lastDrawingInstrumentKey = "drawing.lastDrawingInstrument.v1"
+    var eraserToggleTarget: DrawingInstrument {
+        pencilStyle.instrument == .eraser ? lastDrawingInstrument : .eraser
+    }
+
+    func toggleEraser() { selectInstrument(eraserToggleTarget) }
+
+    private func rememberDrawingInstrument() {
+        let instrument = pencilStyle.instrument
+        guard instrument != .eraser, instrument != lastDrawingInstrument else { return }
+        lastDrawingInstrument = instrument
+        if persistsPreferences { preferences.defaults.set(instrument.rawValue, forKey: Self.lastDrawingInstrumentKey) }
+    }
 
     func setBlendingMode(_ mode: ColorBlendingMode) {
         guard mode != blendingMode else { return }
@@ -114,6 +131,13 @@ final class ToolSettings: ObservableObject {
         let restoredSynchronization = preferences.synchronization
         let savedInstrument = preferences.instrument
         let instrument = AppReleaseFeatures.current.allows(savedInstrument) ? savedInstrument : .monoline
+        if instrument != .eraser {
+            lastDrawingInstrument = instrument
+        } else if let raw = defaults.object(forKey: Self.lastDrawingInstrumentKey) as? Int,
+                  let previous = DrawingInstrument(rawValue: raw), previous != .eraser,
+                  AppReleaseFeatures.current.allows(previous) {
+            lastDrawingInstrument = previous
+        }
         var restored = decoded[instrument.rawValue] ?? .initial(for: instrument)
         restored.blendingMode = restoredBlendingMode
         if !restored.width.isFinite { restored.width = instrument.defaultWidth }

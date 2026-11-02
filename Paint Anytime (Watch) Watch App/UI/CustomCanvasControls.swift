@@ -50,6 +50,7 @@ struct CustomCanvasControls: View {
                     } label: {
                         CanvasQuickActionIcon(action: assignment.actions[0],
                                               instrument: controller.pencilStyle.instrument,
+                                              eraserToggleTarget: controller.eraserToggleTarget,
                                               isMorph: assignment.isMorph,
                                               morphIcon: assignment.icon)
                             .frame(width: diameter, height: diameter)
@@ -73,7 +74,8 @@ struct CustomCanvasControls: View {
             state.customExpandedSlot = nil
             onAction(action)
         } label: {
-            CanvasQuickActionIcon(action: action, instrument: controller.pencilStyle.instrument)
+            CanvasQuickActionIcon(action: action, instrument: controller.pencilStyle.instrument,
+                                  eraserToggleTarget: controller.eraserToggleTarget)
                 .frame(width: MorphPanelGeometry.buttonDiameter, height: height)
         }
         .buttonStyle(.plain)
@@ -104,6 +106,8 @@ struct CustomCanvasControls: View {
 struct CanvasQuickActionIcon: View {
     let action: CanvasQuickAction
     let instrument: DrawingInstrument
+    /// The tool the eraser toggle switches to, shown on its circle.
+    var eraserToggleTarget: DrawingInstrument = .eraser
     var isMorph = false
     var morphIcon: String? = nil
 
@@ -112,6 +116,8 @@ struct CanvasQuickActionIcon: View {
             if isMorph { Image(systemName: CanvasMorphIcon.resolve(morphIcon)) }
             else if action == .clear { BroomIcon() }
             else if action == .brush { ToolIcon(instrument: instrument) }
+            else if action == .eraserToggle { ToolIcon(instrument: eraserToggleTarget) }
+            else if action == .canvasEditor { CanvasLayoutIcon() }
             else { Image(systemName: action.symbol) }
         }
         .font(.system(size: 17, weight: .semibold))
