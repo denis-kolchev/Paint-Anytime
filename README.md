@@ -145,33 +145,37 @@ Save your drawings to your personal gallery and continue editing whenever inspir
 - Compact, interactive drawing tutorial;
 - Sharing creations through iMessage or email.
 
-## What's New in 1.1.0
+## What's New in 1.2.0
 
 ### New Features
 
-- New UI hides controls to give you more space to draw and view your artwork;
-- Layers. Lock transparency to keep your colors within painted boundaries;
-- Use the Lasso tool to adjust your composition;
-- Draw and hold to turn rough shapes into perfect geometry;
-- HSB and RGB sliders give you more ways to create colors for your palette;
-- Palette collections make it easy to switch your painting mood;
-- Color blending. Yellow plus blue doesn't always equal green anymore;
-- Watercolor brush is a great addition to Marker for exploring color blending;
-- New Fill tool helps you spend less time covering large areas;
-- Widgets to display your favorite artwork, jump back into drawing, and open the gallery;
-- Updated tutorial is quicker to complete and comes in a more compact form;
-- All brushes and layers now have opacity settings to adjust transparency.
+- iPhone companion app with a gallery synced to your Apple Watch, plus sharing from your phone;
+- Deleting a drawing on Apple Watch also removes it from the iPhone gallery;
+- Export and import drawings as editable Paint Anytime projects;
+- Pinch to switch the gallery between 5, 3 and 1 columns on both iPhone and Apple Watch;
+- Fold-aware gallery and drawing layout for dual-screen iPhone;
+- Pencil and Crayon brushes, plus named ink colors;
+- New Blur brush for softening edges and blending colors;
+- Autosave keeps your work safe while you draw;
+- Canvas size and cropping controls, now split into separate, easier-to-use menus;
+- Canvas layout editor lets you choose and arrange on-canvas controls;
+- Drawing area now extends under the system clock, which is hidden on the canvas and in the tutorial;
+- Shape recognition understands more shapes, including clouds;
+- Deep links to open specific parts of the app.
 
 ### Bug Fixes
 
-- Reduced lag while drawing with Marker and other brushes.
-- Improved Marker stroke direction and corner behavior.
-- Improved drawing performance as the number of strokes increases.
-- Improved zooming and panning performance on complex drawings.
-- Fixed visual and layout issues on watchOS 10.
-- Improved compatibility across supported watchOS versions.
-- Kept the system clock consistently positioned while drawing.
-- Smoothed transitions between different layouts.
+- Faster Undo and Redo.
+- Faster Fill tool.
+- Smoother movement of objects selected with the Lasso.
+- Much smoother pinch zoom in the gallery, without freezes, lag or jumps between grid sizes.
+- Scrolling in the gallery starts right after zooming, and fast pinches no longer block it.
+- Fixed empty gaps, duplicated images and black bars around gallery images while zooming.
+- The gallery keeps its scroll position when you zoom out or return to it.
+- Pinching in the iPhone gallery no longer opens photos by accident.
+- Fixed the white bar and top spacing in the iPhone gallery.
+- Fixed blur artifacts at the top of the Apple Watch gallery and optimized its scrolling.
+- Fixed mistakes in the tutorial.
 
 ## Requirements
 
