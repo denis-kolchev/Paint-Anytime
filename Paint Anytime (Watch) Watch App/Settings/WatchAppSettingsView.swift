@@ -24,18 +24,18 @@ struct WatchAppSettingsView: View {
                     } label: {
                         Label(L10n.text("Language"), systemImage: "globe")
                     }
-                    Button(action: onStartTutorial) {
-                        Label(L10n.text("Tutorial"), systemImage: "graduationcap")
-                    }
                     NavigationLink {
                         DrawingSettingsView(controller: controller, viewportSize: viewportSize)
                     } label: {
                         Label(L10n.text("Drawing"), systemImage: "paintbrush")
                     }
+                    Button(action: onStartTutorial) {
+                        Label(L10n.text("Tutorial"), systemImage: "graduationcap")
+                    }
                     NavigationLink {
-                        PerspectiveGuidesSettingsView()
+                        AutosaveSettingsView()
                     } label: {
-                        Label(L10n.text("Perspective guides"), systemImage: "perspective")
+                        Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
                     }
                     NavigationLink {
                         WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
@@ -113,11 +113,6 @@ private struct DrawingSettingsView: View {
                 }
             }
             NavigationLink {
-                ToolSynchronizationView(controller: controller)
-            } label: {
-                Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
-            }
-            NavigationLink {
                 PaletteVisibilitySettingsView(controller: controller)
             } label: {
                 Label(L10n.text("Visible palettes"), systemImage: "paintpalette")
@@ -126,6 +121,11 @@ private struct DrawingSettingsView: View {
                 ColorBlendingSelectionView(controller: controller)
             } label: {
                 Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
+            }
+            NavigationLink {
+                PerspectiveGuidesSettingsView()
+            } label: {
+                Label(L10n.text("Perspective guides"), systemImage: "perspective")
             }
             NavigationLink {
                 CanvasEditorSettingsView()
@@ -137,9 +137,9 @@ private struct DrawingSettingsView: View {
                 }
             }
             NavigationLink {
-                AutosaveSettingsView()
+                ToolSynchronizationView(controller: controller)
             } label: {
-                Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+                Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
             }
         }
         .labelStyle(CenteredMenuLabelStyle())
