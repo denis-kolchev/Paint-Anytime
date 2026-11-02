@@ -130,7 +130,11 @@ private struct DrawingSettingsView: View {
             NavigationLink {
                 CanvasEditorSettingsView()
             } label: {
-                Label(L10n.text("Canvas editor"), systemImage: "slider.horizontal.3")
+                Label {
+                    Text(L10n.text("Canvas editor"))
+                } icon: {
+                    CanvasLayoutIcon()
+                }
             }
             NavigationLink {
                 AutosaveSettingsView()
@@ -482,7 +486,7 @@ private struct CanvasEditorSettingsView: View {
                 Button {
                     showsEditor = true
                 } label: {
-                    Label(L10n.text("Edit canvas"), systemImage: "square.and.pencil")
+                    Label(L10n.text("Edit canvas"), systemImage: "pencil.and.ellipsis.rectangle")
                 }
                 // Same original interface as the editor's reset preview.
                 Button {

@@ -28,6 +28,32 @@ struct BroomIcon: View {
     }
 }
 
+/// A watch outline with the two top canvas controls, as the editor places them.
+struct CanvasLayoutIcon: View {
+    var body: some View {
+        Canvas { context, size in
+            var drawing = context
+            drawing.scaleBy(x: size.width / 24, y: size.height / 24)
+            let body = CGRect(x: 2, y: 3, width: 18, height: 18)
+            drawing.stroke(Path(roundedRect: body, cornerRadius: 5, style: .continuous),
+                           with: .color(.primary), lineWidth: 1.7)
+            // Digital Crown on the trailing edge.
+            drawing.fill(Path(roundedRect: CGRect(x: 20.6, y: 8, width: 1.8, height: 4.5), cornerRadius: 0.9),
+                         with: .color(.primary))
+            // Larger dots, still clear of the case and its rounded corners.
+            let diameter: CGFloat = 3.4
+            let dots = [-1, 1].map { CGPoint(x: body.midX + CGFloat($0) * 4.4, y: body.midY - 4.4) }
+            for dot in dots {
+                drawing.fill(Path(ellipseIn: CGRect(x: dot.x - diameter / 2, y: dot.y - diameter / 2,
+                                                    width: diameter, height: diameter)),
+                             with: .color(.primary))
+            }
+        }
+        .frame(width: 22, height: 22)
+        .accessibilityHidden(true)
+    }
+}
+
 // Upright tool tips, rather than the diagonal editing/pencil action symbol.
 struct ToolIcon: View {
     let instrument: DrawingInstrument
