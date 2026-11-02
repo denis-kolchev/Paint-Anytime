@@ -501,8 +501,34 @@ private struct CanvasEditorSettingsView: View {
         }
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Canvas editor"))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    CanvasEditorInformationView()
+                } label: {
+                    Image(systemName: "info.circle")
+                }
+                .accessibilityLabel(L10n.text("About canvas editor"))
+            }
+        }
         .fullScreenCover(isPresented: $showsEditor) {
             CanvasLayoutEditorView()
         }
+    }
+}
+
+private struct CanvasEditorInformationView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+
+    var body: some View {
+        ScrollView {
+            Text(L10n.text("Arrange the buttons on the canvas: give each top corner and bottom-row slot an action or a menu of up to five actions. Reset brings back the original interface."))
+                .font(.footnote)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 12)
+        }
+        .navigationTitle(L10n.text("Canvas editor"))
     }
 }
