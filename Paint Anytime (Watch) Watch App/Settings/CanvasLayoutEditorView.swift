@@ -9,6 +9,7 @@ struct CanvasLayoutEditorView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft = CanvasControlLayout.standard
     @State private var editingSlot: Int?
+    @State private var resetsToOriginal = false
     @State private var loaded = false
 
     var body: some View {
@@ -62,30 +63,32 @@ struct CanvasLayoutEditorView: View {
     }
 
     private var center: some View {
-        VStack(spacing: 6) {
-            HStack(spacing: 14) {
-                Button(action: { dismiss() }) {
-                    CanvasLayoutCircle {
-                        Image(systemName: "xmark")
-                    }
+        HStack(spacing: 10) {
+            Button(action: { dismiss() }) {
+                CanvasLayoutCircle {
+                    Image(systemName: "xmark")
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.text("Cancel"))
-                Button(action: save) {
-                    CanvasLayoutCircle {
-                        Image(systemName: "checkmark").foregroundStyle(.green)
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(L10n.text("Save and apply"))
-            }
-            Button(L10n.text("Use standard layout")) {
-                customLayoutEnabled = false
-                dismiss()
             }
             .buttonStyle(.plain)
-            .font(.caption2)
-            .foregroundStyle(.gray)
+            .accessibilityLabel(L10n.text("Cancel"))
+            // Previews the original layout; the checkmark makes it permanent.
+            Button {
+                draft = .standard
+                resetsToOriginal = true
+            } label: {
+                CanvasLayoutCircle {
+                    Image(systemName: "arrow.counterclockwise")
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.text("Use standard layout"))
+            Button(action: save) {
+                CanvasLayoutCircle {
+                    Image(systemName: "checkmark").foregroundStyle(.green)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.text("Save and apply"))
         }
     }
 
@@ -115,6 +118,15 @@ struct CanvasLayoutEditorView: View {
     }
 
     private func save() {
+        // Untouched after a reset: restore the original interface itself,
+        // not a custom layout that merely copies it.
+        if resetsToOriginal && draft == .standard {
+            storedLayout = Data()
+            customLayoutEnabled = false
+            usesMorphToolbar = true
+            dismiss()
+            return
+        }
         guard let data = try? JSONEncoder().encode(draft),
               CanvasControlLayout.decode(data) != nil else { return }
         storedLayout = data
