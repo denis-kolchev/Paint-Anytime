@@ -149,38 +149,34 @@ Save your drawings to your personal gallery and continue editing whenever inspir
 
 ### New Features
 
-- iPhone companion app with a gallery synced to your Apple Watch, plus sharing from your phone;
-- Deleting a drawing on Apple Watch also removes it from the iPhone gallery;
-- Export and import drawings as editable Paint Anytime projects;
-- Pinch to switch the gallery between 5, 3 and 1 columns on both iPhone and Apple Watch;
-- Fold-aware gallery and drawing layout for dual-screen iPhone;
-- Pencil and Crayon brushes, plus named ink colors;
-- New Blur brush for softening edges and blending colors;
-- Autosave keeps your work safe while you draw;
-- Canvas size and cropping controls, now split into separate, easier-to-use menus;
-- Canvas layout editor lets you choose and arrange on-canvas controls;
-- Drawing area now extends under the system clock, which is hidden on the canvas and in the tutorial;
+- New Pencil and Crayon brushes to better express the texture;
+- Blur brush for softening edges and better gradient;
+- iPhone companion app to display, upload, download, delete, and share projects;
+- Updates gallery animations to optimize for more content, and it is ported to iPhone;
+- Autosave to make you less worry about battery drain;
+- Rotate, crop and change Canvas size;
+- Canvas Editor lets you choose and arrange on-canvas controls;
 - Shape recognition understands more shapes, including clouds;
-- Deep links to open specific parts of the app.
+- Leading lines to easier draw the perspective images;
+- Tutorial is separated on levels to get into the business faster (atwork);
+- Allows to change your pictures from your gallery on your watch (atwork);
+- Lets you put other image new by Canvas as reference (atwork);
+- Apple Intelligence turns your sketch into picture.
 
 ### Bug Fixes
 
+- Drawing area now extends under the system clock;
 - Faster Undo and Redo.
 - Faster Fill tool.
 - Smoother movement of objects selected with the Lasso.
-- Much smoother pinch zoom in the gallery, without freezes, lag or jumps between grid sizes.
-- Scrolling in the gallery starts right after zooming, and fast pinches no longer block it.
-- Fixed empty gaps, duplicated images and black bars around gallery images while zooming.
-- The gallery keeps its scroll position when you zoom out or return to it.
-- Pinching in the iPhone gallery no longer opens photos by accident.
-- Fixed the white bar and top spacing in the iPhone gallery.
-- Fixed blur artifacts at the top of the Apple Watch gallery and optimized its scrolling.
+- Much smoother zoom in the gallery, without freezes, lag or jumps between grid sizes.
 - Fixed mistakes in the tutorial.
 
 ## Requirements
 
 - watchOS 10.0 or later
 - iOS 17 or later
+- iOS 18.2 or later for Apple Intelligence feature 
 - Xcode with watchOS development support for building from source
 
 ## Build from Source
