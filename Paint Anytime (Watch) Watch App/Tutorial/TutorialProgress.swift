@@ -3,20 +3,17 @@ import Foundation
 enum TutorialStep: Int, CaseIterable {
     case inactive = 0
     case firstStrokes, holdCircle, zoomCanvas, panCanvas, finishCamera, openTools
-    case selectColor, tapAddColor, openPalettes, findNewPalette, createPalette
+    case pickColor, selectColor, tapAddColor, openPalettes, findNewPalette, createPalette
     case addPaletteColor, adjustPaletteColor, savePaletteColor
     case openWidth, setWidth, openOpacity, setOpacity, openTool
-    case selectReed, openAngle, setAngle, closeTools, reedStrokes
+    case selectReed, chooseReed, openAngle, setAngle, closeTools, reedStrokes
     case openLasso, selectLasso, transformLasso, finishLasso
     case history, saveDrawing, shareDrawing, openMenu, openGallery
-    case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas, finished
+    case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
+    // Results, not lessons: they wait for Next (or Done after the last chapter).
+    case chapterComplete, finished
 
-    // The completion screen is a result, not another lesson.
-    // Angle exercises are no longer part of the guided sequence.
-    static var lessonCount: Int { finished.rawValue - 3 }
-    var completedLessonCount: Int {
-        max(0, rawValue - 1 - (rawValue >= TutorialStep.closeTools.rawValue ? 2 : 0))
-    }
+    var isResult: Bool { self == .chapterComplete || self == .finished }
 }
 
 /// Pure exercise rules; completed skills remain available for exploration.
@@ -24,6 +21,10 @@ struct TutorialProgress {
     private(set) var step: TutorialStep = .inactive
     private(set) var count = 0
     private(set) var hasPanned = false
+    private(set) var chapters: [TutorialChapter] = []
+    private(set) var chapterIndex = 0
+    private(set) var lessonIndex = 0
+    private var stepIndex = 0
     private var unlockedToolPages: Set<Int> = [1]
 
     enum Event {
@@ -39,32 +40,105 @@ struct TutorialProgress {
         case none, advance, showResult, pauseReminders
         case resumeReminders(advance: Bool)
     }
-    mutating func start() { self = TutorialProgress(); step = .firstStrokes }
+
+    var chapter: TutorialChapter? {
+        step == .inactive || !chapters.indices.contains(chapterIndex) ? nil : chapters[chapterIndex]
+    }
+
+    /// Reads the chapter list directly: `chapter` is nil until the first step begins.
+    private var lessonSteps: [TutorialStep] {
+        guard chapters.indices.contains(chapterIndex) else { return [] }
+        let lessons = chapters[chapterIndex].lessons
+        guard lessons.indices.contains(lessonIndex) else { return [] }
+        return lessons[lessonIndex].steps
+    }
+
+    /// Fraction of the current chapter's exercises; the ring fills once per chapter.
+    var chapterProgress: Double {
+        guard let chapter else { return 0 }
+        if step == .chapterComplete || step == .finished { return 1 }
+        let lessons = chapter.lessons
+        let total = lessons.reduce(0) { $0 + $1.steps.count }
+        let previous = lessons.prefix(lessonIndex).reduce(0) { $0 + $1.steps.count }
+        return Double(previous + stepIndex) / Double(max(1, total))
+    }
+
+    var completedLessonCount: Int {
+        switch step {
+        case .inactive: 0
+        case .chapterComplete, .finished: chapter?.lessons.count ?? 0
+        default: lessonIndex
+        }
+    }
+
+    mutating func start(chapters: [TutorialChapter] = TutorialChapter.allCases) {
+        self = TutorialProgress()
+        self.chapters = chapters.isEmpty ? TutorialChapter.allCases : chapters
+        beginLesson()
+    }
     mutating func stop() { step = .inactive }
+
+    /// Completes the current exercise; lessons within a chapter follow each other directly.
     mutating func advance() {
-        guard step != .inactive, step != .finished,
-              let next = TutorialStep(rawValue: step.rawValue + 1) else { return }
+        guard step != .inactive, !step.isResult else { return }
+        if stepIndex + 1 < lessonSteps.count { enter(stepIndex + 1) } else { finishLesson() }
+    }
+
+    /// Next on a chapter result. Returns true when the following chapter begins.
+    @discardableResult
+    mutating func continueToNext() -> Bool {
+        guard step == .chapterComplete else { return false }
+        chapterIndex += 1
+        lessonIndex = 0
+        beginLesson()
+        return true
+    }
+
+    private mutating func finishLesson() {
         count = 0
-        step = step == .selectReed ? .closeTools : next
+        if lessonIndex + 1 < (chapter?.lessons.count ?? 0) {
+            lessonIndex += 1
+            beginLesson()
+        } else if chapterIndex + 1 < chapters.count { step = .chapterComplete }
+        else { step = .finished }
+    }
+
+    private mutating func beginLesson() {
+        hasPanned = false
+        unlockedToolPages = [1]
+        enter(0)
+    }
+
+    private mutating func enter(_ index: Int) {
+        guard lessonSteps.indices.contains(index) else { return }
+        stepIndex = index
+        count = 0
+        step = lessonSteps[index]
+        // Pages between Color and the target stay reachable for the swipe.
         switch step {
         case .openWidth: unlockedToolPages.insert(0)
-        case .openOpacity: unlockedToolPages.insert(5)
-        case .openTool: unlockedToolPages.formUnion([2, 3, 6])
+        case .openOpacity: unlockedToolPages.formUnion([0, 5])
+        case .openTool: unlockedToolPages.formUnion([0, 2, 3, 5, 6])
         case .selectReed: unlockedToolPages = visibleToolPages
         case .openAngle: unlockedToolPages.insert(4)
         default: break
         }
     }
+
+    /// Steps back within the lesson when the user undoes a completed action.
+    private mutating func returnTo(_ target: TutorialStep) {
+        guard let index = lessonSteps.firstIndex(of: target) else { return }
+        enter(index)
+    }
+
     mutating func record(_ event: Event) -> Effect {
         switch (step, event) {
         case (.selectReed, .browsedTools): return .advance
         case (.tapAddColor, .returnedToColorSelection):
-            step = .selectColor
-            count = 0
+            returnTo(.selectColor)
             return .none
         case (.createPalette, .returnedToPalettes):
-            step = .findNewPalette
-            count = 0
+            returnTo(.findNewPalette)
             return .none
         case (.firstStrokes, .stroke), (.history, .history):
             count += 1
@@ -83,10 +157,8 @@ struct TutorialProgress {
              (.adjustPaletteColor, .adjustedColor), (.savePaletteColor, .savedColor): return .advance
         case (.selectLasso, .failedLassoSelection), (.transformLasso, .failedLassoSelection):
             count += 1
-            if count >= 3 {
-                count = 0
-                step = .history
-            }
+            // Repeated misses end the lesson instead of blocking the tour.
+            if count >= 3 { finishLesson() }
             return .none
         case (.openLasso, .openedLasso), (.selectLasso, .selectedLasso),
              (.transformLasso, .transformedLasso), (.finishLasso, .finishedLasso): return .advance
@@ -112,8 +184,16 @@ struct TutorialProgress {
         switch step {
         case .setOpacity: return page == 5 && style.instrument != .eraser && old.opacity != style.opacity
         case .setWidth: return page == 0 && old.width != style.width
+        case .pickColor: return page == 1 && old.color != style.color
         case .selectReed: return old.instrument != style.instrument
-        case .setAngle: return page == 4 && style.instrument == .reed && old.reedAngle != style.reedAngle
+        case .chooseReed: return style.instrument == .reed
+        case .openAngle, .setAngle:
+            // Angle exists only for Reed; leaving it restores the selection exercise.
+            guard style.instrument == .reed else {
+                returnTo(.chooseReed)
+                return false
+            }
+            return step == .setAngle && page == 4 && old.reedAngle != style.reedAngle
         default: return false
         }
     }

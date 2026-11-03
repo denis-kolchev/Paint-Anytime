@@ -10,6 +10,7 @@ enum TutorialLesson {
         case .panCanvas: return L10n.text("Drag your finger to move around.")
         case .finishCamera: return L10n.text("Tap ✓ when ready.")
         case .openTools: return L10n.text("Tap the brush settings button.")
+        case .pickColor: return L10n.text("Turn the Crown to choose a color.")
         case .selectColor: return L10n.text("Turn the Crown to + to add a color.")
         case .tapAddColor, .addPaletteColor: return L10n.text("Tap + to add a color.")
         case .openPalettes: return L10n.text("Tap the palette button above.")
@@ -23,6 +24,7 @@ enum TutorialLesson {
         case .setOpacity: return L10n.text("Turn the Crown to change opacity")
         case .openTool: return L10n.text("Swipe left to Tool.")
         case .selectReed: return L10n.text("Scroll down with the Crown to choose any tool.")
+        case .chooseReed: return L10n.text("Choose Reed pen to set the angle.")
         case .openAngle: return L10n.text("Swipe left to Angle.")
         case .setAngle: return L10n.text("Turn the Crown to change the nib angle.")
         case .closeTools: return L10n.text("Tap ✓ to start drawing.")
@@ -40,6 +42,7 @@ enum TutorialLesson {
         case .deleteDrawing: return L10n.text("Tap the trash to delete a picture.")
         case .returnToCanvas: return L10n.text("Tap Back to leave the gallery.")
         case .clearCanvas: return L10n.text("Tap the broom to clear the canvas.")
+        case .chapterComplete: return L10n.text("Chapter complete! Tap the arrow for the next chapter.")
         case .finished: return L10n.text("Well done! Tutorial complete. Tap ✓ below to finish.")
         }
     }

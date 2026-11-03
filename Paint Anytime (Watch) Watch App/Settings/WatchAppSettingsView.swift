@@ -7,7 +7,8 @@ struct WatchAppSettingsView: View {
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
     var onOpenDrawings: () -> Void
-    var onStartTutorial: () -> Void
+    var onStartTutorial: ([TutorialChapter]) -> Void
+    var completedTutorialChapters: Set<TutorialChapter> = []
     var onClose: (() -> Void)? = nil
     @ObservedObject var tutorial = TutorialSession.inactive
 
@@ -29,7 +30,9 @@ struct WatchAppSettingsView: View {
                     } label: {
                         Label(L10n.text("Drawing"), systemImage: "paintbrush")
                     }
-                    Button(action: onStartTutorial) {
+                    NavigationLink {
+                        TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
+                    } label: {
                         Label(L10n.text("Tutorial"), systemImage: "graduationcap")
                     }
                     NavigationLink {
@@ -531,5 +534,36 @@ private struct CanvasEditorInformationView: View {
                 .padding(.bottom, 12)
         }
         .navigationTitle(L10n.text("Canvas editor"))
+    }
+}
+
+/// Chapters can be taken in any order; the full tour plays them one after another.
+private struct TutorialChaptersView: View {
+    let completed: Set<TutorialChapter>
+    let onStart: ([TutorialChapter]) -> Void
+
+    var body: some View {
+        List {
+            Button { onStart(TutorialChapter.allCases) } label: {
+                Label(L10n.text("Full tour"), systemImage: "play.fill")
+            }
+            Section(L10n.text("Chapters")) {
+                ForEach(TutorialChapter.allCases) { chapter in
+                    Button { onStart([chapter]) } label: {
+                        HStack {
+                            Label(chapter.title, systemImage: chapter.systemImage)
+                            Spacer(minLength: 4)
+                            if completed.contains(chapter) {
+                                Image(systemName: "checkmark")
+                                    .foregroundStyle(.green)
+                                    .accessibilityLabel(L10n.text("Completed"))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(L10n.text("Tutorial"))
+        .toolbarTitleDisplayMode(.inline)
     }
 }

@@ -17,7 +17,7 @@ struct ToolSettingCarousel: View {
         switch setting {
         case .width: return [.openWidth]
         case .opacity: return [.openOpacity]
-        case .instrument: return [.openTool, .selectReed]
+        case .instrument: return [.openTool, .selectReed, .chooseReed]
         case .direction: return [.openAngle]
         default: return []
         }

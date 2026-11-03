@@ -96,7 +96,7 @@ struct WatchToolSettingsView: View {
         switch tutorial.step {
         case .openWidth: return .width
         case .openOpacity: return .opacity
-        case .openTool: return .instrument
+        case .openTool, .chooseReed: return .instrument
         case .openAngle: return .direction
         default: return nil
         }

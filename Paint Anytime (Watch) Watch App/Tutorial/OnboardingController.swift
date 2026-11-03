@@ -6,6 +6,8 @@ final class OnboardingController: ObservableObject {
     @Published private(set) var hasCompletedWelcome: Bool
     @Published private(set) var tutorialFolder: URL?
     @Published private(set) var preparesTutorial = false
+    /// Chapters of the requested run: the full tour or one chapter from the menu.
+    @Published private(set) var tutorialChapters = TutorialChapter.allCases
     @Published var tutorialError = false
     private let defaults: UserDefaults
     private let workspace: TutorialWorkspace
@@ -17,8 +19,12 @@ final class OnboardingController: ObservableObject {
         hasCompletedWelcome = defaults.bool(forKey: Self.completionKey)
     }
 
-    func requestTutorial() {
+    /// Read on demand: the welcome flow and the editor menu own separate controllers.
+    var completedChapters: Set<TutorialChapter> { TutorialChapter.completed(in: defaults) }
+
+    func requestTutorial(chapters: [TutorialChapter] = TutorialChapter.allCases) {
         guard tutorialFolder == nil, !preparesTutorial else { return }
+        tutorialChapters = chapters.isEmpty ? TutorialChapter.allCases : chapters
         tutorialError = false
         preparesTutorial = true
     }
@@ -36,6 +42,11 @@ final class OnboardingController: ObservableObject {
     func completeWelcome() {
         hasCompletedWelcome = true
         defaults.set(true, forKey: Self.completionKey)
+    }
+
+    func completeChapter(_ chapter: TutorialChapter) {
+        objectWillChange.send()
+        chapter.markCompleted(in: defaults)
     }
 
     func finishTutorial() {

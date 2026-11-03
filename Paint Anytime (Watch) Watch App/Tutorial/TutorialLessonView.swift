@@ -11,7 +11,7 @@ struct TutorialLessonView: View {
     var maximumCardHeight: CGFloat? = nil
     @Binding var confirmsFinish: Bool
     @State private var completionProgress: CGFloat = 0
-    @State private var showsCompletionCheckmark = false
+    @State private var revealsResultAction = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .body) private var instructionFontSize: CGFloat = 11
 
@@ -29,40 +29,52 @@ struct TutorialLessonView: View {
                 .transition(.opacity)
             }
 
-            Button(role: showsCompletionCheckmark ? nil : .destructive) {
-                if showsCompletionCheckmark {
+            Button(role: action == .exit ? .destructive : nil) {
+                switch action {
+                case .exit:
+                    tutorial.pauseReminders()
+                    confirmsFinish = true
+                case .next:
+                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                        tutorial.continueToNext()
+                    }
+                case .done:
                     withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
                         onFinish()
                     }
-                } else {
-                    tutorial.pauseReminders()
-                    confirmsFinish = true
                 }
             } label: {
                 ZStack {
                     Image(systemName: "xmark")
                         .foregroundStyle(.red)
-                        .opacity(showsCompletionCheckmark ? 0 : 1)
-                        .scaleEffect(showsCompletionCheckmark && !reduceMotion ? 0.6 : 1)
-                    // Completion uses the neutral tint of the other toolbar controls.
+                        .opacity(action == .exit ? 1 : 0)
+                        .scaleEffect(action != .exit && !reduceMotion ? 0.6 : 1)
+                    // Results use the neutral tint of the other toolbar controls.
+                    Image(systemName: "arrow.forward")
+                        .foregroundStyle(.white)
+                        .opacity(action == .next ? 1 : 0)
+                        .scaleEffect(action == .next || reduceMotion ? 1 : 0.6)
+                        .tutorialHint(tutorial, steps: [.chapterComplete], isSuggested: action == .next)
                     Image(systemName: "checkmark")
                         .foregroundStyle(.white)
-                        .opacity(showsCompletionCheckmark ? 1 : 0)
-                        .scaleEffect(showsCompletionCheckmark || reduceMotion ? 1 : 0.6)
-                        .tutorialHint(tutorial, steps: [.finished], isSuggested: showsCompletionCheckmark)
+                        .opacity(action == .done ? 1 : 0)
+                        .scaleEffect(action == .done || reduceMotion ? 1 : 0.6)
+                        .tutorialHint(tutorial, steps: [.finished], isSuggested: action == .done)
                 }
                 .font(.system(size: 11, weight: .semibold))
+                .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: action)
             }
-            .tint(showsCompletionCheckmark ? .white : .red)
+            .tint(action == .exit ? .red : .white)
             .buttonStyle(TutorialOverlayButtonStyle(diameter: 24, hitDiameter: 32))
             .overlay {
-                TutorialProgressRing(completedLessons: completedLessons, completionProgress: completionProgress)
+                TutorialProgressRing(progress: tutorial.chapterProgress, completionProgress: completionProgress)
                     .frame(width: 32, height: 32)
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
             }
-            .accessibilityLabel(L10n.text("Finish tutorial"))
-            .accessibilityValue(L10n.format("%d of %d lessons completed", completedLessons, TutorialStep.lessonCount))
+            .accessibilityLabel(L10n.text(action == .exit ? "Finish tutorial" : action == .next ? "Next chapter" : "Done"))
+            .accessibilityValue(L10n.format("%d of %d lessons completed",
+                                            tutorial.completedLessonCount, tutorial.lessonCount))
 
             // Measure the full copy independently of the scroll viewport.
             Text(tutorial.instruction)
@@ -83,8 +95,8 @@ struct TutorialLessonView: View {
         .task(id: tutorial.step) {
             await animateCompletion()
         }
-        .onChange(of: showsCompletionCheckmark) { _, isShowing in
-            if isShowing {
+        .onChange(of: action) { _, action in
+            if action != .exit {
                 WKInterfaceDevice.current().play(.success)
             }
         }
@@ -93,34 +105,41 @@ struct TutorialLessonView: View {
 
     @MainActor
     private func animateCompletion() async {
-        guard tutorial.step == .finished else {
+        // A chapter first fills its ring, then offers Next or Done.
+        guard tutorial.step == .chapterComplete || tutorial.step == .finished else {
             completionProgress = 0
-            showsCompletionCheckmark = false
+            revealsResultAction = false
             return
         }
-        guard !showsCompletionCheckmark else { return }
+        guard !revealsResultAction else { return }
         if reduceMotion {
             completionProgress = 1
-            showsCompletionCheckmark = true
+            revealsResultAction = true
             return
         }
         do {
             withAnimation(.linear(duration: 0.7)) {
                 completionProgress = 1
             }
-            // Keep the completed green ring visible before revealing Done.
+            // Keep the completed green ring visible before revealing Next or Done.
             try await Task.sleep(for: .milliseconds(800))
             try Task.checkCancellation()
             withAnimation(.easeInOut(duration: 0.2)) {
-                showsCompletionCheckmark = true
+                revealsResultAction = true
             }
         } catch {
             // Leaving the card or changing lessons cancels the sequence.
         }
     }
 
-    private var completedLessons: Int {
-        tutorial.step == .finished ? TutorialStep.lessonCount : tutorial.step.completedLessonCount
+    private enum Action { case exit, next, done }
+
+    private var action: Action {
+        switch tutorial.step {
+        case .chapterComplete where revealsResultAction: .next
+        case .finished where revealsResultAction: .done
+        default: .exit
+        }
     }
 
     private let edgeGap: CGFloat = 10
@@ -131,20 +150,16 @@ struct TutorialLessonView: View {
 }
 
 private struct TutorialProgressRing: View {
-    let completedLessons: Int
+    let progress: Double
     let completionProgress: CGFloat
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    private var progress: CGFloat {
-        min(1, max(0, CGFloat(completedLessons) / CGFloat(max(1, TutorialStep.lessonCount))))
-    }
 
     var body: some View {
         ZStack {
             Circle()
                 .stroke(Color(white: 0.3), lineWidth: 2.5)
             Circle()
-                .trim(from: 0, to: progress)
+                .trim(from: 0, to: min(1, max(0, progress)))
                 .stroke(Color(white: 0.8), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: progress)

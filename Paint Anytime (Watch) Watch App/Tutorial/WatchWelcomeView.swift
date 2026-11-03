@@ -20,7 +20,8 @@ struct WatchWelcomeView: View {
                     .accessibilityHidden(!onboarding.hasCompletedWelcome || onboarding.tutorialFolder != nil)
 
                 if let tutorialFolder = onboarding.tutorialFolder {
-                    TutorialPlayerView(folder: tutorialFolder) {
+                    TutorialPlayerView(folder: tutorialFolder, chapters: onboarding.tutorialChapters,
+                                       onCompleteChapter: onboarding.completeChapter) {
                         onboarding.finishTutorial()
                     }
                     .id(tutorialFolder)
@@ -128,7 +129,8 @@ struct TutorialMenuPresentation: View {
     let onFinish: () -> Void
     var body: some View {
         WatchAppSettingsView(controller: controller, viewportSize: viewportSize, onOpenDrawings: onOpenDrawings,
-                             onStartTutorial: { onboarding.requestTutorial() }, onClose: onFinish)
+                             onStartTutorial: { onboarding.requestTutorial(chapters: $0) },
+                             completedTutorialChapters: onboarding.completedChapters, onClose: onFinish)
         // Block repeated taps without dimming every menu row before dismissal.
         .allowsHitTesting(!onboarding.preparesTutorial)
         .preferredColorScheme(.dark)

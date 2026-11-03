@@ -21,7 +21,9 @@ final class TutorialSession: ObservableObject {
     var instruction: String {
         switch step {
         case .holdCircle where releasedCircleEarly: return L10n.text("Hold your finger at the end.")
-        case .selectColor where toolPage != 1: return L10n.text("Open Color, then turn the Crown.")
+        case .selectColor where toolPage != 1, .pickColor where toolPage != 1:
+            return L10n.text("Open Color, then turn the Crown.")
+        case .chooseReed where toolPage != 2: return L10n.text("Open Tool and choose Reed pen.")
         case .openWidth where toolPage != 1: return L10n.text("Open Width.")
         case .setWidth where toolPage != 0: return L10n.text("Open Width, then turn the Crown.")
         case .openOpacity where toolIsEraser, .setOpacity where toolIsEraser:
@@ -59,7 +61,8 @@ final class TutorialSession: ObservableObject {
     @Published private(set) var crownPracticedSteps: Set<TutorialStep> = []
     var crownHintIsSubtle: Bool { !crownPracticedSteps.isEmpty }
     var showsCrownHint: Bool {
-        suggestsCrownRotation && !crownPracticedSteps.contains(step) && (step == .selectReed || crownPracticedSteps.count < 3)
+        suggestsCrownRotation && !crownPracticedSteps.contains(step)
+            && (step == .selectReed || step == .chooseReed || crownPracticedSteps.count < 3)
     }
 
     func usedCrown(in expectedStep: TutorialStep, velocity: Double) {
@@ -72,10 +75,10 @@ final class TutorialSession: ObservableObject {
         guard acceptsActions else { return false }
         switch step {
         case .zoomCanvas: return true
-        case .selectColor: return toolPage == 1
+        case .selectColor, .pickColor: return toolPage == 1
         case .setWidth: return toolPage == 0
         case .setOpacity: return toolPage == 5 && !toolIsEraser
-        case .selectReed: return toolPage == 2
+        case .selectReed, .chooseReed: return toolPage == 2
         case .setAngle: return toolPage == 4
         case .galleryFullscreen, .deleteDrawing: return galleryIsOpen && !galleryIsFullscreen
         default: return false
@@ -83,6 +86,12 @@ final class TutorialSession: ObservableObject {
     }
 
     var visibleToolPages: Set<Int> { progress.visibleToolPages }
+    var chapter: TutorialChapter? { progress.chapter }
+    var chapterProgress: Double { progress.chapterProgress }
+    var completedLessonCount: Int { progress.completedLessonCount }
+    var lessonCount: Int { progress.chapter?.lessons.count ?? 0 }
+    /// Changes whenever the following chapter begins, so the player can reset its canvas.
+    @Published private(set) var chapterRevision = 0
 
     func permits(_ steps: Set<TutorialStep>) -> Bool {
         !isActive || (acceptsActions && steps.contains(step))
@@ -100,9 +109,9 @@ final class TutorialSession: ObservableObject {
         "session=\(ObjectIdentifier(self)) step=\(step) instruction=\(showsInstruction) result=\(showsResult) paused=\(remindersPaused) acceptsActions=\(acceptsActions) allowsDrawing=\(allowsDrawing) count=\(progress.count)"
     }
 
-    func start() {
+    func start(chapters: [TutorialChapter] = TutorialChapter.allCases) {
         cancelPendingAdvance()
-        progress.start()
+        progress.start(chapters: chapters)
         releasedCircleEarly = false
         failedCircleAttempts = 0
         crownPracticedSteps = []
@@ -122,6 +131,22 @@ final class TutorialSession: ObservableObject {
         TutorialDebug.trace("beginExercise.afterHide", debugState)
         activity()
         TutorialDebug.trace("beginExercise.exit", debugState)
+    }
+
+    /// Next on a chapter result.
+    func continueToNext() {
+        guard step == .chapterComplete, acceptsActions else { return }
+        cancelPendingAdvance()
+        guard progress.continueToNext() else { return }
+        chapterRevision &+= 1
+        releasedCircleEarly = false
+        failedCircleAttempts = 0
+        toolIsEraser = false
+        toolPage = 1
+        galleryIsOpen = false
+        galleryIsFullscreen = false
+        showsInstruction = false
+        activity()
     }
 
     func finishedCircleAttempt(kind: ShapeRecognizer.Kind?, isStrokeComplete: Bool = true) {
@@ -221,7 +246,7 @@ final class TutorialSession: ObservableObject {
     }
 
     private func advance() {
-        guard step != .inactive, step != .finished else { return }
+        guard step != .inactive, !step.isResult else { return }
         cancelPendingAdvance()
         progress.advance()
         showsInstruction = false

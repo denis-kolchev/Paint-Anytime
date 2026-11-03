@@ -3,6 +3,7 @@ import WatchKit
 
 struct TutorialPlayerView: View {
     let folder: URL
+    let onCompleteChapter: (TutorialChapter) -> Void
     let onFinish: () -> Void
     @StateObject private var player: TutorialPlayerController
     private var tutorial: TutorialSession { player.tutorial }
@@ -24,10 +25,13 @@ struct TutorialPlayerView: View {
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
 
-    init(folder: URL, onFinish: @escaping () -> Void) {
+    init(folder: URL, chapters: [TutorialChapter] = TutorialChapter.allCases,
+         onCompleteChapter: @escaping (TutorialChapter) -> Void = { _ in },
+         onFinish: @escaping () -> Void) {
         self.folder = folder
+        self.onCompleteChapter = onCompleteChapter
         self.onFinish = onFinish
-        _player = StateObject(wrappedValue: TutorialPlayerController(folder: folder))
+        _player = StateObject(wrappedValue: TutorialPlayerController(folder: folder, chapters: chapters))
     }
 
     var body: some View {
@@ -49,6 +53,8 @@ struct TutorialPlayerView: View {
                                             acceptsInput: page == .canvas && tutorial.acceptsActions,
                                             acceptsZoomOnlyInput: page == .saved && tutorial.acceptsActions,
                                             protectedControls: canvasProtectedControls, isMovingCanvas: $isMovingCanvas)
+                                // A new chapter also starts from the default camera.
+                                .id(tutorial.chapterRevision)
                                 .opacity(page == .canvas || page == .saved ? 1 : 0)
                                 .allowsHitTesting((page == .canvas || page == .saved) && tutorial.acceptsActions)
                                 .accessibilityHidden(page != .canvas && page != .saved)
@@ -174,7 +180,7 @@ struct TutorialPlayerView: View {
                     if page == .menu {
                         WatchAppSettingsView(controller: controller, viewportSize: screen.size,
                                              onOpenDrawings: { player.openGallery() },
-                                             onStartTutorial: {},
+                                             onStartTutorial: { _ in },
                                              tutorial: tutorial)
                     }
 
@@ -366,13 +372,13 @@ struct TutorialPlayerView: View {
             player.startOrResume()
         }
         .onChange(of: tutorial.step) { _, step in
-            if step == .history { player.lasso.deactivate() }
-            guard step == .holdCircle,
-                  let red = InkPreset.all.first(where: { $0.nameKey == "Red" }) else { return }
-            var style = controller.pencilStyle
-            style.color = red.rgba
-            style.opacity = 1
-            controller.pencilStyle = style
+            if ![.selectLasso, .transformLasso, .finishLasso].contains(step), player.lasso.isActive {
+                player.lasso.deactivate()
+            }
+            if step == .chapterComplete || step == .finished, let chapter = tutorial.chapter {
+                onCompleteChapter(chapter)
+            }
+            applyCircleInk(for: step)
         }
         .task(id: tutorial.step) {
             guard tutorial.step == .history else { return }
@@ -396,6 +402,12 @@ struct TutorialPlayerView: View {
                     shareEmphasizesExit.toggle()
                 }
             } catch {}
+        }
+        .onChange(of: tutorial.chapterRevision) { _, _ in
+            isMovingCanvas = false
+            player.beginChapter()
+            // The step change may be handled first; the reset must not drop the lesson ink.
+            applyCircleInk(for: tutorial.step)
         }
         .onChange(of: page) { _, page in
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
@@ -423,6 +435,16 @@ struct TutorialPlayerView: View {
         )) {
             Button(L10n.text("OK"), role: .cancel) { player.dismissSaveError() }
         } message: { Text(player.saveError ?? "") }
+    }
+
+    /// The circle exercise uses the guide's red ink.
+    private func applyCircleInk(for step: TutorialStep) {
+        guard step == .holdCircle,
+              let red = InkPreset.all.first(where: { $0.nameKey == "Red" }) else { return }
+        var style = controller.pencilStyle
+        style.color = red.rgba
+        style.opacity = 1
+        controller.pencilStyle = style
     }
 
     private var showsCircleGuide: Bool {
@@ -531,7 +553,7 @@ struct TutorialPlayerView: View {
                 Spacer()
             }
         }
-        if page == .canvas && (tutorial.step == .clearCanvas || tutorial.step == .finished) {
+        if page == .canvas && tutorial.step == .clearCanvas {
             Group {
                 HStack {
                     Button {

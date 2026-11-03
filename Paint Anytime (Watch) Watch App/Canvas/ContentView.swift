@@ -156,7 +156,8 @@ struct ContentView: View {
         .overlay {
             if showsAppSettings, let folder = menuOnboarding.tutorialFolder {
                 NavigationStack {
-                    TutorialPlayerView(folder: folder) {
+                    TutorialPlayerView(folder: folder, chapters: menuOnboarding.tutorialChapters,
+                                       onCompleteChapter: menuOnboarding.completeChapter) {
                         showsAppSettings = false
                     }
                     .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)

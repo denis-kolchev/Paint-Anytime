@@ -15,10 +15,13 @@ final class TutorialPlayerController: ObservableObject {
     @Published private(set) var saveError: String?
     private var didConfirmClear = false
     private let folder: URL
+    private let chapters: [TutorialChapter]
+    private var initialStyle = PencilStyle()
     private var subscriptions: Set<AnyCancellable> = []
 
-    init(folder: URL) {
+    init(folder: URL, chapters: [TutorialChapter] = TutorialChapter.allCases) {
         self.folder = folder
+        self.chapters = chapters
         // The view observes this controller; nested objects still drive all UI updates.
         tutorial.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &subscriptions)
@@ -34,13 +37,23 @@ final class TutorialPlayerController: ObservableObject {
             canvas.setSynchronizeWidth(true)
             canvas.setSynchronizeColor(true)
             canvas.setSynchronizeOpacity(true)
-            tutorial.start()
+            initialStyle = canvas.pencilStyle
+            tutorial.start(chapters: chapters)
         } else { tutorial.resumeReminders() }
     }
 
     func setActive(_ active: Bool) {
         if active { tutorial.resumeReminders() }
         else { tutorial.pauseReminders(); canvas.cancelStroke() }
+    }
+
+    /// Chapters stay independent: each one starts on a clean canvas with the default brush.
+    func beginChapter() {
+        canvas.cancelStroke()
+        lasso.deactivate()
+        canvas.clear()
+        canvas.pencilStyle = initialStyle
+        page = .canvas
     }
 
     func openLasso() {
