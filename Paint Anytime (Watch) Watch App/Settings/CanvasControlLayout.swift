@@ -1,5 +1,21 @@
 import Foundation
 
+/// Decodes the stored layout once per distinct value. Views read the layout many
+/// times per body evaluation; comparing the small stored Data is far cheaper than
+/// JSON decoding. Not observable: it memoizes a value SwiftUI already tracks.
+final class CanvasControlLayoutCache {
+    private var data: Data?
+    private var layout: CanvasControlLayout?
+
+    func layout(for data: Data) -> CanvasControlLayout? {
+        if data != self.data {
+            self.data = data
+            layout = CanvasControlLayout.decode(data)
+        }
+        return layout
+    }
+}
+
 /// Slots: 0 top right, 1...4 bottom row, 5 top left. Version 1 stored only
 /// the first five and kept More fixed at the top left.
 struct CanvasControlLayout: Codable, Equatable {

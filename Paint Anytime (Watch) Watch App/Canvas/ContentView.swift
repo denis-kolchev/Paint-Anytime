@@ -22,8 +22,9 @@ struct ContentView: View {
     @AppStorage(WatchSketchAssist.phoneAvailabilityKey) private var sketchAssistOnPhone = false
     @State private var showsSketchAssistRequirements = false
     @Environment(\.openURL) private var openURL
+    @State private var layoutCache = CanvasControlLayoutCache()
     private var customLayout: CanvasControlLayout? {
-        customLayoutEnabled ? CanvasControlLayout.decode(controlLayoutData) : nil
+        customLayoutEnabled ? layoutCache.layout(for: controlLayoutData) : nil
     }
     /// The built-in controls are the morph menus; any other arrangement is a custom layout.
     private var usesMorphToolbar: Bool { customLayout == nil }
