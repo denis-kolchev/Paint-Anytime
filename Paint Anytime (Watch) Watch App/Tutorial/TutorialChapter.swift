@@ -48,8 +48,12 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
                            .reedStrokes])
         ]
         case .composition: [
-            // Draw first, so the selection lesson never relies on an earlier chapter's artwork.
-            Lesson(steps: [.firstStrokes, .openLasso, .selectLasso, .transformLasso, .finishLasso])
+            // Draw first, so the layer lessons never rely on an earlier chapter's artwork.
+            Lesson(steps: [.firstStrokes, .openLayers, .openLayerSettings, .lockTransparency,
+                           .closeLayerSettings, .closeLayers]),
+            Lesson(steps: [.openTools, .pickColor, .closeTools, .paintOverStroke]),
+            Lesson(steps: [.openLayers, .addLayer, .closeLayers, .drawOnLayer]),
+            Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso])
         ]
         }
     }

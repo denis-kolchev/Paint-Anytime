@@ -5,6 +5,11 @@ import WatchKit
 struct WatchLayersView: View {
     @ObservedObject var controller: CanvasController
     let canvasSize: CGSize
+    @ObservedObject var tutorial: TutorialSession = .inactive
+    /// The tutorial hosts this list in its own navigation stack and pages.
+    var embedsNavigation = true
+    var onEditLayer: ((UUID) -> Void)? = nil
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     private let rowSpacing: CGFloat = 4
     @State private var editingLayer: UUID?
     @State private var pendingLayerDeletion: UUID?
@@ -42,190 +47,201 @@ struct WatchLayersView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(spacing: rowSpacing) {
-                        ForEach(Array(controller.document.layers.reversed())) { layer in
-                            ZStack {
-                                layerRow(layer)
-                                    .offset(y: rowOffset(layer.id))
-                                    .animation(
-                                        layer.id == draggedLayer || reduceMotion ? nil : .easeInOut(duration: 0.18),
-                                        value: reorderTarget
-                                    )
-                                    .scaleEffect(draggedLayer == layer.id && !reduceMotion ? 1.04 : 1)
-                            }
-                                // Scroll targets and measurements must use the stationary slot.
-                                .id(layer.id)
-                                // Measure the layout slot, outside the visual drag/preview transforms.
-                                .background {
-                                    GeometryReader { geometry in
-                                        Color.clear.preference(key: LayerRowFrames.self,
-                                            value: [layer.id: geometry.frame(in: .global)])
-                                    }
+        if embedsNavigation {
+            NavigationStack { layerList }
+        } else {
+            layerList
+        }
+    }
+
+    private var layerList: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(spacing: rowSpacing) {
+                    ForEach(Array(controller.document.layers.reversed())) { layer in
+                        ZStack {
+                            layerRow(layer)
+                                .offset(y: rowOffset(layer.id))
+                                .animation(
+                                    layer.id == draggedLayer || reduceMotion ? nil : .easeInOut(duration: 0.18),
+                                    value: reorderTarget
+                                )
+                                .scaleEffect(draggedLayer == layer.id && !reduceMotion ? 1.04 : 1)
+                        }
+                            // Scroll targets and measurements must use the stationary slot.
+                            .id(layer.id)
+                            // Measure the layout slot, outside the visual drag/preview transforms.
+                            .background {
+                                GeometryReader { geometry in
+                                    Color.clear.preference(key: LayerRowFrames.self,
+                                        value: [layer.id: geometry.frame(in: .global)])
                                 }
-                                .zIndex(draggedLayer == layer.id ? 1 : 0)
-                        }
-                        LayerCard(title: L10n.text("Canvas"), canvasSize: canvasSize,
-                                  onSelect: nil,
-                                  onEdit: { showsPaperEditor = true }) {
-                            CanvasBackgroundPreview(color: controller.document.effectiveBackgroundColor)
-                                .aspectRatio(previewAspectRatio, contentMode: .fit)
-                        }
-                        .id(canvasRowID)
-                        .background {
-                            GeometryReader { geometry in
-                                Color.clear.preference(key: LayerRowFrames.self,
-                                    value: [canvasRowID: geometry.frame(in: .global)])
                             }
-                        }
+                            .zIndex(draggedLayer == layer.id ? 1 : 0)
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 8)
-                    .id(contentID)
+                    LayerCard(title: L10n.text("Canvas"), canvasSize: canvasSize,
+                              onSelect: nil,
+                              onEdit: { if !tutorial.isActive { showsPaperEditor = true } }) {
+                        CanvasBackgroundPreview(color: controller.document.effectiveBackgroundColor)
+                            .aspectRatio(previewAspectRatio, contentMode: .fit)
+                    }
+                    .id(canvasRowID)
                     .background {
                         GeometryReader { geometry in
-                            Color.clear.preference(key: LayerContentFrame.self,
-                                                   value: geometry.frame(in: .global))
+                            Color.clear.preference(key: LayerRowFrames.self,
+                                value: [canvasRowID: geometry.frame(in: .global)])
                         }
                     }
                 }
-                .onPreferenceChange(LayerContentFrame.self) { contentFrame = $0 }
-                .scrollDisabled(isReordering)
-                // One touch observer handles scrolling and held-layer movement
-                // across the whole list, including card buttons and empty space.
-                .simultaneousGesture(layerListGesture)
-                .task(id: pendingLayerHold) {
-                    guard let id = pendingLayerHold else { return }
-                    do { try await Task.sleep(for: .milliseconds(450)) } catch { return }
-                    guard !Task.isCancelled, isTouchingLayers,
-                          pendingLayerHold == id, let location = touchLocation,
-                          let frame = rowFrames[id] else { return }
-                    var transaction = Transaction(animation: nil)
-                    transaction.disablesAnimations = true
-                    withTransaction(transaction) {
-                        controller.selectLayer(id)
-                        selectionBlockedUntil = .distantFuture
-                        draggedLayer = id
-                        dragGrabOffset = location.y - frame.midY
-                        dragLocationY = location.y
-                    }
-                }
-                .onGeometryChange(for: CGRect.self) { geometry in
-                    let frame = geometry.frame(in: .global)
-                    return CGRect(x: frame.minX, y: frame.minY + geometry.safeAreaInsets.top,
-                                  width: frame.width,
-                                  height: max(0, frame.height
-                                      - geometry.safeAreaInsets.top - geometry.safeAreaInsets.bottom))
-                } action: { scrollViewport = $0 }
-                .onPreferenceChange(LayerRowFrames.self) {
-                    rowFrames = $0
-                    updateDragPosition()
-                }
-                .modifier(LayerScrollPositionModifier(request: autoScrollRequest,
-                                                       fingerRequest: fingerScrollRequest,
-                                                       currentOffset: $scrollContentOffset))
-                .onChange(of: fingerScrollRequest) { _, request in
-                    // Older watchOS can align the entire content to an arbitrary
-                    // anchor, which also gives continuous finger scrolling.
-                    if #available(watchOS 11.0, *) { return }
-                    guard let request else { return }
-                    let maximum = max(0, contentFrame.height - scrollViewport.height)
-                    guard maximum > 0 else { return }
-                    let fraction = min(1, max(0, request.offset / maximum))
-                    withAnimation(request.animated && !reduceMotion ? .easeOut(duration: 0.25) : nil) {
-                        proxy.scrollTo(contentID, anchor: UnitPoint(x: 0.5, y: fraction))
-                    }
-                }
-                .onReceive(scrollClock) { now in
-                    guard let velocity = autoScrollVelocity else {
-                        heldEdge = nil
-                        edgeEnteredAt = nil
-                        lastScrollTick = nil
-                        return
-                    }
-                    let direction = velocity < 0 ? -1 : 1
-                    if heldEdge != direction {
-                        heldEdge = direction
-                        edgeEnteredAt = now
-                        lastScrollTick = nil
-                        return
-                    }
-                    guard let edgeEnteredAt, now.timeIntervalSince(edgeEnteredAt) >= 0.45 else { return }
-                    if #available(watchOS 11.0, *) {
-                        let elapsed = min(0.1, now.timeIntervalSince(lastScrollTick ?? now.addingTimeInterval(-1.0 / 30)))
-                        autoScrollRequest += velocity * CGFloat(elapsed)
-                        lastScrollTick = now
-                    } else {
-                        // Older watches scroll by rows; vary the interval with the same speed curve.
-                        let rowHeight = draggedLayer.flatMap { rowFrames[$0]?.height } ?? 60
-                        let interval = Double((rowHeight + rowSpacing) / abs(velocity))
-                        guard now.timeIntervalSince(lastScrollTick ?? .distantPast) >= interval else { return }
-                        scrollDuringDrag(direction: direction, proxy: proxy)
-                        lastScrollTick = now
+                .padding(.horizontal, 6)
+                .padding(.top, 8)
+                // Keep the last card scrollable above the tutorial's lesson card.
+                .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight + 8 : 8)
+                .id(contentID)
+                .background {
+                    GeometryReader { geometry in
+                        Color.clear.preference(key: LayerContentFrame.self,
+                                               value: geometry.frame(in: .global))
                     }
                 }
             }
-            .onChange(of: isTouchingLayers) { _, active in
-                if !active {
-                    if draggedLayer != nil {
-                        selectionBlockedUntil = Date().addingTimeInterval(0.2)
-                    }
-                    resetDrag()
+            .onPreferenceChange(LayerContentFrame.self) { contentFrame = $0 }
+            .scrollDisabled(isReordering)
+            // One touch observer handles scrolling and held-layer movement
+            // across the whole list, including card buttons and empty space.
+            .simultaneousGesture(layerListGesture)
+            .task(id: pendingLayerHold) {
+                guard let id = pendingLayerHold else { return }
+                do { try await Task.sleep(for: .milliseconds(450)) } catch { return }
+                guard !Task.isCancelled, isTouchingLayers,
+                      pendingLayerHold == id, let location = touchLocation,
+                      let frame = rowFrames[id] else { return }
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    controller.selectLayer(id)
+                    selectionBlockedUntil = .distantFuture
+                    draggedLayer = id
+                    dragGrabOffset = location.y - frame.midY
+                    dragLocationY = location.y
                 }
             }
-            .onDisappear { resetDrag() }
-            .navigationTitle(L10n.text("Layers"))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        controller.addLayer()
-                    } label: { Image(systemName: "plus") }
-                    .accessibilityLabel(L10n.text("Add layer"))
+            .onGeometryChange(for: CGRect.self) { geometry in
+                let frame = geometry.frame(in: .global)
+                return CGRect(x: frame.minX, y: frame.minY + geometry.safeAreaInsets.top,
+                              width: frame.width,
+                              height: max(0, frame.height
+                                  - geometry.safeAreaInsets.top - geometry.safeAreaInsets.bottom))
+            } action: { scrollViewport = $0 }
+            .onPreferenceChange(LayerRowFrames.self) {
+                rowFrames = $0
+                updateDragPosition()
+            }
+            .modifier(LayerScrollPositionModifier(request: autoScrollRequest,
+                                                   fingerRequest: fingerScrollRequest,
+                                                   currentOffset: $scrollContentOffset))
+            .onChange(of: fingerScrollRequest) { _, request in
+                // Older watchOS can align the entire content to an arbitrary
+                // anchor, which also gives continuous finger scrolling.
+                if #available(watchOS 11.0, *) { return }
+                guard let request else { return }
+                let maximum = max(0, contentFrame.height - scrollViewport.height)
+                guard maximum > 0 else { return }
+                let fraction = min(1, max(0, request.offset / maximum))
+                withAnimation(request.animated && !reduceMotion ? .easeOut(duration: 0.25) : nil) {
+                    proxy.scrollTo(contentID, anchor: UnitPoint(x: 0.5, y: fraction))
                 }
             }
-            .navigationDestination(isPresented: Binding(
-                get: { editingLayer != nil }, set: { if !$0 { editingLayer = nil } }
-            )) {
-                if let id = editingLayer {
-                    LayerSettingsView(controller: controller, layerID: id, canvasSize: canvasSize)
+            .onReceive(scrollClock) { now in
+                guard let velocity = autoScrollVelocity else {
+                    heldEdge = nil
+                    edgeEnteredAt = nil
+                    lastScrollTick = nil
+                    return
+                }
+                let direction = velocity < 0 ? -1 : 1
+                if heldEdge != direction {
+                    heldEdge = direction
+                    edgeEnteredAt = now
+                    lastScrollTick = nil
+                    return
+                }
+                guard let edgeEnteredAt, now.timeIntervalSince(edgeEnteredAt) >= 0.45 else { return }
+                if #available(watchOS 11.0, *) {
+                    let elapsed = min(0.1, now.timeIntervalSince(lastScrollTick ?? now.addingTimeInterval(-1.0 / 30)))
+                    autoScrollRequest += velocity * CGFloat(elapsed)
+                    lastScrollTick = now
+                } else {
+                    // Older watches scroll by rows; vary the interval with the same speed curve.
+                    let rowHeight = draggedLayer.flatMap { rowFrames[$0]?.height } ?? 60
+                    let interval = Double((rowHeight + rowSpacing) / abs(velocity))
+                    guard now.timeIntervalSince(lastScrollTick ?? .distantPast) >= interval else { return }
+                    scrollDuringDrag(direction: direction, proxy: proxy)
+                    lastScrollTick = now
                 }
             }
-            .fullScreenCover(isPresented: Binding(
-                get: { pendingLayerDeletion != nil },
-                set: { if !$0 { pendingLayerDeletion = nil } }
-            )) {
-                DestructiveConfirmationView(title: L10n.text("Delete this layer?"), confirmTitle: L10n.text("Delete")) {
-                    pendingLayerDeletion = nil
-                } onConfirm: {
-                    if let id = pendingLayerDeletion { controller.deleteLayer(id) }
-                    pendingLayerDeletion = nil
+        }
+        .onChange(of: isTouchingLayers) { _, active in
+            if !active {
+                if draggedLayer != nil {
+                    selectionBlockedUntil = Date().addingTimeInterval(0.2)
                 }
+                resetDrag()
             }
-            .navigationDestination(isPresented: $showsPaperEditor) {
-                LayerSettingsView(controller: controller, layerID: nil, canvasSize: canvasSize)
+        }
+        .onDisappear { resetDrag() }
+        .navigationTitle(L10n.text("Layers"))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    guard tutorial.permits([.addLayer]) else { return }
+                    controller.addLayer()
+                    tutorial.record(.addedLayer)
+                } label: { Image(systemName: "plus").tutorialHint(tutorial, steps: [.addLayer]) }
+                .disabled(!tutorial.permits([.addLayer]))
+                .accessibilityLabel(L10n.text("Add layer"))
             }
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { editingLayer != nil }, set: { if !$0 { editingLayer = nil } }
+        )) {
+            if let id = editingLayer {
+                LayerSettingsView(controller: controller, layerID: id, canvasSize: canvasSize)
+            }
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { pendingLayerDeletion != nil },
+            set: { if !$0 { pendingLayerDeletion = nil } }
+        )) {
+            DestructiveConfirmationView(title: L10n.text("Delete this layer?"), confirmTitle: L10n.text("Delete")) {
+                pendingLayerDeletion = nil
+            } onConfirm: {
+                if let id = pendingLayerDeletion { controller.deleteLayer(id) }
+                pendingLayerDeletion = nil
+            }
+        }
+        .navigationDestination(isPresented: $showsPaperEditor) {
+            LayerSettingsView(controller: controller, layerID: nil, canvasSize: canvasSize)
         }
     }
 
     private func layerRow(_ layer: CanvasLayer) -> some View {
         LayerCard(title: layer.displayName, canvasSize: canvasSize, onSelect: {
-            guard draggedLayer == nil, !isReordering,
+            guard draggedLayer == nil, !isReordering, !tutorial.isActive,
                   Date() >= selectionBlockedUntil else { return }
             controller.selectLayer(layer.id)
         }, onEdit: {
-            guard draggedLayer == nil, !isReordering,
+            guard draggedLayer == nil, !isReordering, tutorial.permits([.openLayerSettings]),
                   Date() >= selectionBlockedUntil else { return }
-            editingLayer = layer.id
-        }) {
+            if let onEditLayer { onEditLayer(layer.id) } else { editingLayer = layer.id }
+        }, tutorial: controller.selectedLayer.id == layer.id ? tutorial : .inactive) {
             LayerThumbnail(layer: layer, canvasSize: canvasSize)
         }
         .accessibilityAddTraits(controller.selectedLayer.id == layer.id ? [.isSelected] : [])
         .accessibilityAction(named: Text(L10n.text("Move up"))) { move(layer.id, up: true) }
         .accessibilityAction(named: Text(L10n.text("Move down"))) { move(layer.id, up: false) }
         .accessibilityActions {
-            if controller.document.layers.count > 1 {
+            if controller.document.layers.count > 1 && !tutorial.isActive {
                 Button(L10n.text("Delete")) { pendingLayerDeletion = layer.id }
             }
         }
@@ -248,7 +264,8 @@ struct WatchLayersView: View {
                     touchStart = drag.startLocation
                     fingerScrollStart = max(0, scrollContentOffset
                         ?? (scrollViewport.minY - contentFrame.minY))
-                    pendingLayerHold = rowFrames.first { id, frame in
+                    // The tutorial keeps the layer order fixed.
+                    pendingLayerHold = tutorial.isActive ? nil : rowFrames.first { id, frame in
                         id != canvasRowID && frame.contains(drag.startLocation)
                     }?.key
                 }
@@ -391,6 +408,7 @@ struct WatchLayersView: View {
     }
 
     private func move(_ id: UUID, up: Bool) {
+        guard !tutorial.isActive else { return }
         let layers = controller.document.layers
         guard let index = layers.firstIndex(where: { $0.id == id }) else { return }
         let target = index + (up ? 1 : -1)

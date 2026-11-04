@@ -7,6 +7,7 @@ struct TutorialChecks {
     @MainActor static func main() async throws {
         checkCrownPlacement()
         checkProgress()
+        checkStrokeOverlap()
         try await checkSession()
         try await checkWorkspaceAndOnboarding()
         print("PASS: tutorial rules, exploration, observation, workspace isolation, onboarding persistence")
@@ -207,6 +208,34 @@ struct TutorialChecks {
         _ = progress.record(.stroke)
         precondition(progress.record(.stroke) == .advance)
         progress.advance()
+        // Layers: lock transparency, paint inside the strokes, then draw on a new layer.
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.openLayers, .openedLayers), (.openLayerSettings, .openedLayerSettings),
+            (.lockTransparency, .lockedTransparency), (.closeLayerSettings, .closedLayerSettings),
+            (.closeLayers, .closedLayers), (.openTools, .openedTools)
+        ] {
+            precondition(progress.step == step && progress.record(event) == .advance)
+            progress.advance()
+        }
+        precondition(progress.step == .pickColor && progress.allowsToolPage(1) && !progress.allowsToolPage(0))
+        var recolored = PencilStyle()
+        recolored.color = SIMD4(0.1, 0.4, 0.9, 1)
+        precondition(progress.changedStyle(from: PencilStyle(), to: recolored, page: 1))
+        progress.advance()
+        precondition(progress.record(.closedTools) == .advance)
+        progress.advance()
+        precondition(progress.step == .paintOverStroke && progress.record(.stroke) == .none)
+        precondition(progress.record(.paintedOver) == .advance)
+        progress.advance()
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.openLayers, .openedLayers), (.addLayer, .addedLayer), (.closeLayers, .closedLayers)
+        ] {
+            precondition(progress.step == step && progress.record(event) == .advance)
+            progress.advance()
+        }
+        precondition(progress.step == .drawOnLayer && progress.record(.stroke) == .none)
+        precondition(progress.record(.stroke) == .advance)
+        progress.advance()
         precondition(progress.record(.openedLasso) == .advance)
         progress.advance()
         for _ in 0..<3 { precondition(progress.record(.failedLassoSelection) == .none) }
@@ -220,6 +249,21 @@ struct TutorialChecks {
         precondition(progress.chapter == nil)
         progress.start()
         precondition(progress.step == .firstStrokes && !progress.hasPanned && progress.chapter == .firstDrawing)
+    }
+
+    static func checkStrokeOverlap() {
+        var wide = PencilStyle()
+        wide.width = 8
+        func stroke(_ points: [SIMD2<Float>]) -> Stroke {
+            Stroke(points: points.map { PointerSample(position: $0, pressure: 1, timestamp: 0) }, style: wide)
+        }
+        let earlier = stroke([SIMD2(0, 0), SIMD2(100, 0)])
+        precondition(TutorialStrokeOverlap.paintsOver(stroke([SIMD2(50, 6), SIMD2(50, 40)]), earlier: [earlier]),
+                     "Touching the edge of a stroke counts")
+        precondition(TutorialStrokeOverlap.paintsOver(stroke([SIMD2(50, -30), SIMD2(50, 30)]), earlier: [earlier]),
+                     "A sparse stroke crossing the line counts")
+        precondition(!TutorialStrokeOverlap.paintsOver(stroke([SIMD2(0, 20), SIMD2(100, 20)]), earlier: [earlier]))
+        precondition(!TutorialStrokeOverlap.paintsOver(stroke([SIMD2(50, 0)]), earlier: []))
     }
 
     @MainActor static func checkSession() async throws {

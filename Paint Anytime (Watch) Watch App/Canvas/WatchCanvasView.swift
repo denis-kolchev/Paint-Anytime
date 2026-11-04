@@ -375,6 +375,7 @@ struct WatchCanvasView: View {
                         if controller.document.strokes.count > previousCount {
                             tutorial.finishedCircleAttempt(kind: recognizedKind)
                             tutorial.record(.stroke)
+                            tutorial.finishedStroke(in: controller.selectedLayer)
                         }
                     },
                 including: acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt ? .all : .none

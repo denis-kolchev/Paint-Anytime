@@ -4,7 +4,7 @@ import CoreGraphics
 
 @MainActor
 final class TutorialPlayerController: ObservableObject {
-    enum Page { case canvas, tools, saved, menu, gallery }
+    enum Page { case canvas, tools, saved, menu, gallery, layers, layerSettings }
 
     let tutorial = TutorialSession()
     let lasso = WatchLassoController()
@@ -13,6 +13,7 @@ final class TutorialPlayerController: ObservableObject {
     @Published private(set) var savedDrawing: CanvasExport?
     @Published var confirmsClear = false
     @Published private(set) var saveError: String?
+    @Published private(set) var editedLayerID: UUID?
     private var didConfirmClear = false
     private let folder: URL
     private let chapters: [TutorialChapter]
@@ -75,6 +76,28 @@ final class TutorialPlayerController: ObservableObject {
         canvas.cancelStroke()
         page = .tools
         tutorial.record(.openedTools)
+    }
+    func openLayers() {
+        guard page == .canvas, tutorial.permits([.openLayers]) else { return }
+        canvas.cancelStroke()
+        page = .layers
+        tutorial.record(.openedLayers)
+    }
+    func openLayerSettings(_ id: UUID) {
+        guard page == .layers, tutorial.permits([.openLayerSettings]) else { return }
+        editedLayerID = id
+        page = .layerSettings
+        tutorial.record(.openedLayerSettings)
+    }
+    func closeLayerSettings() {
+        guard page == .layerSettings, tutorial.permits([.closeLayerSettings]) else { return }
+        page = .layers
+        tutorial.record(.closedLayerSettings)
+    }
+    func closeLayers() {
+        guard page == .layers, tutorial.permits([.closeLayers]) else { return }
+        page = .canvas
+        tutorial.record(.closedLayers)
     }
     func closeTools() {
         guard page == .tools, tutorial.permits([.closeTools]) else { return }

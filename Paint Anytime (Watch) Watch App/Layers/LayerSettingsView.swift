@@ -4,6 +4,7 @@ struct LayerSettingsView: View {
     @ObservedObject var controller: CanvasController
     let layerID: UUID?
     let canvasSize: CGSize
+    @ObservedObject var tutorial: TutorialSession = .inactive
     @FocusState private var crownFocused: Bool
     @State private var opacity: Double = 1
     @State private var previewSideInset: CGFloat = 0
@@ -87,6 +88,8 @@ struct LayerSettingsView: View {
                                     .frame(width: 44, height: controlHeight)
                                     .contentShape(Rectangle())
                             }
+                            // The tutorial keeps the layer visible and its opacity unchanged.
+                            .disabled(tutorial.isActive)
                             .accessibilityLabel(L10n.text("Visible"))
                             .accessibilityAddTraits(layer.isVisible ? [.isSelected] : [])
 
@@ -103,16 +106,21 @@ struct LayerSettingsView: View {
                                 .accessibilityLabel(L10n.text("Canvas color"))
                             } else {
                                 Button {
+                                    guard tutorial.permits([.lockTransparency]) else { return }
                                     updateLayer { $0.locksTransparency.toggle() }
                                     transparencyFeedbackID = UUID()
                                     crownFocused = true
+                                    if !layer.locksTransparency { tutorial.record(.lockedTransparency) }
                                 } label: {
                                     LayerTransparencyLockIcon(isLocked: layer.locksTransparency)
                                         .font(.system(size: 23))
                                         .foregroundStyle(.white)
+                                        .tutorialHint(tutorial, steps: [.lockTransparency])
                                         .frame(width: 44, height: controlHeight)
                                         .contentShape(Rectangle())
                                 }
+                                // Once locked in the tutorial, the layer stays locked.
+                                .disabled(!tutorial.permits([.lockTransparency]))
                                 .accessibilityLabel(L10n.text("Lock transparency"))
                                 .accessibilityAddTraits(layer.locksTransparency ? [.isSelected] : [])
                             }
@@ -164,6 +172,7 @@ struct LayerSettingsView: View {
                             value: Binding(get: { opacity * 100 }, set: { setOpacity($0) }),
                             maximum: 100, colors: [.white, .black],
                             thumbColor: Color(white: 1 - opacity))
+                            .disabled(tutorial.isActive)
                             .accessibilityElement(children: .ignore)
                             .accessibilityLabel(L10n.text("Opacity"))
                             .accessibilityValue(L10n.percent(opacity))
@@ -184,7 +193,7 @@ struct LayerSettingsView: View {
             }
             .padding(.horizontal, 8)
             .ignoresSafeArea(.container, edges: .bottom)
-            .focusable()
+            .focusable(!tutorial.isActive)
             .focused($crownFocused)
             .modifier(SteppedCrownModifier(
                 value: Binding(
@@ -193,7 +202,7 @@ struct LayerSettingsView: View {
                 range: 0...100))
             .navigationTitle(layer.displayName)
             .toolbar {
-                if layerID != nil, controller.document.layers.count > 1 {
+                if layerID != nil, controller.document.layers.count > 1, !tutorial.isActive {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button(role: .destructive) {
                             showsDeleteConfirmation = true
@@ -275,7 +284,7 @@ struct LayerSettingsView: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(amount > 0 ? opacity >= 1 : opacity <= 0)
+        .disabled(tutorial.isActive || (amount > 0 ? opacity >= 1 : opacity <= 0))
         .accessibilityLabel(L10n.text("Opacity") + (amount > 0 ? " +1" : " −1"))
     }
 

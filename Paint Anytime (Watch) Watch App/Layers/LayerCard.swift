@@ -6,6 +6,7 @@ struct LayerCard<Preview: View>: View {
     let canvasSize: CGSize
     let onSelect: (() -> Void)?
     let onEdit: () -> Void
+    var tutorial: TutorialSession = .inactive
     @ViewBuilder let preview: () -> Preview
 
     private let previewHeight: CGFloat = 52
@@ -37,6 +38,7 @@ struct LayerCard<Preview: View>: View {
                 Button(action: onEdit) {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 15, weight: .semibold))
+                        .tutorialHint(tutorial, steps: [.openLayerSettings])
                         .frame(width: 30, height: previewHeight)
                         .contentShape(Rectangle())
                 }

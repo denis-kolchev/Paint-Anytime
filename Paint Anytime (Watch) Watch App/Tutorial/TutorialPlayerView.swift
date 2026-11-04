@@ -138,6 +138,27 @@ struct TutorialPlayerView: View {
                                 .transition(.opacity)
                                 .zIndex(1)
                             }
+                            if page == .layers {
+                                WatchLayersView(controller: controller,
+                                                canvasSize: controller.document.size(fallback: geometry.size),
+                                                tutorial: tutorial, embedsNavigation: false,
+                                                onEditLayer: { id in
+                                                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                                        player.openLayerSettings(id)
+                                                    }
+                                                })
+                                .background(Color.black.ignoresSafeArea())
+                                .transition(.opacity)
+                                .zIndex(1)
+                            }
+                            if page == .layerSettings {
+                                LayerSettingsView(controller: controller, layerID: player.editedLayerID,
+                                                  canvasSize: controller.document.size(fallback: geometry.size),
+                                                  tutorial: tutorial)
+                                .background(Color.black.ignoresSafeArea())
+                                .transition(.opacity)
+                                .zIndex(1)
+                            }
                             if page == .gallery {
                                 SavedDrawingsView(tutorial: tutorial, galleryFolder: folder, onClose: {
                                     withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
@@ -283,6 +304,24 @@ struct TutorialPlayerView: View {
                             .accessibilityHidden(!tutorial.permits([.shareDrawing]))
                         }
                     }
+                    if page == .layers || page == .layerSettings {
+                        ToolbarItem(placement: .topBarLeading) {
+                            let back: Set<TutorialStep> = page == .layers ? [.closeLayers] : [.closeLayerSettings]
+                            Button {
+                                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                    if page == .layers { player.closeLayers() } else { player.closeLayerSettings() }
+                                }
+                            } label: {
+                                Image(systemName: "chevron.backward")
+                                    .tutorialHint(tutorial, steps: back)
+                                    .frame(width: 32, height: 32)
+                                    .contentShape(Circle())
+                            }
+                            .watchToolbarButtonStyle()
+                            .disabled(!tutorial.permits(back))
+                            .accessibilityLabel(L10n.text("Back"))
+                        }
+                    }
                     if page == .canvas && tutorial.permits([.openMenu]) {
                         ToolbarItem(placement: .topBarLeading) {
                             Button { player.openMenu() } label: {
@@ -328,7 +367,8 @@ struct TutorialPlayerView: View {
         // Native menu and palette content start below the navigation toolbar.
         // Their full-height layouts extend through the bottom safe area,
         // with the lesson card layered above rather than reserving space.
-        .ignoresSafeArea(.container, edges: page == .menu || tutorial.isPaletteLesson ? .bottom : .all)
+        .ignoresSafeArea(.container, edges: [.menu, .layers, .layerSettings].contains(page)
+                         || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
             if height > 0 { hintHeight = height }
         }
@@ -379,6 +419,7 @@ struct TutorialPlayerView: View {
                 onCompleteChapter(chapter)
             }
             applyCircleInk(for: step)
+            applyLayerBrush(for: step)
         }
         .task(id: tutorial.step) {
             guard tutorial.step == .history else { return }
@@ -408,6 +449,7 @@ struct TutorialPlayerView: View {
             player.beginChapter()
             // The step change may be handled first; the reset must not drop the lesson ink.
             applyCircleInk(for: tutorial.step)
+            applyLayerBrush(for: tutorial.step)
         }
         .onChange(of: page) { _, page in
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
@@ -447,6 +489,14 @@ struct TutorialPlayerView: View {
         controller.pencilStyle = style
     }
 
+    /// Layer lessons use a wide brush so painting inside earlier strokes stays visible.
+    private func applyLayerBrush(for step: TutorialStep) {
+        guard tutorial.chapter == .composition, step == .firstStrokes else { return }
+        var style = controller.pencilStyle
+        style.width = 8
+        controller.pencilStyle = style
+    }
+
     private var showsCircleGuide: Bool {
         page == .canvas && tutorial.step == .holdCircle
             && !tutorial.showsResult && !tutorial.remindersPaused
@@ -482,7 +532,7 @@ struct TutorialPlayerView: View {
         return controls.filter { control, _ in
             switch control {
             case .morph, .contentMorph, .custom: return false
-            case .canvasToolsMorph: return tutorial.permits([.openLasso])
+            case .canvasToolsMorph: return tutorial.permits([.openLasso, .openLayers])
             case .tools: return showsPrimaryControl
             case .more: return tutorial.permits([.openMenu])
             case .undo, .redo: return tutorial.permits([.history])
@@ -549,6 +599,23 @@ struct TutorialPlayerView: View {
                 .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
                 .disabled(!tutorial.permits([.openLasso]))
                 .accessibilityLabel(L10n.text("Lasso"))
+                .trackCanvasControl(.canvasToolsMorph, frames: $controls)
+                Spacer()
+            }
+        }
+        if page == .canvas && tutorial.step == .openLayers {
+            HStack {
+                Button {
+                    isMovingCanvas = false
+                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                        player.openLayers()
+                    }
+                } label: {
+                    Image(systemName: "square.3.layers.3d").tutorialHint(tutorial, steps: [.openLayers])
+                }
+                .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
+                .disabled(!tutorial.permits([.openLayers]))
+                .accessibilityLabel(L10n.text("Layers"))
                 .trackCanvasControl(.canvasToolsMorph, frames: $controls)
                 Spacer()
             }

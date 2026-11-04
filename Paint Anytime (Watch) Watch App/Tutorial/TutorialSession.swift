@@ -48,7 +48,7 @@ final class TutorialSession: ObservableObject {
     @Published private(set) var showsResult = false
     var isActive: Bool { step != .inactive }
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
-    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .openLasso, .history, .clearCanvas, .saveDrawing, .shareDrawing, .openMenu]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .paintOverStroke, .drawOnLayer, .openLasso, .history, .clearCanvas, .saveDrawing, .shareDrawing, .openMenu]) }
     var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
@@ -149,6 +149,13 @@ final class TutorialSession: ObservableObject {
         galleryIsFullscreen = false
         showsInstruction = false
         activity()
+    }
+
+    /// The overlap lesson completes once a stroke reaches the shape of an earlier one.
+    func finishedStroke(in layer: CanvasLayer) {
+        guard step == .paintOverStroke, acceptsActions, let stroke = layer.strokes.last,
+              TutorialStrokeOverlap.paintsOver(stroke, earlier: Array(layer.strokes.dropLast())) else { return }
+        record(.paintedOver)
     }
 
     func finishedCircleAttempt(kind: ShapeRecognizer.Kind?, isStrokeComplete: Bool = true) {

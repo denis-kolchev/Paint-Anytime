@@ -1,4 +1,5 @@
 import Foundation
+import simd
 
 enum TutorialStep: Int, CaseIterable {
     case inactive = 0
@@ -8,6 +9,8 @@ enum TutorialStep: Int, CaseIterable {
     case openWidth, setWidth, openOpacity, setOpacity, openTool
     case selectReed, chooseReed, openAngle, setAngle, closeTools, reedStrokes
     case chooseFill, fillCanvas
+    case openLayers, openLayerSettings, lockTransparency, closeLayerSettings, closeLayers
+    case paintOverStroke, addLayer, drawOnLayer
     case openLasso, selectLasso, transformLasso, finishLasso
     case history, saveDrawing, shareDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
@@ -35,6 +38,8 @@ struct TutorialProgress {
         case galleryFullscreen, deleted, returnedToCanvas, cleared
         case reachedAddColor, returnedToColorSelection, openedColorList, browsedPalettes, foundNewPalette
         case returnedToPalettes
+        case openedLayers, openedLayerSettings, lockedTransparency, closedLayerSettings, closedLayers
+        case paintedOver, addedLayer
         case createdPalette, openedColorEditor, adjustedColor, savedColor
     }
     enum Effect: Equatable {
@@ -143,7 +148,7 @@ struct TutorialProgress {
         case (.createPalette, .returnedToPalettes):
             returnTo(.findNewPalette)
             return .none
-        case (.firstStrokes, .stroke), (.history, .history):
+        case (.firstStrokes, .stroke), (.history, .history), (.drawOnLayer, .stroke):
             count += 1
             return count >= 2 ? .advance : .none
         case (.panCanvas, .panned):
@@ -170,7 +175,10 @@ struct TutorialProgress {
              (.saveDrawing, .saved), (.shareDrawing, .closedSave), (.openMenu, .openedMenu),
              (.openGallery, .openedGallery), (.galleryFullscreen, .galleryFullscreen),
              (.deleteDrawing, .deleted), (.returnToCanvas, .returnedToCanvas),
-             (.fillCanvas, .filled): return .advance
+             (.fillCanvas, .filled), (.openLayers, .openedLayers),
+             (.openLayerSettings, .openedLayerSettings), (.lockTransparency, .lockedTransparency),
+             (.closeLayerSettings, .closedLayerSettings), (.closeLayers, .closedLayers),
+             (.paintOverStroke, .paintedOver), (.addLayer, .addedLayer): return .advance
         default: break
         }
         return .none
@@ -211,5 +219,49 @@ struct TutorialProgress {
             return step == .setAngle && page == 4 && old.reedAngle != style.reedAngle
         default: return false
         }
+    }
+}
+
+/// Whether a new stroke touches the painted shape of earlier strokes on the same layer.
+enum TutorialStrokeOverlap {
+    static func paintsOver(_ stroke: Stroke, earlier: [Stroke]) -> Bool {
+        let path = segments(stroke)
+        return earlier.contains { old in
+            let reach = (stroke.style.width + old.style.width) / 2
+            let oldPath = segments(old)
+            return path.contains { segment in
+                oldPath.contains { distance(segment, $0) <= reach }
+            }
+        }
+    }
+
+    private typealias Segment = (start: SIMD2<Float>, end: SIMD2<Float>)
+
+    // Fast strokes sample sparsely, so compare segments rather than samples.
+    private static func segments(_ stroke: Stroke) -> [Segment] {
+        let points = stroke.points.map(\.position)
+        guard let first = points.first else { return [] }
+        guard points.count > 1 else { return [(first, first)] }
+        return zip(points, points.dropFirst()).map { ($0, $1) }
+    }
+
+    private static func distance(_ a: Segment, _ b: Segment) -> Float {
+        if intersect(a, b) { return 0 }
+        return min(distance(a.start, b), distance(a.end, b), distance(b.start, a), distance(b.end, a))
+    }
+
+    private static func distance(_ point: SIMD2<Float>, _ segment: Segment) -> Float {
+        let direction = segment.end - segment.start
+        let length = simd_length_squared(direction)
+        let t = length > 0 ? min(1, max(0, simd_dot(point - segment.start, direction) / length)) : 0
+        return simd_distance(point, segment.start + direction * t)
+    }
+
+    private static func intersect(_ a: Segment, _ b: Segment) -> Bool {
+        func cross(_ u: SIMD2<Float>, _ v: SIMD2<Float>) -> Float { u.x * v.y - u.y * v.x }
+        let d1 = cross(b.end - b.start, a.start - b.start), d2 = cross(b.end - b.start, a.end - b.start)
+        let d3 = cross(a.end - a.start, b.start - a.start), d4 = cross(a.end - a.start, b.end - a.start)
+        // Collinear and touching cases are covered by the endpoint distances.
+        return (d1 > 0) != (d2 > 0) && (d3 > 0) != (d4 > 0) && d1 != 0 && d2 != 0 && d3 != 0 && d4 != 0
     }
 }
