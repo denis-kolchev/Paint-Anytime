@@ -40,6 +40,36 @@ struct RenderCheck {
         style.width = 30
         let erased = render([ink, Stroke(points: [point], style: style)])
         precondition(pixel(erased, 80, 80)[0] == 255, "Eraser must reveal white paper")
+        // A mask replayed only around its erasers must equal the full-canvas replay bit for bit,
+        // including transformed objects, cutouts, edge-crossing and off-canvas erasers.
+        do {
+            var eraserStyle = PencilStyle()
+            eraserStyle.instrument = .eraser
+            eraserStyle.eraserMode = .pixels
+            eraserStyle.width = 9
+            func eraser(_ points: [SIMD2<Float>]) -> Stroke {
+                Stroke(points: points.map { PointerSample(position: $0, pressure: 1, timestamp: 0) }, style: eraserStyle)
+            }
+            var object = Stroke(points: [point, PointerSample(position: SIMD2(70, 55), pressure: 1, timestamp: 0)], style: ink.style)
+            var cut = eraser([SIMD2(30, 30), SIMD2(55, 48), SIMD2(62, 41)])
+            cut.excludedAreas = [[SIMD2(40, 30), SIMD2(60, 30), SIMD2(60, 50), SIMD2(40, 50)]]
+            var moved = eraser([SIMD2(20, 60), SIMD2(35, 65)])
+            moved.transform = StrokeTransform(CGAffineTransform(rotationAngle: 0.4).translatedBy(x: 7.3, y: -3.1))
+            object.erasures = [cut, moved, eraser([SIMD2(-8, 50), SIMD2(12, 52)]), eraser([SIMD2(160, 160)])]
+            for transform in [CGAffineTransform.identity, CGAffineTransform(rotationAngle: -0.3).translatedBy(x: 11.5, y: 4.25)] {
+                object.transform = StrokeTransform(transform)
+                for scale in [CGFloat(1), 1.5, 2] {
+                    let size = CGSize(width: 100, height: 100)
+                    guard let regional = WatchBitmapRenderer.erasureMask(for: object, size: size, scale: scale),
+                          let full = WatchBitmapRenderer.erasureMask(for: object, size: size, scale: scale, allowsRegion: false),
+                          let a = regional.data, let b = full.data else { fatalError("No erasure mask") }
+                    precondition(regional.width == full.width && regional.height == full.height
+                                 && regional.bytesPerRow == full.bytesPerRow)
+                    precondition(memcmp(a, b, full.bytesPerRow * full.height) == 0,
+                                 "Regional erasure mask must match full replay at scale \(scale)")
+                }
+            }
+        }
         let empty = render([])
         precondition(pixel(empty, 80, 80)[0] == 255, "Empty canvas must be white")
         func sample(_ x: Float, _ y: Float) -> PointerSample {

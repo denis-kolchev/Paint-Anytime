@@ -246,22 +246,85 @@ nonisolated enum WatchBitmapRenderer {
         return InkSnapshot(image: image)
     }
 
-    private static func erasureMask(for stroke: Stroke, size: CGSize, scale: CGFloat) -> CGContext? {
+    /// `allowsRegion: false` forces the original full-canvas replay; checks compare both paths.
+    static func erasureMask(for stroke: Stroke, size: CGSize, scale: CGFloat,
+                            allowsRegion: Bool = true) -> CGContext? {
         guard let background = makeFloatContext(width: Int(ceil(size.width * scale)),
                                                 height: Int(ceil(size.height * scale))) else { return nil }
         background.setFillColor(CGColor(gray: 1, alpha: 1))
         background.fill(CGRect(x: 0, y: 0, width: background.width, height: background.height))
-        guard let image = background.makeImage() else { return nil }
         let erasers = stroke.erasures.map { local in
             var eraser = local
             eraser.transform = StrokeTransform(local.transform.affine.concatenating(stroke.transform.affine))
             return eraser
         }
+        if allowsRegion, let regional = regionalErasure(erasers, into: background, scale: scale) {
+            return regional ? background : nil
+        }
+        guard let image = background.makeImage() else { return nil }
         guard let mask = renderInk(strokes: erasers, size: size, scale: scale, base: InkSnapshot(image: image))?.image
         else { return nil }
         background.setBlendMode(.copy)
         background.draw(mask, in: CGRect(x: 0, y: 0, width: background.width, height: background.height))
         return background
+    }
+
+    /// Erasers change the white mask only inside their own outlines. Replay them in a
+    /// context covering just their bounds, then copy that region into the full mask,
+    /// instead of allocating and copying a second full-canvas float context per stroke.
+    /// The offset is a whole number of pixels, so rasterization matches the full replay.
+    /// Returns nil when an eraser needs the general renderer (the caller falls back),
+    /// false on a rendering failure, and true once `mask` is complete.
+    private static func regionalErasure(_ erasers: [Stroke], into mask: CGContext, scale: CGFloat) -> Bool? {
+        var commands: [WatchDrawingCommand] = []
+        var bounds = CGRect.null
+        for eraser in erasers {
+            // Only plain pixel erasers are drawn as commands with no full-context passes.
+            guard eraser.style.instrument == .eraser, eraser.style.eraserMode == .pixels,
+                  !eraser.locksTransparency, eraser.raster == nil, eraser.erasures.isEmpty,
+                  eraser.fillRects == nil else { return nil }
+            for command in WatchStrokeDrawing.commands(for: eraser) {
+                // Conservative bounds are enough: a larger region only copies more white.
+                switch command.shape {
+                case let .fill(path):
+                    bounds = bounds.union(path.boundingRect)
+                case let .stroke(path, style):
+                    // Half the width reaches round/bevel edges; square caps reach √2 of it,
+                    // miter joins at most the miter limit times it.
+                    let reach = style.lineJoin == .miter ? max(2.squareRoot(), style.miterLimit) : 2.squareRoot()
+                    let pad = style.lineWidth / 2 * reach
+                    bounds = bounds.union(path.boundingRect.insetBy(dx: -pad, dy: -pad))
+                }
+                commands.append(command)
+            }
+        }
+        let canvas = CGRect(x: 0, y: 0, width: mask.width, height: mask.height)
+        // Nothing to draw leaves the mask white, exactly like an empty replay.
+        guard !bounds.isNull else { return true }
+        guard bounds.minX.isFinite, bounds.minY.isFinite,
+              bounds.maxX.isFinite, bounds.maxY.isFinite else { return nil }
+        // Top-left pixel rectangle, padded for antialiased edges.
+        let region = CGRect(x: bounds.minX * scale, y: bounds.minY * scale,
+                            width: bounds.width * scale, height: bounds.height * scale)
+            .insetBy(dx: -2, dy: -2).integral.intersection(canvas)
+        guard !region.isNull, !region.isEmpty else { return true }
+        // Bottom-left origin of the region in the mask's device space.
+        let originY = CGFloat(mask.height) - region.maxY
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let context = makeFloatContext(width: Int(region.width), height: Int(region.height)) else { return false }
+        context.setFillColor(CGColor(gray: 1, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: context.width, height: context.height))
+        context.translateBy(x: -region.minX, y: -originY)
+        context.translateBy(x: 0, y: CGFloat(mask.height))
+        context.scaleBy(x: scale, y: -scale)
+        for command in commands {
+            guard !Task.isCancelled else { return false }
+            draw(command, in: context, space: space)
+        }
+        guard let image = context.makeImage() else { return false }
+        mask.setBlendMode(.copy)
+        mask.draw(image, in: CGRect(x: region.minX, y: originY, width: region.width, height: region.height))
+        return true
     }
 
     static func makeFloatContext(width: Int, height: Int) -> CGContext? {
