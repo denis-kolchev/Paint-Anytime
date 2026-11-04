@@ -40,6 +40,7 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
         ]
         case .tools: [
             Lesson(steps: [.holdCircle]),
+            Lesson(steps: [.openTools, .chooseFill, .closeTools, .fillCanvas]),
             Lesson(steps: [.openTools, .selectColor, .tapAddColor, .openPalettes, .findNewPalette,
                            .createPalette, .addPaletteColor, .adjustPaletteColor, .savePaletteColor,
                            .closeTools]),

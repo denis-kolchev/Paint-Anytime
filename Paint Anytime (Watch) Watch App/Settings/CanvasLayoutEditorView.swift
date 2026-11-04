@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Presented full screen: a white canvas preview whose circles sit where the
+/// Presented as a sheet: a white canvas preview whose circles sit where the
 /// real controls do. Changes stay in a draft until the checkmark is tapped.
 struct CanvasLayoutEditorView: View {
     /// The current tool, shown wherever Tool settings appears.
@@ -19,12 +19,7 @@ struct CanvasLayoutEditorView: View {
         NavigationStack {
             Color.white
                 .ignoresSafeArea()
-                .overlay {
-                    ZStack {
-                        morphPreviews
-                        saveButton
-                    }
-                }
+                .overlay { morphPreviews }
                 // Native toolbar slots, as on the canvas: the system clock
                 // centres between the top buttons before it is hidden.
                 .toolbar {
@@ -50,6 +45,9 @@ struct CanvasLayoutEditorView: View {
                     }
                 }
         }
+        // Above the navigation bar: on watchOS 26 its clock area takes the
+        // taps of anything drawn beneath it inside the stack.
+        .overlay { saveButton }
         // Slides up like Layers and the More menu instead of a zooming push.
         .sheet(isPresented: Binding(
             get: { editingSlot != nil },
@@ -77,18 +75,7 @@ struct CanvasLayoutEditorView: View {
     /// watchOS has no centre toolbar placement, so the checkmark sits in the
     /// clock's place, level with the measured top buttons.
     private var saveButton: some View {
-        GeometryReader { proxy in
-            Button(action: save) {
-                CanvasLayoutCircle {
-                    Image(systemName: "checkmark").foregroundStyle(.green)
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(L10n.text("Save and apply"))
-            .position(x: proxy.size.width / 2,
-                      y: (topControlMidY ?? MorphPanelGeometry.buttonDiameter) - proxy.frame(in: .global).minY)
-        }
-        .ignoresSafeArea()
+        CanvasLayoutSaveButton(topControlMidY: topControlMidY, action: save)
     }
 
     private func slotButton(_ index: Int) -> some View {
@@ -100,6 +87,9 @@ struct CanvasLayoutEditorView: View {
                                   isMorph: assignment.isMorph, morphIcon: assignment.icon)
         }
         .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter, usesCanvasMaterial: true)
+        // The system animates only the bottom bar in; the top buttons share the
+        // checkmark's entrance. Inside the measurement, so frames stay unscaled.
+        .modifier(CanvasLayoutEntrance(isEnabled: CustomCanvasControls.isTop(index)))
         // Toolbar items live in another coordinate space.
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { slotFrames[index] = $0 }
         .accessibilityLabel(slotLabel(index))
@@ -209,6 +199,49 @@ struct CanvasLayoutEditorView: View {
         storedLayout = data
         customLayoutEnabled = true
         dismiss()
+    }
+}
+
+/// The checkmark is no toolbar item, so it plays the bottom bar's entrance itself.
+private struct CanvasLayoutSaveButton: View {
+    let topControlMidY: CGFloat?
+    let action: () -> Void
+
+    var body: some View {
+        GeometryReader { proxy in
+            Button(action: action) {
+                CanvasLayoutCircle {
+                    Image(systemName: "checkmark").foregroundStyle(.green)
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(L10n.text("Save and apply"))
+            .modifier(CanvasLayoutEntrance())
+            .position(x: proxy.size.width / 2,
+                      y: (topControlMidY ?? MorphPanelGeometry.buttonDiameter) - proxy.frame(in: .global).minY)
+        }
+        .ignoresSafeArea()
+    }
+}
+
+/// Grows and fades a control in like the system bottom bar does. Its own state
+/// keeps the animation from rebuilding the editor's toolbar, which would cancel
+/// the system entrance of the bottom buttons.
+private struct CanvasLayoutEntrance: ViewModifier {
+    var isEnabled = true
+    @State private var isShown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isShown || reduceMotion || !isEnabled ? 1 : 0.5)
+            .opacity(isShown || !isEnabled ? 1 : 0)
+            .onAppear {
+                guard isEnabled, !isShown else { return }
+                withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.8)) {
+                    isShown = true
+                }
+            }
     }
 }
 

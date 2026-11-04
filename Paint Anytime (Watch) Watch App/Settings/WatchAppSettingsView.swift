@@ -515,7 +515,8 @@ struct CanvasEditorSettingsView: View {
                 .accessibilityLabel(L10n.text("About canvas editor"))
             }
         }
-        .fullScreenCover(isPresented: $showsEditor) {
+        // A sheet fades in like Layers; a full-screen cover slides up from the bottom.
+        .sheet(isPresented: $showsEditor) {
             CanvasLayoutEditorView(instrument: instrument)
         }
     }

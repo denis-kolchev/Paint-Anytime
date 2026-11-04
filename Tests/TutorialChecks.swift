@@ -127,6 +127,32 @@ struct TutorialChecks {
         precondition(progress.chapter == .tools && progress.step == .holdCircle && progress.chapterProgress == 0)
         precondition(progress.record(.heldCircle) == .advance)
         progress.advance()
+        // Fill: the settings open on Tool and stay there until Fill is chosen.
+        precondition(progress.step == .openTools && progress.initialToolPage == 1 && !progress.limitsToolsToFill)
+        precondition(progress.record(.openedTools) == .advance)
+        progress.advance()
+        precondition(progress.step == .chooseFill && progress.initialToolPage == 2 && progress.limitsToolsToFill)
+        precondition(progress.allowsToolPage(2) && !progress.allowsToolPage(1) && !progress.allowsToolPage(0))
+        var fill = PencilStyle()
+        fill.instrument = .fill
+        var blur = PencilStyle()
+        blur.instrument = .blur
+        precondition(!progress.changedStyle(from: PencilStyle(), to: blur, page: 2))
+        precondition(progress.changedStyle(from: blur, to: fill, page: 2))
+        progress.advance()
+        precondition(progress.step == .closeTools && !progress.allowsToolPage(1))
+        var eraserAfterFill = fill
+        eraserAfterFill.instrument = .eraser
+        precondition(!progress.changedStyle(from: fill, to: eraserAfterFill, page: 2))
+        precondition(progress.step == .chooseFill, "Leaving Fill before closing restores the choice")
+        precondition(progress.changedStyle(from: eraserAfterFill, to: fill, page: 2))
+        progress.advance()
+        precondition(progress.record(.closedTools) == .advance)
+        progress.advance()
+        precondition(progress.step == .fillCanvas && !progress.limitsToolsToFill)
+        precondition(progress.record(.stroke) == .none)
+        precondition(progress.record(.filled) == .advance)
+        progress.advance()
         precondition(progress.step == .openTools && progress.record(.openedTools) == .advance)
         progress.advance()
         precondition(progress.step == .selectColor && progress.record(.reachedAddColor) == .advance)

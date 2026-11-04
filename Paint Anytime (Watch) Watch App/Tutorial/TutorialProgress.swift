@@ -7,6 +7,7 @@ enum TutorialStep: Int, CaseIterable {
     case addPaletteColor, adjustPaletteColor, savePaletteColor
     case openWidth, setWidth, openOpacity, setOpacity, openTool
     case selectReed, chooseReed, openAngle, setAngle, closeTools, reedStrokes
+    case chooseFill, fillCanvas
     case openLasso, selectLasso, transformLasso, finishLasso
     case history, saveDrawing, shareDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
@@ -121,6 +122,8 @@ struct TutorialProgress {
         case .openTool: unlockedToolPages.formUnion([0, 2, 3, 5, 6])
         case .selectReed: unlockedToolPages = visibleToolPages
         case .openAngle: unlockedToolPages.insert(4)
+        // The fill lesson opens on Tool and keeps the carousel there.
+        case .chooseFill: unlockedToolPages = [2]
         default: break
         }
     }
@@ -166,12 +169,19 @@ struct TutorialProgress {
         case (.openTools, .openedTools), (.closeTools, .closedTools), (.reedStrokes, .stroke), (.reedStrokes, .filled),
              (.saveDrawing, .saved), (.shareDrawing, .closedSave), (.openMenu, .openedMenu),
              (.openGallery, .openedGallery), (.galleryFullscreen, .galleryFullscreen),
-             (.deleteDrawing, .deleted), (.returnToCanvas, .returnedToCanvas): return .advance
+             (.deleteDrawing, .deleted), (.returnToCanvas, .returnedToCanvas),
+             (.fillCanvas, .filled): return .advance
         default: break
         }
         return .none
     }
     var visibleToolPages: Set<Int> { [0, 1, 2, 3, 4, 5, 6] }
+    /// The fill lesson offers only the lesson's brush and Fill until the settings close.
+    var limitsToolsToFill: Bool {
+        (step == .chooseFill || step == .closeTools) && lessonSteps.contains(.chooseFill)
+    }
+    /// Tool settings open on Color (1), or on Tool (2) when the lesson starts there.
+    var initialToolPage: Int { step == .chooseFill ? 2 : 1 }
     func allowsToolAdjustment(page: Int) -> Bool { visibleToolPages.contains(page) }
     func allowsToolPage(_ page: Int) -> Bool {
         step == .inactive ? visibleToolPages.contains(page) : unlockedToolPages.contains(page)
@@ -187,6 +197,11 @@ struct TutorialProgress {
         case .pickColor: return page == 1 && old.color != style.color
         case .selectReed: return old.instrument != style.instrument
         case .chooseReed: return style.instrument == .reed
+        case .chooseFill: return style.instrument == .fill
+        case .closeTools where lessonSteps.contains(.chooseFill):
+            // Scrolling past Fill before closing restores the selection exercise.
+            if style.instrument != .fill { returnTo(.chooseFill) }
+            return false
         case .openAngle, .setAngle:
             // Angle exists only for Reed; leaving it restores the selection exercise.
             guard style.instrument == .reed else {

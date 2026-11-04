@@ -25,6 +25,8 @@ enum TutorialLesson {
         case .openTool: return L10n.text("Swipe left to Tool.")
         case .selectReed: return L10n.text("Scroll down with the Crown to choose any tool.")
         case .chooseReed: return L10n.text("Choose Reed pen to set the angle.")
+        case .chooseFill: return L10n.format("Turn the Crown to choose %@.", DrawingInstrument.fill.title)
+        case .fillCanvas: return L10n.text("Tap to fill a connected area with the selected color and opacity.")
         case .openAngle: return L10n.text("Swipe left to Angle.")
         case .setAngle: return L10n.text("Turn the Crown to change the nib angle.")
         case .closeTools: return L10n.text("Tap ✓ to start drawing.")

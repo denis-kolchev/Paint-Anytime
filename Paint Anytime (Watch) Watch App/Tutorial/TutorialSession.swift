@@ -48,7 +48,7 @@ final class TutorialSession: ObservableObject {
     @Published private(set) var showsResult = false
     var isActive: Bool { step != .inactive }
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
-    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .openLasso, .history, .clearCanvas, .saveDrawing, .shareDrawing, .openMenu]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .openLasso, .history, .clearCanvas, .saveDrawing, .shareDrawing, .openMenu]) }
     var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
@@ -62,7 +62,7 @@ final class TutorialSession: ObservableObject {
     var crownHintIsSubtle: Bool { !crownPracticedSteps.isEmpty }
     var showsCrownHint: Bool {
         suggestsCrownRotation && !crownPracticedSteps.contains(step)
-            && (step == .selectReed || step == .chooseReed || crownPracticedSteps.count < 3)
+            && ([.selectReed, .chooseReed, .chooseFill].contains(step) || crownPracticedSteps.count < 3)
     }
 
     func usedCrown(in expectedStep: TutorialStep, velocity: Double) {
@@ -78,7 +78,7 @@ final class TutorialSession: ObservableObject {
         case .selectColor, .pickColor: return toolPage == 1
         case .setWidth: return toolPage == 0
         case .setOpacity: return toolPage == 5 && !toolIsEraser
-        case .selectReed, .chooseReed: return toolPage == 2
+        case .selectReed, .chooseReed, .chooseFill: return toolPage == 2
         case .setAngle: return toolPage == 4
         case .galleryFullscreen, .deleteDrawing: return galleryIsOpen && !galleryIsFullscreen
         default: return false
@@ -86,6 +86,8 @@ final class TutorialSession: ObservableObject {
     }
 
     var visibleToolPages: Set<Int> { progress.visibleToolPages }
+    var initialToolPage: Int { progress.initialToolPage }
+    var limitsToolsToFill: Bool { progress.limitsToolsToFill }
     var chapter: TutorialChapter? { progress.chapter }
     var chapterProgress: Double { progress.chapterProgress }
     var completedLessonCount: Int { progress.completedLessonCount }

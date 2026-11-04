@@ -76,7 +76,13 @@ struct WatchToolSettingsView: View {
     private var colors: [InkPreset] { tutorial.isActive ? tutorialColors : palette.selectedColors }
 
     private var isEraser: Bool { controller.pencilStyle.instrument == .eraser }
-    private var instruments: [DrawingInstrument] { DrawingInstrument.displayOrder }
+    private var instruments: [DrawingInstrument] {
+        guard tutorial.limitsToolsToFill else { return DrawingInstrument.displayOrder }
+        let brush = fillLessonBrush ?? controller.pencilStyle.instrument
+        return DrawingInstrument.displayOrder.filter { $0 == brush || $0 == .fill }
+    }
+    /// The brush in use when the fill lesson opened the settings.
+    @State private var fillLessonBrush: DrawingInstrument?
     private var instrumentIndex: Int { instruments.firstIndex(of: controller.pencilStyle.instrument) ?? 0 }
 
     private var availableSettings: [ToolSetting] {
@@ -524,8 +530,11 @@ struct WatchToolSettingsView: View {
         .onChange(of: paletteData) { _, _ in reloadPaletteLibrary() }
         .onAppear {
             reloadPaletteLibrary()
+            if tutorial.limitsToolsToFill, controller.pencilStyle.instrument != .fill {
+                fillLessonBrush = controller.pencilStyle.instrument
+            }
             if !didRestorePage {
-                selectedPage = tutorial.isActive ? ToolSetting.color.rawValue : savedPage
+                selectedPage = tutorial.isActive ? tutorial.initialToolPage : savedPage
                 didRestorePage = true
             }
             // Migrate the old eraser page, previously stored in the color slot.

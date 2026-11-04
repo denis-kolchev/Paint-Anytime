@@ -34,8 +34,9 @@ struct ToolInstrumentPicker: View {
                                     .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
                                                  : instrumentIndex == index ? 1 : 0.72)
                                     .animation(choiceAnimation, value: instrumentIndex)
-                                    .tutorialHint(tutorial, steps: [.chooseReed],
-                                                  isSuggested: isActive && instrument == .reed)
+                                    .tutorialHint(tutorial, steps: [.chooseReed, .chooseFill],
+                                                  isSuggested: isActive && (tutorial.step == .chooseFill
+                                                      ? instrument == .fill : instrument == .reed))
                                     .frame(width: 40, height: rowHeight)
                                     .contentShape(Rectangle())
                             }
