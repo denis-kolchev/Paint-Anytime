@@ -66,8 +66,18 @@ struct LayerRenderCheck {
             let idleBuilds = layers.compositeBuildCount
             check()
             precondition(layers.compositeBuildCount == idleBuilds, "Idle frames must reuse the complete composition")
+            let replayBeforeUndo = layers.replayedStrokeCount
             document.layers[1].strokes.removeLast()
             check(eraser) // Undo and live erasing remain isolated to their layer.
+            precondition(layers.replayedStrokeCount == replayBeforeUndo && layers.previousInkHits == 1,
+                         "Drawing after Undo must reuse the retained layer snapshot, not replay the layer")
+            document.layers[1].strokes.append(eraser)
+            check(ink) // Redo
+            precondition(layers.replayedStrokeCount == replayBeforeUndo && layers.previousInkHits == 2,
+                         "Redo must reuse the retained layer snapshot")
+            document.layers[1].strokes.removeLast()
+            check(eraser)
+            precondition(layers.previousInkHits == 3)
             document.layers[0].opacity = 0.7
             check(ink)
             document.layers[0].isVisible = false

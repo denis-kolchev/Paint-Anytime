@@ -30,6 +30,49 @@ nonisolated extension WatchBitmapRenderer {
         private(set) var appendCount = 0
         private(set) var committedRasterizedStrokeCount = 0
         private var committedStrokes: [StrokeVersion] = []
+        /// Eraser regions survive full replays (Undo past retained snapshots, resizes).
+        let masks = ErasureMaskCache()
+
+        /// Committed states replaced by later ones, newest first. Undo and Redo return to
+        /// one of these exactly, so their first frame needs no replay of the drawing.
+        private struct CommittedState {
+            let key: CacheKey
+            let ink: InkSnapshot
+            let image: CGImage
+            let strokes: [StrokeVersion]
+            var bytes: Int {
+                ink.image.bytesPerRow * ink.image.height + image.bytesPerRow * image.height
+            }
+        }
+        private var previousStates: [CommittedState] = []
+        static let previousStateLimit = 2
+        static let previousStateByteLimit = 12 * 1024 * 1024
+        private(set) var previousStateHits = 0
+
+        private static func compatible(_ lhs: CacheKey, _ rhs: CacheKey) -> Bool {
+            lhs.documentID == rhs.documentID && lhs.size == rhs.size && lhs.scale == rhs.scale
+        }
+
+        /// Publish a committed snapshot, retaining the replaced one for Undo/Redo.
+        private func commit(ink: InkSnapshot, image: CGImage?, strokes: [StrokeVersion], key nextKey: CacheKey) {
+            if let oldKey = key, let oldInk = committedInk, let oldImage = committedImage,
+               committedStrokes != strokes || !Self.compatible(oldKey, nextKey) {
+                previousStates.insert(CommittedState(key: oldKey, ink: oldInk, image: oldImage,
+                                                     strokes: committedStrokes), at: 0)
+            }
+            committedInk = ink
+            committedImage = image
+            committedStrokes = strokes
+            key = nextKey
+            // Never keep images for another document or resolution, or a duplicate of the current state.
+            previousStates.removeAll { !Self.compatible($0.key, nextKey) || $0.strokes == strokes }
+            var total = 0
+            previousStates = Array(previousStates.prefix(Self.previousStateLimit)).filter { state in
+                guard total + state.bytes <= Self.previousStateByteLimit else { return false }
+                total += state.bytes
+                return true
+            }
+        }
 
         private struct StrokeVersion: Equatable {
             let id: UUID
@@ -225,10 +268,8 @@ nonisolated extension WatchBitmapRenderer {
                     if let image = ink.frame.makeImage(),
                        let display = WatchBitmapRenderer.flatten(InkSnapshot(image: image), paperWhite: 1),
                        !Task.isCancelled {
-                        committedInk = InkSnapshot(image: image)
-                        committedImage = display
-                        committedStrokes = strokes.map(StrokeVersion.init)
-                        key = nextKey
+                        commit(ink: InkSnapshot(image: image), image: display,
+                               strokes: strokes.map(StrokeVersion.init), key: nextKey)
                         appendCount += 1
                         activeInk = nil
                         activeImage = nil
@@ -248,10 +289,9 @@ nonisolated extension WatchBitmapRenderer {
                    final.extends(dry.stroke), let base = committedInk,
                    let display = renderDry(final, base: base, key: nextKey),
                    let ink = activeDry?.frame.makeImage(), !Task.isCancelled {
-                    committedInk = InkSnapshot(image: ink)
-                    committedImage = usesScreenTiles ? activeDry?.display.makeImage() : display
-                    committedStrokes = versions
-                    key = nextKey
+                    commit(ink: InkSnapshot(image: ink),
+                           image: usesScreenTiles ? activeDry?.display.makeImage() : display,
+                           strokes: versions, key: nextKey)
                     appendCount += 1
                     activeDry = nil
                     activeImage = nil
@@ -263,14 +303,36 @@ nonisolated extension WatchBitmapRenderer {
                 let ids = Set(strokes.map(\.id))
                 geometry = geometry.filter { ids.contains($0.key) }
                 let versions = strokes.map(StrokeVersion.init)
-                // Reuse only an unchanged prefix at the same resolution and canvas size.
+                if let index = previousStates.firstIndex(where: {
+                    Self.compatible($0.key, nextKey) && $0.strokes == versions
+                }) {
+                    // Undo/Redo back to a retained state: publish it without replay.
+                    let state = previousStates[index]
+                    commit(ink: state.ink, image: state.image, strokes: versions, key: nextKey)
+                    previousStateHits += 1
+                    activeInk = nil
+                    activeDry = nil
+                    activeImage = nil
+                }
+            }
+            if key != nextKey {
+                let versions = strokes.map(StrokeVersion.init)
+                // Reuse only an unchanged prefix at the same resolution and canvas size, either
+                // the current snapshot or a retained earlier one (a new stroke after Undo).
                 // Requests may skip intermediate commits, so append the whole unseen suffix.
-                let canAppend = committedInk != nil &&
-                    key?.documentID == nextKey.documentID &&
-                    key?.size == nextKey.size && key?.scale == nextKey.scale &&
-                    versions.count > committedStrokes.count &&
-                    versions.starts(with: committedStrokes)
-                let pendingStrokes = canAppend ? Array(strokes.dropFirst(committedStrokes.count)) : strokes
+                let current: (ink: InkSnapshot, count: Int)? = committedInk.flatMap { ink in
+                    guard let key, Self.compatible(key, nextKey),
+                          versions.count > committedStrokes.count,
+                          versions.starts(with: committedStrokes) else { return nil }
+                    return (ink, committedStrokes.count)
+                }
+                let base = current ?? previousStates
+                    .filter { Self.compatible($0.key, nextKey) && versions.count > $0.strokes.count
+                              && versions.starts(with: $0.strokes) }
+                    .max { $0.strokes.count < $1.strokes.count }
+                    .map { (ink: $0.ink, count: $0.strokes.count) }
+                let canAppend = base != nil
+                let pendingStrokes = base.map { Array(strokes.dropFirst($0.count)) } ?? strokes
                 // Promoted live strokes need no vector cache until a full replay
                 // (undo, resize, export) actually requires their geometry.
                 for stroke in pendingStrokes where geometry[stroke.id]?.revision != stroke.geometryRevision {
@@ -281,15 +343,12 @@ nonisolated extension WatchBitmapRenderer {
                 }
                 guard let ink = WatchBitmapRenderer.renderInk(strokes: pendingStrokes, size: nextKey.size,
                                                              scale: nextKey.scale,
-                                                             base: canAppend ? committedInk : nil,
-                                                             geometry: geometry),
+                                                             base: base?.ink,
+                                                             geometry: geometry, masks: masks),
                       let image = WatchBitmapRenderer.flatten(ink, paperWhite: 1),
                       !Task.isCancelled else { return nil }
                 // Publish the snapshot and its prefix together only after success.
-                committedInk = ink
-                committedImage = image
-                committedStrokes = versions
-                key = nextKey
+                commit(ink: ink, image: image, strokes: versions, key: nextKey)
                 if canAppend { appendCount += 1 } else { rebuildCount += 1 }
                 committedRasterizedStrokeCount += pendingStrokes.count
                 activeInk = nil

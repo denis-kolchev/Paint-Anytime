@@ -317,7 +317,32 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         self.style = style
     }
 
-    private enum CodingKeys: String, CodingKey { case id, points, style, locksTransparency, fillRects, transform, raster, excludedAreas, erasures }
+    /// A placement of a shared eraser from the document's eraser table, in this stroke's coordinates.
+    nonisolated struct StoredErasure: Codable, Equatable {
+        let id: UUID
+        let transform: StrokeTransform
+    }
+    /// Used only while a document is encoded or decoded; always empty in memory.
+    /// Lasso attaches a copy of an eraser to every stroke it touched; the copies
+    /// differ only in transform, so documents store each eraser once.
+    fileprivate var storedErasures: [StoredErasure] = []
+
+    private enum CodingKeys: String, CodingKey { case id, points, style, locksTransparency, fillRects, transform, raster, excludedAreas, erasures, erasureRefs }
+
+    func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encode(id, forKey: .id)
+        try values.encode(points, forKey: .points)
+        try values.encode(style, forKey: .style)
+        try values.encode(locksTransparency, forKey: .locksTransparency)
+        try values.encodeIfPresent(fillRects, forKey: .fillRects)
+        try values.encode(transform, forKey: .transform)
+        try values.encodeIfPresent(raster, forKey: .raster)
+        try values.encode(excludedAreas, forKey: .excludedAreas)
+        // Inline copies remain for standalone strokes and anything the table cannot share.
+        if !erasures.isEmpty { try values.encode(erasures, forKey: .erasures) }
+        if !storedErasures.isEmpty { try values.encode(storedErasures, forKey: .erasureRefs) }
+    }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
@@ -331,6 +356,7 @@ nonisolated struct Stroke: Codable, Equatable, Identifiable {
         raster = try values.decodeIfPresent(StrokeRaster.self, forKey: .raster)
         excludedAreas = try values.decodeIfPresent([[SIMD2<Float>]].self, forKey: .excludedAreas) ?? []
         erasures = try values.decodeIfPresent([Stroke].self, forKey: .erasures) ?? []
+        storedErasures = try values.decodeIfPresent([StoredErasure].self, forKey: .erasureRefs) ?? []
     }
 
     static func == (lhs: Self, rhs: Self) -> Bool {
@@ -374,13 +400,31 @@ nonisolated struct CanvasDocument: Codable, Equatable {
 
     init(strokes: [Stroke] = []) { layers = [CanvasLayer(strokes: strokes)] }
 
-    private enum CodingKeys: String, CodingKey { case id, layers, backgroundColor, backgroundIsVisible, strokes, canvasSize, resolution }
+    private enum CodingKeys: String, CodingKey { case id, layers, backgroundColor, backgroundIsVisible, strokes, canvasSize, resolution, erasers }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         if let decoded = try values.decodeIfPresent([CanvasLayer].self, forKey: .layers) {
             layers = decoded
         } else {
             layers = [CanvasLayer(strokes: try values.decodeIfPresent([Stroke].self, forKey: .strokes) ?? [])]
+        }
+        // Rebuild each stroke's local eraser copies from the shared table. Copies made
+        // from one table entry share its point storage in memory.
+        let table = try values.decodeIfPresent([Stroke].self, forKey: .erasers) ?? []
+        let erasers = Dictionary(table.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for layer in layers.indices {
+            for index in layers[layer].strokes.indices where !layers[layer].strokes[index].storedErasures.isEmpty {
+                let placements = layers[layer].strokes[index].storedErasures
+                layers[layer].strokes[index].erasures += try placements.map { placement in
+                    guard var eraser = erasers[placement.id] else {
+                        throw DecodingError.dataCorruptedError(forKey: .erasers, in: values,
+                            debugDescription: "Missing shared eraser \(placement.id)")
+                    }
+                    eraser.transform = placement.transform
+                    return eraser
+                }
+                layers[layer].strokes[index].storedErasures = []
+            }
         }
         // Existing layered documents already carry a persistent layer identifier.
         id = try values.decodeIfPresent(UUID.self, forKey: .id) ?? layers.first?.id ?? UUID()
@@ -397,7 +441,36 @@ nonisolated struct CanvasDocument: Codable, Equatable {
         try values.encode(id, forKey: .id)
         try values.encodeIfPresent(canvasSize, forKey: .canvasSize)
         try values.encode(resolution, forKey: .resolution)
-        try values.encode(layers, forKey: .layers)
+        var table: [Stroke] = []
+        var tableIndex: [UUID: Int] = [:]
+        // Copies of one eraser differ only by transform: store the body once and a
+        // placement per stroke. Anything that does not match stays inline, unchanged.
+        func sharingErasers(_ stroke: Stroke) -> Stroke {
+            guard !stroke.erasures.isEmpty else { return stroke }
+            var placements: [Stroke.StoredErasure] = []
+            for eraser in stroke.erasures {
+                guard eraser.erasures.isEmpty else { return stroke }
+                var body = eraser
+                body.transform = .identity
+                if let existing = tableIndex[eraser.id] {
+                    guard table[existing] == body else { return stroke }
+                } else {
+                    tableIndex[eraser.id] = table.count
+                    table.append(body)
+                }
+                placements.append(.init(id: eraser.id, transform: eraser.transform))
+            }
+            var stored = stroke
+            stored.erasures = []
+            stored.storedErasures = placements
+            return stored
+        }
+        var storedLayers = layers
+        for layer in storedLayers.indices {
+            storedLayers[layer].strokes = storedLayers[layer].strokes.map(sharingErasers)
+        }
+        try values.encode(storedLayers, forKey: .layers)
+        if !table.isEmpty { try values.encode(table, forKey: .erasers) }
         try values.encode(backgroundColor, forKey: .backgroundColor)
         try values.encode(backgroundIsVisible, forKey: .backgroundIsVisible)
     }

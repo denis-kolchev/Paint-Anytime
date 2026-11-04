@@ -27,6 +27,47 @@ struct PaintProjectChecks {
         let read = try PaintProject.read(url)
         let restored = try JSONDecoder().decode(CanvasDocument.self, from: read.document)
         precondition(restored == document, "All editable drawing properties must survive export/import")
+        // Lasso attaches a copy of one eraser to every stroke it touched. Documents store it once.
+        do {
+            var eraserStyle = PencilStyle.initial(for: .eraser)
+            eraserStyle.eraserMode = .pixels
+            let eraser = Stroke(points: (0..<50).map { PointerSample(position: SIMD2(Float($0), 3), pressure: 1, timestamp: 0) },
+                                style: eraserStyle)
+            var first = Stroke(points: [PointerSample(position: SIMD2(1, 1), pressure: 1, timestamp: 0)], style: .initial(for: .monoline))
+            var second = Stroke(points: first.points, style: first.style)
+            var placement = StrokeTransform()
+            placement.tx = -4
+            placement.ty = 2.5
+            var shifted = eraser
+            shifted.transform = placement
+            first.erasures = [eraser]
+            second.erasures = [shifted, eraser]
+            let shared = CanvasDocument(strokes: [first, second])
+            let data = try JSONEncoder().encode(shared)
+            let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+            precondition((json["erasers"] as? [Any])?.count == 1, "A shared eraser must be stored once")
+            let strokes = ((json["layers"] as! [[String: Any]])[0]["strokes"] as! [[String: Any]])
+            precondition(strokes.allSatisfy { $0["erasures"] == nil }, "Shared erasers must not be copied inline")
+            precondition((strokes[1]["erasureRefs"] as? [Any])?.count == 2)
+            let decoded = try JSONDecoder().decode(CanvasDocument.self, from: data)
+            precondition(decoded == shared, "Shared erasers must restore every placement and transform")
+            // Earlier documents stored every copy inline and must still open.
+            var legacy = json
+            var legacyLayers = json["layers"] as! [[String: Any]]
+            legacyLayers[0]["strokes"] = try [first, second].map {
+                try JSONSerialization.jsonObject(with: JSONEncoder().encode($0))
+            }
+            legacy["layers"] = legacyLayers
+            legacy.removeValue(forKey: "erasers")
+            let inline = try JSONDecoder().decode(CanvasDocument.self, from: JSONSerialization.data(withJSONObject: legacy))
+            precondition(inline == shared, "Inline erasers from earlier documents must decode unchanged")
+            var missing = json
+            missing.removeValue(forKey: "erasers")
+            do {
+                _ = try JSONDecoder().decode(CanvasDocument.self, from: JSONSerialization.data(withJSONObject: missing))
+                preconditionFailure("A reference to a missing shared eraser must fail, not drop erasing")
+            } catch is DecodingError {}
+        }
         let inbox = IncomingDrawingStore(folder: folder.appendingPathComponent("Inbox"))
         try inbox.receive(url, name: "Copy.paintanytime")
         let images = try inbox.pendingImages()

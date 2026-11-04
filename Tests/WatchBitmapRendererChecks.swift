@@ -69,6 +69,19 @@ struct RenderCheck {
                                  "Regional erasure mask must match full replay at scale \(scale)")
                 }
             }
+            // A cached eraser region must reproduce the same ink without replaying erasers.
+            let masks = WatchBitmapRenderer.ErasureMaskCache()
+            let size = CGSize(width: 100, height: 100)
+            let fresh = WatchBitmapRenderer.renderInk(strokes: [object], size: size, scale: 2)!.image
+            _ = WatchBitmapRenderer.renderInk(strokes: [object], size: size, scale: 2, masks: masks)
+            let reused = WatchBitmapRenderer.renderInk(strokes: [object], size: size, scale: 2, masks: masks)!.image
+            precondition(masks.hits == 1, "An unchanged stroke must reuse its eraser region")
+            precondition((fresh.dataProvider!.data! as Data) == (reused.dataProvider!.data! as Data),
+                         "A cached eraser region must render identically")
+            var shiftedObject = object
+            shiftedObject.transform = StrokeTransform(CGAffineTransform(translationX: 3, y: 0))
+            _ = WatchBitmapRenderer.renderInk(strokes: [shiftedObject], size: size, scale: 2, masks: masks)
+            precondition(masks.hits == 1, "A moved stroke must not reuse the old eraser region")
         }
         let empty = render([])
         precondition(pixel(empty, 80, 80)[0] == 255, "Empty canvas must be white")
@@ -694,7 +707,10 @@ struct RenderCheck {
             assertSame(cache.render(strokes: strokes, activeStroke: nil, key: key(revision)),
                        render(strokes), "Commit/undo/redo/object deletion/clear must preserve replay parity")
         }
-        precondition(cache.rebuildCount == 4 && cache.appendCount == 2)
+        // Commit appends; Undo and Redo return to retained snapshots without replay;
+        // object deletion and clear are new states and rebuild.
+        precondition(cache.rebuildCount == 3 && cache.appendCount == 1 && cache.previousStateHits == 2,
+                     "Undo/Redo must reuse retained snapshots")
         for scale: CGFloat in [1, 3] {
             assertSame(cache.render(strokes: history, activeStroke: marker, key: key(7, scale: scale)),
                        WatchBitmapRenderer.render(strokes: history + [marker], size: CGSize(width: 100, height: 100), scale: scale),

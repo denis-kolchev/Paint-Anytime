@@ -11,10 +11,14 @@ nonisolated struct PaintProject: Codable {
     let version: Int
     let document: Data
     let preview: Data
+    /// 2: documents may store shared erasers once (`erasers` + `erasureRefs`).
+    /// Version 1 readers would silently drop those erasers, so they must refuse.
+    static let currentVersion = 2
+    static let supportedVersions = 1...currentVersion
 
     init(document: Data, preview: Data) {
         format = "Paint Anytime Project"
-        version = 1
+        version = Self.currentVersion
         self.document = Self.restoringCanvasSize(in: document, preview: preview)
         self.preview = preview
     }
@@ -28,7 +32,7 @@ nonisolated struct PaintProject: Codable {
     static func decode(_ data: Data) throws -> Self {
         guard data.count <= maximumBytes else { throw ProjectError.tooLarge }
         let project = try JSONDecoder().decode(Self.self, from: data)
-        guard project.format == "Paint Anytime Project", project.version == 1 else { throw ProjectError.unsupported }
+        guard project.format == "Paint Anytime Project", Self.supportedVersions.contains(project.version) else { throw ProjectError.unsupported }
         guard let object = try JSONSerialization.jsonObject(with: project.document) as? [String: Any],
               object["layers"] is [[String: Any]],
               project.preview.starts(with: [137, 80, 78, 71, 13, 10, 26, 10]) else { throw ProjectError.invalid }

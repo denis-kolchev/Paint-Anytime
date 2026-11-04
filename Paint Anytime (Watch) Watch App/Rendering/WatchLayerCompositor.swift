@@ -7,7 +7,59 @@ nonisolated extension WatchBitmapRenderer {
     final class LayerCache {
         var size: CGSize = .zero
         var scale: CGFloat = 0
-        fileprivate var inks: [UUID: (revisions: [UUID], ink: InkSnapshot)] = [:]
+        fileprivate var inks: [UUID: (revisions: [UUID], ink: InkSnapshot)] = [:] {
+            didSet { if inks.isEmpty { previousInks.removeAll() } }
+        }
+        /// Snapshots replaced by later commits, newest first. Undo and Redo return to one
+        /// of these exactly, so the first frame after them needs no replay of the layer.
+        private var previousInks: [(layerID: UUID, revisions: [UUID], ink: InkSnapshot)] = []
+        static let previousInksPerLayer = 2
+        static let previousInkByteLimit = 12 * 1024 * 1024
+        private(set) var previousInkHits = 0
+
+        private static func bytes(_ ink: InkSnapshot) -> Int { ink.image.bytesPerRow * ink.image.height }
+
+        /// Commit a snapshot as the layer's current ink, keeping the replaced one for Undo.
+        fileprivate func store(_ ink: InkSnapshot, revisions: [UUID], for layerID: UUID) {
+            if let previous = inks[layerID], previous.revisions != revisions {
+                previousInks.removeAll { $0.layerID == layerID && $0.revisions == previous.revisions }
+                previousInks.insert((layerID, previous.revisions, previous.ink), at: 0)
+            }
+            inks[layerID] = (revisions, ink)
+            previousInks.removeAll { $0.layerID == layerID && $0.revisions == revisions }
+            var kept: [UUID: Int] = [:]
+            var total = 0
+            previousInks = previousInks.filter { entry in
+                let size = Self.bytes(entry.ink)
+                guard kept[entry.layerID, default: 0] < Self.previousInksPerLayer,
+                      total + size <= Self.previousInkByteLimit else { return false }
+                kept[entry.layerID, default: 0] += 1
+                total += size
+                return true
+            }
+        }
+
+        /// The exact earlier state of this layer (after Undo or Redo), if still retained.
+        fileprivate func previousInk(for layerID: UUID, revisions: [UUID]) -> InkSnapshot? {
+            guard let entry = previousInks.first(where: { $0.layerID == layerID && $0.revisions == revisions })
+            else { return nil }
+            previousInkHits += 1
+            return entry.ink
+        }
+
+        /// The longest retained state whose strokes start the new ones, to append the rest.
+        fileprivate func appendBase(for layerID: UUID, revisions: [UUID]) -> (revisions: [UUID], ink: InkSnapshot)? {
+            if let current = inks[layerID], revisions.starts(with: current.revisions) { return current }
+            return previousInks
+                .filter { $0.layerID == layerID && revisions.count > $0.revisions.count && revisions.starts(with: $0.revisions) }
+                .max { $0.revisions.count < $1.revisions.count }
+                .map { ($0.revisions, $0.ink) }
+        }
+
+        fileprivate func retainLayers(_ ids: Set<UUID>) {
+            inks = inks.filter { ids.contains($0.key) }
+            previousInks.removeAll { !ids.contains($0.layerID) }
+        }
         fileprivate struct CompositeKey: Equatable {
             struct Layer: Equatable {
                 let id: UUID
@@ -18,6 +70,8 @@ nonisolated extension WatchBitmapRenderer {
             let layers: [Layer]
         }
         fileprivate var composite: (key: CompositeKey, image: CGImage)?
+        /// Eraser regions survive layer rebuilds (Undo past retained snapshots, resizes).
+        let masks = ErasureMaskCache()
         // The layered renderer must keep coverage between input events too.
         // Replaying the whole live stroke here makes every later frame more expensive.
         fileprivate struct LiveInk {
@@ -109,7 +163,7 @@ nonisolated extension WatchBitmapRenderer {
             }
             cache.size = size
             cache.scale = scale
-            cache.inks = cache.inks.filter { id, _ in document.layers.contains { $0.id == id } }
+            cache.retainLayers(Set(document.layers.map(\.id)))
         }
         let visible = document.layers.filter { $0.isVisible && $0.opacity > 0 }
         // Preserve the exact sequential blend order and 8-bit rounding. Cache the
@@ -141,9 +195,12 @@ nonisolated extension WatchBitmapRenderer {
                 committed = ink
             } else if let entry = cache?.inks[layer.id], entry.revisions == revisions {
                 committed = entry.ink
+            } else if let cache, let earlier = cache.previousInk(for: layer.id, revisions: revisions) {
+                committed = earlier
+                cache.store(earlier, revisions: revisions, for: layer.id)
             } else {
-                let previous = cache?.inks[layer.id]
-                let canAppend = previous.map { revisions.starts(with: $0.revisions) } ?? false
+                let previous = cache?.appendBase(for: layer.id, revisions: revisions)
+                let canAppend = previous != nil
                 let pending = canAppend ? Array(layer.strokes.dropFirst(previous!.revisions.count)) : layer.strokes
                 if canAppend, pending.count == 1, let final = pending.first,
                    let cache, let live = cache.liveInk, let previous,
@@ -155,11 +212,11 @@ nonisolated extension WatchBitmapRenderer {
                     cache.liveInk = nil
                 } else {
                     guard let ink = renderInk(strokes: pending, size: size, scale: scale,
-                                              base: canAppend ? previous?.ink : nil) else { return nil }
+                                              base: canAppend ? previous?.ink : nil, masks: cache?.masks) else { return nil }
                     cache?.didReplay(pending.count)
                     committed = ink
                 }
-                cache?.inks[layer.id] = (revisions, committed)
+                cache?.store(committed, revisions: revisions, for: layer.id)
             }
             var ink = committed
             if layer.id == selectedLayerID, let activeStroke {
@@ -202,7 +259,8 @@ nonisolated extension WatchBitmapRenderer {
         let canAppend = previous.map { revisions.starts(with: $0.revisions) } ?? false
         let strokes = canAppend ? Array(layer.strokes.dropFirst(previous!.revisions.count)) : layer.strokes
         guard let ink = renderInk(strokes: strokes, size: size, scale: scale,
-                                  base: canAppend ? previous?.ink : nil), !Task.isCancelled else { return nil }
+                                  base: canAppend ? previous?.ink : nil, masks: cache.masks),
+              !Task.isCancelled else { return nil }
         cache.inks[layer.id] = (revisions, ink)
         return ink.image
     }
