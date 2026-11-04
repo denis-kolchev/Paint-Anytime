@@ -188,6 +188,10 @@ struct TutorialProgress {
     var limitsToolsToFill: Bool {
         (step == .chooseFill || step == .closeTools) && lessonSteps.contains(.chooseFill)
     }
+    /// The repaint lesson needs a visible change, so the strokes' color cannot be chosen again.
+    var locksLessonColor: Bool {
+        (step == .pickColor || step == .closeTools) && lessonSteps.contains(.paintOverStroke)
+    }
     /// Tool settings open on Color (1), or on Tool (2) when the lesson starts there.
     var initialToolPage: Int { step == .chooseFill ? 2 : 1 }
     func allowsToolAdjustment(page: Int) -> Bool { visibleToolPages.contains(page) }

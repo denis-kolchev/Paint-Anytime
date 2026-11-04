@@ -9,64 +9,77 @@ struct WatchAppSettingsView: View {
     var onOpenDrawings: () -> Void
     var onStartTutorial: ([TutorialChapter]) -> Void
     var completedTutorialChapters: Set<TutorialChapter> = []
+    var opensTutorialChapters = false
     var onClose: (() -> Void)? = nil
     @ObservedObject var tutorial = TutorialSession.inactive
 
     var body: some View {
         NavigationStack {
-            List {
-                Button(action: onOpenDrawings) {
-                    Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
-                        .tutorialHint(tutorial, steps: [.openGallery])
+            if opensTutorialChapters {
+                // The canvas Tutorial button opens straight into the choice of tour.
+                TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
+                    .toolbar { closeToolbar }
+            } else {
+                menu
+            }
+        }
+    }
+
+    private var menu: some View {
+        List {
+            Button(action: onOpenDrawings) {
+                Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
+                    .tutorialHint(tutorial, steps: [.openGallery])
+            }
+            if !tutorial.isActive {
+                NavigationLink {
+                    AppLanguageSelectionView()
+                } label: {
+                    Label(L10n.text("Language"), systemImage: "globe")
                 }
-                if !tutorial.isActive {
-                    NavigationLink {
-                        AppLanguageSelectionView()
-                    } label: {
-                        Label(L10n.text("Language"), systemImage: "globe")
-                    }
-                    NavigationLink {
-                        DrawingSettingsView(controller: controller, viewportSize: viewportSize)
-                    } label: {
-                        Label(L10n.text("Drawing"), systemImage: "paintbrush")
-                    }
-                    NavigationLink {
-                        TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
-                    } label: {
-                        Label(L10n.text("Tutorial"), systemImage: "graduationcap")
-                    }
-                    NavigationLink {
-                        AutosaveSettingsView()
-                    } label: {
-                        Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
-                    }
-                    NavigationLink {
-                        WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
-                    } label: {
-                        Label(L10n.text("Privacy Policy"), systemImage: "hand.raised")
-                    }
-                    Button(action: reportBug) {
-                        Label(L10n.text("Report a bug"), systemImage: "envelope")
-                    }
+                NavigationLink {
+                    DrawingSettingsView(controller: controller, viewportSize: viewportSize)
+                } label: {
+                    Label(L10n.text("Drawing"), systemImage: "paintbrush")
+                }
+                NavigationLink {
+                    TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
+                } label: {
+                    Label(L10n.text("Tutorial"), systemImage: "graduationcap")
+                }
+                NavigationLink {
+                    AutosaveSettingsView()
+                } label: {
+                    Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+                }
+                NavigationLink {
+                    WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
+                } label: {
+                    Label(L10n.text("Privacy Policy"), systemImage: "hand.raised")
+                }
+                Button(action: reportBug) {
+                    Label(L10n.text("Report a bug"), systemImage: "envelope")
                 }
             }
-            .labelStyle(CenteredMenuLabelStyle())
-            .navigationTitle(L10n.text("More"))
-            .toolbarTitleDisplayMode(.inline)
-            .toolbar {
-                if let onClose {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button(action: onClose) {
-                            Image(systemName: "xmark")
-                                // Keep the symbol centered when the navigation host
-                                // restores this item after showing a back button.
-                                .frame(width: 32, height: 32, alignment: .center)
-                                .contentShape(Circle())
-                        }
-                        .watchToolbarButtonStyle()
-                        .accessibilityLabel(L10n.text("Close"))
-                    }
+        }
+        .labelStyle(CenteredMenuLabelStyle())
+        .navigationTitle(L10n.text("More"))
+        .toolbarTitleDisplayMode(.inline)
+        .toolbar { closeToolbar }
+    }
+
+    @ToolbarContentBuilder private var closeToolbar: some ToolbarContent {
+        if let onClose {
+            ToolbarItem(placement: .topBarLeading) {
+                Button(action: onClose) {
+                    Image(systemName: "xmark")
+                        // Keep the symbol centered when the navigation host
+                        // restores this item after showing a back button.
+                        .frame(width: 32, height: 32, alignment: .center)
+                        .contentShape(Circle())
                 }
+                .watchToolbarButtonStyle()
+                .accessibilityLabel(L10n.text("Close"))
             }
         }
     }

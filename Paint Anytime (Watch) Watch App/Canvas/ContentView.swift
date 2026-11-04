@@ -54,6 +54,8 @@ struct ContentView: View {
     @State private var layerMoveName: String?
     @State private var layerMoveID = UUID()
     @State private var showsAppSettings = false
+    /// The canvas Tutorial button presents the menu sheet on the chapter choice.
+    @State private var opensTutorialChapters = false
     @State private var showsGallery = false
     @State private var galleryArtworkFilename: String?
     @State private var galleryInitialBitmap: GalleryBitmap?
@@ -127,6 +129,7 @@ struct ContentView: View {
             if shows { showsContentActions = false }
         }
         .onChange(of: showsAppSettings) { _, shows in
+            if !shows { opensTutorialChapters = false }
             if shows { morphState.customExpandedSlot = nil }
             if shows { showsContentActions = false }
             else if menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
@@ -150,7 +153,7 @@ struct ContentView: View {
                 showsGallery = true
             }, onFinish: {
                 showsAppSettings = false
-            })
+            }, opensTutorialChapters: opensTutorialChapters)
             .task { await resetMorphBehindPresentation() }
         }
         .overlay {
@@ -706,9 +709,10 @@ struct ContentView: View {
             if sketchAssistOnPhone { startLasso(lockedTo: .sketchAssist) }
             else { showsSketchAssistRequirements = true }
         case .tutorial:
-            // Reuse the existing preparation, failure alert and tutorial handoff.
+            // Let the person choose the full tour or one chapter; the menu's
+            // preparation, failure alert and tutorial handoff start it.
+            opensTutorialChapters = true
             showsAppSettings = true
-            menuOnboarding.requestTutorial()
         case .reportBug:
             var components = URLComponents()
             components.scheme = "mailto"

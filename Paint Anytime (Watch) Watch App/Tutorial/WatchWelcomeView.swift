@@ -127,10 +127,12 @@ struct TutorialMenuPresentation: View {
     @ObservedObject var onboarding: OnboardingController
     let onOpenDrawings: () -> Void
     let onFinish: () -> Void
+    var opensTutorialChapters = false
     var body: some View {
         WatchAppSettingsView(controller: controller, viewportSize: viewportSize, onOpenDrawings: onOpenDrawings,
                              onStartTutorial: { onboarding.requestTutorial(chapters: $0) },
-                             completedTutorialChapters: onboarding.completedChapters, onClose: onFinish)
+                             completedTutorialChapters: onboarding.completedChapters,
+                             opensTutorialChapters: opensTutorialChapters, onClose: onFinish)
         // Block repeated taps without dimming every menu row before dismissal.
         .allowsHitTesting(!onboarding.preparesTutorial)
         .preferredColorScheme(.dark)

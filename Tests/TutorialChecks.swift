@@ -218,13 +218,15 @@ struct TutorialChecks {
             progress.advance()
         }
         precondition(progress.step == .pickColor && progress.allowsToolPage(1) && !progress.allowsToolPage(0))
+        precondition(progress.locksLessonColor, "Repainting must not return to the strokes' color")
         var recolored = PencilStyle()
         recolored.color = SIMD4(0.1, 0.4, 0.9, 1)
         precondition(progress.changedStyle(from: PencilStyle(), to: recolored, page: 1))
         progress.advance()
         precondition(progress.record(.closedTools) == .advance)
         progress.advance()
-        precondition(progress.step == .paintOverStroke && progress.record(.stroke) == .none)
+        precondition(progress.step == .paintOverStroke && !progress.locksLessonColor)
+        precondition(progress.record(.stroke) == .none)
         precondition(progress.record(.paintedOver) == .advance)
         progress.advance()
         for (step, event): (TutorialStep, TutorialProgress.Event) in [

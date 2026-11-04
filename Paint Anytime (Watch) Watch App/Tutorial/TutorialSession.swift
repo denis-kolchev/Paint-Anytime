@@ -48,7 +48,9 @@ final class TutorialSession: ObservableObject {
     @Published private(set) var showsResult = false
     var isActive: Bool { step != .inactive }
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
-    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .paintOverStroke, .drawOnLayer, .openLasso, .history, .clearCanvas, .saveDrawing, .shareDrawing, .openMenu]) }
+    // Free drawing stays available wherever the canvas is the current page and a stroke
+    // cannot disturb the exercise; camera, lasso, and gallery steps keep their own input.
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .paintOverStroke, .drawOnLayer, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .shareDrawing, .openMenu, .chapterComplete]) }
     var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
@@ -88,6 +90,7 @@ final class TutorialSession: ObservableObject {
     var visibleToolPages: Set<Int> { progress.visibleToolPages }
     var initialToolPage: Int { progress.initialToolPage }
     var limitsToolsToFill: Bool { progress.limitsToolsToFill }
+    var locksLessonColor: Bool { progress.locksLessonColor }
     var chapter: TutorialChapter? { progress.chapter }
     var chapterProgress: Double { progress.chapterProgress }
     var completedLessonCount: Int { progress.completedLessonCount }

@@ -38,6 +38,8 @@ struct WatchToolSettingsView: View {
             selectsAddColor = true
             tutorial.record(.reachedAddColor)
         } else if colors.indices.contains(index) {
+            // Turning back onto the original color keeps the newly chosen one.
+            if tutorial.locksLessonColor, colors[index].rgba == lessonColor { return }
             selectsAddColor = false
             tutorial.record(.returnedToColorSelection)
             controller.pencilStyle.color = colors[index].rgba
@@ -83,6 +85,8 @@ struct WatchToolSettingsView: View {
     }
     /// The brush in use when the fill lesson opened the settings.
     @State private var fillLessonBrush: DrawingInstrument?
+    /// The strokes' color when the repaint lesson opened the settings.
+    @State private var lessonColor: SIMD4<Float>?
     private var instrumentIndex: Int { instruments.firstIndex(of: controller.pencilStyle.instrument) ?? 0 }
 
     private var availableSettings: [ToolSetting] {
@@ -533,6 +537,7 @@ struct WatchToolSettingsView: View {
             if tutorial.limitsToolsToFill, controller.pencilStyle.instrument != .fill {
                 fillLessonBrush = controller.pencilStyle.instrument
             }
+            if tutorial.locksLessonColor { lessonColor = controller.pencilStyle.color }
             if !didRestorePage {
                 selectedPage = tutorial.isActive ? tutorial.initialToolPage : savedPage
                 didRestorePage = true
