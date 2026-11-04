@@ -670,9 +670,12 @@ struct ContentView: View {
         guard isActive, controller.activeStroke == nil, !showsAppSettings,
               quickSettings == nil, !showsGallery, !showsToolSettings,
               !isMovingCanvas, !lasso.isActive else { return }
-        morphState.customExpandedSlot = nil
-        showsMorphToolbar = false
-        showsContentActions = false
+        // Close only collapses the morph, so it plays the same spring as opening.
+        withAnimation(action == .closeMorph && !reduceMotion ? .spring(response: 0.35, dampingFraction: 0.8) : nil) {
+            morphState.customExpandedSlot = nil
+            showsMorphToolbar = false
+            showsContentActions = false
+        }
         controller.cancelStroke()
         switch action {
         case .brush: showsToolSettings = true

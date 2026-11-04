@@ -70,7 +70,9 @@ struct CustomCanvasControls: View {
 
     private func actionButton(_ action: CanvasQuickAction, height: CGFloat) -> some View {
         Button {
-            state.customExpandedSlot = nil
+            withAnimation(action == .closeMorph && !reduceMotion ? .spring(response: 0.35, dampingFraction: 0.8) : nil) {
+                state.customExpandedSlot = nil
+            }
             onAction(action)
         } label: {
             CanvasQuickActionIcon(action: action, instrument: controller.pencilStyle.instrument)
@@ -141,7 +143,9 @@ struct CustomCanvasToolbarAnchor: View {
                 }
             } else {
                 let action = CustomCanvasControls.isTop(index) ? assignment.actions.first : assignment.actions.last
-                state.customExpandedSlot = nil
+                withAnimation(action == .closeMorph && !reduceMotion ? .spring(response: 0.35, dampingFraction: 0.8) : nil) {
+                    state.customExpandedSlot = nil
+                }
                 if let action { onAction(action) }
             }
         } label: {
