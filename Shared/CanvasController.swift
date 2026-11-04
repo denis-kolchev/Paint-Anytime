@@ -31,6 +31,15 @@ final class CanvasController: ObservableObject {
     private(set) var document = CanvasDocument() {
         didSet { documentRevision &+= 1 }
     }
+    private var transparencyLockCache: (revision: UInt64, value: Bool)?
+    /// Whether any committed stroke clips to transparency. Scans every stroke once
+    /// per document revision instead of on every view update.
+    var containsTransparencyLockedStrokes: Bool {
+        if let cache = transparencyLockCache, cache.revision == documentRevision { return cache.value }
+        let value = document.layers.contains { layer in layer.strokes.contains { $0.locksTransparency } }
+        transparencyLockCache = (documentRevision, value)
+        return value
+    }
     private var savedDocument = CanvasDocument()
     var hasUnsavedChanges: Bool { document != savedDocument }
     // Clearing can differ from the saved snapshot, but leaves nothing to discard.
