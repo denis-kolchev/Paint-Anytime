@@ -16,6 +16,16 @@ final class WatchLassoController: ObservableObject {
     @Published private(set) var isPreparing = false
     @Published var errorMessage: String?
     @Published private(set) var selectionSeed: WatchSelectionPreview?
+    /// Complete strokes runs in two steps: the outlined strokes wait for the user to
+    /// confirm sending them to the iPhone, and object actions appear only once the
+    /// generated image is on the canvas.
+    enum SketchAssistStage { case idle, awaitingConfirmation, waitingForResult }
+    @Published private(set) var sketchAssistStage = SketchAssistStage.idle
+    var awaitsSketchAssistConfirmation: Bool { sketchAssistStage == .awaitingConfirmation }
+    /// True until the generated image replaces the outlined strokes.
+    var hidesSelectionActions: Bool { sketchAssistStage != .idle }
+    private var sketchAssistRender: (size: CGSize, scale: CGFloat)?
+    private var sketchAssistObservation: AnyCancellable?
     private var selection: WatchLassoSelection? {
         didSet {
             guard let selection,
@@ -162,6 +172,8 @@ final class WatchLassoController: ObservableObject {
         rotation = 0
         previewState = nil
         drag = nil
+        sketchAssistStage = .idle
+        sketchAssistRender = nil
     }
 
     func documentChanged(_ controller: CanvasController) {
@@ -313,11 +325,13 @@ final class WatchLassoController: ObservableObject {
                     isPreparing = false
                     outline = []
                     guard controller.document == document, controller.selectedLayer.id == layerID else { return }
+                    // Set before `bounds`, so the canvas keeps object actions hidden.
+                    if mode == .sketchAssist, result != nil {
+                        sketchAssistRender = (size, scale)
+                        sketchAssistStage = .awaitingConfirmation
+                    }
                     selection = result
                     bounds = result?.bounds
-                    if mode == .sketchAssist, let result {
-                        requestSketchAssist(result, controller: controller, size: size, scale: scale)
-                    }
                     onSelectionFinished(result != nil)
                 } catch {
                     guard !Task.isCancelled, generation == token else { return }
@@ -387,25 +401,52 @@ final class WatchLassoController: ObservableObject {
         record(before, controller: controller)
     }
 
+    /// The green checkmark while Complete strokes waits: sends the current selection,
+    /// including any move or resize made after outlining it.
+    func confirmSketchAssist(_ controller: CanvasController) {
+        documentChanged(controller)
+        guard sketchAssistStage == .awaitingConfirmation, let selection, let render = sketchAssistRender,
+              selection.document == controller.document else { return }
+        sketchAssistStage = .waitingForResult
+        // A failed or unusable round trip returns to confirmation so the user can retry.
+        sketchAssistObservation = WatchSketchAssist.shared.$phase.dropFirst().sink { [weak self] phase in
+            guard let self, self.sketchAssistStage == .waitingForResult else { return }
+            switch phase {
+            case .failed, .completed(applied: false):
+                self.sketchAssistStage = self.selection == nil ? .idle : .awaitingConfirmation
+            case .idle, .waiting, .completed(applied: true):
+                break
+            }
+        }
+        requestSketchAssist(selection, controller: controller, size: render.size, scale: render.scale)
+    }
+
     /// Sends only the selected strokes, rendered on the paper, to Image Playground on
     /// the iPhone. The result replaces them if the drawing is unchanged by then.
     private func requestSketchAssist(_ selection: WatchLassoSelection, controller: CanvasController,
                                      size: CGSize, scale: CGFloat) {
-        guard let index = selection.document.layers.firstIndex(where: { $0.id == selection.layerID }) else { return }
+        guard let index = selection.document.layers.firstIndex(where: { $0.id == selection.layerID }) else {
+            sketchAssistStage = .awaitingConfirmation
+            return
+        }
         var document = selection.document
         var layer = document.layers[index]
         layer.strokes = selection.strokes.filter { selection.selectedIDs.contains($0.id) }
         layer.isVisible = true
         layer.opacity = 1
         document.layers = [layer]
-        // A margin keeps antialiased edges and gives Image Playground some context.
-        let region = selection.bounds.insetBy(dx: -8, dy: -8)
+        // A rotated selection is cropped by its visible bounding box. A margin keeps
+        // antialiased edges and gives Image Playground some context.
+        let visibleBounds = selection.bounds.applying(
+            WatchLassoGeometry.rotation(selection.rotation, around: selection.bounds))
+        let region = visibleBounds.insetBy(dx: -8, dy: -8)
             .intersection(CGRect(origin: .zero, size: size)).integral
         guard !region.isEmpty,
               let image = WatchBitmapRenderer.render(document: document, size: size, scale: scale),
               let crop = image.cropping(to: CGRect(x: region.minX * scale, y: region.minY * scale,
                                                    width: region.width * scale, height: region.height * scale))
         else {
+            sketchAssistStage = .awaitingConfirmation
             errorMessage = "Could not create selection"
             return
         }

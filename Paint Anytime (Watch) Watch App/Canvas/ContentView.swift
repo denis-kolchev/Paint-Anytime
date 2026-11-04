@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct ContentView: View {
+    /// Center of the system clock text, in points from the top of the screen.
+    private static let clockCenterY: CGFloat = 27
     @Binding var launchRequest: WatchLaunchRequest?
     var isActive = true
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
@@ -77,14 +79,23 @@ struct ContentView: View {
         }
         // Establish full-screen bounds before applying any presentation effects.
         .ignoresSafeArea()
-        .overlay(alignment: .topTrailing) {
+        .overlay {
+            // The canvas hides the system clock, so the countdown takes its place:
+            // centered at the clock's height.
             if autosaveEnabled, isActive, scenePhase == .active, !showsAutosaveProgress,
+               menuOnboarding.tutorialFolder == nil,
                !showsGallery, !showsAppSettings, !showsToolSettings, !showsLayers,
                !showsSampledPalette, quickSettings == nil,
                let autosaveTimerRange {
-                AutosaveCountdownView(timerRange: autosaveTimerRange)
-                    .padding(.top, 2)
-                    .padding(.trailing, 8)
+                GeometryReader { overlay in
+                    let frame = overlay.frame(in: .global)
+                    // Fixed screen height of the hidden clock's center (measured on Apple Watch
+                    // Ultra). Toolbar frames are not used: they differ in the free camera.
+                    AutosaveCountdownView(timerRange: autosaveTimerRange)
+                        .position(x: overlay.size.width / 2, y: Self.clockCenterY - frame.minY)
+                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
             }
         }
         // Reinstall toolbar items when returning from onboarding so watchOS
@@ -215,7 +226,12 @@ struct ContentView: View {
             Text(session.exportError ?? "")
         }
         .onChange(of: lasso.bounds) { _, bounds in
-            if bounds != nil { showsSelectionActions = true }
+            if bounds != nil && !lasso.hidesSelectionActions { showsSelectionActions = true }
+        }
+        .onChange(of: lasso.hidesSelectionActions) { _, hides in
+            // Complete strokes shows object actions only for the generated image.
+            if hides { showsSelectionActions = false }
+            else if lasso.bounds != nil { showsSelectionActions = true }
         }
         .onChange(of: usesMorphToolbar) { _, _ in
             showsContentActions = false
@@ -551,10 +567,14 @@ struct ContentView: View {
         }
         if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && lasso.isActive {
             ToolbarItem(placement: .topBarLeading) {
-                // Balance Done to center the system clock, and forward this
-                // native toolbar region's drags to the same lasso controller.
-                WatchLassoToolbarTouchRegion(input: lassoToolbarInput, lasso: lasso,
-                    controller: controller, diameter: canvasToolbarDiameter)
+                if lasso.awaitsSketchAssistConfirmation {
+                    sketchAssistCancelControl
+                } else {
+                    // Balance Done to center the system clock, and forward this
+                    // native toolbar region's drags to the same lasso controller.
+                    WatchLassoToolbarTouchRegion(input: lassoToolbarInput, lasso: lasso,
+                        controller: controller, diameter: canvasToolbarDiameter)
+                }
             }
         }
         // A custom layout assigns the top-left slot itself, except while the
@@ -609,13 +629,35 @@ struct ContentView: View {
         }
     }
 
+    /// Complete strokes: discards the outlined strokes instead of sending them.
+    private var sketchAssistCancelControl: some View {
+        MorphControlsScope {
+            Button {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { lasso.resetSelection() }
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 17, weight: .semibold))
+                    .frame(width: 18, height: 18, alignment: .center)
+                    .contentShape(Rectangle())
+            }
+            .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true,
+                                     hidesNativeChrome: lasso.hidesControls)
+            .accessibilityLabel(L10n.text("Cancel"))
+            .trackCanvasControl(.more, frames: controlFramesBinding)
+            .opacity(lasso.hidesControls ? 0 : 1)
+            .allowsHitTesting(!lasso.hidesControls)
+            .accessibilityHidden(lasso.hidesControls)
+        }
+    }
+
     /// The trailing toolbar control: tool settings, Done or the drawing morph.
     /// Kept apart from `body` so the toolbar stays within type-checking limits.
     private var trailingToolControl: some View {
         MorphControlsScope {
             Button {
                 if lasso.isActive {
-                    finishLasso()
+                    if lasso.awaitsSketchAssistConfirmation { lasso.confirmSketchAssist(controller) }
+                    else { finishLasso() }
                 } else if isMovingCanvas {
                     finishCameraTool()
                 }
@@ -649,7 +691,7 @@ struct ContentView: View {
                 .contentShape(Rectangle())
             }
             .watchToolbarButtonStyle(diameter: showsToolSettings ? 32 : canvasToolbarDiameter, usesCanvasMaterial: !showsToolSettings, hidesNativeChrome: morphOwnsTrailingControl || lasso.hidesControls || (!showsToolSettings && controller.activeStroke != nil))
-            .accessibilityLabel(showsToolSettings || isMovingCanvas || lasso.isActive ? L10n.text("Done") : L10n.text(usesMorphToolbar && !showsMorphToolbar ? "Open drawing controls" : "Tool settings"))
+            .accessibilityLabel(lasso.isActive && lasso.awaitsSketchAssistConfirmation ? L10n.text("Send to iPhone") : showsToolSettings || isMovingCanvas || lasso.isActive ? L10n.text("Done") : L10n.text(usesMorphToolbar && !showsMorphToolbar ? "Open drawing controls" : "Tool settings"))
             .trackCanvasControl(.tools, frames: controlFramesBinding)
             .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
             // Keep the toolbar slot installed so the system clock does not
@@ -800,7 +842,7 @@ struct ContentView: View {
     private var protectedCanvasControls: [CanvasToolbarControl: CGRect] {
         guard isActive && !showsGallery && !showsToolSettings && controller.activeStroke == nil && !lasso.hidesControls else { return [:] }
         return canvasControlFrames.filter { control, _ in
-            if lasso.isActive { return (!showsSelectionActions && control == .tools) || control == .canvasToolsMorph || (showsSelectionActions && control == .morph) }
+            if lasso.isActive { return (!showsSelectionActions && control == .tools) || control == .canvasToolsMorph || (showsSelectionActions && control == .morph) || (lasso.awaitsSketchAssistConfirmation && control == .more) }
             if isMovingCanvas { return control == .tools || control == .more }
             if customLayout != nil {
                 if case .custom = control { return true }

@@ -363,8 +363,9 @@ struct CanvasMorphPanels: View {
                 let left = bottom.x - diameter / 2
                 let availableWidth = max(0, size.width - left * 2)
                 let panelWidth = min(diameter * (showsSelectionActions ? 4 : CGFloat(lassoModes.count)), availableWidth)
-                // A lasso opened into one mode skips the mode picker.
-                if showsSelectionActions || !lasso.isModeLocked {
+                // A lasso opened into one mode skips the mode picker; Complete strokes
+                // leaves only the send checkmark until its image arrives.
+                if showsSelectionActions || (!lasso.isModeLocked && !(lasso.hidesSelectionActions && lasso.bounds != nil)) {
                     lassoMorph(diameter: diameter, panelWidth: panelWidth)
                         .position(x: size.width / 2, y: bottom.y)
                         .zIndex(3)

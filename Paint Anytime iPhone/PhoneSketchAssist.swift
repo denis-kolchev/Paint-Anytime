@@ -217,7 +217,9 @@ private struct SketchAssistPlaygroundSheet: ViewModifier {
                 onCompletion: { assist.complete(with: $0) },
                 onCancellation: { assist.cancel() }
             )
-            .imagePlaygroundGenerationStyle(.sketch)
+            // `.all` includes iOS 27's automatic `.any` style, which the sheet can pick
+            // instead of the preferred one; list the styles explicitly, Illustration first.
+            .imagePlaygroundGenerationStyle(.illustration, in: [.illustration, .sketch, .animation])
         if #available(iOS 27.0, *) {
             sheet.imagePlaygroundOptions(Self.editingOptions)
         } else {
