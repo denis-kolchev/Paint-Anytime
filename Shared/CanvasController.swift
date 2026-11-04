@@ -2,6 +2,9 @@ import Combine
 import CoreGraphics
 import Foundation
 
+/// Publishes live-stroke samples without invalidating every observer of the canvas.
+final class LiveStrokeChanges: ObservableObject {}
+
 final class CanvasController: ObservableObject {
     let tools: ToolSettings
     private var toolChanges: AnyCancellable?
@@ -49,6 +52,8 @@ final class CanvasController: ObservableObject {
     var canUndo: Bool { !undoStack.isEmpty }
     var canRedo: Bool { !redoStack.isEmpty }
     var onNeedsDisplay: (() -> Void)?
+    /// Fires for every appended live-stroke sample, separately from `objectWillChange`.
+    let liveStroke = LiveStrokeChanges()
 
     init(defaults: UserDefaults = .standard, persistsPreferences: Bool = true) {
         savedDocument = document
@@ -234,7 +239,13 @@ final class CanvasController: ObservableObject {
     }
 
     func continueStroke(at sample: PointerSample) {
-        objectWillChange.send()
+        // Per-sample updates reach only views that draw the live stroke. The rest
+        // of the UI depends on whether a stroke exists, published by begin/end/cancel.
+        // Object erasing edits the committed document, so it still notifies everyone.
+        if let style = pencil.activeStroke?.style, style.instrument == .eraser, style.eraserMode == .objects {
+            objectWillChange.send()
+        }
+        liveStroke.objectWillChange.send()
         let previous = pencil.activeStroke?.points.last?.position ?? sample.position
         pencil.update(with: sample)
         activeStrokeRevision &+= 1

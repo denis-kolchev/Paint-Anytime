@@ -9,6 +9,7 @@ struct ContentView: View {
     @StateObject private var session = DrawingSessionController()
     @AppStorage(AutosaveSettings.enabledKey) private var autosaveEnabled = false
     @AppStorage(AutosaveSettings.intervalKey) private var autosaveMinutes = AutosaveSettings.defaultMinutes
+    @AppStorage(AutosaveSettings.showsTimerKey) private var showsAutosaveTimer = AutosaveSettings.defaultShowsTimer
     @State private var autosaveTimerRange: ClosedRange<Date>?
     @State private var autosaveScheduleID: String?
     @State private var showsAutosaveProgress = false
@@ -82,7 +83,7 @@ struct ContentView: View {
         .overlay {
             // The canvas hides the system clock, so the countdown takes its place:
             // centered at the clock's height.
-            if autosaveEnabled, isActive, scenePhase == .active, !showsAutosaveProgress,
+            if autosaveEnabled, showsAutosaveTimer, isActive, scenePhase == .active, !showsAutosaveProgress,
                menuOnboarding.tutorialFolder == nil,
                !showsGallery, !showsAppSettings, !showsToolSettings, !showsLayers,
                !showsSampledPalette, quickSettings == nil,

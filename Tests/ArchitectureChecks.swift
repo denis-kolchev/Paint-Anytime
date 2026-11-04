@@ -181,7 +181,15 @@ struct ArchitectureChecks {
         let initialGesture = revisions.activeStrokeID
         revisions.beginStroke(at: start)
         let firstGesture = revisions.activeStrokeID
+        var structuralChanges = 0
+        var liveChanges = 0
+        let structuralSubscription = revisions.objectWillChange.sink { structuralChanges += 1 }
+        let liveSubscription = revisions.liveStroke.objectWillChange.sink { liveChanges += 1 }
         revisions.continueStroke(at: end)
+        precondition(structuralChanges == 0 && liveChanges == 1,
+                     "Live samples must not invalidate every canvas observer")
+        structuralSubscription.cancel()
+        liveSubscription.cancel()
         precondition(firstGesture != initialGesture && revisions.activeStrokeID == firstGesture,
                      "Gesture identity must remain stable while appending")
         precondition(revisions.documentRevision == initialRevision,

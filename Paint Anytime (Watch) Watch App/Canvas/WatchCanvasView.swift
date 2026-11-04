@@ -85,21 +85,24 @@ struct WatchCanvasView: View {
         GeometryReader { geometry in
             let paperSize = controller.document.size(fallback: geometry.size)
             let fit = canvasFit(geometry.size)
-            let displayedDocument = controller.document
             let useLayers = lasso.isActive || needsLayerRendering
             Color(white: 0.16)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .overlay {
                     // Hiding settings/gallery must not destroy the raster view's image and cache.
                     // Keep its identity so returning to the canvas displays the last frame immediately.
-                    WatchRasterArtwork(document: useLayers ? displayedDocument : nil,
-                        selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, selectionSeed: lasso.selectionSeed,
-                        strokes: useLayers ? [] : (displayedDocument.layers.first?.strokes ?? []),
-                        activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
-                        documentRevision: controller.documentRevision,
-                        clearDocumentRevision: controller.clearDocumentRevision,
-                        activeStrokeRevision: controller.activeStrokeRevision,
-                        activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: zoom)
+                    // Live samples re-evaluate only this observer, not the canvas or its menus.
+                    LiveStrokeObserver(changes: controller.liveStroke) {
+                        let displayedDocument = controller.document
+                        WatchRasterArtwork(document: useLayers ? displayedDocument : nil,
+                            selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, selectionSeed: lasso.selectionSeed,
+                            strokes: useLayers ? [] : (displayedDocument.layers.first?.strokes ?? []),
+                            activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
+                            documentRevision: controller.documentRevision,
+                            clearDocumentRevision: controller.clearDocumentRevision,
+                            activeStrokeRevision: controller.activeStrokeRevision,
+                            activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: zoom)
+                    }
                         .frame(width: paperSize.width, height: paperSize.height)
                         .overlay {
                             if let failedCircleImage {
@@ -155,6 +158,7 @@ struct WatchCanvasView: View {
                 }
             }
             .overlay {
+                LiveStrokeObserver(changes: controller.liveStroke) {
                 if rendersArtwork, acceptsInput, isDragging, acceptsCurrentGesture == true,
                    !isMovingCanvas, !isEyedropperActive, !lasso.isActive,
                    let stroke = controller.activeStroke,
@@ -178,6 +182,7 @@ struct WatchCanvasView: View {
                     .clipped()
                     .allowsHitTesting(false)
                     .accessibilityHidden(true)
+                }
                 }
             }
             .overlay {
@@ -694,6 +699,15 @@ struct WatchCanvasView: View {
         PointerSample(position: SIMD2(Float(point.x), Float(point.y)),
                       pressure: 1, timestamp: time.timeIntervalSinceReferenceDate)
     }
+}
+
+/// Re-evaluates only its content for each live-stroke sample. The content closure is
+/// rebuilt by the parent on structural changes and reads live values from the controller.
+private struct LiveStrokeObserver<Content: View>: View {
+    @ObservedObject var changes: LiveStrokeChanges
+    @ViewBuilder let content: () -> Content
+
+    var body: some View { content() }
 }
 
 /// Display-only transparency backing shared by the canvas and layer previews.
