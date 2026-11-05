@@ -293,6 +293,7 @@ private struct CanvasSlotEditorView: View {
     @State private var selection: [CanvasQuickAction] = []
     @State private var icon = CanvasMorphIcon.standard
     @State private var loaded = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         List {
@@ -327,16 +328,19 @@ private struct CanvasSlotEditorView: View {
         }
         .navigationTitle(L10n.text("Action"))
         .toolbar {
-            if isGrouped {
-                // Shows the group's icon and opens the full icon list.
-                ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink {
-                        CanvasMorphIconPicker(icon: $icon, onSelect: commit)
-                    } label: {
-                        Image(systemName: icon)
-                    }
-                    .accessibilityLabel(L10n.text("Icon"))
+            // Shows the group's icon and opens the full icon list. Always installed,
+            // so the title keeps its place; ungrouped, it fades and shrinks away.
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    CanvasMorphIconPicker(icon: $icon, onSelect: commit)
+                } label: {
+                    Image(systemName: icon)
                 }
+                .accessibilityLabel(L10n.text("Icon"))
+                .scaleEffect(isGrouped || reduceMotion ? 1 : 0.5)
+                .opacity(isGrouped ? 1 : 0)
+                .allowsHitTesting(isGrouped)
+                .accessibilityHidden(!isGrouped)
             }
         }
         .onAppear {
@@ -374,6 +378,14 @@ private struct CanvasSlotEditorView: View {
 
     /// Grouping keeps the current action as number one; ungrouping keeps only the first.
     private func setGrouped(_ grouped: Bool) {
+        // One spring for the counter, the markers, the rows and the icon button,
+        // in both directions.
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.8)) {
+            applyGrouped(grouped)
+        }
+    }
+
+    private func applyGrouped(_ grouped: Bool) {
         isGrouped = grouped
         if grouped {
             selection = assignment.actions.filter { $0 != .nothing }
