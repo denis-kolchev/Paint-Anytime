@@ -188,6 +188,57 @@ struct GalleryMorphActions: View {
 
 }
 
+/// Grid selection actions: the 1:1 morph panel without its close and edit cells.
+/// Select/Cancel in the top bar owns dismissal, so the panel stays expanded.
+struct GallerySelectionActions: View {
+    let drawings: [CanvasExport]
+    var onFavorite: (Bool) -> Void
+    var onDelete: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var allFavorite: Bool { !drawings.isEmpty && drawings.allSatisfy(\.isFavorite) }
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Button {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
+                    onFavorite(!allFavorite)
+                }
+            } label: {
+                icon(allFavorite ? "heart.fill" : "heart")
+            }
+            .accessibilityLabel(L10n.text(allFavorite ? "Remove from favorites" : "Add to favorites"))
+
+            ShareLink(items: drawings.map { DrawingShareItem(url: $0.url) }) { item in
+                SharePreview(Text(verbatim: item.url.lastPathComponent), image: item)
+            } label: {
+                icon("square.and.arrow.up")
+            }
+            .accessibilityLabel(L10n.text("Share"))
+
+            Button(role: .destructive, action: onDelete) {
+                icon("trash")
+            }
+            .accessibilityLabel(L10n.text("Delete drawing"))
+        }
+        .disabled(drawings.isEmpty)
+        .opacity(drawings.isEmpty ? 0.45 : 1)
+        .frame(width: GalleryMorphState.buttonDiameter * 3, height: GalleryMorphState.buttonDiameter)
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .fixedSize()
+        .modifier(GalleryMorphGlass())
+    }
+
+    private func icon(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 17, weight: .medium))
+            .frame(height: GalleryMorphState.buttonDiameter)
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+    }
+}
+
 /// Let glass resolve the foreground contrast over the current gallery artwork.
 /// A fixed white foreground prevents the light glass appearance from using dark symbols.
 private struct GalleryMorphGlass: ViewModifier {

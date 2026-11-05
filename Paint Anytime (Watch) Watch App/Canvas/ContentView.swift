@@ -852,40 +852,63 @@ struct DestructiveConfirmationView: View {
     let title: String
     let confirmTitle: String
     var cancelTitle: String = L10n.text("No")
+    /// Fit one screen: no scrolling, and the title shrinks so both buttons stay visible.
+    var fitsScreen = false
     var onCancel: () -> Void
     var onConfirm: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
+        if fitsScreen {
+            VStack(spacing: 12) {
                 Text(title)
                     .font(.headline)
                     .multilineTextAlignment(.center)
+                    .minimumScaleFactor(0.5)
+                    .allowsTightening(true)
+                    // Take only the height the buttons leave; the text scales into it.
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                buttons
                     .fixedSize(horizontal: false, vertical: true)
-
-                ConfirmationButtonsLayout(layoutDirection: layoutDirection) {
-                    Button(action: onCancel) {
-                        Text(cancelTitle)
-                            .frame(maxWidth: .infinity, minHeight: 32)
-                    }
-                    .watchActionButtonStyle()
-
-                    Button(role: .destructive, action: onConfirm) {
-                        Text(confirmTitle)
-                            .frame(maxWidth: .infinity, minHeight: 32)
-                    }
-                    .watchActionButtonStyle()
-                    .tint(.red)
-                    .foregroundStyle(.red)
-                }
-                .font(.caption.weight(.semibold))
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                    .layoutPriority(1)
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 16)
+            .padding(.bottom, 8)
+            .background(.black)
+        } else {
+            ScrollView {
+                VStack(spacing: 20) {
+                    Text(title)
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                    buttons
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 16)
+            }
+            .background(.black)
         }
-        .background(.black)
+    }
+
+    private var buttons: some View {
+        ConfirmationButtonsLayout(layoutDirection: layoutDirection) {
+            Button(action: onCancel) {
+                Text(cancelTitle)
+                    .frame(maxWidth: .infinity, minHeight: 32)
+            }
+            .watchActionButtonStyle()
+
+            Button(role: .destructive, action: onConfirm) {
+                Text(confirmTitle)
+                    .frame(maxWidth: .infinity, minHeight: 32)
+            }
+            .watchActionButtonStyle()
+            .tint(.red)
+            .foregroundStyle(.red)
+        }
+        .font(.caption.weight(.semibold))
+        .lineLimit(1)
+        .minimumScaleFactor(0.75)
     }
 }
 

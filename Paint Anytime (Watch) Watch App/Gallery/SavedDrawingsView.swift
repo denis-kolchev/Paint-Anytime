@@ -28,6 +28,15 @@ struct SavedDrawingsView: View {
         nonmutating set { gridStorage.focusedDrawing = newValue }
     }
     @State private var pendingDeletion: CanvasExport?
+    // Grid selection mode: tiles toggle membership instead of zooming.
+    @State private var isSelecting = false
+    @State private var selectedURLs: Set<URL> = []
+    @State private var confirmsSelectionDeletion = false
+    private var selectedDrawings: [CanvasExport] { drawings.filter { selectedURLs.contains($0.url) } }
+    // Keep the toolbar item mounted through grid zoom: inserting or removing it
+    // mid-transition makes the native toolbar drop the icon.
+    private var hostsSelectButton: Bool { !tutorial.isActive && !drawings.isEmpty }
+    private var showsSelectButton: Bool { hostsSelectButton && !showsFullscreen }
     @State private var showsFullscreen = false
     @State private var isCleanViewing = false
     @State private var showsFullscreenActions = false
@@ -91,7 +100,8 @@ struct SavedDrawingsView: View {
                     .modifier(crownInput(for: .grid))
                     // Let photos scroll behind the tutorial card while allowing
                     // the final row to scroll fully above it.
-                    .contentMargins(.bottom, tutorialHintReservedHeight, for: .scrollContent)
+                    .contentMargins(.bottom, tutorialHintReservedHeight + (isSelecting ? selectionPanelInset : 0),
+                                    for: .scrollContent)
                     .contentMargins(.top, contentTopInset, for: .scrollContent)
                     .scrollIndicators(.hidden)
                     .galleryCustomHeaderEdge()
@@ -157,6 +167,23 @@ struct SavedDrawingsView: View {
                         .allowsHitTesting(!isCleanViewing && showsFullscreenActions && !isTransitioning)
                         .accessibilityHidden(isCleanViewing || !showsFullscreenActions || isTransitioning)
 
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if isSelecting && !showsFullscreen && !isTransitioning {
+                    GallerySelectionActions(
+                        drawings: selectedDrawings,
+                        onFavorite: { favorite in
+                            for drawing in selectedDrawings {
+                                controller.setFavorite(favorite, for: drawing, in: galleryFolder)
+                            }
+                        },
+                        onDelete: {
+                            crownFocused = false
+                            confirmsSelectionDeletion = true
+                        })
+                        .padding(.bottom, 8)
+                        .transition(.scale(scale: 0.6).combined(with: .opacity))
                 }
             }
             .overlay {
@@ -257,6 +284,36 @@ struct SavedDrawingsView: View {
                     Spacer(minLength: 0)
                 }
             }
+            if hostsSelectButton {
+                ToolbarItem(placement: .topBarTrailing) {
+                    // Same hidden-chrome slot and glass circle as the back button.
+                    Button {
+                        setSelecting(!isSelecting)
+                    } label: {
+                        Image(systemName: "checkmark.circle")
+                            .opacity(0)
+                    }
+                    .disabled(isLoading || isTransitioning || !showsSelectButton)
+                    .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
+                    .overlay {
+                        Image(systemName: isSelecting ? "xmark" : "checkmark.circle")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .contentTransition(.opacity)
+                            .frame(width: GalleryMorphState.buttonDiameter,
+                                   height: GalleryMorphState.buttonDiameter)
+                            .modifier(CanvasMorphGlass(adaptsToCanvas: true))
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                    // The 1:1 photo has its own morph actions; fade rather than remove.
+                    .opacity(showsSelectButton ? 1 : 0)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: showsSelectButton)
+                    .allowsHitTesting(showsSelectButton)
+                    .accessibilityHidden(!showsSelectButton)
+                    .accessibilityLabel(L10n.text(isSelecting ? "Cancel" : "Select"))
+                }
+            }
             if tutorial.allowsGalleryBack {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: goBack) {
@@ -344,7 +401,7 @@ struct SavedDrawingsView: View {
     private func crownInput(for target: GalleryCrownInput.Target) -> GalleryCrownInput {
         let owner: GalleryCrownInput.Target = isTransitioning || showsFullscreen ? .presentation : .grid
         return GalleryCrownInput(target: target,
-            enabled: owner == target && !isLoading && pendingDeletion == nil && tutorial.allowsGalleryZoom,
+            enabled: owner == target && !isLoading && pendingDeletion == nil && !isSelecting && tutorial.allowsGalleryZoom,
             focus: $crownTarget,
             position: Binding(get: { crownPosition }, set: { value in
                 // A disabled host can still deliver a queued event at handoff.
@@ -413,6 +470,19 @@ struct SavedDrawingsView: View {
 
     var body: some View {
         galleryWithConfirmations
+        .fullScreenCover(isPresented: $confirmsSelectionDeletion, onDismiss: {
+            crownFocused = tutorial.allowsGalleryZoom
+        }) {
+            DestructiveConfirmationView(title: selectionDeletionTitle, confirmTitle: L10n.text("Delete"),
+                                        fitsScreen: true) {
+                confirmsSelectionDeletion = false
+            } onConfirm: {
+                withoutAnimation { deleteSelectedDrawings() }
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                    confirmsSelectionDeletion = false
+                }
+            }
+        }
         .alert(L10n.text("Error"), isPresented: Binding(
             get: { controller.errorMessage != nil }, set: { if !$0 { controller.errorMessage = nil } }
         )) { Button(L10n.text("OK"), role: .cancel) { controller.errorMessage = nil } }
@@ -451,6 +521,7 @@ struct SavedDrawingsView: View {
             if gridZoom.active, urls != gridZoom.snapshot { gridZoom.reset() }
             leadingSlots = 0
             gridStorage.retain(urls: Set(urls))
+            selectedURLs.formIntersection(urls)
         }
         .onChange(of: tutorial.showsInstruction) { _, showing in
             crownFocused = !showing && tutorial.allowsGalleryZoom && pendingDeletion == nil
@@ -458,6 +529,7 @@ struct SavedDrawingsView: View {
         }
         .onChange(of: showsFullscreen) { _, fullscreen in
             morphState.isExpanded = false
+            if fullscreen { setSelecting(false) }
             if !fullscreen { pageVisibility = [:] }
             tutorial.galleryIsFullscreen = fullscreen
             // Reduce Motion opens directly, so isTransitioning never changes.
@@ -475,6 +547,39 @@ struct SavedDrawingsView: View {
             ? "Delete from Apple Watch and iPhone? Export it first to keep a copy."
             : "Delete the image?"
         return L10n.text(key)
+    }
+
+    private var selectionDeletionTitle: String {
+        let key = galleryFolder == nil
+            ? "Delete the selected images from Apple Watch and iPhone? Export them first to keep a copy."
+            : "Delete the selected images?"
+        return L10n.text(key)
+    }
+
+    private let selectionPanelInset: CGFloat = GalleryMorphState.buttonDiameter + 12
+
+    private func setSelecting(_ selecting: Bool) {
+        guard isSelecting != selecting else { return }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            isSelecting = selecting
+            if !selecting { selectedURLs = [] }
+        }
+    }
+
+    private func toggleSelection(_ drawing: CanvasExport) {
+        if selectedURLs.contains(drawing.url) { selectedURLs.remove(drawing.url) }
+        else { selectedURLs.insert(drawing.url) }
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    private func deleteSelectedDrawings() {
+        for drawing in selectedDrawings {
+            _ = controller.delete(drawing, in: galleryFolder)
+        }
+        focusedDrawing = nil
+        isSelecting = false
+        selectedURLs = []
+        WKInterfaceDevice.current().play(.click)
     }
 
     private func handleRemoteDeletions() {
@@ -499,6 +604,10 @@ struct SavedDrawingsView: View {
             GalleryThumbnailGrid(columns: columnCount, spacing: spacing, side: width, leading: leadingSlots) {
                 ForEach(drawings) { drawing in
                     Button {
+                        if isSelecting {
+                            toggleSelection(drawing)
+                            return
+                        }
                         guard Date() >= suppressOpeningUntil else { return }
                         tutorial.activity()
                         focusedDrawing = drawing
@@ -515,11 +624,17 @@ struct SavedDrawingsView: View {
                             })
                             .frame(width: width, height: width)
                             .clipped()
+                            .overlay(alignment: .bottomTrailing) {
+                                if isSelecting {
+                                    selectionMark(selectedURLs.contains(drawing.url), side: width)
+                                }
+                            }
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .disabled(!tutorial.allowsGalleryZoom)
                     .accessibilityLabel(L10n.text("Open drawing"))
+                    .accessibilityAddTraits(isSelecting && selectedURLs.contains(drawing.url) ? .isSelected : [])
                     .id(drawing.id)
                 }
             }
@@ -542,11 +657,30 @@ struct SavedDrawingsView: View {
         }
     }
 
+    private func selectionMark(_ selected: Bool, side: CGFloat) -> some View {
+        let diameter = min(18, side * 0.4)
+        return ZStack {
+            if selected {
+                Color.black.opacity(0.25)
+            }
+            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: diameter, weight: .semibold))
+                .symbolRenderingMode(.palette)
+                .foregroundStyle(.white, selected ? Color.accentColor : .clear)
+                .shadow(color: .black.opacity(0.4), radius: 1)
+                .padding(3)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
     private func goBack() {
         guard !isLoading else { return }
         guard tutorial.allowsGalleryBack else { return }
         tutorial.activity()
         guard !isTransitioning else { return }
+        if isSelecting { setSelecting(false); return }
         if showsFullscreen { setZoom(returnGridLevel) }
         else if zoomLevel > 0 { setZoom(zoomLevel - 1) }
         else { onClose() }
@@ -663,7 +797,7 @@ struct SavedDrawingsView: View {
             WatchGalleryDiagnostics.shared.crown(value, result: reason)
         }
         #endif
-        guard !isLoading, pendingDeletion == nil, tutorial.allowsGalleryZoom else { return }
+        guard !isLoading, pendingDeletion == nil, !isSelecting, tutorial.allowsGalleryZoom else { return }
         tutorial.activity()
         if !gridZoom.active {
             guard let target = selectedDrawing ?? focusedDrawing ?? drawings.first else { return }
