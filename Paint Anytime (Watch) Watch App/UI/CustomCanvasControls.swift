@@ -53,6 +53,9 @@ struct CustomCanvasControls: View {
                                               isMorph: assignment.isMorph,
                                               morphIcon: assignment.icon)
                             .frame(width: diameter, height: diameter)
+                            // A plain button hit-tests only the glyph; the interactive glass
+                            // still animates, so a tap beside the icon looked accepted.
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                     .disabled(!assignment.isMorph && !enabled(assignment.actions[0]))
@@ -81,6 +84,8 @@ struct CustomCanvasControls: View {
         } label: {
             CanvasQuickActionIcon(action: action, instrument: controller.pencilStyle.instrument)
                 .frame(width: MorphPanelGeometry.buttonDiameter, height: height)
+                // The whole row belongs to its action: rows tile the glass with no gaps.
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!enabled(action))

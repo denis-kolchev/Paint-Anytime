@@ -125,19 +125,16 @@ struct GalleryMorphActions: View {
     private func galleryActions(for drawing: CanvasExport, expandedWidth: CGFloat) -> some View {
         CanvasMorphContent(isExpanded: showsGalleryActions) {
             HStack(spacing: 0) {
-                // Six equal gaps: four between the intrinsic symbol widths and two at the edges.
-                Spacer(minLength: 0)
+                // Equal cells without spacers: the interactive glass reacts anywhere in the
+                // capsule, so every point must belong to the nearest action.
                 Button(action: toggleGalleryActions) {
                     galleryActionIcon("xmark", itemWidth: nil)
                 }
                 .accessibilityHidden(true)
-                Spacer(minLength: 0)
-
                 Button { showsGalleryActions = false; onEdit() } label: {
                     galleryActionIcon("pencil", itemWidth: nil)
                 }
                 .accessibilityLabel(L10n.text("Edit drawing"))
-                Spacer(minLength: 0)
 
                 Button {
                     withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) {
@@ -152,7 +149,6 @@ struct GalleryMorphActions: View {
                     }
                 }
                 .accessibilityLabel(L10n.text(isFavorite ? "Remove from favorites" : "Add to favorites"))
-                Spacer(minLength: 0)
 
                 ShareLink(item: DrawingShareItem(url: drawing.url),
                           preview: SharePreview(Text(verbatim: drawing.url.lastPathComponent),
@@ -160,7 +156,6 @@ struct GalleryMorphActions: View {
                     galleryActionIcon("square.and.arrow.up", itemWidth: nil)
                 }
                 .accessibilityLabel(L10n.text("Share"))
-                Spacer(minLength: 0)
 
                 Button(role: .destructive) {
                     onDelete()
@@ -168,7 +163,6 @@ struct GalleryMorphActions: View {
                     galleryActionIcon("trash", itemWidth: nil)
                 }
                 .accessibilityLabel(L10n.text("Delete drawing"))
-                Spacer(minLength: 0)
             }
             .frame(width: expandedWidth, height: GalleryMorphState.buttonDiameter)
         } collapsed: {
@@ -183,10 +177,12 @@ struct GalleryMorphActions: View {
         .modifier(GalleryMorphGlass())
     }
 
+    /// `itemWidth: nil` fills an equal share of the expanded panel.
     private func galleryActionIcon(_ symbol: String, itemWidth: CGFloat?) -> some View {
         Image(systemName: symbol)
             .font(.system(size: 17, weight: .medium))
             .frame(width: itemWidth, height: GalleryMorphState.buttonDiameter)
+            .frame(maxWidth: itemWidth == nil ? .infinity : nil)
             .contentShape(Rectangle())
     }
 
@@ -554,11 +550,11 @@ struct CanvasMorphPanels: View {
                 .disabled(lasso.bounds == nil)
             }
         } collapsed: {
+            // Equal cells without spacers: every point of the glass selects the nearest mode.
             HStack(spacing: 0) {
-                Spacer(minLength: 0)
                 ForEach(lassoModes, id: \.self) { mode in
                     let isLocked = mode == .sketchAssist && !sketchAssistOnPhone
-                    morphButton(mode.title, height: diameter, intrinsicWidth: true) {
+                    morphButton(mode.title, height: diameter) {
                         if isLocked { showsSketchAssistRequirements = true } else { lasso.setMode(mode) }
                     } label: {
                         Image(systemName: mode.symbol)
@@ -567,8 +563,6 @@ struct CanvasMorphPanels: View {
                     }
                     .accessibilityAddTraits(lasso.mode == mode ? [.isSelected] : [])
                     .accessibilityValue(isLocked ? L10n.text("Unavailable") : "")
-                    Spacer(minLength: 0)
-
                 }
             }
         }
@@ -581,12 +575,12 @@ struct CanvasMorphPanels: View {
         .modifier(SketchAssistRequirementsAlert(isPresented: $showsSketchAssistRequirements))
     }
 
-    private func morphButton<Label: View>(_ title: String, height: CGFloat, intrinsicWidth: Bool = false, action: @escaping () -> Void,
+    private func morphButton<Label: View>(_ title: String, height: CGFloat, action: @escaping () -> Void,
                                           @ViewBuilder label: () -> Label) -> some View {
         Button(action: action) {
             label()
                 .font(.system(size: 17, weight: .semibold))
-                .frame(maxWidth: intrinsicWidth ? nil : .infinity)
+                .frame(maxWidth: .infinity)
                 .frame(height: height)
                 .contentShape(Rectangle())
         }
