@@ -50,7 +50,7 @@ final class TutorialSession: ObservableObject {
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
     // Free drawing stays available wherever the canvas is the current page and a stroke
     // cannot disturb the exercise; camera, lasso, and gallery steps keep their own input.
-    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .paintOverStroke, .drawOnLayer, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .shareDrawing, .openMenu, .chapterComplete]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .shareDrawing, .openMenu, .chapterComplete]) }
     var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
@@ -154,11 +154,31 @@ final class TutorialSession: ObservableObject {
         activity()
     }
 
-    /// The overlap lesson completes once a stroke reaches the shape of an earlier one.
+    /// Supplies the practice canvas, so stroke checks can compare against other layers.
+    var canvasDocument: (() -> CanvasDocument?)?
+
+    /// Overlap lessons complete once a stroke reaches the shape of an earlier one:
+    /// on the same layer, or on a layer above for the layer-order lesson.
     func finishedStroke(in layer: CanvasLayer) {
-        guard step == .paintOverStroke, acceptsActions, let stroke = layer.strokes.last,
-              TutorialStrokeOverlap.paintsOver(stroke, earlier: Array(layer.strokes.dropLast())) else { return }
-        record(.paintedOver)
+        guard acceptsActions, let stroke = layer.strokes.last else { return }
+        switch step {
+        case .paintOverStroke:
+            guard TutorialStrokeOverlap.paintsOver(stroke, earlier: Array(layer.strokes.dropLast())) else { return }
+            record(.paintedOver)
+        case .drawBehindStroke:
+            guard let document = canvasDocument?(),
+                  TutorialStrokeOverlap.passesBehind(stroke, on: layer.id, in: document) else { return }
+            record(.drewBehind)
+        default: break
+        }
+    }
+
+    /// The layer-order lesson completes once the moved layer lies below another layer.
+    func movedLayer(_ id: UUID, in document: CanvasDocument) {
+        guard step == .moveLayerDown,
+              let index = document.layers.firstIndex(where: { $0.id == id }),
+              index < document.layers.count - 1 else { return }
+        record(.movedLayerDown)
     }
 
     func finishedCircleAttempt(kind: ShapeRecognizer.Kind?, isStrokeComplete: Bool = true) {

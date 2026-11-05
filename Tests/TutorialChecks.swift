@@ -230,13 +230,15 @@ struct TutorialChecks {
         precondition(progress.record(.paintedOver) == .advance)
         progress.advance()
         for (step, event): (TutorialStep, TutorialProgress.Event) in [
-            (.openLayers, .openedLayers), (.addLayer, .addedLayer), (.closeLayers, .closedLayers)
+            (.openLayers, .openedLayers), (.addLayer, .addedLayer),
+            (.moveLayerDown, .movedLayerDown), (.closeLayers, .closedLayers)
         ] {
             precondition(progress.step == step && progress.record(event) == .advance)
             progress.advance()
         }
-        precondition(progress.step == .drawOnLayer && progress.record(.stroke) == .none)
-        precondition(progress.record(.stroke) == .advance)
+        precondition(progress.step == .drawBehindStroke && progress.record(.stroke) == .none,
+                     "Only a stroke behind an upper-layer stroke completes the layer-order lesson")
+        precondition(progress.record(.drewBehind) == .advance)
         progress.advance()
         precondition(progress.record(.openedLasso) == .advance)
         progress.advance()
@@ -266,6 +268,21 @@ struct TutorialChecks {
                      "A sparse stroke crossing the line counts")
         precondition(!TutorialStrokeOverlap.paintsOver(stroke([SIMD2(0, 20), SIMD2(100, 20)]), earlier: [earlier]))
         precondition(!TutorialStrokeOverlap.paintsOver(stroke([SIMD2(50, 0)]), earlier: []))
+
+        // Stored bottom to top: the moved layer is first, the original layer covers it.
+        let crossing = stroke([SIMD2(50, -30), SIMD2(50, 30)])
+        var document = CanvasDocument(strokes: [earlier])
+        let lower = CanvasLayer(name: "Layer 2", strokes: [crossing])
+        document.layers.insert(lower, at: 0)
+        precondition(TutorialStrokeOverlap.passesBehind(crossing, on: lower.id, in: document))
+        precondition(!TutorialStrokeOverlap.passesBehind(stroke([SIMD2(0, 20), SIMD2(100, 20)]),
+                                                         on: lower.id, in: document),
+                     "A stroke beside the upper strokes does not pass behind them")
+        precondition(!TutorialStrokeOverlap.passesBehind(crossing, on: document.layers[1].id, in: document),
+                     "The top layer has nothing above it")
+        document.layers[1].strokes = []
+        precondition(TutorialStrokeOverlap.passesBehind(crossing, on: lower.id, in: document),
+                     "An empty upper layer cannot stall the lesson")
     }
 
     @MainActor static func checkSession() async throws {

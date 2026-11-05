@@ -10,7 +10,7 @@ enum TutorialStep: Int, CaseIterable {
     case selectReed, chooseReed, openAngle, setAngle, closeTools, reedStrokes
     case chooseFill, fillCanvas
     case openLayers, openLayerSettings, lockTransparency, closeLayerSettings, closeLayers
-    case paintOverStroke, addLayer, drawOnLayer
+    case paintOverStroke, addLayer, moveLayerDown, drawBehindStroke
     case openLasso, selectLasso, transformLasso, finishLasso
     case history, saveDrawing, shareDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
@@ -39,7 +39,7 @@ struct TutorialProgress {
         case reachedAddColor, returnedToColorSelection, openedColorList, browsedPalettes, foundNewPalette
         case returnedToPalettes
         case openedLayers, openedLayerSettings, lockedTransparency, closedLayerSettings, closedLayers
-        case paintedOver, addedLayer
+        case paintedOver, addedLayer, movedLayerDown, drewBehind
         case createdPalette, openedColorEditor, adjustedColor, savedColor
     }
     enum Effect: Equatable {
@@ -148,7 +148,7 @@ struct TutorialProgress {
         case (.createPalette, .returnedToPalettes):
             returnTo(.findNewPalette)
             return .none
-        case (.firstStrokes, .stroke), (.history, .history), (.drawOnLayer, .stroke):
+        case (.firstStrokes, .stroke), (.history, .history):
             count += 1
             return count >= 2 ? .advance : .none
         case (.panCanvas, .panned):
@@ -178,7 +178,8 @@ struct TutorialProgress {
              (.fillCanvas, .filled), (.openLayers, .openedLayers),
              (.openLayerSettings, .openedLayerSettings), (.lockTransparency, .lockedTransparency),
              (.closeLayerSettings, .closedLayerSettings), (.closeLayers, .closedLayers),
-             (.paintOverStroke, .paintedOver), (.addLayer, .addedLayer): return .advance
+             (.paintOverStroke, .paintedOver), (.addLayer, .addedLayer),
+             (.moveLayerDown, .movedLayerDown), (.drawBehindStroke, .drewBehind): return .advance
         default: break
         }
         return .none
@@ -237,6 +238,25 @@ enum TutorialStrokeOverlap {
                 oldPath.contains { distance(segment, $0) <= reach }
             }
         }
+    }
+
+    /// Whether a stroke on `layerID` crosses a visible stroke on a layer above it.
+    /// Without visible painted strokes above, any stroke counts, so the lesson cannot stall.
+    static func passesBehind(_ stroke: Stroke, on layerID: UUID, in document: CanvasDocument) -> Bool {
+        guard paints(stroke), let index = document.layers.firstIndex(where: { $0.id == layerID }),
+              index + 1 < document.layers.count else { return false }
+        let covering = document.layers[(index + 1)...]
+            .filter { $0.isVisible && $0.opacity > 0 }
+            .flatMap(\.strokes).filter(paints)
+        // Locked strokes only show inside unlocked ones, whose geometry is the visible shape.
+        let shapes = covering.filter { !$0.locksTransparency }
+        let candidates = shapes.isEmpty ? covering : shapes
+        return candidates.isEmpty || paintsOver(stroke, earlier: candidates)
+    }
+
+    /// Erasers, fill and blur leave no stroke-shaped paint to compare.
+    private static func paints(_ stroke: Stroke) -> Bool {
+        ![.eraser, .fill, .blur].contains(stroke.style.instrument)
     }
 
     private typealias Segment = (start: SIMD2<Float>, end: SIMD2<Float>)

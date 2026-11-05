@@ -264,10 +264,10 @@ struct WatchLayersView: View {
                     touchStart = drag.startLocation
                     fingerScrollStart = max(0, scrollContentOffset
                         ?? (scrollViewport.minY - contentFrame.minY))
-                    // The tutorial keeps the layer order fixed.
-                    pendingLayerHold = tutorial.isActive ? nil : rowFrames.first { id, frame in
+                    let touchedLayer = rowFrames.first { id, frame in
                         id != canvasRowID && frame.contains(drag.startLocation)
                     }?.key
+                    pendingLayerHold = touchedLayer.flatMap { canMove($0) ? $0 : nil }
                 }
                 touchLocation = drag.location
                 if draggedLayer != nil {
@@ -299,6 +299,7 @@ struct WatchLayersView: View {
                 updateDragPosition()
                 guard let target = reorderTarget else { return }
                 controller.moveLayer(id, to: target)
+                tutorial.movedLayer(id, in: controller.document)
             }
     }
 
@@ -407,13 +408,19 @@ struct WatchLayersView: View {
         return nil
     }
 
+    /// The tutorial keeps the layer order fixed, except for moving the new layer in its lesson.
+    private func canMove(_ id: UUID) -> Bool {
+        !tutorial.isActive || (tutorial.permits([.moveLayerDown]) && id == controller.selectedLayer.id)
+    }
+
     private func move(_ id: UUID, up: Bool) {
-        guard !tutorial.isActive else { return }
+        guard canMove(id) else { return }
         let layers = controller.document.layers
         guard let index = layers.firstIndex(where: { $0.id == id }) else { return }
         let target = index + (up ? 1 : -1)
         guard layers.indices.contains(target) else { return }
         controller.moveLayer(id, to: layers[target].id)
+        tutorial.movedLayer(id, in: controller.document)
     }
 }
 

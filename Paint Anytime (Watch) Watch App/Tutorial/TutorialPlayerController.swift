@@ -30,6 +30,8 @@ final class TutorialPlayerController: ObservableObject {
             .store(in: &subscriptions)
         canvas.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &subscriptions)
+        // Read on demand; retaining a copy would make every stroke commit copy the layers.
+        tutorial.canvasDocument = { [weak canvas = self.canvas] in canvas?.document }
     }
 
     func startOrResume() {

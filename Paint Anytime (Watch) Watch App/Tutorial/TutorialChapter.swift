@@ -52,7 +52,8 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             Lesson(steps: [.firstStrokes, .openLayers, .openLayerSettings, .lockTransparency,
                            .closeLayerSettings, .closeLayers]),
             Lesson(steps: [.openTools, .pickColor, .closeTools, .paintOverStroke]),
-            Lesson(steps: [.openLayers, .addLayer, .closeLayers, .drawOnLayer]),
+            // Moving the new layer under the first one shows which layer covers the other.
+            Lesson(steps: [.openLayers, .addLayer, .moveLayerDown, .closeLayers, .drawBehindStroke]),
             Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso])
         ]
         }
