@@ -30,8 +30,11 @@ struct InkPaletteBrowser: View {
     private let addID = "add-palette"
 
     init(library: InkPaletteLibrary, controller: CanvasController, initialColor: SIMD4<Float>? = nil,
-         tutorial: TutorialSession? = nil,
+         tutorial: TutorialSession? = nil, startsBrowsing: Bool = false,
          onSave: @escaping (InkPaletteLibrary) -> Void) {
+        // Opens on the palette carousel instead of the active palette's colors.
+        // A sampled color always goes to the color editor first.
+        _browsing = State(initialValue: startsBrowsing && initialColor == nil)
         let visibleLibrary = InkPaletteLibrary(palettes: library.visiblePalettes, activeID: library.activeID)
         _library = State(initialValue: visibleLibrary)
         self.controller = controller
