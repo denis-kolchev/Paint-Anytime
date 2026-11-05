@@ -249,6 +249,7 @@ struct PaletteVisibilitySettingsView: View {
     @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
     @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
     @ObservedObject var controller: CanvasController
+    @State private var showsPalettes = false
 
     private var library: InkPaletteLibrary {
         InkPaletteLibrary.decode(palettesData, legacy: paletteData)
@@ -256,6 +257,14 @@ struct PaletteVisibilitySettingsView: View {
 
     var body: some View {
         List {
+            // The palette cards, to see what a palette holds before showing or hiding it.
+            Section {
+                Button {
+                    showsPalettes = true
+                } label: {
+                    Label(L10n.text("Palettes"), systemImage: "square.stack")
+                }
+            }
             if library.palettes.contains(where: { !$0.isBuiltIn }) {
                 NavigationLink {
                     List { paletteRows(builtIn: true) }
@@ -274,6 +283,27 @@ struct PaletteVisibilitySettingsView: View {
             }
         }
         .navigationTitle(L10n.text("Visible palettes"))
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                NavigationLink {
+                    PaletteVisibilityInformationView()
+                } label: {
+                    Image(systemName: "info.circle")
+                }
+                .accessibilityLabel(L10n.text("About visible palettes"))
+            }
+        }
+        // Full screen like everywhere else the palettes open: their carousel needs the whole display.
+        .fullScreenCover(isPresented: $showsPalettes) {
+            InkPaletteBrowser(library: library, controller: controller, startsBrowsing: true) { updated in
+                if let data = try? JSONEncoder().encode(updated) { palettesData = data }
+                if !updated.activePalette.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
+                   let first = updated.activePalette.selectedColors.first {
+                    controller.pencilStyle.color = first.rgba
+                }
+            }
+            .environment(\.colorScheme, .dark)
+        }
     }
 
     private func paletteRows(builtIn: Bool) -> some View {
@@ -311,6 +341,29 @@ struct PaletteVisibilitySettingsView: View {
            let first = updated.activePalette.selectedColors.first {
             controller.pencilStyle.color = first.rgba
         }
+    }
+}
+
+/// What hiding a palette does, opened from the Visible palettes info button.
+private struct PaletteVisibilityInformationView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(L10n.text("Choose which palettes you can switch between when picking a color. Hidden palettes keep their colors and can be shown again at any time."))
+                    .font(.footnote)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(L10n.text("At least one palette always stays visible."))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 12)
+        }
+        .navigationTitle(L10n.text("Visible palettes"))
     }
 }
 

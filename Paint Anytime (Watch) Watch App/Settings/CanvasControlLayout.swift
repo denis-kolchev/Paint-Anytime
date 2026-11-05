@@ -48,8 +48,15 @@ struct CanvasControlLayout: Codable, Equatable {
 
     /// The custom layout the canvas shows, or nil for the original menus.
     /// A stored layout that no longer decodes also falls back to the menus.
+    static func custom(from data: Data, enabled: Bool) -> CanvasControlLayout? {
+        // An overload, not a default argument: defaults are evaluated outside the
+        // main actor, where the main-actor `decode` cannot be referenced.
+        custom(from: data, enabled: enabled) { Self.decode($0) }
+    }
+
+    /// The same rule with another decoder, such as the canvas's memoizing cache.
     static func custom(from data: Data, enabled: Bool,
-                       decode: (Data) -> CanvasControlLayout? = CanvasControlLayout.decode) -> CanvasControlLayout? {
+                       decode: (Data) -> CanvasControlLayout?) -> CanvasControlLayout? {
         enabled ? decode(data) : nil
     }
 

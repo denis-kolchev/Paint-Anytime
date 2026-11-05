@@ -1914,6 +1914,180 @@
         }
       }
     },
+    "About visible palettes" : {
+      "comment" : "Visible palettes information screen on Apple Watch. Keep concise.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "حول اللوحات المرئية"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O viditelných paletách"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om synlige paletter"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Über sichtbare Paletten"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Σχετικά με τις ορατές παλέτες"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About visible palettes"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acerca de las paletas visibles"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tietoja näkyvistä paleteista"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À propos des palettes visibles"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "מידע על פלטות גלויות"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A látható palettákról"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tentang palet yang terlihat"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informazioni sulle palette visibili"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "表示するパレットについて"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "표시할 팔레트 정보"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om synlige paletter"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Over zichtbare paletten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O widocznych paletach"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sobre paletas visíveis"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acerca das paletas visíveis"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "О видимых палитрах"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Om synliga paletter"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เกี่ยวกับจานสีที่แสดง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görünür paletler hakkında"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Про видимі палітри"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Về bảng màu hiển thị"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关于可见调色板"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "關於可見調色盤"
+          }
+        }
+      }
+    },
     "Apple Intelligence is not available on your iPhone." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2083,6 +2257,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的 iPhone 無法使用 Apple Intelligence。"
+          }
+        }
+      }
+    },
+    "At least one palette always stays visible." : {
+      "comment" : "Visible palettes information screen on Apple Watch. Keep concise.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تبقى لوحة واحدة على الأقل مرئية دائمًا."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alespoň jedna paleta zůstane vždy viditelná."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mindst én palet forbliver altid synlig."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mindestens eine Palette bleibt immer sichtbar."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Τουλάχιστον μία παλέτα παραμένει πάντα ορατή."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "At least one palette always stays visible."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siempre queda visible al menos una paleta."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vähintään yksi paletti on aina näkyvissä."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Au moins une palette reste toujours visible."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "לפחות פלטה אחת תמיד נשארת גלויה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Legalább egy paletta mindig látható marad."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Setidaknya satu palet selalu terlihat."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Almeno una palette resta sempre visibile."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "少なくとも1つのパレットは常に表示されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "팔레트는 항상 하나 이상 표시됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minst én palett er alltid synlig."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er blijft altijd minstens één palet zichtbaar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Co najmniej jedna paleta jest zawsze widoczna."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pelo menos uma paleta sempre fica visível."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pelo menos uma paleta fica sempre visível."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Хотя бы одна палитра всегда остаётся видимой."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minst en palett är alltid synlig."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "จะมีจานสีแสดงอยู่อย่างน้อยหนึ่งจานเสมอ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En az bir palet her zaman görünür kalır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Принаймні одна палітра завжди залишається видимою."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Luôn có ít nhất một bảng màu được hiển thị."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "始终至少显示一个调色板。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "始終至少顯示一個調色盤。"
           }
         }
       }
@@ -2429,6 +2777,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在 iPhone 上的 Paint Anytime 中選擇影像"
+          }
+        }
+      }
+    },
+    "Choose which palettes you can switch between when picking a color. Hidden palettes keep their colors and can be shown again at any time." : {
+      "comment" : "Visible palettes information screen on Apple Watch. Keep concise.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اختر اللوحات التي يمكنك التبديل بينها عند اختيار لون. تحتفظ اللوحات المخفية بألوانها ويمكن إظهارها مجددًا في أي وقت."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vyberte, mezi kterými paletami můžete při výběru barvy přepínat. Skryté palety si ponechají barvy a kdykoli je můžete znovu zobrazit."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vælg, hvilke paletter du kan skifte mellem, når du vælger en farve. Skjulte paletter beholder deres farver og kan vises igen når som helst."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle, zwischen welchen Paletten du bei der Farbwahl wechseln kannst. Ausgeblendete Paletten behalten ihre Farben und lassen sich jederzeit wieder einblenden."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Επιλέξτε ανάμεσα σε ποιες παλέτες μπορείτε να εναλλάσσεστε όταν διαλέγετε χρώμα. Οι κρυφές παλέτες κρατούν τα χρώματά τους και μπορούν να εμφανιστούν ξανά οποιαδήποτε στιγμή."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose which palettes you can switch between when picking a color. Hidden palettes keep their colors and can be shown again at any time."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige entre qué paletas puedes cambiar al escoger un color. Las paletas ocultas conservan sus colores y puedes volver a mostrarlas en cualquier momento."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valitse, minkä palettien välillä voit vaihtaa värin valinnassa. Piilotetut paletit säilyttävät värinsä, ja voit näyttää ne milloin tahansa uudelleen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez entre quelles palettes vous pouvez passer lorsque vous choisissez une couleur. Les palettes masquées gardent leurs couleurs et peuvent être réaffichées à tout moment."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "בחרו בין אילו פלטות אפשר לעבור בבחירת צבע. פלטות מוסתרות שומרות על הצבעים שלהן ואפשר להציג אותן שוב בכל עת."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Válassza ki, mely paletták között válthat színválasztáskor. A rejtett paletták megtartják a színeiket, és bármikor újra megjeleníthetők."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pilih palet mana yang bisa dipakai bergantian saat memilih warna. Palet yang disembunyikan tetap menyimpan warnanya dan bisa ditampilkan lagi kapan saja."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli tra quali palette puoi passare quando scegli un colore. Le palette nascoste mantengono i loro colori e puoi mostrarle di nuovo in qualsiasi momento."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "色を選ぶときに切り替えられるパレットを選びます。非表示のパレットも色はそのまま残り、いつでも再表示できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "색상을 고를 때 전환할 수 있는 팔레트를 선택합니다. 숨긴 팔레트도 색상은 그대로 유지되며 언제든 다시 표시할 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg hvilke paletter du kan bytte mellom når du velger en farge. Skjulte paletter beholder fargene sine og kan vises igjen når som helst."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies tussen welke paletten je kunt wisselen bij het kiezen van een kleur. Verborgen paletten houden hun kleuren en kun je altijd weer tonen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz, między którymi paletami możesz przełączać się przy wyborze koloru. Ukryte palety zachowują kolory i w każdej chwili możesz je znowu pokazać."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha entre quais paletas você pode alternar ao escolher uma cor. Paletas ocultas mantêm suas cores e podem ser mostradas de novo a qualquer momento."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha entre que paletas pode alternar ao escolher uma cor. As paletas ocultas mantêm as cores e podem voltar a ser mostradas a qualquer momento."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите, между какими палитрами можно переключаться при выборе цвета. Скрытые палитры сохраняют свои цвета, и их можно снова показать в любой момент."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj vilka paletter du kan växla mellan när du väljer en färg. Dolda paletter behåller sina färger och kan visas igen när som helst."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เลือกจานสีที่สลับไปมาได้เมื่อเลือกสี จานสีที่ซ่อนไว้ยังเก็บสีไว้และแสดงอีกครั้งได้ทุกเมื่อ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Renk seçerken hangi paletler arasında geçiş yapabileceğinizi seçin. Gizlenen paletler renklerini korur ve istediğiniz zaman yeniden gösterilebilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виберіть, між якими палітрами можна перемикатися під час вибору кольору. Приховані палітри зберігають свої кольори, і їх можна знову показати будь-коли."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chọn những bảng màu bạn có thể chuyển qua lại khi chọn màu. Bảng màu bị ẩn vẫn giữ màu và có thể hiện lại bất cứ lúc nào."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择在挑选颜色时可以切换的调色板。隐藏的调色板会保留其颜色，并可随时重新显示。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇挑選顏色時可以切換的調色盤。隱藏的調色盤會保留其顏色，並可隨時重新顯示。"
           }
         }
       }
