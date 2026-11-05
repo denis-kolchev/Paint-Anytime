@@ -38,8 +38,6 @@ final class RenderDebugSettings: ObservableObject {
 
     @Published var showsHUD = RenderDebug.isEnabled
     @Published var hudPosition = RenderHUDPosition.top
-    /// Predicted tip lookahead in 60 Hz display frames; the shipping value is 2 (~33 ms).
-    @Published var predictionFrames = 2
     @Published private(set) var disabledStages = RenderStageSwitches.shared.disabledStages
 
     func isOn(_ stage: RenderStage) -> Bool {
@@ -62,7 +60,7 @@ final class RenderDebugSettings: ObservableObject {
     }
 }
 
-/// ⋯ menu → Render debug: HUD, prediction lookahead and the three latency optimizations.
+/// ⋯ menu → Render debug: HUD and the latency optimizations.
 /// Changes apply from the next rendered frame; draw on the canvas to compare.
 struct RenderDebugSettingsView: View {
     @ObservedObject private var settings = RenderDebugSettings.shared
@@ -79,13 +77,6 @@ struct RenderDebugSettingsView: View {
                     }
                 } label: {
                     Text(verbatim: "HUD position")
-                }
-                Picker(selection: $settings.predictionFrames) {
-                    ForEach(1...4, id: \.self) { frames in
-                        Text(verbatim: "\(frames) frame\(frames == 1 ? "" : "s") · \(frames * 17) ms").tag(frames)
-                    }
-                } label: {
-                    Text(verbatim: "Prediction")
                 }
             } footer: {
                 Text(verbatim: "FPS: published frames/s. drop: frames replaced before rendering. ev: touch event → handler. disp: handler → frame queued. pub: queued → published. e2e: touch event → published; the screen shows it 1–2 vsyncs later. Stage times are averages in ms. main lag: wait of a main-queue probe every 50 ms. body: view re-evaluations/s. heat, LPM, mem, WC: thermal state, Low Power Mode, footprint, pending iPhone transfers.")

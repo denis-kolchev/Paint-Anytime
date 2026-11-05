@@ -6,13 +6,13 @@ import Dispatch
 /// is measured. Release builds always compile it off.
 nonisolated enum RenderDebug {
     #if DEBUG
-    static let isEnabled = true
+    static let isEnabled = false
     #else
     static let isEnabled = false
     #endif
 }
 
-/// Latency optimizations of the live stroke. All three ship on; in debug builds the
+/// Latency optimizations of the live stroke. Both ship on; in debug builds the
 /// Render debug menu can switch each off to compare the result live.
 nonisolated enum RenderStage: Int, CaseIterable, Sendable {
     /// Queue the live frame from the touch handler itself, skipping the
@@ -21,8 +21,6 @@ nonisolated enum RenderStage: Int, CaseIterable, Sendable {
     /// Draw the samples the displayed bitmap does not cover yet with the brush's vector
     /// geometry in the touch's own SwiftUI update (opaque vector brushes only).
     case inkTip
-    /// Extend the ink tip along the finger's velocity (lookahead set in Render debug).
-    case predictedTip
 
     /// Shipping behaviour.
     var isDefaultOn: Bool { true }
@@ -31,7 +29,6 @@ nonisolated enum RenderStage: Int, CaseIterable, Sendable {
         switch self {
         case .directSubmit: "Direct submit"
         case .inkTip: "Live ink tip"
-        case .predictedTip: "Predicted tip"
         }
     }
 
@@ -39,7 +36,6 @@ nonisolated enum RenderStage: Int, CaseIterable, Sendable {
         switch self {
         case .directSubmit: "Off: queue via body/.task"
         case .inkTip: "Off: tip waits for bitmap"
-        case .predictedTip: "Off: no prediction"
         }
     }
 }

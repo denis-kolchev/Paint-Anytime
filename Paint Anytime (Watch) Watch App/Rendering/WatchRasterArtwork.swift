@@ -158,9 +158,7 @@ struct WatchRasterArtwork: View {
             .overlay(alignment: .topLeading) {
                 if allowsInkTip, RenderStageSwitches.isOn(.inkTip),
                    let stroke = frames.tipStroke(for: activeStroke) {
-                    InkTipOverlay(stroke: stroke, renderedPoints: frames.renderedPoints(of: stroke),
-                                  lookahead: RenderStageSwitches.isOn(.predictedTip)
-                                      ? Double(RenderDebugSettings.shared.predictionFrames) / 60 : 0)
+                    InkTipOverlay(stroke: stroke, renderedPoints: frames.renderedPoints(of: stroke))
                         .frame(width: key.size.width, height: key.size.height)
                 }
             }
@@ -246,14 +244,12 @@ final class LiveFrameSubmitter {
 }
 
 /// Live ink tip: the samples the displayed bitmap does not include yet, drawn with the
-/// brush's own vector geometry in the touch's SwiftUI update, plus a short prediction.
+/// brush's own vector geometry in the touch's SwiftUI update.
 /// Only opaque vector brushes qualify: drawn over the bitmap they match it exactly,
 /// while textured or translucent brushes would differ or double their coverage.
 private struct InkTipOverlay: View {
     let stroke: Stroke
     let renderedPoints: Int
-    /// Seconds to extrapolate along the last segment; 0 disables prediction.
-    let lookahead: Double
 
     static func supports(_ style: PencilStyle) -> Bool {
         switch style.instrument {
@@ -291,9 +287,7 @@ private struct InkTipOverlay: View {
         guard Self.supports(stroke.style), !samples.isEmpty else { return nil }
         // Overlap the last rendered sample so the tail joins the bitmap without a gap.
         let start = min(samples.count - 1, max(0, renderedPoints - 1))
-        var points = samples[start...].map(\.position)
-        let predicted = prediction()
-        if let predicted { points.append(predicted) }
+        let points = samples[start...].map(\.position)
         guard points.count > 1 || renderedPoints == 0 else { return nil }
         let width = max(0.1, stroke.style.width)
         switch stroke.style.instrument {
@@ -309,35 +303,16 @@ private struct InkTipOverlay: View {
         case .pen:
             // Speed-dependent radii are smoothed from the stroke's start: take them
             // from the whole stroke, then build discs only for the tail.
-            var radii = Array(BrushGeometry.radii(for: stroke)[start...])
-            if predicted != nil, let last = radii.last { radii.append(last) }
+            let radii = Array(BrushGeometry.radii(for: stroke)[start...])
             return .fill(Self.shape(BrushGeometry.roundPolygons(points: points, radii: radii)))
         case .fountainPen, .reed:
             // The nib is swept segment by segment, so the tail alone matches exactly.
             var tail = stroke
             tail.points = Array(samples[start...])
-            if let predicted, let last = samples.last {
-                tail.points.append(PointerSample(position: predicted, pressure: last.pressure,
-                                                 timestamp: last.timestamp + lookahead))
-            }
             return .fill(Self.shape(FountainPenGeometry.polygons(for: tail)))
         default:
             return nil
         }
-    }
-
-    /// Extrapolate the last segment's velocity; capped so a jerk cannot fling the tip away.
-    private func prediction() -> SIMD2<Float>? {
-        let samples = stroke.points
-        guard lookahead > 0, samples.count >= 2 else { return nil }
-        let a = samples[samples.count - 2], b = samples[samples.count - 1]
-        let dt = max(0.001, b.timestamp - a.timestamp)
-        var step = (b.position - a.position) / Float(dt) * Float(lookahead)
-        let limit = max(8, stroke.style.width * 2) * Float(max(1, lookahead * 60))
-        let length = simd_length(step)
-        guard length > 0.01 else { return nil }
-        if length > limit { step *= limit / length }
-        return b.position + step
     }
 
     private static func point(_ p: SIMD2<Float>) -> CGPoint { CGPoint(x: CGFloat(p.x), y: CGFloat(p.y)) }
