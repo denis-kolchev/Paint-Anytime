@@ -202,22 +202,31 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         }
     }
 
-    /// Actions the editor offers, alphabetical in the app language with Nothing last.
+    /// Expected use while drawing, most frequent first: drawing tools, then canvas
+    /// and file actions, then settings opened once in a while. An estimate, not
+    /// measured usage: the app collects no analytics.
+    private static let usageOrder: [CanvasQuickAction] = [
+        .brush, .undo, .redo, .eraserToggle, .eyedropper, .palettes, .layers, .lasso,
+        .save, .clear, .gallery, .share, .sketchAssist, .more, .closeMorph,
+        .perspectiveGuides, .canvasSize, .visiblePalettes, .blending, .toolSynchronization,
+        .canvasEditor, .autosave, .language, .tutorial, .reportBug
+    ]
+
+    /// Actions the editor offers: Nothing first for a single circle, then by expected use.
     /// Close only collapses a morph, so a single circle never offers it.
     static func menuOrder(inMorph: Bool) -> [CanvasQuickAction] {
-        let locale = Locale(identifier: AppLanguage.currentCode)
-        let offered = allCases.filter { action in
+        // Actions missing from the list still appear, at the end, so none gets lost.
+        let ordered = usageOrder + allCases.filter { !usageOrder.contains($0) && $0 != .nothing }
+        let offered = ordered.filter { action in
             switch action {
-            case .nothing: false
             case .closeMorph: inMorph
             case .sketchAssist: AppReleaseFeatures.current.showsSketchAssist
+            // No longer offered; a layout that already holds it keeps working.
+            case .camera: false
             default: true
             }
         }
-        return offered.sorted {
-            L10n.text($0.title).compare(L10n.text($1.title), options: .caseInsensitive, locale: locale)
-                == .orderedAscending
-        } + (inMorph ? [] : [.nothing])
+        return (inMorph ? [] : [.nothing]) + offered
     }
 }
 
