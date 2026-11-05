@@ -28,7 +28,6 @@ struct CanvasQuickSettingsView: View {
         case .blending: ColorBlendingSelectionView(controller: controller)
         case .perspectiveGuides:
             PerspectiveGuidesSettingsView(controller: controller, viewportSize: viewportSize)
-        case .canvasEditor: CanvasEditorSettingsView(instrument: controller.pencilStyle.instrument)
         case .autosave: AutosaveSettingsView()
         case .share: CanvasShareView(controller: controller, viewportSize: viewportSize)
         default: EmptyView()

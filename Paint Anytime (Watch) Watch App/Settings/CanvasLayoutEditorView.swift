@@ -8,6 +8,7 @@ struct CanvasLayoutEditorView: View {
     @AppStorage(CanvasControlLayout.storageKey) private var storedLayout = Data()
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var draft = CanvasControlLayout.standard
     @State private var editingSlot: Int?
     @State private var topControlMidY: CGFloat?
@@ -47,7 +48,7 @@ struct CanvasLayoutEditorView: View {
         }
         // Above the navigation bar: on watchOS 26 its clock area takes the
         // taps of anything drawn beneath it inside the stack.
-        .overlay { saveButton }
+        .overlay { topActions }
         // Slides up like Layers and the More menu instead of a zooming push.
         .sheet(isPresented: Binding(
             get: { editingSlot != nil },
@@ -72,10 +73,17 @@ struct CanvasLayoutEditorView: View {
         }
     }
 
-    /// watchOS has no centre toolbar placement, so the checkmark sits in the
-    /// clock's place, level with the measured top buttons.
-    private var saveButton: some View {
-        CanvasLayoutSaveButton(topControlMidY: topControlMidY, action: save)
+    /// watchOS has no centre toolbar placement, so Reset and the checkmark sit
+    /// level with the measured top buttons, above the second and third bottom circles.
+    private var topActions: some View {
+        CanvasLayoutTopActions(topControlMidY: topControlMidY,
+                               resetMidX: slotFrames[2]?.midX, saveMidX: slotFrames[3]?.midX,
+                               canReset: draft != .original, onReset: reset, onSave: save)
+    }
+
+    /// Previews the original interface; like any edit it applies only with the checkmark.
+    private func reset() {
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { draft = .original }
     }
 
     private func slotButton(_ index: Int) -> some View {
@@ -202,14 +210,33 @@ struct CanvasLayoutEditorView: View {
     }
 }
 
-/// The checkmark is no toolbar item, so it plays the bottom bar's entrance itself.
-private struct CanvasLayoutSaveButton: View {
+/// Reset and the checkmark are no toolbar items, so they play the bottom bar's entrance themselves.
+private struct CanvasLayoutTopActions: View {
     let topControlMidY: CGFloat?
-    let action: () -> Void
+    /// Global centres of the bottom circles to align with; unmeasured, they fall back to fixed fractions.
+    let resetMidX: CGFloat?
+    let saveMidX: CGFloat?
+    let canReset: Bool
+    let onReset: () -> Void
+    let onSave: () -> Void
 
     var body: some View {
         GeometryReader { proxy in
-            Button(action: action) {
+            let frame = proxy.frame(in: .global)
+            let y = (topControlMidY ?? MorphPanelGeometry.buttonDiameter) - frame.minY
+            Button(action: onReset) {
+                CanvasLayoutCircle {
+                    Image(systemName: "arrow.counterclockwise")
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(!canReset)
+            .opacity(canReset ? 1 : 0.5)
+            .accessibilityLabel(L10n.text("Reset interface"))
+            .modifier(CanvasLayoutEntrance())
+            .position(x: resetMidX.map { $0 - frame.minX } ?? proxy.size.width * 0.375, y: y)
+
+            Button(action: onSave) {
                 CanvasLayoutCircle {
                     Image(systemName: "checkmark").foregroundStyle(.green)
                 }
@@ -217,8 +244,7 @@ private struct CanvasLayoutSaveButton: View {
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.text("Save and apply"))
             .modifier(CanvasLayoutEntrance())
-            .position(x: proxy.size.width / 2,
-                      y: (topControlMidY ?? MorphPanelGeometry.buttonDiameter) - proxy.frame(in: .global).minY)
+            .position(x: saveMidX.map { $0 - frame.minX } ?? proxy.size.width * 0.625, y: y)
         }
         .ignoresSafeArea()
     }

@@ -172,6 +172,7 @@ private struct CanvasSettingsView: View {
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
     @Environment(\.displayScale) private var displayScale
+    @State private var showsEditor = false
 
     var body: some View {
         List {
@@ -184,8 +185,9 @@ private struct CanvasSettingsView: View {
                     Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
                 }
             }
-            NavigationLink {
-                CanvasEditorSettingsView(instrument: controller.pencilStyle.instrument)
+            // Opens the editor itself: Reset and Save live on its canvas preview.
+            Button {
+                showsEditor = true
             } label: {
                 Label {
                     Text(L10n.text("Canvas editor"))
@@ -202,6 +204,11 @@ private struct CanvasSettingsView: View {
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Canvas"))
         .toolbarTitleDisplayMode(.inline)
+        // Not a sheet: the sheet's clock band sits above its content and takes
+        // the taps of the editor's top buttons drawn in the clock's place.
+        .fullScreenCover(isPresented: $showsEditor) {
+            CanvasLayoutEditorView(instrument: controller.pencilStyle.instrument)
+        }
     }
 }
 
@@ -531,69 +538,6 @@ private struct ColorBlendingIllustration: View {
     }
 }
 
-struct CanvasEditorSettingsView: View {
-    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
-    let instrument: DrawingInstrument
-    @AppStorage(CanvasControlLayout.storageKey) private var storedLayout = Data()
-    @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
-    @State private var showsEditor = false
-
-    var body: some View {
-        List {
-            Section {
-                Button {
-                    showsEditor = true
-                } label: {
-                    Label(L10n.text("Edit canvas"), systemImage: "pencil.and.ellipsis.rectangle")
-                }
-                // Same original interface as the editor's reset preview.
-                Button {
-                    storedLayout = Data()
-                    customLayoutEnabled = false
-                } label: {
-                    Label(L10n.text("Reset interface"), systemImage: "arrow.counterclockwise")
-                }
-            } footer: {
-                Text(L10n.text("Reset restores the original canvas with expandable menus."))
-            }
-        }
-        .labelStyle(CenteredMenuLabelStyle())
-        .navigationTitle(L10n.text("Canvas editor"))
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    CanvasEditorInformationView()
-                } label: {
-                    Image(systemName: "info.circle")
-                }
-                .accessibilityLabel(L10n.text("About canvas editor"))
-            }
-        }
-        // Not a sheet: the sheet's clock band sits above its content and takes
-        // the taps of the checkmark drawn in the clock's place.
-        .fullScreenCover(isPresented: $showsEditor) {
-            CanvasLayoutEditorView(instrument: instrument)
-        }
-    }
-}
-
-private struct CanvasEditorInformationView: View {
-    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
-
-    var body: some View {
-        ScrollView {
-            Text(L10n.text("Arrange the buttons on the canvas: give each top corner and bottom-row slot an action or a menu of up to five actions. Reset brings back the original interface."))
-                .font(.footnote)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 10)
-                .padding(.bottom, 12)
-        }
-        .navigationTitle(L10n.text("Canvas editor"))
-    }
-}
-
-/// Chapters can be taken in any order; the full tour plays them one after another.
 private struct TutorialChaptersView: View {
     let completed: Set<TutorialChapter>
     let onStart: ([TutorialChapter]) -> Void
