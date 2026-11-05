@@ -58,7 +58,8 @@ struct CanvasLayoutEditorView: View {
                 NavigationStack {
                     CanvasSlotEditorView(assignment: $draft.slots[slot], instrument: instrument,
                                          keepsMore: !otherSlotsContainMore(slot),
-                                         usedMorphIcons: morphIcons(excluding: slot))
+                                         usedMorphIcons: morphIcons(excluding: slot),
+                                         otherSlotNumbers: slotNumbers(excluding: slot))
                 }
             }
         }
@@ -187,6 +188,23 @@ struct CanvasLayoutEditorView: View {
             .map { CanvasMorphIcon.resolve(draft.slots[$0].icon) })
     }
 
+    /// Slots numbered in reading order: top left 1, top right 2, bottom row 3...6.
+    private static func displayNumber(of index: Int) -> Int {
+        index == CanvasControlLayout.topLeadingSlot ? 1 : index + 2
+    }
+
+    /// Where each action already sits outside this slot, as sorted slot numbers.
+    /// Nothing and Close are skipped: they are no feature placed on the canvas.
+    private func slotNumbers(excluding index: Int) -> [CanvasQuickAction: [Int]] {
+        var numbers: [CanvasQuickAction: [Int]] = [:]
+        for other in draft.slots.indices where other != index {
+            for action in Set(draft.slots[other].actions) where action != .nothing && action != .closeMorph {
+                numbers[action, default: []].append(Self.displayNumber(of: other))
+            }
+        }
+        return numbers.mapValues { $0.sorted() }
+    }
+
     private func otherSlotsContainMore(_ index: Int) -> Bool {
         draft.slots.indices.contains { $0 != index && draft.slots[$0].actions.contains(.more) }
     }
@@ -288,6 +306,8 @@ private struct CanvasSlotEditorView: View {
     let keepsMore: Bool
     /// Icons of the other morph slots, avoided when this one gets its first icon.
     let usedMorphIcons: Set<String>
+    /// Numbers of the other slots that already hold each action.
+    let otherSlotNumbers: [CanvasQuickAction: [Int]]
     @State private var isGrouped = false
     /// The group's actions in tap order; the first is the one kept when ungrouping.
     @State private var selection: [CanvasQuickAction] = []
@@ -307,7 +327,8 @@ private struct CanvasSlotEditorView: View {
                 ForEach(CanvasQuickAction.menuOrder(inMorph: isGrouped)) { action in
                     Button { select(action) } label: {
                         HStack {
-                            CanvasQuickActionLabel(action: action, instrument: instrument)
+                            CanvasQuickActionLabel(action: action, instrument: instrument,
+                                                   caption: placementCaption(for: action))
                             Spacer()
                             marker(for: action)
                         }
@@ -370,6 +391,13 @@ private struct CanvasSlotEditorView: View {
         } else if assignment.actions == [action] {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
         }
+    }
+
+    /// Text, not colour: green already marks this slot's own choice.
+    private func placementCaption(for action: CanvasQuickAction) -> String? {
+        guard let numbers = otherSlotNumbers[action], !numbers.isEmpty else { return nil }
+        if numbers.count == 1 { return L10n.format("In slot %d", numbers[0]) }
+        return L10n.format("In slots %@", numbers.map(String.init).joined(separator: ", "))
     }
 
     private func isDisabled(_ action: CanvasQuickAction) -> Bool {
@@ -454,11 +482,20 @@ private struct CanvasMorphIconPicker: View {
 struct CanvasQuickActionLabel: View {
     let action: CanvasQuickAction
     let instrument: DrawingInstrument
+    /// A secondary line under the title, such as the other slots holding this action.
+    var caption: String? = nil
     @AppStorage(WatchSketchAssist.phoneAvailabilityKey) private var sketchAssistOnPhone = false
 
     var body: some View {
         Label {
-            Text(L10n.text(action.title))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(L10n.text(action.title))
+                if let caption {
+                    Text(caption)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
         } icon: {
             switch action {
             case .clear: BroomIcon()
