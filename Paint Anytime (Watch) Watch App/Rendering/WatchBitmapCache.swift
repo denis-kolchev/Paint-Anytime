@@ -118,6 +118,8 @@ nonisolated extension WatchBitmapRenderer {
             if extends && previous?.geometryRevision == stroke.geometryRevision {
                 return usesScreenTiles ? committedImage : dry.display.makeImage()
             }
+            let frameStarted = RenderDiagnostics.begin()
+            let previousCount = extends ? (previous?.points.count ?? 0) : 0
             // New segments can change old feather probes at crossings. Include
             // the nib radius, feather distance, grain overhang and the last join.
             var start = extends ? max(0, (previous?.points.count ?? 0) - 2) : 0
@@ -126,22 +128,118 @@ nonisolated extension WatchBitmapRenderer {
                 if travel < 4 { start = 0 } // Opening contact changes opacity globally.
             }
             dry.geometry.append(stroke)
+            let prepared = RenderDiagnostics.begin()
+            let counters = (dry.geometry.grainBuildCount, dry.geometry.grainCacheHits,
+                            dry.geometry.coverageProbeCount, dry.geometry.contourBuildCount)
             let canvas = CGRect(x: 0, y: 0, width: dry.frame.width, height: dry.frame.height)
-            let tiles = Self.dryTiles(for: stroke, from: start, scale: key.scale, canvas: canvas)
-            guard let batches = dryBatches(stroke, tiles: tiles, dry: dry, scale: key.scale, canvas: canvas)
-            else { return nil }
-            if !batches.isEmpty {
-                guard drawDry(stroke, batches: batches, into: &dry, scale: key.scale, canvas: canvas) else { return nil }
-                // Copy only changed rows into small snapshots. No full-canvas
-                // CGImage snapshot is needed while a dry gesture is on screen.
-                guard publishDryTiles(batches.map { $0.tile }, of: &dry, scale: key.scale, canvas: canvas)
+            if let field = dry.geometry.grainField {
+                guard renderIncrementalDry(stroke, field: field, previous: previous, into: &dry,
+                                           key: key, canvas: canvas, stages: (frameStarted, prepared),
+                                           counters: counters, previousCount: previousCount) else { return nil }
+            } else {
+                let tiles = Self.dryTiles(for: stroke, from: start, scale: key.scale, canvas: canvas)
+                guard let batches = dryBatches(stroke, tiles: tiles, dry: dry, scale: key.scale, canvas: canvas)
                 else { return nil }
+                let grained = RenderDiagnostics.begin()
+                var drawn = grained
+                if !batches.isEmpty {
+                    guard drawDry(stroke, batches: batches, into: &dry, scale: key.scale, canvas: canvas) else { return nil }
+                    drawn = RenderDiagnostics.begin()
+                    // Copy only changed rows into small snapshots. No full-canvas
+                    // CGImage snapshot is needed while a dry gesture is on screen.
+                    guard publishDryTiles(batches.map { $0.tile }, of: &dry, scale: key.scale, canvas: canvas)
+                    else { return nil }
+                }
+                // One record per frame, so a frame longer than the HUD window stays consistent.
+                RenderDiagnostics.dryFrame(stages: [frameStarted, prepared, prepared, grained, drawn,
+                                                    RenderDiagnostics.begin()],
+                                           incremental: false,
+                                           samples: stroke.points.count - previousCount,
+                                           tiles: batches.count,
+                                           grainsBuilt: dry.geometry.grainBuildCount - counters.0,
+                                           grainHits: dry.geometry.grainCacheHits - counters.1,
+                                           probes: dry.geometry.coverageProbeCount - counters.2,
+                                           contours: dry.geometry.contourBuildCount - counters.3)
             }
             dry.stroke = stroke
             dry.travel = dry.geometry.travel
             activeDry = dry
             activeImage = usesScreenTiles ? committedImage : dry.display.makeImage()
             return activeImage
+        }
+
+        /// Incremental grains: redraw only the rectangles around grains that changed, in one
+        /// pass of 9 band fills, then publish the 32 px tiles they touch.
+        private func renderIncrementalDry(_ stroke: Stroke, field: WatchStrokeDrawing.DryGrainField,
+                                          previous: Stroke?, into dry: inout ActiveDry, key: CacheKey,
+                                          canvas: CGRect, stages: (UInt64, UInt64),
+                                          counters: (Int, Int, Int, Int), previousCount: Int) -> Bool {
+            field.update(dry.geometry, stroke: stroke)
+            let updated = RenderDiagnostics.begin()
+            // Opening pastel contact changes the opacity of every drawn grain.
+            let contactChanges = stroke.style.instrument == .crayon && previous != nil && dry.travel < 4
+            let scale = key.scale
+            let pixels = field.dirtyRects(all: contactChanges).compactMap { paper -> CGRect? in
+                let rect = paper.applying(CGAffineTransform(scaleX: scale, y: scale)).integral.intersection(canvas)
+                return rect.isNull || rect.isEmpty ? nil : rect
+            }
+            // One pass over all changed rectangles: each grain near any of them is added to
+            // the band paths once, then 9 fills under their union clip.
+            let toPaper = CGAffineTransform(scaleX: 1 / scale, y: 1 / scale)
+            var commands: [WatchDrawingCommand] = []
+            if !pixels.isEmpty {
+                let region = pixels.reduce(CGRect.null) { $0.union($1) }.applying(toPaper)
+                // A transformed live stroke (not expected) falls back to the bounding region.
+                if stroke.transform == .identity { field.gatherAreas = pixels.map { $0.applying(toPaper) } }
+                commands = WatchStrokeDrawing.commands(for: stroke, region: region, dryGeometry: dry.geometry)
+                field.gatherAreas = nil
+                guard !Task.isCancelled else { return false }
+            }
+            let grained = RenderDiagnostics.begin()
+            var drawn = grained
+            let tileSize = Self.dryTileSize
+            var tiles = Set<SIMD2<Int>>()
+            if !pixels.isEmpty {
+                guard let space = CGColorSpace(name: CGColorSpace.sRGB) else { return false }
+                let frame = dry.frame
+                let clip = CGMutablePath()
+                for rect in pixels {
+                    clip.addRect(CGRect(x: rect.minX, y: CGFloat(frame.height) - rect.maxY,
+                                        width: rect.width, height: rect.height))
+                }
+                frame.saveGState()
+                frame.addPath(clip); frame.clip()
+                frame.clear(canvas)
+                frame.draw(dry.base, in: canvas)
+                frame.translateBy(x: 0, y: CGFloat(frame.height))
+                frame.scaleBy(x: scale, y: -scale)
+                let opacity = stroke.style.effectiveOpacity
+                if opacity < 1 {
+                    frame.setAlpha(CGFloat(opacity))
+                    frame.beginTransparencyLayer(auxiliaryInfo: nil)
+                }
+                for command in commands { WatchBitmapRenderer.draw(command, in: frame, space: space) }
+                if opacity < 1 { frame.endTransparencyLayer() }
+                frame.restoreGState()
+                drawn = RenderDiagnostics.begin()
+                for rect in pixels {
+                    for y in Int(floor(rect.minY / tileSize))...Int(floor((rect.maxY - 0.001) / tileSize)) {
+                        for x in Int(floor(rect.minX / tileSize))...Int(floor((rect.maxX - 0.001) / tileSize)) {
+                            tiles.insert(SIMD2(x, y))
+                        }
+                    }
+                }
+                guard publishDryTiles(Array(tiles), of: &dry, scale: scale, canvas: canvas) else { return false }
+            }
+            RenderDiagnostics.dryFrame(stages: [stages.0, stages.1, updated, grained, drawn, RenderDiagnostics.begin()],
+                                       incremental: true,
+                                       samples: stroke.points.count - previousCount,
+                                       tiles: tiles.count,
+                                       grainsBuilt: dry.geometry.grainBuildCount - counters.0,
+                                       grainHits: dry.geometry.grainCacheHits - counters.1,
+                                       probes: dry.geometry.coverageProbeCount - counters.2,
+                                       contours: dry.geometry.contourBuildCount - counters.3)
+            return true
         }
 
         /// A new dry gesture copies committed ink into its float frame and display bitmap.
@@ -153,8 +251,13 @@ nonisolated extension WatchBitmapRenderer {
             display.setFillColor(CGColor(gray: 1, alpha: 1))
             display.fill(CGRect(x: 0, y: 0, width: frame.width, height: frame.height))
             display.draw(base.image, in: CGRect(x: 0, y: 0, width: frame.width, height: frame.height))
+            let geometry = WatchStrokeDrawing.DryGeometry()
+            // The renderer is chosen once per gesture, so a toggle never mixes the two.
+            if RenderStageSwitches.isOn(.incrementalDryGrains) {
+                geometry.grainField = WatchStrokeDrawing.DryGrainField()
+            }
             activeDry = ActiveDry(stroke: stroke, base: base.image, frame: frame, display: display,
-                                  geometry: WatchStrokeDrawing.DryGeometry())
+                                  geometry: geometry)
             activeDryBuildCount += 1
             activeImage = nil
             return true

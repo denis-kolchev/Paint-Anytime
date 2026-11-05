@@ -194,6 +194,11 @@ nonisolated enum WatchStrokeDrawing {
     // only once per gesture, including joins and retraced sections.
     private static func dryTexture(_ stroke: Stroke, ink: SIMD4<Float>, region: CGRect?, geometry: DryGeometry?,
                                in context: inout WatchDrawingContext) {
+        if let region, let field = geometry?.grainField, let geometry {
+            // Experimental incremental grains (Render debug → Incremental dry grains).
+            field.draw(stroke, ink: ink, region: region, geometry: geometry, in: &context)
+            return
+        }
         let pastel = stroke.style.instrument == .crayon
         let geometry = geometry ?? DryGeometry()
         geometry.append(stroke)
@@ -432,7 +437,11 @@ nonisolated enum WatchStrokeDrawing {
         }
         private let contourCache = RecentCache<SIMD4<Double>, Contours>(capacity: 64)
         private var nextContourRevision: UInt64 = 0
-        private(set) var contourBuildCount = 0
+        var contourBuildCount = 0
+        /// Set for gestures drawn with the incremental grain field; nil keeps `dryTexture`.
+        var grainField: DryGrainField?
+        /// Incremented whenever the polygons are discarded and rebuilt.
+        private(set) var generation = 0
         private(set) var contourCacheHits = 0
 
         private func regionKey(_ rect: CGRect) -> SIMD4<Double> {
@@ -521,6 +530,7 @@ nonisolated enum WatchStrokeDrawing {
             guard stroke.points.count > count else { return }
             // The tiny opening changes from a resting footprint to a moving nib.
             if travel < 0.5 {
+                generation &+= 1
                 polygons.removeAll(); frames.removeAll(); isJoin.removeAll()
                 grainCache.removeAll(keepingCapacity: true)
                 contourCache.removeAll(keepingCapacity: true)
@@ -557,6 +567,7 @@ nonisolated enum WatchStrokeDrawing {
             }
             count = stroke.points.count
             if points.count == 1 || (stroke.style.instrument == .crayon && travel < 0.5), let p = points.first {
+                generation &+= 1
                 polygons.removeAll(); frames.removeAll(); isJoin.removeAll()
                 grainCache.removeAll(keepingCapacity: true)
                 contourCache.removeAll(keepingCapacity: true)
@@ -689,7 +700,7 @@ nonisolated enum WatchStrokeDrawing {
         Double(width) / 2 * (1 - Double(band) * 0.105) * (0.92 + noise(index * 13) * 0.08)
     }
 
-    private static func noise(_ seed: Int) -> Double {
+    static func noise(_ seed: Int) -> Double {
         var value = UInt64(truncatingIfNeeded: seed) &+ 0x9e3779b97f4a7c15
         value = (value ^ (value >> 30)) &* 0xbf58476d1ce4e5b9
         value = (value ^ (value >> 27)) &* 0x94d049bb133111eb

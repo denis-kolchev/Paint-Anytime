@@ -6,7 +6,7 @@ import Dispatch
 /// is measured. Release builds always compile it off.
 nonisolated enum RenderDebug {
     #if DEBUG
-    static let isEnabled = false
+    static let isEnabled = true
     #else
     static let isEnabled = false
     #endif
@@ -21,14 +21,18 @@ nonisolated enum RenderStage: Int, CaseIterable, Sendable {
     /// Draw the samples the displayed bitmap does not cover yet with the brush's vector
     /// geometry in the touch's own SwiftUI update (opaque vector brushes only).
     case inkTip
+    /// Experimental: pencil and pastel keep one grain per paper cell for the gesture and
+    /// recompute only cells near new polygons (`WatchStrokeDrawing.DryGrainField`).
+    case incrementalDryGrains
 
-    /// Shipping behaviour.
-    var isDefaultOn: Bool { true }
+    /// Shipping behaviour; the experiment stays off outside the debug menu.
+    var isDefaultOn: Bool { self != .incrementalDryGrains }
 
     var title: String {
         switch self {
         case .directSubmit: "Direct submit"
         case .inkTip: "Live ink tip"
+        case .incrementalDryGrains: "Incremental dry grains"
         }
     }
 
@@ -36,6 +40,7 @@ nonisolated enum RenderStage: Int, CaseIterable, Sendable {
         switch self {
         case .directSubmit: "Off: queue via body/.task"
         case .inkTip: "Off: tip waits for bitmap"
+        case .incrementalDryGrains: "On: pencil/pastel recompute only new cells. From the next stroke"
         }
     }
 }
@@ -88,6 +93,16 @@ nonisolated enum RenderSpan: Int, CaseIterable, Sendable {
     case composite
     /// Whole renderer call as seen from the main actor.
     case render
+    /// Pencil/pastel: dry geometry append and the changed-tile search.
+    case dryPrep
+    /// Pencil/pastel, incremental grains: updating the cells near new polygons.
+    case dryUpdate
+    /// Pencil/pastel: grain generation and contours for the changed tiles.
+    case dryGrains
+    /// Pencil/pastel: restoring and filling the changed tiles in the float frame.
+    case dryDraw
+    /// Pencil/pastel: snapshot and flatten of the changed tiles for display.
+    case dryPublish
 
     var label: String {
         switch self {
@@ -100,6 +115,11 @@ nonisolated enum RenderSpan: Int, CaseIterable, Sendable {
         case .live: "live"
         case .composite: "comp"
         case .render: "frame"
+        case .dryPrep: "prep"
+        case .dryUpdate: "upd"
+        case .dryGrains: "grain"
+        case .dryDraw: "fill"
+        case .dryPublish: "pub"
         }
     }
 }
@@ -151,6 +171,15 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     private var probeTimer: DispatchSourceTimer?
     private var probeInFlight = false
     private var path = "—"
+    /// Pencil/pastel work per live frame, summed over the HUD window.
+    private var dryFrames = 0
+    private var dryIncremental = false
+    private var drySamples = 0
+    private var dryTiles = 0
+    private var dryGrainsBuilt = 0
+    private var dryGrainHits = 0
+    private var dryProbes = 0
+    private var dryContours = 0
     private var windowStart = RenderDiagnostics.now()
 
     static func now() -> UInt64 { DispatchTime.now().uptimeNanoseconds }
@@ -281,6 +310,27 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         }
     }
 
+    /// One live pencil/pastel frame: stage boundaries (prep, upd, grain, fill, publish),
+    /// new input samples, tiles redrawn and the geometry counters' deltas.
+    static func dryFrame(stages: [UInt64], incremental: Bool, samples: Int, tiles: Int, grainsBuilt: Int,
+                         grainHits: Int, probes: Int, contours: Int) {
+        guard RenderDebug.isEnabled, stages.count == 6, stages[0] != 0 else { return }
+        let spans: [RenderSpan] = [.dryPrep, .dryUpdate, .dryGrains, .dryDraw, .dryPublish]
+        shared.locked {
+            for (index, span) in spans.enumerated() {
+                shared.spans[span.rawValue].add(stages[index + 1] &- stages[index])
+            }
+            shared.dryFrames += 1
+            shared.dryIncremental = incremental
+            shared.drySamples += samples
+            shared.dryTiles += tiles
+            shared.dryGrainsBuilt += grainsBuilt
+            shared.dryGrainHits += grainHits
+            shared.dryProbes += probes
+            shared.dryContours += contours
+        }
+    }
+
     static func setPath(_ name: String) {
         guard RenderDebug.isEnabled else { return }
         shared.locked { shared.path = name }
@@ -288,6 +338,19 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
 
     private func record(_ span: RenderSpan, _ value: UInt64) {
         locked { spans[span.rawValue].add(value) }
+    }
+
+    /// Shown only while a pencil or pastel stroke was drawn in the window.
+    /// Per-frame averages: tiles, grains built/reused, coverage probes, contour rebuilds.
+    private func dryLines(_ ms: (RenderSpan) -> String) -> [String] {
+        guard dryFrames > 0 else { return [] }
+        func perFrame(_ value: Int) -> String { String(format: "%.0f", Double(value) / Double(dryFrames)) }
+        return [
+            (dryIncremental ? "dry·inc " : "dry·old ") + [RenderSpan.dryPrep, .dryUpdate, .dryGrains, .dryDraw, .dryPublish].map(ms).joined(separator: " "),
+            "pts \(perFrame(drySamples)) · tiles \(perFrame(dryTiles)) · n \(dryFrames)",
+            "grains \(perFrame(dryGrainsBuilt)) new \(perFrame(dryGrainHits)) hit"
+                + " · probes \(perFrame(dryProbes)) · ctr \(perFrame(dryContours))",
+        ]
     }
 
     private func locked<T>(_ body: () -> T) -> T {
@@ -306,7 +369,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             }
             let frame = spans[RenderSpan.render.rawValue]
             let input = spans[RenderSpan.input.rawValue]
-            let text = [
+            let text = ([
                 "FPS \(rate(liveFrames)) live · \(rate(committedFrames)) commit · drop \(coalescedFrames)",
                 "in \(rate(input.count))/s " + String(format: "%.2fms", input.averageMS)
                     + " · " + [RenderSpan.event, .dispatch].map(ms).joined(separator: " "),
@@ -319,7 +382,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
                 String(format: "main lag %.0f/%.0fms", mainLag.averageMS, mainLag.maximumMS),
                 "body raster \(rate(bodies[RenderCounter.raster.rawValue])) canvas "
                     + "\(rate(bodies[RenderCounter.canvas.rawValue])) screen \(rate(bodies[RenderCounter.screen.rawValue]))/s",
-            ].joined(separator: "\n")
+            ] + dryLines(ms)).joined(separator: "\n")
             spans = Array(repeating: Accumulator(), count: RenderSpan.allCases.count)
             latency = Accumulator()
             endToEnd = Accumulator()
@@ -328,6 +391,8 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             coalescedFrames = 0
             bodies = Array(repeating: 0, count: RenderCounter.allCases.count)
             mainLag = Accumulator()
+            dryFrames = 0; drySamples = 0; dryTiles = 0; dryGrainsBuilt = 0
+            dryGrainHits = 0; dryProbes = 0; dryContours = 0
             windowStart = now
             return text
         }
