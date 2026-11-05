@@ -93,14 +93,16 @@ struct CanvasControlAssignment: Codable, Equatable {
 }
 
 /// Symbols offered for a morph circle. The list is closed so a stored layout
-/// can never reference a symbol missing from the watchOS 10 SDK. The ellipsis
-/// is left out: it now marks More.
+/// can never reference a symbol missing from the watchOS 10 SDK. Symbols of
+/// actions a morph can hold are left out, such as the ellipsis of More, the
+/// palette, the sparkles of Complete strokes and the pen tip of a tool. Twenty
+/// fill the picker's four columns evenly.
 enum CanvasMorphIcon {
     static let standard = "square.grid.2x2"
     static let symbols = [
         standard, "paintbrush.pointed", "doc.badge.gearshape", "circle.grid.cross", "plus", "star", "heart",
-        "bolt", "sparkles", "wand.and.stars", "paintpalette", "scribble", "pencil.tip",
-        "slider.horizontal.3", "gearshape", "folder", "square.stack", "list.bullet", "tray"
+        "bolt", "wand.and.stars", "scribble", "slider.horizontal.3", "gearshape", "folder", "square.stack",
+        "list.bullet", "tray", "wrench.and.screwdriver", "archivebox", "square.on.circle", "bookmark.fill"
     ]
 
     /// Unknown or retired symbols fall back instead of invalidating the layout.
