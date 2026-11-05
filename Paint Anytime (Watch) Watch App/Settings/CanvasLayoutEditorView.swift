@@ -458,34 +458,18 @@ struct CanvasQuickActionLabel: View {
     }
 }
 
-/// The plate behind a morph preview, matching the circles above it: glass with
-/// adaptive icons on watchOS 26, the circles' material with white icons before it.
-/// watchOS 27 keeps white icons on a grey plate.
+/// The plate behind a morph preview. It only shows what a morph holds, so on every
+/// watchOS it stays flat and low-contrast: no glass or material that would make it
+/// read as a button like the circles.
 private struct MorphPreviewSurface: ViewModifier {
     let cornerRadius: CGFloat
 
-    @ViewBuilder
     func body(content: Content) -> some View {
-        if #available(watchOS 27, *) {
-            grey(content)
-        } else if #available(watchOS 26, *) {
-            content
-                .foregroundStyle(.primary)
-                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
-        } else {
-            // Same material and foreground as the editor's circles on watchOS 10 and 11.
-            content
-                .foregroundStyle(.white)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
-                .environment(\.colorScheme, .dark)
-        }
-    }
-
-    private func grey(_ content: Content) -> some View {
         content
-            .foregroundStyle(.white)
-            .background(Color.black.opacity(0.3), in: RoundedRectangle(cornerRadius: cornerRadius))
-            .environment(\.colorScheme, .dark)
+            .foregroundStyle(Color.black.opacity(0.35))
+            .background(Color.black.opacity(0.06), in: RoundedRectangle(cornerRadius: cornerRadius))
+            // The editor's canvas is always white, whatever the system appearance.
+            .environment(\.colorScheme, .light)
     }
 }
 

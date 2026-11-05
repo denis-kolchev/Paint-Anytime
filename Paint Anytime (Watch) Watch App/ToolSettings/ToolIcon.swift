@@ -20,7 +20,7 @@ struct BroomIcon: View {
             path.addLine(to: CGPoint(x: 5, y: 17))
             path.move(to: CGPoint(x: 10, y: 17))
             path.addLine(to: CGPoint(x: 8, y: 20))
-            drawing.stroke(path, with: .color(.primary),
+            drawing.stroke(path, with: .foreground,
                            style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
         }
         .frame(width: 22, height: 22)
@@ -36,17 +36,17 @@ struct CanvasLayoutIcon: View {
             drawing.scaleBy(x: size.width / 24, y: size.height / 24)
             let body = CGRect(x: 2, y: 3, width: 18, height: 18)
             drawing.stroke(Path(roundedRect: body, cornerRadius: 5, style: .continuous),
-                           with: .color(.primary), lineWidth: 1.7)
+                           with: .foreground, lineWidth: 1.7)
             // Digital Crown on the trailing edge.
             drawing.fill(Path(roundedRect: CGRect(x: 20.6, y: 8, width: 1.8, height: 4.5), cornerRadius: 0.9),
-                         with: .color(.primary))
+                         with: .foreground)
             // Larger dots, still clear of the case and its rounded corners.
             let diameter: CGFloat = 3.4
             let dots = [-1, 1].map { CGPoint(x: body.midX + CGFloat($0) * 4.4, y: body.midY - 4.4) }
             for dot in dots {
                 drawing.fill(Path(ellipseIn: CGRect(x: dot.x - diameter / 2, y: dot.y - diameter / 2,
                                                     width: diameter, height: diameter)),
-                             with: .color(.primary))
+                             with: .foreground)
             }
         }
         .frame(width: 22, height: 22)
@@ -65,7 +65,8 @@ struct ToolIcon: View {
             defer { TutorialDebug.finish("toolIcon.draw", since: started) }
             var c = context
             c.scaleBy(x: size.width / 24, y: size.height / 28)
-            let ink = GraphicsContext.Shading.color(.primary)
+            // The foreground style, not .primary, so the icon dims and tints like SF Symbols beside it.
+            let ink = GraphicsContext.Shading.foreground
             func outline(_ points: [CGPoint], closed: Bool = false) {
                 var path = Path()
                 guard let first = points.first else { return }
