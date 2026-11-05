@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import simd
 
 /// Present a fully materialized Core Graphics bitmap, using the same brush
 /// geometry as export without SwiftUI's Canvas/ImageRenderer preparation path.
@@ -17,6 +18,11 @@ struct WatchRasterArtwork: View {
     let activeStrokeID: UInt64
     var onFramePrepared: (Bool) -> Void = { _ in }
     let zoom: Double
+    /// Lets the touch handler queue live frames directly (Direct submit).
+    var liveSubmitter: LiveFrameSubmitter? = nil
+    /// The live ink tip is drawn above every layer, so the caller allows it only when
+    /// nothing covers or clips the live layer: topmost, fully opaque, not alpha-locked.
+    var allowsInkTip = false
     @State private var rasterZoom: Double = 1
     @Environment(\.displayScale) private var displayScale
 
@@ -29,7 +35,8 @@ struct WatchRasterArtwork: View {
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
                             // Keep the previous resolution until Crown input settles.
-                            scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom)))
+                            scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom)),
+                        liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip && selectionPreview == nil)
         }
         .task(id: zoom) {
             do {
@@ -56,6 +63,8 @@ struct WatchRasterArtwork: View {
         let activeStrokeRevision: UInt64
         let activeStrokeID: UInt64
         let key: WatchBitmapRenderer.CacheKey
+        var liveSubmitter: LiveFrameSubmitter?
+        var allowsInkTip: Bool
 
         @StateObject private var frames = CanvasFrameQueue()
         @State private var finishedTransform: CGAffineTransform?
@@ -137,6 +146,8 @@ struct WatchRasterArtwork: View {
 
         var body: some View {
             let _ = TutorialDebug.trace("raster.frame.body", "strokes=\(strokes.count) imageReady=\(frames.frame != nil)")
+            let _ = RenderDiagnostics.bodyEvaluated()
+            let _ = registerLiveSubmitter()
             Group {
                 if let frame = displayFrame {
                     artwork(frame)
@@ -144,10 +155,19 @@ struct WatchRasterArtwork: View {
                     Color.white
                 }
             }
+            .overlay(alignment: .topLeading) {
+                if allowsInkTip, RenderStageSwitches.isOn(.inkTip),
+                   let stroke = frames.tipStroke(for: activeStroke) {
+                    InkTipOverlay(stroke: stroke, renderedPoints: frames.renderedPoints(of: stroke),
+                                  lookahead: RenderStageSwitches.isOn(.predictedTip)
+                                      ? Double(RenderDebugSettings.shared.predictionFrames) / 60 : 0)
+                        .frame(width: key.size.width, height: key.size.height)
+                }
+            }
             .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: hasSelectionTexture ? nil : selectionPreview?.transform)) { @MainActor in
                 if hasSelectionTexture { return }
                 frames.submit(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke,
-                              key: key, activeStrokeID: activeStrokeID,
+                              activeStrokeRevision: activeStrokeRevision, key: key, activeStrokeID: activeStrokeID,
                               animatesClear: activeStroke == nil && key.documentRevision == clearDocumentRevision)
             }
             .task(id: Request(key: key, activeStrokeRevision: 0, sessionID: selectionSeed?.sessionID, transform: nil)) {
@@ -190,6 +210,147 @@ struct WatchRasterArtwork: View {
             .onDisappear { frames.stop() }
         }
 
+        /// Hand the touch handler a closure with this body's layout and document, so a
+        /// live frame can be queued without waiting for the `.task(id:)` hop. Assigning a
+        /// plain property during body publishes nothing and invalidates no view.
+        private func registerLiveSubmitter() {
+            guard let liveSubmitter else { return }
+            guard selectionPreview == nil, !hasSelectionTexture else {
+                liveSubmitter.submit = nil
+                return
+            }
+            let frames = frames, document = document, selectedLayerID = selectedLayerID
+            let strokes = strokes, key = key
+            liveSubmitter.submit = { stroke, revision, strokeID in
+                frames.submit(document: document, selectedLayerID: selectedLayerID, selectionPreview: nil,
+                              strokes: strokes, activeStroke: stroke, activeStrokeRevision: revision,
+                              key: key, activeStrokeID: strokeID)
+            }
+        }
+    }
+}
+
+/// Direct submit: the touch handler queues the live frame in the same run-loop
+/// pass that applied the sample. The raster view re-registers `submit` on every body
+/// evaluation; the later `.task(id:)` submit of the same revision is then dropped.
+@MainActor
+final class LiveFrameSubmitter {
+    fileprivate var submit: ((Stroke, UInt64, UInt64) -> Void)?
+
+    func submitLive(_ stroke: Stroke?, revision: UInt64, strokeID: UInt64) {
+        guard RenderStageSwitches.isOn(.directSubmit), let stroke else { return }
+        // Object erasing edits the document mid-stroke; the captured one would be stale.
+        if stroke.style.instrument == .eraser, stroke.style.eraserMode == .objects { return }
+        submit?(stroke, revision, strokeID)
+    }
+}
+
+/// Live ink tip: the samples the displayed bitmap does not include yet, drawn with the
+/// brush's own vector geometry in the touch's SwiftUI update, plus a short prediction.
+/// Only opaque vector brushes qualify: drawn over the bitmap they match it exactly,
+/// while textured or translucent brushes would differ or double their coverage.
+private struct InkTipOverlay: View {
+    let stroke: Stroke
+    let renderedPoints: Int
+    /// Seconds to extrapolate along the last segment; 0 disables prediction.
+    let lookahead: Double
+
+    static func supports(_ style: PencilStyle) -> Bool {
+        switch style.instrument {
+        case .monoline, .pen, .fountainPen, .reed:
+            return style.color.w * style.effectiveOpacity >= 0.999
+        default:
+            return false
+        }
+    }
+
+    var body: some View {
+        Canvas { context, _ in
+            guard let path = tailPath() else { return }
+            let ink = stroke.style.color
+            let color = Color(.sRGB, red: Double(ink.x), green: Double(ink.y), blue: Double(ink.z), opacity: 1)
+            switch path {
+            case let .fill(shape):
+                context.fill(shape, with: .color(color))
+            case let .stroke(line, style):
+                context.stroke(line, with: .color(color), style: style)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private enum TailPath {
+        case fill(Path)
+        case stroke(Path, StrokeStyle)
+    }
+
+    /// The same geometry `WatchStrokeDrawing` uses for these brushes, for the tail only.
+    private func tailPath() -> TailPath? {
+        let samples = stroke.points
+        guard Self.supports(stroke.style), !samples.isEmpty else { return nil }
+        // Overlap the last rendered sample so the tail joins the bitmap without a gap.
+        let start = min(samples.count - 1, max(0, renderedPoints - 1))
+        var points = samples[start...].map(\.position)
+        let predicted = prediction()
+        if let predicted { points.append(predicted) }
+        guard points.count > 1 || renderedPoints == 0 else { return nil }
+        let width = max(0.1, stroke.style.width)
+        switch stroke.style.instrument {
+        case .monoline:
+            if points.count == 1 {
+                let r = CGFloat(width) / 2, p = points[0]
+                return .fill(Path(ellipseIn: CGRect(x: CGFloat(p.x) - r, y: CGFloat(p.y) - r,
+                                                    width: r * 2, height: r * 2)))
+            }
+            var line = Path()
+            line.addLines(points.map(Self.point))
+            return .stroke(line, StrokeStyle(lineWidth: CGFloat(width), lineCap: .round, lineJoin: .round))
+        case .pen:
+            // Speed-dependent radii are smoothed from the stroke's start: take them
+            // from the whole stroke, then build discs only for the tail.
+            var radii = Array(BrushGeometry.radii(for: stroke)[start...])
+            if predicted != nil, let last = radii.last { radii.append(last) }
+            return .fill(Self.shape(BrushGeometry.roundPolygons(points: points, radii: radii)))
+        case .fountainPen, .reed:
+            // The nib is swept segment by segment, so the tail alone matches exactly.
+            var tail = stroke
+            tail.points = Array(samples[start...])
+            if let predicted, let last = samples.last {
+                tail.points.append(PointerSample(position: predicted, pressure: last.pressure,
+                                                 timestamp: last.timestamp + lookahead))
+            }
+            return .fill(Self.shape(FountainPenGeometry.polygons(for: tail)))
+        default:
+            return nil
+        }
+    }
+
+    /// Extrapolate the last segment's velocity; capped so a jerk cannot fling the tip away.
+    private func prediction() -> SIMD2<Float>? {
+        let samples = stroke.points
+        guard lookahead > 0, samples.count >= 2 else { return nil }
+        let a = samples[samples.count - 2], b = samples[samples.count - 1]
+        let dt = max(0.001, b.timestamp - a.timestamp)
+        var step = (b.position - a.position) / Float(dt) * Float(lookahead)
+        let limit = max(8, stroke.style.width * 2) * Float(max(1, lookahead * 60))
+        let length = simd_length(step)
+        guard length > 0.01 else { return nil }
+        if length > limit { step *= limit / length }
+        return b.position + step
+    }
+
+    private static func point(_ p: SIMD2<Float>) -> CGPoint { CGPoint(x: CGFloat(p.x), y: CGFloat(p.y)) }
+
+    private static func shape(_ polygons: [[SIMD2<Float>]]) -> Path {
+        var path = Path()
+        for polygon in polygons {
+            guard let first = polygon.first else { continue }
+            path.move(to: point(first))
+            for vertex in polygon.dropFirst() { path.addLine(to: point(vertex)) }
+            path.closeSubpath()
+        }
+        return path
     }
 }
 
@@ -245,16 +406,31 @@ private final class CanvasFrameQueue: ObservableObject {
         let key: WatchBitmapRenderer.CacheKey
         let activeStrokeID: UInt64
         let animatesClear: Bool
+        let activeStrokeRevision: UInt64
+        /// Diagnostics clock at submission; 0 when render debugging is compiled out.
+        let submittedAt: UInt64
+        /// Touch event this live frame answers, for the end-to-end figure; 0 otherwise.
+        let eventAt: UInt64
     }
     private var pending: Job?
     private var latest: Job?
     private var worker: Task<Void, Never>?
     private var generation: UInt64 = 0
 
-    func submit(document: CanvasDocument?, selectedLayerID: UUID?, selectionPreview: WatchSelectionPreview?, strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
+    func submit(document: CanvasDocument?, selectedLayerID: UUID?, selectionPreview: WatchSelectionPreview?, strokes: [Stroke], activeStroke: Stroke?,
+                activeStrokeRevision: UInt64 = 0, key: WatchBitmapRenderer.CacheKey,
                 activeStrokeID: UInt64, animatesClear: Bool = false) {
-        if !animatesClear { clearTransition = nil }
-        let job = Job(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID, animatesClear: animatesClear)
+        // Direct submit already queued this live sample; drop the `.task(id:)` duplicate.
+        if let activeStroke, selectionPreview == nil, let latest,
+           latest.selectionPreview == nil, latest.key == key,
+           latest.activeStrokeID == activeStrokeID, latest.activeStroke?.id == activeStroke.id,
+           latest.activeStrokeRevision == activeStrokeRevision { return }
+        if !animatesClear, clearTransition != nil { clearTransition = nil }
+        if pending != nil { RenderDiagnostics.frameCoalesced() }
+        let job = Job(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID, animatesClear: animatesClear,
+                      activeStrokeRevision: activeStrokeRevision,
+                      submittedAt: RenderDiagnostics.begin(),
+                      eventAt: RenderDiagnostics.frameSubmitted(live: activeStroke != nil))
         pending = job
         latest = job
         guard worker == nil else { return }
@@ -263,39 +439,83 @@ private final class CanvasFrameQueue: ObservableObject {
             guard let self else { return }
             while let job = self.pending, !Task.isCancelled {
                 self.pending = nil
-                let next: WatchBitmapRenderer.ScreenFrame?
-                if let preview = job.selectionPreview {
-                    next = await self.renderer.selectionFrame(preview, key: job.key)
-                } else if let document = job.document {
-                    next = await self.renderer.layeredFrame(document: document, activeStroke: job.activeStroke,
-                        selectedLayerID: job.selectedLayerID, key: job.key)
-                } else {
-                    next = await self.renderer.screenFrame(strokes: job.strokes, activeStroke: job.activeStroke,
-                                                     key: job.key, activeStrokeID: job.activeStrokeID)
-                }
+                let next = await self.render(job)
                 guard !Task.isCancelled, self.generation == token else { return }
-                // An older prefix of this gesture is useful. An old document,
-                // cancelled gesture or viewport must never replace the new one.
-                if let latest = self.latest,
-                   ((latest.key == job.key && latest.selectionPreview?.sessionID == job.selectionPreview?.sessionID) || Self.sameSelectionDrag(latest, job)),
-                   latest.activeStrokeID == job.activeStrokeID,
-                   latest.activeStroke?.id == job.activeStroke?.id, let next {
-                    if job.animatesClear, self.preparedResult?.key.documentRevision != job.key.documentRevision, let previous = self.frame {
-                        self.clearTransition = ClearTransition(frame: previous)
-                    }
-                    self.frame = next
-                    self.preparedResult = PreparedResult(key: job.key, succeeded: true)
-                    if let texture = next.selection, let pending = self.pending,
-                       pending.key == texture.key,
-                       pending.selectionPreview?.sessionID == texture.sessionID {
-                        self.pending = nil
-                    }
-                } else if next == nil, self.latest?.key == job.key {
-                    self.preparedResult = PreparedResult(key: job.key, succeeded: false)
-                }
+                self.publish(next, for: job)
             }
             if self.generation == token { self.worker = nil }
         }
+    }
+
+    /// Render stage: lasso preview, layer compositor or the single-layer cache.
+    private func render(_ job: Job) async -> WatchBitmapRenderer.ScreenFrame? {
+        RenderDiagnostics.end(.queue, job.submittedAt)
+        let started = RenderDiagnostics.begin()
+        defer { RenderDiagnostics.end(.render, started) }
+        if let preview = job.selectionPreview {
+            RenderDiagnostics.setPath("lasso")
+            return await renderer.selectionFrame(preview, key: job.key)
+        } else if let document = job.document {
+            RenderDiagnostics.setPath("layers")
+            return await renderer.layeredFrame(document: document, activeStroke: job.activeStroke,
+                selectedLayerID: job.selectedLayerID, key: job.key)
+        } else {
+            RenderDiagnostics.setPath("1-layer")
+            return await renderer.screenFrame(strokes: job.strokes, activeStroke: job.activeStroke,
+                                              key: job.key, activeStrokeID: job.activeStrokeID)
+        }
+    }
+
+    /// Publish stage: hand a still-current frame to SwiftUI.
+    private func publish(_ next: WatchBitmapRenderer.ScreenFrame?, for job: Job) {
+        // An older prefix of this gesture is useful. An old document,
+        // cancelled gesture or viewport must never replace the new one.
+        if let latest = self.latest,
+           ((latest.key == job.key && latest.selectionPreview?.sessionID == job.selectionPreview?.sessionID) || Self.sameSelectionDrag(latest, job)),
+           latest.activeStrokeID == job.activeStrokeID,
+           latest.activeStroke?.id == job.activeStroke?.id, let next {
+            if job.animatesClear, self.preparedResult?.key.documentRevision != job.key.documentRevision, let previous = self.frame {
+                self.clearTransition = ClearTransition(frame: previous)
+            }
+            // Ink tip bookkeeping: which samples the displayed bitmap already contains.
+            displayedStrokeID = job.activeStroke?.id
+            displayedPointCount = job.activeStroke?.points.count ?? 0
+            if job.activeStroke == nil { heldTipStroke = nil }
+            self.frame = next
+            // Assign only on change: every @Published write re-evaluates the raster body.
+            let result = PreparedResult(key: job.key, succeeded: true)
+            if self.preparedResult != result { self.preparedResult = result }
+            RenderDiagnostics.framePublished(live: job.activeStroke != nil, submittedAt: job.submittedAt,
+                                             eventAt: job.eventAt)
+            if let texture = next.selection, let pending = self.pending,
+               pending.key == texture.key,
+               pending.selectionPreview?.sessionID == texture.sessionID {
+                self.pending = nil
+            }
+        } else if next == nil, self.latest?.key == job.key {
+            self.preparedResult = PreparedResult(key: job.key, succeeded: false)
+        }
+    }
+
+    // MARK: Live ink tip
+
+    private var displayedStrokeID: UUID?
+    private var displayedPointCount = 0
+    /// The lifted stroke, kept until its committed frame is published so the tip
+    /// does not vanish for the frame between lift and commit.
+    private var heldTipStroke: Stroke?
+
+    /// Called from body; writes only plain properties, never a published one.
+    func tipStroke(for active: Stroke?) -> Stroke? {
+        if let active {
+            heldTipStroke = active
+            return active
+        }
+        return heldTipStroke
+    }
+
+    func renderedPoints(of stroke: Stroke) -> Int {
+        displayedStrokeID == stroke.id ? displayedPointCount : 0
     }
 
     private static func sameSelectionDrag(_ latest: Job, _ rendered: Job) -> Bool {
@@ -314,5 +534,6 @@ private final class CanvasFrameQueue: ObservableObject {
         worker = nil
         pending = nil
         latest = nil
+        heldTipStroke = nil
     }
 }

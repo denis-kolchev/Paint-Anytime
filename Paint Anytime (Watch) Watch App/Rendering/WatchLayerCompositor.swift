@@ -144,6 +144,8 @@ nonisolated extension WatchBitmapRenderer {
         fileprivate func didBuildComposite() { compositeBuildCount += 1 }
     }
 
+    /// Layered frame: paper, the cached composite of lower layers, then each layer's
+    /// committed ink (with the live stroke on the selected layer) in sequential blend order.
     static func render(document: CanvasDocument, size: CGSize, scale: CGFloat,
                        activeStroke: Stroke? = nil, selectedLayerID: UUID? = nil,
                        cache: LayerCache? = nil, selection: WatchSelectionPreview? = nil) -> CGImage? {
@@ -152,96 +154,148 @@ nonisolated extension WatchBitmapRenderer {
               let output = makeDisplayContext(width: Int(ceil(size.width * scale)),
                                               height: Int(ceil(size.height * scale))) else { return nil }
         let bounds = CGRect(x: 0, y: 0, width: output.width, height: output.height)
-        let c = document.effectiveBackgroundColor
-        output.setFillColor(CGColor(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: CGFloat(c.w)))
-        output.fill(bounds)
-        if let cache {
-            if cache.size != size || cache.scale != scale {
-                cache.inks.removeAll()
-                cache.composite = nil
-                cache.liveInk = nil
-            }
-            cache.size = size
-            cache.scale = scale
-            cache.retainLayers(Set(document.layers.map(\.id)))
-        }
+        let background = document.effectiveBackgroundColor
+        fillPaper(output, color: background, bounds: bounds)
+        if let cache { prepare(cache, for: document, size: size, scale: scale) }
         let visible = document.layers.filter { $0.isVisible && $0.opacity > 0 }
         // Preserve the exact sequential blend order and 8-bit rounding. Cache the
         // paper and layers below the live layer, or the entire frame when idle.
         let liveLayerID = selection?.layerID ?? (activeStroke == nil ? nil : selectedLayerID)
-        let liveIndex = visible.firstIndex { $0.id == liveLayerID }
-        let prefixCount = liveIndex ?? visible.count
-        let compositeKey = LayerCache.CompositeKey(background: c, layers: visible.prefix(prefixCount).map {
+        let prefixCount = visible.firstIndex { $0.id == liveLayerID } ?? visible.count
+        let compositeKey = LayerCache.CompositeKey(background: background, layers: visible.prefix(prefixCount).map {
             .init(id: $0.id, revisions: $0.strokes.map(\.geometryRevision), opacity: $0.opacity)
         })
-        let reusedComposite = cache?.composite?.key == compositeKey
-        if reusedComposite, let image = cache?.composite?.image {
-            output.setBlendMode(.copy)
-            output.draw(image, in: bounds)
-            output.setBlendMode(.normal)
+        let reusedComposite = RenderDiagnostics.measure(.composite) {
+            reuseComposite(compositeKey, cache: cache, in: output, bounds: bounds)
         }
         for (index, layer) in visible.enumerated() {
-            if index == prefixCount, !reusedComposite, let cache, let image = output.makeImage() {
-                cache.composite = (compositeKey, image)
-                cache.didBuildComposite()
+            if index == prefixCount, !reusedComposite, let cache {
+                RenderDiagnostics.measure(.composite) { storeComposite(compositeKey, from: output, in: cache) }
             }
             if reusedComposite && index < prefixCount { continue }
             let revisions = layer.strokes.map(\.geometryRevision)
-            let committed: InkSnapshot
-            if selection?.layerID == layer.id {
-                // Replay the selected layer in its original order. Other layers stay cached.
-                guard let ink = renderInk(strokes: layer.strokes, size: size, scale: scale,
-                                          selection: selection) else { return nil }
-                committed = ink
-            } else if let entry = cache?.inks[layer.id], entry.revisions == revisions {
-                committed = entry.ink
-            } else if let cache, let earlier = cache.previousInk(for: layer.id, revisions: revisions) {
-                committed = earlier
-                cache.store(earlier, revisions: revisions, for: layer.id)
-            } else {
-                let previous = cache?.appendBase(for: layer.id, revisions: revisions)
-                let canAppend = previous != nil
-                let pending = canAppend ? Array(layer.strokes.dropFirst(previous!.revisions.count)) : layer.strokes
-                if canAppend, pending.count == 1, let final = pending.first,
-                   let cache, let live = cache.liveInk, let previous,
-                   live.layerID == layer.id, live.revisions == previous.revisions,
-                   final.extends(live.stroke),
-                   let promoted = cache.renderLive(final, layerID: layer.id, revisions: previous.revisions,
-                                                   base: previous.ink, scale: scale) {
-                    committed = promoted
-                    cache.liveInk = nil
-                } else {
-                    guard let ink = renderInk(strokes: pending, size: size, scale: scale,
-                                              base: canAppend ? previous?.ink : nil, masks: cache?.masks) else { return nil }
-                    cache?.didReplay(pending.count)
-                    committed = ink
-                }
-                cache?.store(committed, revisions: revisions, for: layer.id)
-            }
+            guard let committed = RenderDiagnostics.measure(.committed, {
+                committedInk(for: layer, revisions: revisions, size: size, scale: scale,
+                             cache: cache, selection: selection)
+            }) else { return nil }
             var ink = committed
             if layer.id == selectedLayerID, let activeStroke {
-                if let live = cache?.renderLive(activeStroke, layerID: layer.id, revisions: revisions,
-                                                base: committed, scale: scale) {
-                    ink = live
-                } else {
-                    guard let live = renderInk(strokes: [activeStroke], size: size, scale: scale, base: committed) else { return nil }
-                    ink = live
-                }
+                guard let live = RenderDiagnostics.measure(.live, {
+                    liveInk(activeStroke, over: committed, layerID: layer.id, revisions: revisions,
+                            size: size, scale: scale, cache: cache)
+                }) else { return nil }
+                ink = live
             }
-            output.saveGState()
-            output.setAlpha(CGFloat(layer.opacity))
-            output.draw(ink.image, in: bounds)
-            output.restoreGState()
+            RenderDiagnostics.measure(.composite) {
+                drawLayer(ink, opacity: layer.opacity, in: output, bounds: bounds)
+            }
         }
         if activeStroke == nil || !visible.contains(where: { $0.id == selectedLayerID }) || selection != nil {
             cache?.liveInk = nil
         }
-        guard let image = output.makeImage() else { return nil }
-        if prefixCount == visible.count, !reusedComposite, let cache {
-            cache.composite = (compositeKey, image)
-            cache.didBuildComposite()
+        return RenderDiagnostics.measure(.composite) {
+            guard let image = output.makeImage() else { return nil }
+            if prefixCount == visible.count, !reusedComposite, let cache {
+                cache.composite = (compositeKey, image)
+                cache.didBuildComposite()
+            }
+            return image
         }
-        return image
+    }
+
+    // MARK: Layer pipeline stages
+
+    private static func fillPaper(_ output: CGContext, color c: SIMD4<Float>, bounds: CGRect) {
+        output.setFillColor(CGColor(red: CGFloat(c.x), green: CGFloat(c.y), blue: CGFloat(c.z), alpha: CGFloat(c.w)))
+        output.fill(bounds)
+    }
+
+    /// Drop images for another raster size and for layers that no longer exist.
+    private static func prepare(_ cache: LayerCache, for document: CanvasDocument, size: CGSize, scale: CGFloat) {
+        if cache.size != size || cache.scale != scale {
+            cache.inks.removeAll()
+            cache.composite = nil
+            cache.liveInk = nil
+        }
+        cache.size = size
+        cache.scale = scale
+        cache.retainLayers(Set(document.layers.map(\.id)))
+    }
+
+    /// Paper and unchanged lower layers in one copy, when the cached composite matches.
+    private static func reuseComposite(_ key: LayerCache.CompositeKey, cache: LayerCache?,
+                                       in output: CGContext, bounds: CGRect) -> Bool {
+        guard let composite = cache?.composite, composite.key == key else { return false }
+        output.setBlendMode(.copy)
+        output.draw(composite.image, in: bounds)
+        output.setBlendMode(.normal)
+        return true
+    }
+
+    private static func storeComposite(_ key: LayerCache.CompositeKey, from output: CGContext, in cache: LayerCache) {
+        guard let image = output.makeImage() else { return }
+        cache.composite = (key, image)
+        cache.didBuildComposite()
+    }
+
+    /// The layer's committed ink: a lasso replay, a cache hit, an Undo snapshot,
+    /// the promoted live stroke, or a replay of the strokes past the cached prefix.
+    private static func committedInk(for layer: CanvasLayer, revisions: [UUID], size: CGSize, scale: CGFloat,
+                                     cache: LayerCache?, selection: WatchSelectionPreview?) -> InkSnapshot? {
+        if selection?.layerID == layer.id {
+            // Replay the selected layer in its original order. Other layers stay cached.
+            return renderInk(strokes: layer.strokes, size: size, scale: scale, selection: selection)
+        }
+        if let entry = cache?.inks[layer.id], entry.revisions == revisions {
+            return entry.ink
+        }
+        if let cache, let earlier = cache.previousInk(for: layer.id, revisions: revisions) {
+            cache.store(earlier, revisions: revisions, for: layer.id)
+            return earlier
+        }
+        let previous = cache?.appendBase(for: layer.id, revisions: revisions)
+        let committed: InkSnapshot
+        if let promoted = promotedLiveInk(layer, previous: previous, cache: cache, scale: scale) {
+            committed = promoted
+            cache?.liveInk = nil
+        } else {
+            let pending = previous.map { Array(layer.strokes.dropFirst($0.revisions.count)) } ?? layer.strokes
+            guard let ink = renderInk(strokes: pending, size: size, scale: scale,
+                                      base: previous?.ink, masks: cache?.masks) else { return nil }
+            cache?.didReplay(pending.count)
+            committed = ink
+        }
+        cache?.store(committed, revisions: revisions, for: layer.id)
+        return committed
+    }
+
+    /// The one new stroke is the live stroke this layer already holds in its buffer.
+    private static func promotedLiveInk(_ layer: CanvasLayer, previous: (revisions: [UUID], ink: InkSnapshot)?,
+                                        cache: LayerCache?, scale: CGFloat) -> InkSnapshot? {
+        guard let previous, let cache, let live = cache.liveInk,
+              layer.strokes.count == previous.revisions.count + 1, let final = layer.strokes.last,
+              live.layerID == layer.id, live.revisions == previous.revisions,
+              final.extends(live.stroke) else { return nil }
+        return cache.renderLive(final, layerID: layer.id, revisions: previous.revisions,
+                                base: previous.ink, scale: scale)
+    }
+
+    /// The live stroke over the layer's committed ink, incrementally when possible.
+    private static func liveInk(_ activeStroke: Stroke, over committed: InkSnapshot, layerID: UUID,
+                                revisions: [UUID], size: CGSize, scale: CGFloat,
+                                cache: LayerCache?) -> InkSnapshot? {
+        if let live = cache?.renderLive(activeStroke, layerID: layerID, revisions: revisions,
+                                        base: committed, scale: scale) {
+            return live
+        }
+        return renderInk(strokes: [activeStroke], size: size, scale: scale, base: committed)
+    }
+
+    private static func drawLayer(_ ink: InkSnapshot, opacity: Float, in output: CGContext, bounds: CGRect) {
+        output.saveGState()
+        output.setAlpha(CGFloat(opacity))
+        output.draw(ink.image, in: bounds)
+        output.restoreGState()
     }
 
 

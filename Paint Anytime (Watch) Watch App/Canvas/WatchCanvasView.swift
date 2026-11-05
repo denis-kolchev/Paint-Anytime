@@ -50,6 +50,9 @@ struct WatchCanvasView: View {
     @State private var failedCircleOpacity = 1.0
     @State private var failedCircleKind: ShapeRecognizer.Kind?
     @ObservedObject var guides = PerspectiveGuides.shared
+    @ObservedObject var renderDebug = RenderDebugSettings.shared
+    /// Queues live frames straight from the touch handler (Direct submit).
+    @State private var liveSubmitter = LiveFrameSubmitter()
     @State private var guideDrag: GuideDrag?
     // A stroke that starts on a guide waits for its direction before choosing a ruler.
     @State private var isRulerPending = false
@@ -70,6 +73,14 @@ struct WatchCanvasView: View {
         || controller.selectedLayer.locksTransparency || controller.containsTransparencyLockedStrokes
     }
 
+    /// The ink tip draws above all layers; allow it only when nothing would cover,
+    /// fade or clip the live stroke in the real frame.
+    private var allowsInkTip: Bool {
+        let layer = controller.selectedLayer
+        return !lasso.isActive && layer.isVisible && layer.opacity >= 1 && !layer.locksTransparency
+            && controller.document.layers.last(where: { $0.isVisible && $0.opacity > 0 })?.id == layer.id
+    }
+
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
     @FocusState private var crownFocused: Bool
     private var shouldFocusCrown: Bool {
@@ -82,6 +93,7 @@ struct WatchCanvasView: View {
 
     var body: some View {
         let _ = TutorialDebug.trace("canvas.body", "input=\(acceptsInput) controls=\(protectedControls.count) \(tutorial.debugState)")
+        let _ = RenderDiagnostics.bodyEvaluated(.canvas)
         GeometryReader { geometry in
             let paperSize = controller.document.size(fallback: geometry.size)
             let fit = canvasFit(geometry.size)
@@ -101,7 +113,8 @@ struct WatchCanvasView: View {
                             documentRevision: controller.documentRevision,
                             clearDocumentRevision: controller.clearDocumentRevision,
                             activeStrokeRevision: controller.activeStrokeRevision,
-                            activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: zoom)
+                            activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: zoom,
+                            liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip)
                     }
                         .frame(width: paperSize.width, height: paperSize.height)
                         .overlay {
@@ -205,6 +218,12 @@ struct WatchCanvasView: View {
             .overlay {
                 if fillRequestID != nil { ProgressView().allowsHitTesting(false) }
             }
+            .overlay(alignment: renderDebug.hudPosition.alignment) {
+                if RenderDebug.isEnabled, renderDebug.showsHUD, rendersArtwork {
+                    RenderDebugOverlay()
+                        .padding(renderDebug.hudPosition.insets)
+                }
+            }
             .overlay {
                 if rendersArtwork && acceptsInput {
                     WatchLassoModeNotice(lasso: lasso)
@@ -237,6 +256,9 @@ struct WatchCanvasView: View {
                 DragGesture(minimumDistance: 0)
                     .updating($isDragging) { _, state, _ in state = true }
                     .onChanged { value in
+                        // Speed HUD: touch event age, then handler, stroke geometry, object erasing.
+                        let inputStarted = RenderDiagnostics.inputBegan(eventTime: value.time)
+                        defer { RenderDiagnostics.end(.input, inputStarted) }
                         guard fillRequestID == nil, acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt && blockedEraserLayerID == nil else { return }
                         guard (lasso.isActive ? tutorial.allowsLassoInput : isMovingCanvas ? tutorial.allowsCanvasPan : tutorial.allowsDrawing) else { return }
                         tutorial.activity()
@@ -322,6 +344,9 @@ struct WatchCanvasView: View {
                         }
                         controller.continueStroke(at: sample(
                             at: ruled(canvasPoint(value.location, size: geometry.size)), time: value.time))
+                        RenderDiagnostics.sampleApplied()
+                        liveSubmitter.submitLive(controller.activeStroke, revision: controller.activeStrokeRevision,
+                                                 strokeID: controller.activeStrokeID)
                         // A ruled line is already exact; shape recognition would only distort it.
                         if guides.activeRuler == nil { scheduleShapeHold(at: value.location) }
                     }
@@ -575,34 +600,16 @@ struct WatchCanvasView: View {
         let screenPoint = CGPoint(x: canvasFrame.minX + point.x, y: canvasFrame.minY + point.y)
         for (control, frame) in protectedControlsProvider?() ?? protectedControls {
             guard !frame.isNull && !frame.isEmpty else { continue }
-            // Include the button when the toolbar reports only its icon, without
-            // adding a margin toward the canvas. Extend its rounded footprint
-            // outward to the screen edges, never across the whole bottom row.
-            let radiusX = max(44, frame.width) / 2
-            let radiusY = max(44, frame.height) / 2
-            // Follow the actual screen position, including right-to-left layouts.
-            let outwardSideDistance = frame.midX < canvasFrame.midX
-                ? max(0, screenPoint.x - frame.midX)
-                : max(0, frame.midX - screenPoint.x)
-            let dx: CGFloat
-            let dy: CGFloat
+            // Only the button itself blocks drawing, so tapping it never leaves a dot.
+            // There is no extra no-draw zone around it: the canvas is drawable up to it.
             switch control {
             case .morph, .contentMorph, .canvasToolsMorph, .custom:
                 if frame.contains(screenPoint) { return true }
-                continue
-            case .more, .tools:
-                dx = outwardSideDistance
-                dy = max(0, screenPoint.y - frame.midY)
-            case .clear, .save:
-                dx = outwardSideDistance
-                dy = max(0, frame.midY - screenPoint.y)
-            case .undo, .redo:
-                dx = abs(screenPoint.x - frame.midX)
-                dy = max(0, frame.midY - screenPoint.y)
+            case .more, .tools, .clear, .save, .undo, .redo:
+                // The toolbar reports only the icon bounds; test the round 44 pt button.
+                let radius = max(44, max(frame.width, frame.height)) / 2
+                if hypot(screenPoint.x - frame.midX, screenPoint.y - frame.midY) <= radius { return true }
             }
-            let normalizedX = dx / radiusX
-            let normalizedY = dy / radiusY
-            if normalizedX * normalizedX + normalizedY * normalizedY <= 1 { return true }
         }
         return false
     }

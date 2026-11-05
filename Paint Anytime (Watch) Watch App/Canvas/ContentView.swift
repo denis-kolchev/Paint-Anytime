@@ -75,6 +75,7 @@ struct ContentView: View {
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
     var body: some View {
+        let _ = RenderDiagnostics.bodyEvaluated(.screen)
         Group {
         GeometryReader { geometry in
             canvasStack(geometry)

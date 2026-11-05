@@ -152,17 +152,22 @@ nonisolated enum BrushGeometry {
     }
 
     static func roundPolygons(for stroke: Stroke) -> [[SIMD2<Float>]] {
-        let radii = radii(for: stroke)
+        roundPolygons(points: stroke.points.map(\.position), radii: radii(for: stroke))
+    }
+
+    /// Discs at each point joined by quads. The live ink tip passes only the stroke's
+    /// tail with radii computed over the whole stroke, so widths match the renderer.
+    static func roundPolygons(points: [SIMD2<Float>], radii: [Float]) -> [[SIMD2<Float>]] {
         var result: [[SIMD2<Float>]] = []
-        for index in stroke.points.indices {
-            let center = stroke.points[index].position
+        for index in points.indices {
+            let center = points[index]
             let radius = radii[index]
             result.append((0..<16).map {
                 let angle = Float($0) * 2 * .pi / 16
                 return center + SIMD2(cos(angle), sin(angle)) * radius
             })
             guard index > 0 else { continue }
-            let previous = stroke.points[index - 1].position
+            let previous = points[index - 1]
             let delta = center - previous
             guard simd_length(delta) > 0.001 else { continue }
             let normal = simd_normalize(SIMD2<Float>(-delta.y, delta.x))

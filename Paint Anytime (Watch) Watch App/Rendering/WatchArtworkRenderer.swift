@@ -56,6 +56,12 @@ actor WatchArtworkRenderer {
             background: document?.effectiveBackgroundColor ?? SIMD4(1, 1, 1, 1), layers: layers)
     }
 
+    /// History stage of a committed frame (Undo/Redo back to a retained frame).
+    private func recall(_ state: HistoryKey?) -> WatchBitmapRenderer.ScreenFrame? {
+        guard let state else { return nil }
+        return RenderDiagnostics.measure(.history) { recalledFrame(state) }
+    }
+
     private func recalledFrame(_ key: HistoryKey) -> WatchBitmapRenderer.ScreenFrame? {
         // Never retain images for another document or raster resolution.
         historyFrames.removeAll {
@@ -94,7 +100,7 @@ actor WatchArtworkRenderer {
         guard !Task.isCancelled else { return nil }
         selection.clear()
         let state = activeStroke == nil ? historyKey(document: document, strokes: [], key: key) : nil
-        if let state, let frame = recalledFrame(state) { return frame }
+        if let frame = recall(state) { return frame }
         guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: key.scale,
             activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers), !Task.isCancelled else { return nil }
         let frame = WatchBitmapRenderer.ScreenFrame(background: image, tiles: [])
@@ -107,7 +113,7 @@ actor WatchArtworkRenderer {
         guard !Task.isCancelled else { return nil }
         selection.clear()
         let state = activeStroke == nil ? historyKey(document: nil, strokes: strokes, key: key) : nil
-        if let state, let frame = recalledFrame(state) { return frame }
+        if let frame = recall(state) { return frame }
         guard let frame = cache.screenFrame(strokes: strokes, activeStroke: activeStroke,
             key: key, activeStrokeID: activeStrokeID), !Task.isCancelled else { return nil }
         if let state { rememberFrame(frame, key: state) }

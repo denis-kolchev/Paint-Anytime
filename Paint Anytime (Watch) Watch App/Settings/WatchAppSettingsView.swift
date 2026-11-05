@@ -60,6 +60,14 @@ struct WatchAppSettingsView: View {
                 Button(action: reportBug) {
                     Label(L10n.text("Report a bug"), systemImage: "envelope")
                 }
+                if RenderDebug.isEnabled {
+                    // Debug builds only; not localized.
+                    NavigationLink {
+                        RenderDebugSettingsView()
+                    } label: {
+                        Label { Text(verbatim: "Render debug") } icon: { Image(systemName: "speedometer") }
+                    }
+                }
             }
         }
         .labelStyle(CenteredMenuLabelStyle())

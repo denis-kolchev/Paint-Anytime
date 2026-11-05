@@ -15,6 +15,7 @@ xcrun swiftc -parse-as-library \
   "Paint Anytime (Watch) Watch App/Rendering/WatchFloodFill.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchFillWorker.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchArtworkRenderer.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift" \
   Tests/LayerRendererChecks.swift -o "$check_dir/check"
 "$check_dir/check"
