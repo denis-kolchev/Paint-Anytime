@@ -70,8 +70,12 @@ struct CustomCanvasControls: View {
 
     private func actionButton(_ action: CanvasQuickAction, height: CGFloat) -> some View {
         Button {
-            withAnimation(action == .closeMorph && !reduceMotion ? .spring(response: 0.35, dampingFraction: 0.8) : nil) {
-                state.customExpandedSlot = nil
+            // Undo and Redo keep the morph open for repeated taps; any other option
+            // collapses it with the same spring as opening.
+            if !action.keepsMorphOpen {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                    state.customExpandedSlot = nil
+                }
             }
             onAction(action)
         } label: {
@@ -101,6 +105,11 @@ struct CustomCanvasControls: View {
         return CGPoint(x: geometry.leadingX + (geometry.trailingX - geometry.leadingX) * CGFloat(index - 1) / 3,
                        y: geometry.bottom - 18)
     }
+}
+
+extension CanvasQuickAction {
+    /// Undo and Redo are tapped repeatedly, so choosing them leaves the morph open.
+    var keepsMorphOpen: Bool { self == .undo || self == .redo }
 }
 
 struct CanvasQuickActionIcon: View {
@@ -143,8 +152,10 @@ struct CustomCanvasToolbarAnchor: View {
                 }
             } else {
                 let action = CustomCanvasControls.isTop(index) ? assignment.actions.first : assignment.actions.last
-                withAnimation(action == .closeMorph && !reduceMotion ? .spring(response: 0.35, dampingFraction: 0.8) : nil) {
-                    state.customExpandedSlot = nil
+                if action?.keepsMorphOpen != true {
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                        state.customExpandedSlot = nil
+                    }
                 }
                 if let action { onAction(action) }
             }

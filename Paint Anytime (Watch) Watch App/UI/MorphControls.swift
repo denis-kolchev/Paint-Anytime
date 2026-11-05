@@ -400,6 +400,11 @@ struct CanvasMorphPanels: View {
         return CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
     }
 
+    /// Collapse after choosing an option, with the same spring as opening.
+    private func collapse(_ change: () -> Void) {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), change)
+    }
+
     private func openContentActions() {
         withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
             showsMorphToolbar = false
@@ -410,19 +415,20 @@ struct CanvasMorphPanels: View {
     private func morphContentActions(diameter: CGFloat, rowHeight: CGFloat) -> some View {
         CanvasMorphContent(isExpanded: showsContentActions) {
             VStack(spacing: 0) {
+                // Options collapse the morph with its spring; Undo and Redo keep it open.
                 morphButton("More", height: rowHeight) {
                     controller.cancelStroke()
-                    showsContentActions = false
+                    collapse { showsContentActions = false }
                     showsAppSettings = true
                 } label: { Image(systemName: "ellipsis") }
                 .accessibilityHidden(true)
                 morphButton("Clear canvas", height: rowHeight) {
-                    showsContentActions = false
+                    collapse { showsContentActions = false }
                     session.requestCanvasAction(.clear)
                 } label: { BroomIcon() }
                 .disabled(!controller.canClear)
                 morphButton("Save drawing", height: rowHeight) {
-                    showsContentActions = false
+                    collapse { showsContentActions = false }
                     session.saveDrawing(size: size, scale: displayScale)
                 } label: { Image(systemName: "square.and.arrow.down") }
                 morphButton("Lasso", height: rowHeight, action: onStartLasso) {
@@ -430,7 +436,7 @@ struct CanvasMorphPanels: View {
                 }
                 morphButton("Layers", height: rowHeight) {
                     controller.cancelStroke()
-                    showsContentActions = false
+                    collapse { showsContentActions = false }
                     showsLayers = true
                 } label: { Image(systemName: "square.3.layers.3d") }
             }
@@ -453,8 +459,8 @@ struct CanvasMorphPanels: View {
         CanvasMorphContent(isExpanded: showsMorphToolbar) {
             VStack(spacing: 0) {
                 morphButton("Tool settings", height: rowHeight) {
-                    showsMorphToolbar = false
                     controller.cancelStroke()
+                    collapse { showsMorphToolbar = false }
                     showsToolSettings = true
                 } label: {
                     ToolIcon(instrument: controller.pencilStyle.instrument)

@@ -136,17 +136,9 @@ struct ContentView: View {
         .sheet(isPresented: $showsLayers) {
             WatchLayersView(controller: controller, canvasSize: controller.document.size(fallback: canvasSize))
         }
-        .onChange(of: showsLayers) { _, shows in
-            if shows { showsMorphToolbar = false; showsContentActions = false }
-        }
-        .onChange(of: showsToolSettings) { _, shows in
-            if shows { showsContentActions = false }
-        }
         .onChange(of: showsAppSettings) { _, shows in
             if !shows { opensTutorialChapters = false }
-            if shows { morphState.customExpandedSlot = nil }
-            if shows { showsContentActions = false }
-            else if menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
+            if !shows, menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
         }
         .accessibilityHidden(showsAppSettings)
         .sheet(isPresented: Binding(
@@ -168,7 +160,6 @@ struct ContentView: View {
             }, onFinish: {
                 showsAppSettings = false
             }, opensTutorialChapters: opensTutorialChapters)
-            .task { await resetMorphBehindPresentation() }
         }
         .overlay {
             if showsAppSettings, let folder = menuOnboarding.tutorialFolder {
@@ -196,8 +187,6 @@ struct ContentView: View {
             var transaction = Transaction(animation: nil)
             transaction.disablesAnimations = true
             withTransaction(transaction) {
-                showsMorphToolbar = false
-                showsContentActions = false
                 galleryArtworkFilename = nil
                 galleryInitialBitmap = nil
                 galleryLaunchID = UUID()
@@ -219,7 +208,6 @@ struct ContentView: View {
                 session.pendingCanvasAction = nil
                 session.performCanvasAction(action)
             }
-            .task { await resetMorphBehindPresentation() }
         }
         .alert(L10n.text("Could not save"), isPresented: Binding(
             get: { session.exportError != nil }, set: { if !$0 { session.exportError = nil } }
@@ -407,26 +395,6 @@ struct ContentView: View {
         launchRequest = nil
     }
 
-    @MainActor
-    private func resetMorphBehindPresentation() async {
-        guard showsMorphToolbar || showsContentActions else { return }
-        // onAppear/task starts during the presentation transition, not after it.
-        // A view-owned task is cancelled if the user dismisses the window early.
-        do {
-            try await Task.sleep(for: .seconds(1))
-            try Task.checkCancellation()
-        } catch {
-            return
-        }
-        guard showsAppSettings || session.savedDrawing != nil || session.pendingCanvasAction != nil else { return }
-        var transaction = Transaction(animation: nil)
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            showsMorphToolbar = false
-            showsContentActions = false
-        }
-    }
-
     private var morphOwnsTrailingControl: Bool {
         !showsToolSettings && (isMovingCanvas || (lasso.isActive && showsSelectionActions) ||
             (!lasso.isActive && usesMorphToolbar))
@@ -596,7 +564,9 @@ struct ContentView: View {
                             hasEyedropperSession = true
                         } else if usesMorphToolbar {
                             if showsContentActions {
-                                showsContentActions = false
+                                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                                    showsContentActions = false
+                                }
                                 showsAppSettings = true
                             } else {
                                 withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
@@ -666,7 +636,9 @@ struct ContentView: View {
                 }
                 else if usesMorphToolbar && !showsToolSettings {
                     if showsMorphToolbar {
-                        showsMorphToolbar = false
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                            showsMorphToolbar = false
+                        }
                         showsToolSettings = true
                     } else {
                         withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
@@ -718,11 +690,13 @@ struct ContentView: View {
         guard isActive, controller.activeStroke == nil, !showsAppSettings,
               quickSettings == nil, !showsGallery, !showsToolSettings,
               !isMovingCanvas, !lasso.isActive else { return }
-        // Close only collapses the morph, so it plays the same spring as opening.
-        withAnimation(action == .closeMorph && !reduceMotion ? .spring(response: 0.35, dampingFraction: 0.8) : nil) {
-            morphState.customExpandedSlot = nil
-            showsMorphToolbar = false
-            showsContentActions = false
+        // Every option except Undo and Redo collapses the morph with the same spring as opening.
+        if !action.keepsMorphOpen {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                morphState.customExpandedSlot = nil
+                showsMorphToolbar = false
+                showsContentActions = false
+            }
         }
         controller.cancelStroke()
         switch action {
@@ -746,7 +720,7 @@ struct ContentView: View {
              .perspectiveGuides, .canvasEditor, .autosave, .share:
             quickSettings = action
         case .eraserToggle: controller.toggleEraser()
-        // Every action collapses the open morph above; Close does only that.
+        // Close only collapses the morph (above).
         case .closeMorph: break
         case .sketchAssist:
             // Opens straight into selecting strokes for Image Playground.
