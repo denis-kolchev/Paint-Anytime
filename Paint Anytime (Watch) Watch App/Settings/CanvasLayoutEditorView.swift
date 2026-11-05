@@ -224,11 +224,12 @@ private struct CanvasLayoutTopActions: View {
             Button(action: onReset) {
                 CanvasLayoutCircle {
                     Image(systemName: "arrow.counterclockwise")
+                        // Dim only the symbol: a translucent circle washes out to white on the preview.
+                        .opacity(canReset ? 1 : 0.4)
                 }
             }
             .buttonStyle(.plain)
             .disabled(!canReset)
-            .opacity(canReset ? 1 : 0.5)
             .accessibilityLabel(L10n.text("Reset interface"))
             .modifier(CanvasLayoutEntrance())
             .position(x: resetMidX.map { $0 - frame.minX } ?? proxy.size.width * 0.375, y: y)
@@ -457,9 +458,9 @@ struct CanvasQuickActionLabel: View {
     }
 }
 
-/// The plate behind a morph preview. watchOS 26 draws the canvas morphs in glass
-/// with adaptive icons, so the preview matches them there; other versions keep
-/// white icons on a grey plate.
+/// The plate behind a morph preview, matching the circles above it: glass with
+/// adaptive icons on watchOS 26, the circles' material with white icons before it.
+/// watchOS 27 keeps white icons on a grey plate.
 private struct MorphPreviewSurface: ViewModifier {
     let cornerRadius: CGFloat
 
@@ -472,7 +473,11 @@ private struct MorphPreviewSurface: ViewModifier {
                 .foregroundStyle(.primary)
                 .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
         } else {
-            grey(content)
+            // Same material and foreground as the editor's circles on watchOS 10 and 11.
+            content
+                .foregroundStyle(.white)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: cornerRadius))
+                .environment(\.colorScheme, .dark)
         }
     }
 
