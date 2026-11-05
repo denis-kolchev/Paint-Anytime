@@ -299,8 +299,7 @@ private struct CanvasSlotEditorView: View {
         List {
             Section {
                 Toggle(isOn: Binding(get: { isGrouped }, set: setGrouped)) {
-                    Label(L10n.text("Group actions"), systemImage: "square.grid.2x2")
-                        .labelStyle(CenteredMenuLabelStyle())
+                    Text(L10n.text("Group actions"))
                 }
             }
             Section {
