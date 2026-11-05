@@ -25,6 +25,20 @@ struct WatchCanvasSizeView: View {
         }
         .navigationTitle(L10n.text("Canvas size"))
         .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            SettingsInformationButton(
+                accessibilityKey: "About canvas size",
+                titleKey: "Canvas size",
+                items: [
+                    SettingsInformationItem(titleKey: "Adjust size",
+                        messageKey: "Change the canvas width and height, up to 1024 pixels. The drawing can scale with the canvas or keep its size."),
+                    SettingsInformationItem(titleKey: "Crop",
+                        messageKey: "Trim canvas edges. Hidden strokes remain editable."),
+                    SettingsInformationItem(titleKey: "Rotate",
+                        messageKey: "Turn the whole canvas by 90° or 180°.")
+                ]
+            )
+        }
     }
 
     private func adjustment(mode: Int) -> some View {

@@ -386,11 +386,82 @@ struct ToolSynchronizationView: View {
                     get: { controller.synchronization.color },
                     set: { controller.setSynchronizeColor($0) }
                 ))
-            } footer: {
-                Text(L10n.text("Share width, opacity, and color across tools. Color and opacity do not apply to the eraser."))
             }
         }
         .navigationTitle(L10n.text("Synchronization"))
+        .toolbar {
+            SettingsInformationButton(
+                accessibilityKey: "About synchronization",
+                titleKey: "Synchronization",
+                messageKey: "Share width, opacity, and color across tools. Color and opacity do not apply to the eraser."
+            )
+        }
+    }
+}
+
+/// One described option on an information screen; a nil title is a plain paragraph.
+struct SettingsInformationItem: Hashable {
+    var titleKey: String?
+    var messageKey: String
+}
+
+/// Top-trailing info button, level with Back, that opens a settings screen's description.
+/// Keeps the explanation out of the list so the controls fit the small display.
+struct SettingsInformationButton: ToolbarContent {
+    let accessibilityKey: String
+    let titleKey: String
+    let items: [SettingsInformationItem]
+
+    init(accessibilityKey: String, titleKey: String, items: [SettingsInformationItem]) {
+        self.accessibilityKey = accessibilityKey
+        self.titleKey = titleKey
+        self.items = items
+    }
+
+    init(accessibilityKey: String, titleKey: String, messageKey: String) {
+        self.init(accessibilityKey: accessibilityKey, titleKey: titleKey,
+                  items: [SettingsInformationItem(messageKey: messageKey)])
+    }
+
+    var body: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
+            NavigationLink {
+                SettingsInformationView(titleKey: titleKey, items: items)
+            } label: {
+                Image(systemName: "info.circle")
+            }
+            .accessibilityLabel(L10n.text(accessibilityKey))
+        }
+    }
+}
+
+private struct SettingsInformationView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    let titleKey: String
+    let items: [SettingsInformationItem]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(items, id: \.self) { item in
+                    VStack(alignment: .leading, spacing: 2) {
+                        if let itemTitle = item.titleKey {
+                            Text(L10n.text(itemTitle))
+                                .font(.footnote.weight(.semibold))
+                        }
+                        Text(L10n.text(item.messageKey))
+                            .font(.footnote)
+                            .foregroundStyle(item.titleKey == nil ? .primary : .secondary)
+                    }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 12)
+        }
+        .navigationTitle(L10n.text(titleKey))
     }
 }
 

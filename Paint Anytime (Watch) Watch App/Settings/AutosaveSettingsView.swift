@@ -9,19 +9,28 @@ struct AutosaveSettingsView: View {
 
     var body: some View {
         List {
-            Toggle(L10n.text("Autosave"), isOn: $isEnabled.animation(toggleAnimation))
+            Toggle(L10n.text("Autosave"), isOn: $isEnabled)
             // Like the iPhone settings, the options appear only while autosave is on.
             // Every row below the switch grows in and fades together, in both directions.
+            // The transition sits on each row: List ignores transitions on Group/Section.
             if isEnabled {
-                Group {
-                    Toggle(L10n.text("Show timer"), isOn: $showsTimer)
-                    intervalSection
-                }
-                .transition(optionsTransition)
+                Toggle(L10n.text("Show timer"), isOn: $showsTimer)
+                    .transition(optionsTransition)
+                intervalSection
             }
         }
+        // Value-driven animation: @AppStorage writes go through UserDefaults and
+        // drop the transaction of a `Binding.animation(_:)`, so the rows would snap.
+        .animation(toggleAnimation, value: isEnabled)
         .navigationTitle(L10n.text("Autosave"))
         .toolbarTitleDisplayMode(.inline)
+        .toolbar {
+            SettingsInformationButton(
+                accessibilityKey: "About autosave",
+                titleKey: "Autosave",
+                messageKey: "Saves artwork to the gallery at the selected interval while the app is active."
+            )
+        }
     }
 
     private var toggleAnimation: Animation {
@@ -48,11 +57,10 @@ struct AutosaveSettingsView: View {
                     }
                 }
                 .accessibilityAddTraits(AutosaveSettings.minutes(minutes) == interval ? .isSelected : [])
+                .transition(optionsTransition)
             }
         } header: {
             Text(L10n.text("Save every"))
-        } footer: {
-            Text(L10n.text("Saves artwork to the gallery at the selected interval while the app is active."))
         }
     }
 }
