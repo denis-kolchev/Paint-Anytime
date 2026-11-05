@@ -2,6 +2,8 @@ import SwiftUI
 
 struct WatchAppSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @AppStorage(CanvasControlLayout.storageKey) private var controlLayoutData = Data()
+    @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
     @Environment(\.openURL) private var openURL
     private let supportEmail = "paintanytime.app@gmail.com"
     @ObservedObject var controller: CanvasController
@@ -11,6 +13,9 @@ struct WatchAppSettingsView: View {
     var completedTutorialChapters: Set<TutorialChapter> = []
     var opensTutorialChapters = false
     var onClose: (() -> Void)? = nil
+    /// Runs a canvas action chosen in the menu; the caller closes the menu first.
+    /// Without it the menu offers no canvas actions.
+    var onCanvasAction: ((CanvasQuickAction) -> Void)? = nil
     @ObservedObject var tutorial = TutorialSession.inactive
 
     var body: some View {
@@ -32,6 +37,11 @@ struct WatchAppSettingsView: View {
                     .tutorialHint(tutorial, steps: [.openGallery])
             }
             if !tutorial.isActive {
+                if let onCanvasAction {
+                    ForEach(actionsMissingFromCanvas) { action in
+                        MenuCanvasActionButton(action: action, controller: controller, perform: onCanvasAction)
+                    }
+                }
                 NavigationLink {
                     DrawingSettingsView(controller: controller, viewportSize: viewportSize)
                 } label: {
@@ -92,6 +102,13 @@ struct WatchAppSettingsView: View {
         .navigationTitle(L10n.text("More"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar { closeToolbar }
+    }
+
+    /// Tool settings, Layers, Save, Lasso and Clear appear here only once the canvas
+    /// editor has removed them from the canvas, so they always stay reachable.
+    private var actionsMissingFromCanvas: [CanvasQuickAction] {
+        let onCanvas = CanvasControlLayout.current(from: controlLayoutData, enabled: customLayoutEnabled).actions
+        return [CanvasQuickAction.brush, .layers, .save, .lasso, .clear].filter { !onCanvas.contains($0) }
     }
 
     @ToolbarContentBuilder private var closeToolbar: some ToolbarContent {
@@ -209,6 +226,21 @@ private struct CanvasSettingsView: View {
         .fullScreenCover(isPresented: $showsEditor) {
             CanvasLayoutEditorView(instrument: controller.pencilStyle.instrument)
         }
+    }
+}
+
+/// A canvas action in the More menu, with the same icon and title as in the canvas editor.
+private struct MenuCanvasActionButton: View {
+    let action: CanvasQuickAction
+    @ObservedObject var controller: CanvasController
+    let perform: (CanvasQuickAction) -> Void
+
+    var body: some View {
+        Button { perform(action) } label: {
+            CanvasQuickActionLabel(action: action, instrument: controller.pencilStyle.instrument)
+        }
+        // Mirrors the canvas, which ignores Clear on an empty drawing.
+        .disabled(action == .clear && !controller.canClear)
     }
 }
 

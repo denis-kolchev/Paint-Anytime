@@ -24,7 +24,8 @@ struct ContentView: View {
     @Environment(\.openURL) private var openURL
     @State private var layoutCache = CanvasControlLayoutCache()
     private var customLayout: CanvasControlLayout? {
-        customLayoutEnabled ? layoutCache.layout(for: controlLayoutData) : nil
+        CanvasControlLayout.custom(from: controlLayoutData, enabled: customLayoutEnabled,
+                                   decode: layoutCache.layout(for:))
     }
     /// The built-in controls are the morph menus; any other arrangement is a custom layout.
     private var usesMorphToolbar: Bool { customLayout == nil }
@@ -58,6 +59,8 @@ struct ContentView: View {
     @State private var layerMoveName: String?
     @State private var layerMoveID = UUID()
     @State private var showsAppSettings = false
+    /// An action chosen in the More menu, run once the menu has closed.
+    @State private var pendingMenuAction: CanvasQuickAction?
     /// The canvas Tutorial button presents the menu sheet on the chapter choice.
     @State private var opensTutorialChapters = false
     @State private var showsGallery = false
@@ -150,7 +153,12 @@ struct ContentView: View {
                     showsAppSettings = false
                 }
             }
-        )) {
+        ), onDismiss: {
+            // Another sheet cannot present while the menu is still dismissing.
+            guard let action = pendingMenuAction else { return }
+            pendingMenuAction = nil
+            performQuickAction(action)
+        }) {
             TutorialMenuPresentation(controller: controller, viewportSize: canvasSize, onboarding: menuOnboarding, onOpenDrawings: {
                 showsAppSettings = false
                 savedNoticeID = nil
@@ -160,7 +168,10 @@ struct ContentView: View {
                 showsGallery = true
             }, onFinish: {
                 showsAppSettings = false
-            }, opensTutorialChapters: opensTutorialChapters)
+            }, opensTutorialChapters: opensTutorialChapters, onCanvasAction: { action in
+                pendingMenuAction = action
+                showsAppSettings = false
+            })
         }
         .overlay {
             if showsAppSettings, let folder = menuOnboarding.tutorialFolder {

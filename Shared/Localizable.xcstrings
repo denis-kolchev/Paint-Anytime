@@ -57469,175 +57469,350 @@
         }
       }
     },
-    "This is the last More button. Keep it here or in a group." : {
+    "Some of these actions are nowhere else on the canvas, so the group stays." : {
+      "comment" : "Canvas editor: why a group holding the last More, Undo or Redo cannot be ungrouped. Keep short for Apple Watch.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "هذا آخر زر «المزيد». أبقِه هنا أو داخل مجموعة."
+            "value" : "بعض هذه الإجراءات غير موجود في أي مكان آخر على اللوحة، لذا تبقى المجموعة."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toto je poslední tlačítko Další. Ponechte ho zde nebo ve skupině."
+            "value" : "Některé z těchto akcí nejsou jinde na plátně, proto skupina zůstane."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dette er den sidste Mere-knap. Behold den her eller i en gruppe."
+            "value" : "Nogle af disse handlinger findes ikke andre steder på lærredet, så gruppen bliver."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Das ist die letzte Mehr-Taste. Behalte sie hier oder in einer Gruppe."
+            "value" : "Einige dieser Aktionen gibt es sonst nirgends auf der Leinwand, daher bleibt die Gruppe."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Αυτό είναι το τελευταίο κουμπί «Περισσότερα». Κρατήστε το εδώ ή σε μια ομάδα."
+            "value" : "Ορισμένες από αυτές τις ενέργειες δεν υπάρχουν αλλού στον καμβά, οπότε η ομάδα παραμένει."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This is the last More button. Keep it here or in a group."
+            "value" : "Some of these actions are nowhere else on the canvas, so the group stays."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este es el último botón Más. Mantenlo aquí o en un grupo."
+            "value" : "Algunas de estas acciones no están en ningún otro lugar del lienzo, así que el grupo se mantiene."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tämä on viimeinen Lisää-painike. Pidä se tässä tai ryhmässä."
+            "value" : "Osa näistä toiminnoista ei ole muualla kankaalla, joten ryhmä säilyy."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "C’est le dernier bouton Plus. Gardez-le ici ou dans un groupe."
+            "value" : "Certaines de ces actions ne figurent nulle part ailleurs sur la toile : le groupe est conservé."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "זהו כפתור ״עוד״ האחרון. השאירו אותו כאן או בתוך קבוצה."
+            "value" : "חלק מהפעולות האלה לא נמצאות בשום מקום אחר בקנבס, ולכן הקבוצה נשארת."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ez az utolsó Továbbiak gomb. Tartsa itt vagy egy csoportban."
+            "value" : "Néhány művelet sehol máshol nincs a vásznon, ezért a csoport megmarad."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ini tombol Lainnya terakhir. Simpan di sini atau di dalam grup."
+            "value" : "Beberapa tindakan ini tidak ada di tempat lain di kanvas, jadi grup tetap ada."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Questo è l’ultimo pulsante Altro. Tienilo qui o in un gruppo."
+            "value" : "Alcune di queste azioni non sono altrove sulla tela, quindi il gruppo resta."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "これが最後の「その他」ボタンです。ここかグループ内に残してください。"
+            "value" : "これらの操作の一部はキャンバスのほかの場所にないため、グループはそのままになります。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "마지막 더 보기 버튼입니다. 여기에 두거나 그룹에 넣으세요."
+            "value" : "이 중 일부 동작은 캔버스의 다른 곳에 없으므로 그룹이 유지됩니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dette er den siste Mer-knappen. Behold den her eller i en gruppe."
+            "value" : "Noen av disse handlingene finnes ikke andre steder på lerretet, så gruppen blir værende."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dit is de laatste Meer-knop. Houd hem hier of in een groep."
+            "value" : "Sommige van deze acties staan nergens anders op het canvas, dus de groep blijft."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To ostatni przycisk Więcej. Zostaw go tutaj lub w grupie."
+            "value" : "Niektórych z tych czynności nie ma nigdzie indziej na płótnie, więc grupa pozostaje."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este é o último botão Mais. Mantenha-o aqui ou em um grupo."
+            "value" : "Algumas dessas ações não estão em nenhum outro lugar da tela, então o grupo permanece."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este é o último botão Mais. Mantenha-o aqui ou num grupo."
+            "value" : "Algumas destas ações não estão em mais nenhum lugar da tela, por isso o grupo mantém-se."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Это последняя кнопка «Ещё». Оставьте её здесь или в группе."
+            "value" : "Некоторых из этих действий больше нет на холсте, поэтому группа останется."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Det här är den sista Mer-knappen. Behåll den här eller i en grupp."
+            "value" : "Några av de här åtgärderna finns inte någon annanstans på duken, så gruppen blir kvar."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "นี่คือปุ่มเพิ่มเติมปุ่มสุดท้าย เก็บไว้ที่นี่หรือในกลุ่ม"
+            "value" : "การทำงานบางอย่างเหล่านี้ไม่มีที่อื่นบนผืนผ้าใบ จึงคงกลุ่มไว้"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bu son Daha Fazla düğmesi. Burada ya da bir grupta tutun."
+            "value" : "Bu eylemlerin bazıları tuvalde başka hiçbir yerde yok, bu yüzden grup kalır."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Це остання кнопка «Ще». Залиште її тут або в групі."
+            "value" : "Деяких із цих дій більше немає на полотні, тому група залишиться."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Đây là nút Thêm cuối cùng. Giữ nó ở đây hoặc trong một nhóm."
+            "value" : "Một số tác vụ này không có ở nơi nào khác trên canvas, nên nhóm được giữ lại."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这是最后一个“更多”按钮。请将其保留在此处或分组中。"
+            "value" : "其中一些操作在画布上的其他位置都没有，因此保留该分组。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "這是最後一個「更多」按鈕。請將其保留在此處或分組中。"
+            "value" : "其中一些操作在畫布上的其他位置都沒有，因此保留該分組。"
+          }
+        }
+      }
+    },
+    "This is the last %@ button. Keep it here or in a group." : {
+      "comment" : "Canvas editor: %@ is an action title such as More, Undo or Redo. Keep short for Apple Watch.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هذا آخر زر «%@». أبقِه هنا أو داخل مجموعة."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toto je poslední tlačítko „%@“. Ponechte ho zde nebo ve skupině."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette er den sidste knap til “%@”. Behold den her eller i en gruppe."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das ist die letzte Taste „%@“. Behalte sie hier oder in einer Gruppe."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αυτό είναι το τελευταίο κουμπί «%@». Κρατήστε το εδώ ή σε μια ομάδα."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This is the last %@ button. Keep it here or in a group."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este es el último botón «%@». Mantenlo aquí o en un grupo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tämä on viimeinen ”%@”-painike. Pidä se tässä tai ryhmässä."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C’est le dernier bouton « %@ ». Gardez-le ici ou dans un groupe."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "זהו כפתור ״%@״ האחרון. השאירו אותו כאן או בתוך קבוצה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ez az utolsó „%@” gomb. Tartsa itt vagy egy csoportban."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ini tombol “%@” terakhir. Simpan di sini atau di dalam grup."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo è l’ultimo pulsante «%@». Tienilo qui o in un gruppo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "これが最後の「%@」ボタンです。ここかグループ内に残してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "마지막 ‘%@’ 버튼입니다. 여기에 두거나 그룹에 넣으세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette er den siste «%@»-knappen. Behold den her eller i en gruppe."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit is de laatste knop ‘%@’. Houd hem hier of in een groep."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "To ostatni przycisk „%@”. Zostaw go tutaj lub w grupie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este é o último botão “%@”. Mantenha-o aqui ou em um grupo."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este é o último botão “%@”. Mantenha-o aqui ou num grupo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это последняя кнопка «%@». Оставьте её здесь или в группе."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det här är den sista ”%@”-knappen. Behåll den här eller i en grupp."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "นี่คือปุ่ม “%@” ปุ่มสุดท้าย เก็บไว้ที่นี่หรือในกลุ่ม"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu son “%@” düğmesi. Burada ya da bir grupta tutun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Це остання кнопка «%@». Залиште її тут або в групі."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đây là nút “%@” cuối cùng. Giữ nó ở đây hoặc trong một nhóm."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "这是最后一个“%@”按钮。请将其保留在此处或分组中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "這是最後一個「%@」按鈕。請將其保留在此處或分組中。"
           }
         }
       }

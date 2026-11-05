@@ -57,7 +57,7 @@ struct CanvasLayoutEditorView: View {
             if let slot = editingSlot {
                 NavigationStack {
                     CanvasSlotEditorView(assignment: $draft.slots[slot], instrument: instrument,
-                                         keepsMore: !otherSlotsContainMore(slot),
+                                         keptActions: lastCopies(in: slot),
                                          usedMorphIcons: morphIcons(excluding: slot),
                                          otherSlotNumbers: slotNumbers(excluding: slot))
                 }
@@ -69,7 +69,7 @@ struct CanvasLayoutEditorView: View {
         .onAppear {
             guard !loaded else { return }
             // Show the canvas as it is now: the custom layout or the original menus.
-            draft = (customLayoutEnabled ? CanvasControlLayout.decode(storedLayout) : nil) ?? .original
+            draft = CanvasControlLayout.current(from: storedLayout, enabled: customLayoutEnabled)
             loaded = true
         }
     }
@@ -205,8 +205,13 @@ struct CanvasLayoutEditorView: View {
         return numbers.mapValues { $0.sorted() }
     }
 
-    private func otherSlotsContainMore(_ index: Int) -> Bool {
-        draft.slots.indices.contains { $0 != index && draft.slots[$0].actions.contains(.more) }
+    /// Required actions this slot holds that no other slot does: every choice here must keep them.
+    /// An action already missing from the canvas, as in a layout saved without Undo, binds no slot.
+    private func lastCopies(in index: Int) -> [CanvasQuickAction] {
+        CanvasControlLayout.requiredActions.filter { action in
+            draft.slots[index].actions.contains(action)
+                && !draft.slots.indices.contains { $0 != index && draft.slots[$0].actions.contains(action) }
+        }
     }
 
     private func save() {
@@ -302,8 +307,9 @@ private struct CanvasLayoutCircle<Icon: View>: View {
 private struct CanvasSlotEditorView: View {
     @Binding var assignment: CanvasControlAssignment
     let instrument: DrawingInstrument
-    /// This slot holds the last More, so every choice here must keep it.
-    let keepsMore: Bool
+    /// More, Undo or Redo this slot holds as the last copy on the canvas, so every
+    /// choice here must keep them. Two or more fit only in a group.
+    let keptActions: [CanvasQuickAction]
     /// Icons of the other morph slots, avoided when this one gets its first icon.
     let usedMorphIcons: Set<String>
     /// Numbers of the other slots that already hold each action.
@@ -320,6 +326,11 @@ private struct CanvasSlotEditorView: View {
             Section {
                 Toggle(isOn: Binding(get: { isGrouped }, set: setGrouped)) {
                     Text(L10n.text("Group actions"))
+                }
+                .disabled(isGrouped && keptActions.count > 1)
+            } footer: {
+                if isGrouped && keptActions.count > 1 {
+                    Text(L10n.text("Some of these actions are nowhere else on the canvas, so the group stays."))
                 }
             }
             Section {
@@ -341,8 +352,9 @@ private struct CanvasSlotEditorView: View {
             } footer: {
                 if isGrouped {
                     Text(L10n.text("Choose up to five actions. Their order follows your selection."))
-                } else if keepsMore {
-                    Text(L10n.text("This is the last More button. Keep it here or in a group."))
+                } else if let kept = keptActions.first {
+                    Text(L10n.format("This is the last %@ button. Keep it here or in a group.",
+                                     L10n.text(kept.title)))
                 }
             }
         }
@@ -403,9 +415,9 @@ private struct CanvasSlotEditorView: View {
     private func isDisabled(_ action: CanvasQuickAction) -> Bool {
         if isGrouped {
             return (selection.count == CanvasControlAssignment.maxMorphActions && !selection.contains(action))
-                || (keepsMore && action == .more)
+                || keptActions.contains(action)
         }
-        return keepsMore && action != .more
+        return keptActions.first.map { action != $0 } ?? false
     }
 
     /// Grouping keeps the current action as number one; ungrouping keeps only the first.
@@ -421,12 +433,12 @@ private struct CanvasSlotEditorView: View {
         isGrouped = grouped
         if grouped {
             selection = assignment.actions.filter { $0 != .nothing }
-            if keepsMore && !selection.contains(.more) { selection.insert(.more, at: 0) }
+            for kept in keptActions.reversed() where !selection.contains(kept) { selection.insert(kept, at: 0) }
             commit()
         } else {
-            // A single circle never offers Close, and the last More must stay.
-            let kept = selection.first(where: { $0 != .closeMorph }) ?? .nothing
-            let first: CanvasQuickAction = keepsMore ? .more : kept
+            // A single circle never offers Close, and a last required action must stay.
+            // The toggle is disabled while the group holds two of them.
+            let first = keptActions.first ?? selection.first(where: { $0 != .closeMorph }) ?? .nothing
             selection = first == .nothing ? [] : [first]
             assignment = .single(first)
         }
@@ -446,7 +458,7 @@ private struct CanvasSlotEditorView: View {
     /// Each tap applies at once. An empty group keeps the previous assignment
     /// rather than an invalid morph.
     private func commit() {
-        guard isGrouped, !selection.isEmpty, !keepsMore || selection.contains(.more) else { return }
+        guard isGrouped, !selection.isEmpty, keptActions.allSatisfy({ selection.contains($0) }) else { return }
         assignment = .group(selection, icon: icon == CanvasMorphIcon.standard ? nil : icon)
     }
 }

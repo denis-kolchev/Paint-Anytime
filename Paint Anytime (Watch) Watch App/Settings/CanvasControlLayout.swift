@@ -41,6 +41,26 @@ struct CanvasControlLayout: Codable, Equatable {
     /// More is the only way into settings, so at least one slot must offer it.
     var containsMore: Bool { slots.contains { $0.actions.contains(.more) } }
 
+    /// Actions the canvas editor never lets the last copy of leave the canvas:
+    /// More leads to settings, and Undo and Redo have no other way in.
+    /// Only More is enforced on decoding, so layouts saved without Undo still load.
+    static let requiredActions: [CanvasQuickAction] = [.more, .undo, .redo]
+
+    /// The custom layout the canvas shows, or nil for the original menus.
+    /// A stored layout that no longer decodes also falls back to the menus.
+    static func custom(from data: Data, enabled: Bool,
+                       decode: (Data) -> CanvasControlLayout? = CanvasControlLayout.decode) -> CanvasControlLayout? {
+        enabled ? decode(data) : nil
+    }
+
+    /// The layout the canvas shows, with the original menus spelled out as a layout.
+    static func current(from data: Data, enabled: Bool) -> CanvasControlLayout {
+        custom(from: data, enabled: enabled) ?? .original
+    }
+
+    /// Every action placed on the canvas, inside groups included.
+    var actions: Set<CanvasQuickAction> { Set(slots.flatMap(\.actions)) }
+
     /// Everything at hand was retired in 1.2. Keep its always-visible buttons
     /// for people who had it on by turning them into the same custom layout.
     static func migrateEverythingAtHand(_ defaults: UserDefaults = .standard) {
