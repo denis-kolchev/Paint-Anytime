@@ -165,7 +165,8 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .reportBug: "Report a bug"
         case .eyedropper: "Eyedropper"
         case .camera: "Free camera"
-        case .palettes: "Palettes"
+        // The raw value stays "palettes" so saved layouts keep the action.
+        case .palettes: "Current palette"
         case .perspectiveGuides: "Perspective guides"
         case .canvasEditor: "Canvas editor"
         case .autosave: "Autosave"
@@ -192,7 +193,9 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .tutorial: "graduationcap"
         case .canvasSize: "arrow.up.left.and.arrow.down.right"
         case .toolSynchronization: "arrow.triangle.2.circlepath"
-        case .visiblePalettes, .palettes: "paintpalette"
+        case .visiblePalettes: "paintpalette"
+        // Swatches in rows, like the palette's color grid it opens.
+        case .palettes: "circle.grid.3x3.fill"
         case .blending: "circle.lefthalf.filled"
         case .reportBug: "envelope"
         case .eyedropper: "eyedropper"

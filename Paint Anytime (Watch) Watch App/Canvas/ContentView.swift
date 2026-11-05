@@ -115,9 +115,7 @@ struct ContentView: View {
             && !showsGallery && !showsToolSettings && !showsAppSettings)
         .fullScreenCover(isPresented: $showsSampledPalette) {
             InkPaletteBrowser(library: InkPaletteLibrary.decode(palettesData, legacy: paletteData),
-                              controller: controller, initialColor: cameraSampledColor,
-                              // The Palettes action shows the palette list; the eyedropper edits its color.
-                              startsBrowsing: cameraSampledColor == nil) { library in
+                              controller: controller, initialColor: cameraSampledColor) { library in
                 if let data = try? JSONEncoder().encode(library) { palettesData = data }
                 if !library.activePalette.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
                    let first = library.activePalette.selectedColors.first {
