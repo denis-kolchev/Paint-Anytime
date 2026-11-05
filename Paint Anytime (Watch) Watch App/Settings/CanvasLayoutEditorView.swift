@@ -333,8 +333,13 @@ private struct CanvasSlotEditorView: View {
                 NavigationLink {
                     CanvasMorphIconPicker(icon: $icon, onSelect: commit)
                 } label: {
-                    Image(systemName: icon)
+                    // The circle is part of the label, so it fades with the icon: the
+                    // toolbar's own chrome ignores opacity on watchOS 27 and stays visible.
+                    CanvasLayoutCircle {
+                        Image(systemName: icon)
+                    }
                 }
+                .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter, hidesNativeChrome: true)
                 .accessibilityLabel(L10n.text("Icon"))
                 .scaleEffect(isGrouped || reduceMotion ? 1 : 0.5)
                 .opacity(isGrouped ? 1 : 0)
