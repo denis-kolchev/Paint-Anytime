@@ -33,14 +33,27 @@ struct WatchAppSettingsView: View {
             }
             if !tutorial.isActive {
                 NavigationLink {
-                    AppLanguageSelectionView()
-                } label: {
-                    Label(L10n.text("Language"), systemImage: "globe")
-                }
-                NavigationLink {
                     DrawingSettingsView(controller: controller, viewportSize: viewportSize)
                 } label: {
                     Label(L10n.text("Drawing"), systemImage: "paintbrush")
+                }
+                NavigationLink {
+                    CanvasSettingsView(controller: controller, viewportSize: viewportSize)
+                } label: {
+                    Label {
+                        Text(L10n.text("Canvas"))
+                    } icon: {
+                        // The current name arrived in watchOS 11; watchOS 10 has the older one.
+                        Group {
+                            if #available(watchOS 11, *) {
+                                Image(systemName: "inset.filled.applewatch.case")
+                            } else {
+                                Image(systemName: "applewatch.case.inset.filled")
+                            }
+                        }
+                        // The narrow watch outline looks smaller than its neighbours at the default scale.
+                        .imageScale(.large)
+                    }
                 }
                 NavigationLink {
                     TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
@@ -51,6 +64,11 @@ struct WatchAppSettingsView: View {
                     AutosaveSettingsView()
                 } label: {
                     Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+                }
+                NavigationLink {
+                    AppLanguageSelectionView()
+                } label: {
+                    Label(L10n.text("Language"), systemImage: "globe")
                 }
                 NavigationLink {
                     WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
@@ -123,6 +141,36 @@ private struct DrawingSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
+
+    var body: some View {
+        List {
+            NavigationLink {
+                PaletteVisibilitySettingsView(controller: controller)
+            } label: {
+                Label(L10n.text("Visible palettes"), systemImage: "paintpalette")
+            }
+            NavigationLink {
+                ColorBlendingSelectionView(controller: controller)
+            } label: {
+                Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
+            }
+            NavigationLink {
+                ToolSynchronizationView(controller: controller)
+            } label: {
+                Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
+            }
+        }
+        .labelStyle(CenteredMenuLabelStyle())
+        .navigationTitle(L10n.text("Drawing"))
+        .toolbarTitleDisplayMode(.inline)
+    }
+}
+
+/// The canvas itself: its size, the arrangement of its controls and its guides.
+private struct CanvasSettingsView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @ObservedObject var controller: CanvasController
+    let viewportSize: CGSize
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
@@ -137,21 +185,6 @@ private struct DrawingSettingsView: View {
                 }
             }
             NavigationLink {
-                PaletteVisibilitySettingsView(controller: controller)
-            } label: {
-                Label(L10n.text("Visible palettes"), systemImage: "paintpalette")
-            }
-            NavigationLink {
-                ColorBlendingSelectionView(controller: controller)
-            } label: {
-                Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
-            }
-            NavigationLink {
-                PerspectiveGuidesSettingsView(controller: controller, viewportSize: viewportSize)
-            } label: {
-                Label(L10n.text("Perspective guides"), systemImage: "perspective")
-            }
-            NavigationLink {
                 CanvasEditorSettingsView(instrument: controller.pencilStyle.instrument)
             } label: {
                 Label {
@@ -161,13 +194,13 @@ private struct DrawingSettingsView: View {
                 }
             }
             NavigationLink {
-                ToolSynchronizationView(controller: controller)
+                PerspectiveGuidesSettingsView(controller: controller, viewportSize: viewportSize)
             } label: {
-                Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
+                Label(L10n.text("Perspective guides"), systemImage: "perspective")
             }
         }
         .labelStyle(CenteredMenuLabelStyle())
-        .navigationTitle(L10n.text("Drawing"))
+        .navigationTitle(L10n.text("Canvas"))
         .toolbarTitleDisplayMode(.inline)
     }
 }

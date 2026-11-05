@@ -247,7 +247,7 @@ enum TutorialStrokeOverlap {
               index + 1 < document.layers.count else { return false }
         let covering = document.layers[(index + 1)...]
             .filter { $0.isVisible && $0.opacity > 0 }
-            .flatMap(\.strokes).filter(paints)
+            .flatMap(\.strokes).filter { paints($0) }
         // Locked strokes only show inside unlocked ones, whose geometry is the visible shape.
         let shapes = covering.filter { !$0.locksTransparency }
         let candidates = shapes.isEmpty ? covering : shapes

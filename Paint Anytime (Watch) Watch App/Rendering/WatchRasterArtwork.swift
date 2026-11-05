@@ -298,7 +298,7 @@ private struct InkTipOverlay: View {
                                                     width: r * 2, height: r * 2)))
             }
             var line = Path()
-            line.addLines(points.map(Self.point))
+            line.addLines(points.map { Self.point($0) })
             return .stroke(line, StrokeStyle(lineWidth: CGFloat(width), lineCap: .round, lineJoin: .round))
         case .pen:
             // Speed-dependent radii are smoothed from the stroke's start: take them
