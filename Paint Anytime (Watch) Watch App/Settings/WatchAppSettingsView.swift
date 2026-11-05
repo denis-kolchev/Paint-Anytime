@@ -501,6 +501,7 @@ struct ColorBlendingSelectionView: View {
                         controller.setBlendingMode(mode)
                     } label: {
                         HStack {
+                            ColorBlendingSwatchIcon(mode: mode)
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(mode.effectTitle)
                                 Text(mode.referenceLabel)
@@ -620,6 +621,34 @@ private struct ColorBlendingIllustration: View {
             }
         }
         .accessibilityElement(children: .ignore)
+    }
+}
+
+/// The information chart shrunk to an icon: 4×4 cells at 0, 1, 3 and 10 passes
+/// (yellow →, blue ↓), so the far corner still shows where many passes lead.
+private struct ColorBlendingSwatchIcon: View {
+    let mode: ColorBlendingMode
+    @ScaledMetric(relativeTo: .body) private var side = 28.0
+    private static let passes = [0, 1, 3, 10]
+
+    var body: some View {
+        Canvas { context, size in
+            let cell = size.width / CGFloat(Self.passes.count)
+            for (row, blue) in Self.passes.enumerated() {
+                for (column, yellow) in Self.passes.enumerated() {
+                    let result = mode.referenceSwatch(yellowPasses: yellow, bluePasses: blue)
+                    // A hair of overlap hides seams between neighbouring cells.
+                    let rect = CGRect(x: CGFloat(column) * cell, y: CGFloat(row) * cell,
+                                      width: cell + 0.25, height: cell + 0.25)
+                    context.fill(Path(rect), with: .color(Color(.sRGB, red: Double(result.x), green: Double(result.y),
+                                                               blue: Double(result.z), opacity: 1)))
+                }
+            }
+        }
+        .frame(width: side, height: side)
+        .clipShape(RoundedRectangle(cornerRadius: side * 0.2, style: .continuous))
+        // Decorative: the mode's title and reference already say what it does.
+        .accessibilityHidden(true)
     }
 }
 
