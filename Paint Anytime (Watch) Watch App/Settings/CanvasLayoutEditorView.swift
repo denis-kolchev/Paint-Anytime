@@ -169,12 +169,9 @@ struct CanvasLayoutEditorView: View {
                 }
             }
         }
-        .foregroundStyle(.white)
         .padding(.vertical, MorphPreviewLayout.padding)
         .padding(.horizontal, layout.columns > 1 ? MorphPreviewLayout.padding : 0)
-        .background(Color.black.opacity(0.3),
-                    in: RoundedRectangle(cornerRadius: (layout.row + MorphPreviewLayout.padding * 2) / 2))
-        .environment(\.colorScheme, .dark)
+        .modifier(MorphPreviewSurface(cornerRadius: (layout.row + MorphPreviewLayout.padding * 2) / 2))
     }
 
     private func slotLabel(_ index: Int) -> String {
@@ -457,6 +454,33 @@ struct CanvasQuickActionLabel: View {
         }
         // Keeps the icon centred on titles that wrap to several lines.
         .labelStyle(CenteredMenuLabelStyle())
+    }
+}
+
+/// The plate behind a morph preview. watchOS 26 draws the canvas morphs in glass
+/// with adaptive icons, so the preview matches them there; other versions keep
+/// white icons on a grey plate.
+private struct MorphPreviewSurface: ViewModifier {
+    let cornerRadius: CGFloat
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if #available(watchOS 27, *) {
+            grey(content)
+        } else if #available(watchOS 26, *) {
+            content
+                .foregroundStyle(.primary)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius))
+        } else {
+            grey(content)
+        }
+    }
+
+    private func grey(_ content: Content) -> some View {
+        content
+            .foregroundStyle(.white)
+            .background(Color.black.opacity(0.3), in: RoundedRectangle(cornerRadius: cornerRadius))
+            .environment(\.colorScheme, .dark)
     }
 }
 
