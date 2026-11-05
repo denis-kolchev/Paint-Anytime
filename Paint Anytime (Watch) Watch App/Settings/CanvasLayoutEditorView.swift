@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Presented as a sheet: a white canvas preview whose circles sit where the
+/// Presented full screen: a white canvas preview whose circles sit where the
 /// real controls do. Changes stay in a draft until the checkmark is tapped.
 struct CanvasLayoutEditorView: View {
     /// The current tool, shown wherever Tool settings appears.
@@ -262,55 +262,10 @@ private struct CanvasSlotEditorView: View {
     let instrument: DrawingInstrument
     /// This slot holds the last More, so every choice here must keep it.
     let keepsMore: Bool
-    let usedMorphIcons: Set<String>
-
-    var body: some View {
-        List {
-            NavigationLink {
-                CanvasMorphSelectionView(assignment: $assignment, instrument: instrument, keepsMore: keepsMore,
-                                         usedMorphIcons: usedMorphIcons)
-            } label: {
-                HStack {
-                    Label("Morph", systemImage: "square.grid.2x2")
-                        .labelStyle(CenteredMenuLabelStyle())
-                    Spacer()
-                    if assignment.isMorph {
-                        Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                    }
-                }
-            }
-            ForEach(CanvasQuickAction.menuOrder(inMorph: false)) { action in
-                Button {
-                    // Stays open to show the choice; the sheet's close button dismisses it.
-                    assignment = .single(action)
-                } label: {
-                    HStack {
-                        CanvasQuickActionLabel(action: action, instrument: instrument)
-                        Spacer()
-                        if !assignment.isMorph && assignment.actions == [action] {
-                            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                        }
-                    }
-                }
-                .disabled(keepsMore && action != .more)
-            }
-            if keepsMore {
-                Text(L10n.text("This is the last More button. Keep it here or inside Morph."))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .listRowBackground(Color.clear)
-            }
-        }
-        .navigationTitle(L10n.text("Action"))
-    }
-}
-
-private struct CanvasMorphSelectionView: View {
-    @Binding var assignment: CanvasControlAssignment
-    let instrument: DrawingInstrument
-    let keepsMore: Bool
     /// Icons of the other morph slots, avoided when this one gets its first icon.
     let usedMorphIcons: Set<String>
+    @State private var isGrouped = false
+    /// The group's actions in tap order; the first is the one kept when ungrouping.
     @State private var selection: [CanvasQuickAction] = []
     @State private var icon = CanvasMorphIcon.standard
     @State private var loaded = false
@@ -318,49 +273,52 @@ private struct CanvasMorphSelectionView: View {
     var body: some View {
         List {
             Section {
-                ForEach(CanvasQuickAction.menuOrder(inMorph: true)) { action in
-                    Button {
-                        if selection.contains(action) { selection.removeAll { $0 == action } }
-                        else if selection.count < CanvasControlAssignment.maxMorphActions { selection.append(action) }
-                        commit()
-                    } label: {
+                Toggle(isOn: Binding(get: { isGrouped }, set: setGrouped)) {
+                    Label(L10n.text("Group actions"), systemImage: "square.grid.2x2")
+                        .labelStyle(CenteredMenuLabelStyle())
+                }
+            }
+            Section {
+                // Stays open to show the choice; the sheet's close button dismisses it.
+                ForEach(CanvasQuickAction.menuOrder(inMorph: isGrouped)) { action in
+                    Button { select(action) } label: {
                         HStack {
                             CanvasQuickActionLabel(action: action, instrument: instrument)
                             Spacer()
-                            // The number is the action's row in the opened morph, from the top.
-                            if let order = selection.firstIndex(of: action) {
-                                Image(systemName: "\(order + 1).circle.fill").foregroundStyle(.green)
-                            } else {
-                                Image(systemName: "circle").foregroundStyle(.secondary)
-                            }
+                            marker(for: action)
                         }
                     }
-                    .disabled((selection.count == CanvasControlAssignment.maxMorphActions && !selection.contains(action))
-                              || (keepsMore && action == .more))
+                    .disabled(isDisabled(action))
                     .accessibilityAddTraits(selection.contains(action) ? .isSelected : [])
                 }
             } header: {
-                Text("\(selection.count)/\(CanvasControlAssignment.maxMorphActions)")
+                if isGrouped { Text("\(selection.count)/\(CanvasControlAssignment.maxMorphActions)") }
             } footer: {
-                Text(L10n.text("Choose up to five actions. Their order follows your selection."))
+                if isGrouped {
+                    Text(L10n.text("Choose up to five actions. Their order follows your selection."))
+                } else if keepsMore {
+                    Text(L10n.text("This is the last More button. Keep it here or in a group."))
+                }
             }
         }
-        .navigationTitle("Morph")
+        .navigationTitle(L10n.text("Action"))
         .toolbar {
-            // Shows the current icon and opens the full icon list.
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    CanvasMorphIconPicker(icon: $icon, onSelect: commit)
-                } label: {
-                    Image(systemName: icon)
+            if isGrouped {
+                // Shows the group's icon and opens the full icon list.
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        CanvasMorphIconPicker(icon: $icon, onSelect: commit)
+                    } label: {
+                        Image(systemName: icon)
+                    }
+                    .accessibilityLabel(L10n.text("Icon"))
                 }
-                .accessibilityLabel(L10n.text("Icon"))
             }
         }
         .onAppear {
             guard !loaded else { return }
-            selection = assignment.actions
-            if keepsMore && !selection.contains(.more) { selection.insert(.more, at: 0) }
+            isGrouped = assignment.isMorph
+            selection = assignment.actions.filter { $0 != .nothing }
             icon = assignment.isMorph ? CanvasMorphIcon.resolve(assignment.icon)
                 : CanvasMorphIcon.symbols.filter { !usedMorphIcons.contains($0) }.randomElement()
                     ?? CanvasMorphIcon.standard
@@ -368,10 +326,59 @@ private struct CanvasMorphSelectionView: View {
         }
     }
 
-    /// No Done button: each tap applies at once, so Back keeps it. An empty
-    /// selection keeps the previous assignment rather than an invalid morph.
+    /// A group shows its order as numbers; a single action shows one checkmark.
+    @ViewBuilder private func marker(for action: CanvasQuickAction) -> some View {
+        if isGrouped {
+            // The number is the action's row in the opened morph, from the top.
+            if let order = selection.firstIndex(of: action) {
+                Image(systemName: "\(order + 1).circle.fill").foregroundStyle(.green)
+            } else {
+                Image(systemName: "circle").foregroundStyle(.secondary)
+            }
+        } else if assignment.actions == [action] {
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+        }
+    }
+
+    private func isDisabled(_ action: CanvasQuickAction) -> Bool {
+        if isGrouped {
+            return (selection.count == CanvasControlAssignment.maxMorphActions && !selection.contains(action))
+                || (keepsMore && action == .more)
+        }
+        return keepsMore && action != .more
+    }
+
+    /// Grouping keeps the current action as number one; ungrouping keeps only the first.
+    private func setGrouped(_ grouped: Bool) {
+        isGrouped = grouped
+        if grouped {
+            selection = assignment.actions.filter { $0 != .nothing }
+            if keepsMore && !selection.contains(.more) { selection.insert(.more, at: 0) }
+            commit()
+        } else {
+            // A single circle never offers Close, and the last More must stay.
+            let kept = selection.first(where: { $0 != .closeMorph }) ?? .nothing
+            let first: CanvasQuickAction = keepsMore ? .more : kept
+            selection = first == .nothing ? [] : [first]
+            assignment = .single(first)
+        }
+    }
+
+    private func select(_ action: CanvasQuickAction) {
+        if isGrouped {
+            if selection.contains(action) { selection.removeAll { $0 == action } }
+            else if selection.count < CanvasControlAssignment.maxMorphActions { selection.append(action) }
+            commit()
+        } else {
+            selection = action == .nothing ? [] : [action]
+            assignment = .single(action)
+        }
+    }
+
+    /// Each tap applies at once. An empty group keeps the previous assignment
+    /// rather than an invalid morph.
     private func commit() {
-        guard !selection.isEmpty, !keepsMore || selection.contains(.more) else { return }
+        guard isGrouped, !selection.isEmpty, !keepsMore || selection.contains(.more) else { return }
         assignment = .group(selection, icon: icon == CanvasMorphIcon.standard ? nil : icon)
     }
 }

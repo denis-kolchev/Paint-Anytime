@@ -536,8 +536,9 @@ struct CanvasEditorSettingsView: View {
                 .accessibilityLabel(L10n.text("About canvas editor"))
             }
         }
-        // A sheet fades in like Layers; a full-screen cover slides up from the bottom.
-        .sheet(isPresented: $showsEditor) {
+        // Not a sheet: the sheet's clock band sits above its content and takes
+        // the taps of the checkmark drawn in the clock's place.
+        .fullScreenCover(isPresented: $showsEditor) {
             CanvasLayoutEditorView(instrument: instrument)
         }
     }

@@ -29500,6 +29500,179 @@
         }
       }
     },
+    "Group actions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تجميع الإجراءات"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seskupit akce"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppér handlinger"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktionen gruppieren"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ομαδοποίηση ενεργειών"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Group actions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agrupar acciones"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ryhmitä toiminnot"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grouper les actions"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קיבוץ פעולות"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Műveletek csoportosítása"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kelompokkan tindakan"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raggruppa azioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アクションをグループ化"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "동작 그룹화"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grupper handlinger"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acties groeperen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grupuj akcje"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agrupar ações"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agrupar ações"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Группировать действия"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppera åtgärder"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "จัดกลุ่มการทำงาน"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eylemleri grupla"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Групувати дії"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhóm thao tác"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分组操作"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "分組操作"
+          }
+        }
+      }
+    },
     "Icon" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -33324,178 +33497,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Дополнительно — закреплено"
-          }
-        }
-      }
-    },
-    "Morph" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morph"
           }
         }
       }
@@ -57812,175 +57813,175 @@
         }
       }
     },
-    "This is the last More button. Keep it here or inside Morph." : {
+    "This is the last More button. Keep it here or in a group." : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "هذا آخر زر «المزيد». أبقِه هنا أو داخل Morph."
+            "value" : "هذا آخر زر «المزيد». أبقِه هنا أو داخل مجموعة."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toto je poslední tlačítko Další možnosti. Ponechte ho tady nebo v Morph."
+            "value" : "Toto je poslední tlačítko Další. Ponechte ho zde nebo ve skupině."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dette er den sidste Mere-knap. Behold den her eller i Morph."
+            "value" : "Dette er den sidste Mere-knap. Behold den her eller i en gruppe."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dies ist die letzte Mehr-Taste. Behalte sie hier oder in Morph."
+            "value" : "Das ist die letzte Mehr-Taste. Behalte sie hier oder in einer Gruppe."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Αυτό είναι το τελευταίο κουμπί «Περισσότερα». Κρατήστε το εδώ ή μέσα στο Morph."
+            "value" : "Αυτό είναι το τελευταίο κουμπί «Περισσότερα». Κρατήστε το εδώ ή σε μια ομάδα."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "This is the last More button. Keep it here or inside Morph."
+            "value" : "This is the last More button. Keep it here or in a group."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este es el último botón Más. Mantenlo aquí o dentro de Morph."
+            "value" : "Este es el último botón Más. Mantenlo aquí o en un grupo."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tämä on viimeinen Lisää-painike. Pidä se tässä tai Morphissa."
+            "value" : "Tämä on viimeinen Lisää-painike. Pidä se tässä tai ryhmässä."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "C’est le dernier bouton Plus. Gardez-le ici ou dans Morph."
+            "value" : "C’est le dernier bouton Plus. Gardez-le ici ou dans un groupe."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "זהו כפתור „עוד” האחרון. השאירו אותו כאן או בתוך Morph."
+            "value" : "זהו כפתור ״עוד״ האחרון. השאירו אותו כאן או בתוך קבוצה."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ez az utolsó Továbbiak gomb. Hagyja itt vagy a Morphban."
+            "value" : "Ez az utolsó Továbbiak gomb. Tartsa itt vagy egy csoportban."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ini tombol Lainnya terakhir. Biarkan di sini atau di dalam Morph."
+            "value" : "Ini tombol Lainnya terakhir. Simpan di sini atau di dalam grup."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Questo è l’ultimo pulsante Altro. Tienilo qui o in Morph."
+            "value" : "Questo è l’ultimo pulsante Altro. Tienilo qui o in un gruppo."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "これは最後の「その他」ボタンです。ここかMorphの中に残してください。"
+            "value" : "これが最後の「その他」ボタンです。ここかグループ内に残してください。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "마지막 ‘더 보기’ 버튼입니다. 여기에 두거나 Morph 안에 두세요."
+            "value" : "마지막 더 보기 버튼입니다. 여기에 두거나 그룹에 넣으세요."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dette er den siste Mer-knappen. Behold den her eller i Morph."
+            "value" : "Dette er den siste Mer-knappen. Behold den her eller i en gruppe."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dit is de laatste Meer-knop. Houd hem hier of in Morph."
+            "value" : "Dit is de laatste Meer-knop. Houd hem hier of in een groep."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "To ostatni przycisk Więcej. Zostaw go tutaj lub w Morph."
+            "value" : "To ostatni przycisk Więcej. Zostaw go tutaj lub w grupie."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este é o último botão Mais. Mantenha-o aqui ou dentro do Morph."
+            "value" : "Este é o último botão Mais. Mantenha-o aqui ou em um grupo."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Este é o último botão Mais. Mantenha-o aqui ou dentro do Morph."
+            "value" : "Este é o último botão Mais. Mantenha-o aqui ou num grupo."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Это последняя кнопка «Дополнительно». Оставьте её здесь или внутри Morph."
+            "value" : "Это последняя кнопка «Ещё». Оставьте её здесь или в группе."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Det här är den sista Mer-knappen. Behåll den här eller i Morph."
+            "value" : "Det här är den sista Mer-knappen. Behåll den här eller i en grupp."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "นี่คือปุ่ม “เพิ่มเติม” ปุ่มสุดท้าย เก็บไว้ที่นี่หรือใน Morph"
+            "value" : "นี่คือปุ่มเพิ่มเติมปุ่มสุดท้าย เก็บไว้ที่นี่หรือในกลุ่ม"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bu son Diğer düğmesi. Burada veya Morph içinde tutun."
+            "value" : "Bu son Daha Fazla düğmesi. Burada ya da bir grupta tutun."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Це остання кнопка «Ще». Залиште її тут або в Morph."
+            "value" : "Це остання кнопка «Ще». Залиште її тут або в групі."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Đây là nút Thêm cuối cùng. Hãy giữ nó ở đây hoặc trong Morph."
+            "value" : "Đây là nút Thêm cuối cùng. Giữ nó ở đây hoặc trong một nhóm."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "这是最后一个“更多”按钮。请将它保留在这里或 Morph 中。"
+            "value" : "这是最后一个“更多”按钮。请将其保留在此处或分组中。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "這是最後一個「更多」按鈕。請將它保留在這裡或 Morph 中。"
+            "value" : "這是最後一個「更多」按鈕。請將其保留在此處或分組中。"
           }
         }
       }
