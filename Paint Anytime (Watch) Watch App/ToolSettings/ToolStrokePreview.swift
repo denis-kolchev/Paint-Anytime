@@ -5,13 +5,13 @@ struct ToolStrokePreview: View {
 
     let style: PencilStyle
     let fillPreviewSize: CGSize
-    /// Pencil and pastel styles a Crown step may switch to next. Their bitmaps render
+    /// Pencil and pastel styles a Crown step may switch to next. Their masks render
     /// off the main thread ahead of time, so the switch shows the current width at once.
     var upcomingTexturedStyles: [PencilStyle] = []
     @Environment(\.displayScale) private var displayScale
-    @State private var bitmap: CGImage?
-    /// Rendered textured bitmaps the body can show synchronously.
-    @State private var frames: [(request: ToolPreviewRequest, image: CGImage)] = []
+    @State private var lastMask: CGImage?
+    /// Rendered grain coverage masks the body can tint synchronously.
+    @State private var masks: [(request: ToolPreviewRequest, image: CGImage)] = []
     @State private var renderer = ToolPreviewRenderer()
 
     var body: some View {
@@ -54,63 +54,85 @@ struct ToolStrokePreview: View {
     }
 
     private var deferredPreview: some View {
-        // Drawn through Canvas like the other tools, so viewport resizes follow every
-        // animation frame: the nearest ready bitmap stretches to the current size while
-        // the exact one renders off the main thread.
+        // Grain coverage depends only on the instrument, width and ink alpha; color and
+        // opacity tint it linearly, exactly as the pixel path composites. So color and
+        // opacity changes redraw in the same frame, and resizes stretch the nearest mask.
         Canvas { context, size in
-            guard let image = bestFrame(for: size) else { return }
-            context.draw(Image(decorative: image, scale: displayScale),
-                         in: CGRect(origin: .zero, size: size))
+            guard let mask = bestMask(for: size) else { return }
+            let color = style.color
+            context.withCGContext { cg in
+                let rect = CGRect(origin: .zero, size: size)
+                cg.saveGState()
+                // Core Graphics images draw bottom-up inside SwiftUI's top-down context.
+                cg.translateBy(x: 0, y: size.height)
+                cg.scaleBy(x: 1, y: -1)
+                cg.clip(to: rect, mask: mask)
+                cg.setFillColor(CGColor(srgbRed: CGFloat(color.x), green: CGFloat(color.y),
+                                        blue: CGFloat(color.z), alpha: CGFloat(style.effectiveOpacity)))
+                cg.fill(rect)
+                cg.restoreGState()
+            }
         }
     }
 
-    /// Exact match first, then this style at the closest size, then the last frame shown.
-    private func bestFrame(for size: CGSize) -> CGImage? {
-        let request = Self.request(style: style, size: size, scale: displayScale)
-        if let exact = frames.first(where: { $0.request == request }) { return exact.image }
-        let sameStyle = frames.filter { $0.request.style == style && $0.request.scale == displayScale }
-        let nearest = sameStyle.min { lhs, rhs in
-            abs(lhs.request.size.width - size.width) + abs(lhs.request.size.height - size.height)
-                < abs(rhs.request.size.width - size.width) + abs(rhs.request.size.height - size.height)
+    /// Exact mask first, then the same instrument at the nearest width and size,
+    /// then the last mask shown.
+    private func bestMask(for size: CGSize) -> CGImage? {
+        let request = ToolPreviewRequest(style: style, size: size, scale: displayScale)
+        if let exact = masks.first(where: { $0.request == request }) { return exact.image }
+        let candidates = masks.filter { $0.request.style.instrument == style.instrument
+            && $0.request.scale == displayScale }
+        func distance(_ other: ToolPreviewRequest) -> CGFloat {
+            CGFloat(abs(other.style.width - request.style.width)) * 1000
+                + CGFloat(abs(other.style.color.w - request.style.color.w)) * 100
+                + abs(other.size.width - request.size.width) + abs(other.size.height - request.size.height)
         }
-        return nearest?.image ?? bitmap
+        return candidates.min { distance($0.request) < distance($1.request) }?.image ?? lastMask
     }
 
     private static func isTextured(_ style: PencilStyle) -> Bool {
         style.instrument == .pencil || style.instrument == .crayon
     }
 
-    private static func request(style: PencilStyle, size: CGSize, scale: CGFloat) -> ToolPreviewRequest {
-        ToolPreviewRequest(style: style,
-            size: CGSize(width: max(1, size.width.rounded()), height: max(1, size.height.rounded())),
-            scale: scale)
-    }
-
-    /// The visible textured style first, then the ones a switch may reveal next.
+    /// The visible mask first, the instruments a switch may reveal next, then the
+    /// neighboring widths a Crown step may reach.
     private func texturedRequests(size: CGSize) -> [ToolPreviewRequest] {
-        ([style] + upcomingTexturedStyles)
+        var styles = ([style] + upcomingTexturedStyles)
             .filter { Self.isTextured($0) && ($0 == style || $0.instrument != style.instrument) }
-            .map { Self.request(style: $0, size: size, scale: displayScale) }
+        if Self.isTextured(style) {
+            for step: Float in [1, -1] {
+                var neighbor = style
+                neighbor.width = min(style.instrument.maximumWidth, max(1, style.width + step))
+                if neighbor.width != style.width { styles.append(neighbor) }
+            }
+        }
+        var requests: [ToolPreviewRequest] = []
+        for style in styles {
+            let request = ToolPreviewRequest(style: style, size: size, scale: displayScale)
+            if !requests.contains(request) { requests.append(request) }
+        }
+        return requests
     }
 
     private func render(_ requests: [ToolPreviewRequest]) async {
+        let visible = ToolPreviewRequest(style: style, size: .zero, scale: displayScale).style
         for request in requests {
-            if let cached = frames.first(where: { $0.request == request }) {
-                if request.style == style { bitmap = cached.image }
+            if let cached = masks.first(where: { $0.request == request }) {
+                if request.style == visible { lastMask = cached.image }
                 continue
             }
-            // A newer request list cancels this one; the shown bitmap stays meanwhile.
+            // A newer request list cancels this one; the shown mask stays meanwhile.
             guard let next = await renderer.render(request), !Task.isCancelled else { return }
-            frames.removeAll { $0.request == request }
-            frames.append((request, next))
-            // Resize animations produce in-between sizes; keep two sizes per style so they
-            // don't evict the bitmaps prepared for the next instrument.
-            if let oldest = frames.firstIndex(where: { $0.request.style == request.style }),
-               frames.filter({ $0.request.style == request.style }).count > 2 {
-                frames.remove(at: oldest)
+            masks.removeAll { $0.request == request }
+            masks.append((request, next))
+            // Resize animations produce in-between sizes; keep two sizes per mask so they
+            // don't evict the masks prepared for the next instrument or width.
+            if let oldest = masks.firstIndex(where: { $0.request.style == request.style }),
+               masks.filter({ $0.request.style == request.style }).count > 2 {
+                masks.remove(at: oldest)
             }
-            if frames.count > 8 { frames.removeFirst() }
-            if request.style == style { bitmap = next }
+            if masks.count > 10 { masks.removeFirst() }
+            if request.style == visible { lastMask = next }
         }
     }
 }
@@ -168,39 +190,63 @@ private struct ToolObjectEraserPreview: View {
     }
 }
 
+/// Identifies a grain coverage mask: the style without its color and opacity, which
+/// tint the mask at draw time.
 nonisolated struct ToolPreviewRequest: Equatable {
     let style: PencilStyle
     let size: CGSize
     let scale: CGFloat
+
+    init(style: PencilStyle, size: CGSize, scale: CGFloat) {
+        var maskStyle = style
+        maskStyle.color = SIMD4(1, 1, 1, style.color.w)
+        maskStyle.opacity = 1
+        maskStyle.blendingMode = .hybrid
+        self.style = maskStyle
+        self.size = CGSize(width: max(1, size.width.rounded()), height: max(1, size.height.rounded()))
+        self.scale = scale
+    }
 }
 
-/// Textured pencil and crayon previews render outside layout/drawing callbacks.
-/// A small cache also makes returning to a recent settings layout inexpensive.
+/// Textured pencil and crayon masks render outside layout/drawing callbacks.
 actor ToolPreviewRenderer {
     private let strokeID = UUID()
-    private var cache: [(request: ToolPreviewRequest, image: CGImage)] = []
 
+    /// White ink on black paper, so each pixel's gray level is the stroke's coverage;
+    /// returned as a gray image that `clip(to:mask:)` reads as alpha.
     func render(_ request: ToolPreviewRequest) -> CGImage? {
         assert(!Thread.isMainThread, "Tool preview must render off the main thread")
         guard !Task.isCancelled else { return nil }
-        if let index = cache.firstIndex(where: { $0.request == request }) {
-            let entry = cache.remove(at: index)
-            cache.append(entry)
-            return entry.image
-        }
         let size = request.size
         let strokes = ToolPreviewStroke.make(style: request.style, size: size, id: strokeID)
         // Pencil and pastel use the live drawing's pixel grain path; the CG replay remains
         // the fallback (Render debug switches off).
         let fast = strokes.count == 1
-            ? WatchBitmapRenderer.renderDryPixel(strokes[0], size: size, scale: request.scale, paperWhite: 0.88)
+            ? WatchBitmapRenderer.renderDryPixel(strokes[0], size: size, scale: request.scale, paperWhite: 0)
             : nil
         guard !Task.isCancelled,
               let image = fast ?? WatchBitmapRenderer.render(strokes: strokes, size: size,
-                  scale: request.scale, paperWhite: 0.88), !Task.isCancelled else { return nil }
-        cache.append((request, image))
-        if cache.count > 4 { cache.removeFirst() }
-        return image
+                  scale: request.scale, paperWhite: 0), !Task.isCancelled else { return nil }
+        return Self.coverageMask(from: image)
+    }
+
+    /// Copies the red channel byte for byte, so no color conversion alters coverage.
+    private static func coverageMask(from image: CGImage) -> CGImage? {
+        let width = image.width, height = image.height
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let rgba = CGContext(data: nil, width: width, height: height, bitsPerComponent: 8,
+                                   bytesPerRow: width * 4, space: space,
+                                   bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        rgba.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let source = rgba.data?.assumingMemoryBound(to: UInt8.self) else { return nil }
+        var gray = [UInt8](repeating: 0, count: width * height)
+        for index in 0..<(width * height) { gray[index] = source[index * 4] }
+        guard let provider = CGDataProvider(data: Data(gray) as CFData) else { return nil }
+        return CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 8,
+                       bytesPerRow: width, space: CGColorSpaceCreateDeviceGray(),
+                       bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+                       provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
     }
 }
 
