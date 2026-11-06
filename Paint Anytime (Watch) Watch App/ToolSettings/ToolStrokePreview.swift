@@ -2,6 +2,10 @@ import SwiftUI
 
 struct ToolStrokePreview: View {
     static let viewportShape = RoundedRectangle(cornerRadius: 16)
+    static let paperWhite: CGFloat = 0.88
+    /// Bitmap previews fill paper with `CGColor(gray:)`, a gamma 2.2 gray that lands on
+    /// 230/255 in sRGB; `Color(white: 0.88)` would be 224/255 and read visibly darker.
+    static let paperColor = Color(cgColor: CGColor(gray: paperWhite, alpha: 1))
 
     let style: PencilStyle
     let fillPreviewSize: CGSize
@@ -26,7 +30,7 @@ struct ToolStrokePreview: View {
                 Canvas { context, size in
                     let strokes = ToolPreviewStroke.make(style: style, size: size)
                     if let image = WatchBitmapRenderer.render(strokes: strokes, size: size,
-                                                             scale: displayScale, paperWhite: 0.88) {
+                                                             scale: displayScale, paperWhite: Self.paperWhite) {
                         context.draw(Image(decorative: image, scale: displayScale),
                                      in: CGRect(origin: .zero, size: size))
                     }
@@ -43,7 +47,7 @@ struct ToolStrokePreview: View {
             }
         }
         // The settings viewport clips the paper, stroke and overlay together.
-        .background(Color(white: 0.88))
+        .background(Self.paperColor)
         .background {
             GeometryReader { geometry in
                 let requests = texturedRequests(size: geometry.size)
@@ -177,7 +181,7 @@ private struct ToolObjectEraserPreview: View {
                                                     width: radius * 2, height: radius * 2))
                 var cursorContext = context
                 cursorContext.opacity = cursorOpacity
-                cursorContext.fill(cursor, with: .color(Color(white: 0.88)))
+                cursorContext.fill(cursor, with: .color(ToolStrokePreview.paperColor))
                 cursorContext.stroke(cursor, with: .color(.black.opacity(0.65)), lineWidth: 1.5)
             }
         }
@@ -288,7 +292,7 @@ private struct ToolFillPreview: View {
 
     var body: some View {
         // Keep the organic outline stable and center its visible bounds in the viewport.
-        Color(white: 0.88)
+        ToolStrokePreview.paperColor
             .overlay {
                 Canvas { context, canvasSize in
                     let center = CGPoint(x: canvasSize.width / 2, y: canvasSize.height / 2)
