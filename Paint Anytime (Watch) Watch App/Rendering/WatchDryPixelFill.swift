@@ -106,6 +106,51 @@ nonisolated extension WatchStrokeDrawing {
             high = max(high, x)
         }
 
+        /// Recompute every 32 px tile the changed pixel rectangles (top-left origin) touch:
+        /// the box around the changes in each tile, from the committed ink and all grains of
+        /// `field`. Call after `field.update`. Returns the tiles written, or nil if cancelled.
+        func fillChanged(_ pixels: [CGRect], field: DryGrainField, stroke: Stroke, geometry: DryGeometry,
+                         frame: CGContext, scale: CGFloat)
+            -> (tiles: [SIMD2<Int>], grains: Int, rasterNS: UInt64, compositeNS: UInt64)? {
+            let tileSize = 32
+            // Bounding box (min x, min y, max x, max y; exclusive) of the changes in each tile.
+            var boxes: [SIMD2<Int>: SIMD4<Int>] = [:]
+            for rect in pixels {
+                let minX = Int(rect.minX), minY = Int(rect.minY), maxX = Int(rect.maxX), maxY = Int(rect.maxY)
+                guard minX >= 0, minY >= 0, minX < maxX, minY < maxY else { continue }
+                for tileY in (minY / tileSize)...((maxY - 1) / tileSize) {
+                    for tileX in (minX / tileSize)...((maxX - 1) / tileSize) {
+                        let part = SIMD4(max(minX, tileX * tileSize), max(minY, tileY * tileSize),
+                                         min(maxX, (tileX + 1) * tileSize), min(maxY, (tileY + 1) * tileSize))
+                        let tile = SIMD2(tileX, tileY)
+                        if let box = boxes[tile] {
+                            boxes[tile] = SIMD4(min(box.x, part.x), min(box.y, part.y),
+                                                max(box.z, part.z), max(box.w, part.w))
+                        } else {
+                            boxes[tile] = part
+                        }
+                    }
+                }
+            }
+            let ink = stroke.style.color
+            let alphas = field.bandOpacities(stroke, geometry: geometry).map { Float($0) * ink.w }
+            let opacity = stroke.style.effectiveOpacity
+            var rasterNS: UInt64 = 0, compositeNS: UInt64 = 0
+            var grains = 0
+            for box in boxes.values {
+                guard !Task.isCancelled else { return nil }
+                let started = RenderDiagnostics.begin()
+                reset(x: box.x, y: box.y, width: box.z - box.x, height: box.w - box.y)
+                grains += field.rasterize(into: self, scale: Double(scale))
+                let rasterized = RenderDiagnostics.begin()
+                composite(into: frame, ink: ink, alphas: alphas, opacity: opacity)
+                rasterNS &+= rasterized &- started
+                compositeNS &+= RenderDiagnostics.begin() &- rasterized
+            }
+            if !boxes.isEmpty { geometry.contourBuildCount += 1 }
+            return (Array(boxes.keys), grains, rasterNS, compositeNS)
+        }
+
         /// Write the work box into `frame`: committed ink, then the bands of `ink` at
         /// `alphas` (band opacity × ink alpha), all at stroke `opacity`.
         func composite(into frame: CGContext, ink: SIMD4<Float>, alphas: [Float], opacity: Float) {

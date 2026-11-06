@@ -85,8 +85,125 @@ nonisolated extension WatchBitmapRenderer {
         }
         fileprivate var liveInk: LiveInk?
 
+        /// Pencil/pastel under the finger on a layer: grains of the whole gesture in an
+        /// incremental field, written into a float copy of the layer's committed ink
+        /// (`DryPixelFill`). Without it every frame replays the whole stroke.
+        fileprivate final class LiveDry {
+            let layerID: UUID
+            let revisions: [UUID]
+            var stroke: Stroke
+            let frame: CGContext
+            let geometry: WatchStrokeDrawing.DryGeometry
+            let field: WatchStrokeDrawing.DryGrainField
+            let fill: WatchStrokeDrawing.DryPixelFill
+            var snapshot: InkSnapshot?
+            var travel: Float = 0
+            var drawn = false
+
+            init(layerID: UUID, revisions: [UUID], stroke: Stroke, frame: CGContext,
+                 fill: WatchStrokeDrawing.DryPixelFill) {
+                self.layerID = layerID
+                self.revisions = revisions
+                self.stroke = stroke
+                self.frame = frame
+                self.fill = fill
+                geometry = WatchStrokeDrawing.DryGeometry()
+                field = WatchStrokeDrawing.DryGrainField()
+                geometry.grainField = field
+            }
+        }
+        fileprivate var liveDry: LiveDry?
+
+        fileprivate func clearLive() {
+            liveInk = nil
+            liveDry = nil
+        }
+
+        /// Layer, prefix and stroke of the live buffer, for promotion on lift.
+        fileprivate var liveOwner: (layerID: UUID, revisions: [UUID], stroke: Stroke)? {
+            if let liveDry { return (liveDry.layerID, liveDry.revisions, liveDry.stroke) }
+            if let liveInk { return (liveInk.layerID, liveInk.revisions, liveInk.stroke) }
+            return nil
+        }
+
+        /// Pencil/pastel live ink; nil falls back to replaying the stroke.
+        fileprivate func renderLiveDry(_ stroke: Stroke, layerID: UUID, revisions: [UUID],
+                                       base: InkSnapshot, scale: CGFloat) -> InkSnapshot? {
+            liveInk = nil
+            if let live = liveDry, live.layerID == layerID, live.revisions == revisions,
+               live.stroke.id == stroke.id, stroke.extends(live.stroke) {
+                // Same gesture: continue.
+            } else {
+                // The new path needs both switches; the lock and lasso cut keep the replay.
+                guard RenderStageSwitches.isOn(.incrementalDryGrains), RenderStageSwitches.isOn(.pixelDryFill),
+                      !stroke.locksTransparency, stroke.transform == .identity, stroke.excludedAreas.isEmpty,
+                      stroke.erasures.isEmpty, stroke.raster == nil,
+                      let frame = WatchBitmapRenderer.makeFloatContext(width: base.image.width, height: base.image.height)
+                else {
+                    liveDry = nil
+                    return nil
+                }
+                frame.draw(base.image, in: CGRect(x: 0, y: 0, width: base.image.width, height: base.image.height))
+                guard let fill = WatchStrokeDrawing.DryPixelFill(frame: frame) else {
+                    liveDry = nil
+                    return nil
+                }
+                liveDry = LiveDry(layerID: layerID, revisions: revisions, stroke: stroke, frame: frame, fill: fill)
+            }
+            guard let live = liveDry else { return nil }
+            if live.drawn, live.stroke.geometryRevision == stroke.geometryRevision, let snapshot = live.snapshot {
+                return snapshot
+            }
+            let started = RenderDiagnostics.begin()
+            let previousCount = live.drawn ? live.stroke.points.count : 0
+            let counters = (live.geometry.grainBuildCount, live.geometry.coverageProbeCount,
+                            live.geometry.contourBuildCount)
+            // Opening pastel contact changes the opacity of every drawn grain.
+            let contactChanges = stroke.style.instrument == .crayon && live.drawn && live.travel < 4
+            live.geometry.append(stroke)
+            let prepared = RenderDiagnostics.begin()
+            live.field.update(live.geometry, stroke: stroke)
+            let updated = RenderDiagnostics.begin()
+            let canvas = CGRect(x: 0, y: 0, width: live.frame.width, height: live.frame.height)
+            let pixels = live.field.dirtyRects(all: contactChanges).compactMap { paper -> CGRect? in
+                let rect = paper.applying(CGAffineTransform(scaleX: scale, y: scale)).integral.intersection(canvas)
+                return rect.isNull || rect.isEmpty ? nil : rect
+            }
+            guard let result = live.fill.fillChanged(pixels, field: live.field, stroke: stroke,
+                                                     geometry: live.geometry, frame: live.frame, scale: scale)
+            else {
+                liveDry = nil
+                return nil
+            }
+            if !result.tiles.isEmpty || live.snapshot == nil {
+                guard let image = live.frame.makeImage() else {
+                    liveDry = nil
+                    return nil
+                }
+                live.snapshot = InkSnapshot(image: image)
+            }
+            live.stroke = stroke
+            live.travel = live.geometry.travel
+            live.drawn = true
+            let grained = updated &+ result.rasterNS
+            RenderDiagnostics.dryFrame(stages: [started, prepared, updated, grained, grained &+ result.compositeNS,
+                                                RenderDiagnostics.begin()],
+                                       incremental: true, pixel: true,
+                                       samples: stroke.points.count - previousCount,
+                                       tiles: result.tiles.count,
+                                       grainsBuilt: live.geometry.grainBuildCount - counters.0,
+                                       grainHits: result.grains,
+                                       probes: live.geometry.coverageProbeCount - counters.1,
+                                       contours: live.geometry.contourBuildCount - counters.2)
+            return live.snapshot
+        }
+
         fileprivate func renderLive(_ stroke: Stroke, layerID: UUID, revisions: [UUID],
                                     base: InkSnapshot, scale: CGFloat) -> InkSnapshot? {
+            if stroke.style.instrument == .pencil || stroke.style.instrument == .crayon {
+                return renderLiveDry(stroke, layerID: layerID, revisions: revisions, base: base, scale: scale)
+            }
+            liveDry = nil
             guard (stroke.style.instrument == .watercolor || stroke.style.instrument == .marker),
                   !stroke.locksTransparency, stroke.transform == .identity,
                   stroke.excludedAreas.isEmpty, stroke.erasures.isEmpty, stroke.raster == nil else {
@@ -191,7 +308,7 @@ nonisolated extension WatchBitmapRenderer {
             }
         }
         if activeStroke == nil || !visible.contains(where: { $0.id == selectedLayerID }) || selection != nil {
-            cache?.liveInk = nil
+            cache?.clearLive()
         }
         return RenderDiagnostics.measure(.composite) {
             guard let image = output.makeImage() else { return nil }
@@ -215,7 +332,7 @@ nonisolated extension WatchBitmapRenderer {
         if cache.size != size || cache.scale != scale {
             cache.inks.removeAll()
             cache.composite = nil
-            cache.liveInk = nil
+            cache.clearLive()
         }
         cache.size = size
         cache.scale = scale
@@ -257,7 +374,7 @@ nonisolated extension WatchBitmapRenderer {
         let committed: InkSnapshot
         if let promoted = promotedLiveInk(layer, previous: previous, cache: cache, scale: scale) {
             committed = promoted
-            cache?.liveInk = nil
+            cache?.clearLive()
         } else {
             let pending = previous.map { Array(layer.strokes.dropFirst($0.revisions.count)) } ?? layer.strokes
             guard let ink = renderInk(strokes: pending, size: size, scale: scale,
@@ -272,7 +389,7 @@ nonisolated extension WatchBitmapRenderer {
     /// The one new stroke is the live stroke this layer already holds in its buffer.
     private static func promotedLiveInk(_ layer: CanvasLayer, previous: (revisions: [UUID], ink: InkSnapshot)?,
                                         cache: LayerCache?, scale: CGFloat) -> InkSnapshot? {
-        guard let previous, let cache, let live = cache.liveInk,
+        guard let previous, let cache, let live = cache.liveOwner,
               layer.strokes.count == previous.revisions.count + 1, let final = layer.strokes.last,
               live.layerID == layer.id, live.revisions == previous.revisions,
               final.extends(live.stroke) else { return nil }

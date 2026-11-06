@@ -265,49 +265,16 @@ nonisolated extension WatchBitmapRenderer {
                                     into dry: inout ActiveDry, scale: CGFloat, canvas: CGRect,
                                     stages: (UInt64, UInt64, UInt64), counters: (Int, Int, Int, Int),
                                     previousCount: Int) -> Bool {
-            let tileSize = Int(Self.dryTileSize)
-            // Bounding box (min x, min y, max x, max y; exclusive) of the changes in each tile.
-            var boxes: [SIMD2<Int>: SIMD4<Int>] = [:]
-            for rect in pixels {
-                let minX = Int(rect.minX), minY = Int(rect.minY), maxX = Int(rect.maxX), maxY = Int(rect.maxY)
-                guard minX < maxX, minY < maxY else { continue }
-                for tileY in (minY / tileSize)...((maxY - 1) / tileSize) {
-                    for tileX in (minX / tileSize)...((maxX - 1) / tileSize) {
-                        let part = SIMD4(max(minX, tileX * tileSize), max(minY, tileY * tileSize),
-                                         min(maxX, (tileX + 1) * tileSize), min(maxY, (tileY + 1) * tileSize))
-                        let tile = SIMD2(tileX, tileY)
-                        if let box = boxes[tile] {
-                            boxes[tile] = SIMD4(min(box.x, part.x), min(box.y, part.y),
-                                                max(box.z, part.z), max(box.w, part.w))
-                        } else {
-                            boxes[tile] = part
-                        }
-                    }
-                }
-            }
-            let ink = stroke.style.color
-            let alphas = field.bandOpacities(stroke, geometry: dry.geometry).map { Float($0) * ink.w }
-            let opacity = stroke.style.effectiveOpacity
-            var rasterNS: UInt64 = 0, compositeNS: UInt64 = 0
-            var grains = 0
-            for box in boxes.values {
-                guard !Task.isCancelled else { return false }
-                let started = RenderDiagnostics.begin()
-                fill.reset(x: box.x, y: box.y, width: box.z - box.x, height: box.w - box.y)
-                grains += field.rasterize(into: fill, scale: Double(scale))
-                let rasterized = RenderDiagnostics.begin()
-                fill.composite(into: dry.frame, ink: ink, alphas: alphas, opacity: opacity)
-                rasterNS &+= rasterized &- started
-                compositeNS &+= RenderDiagnostics.begin() &- rasterized
-            }
-            if !boxes.isEmpty { dry.geometry.contourBuildCount += 1 }
+            guard let result = fill.fillChanged(pixels, field: field, stroke: stroke, geometry: dry.geometry,
+                                                frame: dry.frame, scale: scale) else { return false }
+            let (tiles, grains, rasterNS, compositeNS) = result
             let grained = stages.2 &+ rasterNS
             let drawn = grained &+ compositeNS
-            guard publishDryTiles(Array(boxes.keys), of: &dry, scale: scale, canvas: canvas) else { return false }
+            guard publishDryTiles(tiles, of: &dry, scale: scale, canvas: canvas) else { return false }
             RenderDiagnostics.dryFrame(stages: [stages.0, stages.1, stages.2, grained, drawn, RenderDiagnostics.begin()],
                                        incremental: true, pixel: true,
                                        samples: stroke.points.count - previousCount,
-                                       tiles: boxes.count,
+                                       tiles: tiles.count,
                                        grainsBuilt: dry.geometry.grainBuildCount - counters.0,
                                        grainHits: grains,
                                        probes: dry.geometry.coverageProbeCount - counters.2,
