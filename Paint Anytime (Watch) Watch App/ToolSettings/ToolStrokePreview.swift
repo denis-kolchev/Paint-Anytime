@@ -5,8 +5,13 @@ struct ToolStrokePreview: View {
 
     let style: PencilStyle
     let fillPreviewSize: CGSize
+    /// Pencil and pastel styles a Crown step may switch to next. Their bitmaps render
+    /// off the main thread ahead of time, so the switch shows the current width at once.
+    var upcomingTexturedStyles: [PencilStyle] = []
     @Environment(\.displayScale) private var displayScale
     @State private var bitmap: CGImage?
+    /// Rendered textured bitmaps the body can show synchronously.
+    @State private var frames: [(request: ToolPreviewRequest, image: CGImage)] = []
     @State private var renderer = ToolPreviewRenderer()
 
     var body: some View {
@@ -39,35 +44,60 @@ struct ToolStrokePreview: View {
         }
         // The settings viewport clips the paper, stroke and overlay together.
         .background(Color(white: 0.88))
+        .background {
+            GeometryReader { geometry in
+                let requests = texturedRequests(size: geometry.size)
+                Color.clear.task(id: requests) { await render(requests) }
+            }
+        }
         .accessibilityLabel(L10n.text("Stroke preview"))
     }
 
     private var deferredPreview: some View {
         GeometryReader { geometry in
-            let request = ToolPreviewRequest(style: style,
-                size: CGSize(width: max(1, geometry.size.width.rounded()),
-                             height: max(1, geometry.size.height.rounded())),
-                scale: displayScale)
+            let request = Self.request(style: style, size: geometry.size, scale: displayScale)
             ZStack {
                 Color(white: 0.88)
-                if let bitmap {
-                    Image(decorative: bitmap, scale: displayScale)
+                // A bitmap prepared for this exact style wins; otherwise keep the last
+                // frame until the background render arrives.
+                if let image = frames.first(where: { $0.request == request })?.image ?? bitmap {
+                    Image(decorative: image, scale: displayScale)
                         .resizable()
                         .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
-            .task(id: request) {
-                do {
-                    // The pixel grain path is fast enough to follow every Crown step, as the
-                    // other tools do; a newer request cancels this one, and the existing
-                    // bitmap stays on screen until the next one is ready.
-                    let next = await renderer.render(request)
-                    try Task.checkCancellation()
-                    if let next { bitmap = next }
-                } catch {
-                    // A newer request owns the next update; keep the last frame.
-                }
+        }
+    }
+
+    private static func isTextured(_ style: PencilStyle) -> Bool {
+        style.instrument == .pencil || style.instrument == .crayon
+    }
+
+    private static func request(style: PencilStyle, size: CGSize, scale: CGFloat) -> ToolPreviewRequest {
+        ToolPreviewRequest(style: style,
+            size: CGSize(width: max(1, size.width.rounded()), height: max(1, size.height.rounded())),
+            scale: scale)
+    }
+
+    /// The visible textured style first, then the ones a switch may reveal next.
+    private func texturedRequests(size: CGSize) -> [ToolPreviewRequest] {
+        ([style] + upcomingTexturedStyles)
+            .filter { Self.isTextured($0) && ($0 == style || $0.instrument != style.instrument) }
+            .map { Self.request(style: $0, size: size, scale: displayScale) }
+    }
+
+    private func render(_ requests: [ToolPreviewRequest]) async {
+        for request in requests {
+            if let cached = frames.first(where: { $0.request == request }) {
+                if request.style == style { bitmap = cached.image }
+                continue
             }
+            // A newer request list cancels this one; the shown bitmap stays meanwhile.
+            guard let next = await renderer.render(request), !Task.isCancelled else { return }
+            frames.removeAll { $0.request == request }
+            frames.append((request, next))
+            if frames.count > 6 { frames.removeFirst() }
+            if request.style == style { bitmap = next }
         }
     }
 }

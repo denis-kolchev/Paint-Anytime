@@ -151,13 +151,19 @@ final class ToolSettings: ObservableObject {
 
     func selectInstrument(_ instrument: DrawingInstrument) {
         guard AppReleaseFeatures.current.allows(instrument), instrument != pencilStyle.instrument else { return }
+        pencilStyle = style(for: instrument)
+    }
+
+    /// The style `selectInstrument` would apply, for previews prepared ahead of a switch.
+    func style(for instrument: DrawingInstrument) -> PencilStyle {
+        if instrument == pencilStyle.instrument { return pencilStyle }
         var style = savedStyles[instrument.rawValue] ?? .initial(for: instrument)
         if synchronization.width { style.width = synchronization.sharedWidth }
         else { style.width = min(instrument.maximumWidth, max(1, style.width)) }
         if synchronization.color && instrument != .eraser && instrument != .blur { style.color = synchronization.sharedColor }
         if synchronization.opacity && instrument != .eraser && instrument != .blur { style.opacity = synchronization.sharedOpacity }
         style.blendingMode = blendingMode
-        pencilStyle = AppReleaseFeatures.current.availableStyle(style)
+        return AppReleaseFeatures.current.availableStyle(style)
     }
 
 }

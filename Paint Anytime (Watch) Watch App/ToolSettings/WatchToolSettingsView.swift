@@ -77,6 +77,13 @@ struct WatchToolSettingsView: View {
 
     private var colors: [InkPreset] { tutorial.isActive ? tutorialColors : palette.selectedColors }
 
+    /// Pencil and pastel as they would look after a switch, so their previews are ready.
+    private var upcomingTexturedStyles: [PencilStyle] {
+        [DrawingInstrument.pencil, .crayon]
+            .filter { instruments.contains($0) && $0 != controller.pencilStyle.instrument }
+            .map(controller.style(for:))
+    }
+
     private var isEraser: Bool { controller.pencilStyle.instrument == .eraser }
     private var instruments: [DrawingInstrument] {
         guard tutorial.limitsToolsToFill else { return DrawingInstrument.displayOrder }
@@ -236,7 +243,8 @@ struct WatchToolSettingsView: View {
                                       captionHeight: previewCaptionHeight) {
                         ToolStrokePreview(style: controller.pencilStyle,
                                           fillPreviewSize: CGSize(width: settingsGeometry.size.width,
-                                                                  height: max(1, settingsGeometry.size.height - 22)))
+                                                                  height: max(1, settingsGeometry.size.height - 22)),
+                                          upcomingTexturedStyles: upcomingTexturedStyles)
                             .overlay {
                                 if selection == .color && isAddingColor {
                                     Button {
