@@ -113,11 +113,32 @@ struct ToolIcon: View {
                 outline([CGPoint(x: 8, y: 17), CGPoint(x: 10, y: 26), CGPoint(x: 14, y: 26), CGPoint(x: 16, y: 17)])
                 line(9, 20, 15, 20)
             case .blur:
-                for radius in [CGFloat(3), 6, 9] {
-                    var ring = c
-                    ring.opacity = Double(12 - radius) / 10
-                    ring.stroke(Path(ellipseIn: CGRect(x: 12 - radius, y: 14 - radius,
-                        width: radius * 2, height: radius * 2)), with: ink, lineWidth: 1.6)
+                // A blending stump (tortillon): rolled paper, a graphite-worn tip and a soft halo.
+                var stump = Path()
+                stump.move(to: CGPoint(x: 8, y: 26))
+                stump.addLine(to: CGPoint(x: 8, y: 14))
+                stump.addLine(to: CGPoint(x: 11.3, y: 6.4))
+                stump.addQuadCurve(to: CGPoint(x: 12.7, y: 6.4), control: CGPoint(x: 12, y: 5))
+                stump.addLine(to: CGPoint(x: 16, y: 14))
+                stump.addLine(to: CGPoint(x: 16, y: 26))
+                c.stroke(stump, with: ink, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+                var tip = Path()
+                tip.move(to: CGPoint(x: 10.2, y: 9))
+                tip.addLine(to: CGPoint(x: 11.3, y: 6.4))
+                tip.addQuadCurve(to: CGPoint(x: 12.7, y: 6.4), control: CGPoint(x: 12, y: 5))
+                tip.addLine(to: CGPoint(x: 13.8, y: 9))
+                tip.closeSubpath()
+                c.fill(tip, with: ink)
+                // The paper seam spiralling down the cone and the body.
+                line(14.2, 10.1, 8.5, 13)
+                line(8, 21, 16, 17)
+                for (radius, opacity) in [(CGFloat(3), 0.6), (5.5, 0.3)] {
+                    var halo = c
+                    halo.opacity = opacity
+                    var arc = Path()
+                    arc.addArc(center: CGPoint(x: 12, y: 6.5), radius: radius,
+                               startAngle: .degrees(215), endAngle: .degrees(325), clockwise: false)
+                    halo.stroke(arc, with: ink, style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
                 }
             case .fill:
                 outline([CGPoint(x: 3, y: 13), CGPoint(x: 12, y: 4), CGPoint(x: 21, y: 13), CGPoint(x: 12, y: 22)], closed: true)

@@ -31,6 +31,9 @@ struct ToolInstrumentPicker: View {
                                 onSelect(instrument)
                             } label: {
                                 ToolIcon(instrument: instrument)
+                                    // A borderless button tints its label gray; keep the icons white.
+                                    // Color.primary is the label color; the hierarchical .primary would inherit the tint.
+                                    .foregroundStyle(Color.primary)
                                     .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
                                                  : instrumentIndex == index ? 1 : 0.72)
                                     .animation(choiceAnimation, value: instrumentIndex)

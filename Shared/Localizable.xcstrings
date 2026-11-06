@@ -13234,169 +13234,169 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "نصف قطر التمويه"
+            "value" : "نصف القطر"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Poloměr rozostření"
+            "value" : "Poloměr"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sløringsradius"
+            "value" : "Radius"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weichzeichnungsradius"
+            "value" : "Radius"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ακτίνα θόλωσης"
+            "value" : "Ακτίνα"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blur radius"
+            "value" : "Radius"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Radio de desenfoque"
+            "value" : "Radio"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sumennuksen säde"
+            "value" : "Säde"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rayon du flou"
+            "value" : "Rayon"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "רדיוס טשטוש"
+            "value" : "רדיוס"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elmosás sugara"
+            "value" : "Sugár"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Radius buram"
+            "value" : "Radius"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raggio sfocatura"
+            "value" : "Raggio"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ぼかしの半径"
+            "value" : "半径"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "흐림 반경"
+            "value" : "반경"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uskarphetsradius"
+            "value" : "Radius"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vervagingsstraal"
+            "value" : "Straal"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Promień rozmycia"
+            "value" : "Promień"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raio do desfoque"
+            "value" : "Raio"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Raio da desfocagem"
+            "value" : "Raio"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Радиус размытия"
+            "value" : "Радиус"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Oskärperadie"
+            "value" : "Radie"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "รัศมีเบลอ"
+            "value" : "รัศมี"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bulanıklık yarıçapı"
+            "value" : "Yarıçap"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Радіус розмиття"
+            "value" : "Радіус"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bán kính làm mờ"
+            "value" : "Bán kính"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "模糊半径"
+            "value" : "半径"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "模糊半徑"
+            "value" : "半徑"
           }
         }
       }
@@ -13407,169 +13407,169 @@
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "شدة التمويه"
+            "value" : "الشدة"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Síla rozostření"
+            "value" : "Síla"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sløringsstyrke"
+            "value" : "Styrke"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weichzeichnungsstärke"
+            "value" : "Stärke"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ένταση θόλωσης"
+            "value" : "Ένταση"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blur strength"
+            "value" : "Strength"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intensidad del desenfoque"
+            "value" : "Intensidad"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sumennuksen voimakkuus"
+            "value" : "Voimakkuus"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intensité du flou"
+            "value" : "Intensité"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "עוצמת טשטוש"
+            "value" : "עוצמה"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elmosás erőssége"
+            "value" : "Erősség"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kekuatan buram"
+            "value" : "Kekuatan"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intensità sfocatura"
+            "value" : "Intensità"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ぼかしの強さ"
+            "value" : "強さ"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "흐림 강도"
+            "value" : "강도"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Uskarphetsstyrke"
+            "value" : "Styrke"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vervagingssterkte"
+            "value" : "Sterkte"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Siła rozmycia"
+            "value" : "Siła"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intensidade do desfoque"
+            "value" : "Intensidade"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Intensidade da desfocagem"
+            "value" : "Intensidade"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Сила размытия"
+            "value" : "Сила"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Oskärpestyrka"
+            "value" : "Styrka"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ความแรงของการเบลอ"
+            "value" : "ความแรง"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bulanıklık gücü"
+            "value" : "Yoğunluk"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Сила розмиття"
+            "value" : "Сила"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cường độ làm mờ"
+            "value" : "Cường độ"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "模糊强度"
+            "value" : "强度"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "模糊強度"
+            "value" : "強度"
           }
         }
       }
