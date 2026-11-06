@@ -571,7 +571,9 @@ struct ContentView: View {
                         } else if isMovingCanvas {
                             controller.cancelStroke()
                             isEyedropperActive.toggle()
-                            hasEyedropperSession = true
+                            // Deselecting cancels the pick, so ✓ won't open the color editor.
+                            hasEyedropperSession = isEyedropperActive
+                            if !isEyedropperActive { cameraSampledColor = nil }
                         } else if usesMorphToolbar {
                             if showsContentActions {
                                 withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {

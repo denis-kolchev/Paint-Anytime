@@ -58,10 +58,9 @@ struct ToolStrokePreview: View {
             }
             .task(id: request) {
                 do {
-                    // Keep displaying the existing bitmap while layout animates
-                    // or the Crown emits a burst of width changes.
-                    try await Task.sleep(for: .milliseconds(60))
-                    try Task.checkCancellation()
+                    // The pixel grain path is fast enough to follow every Crown step, as the
+                    // other tools do; a newer request cancels this one, and the existing
+                    // bitmap stays on screen until the next one is ready.
                     let next = await renderer.render(request)
                     try Task.checkCancellation()
                     if let next { bitmap = next }
@@ -148,8 +147,13 @@ actor ToolPreviewRenderer {
         }
         let size = request.size
         let strokes = ToolPreviewStroke.make(style: request.style, size: size, id: strokeID)
+        // Pencil and pastel use the live drawing's pixel grain path; the CG replay remains
+        // the fallback (Render debug switches off).
+        let fast = strokes.count == 1
+            ? WatchBitmapRenderer.renderDryPixel(strokes[0], size: size, scale: request.scale, paperWhite: 0.88)
+            : nil
         guard !Task.isCancelled,
-              let image = WatchBitmapRenderer.render(strokes: strokes, size: size,
+              let image = fast ?? WatchBitmapRenderer.render(strokes: strokes, size: size,
                   scale: request.scale, paperWhite: 0.88), !Task.isCancelled else { return nil }
         cache.append((request, image))
         if cache.count > 4 { cache.removeFirst() }

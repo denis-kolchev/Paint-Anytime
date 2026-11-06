@@ -184,3 +184,37 @@ nonisolated extension WatchStrokeDrawing {
         }
     }
 }
+
+nonisolated extension WatchBitmapRenderer {
+    /// One-shot pencil/pastel render through the live pixel path (incremental grains +
+    /// `DryPixelFill`) instead of the CG replay, for small previews such as the tool
+    /// settings viewport. nil when the switches are off or the stroke needs the CG replay.
+    static func renderDryPixel(_ stroke: Stroke, size: CGSize, scale: CGFloat,
+                               paperWhite: CGFloat = 1) -> CGImage? {
+        guard stroke.style.instrument == .pencil || stroke.style.instrument == .crayon,
+              RenderStageSwitches.isOn(.incrementalDryGrains), RenderStageSwitches.isOn(.pixelDryFill),
+              !stroke.locksTransparency, stroke.transform == .identity, stroke.excludedAreas.isEmpty,
+              stroke.erasures.isEmpty, stroke.raster == nil,
+              size.width.isFinite, size.height.isFinite, scale.isFinite,
+              size.width > 0, size.height > 0, scale > 0 else { return nil }
+        let width = Int(ceil(size.width * scale)), height = Int(ceil(size.height * scale))
+        // A new bitmap context starts transparent: no committed ink under the stroke.
+        guard width <= 8192, height <= 8192,
+              let frame = makeFloatContext(width: width, height: height),
+              let fill = WatchStrokeDrawing.DryPixelFill(frame: frame) else { return nil }
+        let geometry = WatchStrokeDrawing.DryGeometry()
+        let field = WatchStrokeDrawing.DryGrainField()
+        geometry.grainField = field
+        geometry.append(stroke)
+        field.update(geometry, stroke: stroke)
+        let canvas = CGRect(x: 0, y: 0, width: width, height: height)
+        let pixels = field.dirtyRects(all: true).compactMap { paper -> CGRect? in
+            let rect = paper.applying(CGAffineTransform(scaleX: scale, y: scale)).integral.intersection(canvas)
+            return rect.isNull || rect.isEmpty ? nil : rect
+        }
+        guard fill.fillChanged(pixels, field: field, stroke: stroke, geometry: geometry,
+                               frame: frame, scale: scale) != nil,
+              let image = frame.makeImage() else { return nil }
+        return flatten(InkSnapshot(image: image), paperWhite: paperWhite)
+    }
+}
