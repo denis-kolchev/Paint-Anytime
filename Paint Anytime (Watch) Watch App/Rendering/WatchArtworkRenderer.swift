@@ -92,11 +92,15 @@ actor WatchArtworkRenderer {
     }
 
     func selectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
-        selection.render(preview, key: key)
+        let started = RenderDiagnostics.begin()
+        defer { RenderDiagnostics.workEnded(started) }
+        return selection.render(preview, key: key)
     }
 
     func layeredFrame(document: CanvasDocument, activeStroke: Stroke?, selectedLayerID: UUID?,
                       key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
+        let started = RenderDiagnostics.begin()
+        defer { RenderDiagnostics.workEnded(started) }
         guard !Task.isCancelled else { return nil }
         selection.clear()
         let state = activeStroke == nil ? historyKey(document: document, strokes: [], key: key) : nil
@@ -110,6 +114,8 @@ actor WatchArtworkRenderer {
 
     func screenFrame(strokes: [Stroke], activeStroke: Stroke?, key: WatchBitmapRenderer.CacheKey,
                      activeStrokeID: UInt64) -> WatchBitmapRenderer.ScreenFrame? {
+        let started = RenderDiagnostics.begin()
+        defer { RenderDiagnostics.workEnded(started) }
         guard !Task.isCancelled else { return nil }
         selection.clear()
         let state = activeStroke == nil ? historyKey(document: nil, strokes: strokes, key: key) : nil

@@ -14,7 +14,7 @@ nonisolated extension WatchBitmapRenderer {
             guard let image = render(strokes: strokes, activeStroke: activeStroke,
                                      key: key, activeStrokeID: activeStrokeID) else { return nil }
             if usesScreenTiles, activeStroke != nil, let dry = activeDry, let background = committedImage {
-                return ScreenFrame(background: background, tiles: dry.screenTiles.values.sorted {
+                return ScreenFrame(background: dry.screenBackground ?? background, tiles: dry.screenTiles.values.sorted {
                     $0.id.y == $1.id.y ? $0.id.x < $1.id.x : $0.id.y < $1.id.y
                 })
             }
@@ -97,10 +97,20 @@ nonisolated extension WatchBitmapRenderer {
             let frame: CGContext
             let display: CGContext
             let geometry: WatchStrokeDrawing.DryGeometry
+            /// Pixel fill of incremental grains; nil when the gesture uses Core Graphics.
+            var pixelFill: WatchStrokeDrawing.DryPixelFill? = nil
             var travel: Float = 0
             var renderedContours: [SIMD2<Int>: UInt64] = [:]
             var screenTiles: [SIMD2<Int>: ScreenTile] = [:]
+            /// Display bitmap at the latest tile merge; shown under `screenTiles` instead
+            /// of the committed image once tiles were merged.
+            var screenBackground: CGImage?
         }
+
+        /// Most tile images shown over the background. On the watch the main thread pays
+        /// for every image in each published frame (HUD 2026-11-06: ~100 ms per frame at
+        /// 140 tiles), so beyond this the tiles merge into one background image.
+        private static let maxScreenTiles = 16
 
         private static let dryTileSize: CGFloat = 32
         private typealias DryBatch = (tile: SIMD2<Int>, rect: CGRect, commands: [WatchDrawingCommand], revision: UInt64?)
@@ -183,6 +193,12 @@ nonisolated extension WatchBitmapRenderer {
                 let rect = paper.applying(CGAffineTransform(scaleX: scale, y: scale)).integral.intersection(canvas)
                 return rect.isNull || rect.isEmpty ? nil : rect
             }
+            // Pixel fill handles the plain live stroke; lasso exclusions and transforms keep CG.
+            if let fill = dry.pixelFill, stroke.transform == .identity, stroke.excludedAreas.isEmpty {
+                return renderPixelDry(stroke, field: field, fill: fill, pixels: pixels, into: &dry,
+                                      scale: scale, canvas: canvas, stages: (stages.0, stages.1, updated),
+                                      counters: counters, previousCount: previousCount)
+            }
             // One pass over all changed rectangles: each grain near any of them is added to
             // the band paths once, then 9 fills under their union clip.
             let toPaper = CGAffineTransform(scaleX: 1 / scale, y: 1 / scale)
@@ -242,6 +258,63 @@ nonisolated extension WatchBitmapRenderer {
             return true
         }
 
+        /// Pixel fill of incremental grains: each changed 32 px tile recomputes the box around
+        /// its changed rectangles from the committed ink and every grain reaching it.
+        private func renderPixelDry(_ stroke: Stroke, field: WatchStrokeDrawing.DryGrainField,
+                                    fill: WatchStrokeDrawing.DryPixelFill, pixels: [CGRect],
+                                    into dry: inout ActiveDry, scale: CGFloat, canvas: CGRect,
+                                    stages: (UInt64, UInt64, UInt64), counters: (Int, Int, Int, Int),
+                                    previousCount: Int) -> Bool {
+            let tileSize = Int(Self.dryTileSize)
+            // Bounding box (min x, min y, max x, max y; exclusive) of the changes in each tile.
+            var boxes: [SIMD2<Int>: SIMD4<Int>] = [:]
+            for rect in pixels {
+                let minX = Int(rect.minX), minY = Int(rect.minY), maxX = Int(rect.maxX), maxY = Int(rect.maxY)
+                guard minX < maxX, minY < maxY else { continue }
+                for tileY in (minY / tileSize)...((maxY - 1) / tileSize) {
+                    for tileX in (minX / tileSize)...((maxX - 1) / tileSize) {
+                        let part = SIMD4(max(minX, tileX * tileSize), max(minY, tileY * tileSize),
+                                         min(maxX, (tileX + 1) * tileSize), min(maxY, (tileY + 1) * tileSize))
+                        let tile = SIMD2(tileX, tileY)
+                        if let box = boxes[tile] {
+                            boxes[tile] = SIMD4(min(box.x, part.x), min(box.y, part.y),
+                                                max(box.z, part.z), max(box.w, part.w))
+                        } else {
+                            boxes[tile] = part
+                        }
+                    }
+                }
+            }
+            let ink = stroke.style.color
+            let alphas = field.bandOpacities(stroke, geometry: dry.geometry).map { Float($0) * ink.w }
+            let opacity = stroke.style.effectiveOpacity
+            var rasterNS: UInt64 = 0, compositeNS: UInt64 = 0
+            var grains = 0
+            for box in boxes.values {
+                guard !Task.isCancelled else { return false }
+                let started = RenderDiagnostics.begin()
+                fill.reset(x: box.x, y: box.y, width: box.z - box.x, height: box.w - box.y)
+                grains += field.rasterize(into: fill, scale: Double(scale))
+                let rasterized = RenderDiagnostics.begin()
+                fill.composite(into: dry.frame, ink: ink, alphas: alphas, opacity: opacity)
+                rasterNS &+= rasterized &- started
+                compositeNS &+= RenderDiagnostics.begin() &- rasterized
+            }
+            if !boxes.isEmpty { dry.geometry.contourBuildCount += 1 }
+            let grained = stages.2 &+ rasterNS
+            let drawn = grained &+ compositeNS
+            guard publishDryTiles(Array(boxes.keys), of: &dry, scale: scale, canvas: canvas) else { return false }
+            RenderDiagnostics.dryFrame(stages: [stages.0, stages.1, stages.2, grained, drawn, RenderDiagnostics.begin()],
+                                       incremental: true, pixel: true,
+                                       samples: stroke.points.count - previousCount,
+                                       tiles: boxes.count,
+                                       grainsBuilt: dry.geometry.grainBuildCount - counters.0,
+                                       grainHits: grains,
+                                       probes: dry.geometry.coverageProbeCount - counters.2,
+                                       contours: dry.geometry.contourBuildCount - counters.3)
+            return true
+        }
+
         /// A new dry gesture copies committed ink into its float frame and display bitmap.
         private func beginDry(_ stroke: Stroke, base: InkSnapshot) -> Bool {
             guard let frame = WatchBitmapRenderer.makeFloatContext(width: base.image.width,
@@ -253,11 +326,16 @@ nonisolated extension WatchBitmapRenderer {
             display.draw(base.image, in: CGRect(x: 0, y: 0, width: frame.width, height: frame.height))
             let geometry = WatchStrokeDrawing.DryGeometry()
             // The renderer is chosen once per gesture, so a toggle never mixes the two.
+            var pixelFill: WatchStrokeDrawing.DryPixelFill?
             if RenderStageSwitches.isOn(.incrementalDryGrains) {
                 geometry.grainField = WatchStrokeDrawing.DryGrainField()
+                // The frame holds exactly the committed ink here: the fill's base.
+                if RenderStageSwitches.isOn(.pixelDryFill) {
+                    pixelFill = WatchStrokeDrawing.DryPixelFill(frame: frame)
+                }
             }
             activeDry = ActiveDry(stroke: stroke, base: base.image, frame: frame, display: display,
-                                  geometry: geometry)
+                                  geometry: geometry, pixelFill: pixelFill)
             activeDryBuildCount += 1
             activeImage = nil
             return true
@@ -370,6 +448,11 @@ nonisolated extension WatchBitmapRenderer {
                 dry.display.draw(flat, in: destination)
                 dry.screenTiles[tile] = ScreenTile(id: tile,
                     rect: dirty.applying(CGAffineTransform(scaleX: 1 / scale, y: 1 / scale)), image: flat)
+            }
+            // The display bitmap already holds every flattened tile: one image replaces them.
+            if usesScreenTiles, dry.screenTiles.count > Self.maxScreenTiles, let merged = dry.display.makeImage() {
+                dry.screenBackground = merged
+                dry.screenTiles.removeAll(keepingCapacity: true)
             }
             return true
         }

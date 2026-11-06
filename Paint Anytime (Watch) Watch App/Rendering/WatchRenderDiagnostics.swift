@@ -12,7 +12,7 @@ nonisolated enum RenderDebug {
     #endif
 }
 
-/// Latency optimizations of the live stroke. Both ship on; in debug builds the
+/// Latency optimizations of the live stroke. All ship on; in debug builds the
 /// Render debug menu can switch each off to compare the result live.
 nonisolated enum RenderStage: Int, CaseIterable, Sendable {
     /// Queue the live frame from the touch handler itself, skipping the
@@ -21,18 +21,22 @@ nonisolated enum RenderStage: Int, CaseIterable, Sendable {
     /// Draw the samples the displayed bitmap does not cover yet with the brush's vector
     /// geometry in the touch's own SwiftUI update (opaque vector brushes only).
     case inkTip
-    /// Experimental: pencil and pastel keep one grain per paper cell for the gesture and
+    /// Pencil and pastel keep one grain per paper cell for the gesture and
     /// recompute only cells near new polygons (`WatchStrokeDrawing.DryGrainField`).
     case incrementalDryGrains
+    /// With incremental grains: write grain coverage straight into the float frame
+    /// (`WatchStrokeDrawing.DryPixelFill`) instead of Core Graphics path fills.
+    case pixelDryFill
 
-    /// Shipping behaviour; the experiment stays off outside the debug menu.
-    var isDefaultOn: Bool { self != .incrementalDryGrains }
+    /// Shipping behaviour: every stage on (incremental grains and pixel fill since 2026-11-06).
+    var isDefaultOn: Bool { true }
 
     var title: String {
         switch self {
         case .directSubmit: "Direct submit"
         case .inkTip: "Live ink tip"
         case .incrementalDryGrains: "Incremental dry grains"
+        case .pixelDryFill: "Pixel dry fill"
         }
     }
 
@@ -40,7 +44,8 @@ nonisolated enum RenderStage: Int, CaseIterable, Sendable {
         switch self {
         case .directSubmit: "Off: queue via body/.task"
         case .inkTip: "Off: tip waits for bitmap"
-        case .incrementalDryGrains: "On: pencil/pastel recompute only new cells. From the next stroke"
+        case .incrementalDryGrains: "Off: per-tile grain search. From the next stroke"
+        case .pixelDryFill: "With incremental grains. Off: Core Graphics fills grains. From the next stroke"
         }
     }
 }
@@ -93,6 +98,10 @@ nonisolated enum RenderSpan: Int, CaseIterable, Sendable {
     case composite
     /// Whole renderer call as seen from the main actor.
     case render
+    /// Inside the renderer actor: the frame's own work.
+    case work
+    /// Renderer finished → the main-actor continuation started (waiting for the main thread).
+    case back
     /// Pencil/pastel: dry geometry append and the changed-tile search.
     case dryPrep
     /// Pencil/pastel, incremental grains: updating the cells near new polygons.
@@ -115,6 +124,8 @@ nonisolated enum RenderSpan: Int, CaseIterable, Sendable {
         case .live: "live"
         case .composite: "comp"
         case .render: "frame"
+        case .work: "work"
+        case .back: "back"
         case .dryPrep: "prep"
         case .dryUpdate: "upd"
         case .dryGrains: "grain"
@@ -167,6 +178,19 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     private var coalescedFrames = 0
     private var bodies = Array(repeating: 0, count: RenderCounter.allCases.count)
     private var mainLag = Accumulator()
+    /// Main run loop: one slice per wake (wake → about to sleep), and their sum.
+    private var mainSlices = Accumulator()
+    private var wokeAt: UInt64 = 0
+    /// First frame published since the main thread last went idle, and publish → idle.
+    private var publishedAt: UInt64 = 0
+    private var publishToIdle = Accumulator()
+    /// End of the latest renderer-actor call, closed by `resumedOnMain`.
+    private var workEndedAt: UInt64 = 0
+    /// Tiles in each published frame (SwiftUI images over the background).
+    private var shownTiles = 0
+    private var shownTilesMax = 0
+    private var shownFrames = 0
+    private var runLoopObservers: [CFRunLoopObserver] = []
     private var probeUsers = 0
     private var probeTimer: DispatchSourceTimer?
     private var probeInFlight = false
@@ -174,6 +198,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     /// Pencil/pastel work per live frame, summed over the HUD window.
     private var dryFrames = 0
     private var dryIncremental = false
+    private var dryPixel = false
     private var drySamples = 0
     private var dryTiles = 0
     private var dryGrainsBuilt = 0
@@ -244,13 +269,39 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         }
     }
 
-    static func framePublished(live: Bool, submittedAt: UInt64, eventAt: UInt64 = 0) {
+    static func framePublished(live: Bool, submittedAt: UInt64, eventAt: UInt64 = 0, tiles: Int = 0) {
         guard RenderDebug.isEnabled else { return }
         let end = now()
         shared.locked {
             if live { shared.liveFrames += 1 } else { shared.committedFrames += 1 }
+            if shared.publishedAt == 0 { shared.publishedAt = end }
+            shared.shownTiles += tiles
+            shared.shownTilesMax = max(shared.shownTilesMax, tiles)
+            shared.shownFrames += 1
             if submittedAt != 0 { shared.latency.add(end &- submittedAt) }
             if eventAt != 0, end > eventAt { shared.endToEnd.add(end &- eventAt) }
+        }
+    }
+
+    /// End of a renderer-actor frame call started at `start`.
+    static func workEnded(_ start: UInt64) {
+        guard RenderDebug.isEnabled, start != 0 else { return }
+        let end = now()
+        shared.locked {
+            shared.spans[RenderSpan.work.rawValue].add(end &- start)
+            shared.workEndedAt = end
+        }
+    }
+
+    /// The main-actor continuation after a renderer call started running.
+    static func resumedOnMain() {
+        guard RenderDebug.isEnabled else { return }
+        let end = now()
+        shared.locked {
+            if shared.workEndedAt != 0, end > shared.workEndedAt {
+                shared.spans[RenderSpan.back.rawValue].add(end &- shared.workEndedAt)
+            }
+            shared.workEndedAt = 0
         }
     }
 
@@ -273,6 +324,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         locked {
             probeUsers += 1
             guard probeTimer == nil else { return }
+            installRunLoopObservers()
             let timer = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
             timer.schedule(deadline: .now() + .milliseconds(50), repeating: .milliseconds(50))
             timer.setEventHandler { [weak self] in self?.sendProbe() }
@@ -288,6 +340,40 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             probeTimer?.cancel()
             probeTimer = nil
             probeInFlight = false
+            for observer in runLoopObservers {
+                CFRunLoopRemoveObserver(CFRunLoopGetMain(), observer, .commonModes)
+            }
+            runLoopObservers = []
+            wokeAt = 0
+            publishedAt = 0
+        }
+    }
+
+    /// Main run loop busy slices: wake (first observer) → about to sleep (last observer,
+    /// after SwiftUI and Core Animation have committed). A frame published in a slice
+    /// adds publish → sleep: the main-thread cost SwiftUI pays to show it.
+    /// Called with the lock held.
+    private func installRunLoopObservers() {
+        let wake = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.afterWaiting.rawValue,
+                                                      true, CFIndex.min) { [weak self] _, _ in
+            guard let self else { return }
+            let time = Self.now()
+            self.locked { self.wokeAt = time }
+        }
+        let sleep = CFRunLoopObserverCreateWithHandler(nil, CFRunLoopActivity.beforeWaiting.rawValue,
+                                                       true, CFIndex.max) { [weak self] _, _ in
+            guard let self else { return }
+            let time = Self.now()
+            self.locked {
+                if self.wokeAt != 0, time > self.wokeAt { self.mainSlices.add(time &- self.wokeAt) }
+                self.wokeAt = 0
+                if self.publishedAt != 0, time > self.publishedAt { self.publishToIdle.add(time &- self.publishedAt) }
+                self.publishedAt = 0
+            }
+        }
+        for observer in [wake, sleep].compactMap({ $0 }) {
+            CFRunLoopAddObserver(CFRunLoopGetMain(), observer, .commonModes)
+            runLoopObservers.append(observer)
         }
     }
 
@@ -312,8 +398,8 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
 
     /// One live pencil/pastel frame: stage boundaries (prep, upd, grain, fill, publish),
     /// new input samples, tiles redrawn and the geometry counters' deltas.
-    static func dryFrame(stages: [UInt64], incremental: Bool, samples: Int, tiles: Int, grainsBuilt: Int,
-                         grainHits: Int, probes: Int, contours: Int) {
+    static func dryFrame(stages: [UInt64], incremental: Bool, pixel: Bool = false, samples: Int, tiles: Int,
+                         grainsBuilt: Int, grainHits: Int, probes: Int, contours: Int) {
         guard RenderDebug.isEnabled, stages.count == 6, stages[0] != 0 else { return }
         let spans: [RenderSpan] = [.dryPrep, .dryUpdate, .dryGrains, .dryDraw, .dryPublish]
         shared.locked {
@@ -322,6 +408,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             }
             shared.dryFrames += 1
             shared.dryIncremental = incremental
+            shared.dryPixel = pixel
             shared.drySamples += samples
             shared.dryTiles += tiles
             shared.dryGrainsBuilt += grainsBuilt
@@ -346,10 +433,9 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         guard dryFrames > 0 else { return [] }
         func perFrame(_ value: Int) -> String { String(format: "%.0f", Double(value) / Double(dryFrames)) }
         return [
-            (dryIncremental ? "dry·inc " : "dry·old ") + [RenderSpan.dryPrep, .dryUpdate, .dryGrains, .dryDraw, .dryPublish].map(ms).joined(separator: " "),
-            "pts \(perFrame(drySamples)) · tiles \(perFrame(dryTiles)) · n \(dryFrames)",
-            "grains \(perFrame(dryGrainsBuilt)) new \(perFrame(dryGrainHits)) hit"
-                + " · probes \(perFrame(dryProbes)) · ctr \(perFrame(dryContours))",
+            (dryPixel ? "dry·px " : dryIncremental ? "dry·inc " : "dry·old ") + [RenderSpan.dryUpdate, .dryGrains, .dryDraw, .dryPublish].map(ms).joined(separator: " "),
+            "pts \(perFrame(drySamples)) · tiles \(perFrame(dryTiles)) · grains \(perFrame(dryGrainsBuilt)) new"
+                + " \(perFrame(dryGrainHits)) \(dryPixel ? "drawn" : "hit")",
         ]
     }
 
@@ -369,20 +455,30 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             }
             let frame = spans[RenderSpan.render.rawValue]
             let input = spans[RenderSpan.input.rawValue]
+            func avgMax(_ value: Accumulator) -> String {
+                String(format: "%.0f/%.0f", value.averageMS, value.maximumMS)
+            }
+            func avg(_ span: RenderSpan) -> String { String(format: "%.0f", spans[span.rawValue].averageMS) }
+            // Frame = renderer work + waiting for the main thread after it + the rest
+            // (hop to the renderer, setup on the main actor).
+            let rest = max(0, frame.averageMS - spans[RenderSpan.work.rawValue].averageMS
+                           - spans[RenderSpan.back.rawValue].averageMS)
+            let busy = Double(mainSlices.total) / 1_000_000 / seconds / 10 // percent
+            var extra: [String] = []
+            for span in [RenderSpan.committed, .history, .composite] where spans[span.rawValue].averageMS >= 0.5 {
+                extra.append(ms(span))
+            }
+            let tiles = shownFrames == 0 ? "—" : String(format: "%.0f/%d", Double(shownTiles) / Double(shownFrames), shownTilesMax)
             let text = ([
-                "FPS \(rate(liveFrames)) live · \(rate(committedFrames)) commit · drop \(coalescedFrames)",
-                "in \(rate(input.count))/s " + String(format: "%.2fms", input.averageMS)
-                    + " · " + [RenderSpan.event, .dispatch].map(ms).joined(separator: " "),
-                String(format: "pub %.0f/%.0f · e2e %.0f/%.0fms +vsync", latency.averageMS, latency.maximumMS,
-                       endToEnd.averageMS, endToEnd.maximumMS),
-                String(format: "frame %.1f/%.1fms", frame.averageMS, frame.maximumMS),
-                [RenderSpan.queue, .history, .committed].map(ms).joined(separator: " "),
-                [RenderSpan.live, .composite].map(ms).joined(separator: " ")
-                    + " · \(path)" + (changed > 0 ? " · custom \(changed)" : ""),
-                String(format: "main lag %.0f/%.0fms", mainLag.averageMS, mainLag.maximumMS),
-                "body raster \(rate(bodies[RenderCounter.raster.rawValue])) canvas "
-                    + "\(rate(bodies[RenderCounter.canvas.rawValue])) screen \(rate(bodies[RenderCounter.screen.rawValue]))/s",
-            ] + dryLines(ms)).joined(separator: "\n")
+                "FPS \(rate(liveFrames)) live \(rate(committedFrames)) commit · drop \(coalescedFrames) · in \(rate(input.count))/s"
+                    + (changed > 0 ? " · custom \(changed)" : ""),
+                "e2e \(avgMax(endToEnd)) · ev \(avg(.event)) · q \(avg(.queue)) · in " + String(format: "%.1f", input.averageMS),
+                "frame \(avgMax(frame)) = work \(avg(.work)) + back \(avg(.back)) + " + String(format: "%.0f", rest),
+                String(format: "main busy %.0f%% · slice ", busy) + avgMax(mainSlices) + " · lag " + avgMax(mainLag),
+                "pub→idle \(avgMax(publishToIdle)) · tiles \(tiles) · body \(rate(bodies[RenderCounter.raster.rawValue]))"
+                    + "/\(rate(bodies[RenderCounter.canvas.rawValue]))/\(rate(bodies[RenderCounter.screen.rawValue]))",
+            ] + (extra.isEmpty ? [] : [extra.joined(separator: " ") + " · \(path)"])
+              + dryLines(ms)).joined(separator: "\n")
             spans = Array(repeating: Accumulator(), count: RenderSpan.allCases.count)
             latency = Accumulator()
             endToEnd = Accumulator()
@@ -391,6 +487,9 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             coalescedFrames = 0
             bodies = Array(repeating: 0, count: RenderCounter.allCases.count)
             mainLag = Accumulator()
+            mainSlices = Accumulator()
+            publishToIdle = Accumulator()
+            shownTiles = 0; shownTilesMax = 0; shownFrames = 0
             dryFrames = 0; drySamples = 0; dryTiles = 0; dryGrainsBuilt = 0
             dryGrainHits = 0; dryProbes = 0; dryContours = 0
             windowStart = now

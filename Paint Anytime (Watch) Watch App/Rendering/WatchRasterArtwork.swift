@@ -427,18 +427,22 @@ private final class CanvasFrameQueue: ObservableObject {
         RenderDiagnostics.end(.queue, job.submittedAt)
         let started = RenderDiagnostics.begin()
         defer { RenderDiagnostics.end(.render, started) }
+        let result: WatchBitmapRenderer.ScreenFrame?
         if let preview = job.selectionPreview {
             RenderDiagnostics.setPath("lasso")
-            return await renderer.selectionFrame(preview, key: job.key)
+            result = await renderer.selectionFrame(preview, key: job.key)
         } else if let document = job.document {
             RenderDiagnostics.setPath("layers")
-            return await renderer.layeredFrame(document: document, activeStroke: job.activeStroke,
+            result = await renderer.layeredFrame(document: document, activeStroke: job.activeStroke,
                 selectedLayerID: job.selectedLayerID, key: job.key)
         } else {
             RenderDiagnostics.setPath("1-layer")
-            return await renderer.screenFrame(strokes: job.strokes, activeStroke: job.activeStroke,
-                                              key: job.key, activeStrokeID: job.activeStrokeID)
+            result = await renderer.screenFrame(strokes: job.strokes, activeStroke: job.activeStroke,
+                                                key: job.key, activeStrokeID: job.activeStrokeID)
         }
+        // Renderer finished → this main-actor continuation runs: the wait for the main thread.
+        RenderDiagnostics.resumedOnMain()
+        return result
     }
 
     /// Publish stage: hand a still-current frame to SwiftUI.
@@ -461,7 +465,7 @@ private final class CanvasFrameQueue: ObservableObject {
             let result = PreparedResult(key: job.key, succeeded: true)
             if self.preparedResult != result { self.preparedResult = result }
             RenderDiagnostics.framePublished(live: job.activeStroke != nil, submittedAt: job.submittedAt,
-                                             eventAt: job.eventAt)
+                                             eventAt: job.eventAt, tiles: next.tiles.count)
             if let texture = next.selection, let pending = self.pending,
                pending.key == texture.key,
                pending.selectionPreview?.sessionID == texture.sessionID {

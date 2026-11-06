@@ -195,7 +195,7 @@ nonisolated enum WatchStrokeDrawing {
     private static func dryTexture(_ stroke: Stroke, ink: SIMD4<Float>, region: CGRect?, geometry: DryGeometry?,
                                in context: inout WatchDrawingContext) {
         if let region, let field = geometry?.grainField, let geometry {
-            // Experimental incremental grains (Render debug → Incremental dry grains).
+            // Incremental grains of the live gesture (default; Render debug → Incremental dry grains).
             field.draw(stroke, ink: ink, region: region, geometry: geometry, in: &context)
             return
         }

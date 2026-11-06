@@ -2,8 +2,8 @@ import SwiftUI
 import simd
 
 nonisolated extension WatchStrokeDrawing {
-    /// Experimental replacement for the per-tile grain search of `dryTexture`, chosen per
-    /// gesture by `RenderStage.incrementalDryGrains` (Render debug menu).
+    /// Live-gesture replacement for the per-tile grain search of `dryTexture`, on by default
+    /// and chosen per gesture by `RenderStage.incrementalDryGrains` (Render debug menu can turn it off).
     ///
     /// `dryTexture` rebuilds every grain of each redrawn 32 px tile: it walks the cells of
     /// every polygon overlapping the tile and probes coverage again whenever an 8 pt index
@@ -263,12 +263,63 @@ nonisolated extension WatchStrokeDrawing {
                 }
             }
             geometry.contourBuildCount += 1
-            let pigment = pastel ? [0.48, 0.72, 0.93] : [0.56, 0.76, 0.94]
+            let opacities = Self.bandOpacities(pastel: pastel, contact: contact)
             for band in bands.indices {
                 var layer = context
-                layer.opacity *= pigment[band % 3] * [0.30, 0.65, 1.0][band / 3] * contact
+                layer.opacity *= opacities[band]
                 layer.fill(Path(bands[band]), with: .color(ink))
             }
+        }
+
+        /// Opacity of each drawn band (edge band × 3 + pigment), as in `dryTexture`.
+        static func bandOpacities(pastel: Bool, contact: Double) -> [Double] {
+            let pigment = pastel ? [0.48, 0.72, 0.93] : [0.56, 0.76, 0.94]
+            return (0..<9).map { band in pigment[band % 3] * [0.30, 0.65, 1.0][band / 3] * contact }
+        }
+
+        /// Band opacities of `stroke` now, including the pastel contact fade.
+        func bandOpacities(_ stroke: Stroke, geometry: DryGeometry) -> [Double] {
+            let pastel = stroke.style.instrument == .crayon
+            let contact = pastel ? 0.09 + 0.91 * min(1, Double(geometry.travel) / 4) : 1
+            return Self.bandOpacities(pastel: pastel, contact: contact)
+        }
+
+        /// Largest distance of a grain vertex from its centre (pencil and pastel shapes).
+        private static let vertexReach = 0.75
+
+        /// Add every grain reaching `fill`'s work box to its band masks. Call after `update`.
+        /// Returns the number of grains added.
+        @discardableResult
+        func rasterize(into fill: DryPixelFill, scale: Double) -> Int {
+            let minPaperX = Double(fill.boxX) / scale - Self.vertexReach
+            let maxPaperX = Double(fill.boxX + fill.boxWidth) / scale + Self.vertexReach
+            let minPaperY = Double(fill.boxY) / scale - Self.vertexReach
+            let maxPaperY = Double(fill.boxY + fill.boxHeight) / scale + Self.vertexReach
+            // A grain's centre lies in its own cell.
+            let minX = Int(floor(minPaperX / Self.cellSize)), maxX = Int(floor(maxPaperX / Self.cellSize))
+            let minY = Int(floor(minPaperY / Self.cellSize)), maxY = Int(floor(maxPaperY / Self.cellSize))
+            let shift = Self.chunkShift, mask = Self.chunkSide - 1
+            let s = Float(scale)
+            var count = 0
+            for chunkY in (minY >> shift)...(maxY >> shift) {
+                for chunkX in (minX >> shift)...(maxX >> shift) {
+                    guard let chunk = chunks[SIMD2(chunkX, chunkY)] else { continue }
+                    let x0 = max(minX, chunkX << shift), x1 = min(maxX, (chunkX << shift) + mask)
+                    let y0 = max(minY, chunkY << shift), y1 = min(maxY, (chunkY << shift) + mask)
+                    chunk.cells.withUnsafeBufferPointer { cells in
+                        for y in y0...y1 {
+                            let row = (y & mask) << shift
+                            for x in x0...x1 {
+                                let cell = cells[row | (x & mask)]
+                                guard cell.band != Cell.noGrain else { continue }
+                                fill.addQuad(cell.a * s, cell.b * s, cell.c * s, cell.d * s, band: Int(cell.band))
+                                count += 1
+                            }
+                        }
+                    }
+                }
+            }
+            return count
         }
 
         // MARK: Cells
