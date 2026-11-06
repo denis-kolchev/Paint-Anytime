@@ -17,6 +17,8 @@ struct ToolStrokePreview: View {
     /// Rendered grain coverage masks the body can tint synchronously.
     @State private var masks: [(request: ToolPreviewRequest, image: CGImage)] = []
     @State private var renderer = ToolPreviewRenderer()
+    /// The direction of the last width change, so the next Crown step's mask comes first.
+    @State private var widthDirection: Float = 1
 
     var body: some View {
         Group {
@@ -50,9 +52,12 @@ struct ToolStrokePreview: View {
         .background(Self.paperColor)
         .background {
             GeometryReader { geometry in
-                let requests = texturedRequests(size: geometry.size)
-                Color.clear.task(id: requests) { await render(requests) }
+                let plan = texturedPlan(size: geometry.size)
+                Color.clear.task(id: plan) { await render(plan) }
             }
+        }
+        .onChange(of: style.width) { old, new in
+            if new != old { widthDirection = new > old ? 1 : -1 }
         }
         .accessibilityLabel(L10n.text("Stroke preview"))
     }
@@ -62,82 +67,179 @@ struct ToolStrokePreview: View {
         // opacity tint it linearly, exactly as the pixel path composites. So color and
         // opacity changes redraw in the same frame, and resizes stretch the nearest mask.
         Canvas { context, size in
-            guard let mask = bestMask(for: size) else { return }
+            guard let choice = bestMask(for: size) else { return }
             let color = style.color
+            let centerline = choice.clipsToWidth ? Self.centerline(of: style, size: size) : nil
             context.withCGContext { cg in
                 let rect = CGRect(origin: .zero, size: size)
                 cg.saveGState()
+                // Grains first; a soft footprint then trims them (destination-in), all in
+                // one transparency layer so nothing below the Canvas is touched.
+                if centerline != nil { cg.beginTransparencyLayer(auxiliaryInfo: nil) }
                 // Core Graphics images draw bottom-up inside SwiftUI's top-down context.
+                cg.saveGState()
                 cg.translateBy(x: 0, y: size.height)
                 cg.scaleBy(x: 1, y: -1)
-                cg.clip(to: rect, mask: mask)
+                cg.clip(to: rect, mask: choice.image)
                 cg.setFillColor(CGColor(srgbRed: CGFloat(color.x), green: CGFloat(color.y),
                                         blue: CGFloat(color.z), alpha: CGFloat(style.effectiveOpacity)))
                 cg.fill(rect)
+                cg.restoreGState()
+                if let centerline {
+                    // The footprint's strokes merge in their own layer first; that layer
+                    // then applies as one alpha mask.
+                    cg.setBlendMode(.destinationIn)
+                    cg.beginTransparencyLayer(auxiliaryInfo: nil)
+                    Self.drawSoftFootprint(centerline, width: CGFloat(style.width), in: cg)
+                    cg.endTransparencyLayer()
+                    cg.endTransparencyLayer()
+                }
                 cg.restoreGState()
             }
         }
     }
 
-    /// Exact mask first, then the same instrument at the nearest width and size,
-    /// then the last mask shown.
-    private func bestMask(for size: CGSize) -> CGImage? {
+    /// The preview stroke's centerline, in top-down view coordinates.
+    private static func centerline(of style: PencilStyle, size: CGSize) -> CGPath? {
+        guard let points = ToolPreviewStroke.make(style: style, size: size).last?.points,
+              let first = points.first else { return nil }
+        let path = CGMutablePath()
+        path.move(to: CGPoint(x: CGFloat(first.position.x), y: CGFloat(first.position.y)))
+        for point in points.dropFirst() {
+            path.addLine(to: CGPoint(x: CGFloat(point.position.x), y: CGFloat(point.position.y)))
+        }
+        return path
+    }
+
+    /// The footprint at `width` with an edge that fades linearly inward over the grain
+    /// field's feather instead of a hard cut, so the clipped grains thin out toward the edge.
+    /// Nested strokes from widest to narrowest, each at 1 / (strokes left), build a linear
+    /// alpha ramp: no blur filter is needed on every Crown step.
+    private static func drawSoftFootprint(_ centerline: CGPath, width: CGFloat, in cg: CGContext) {
+        // Mirrors WatchDryGrainField's edge feather, widened to cover the grain reach.
+        let fade = max(0.5, min(3.6, width * 0.3))
+        let steps = 6
+        // A new transparency layer starts in normal blending; set it in case it doesn't.
+        cg.setBlendMode(.normal)
+        cg.setLineCap(.round)
+        cg.setLineJoin(.round)
+        for step in 0..<steps {
+            let progress = CGFloat(step) / CGFloat(steps - 1)
+            // The fade lies inside the nominal width: real grains stop at the footprint
+            // edge, so a ramp straddling it made the shape look wider than the render.
+            let lineWidth = max(0.2, width - 2 * fade * progress)
+            cg.setStrokeColor(CGColor(gray: 0, alpha: 1 / CGFloat(steps - step)))
+            cg.setLineWidth(lineWidth)
+            cg.addPath(centerline)
+            cg.strokePath()
+        }
+    }
+
+    /// The style whose mask covers every narrower width: grains sit in paper space and the
+    /// footprint only selects them, so clipping this mask to a narrower outline closely
+    /// matches that width's own render, until the exact mask arrives.
+    private static func widestStyle(_ style: PencilStyle) -> PencilStyle {
+        var widest = style
+        widest.width = style.instrument.maximumWidth
+        return widest
+    }
+
+    /// Exact mask first; then the widest mask clipped to the current width, so every
+    /// Crown step changes the width in the same frame; then the nearest width and size.
+    private func bestMask(for size: CGSize) -> (image: CGImage, clipsToWidth: Bool)? {
         let request = ToolPreviewRequest(style: style, size: size, scale: displayScale)
-        if let exact = masks.first(where: { $0.request == request }) { return exact.image }
+        if let exact = masks.first(where: { $0.request == request }) { return (exact.image, false) }
+        func distance(_ other: ToolPreviewRequest, to target: ToolPreviewRequest) -> CGFloat {
+            CGFloat(abs(other.style.width - target.style.width)) * 1000
+                + CGFloat(abs(other.style.color.w - target.style.color.w)) * 100
+                + abs(other.size.width - target.size.width) + abs(other.size.height - target.size.height)
+        }
+        let widest = ToolPreviewRequest(style: Self.widestStyle(style), size: size, scale: displayScale)
+        if let base = masks.filter({ $0.request.style == widest.style && $0.request.scale == displayScale })
+            .min(by: { distance($0.request, to: widest) < distance($1.request, to: widest) }) {
+            return (base.image, true)
+        }
         let candidates = masks.filter { $0.request.style.instrument == style.instrument
             && $0.request.scale == displayScale }
-        func distance(_ other: ToolPreviewRequest) -> CGFloat {
-            CGFloat(abs(other.style.width - request.style.width)) * 1000
-                + CGFloat(abs(other.style.color.w - request.style.color.w)) * 100
-                + abs(other.size.width - request.size.width) + abs(other.size.height - request.size.height)
+        if let nearest = candidates.min(by: { distance($0.request, to: request) < distance($1.request, to: request) }) {
+            return (nearest.image, false)
         }
-        return candidates.min { distance($0.request) < distance($1.request) }?.image ?? lastMask
+        return lastMask.map { ($0, false) }
     }
 
     private static func isTextured(_ style: PencilStyle) -> Bool {
         style.instrument == .pencil || style.instrument == .crayon
     }
 
-    /// The visible mask first, the instruments a switch may reveal next, then the
-    /// neighboring widths a Crown step may reach.
-    private func texturedRequests(size: CGSize) -> [ToolPreviewRequest] {
-        var styles = ([style] + upcomingTexturedStyles)
-            .filter { Self.isTextured($0) && ($0 == style || $0.instrument != style.instrument) }
-        if Self.isTextured(style) {
-            for step: Float in [1, -1] {
-                var neighbor = style
-                neighbor.width = min(style.instrument.maximumWidth, max(1, style.width + step))
-                if neighbor.width != style.width { styles.append(neighbor) }
-            }
+    /// Once the widest mask exists, width changes show at once through it, and every
+    /// render waits until the Crown settles: rendering during a spin would compete with
+    /// the main thread. Before that, only the visible mask renders at once.
+    private func texturedPlan(size: CGSize) -> ToolPreviewPlan {
+        func request(_ style: PencilStyle) -> ToolPreviewRequest {
+            ToolPreviewRequest(style: style, size: size, scale: displayScale)
         }
-        var requests: [ToolPreviewRequest] = []
-        for style in styles {
-            let request = ToolPreviewRequest(style: style, size: size, scale: displayScale)
-            if !requests.contains(request) { requests.append(request) }
+        func neighbor(_ step: Float) -> PencilStyle? {
+            var next = style
+            next.width = min(style.instrument.maximumWidth, max(1, style.width + step))
+            return next.width == style.width ? nil : next
         }
-        return requests
+        guard Self.isTextured(style) else {
+            let upcoming = upcomingTexturedStyles.filter(Self.isTextured).map(request)
+            return ToolPreviewPlan(visible: nil, deferred: upcoming)
+        }
+        let widest = Self.widestStyle(style)
+        let hasWidest = masks.contains { $0.request.style == request(widest).style }
+        var later: [PencilStyle] = hasWidest ? [style, widest] : [widest]
+        // The next width in the Crown's direction first, then the other neighbor.
+        later += [neighbor(widthDirection), neighbor(-widthDirection)].compactMap { $0 }
+        later += upcomingTexturedStyles.filter { Self.isTextured($0) && $0.instrument != style.instrument }
+        var deferred: [ToolPreviewRequest] = []
+        for next in later.map(request) where !deferred.contains(next) { deferred.append(next) }
+        return ToolPreviewPlan(visible: hasWidest ? nil : request(style), deferred: deferred)
     }
 
-    private func render(_ requests: [ToolPreviewRequest]) async {
-        let visible = ToolPreviewRequest(style: style, size: .zero, scale: displayScale).style
-        for request in requests {
-            if let cached = masks.first(where: { $0.request == request }) {
-                if request.style == visible { lastMask = cached.image }
-                continue
-            }
-            // A newer request list cancels this one; the shown mask stays meanwhile.
-            guard let next = await renderer.render(request), !Task.isCancelled else { return }
-            masks.removeAll { $0.request == request }
-            masks.append((request, next))
-            // Resize animations produce in-between sizes; keep two sizes per mask so they
-            // don't evict the masks prepared for the next instrument or width.
-            if let oldest = masks.firstIndex(where: { $0.request.style == request.style }),
-               masks.filter({ $0.request.style == request.style }).count > 2 {
-                masks.remove(at: oldest)
-            }
-            if masks.count > 10 { masks.removeFirst() }
-            if request.style == visible { lastMask = next }
+    private func render(_ plan: ToolPreviewPlan) async {
+        if let visible = plan.visible {
+            guard let mask = await mask(for: visible) else { return }
+            lastMask = mask
         }
+        // A newer plan cancels this sleep, so a spinning Crown renders only what is shown.
+        do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+        for request in plan.deferred {
+            guard await mask(for: request) != nil else { return }
+        }
+    }
+
+    /// A cached mask, or a new one rendered off the main thread; nil once cancelled.
+    private func mask(for request: ToolPreviewRequest) async -> CGImage? {
+        if let cached = masks.first(where: { $0.request == request }) { return cached.image }
+        guard let next = await renderer.render(request), !Task.isCancelled else { return nil }
+        masks.removeAll { $0.request == request }
+        masks.append((request, next))
+        // Resize animations produce in-between sizes; keep two sizes per mask so they
+        // don't evict the masks prepared for the next instrument or width.
+        if let oldest = masks.firstIndex(where: { $0.request.style == request.style }),
+           masks.filter({ $0.request.style == request.style }).count > 2 {
+            masks.remove(at: oldest)
+        }
+        if masks.count > 10,
+           let evicted = masks.firstIndex(where: { $0.request.style.width != $0.request.style.instrument.maximumWidth }) {
+            // Keep the widest masks: they carry every in-between width.
+            masks.remove(at: evicted)
+        }
+        return next
+    }
+}
+
+nonisolated struct ToolPreviewPlan: Equatable {
+    let visible: ToolPreviewRequest?
+    let deferred: [ToolPreviewRequest]
+
+    /// Order-insensitive: the direction update right after a width change reorders the
+    /// deferred masks, and must not restart a visible render already in progress.
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.visible == rhs.visible && lhs.deferred.count == rhs.deferred.count
+            && lhs.deferred.allSatisfy(rhs.deferred.contains)
     }
 }
 
