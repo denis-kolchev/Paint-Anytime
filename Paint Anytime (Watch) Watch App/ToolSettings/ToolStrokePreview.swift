@@ -54,19 +54,26 @@ struct ToolStrokePreview: View {
     }
 
     private var deferredPreview: some View {
-        GeometryReader { geometry in
-            let request = Self.request(style: style, size: geometry.size, scale: displayScale)
-            ZStack {
-                Color(white: 0.88)
-                // A bitmap prepared for this exact style wins; otherwise keep the last
-                // frame until the background render arrives.
-                if let image = frames.first(where: { $0.request == request })?.image ?? bitmap {
-                    Image(decorative: image, scale: displayScale)
-                        .resizable()
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                }
-            }
+        // Drawn through Canvas like the other tools, so viewport resizes follow every
+        // animation frame: the nearest ready bitmap stretches to the current size while
+        // the exact one renders off the main thread.
+        Canvas { context, size in
+            guard let image = bestFrame(for: size) else { return }
+            context.draw(Image(decorative: image, scale: displayScale),
+                         in: CGRect(origin: .zero, size: size))
         }
+    }
+
+    /// Exact match first, then this style at the closest size, then the last frame shown.
+    private func bestFrame(for size: CGSize) -> CGImage? {
+        let request = Self.request(style: style, size: size, scale: displayScale)
+        if let exact = frames.first(where: { $0.request == request }) { return exact.image }
+        let sameStyle = frames.filter { $0.request.style == style && $0.request.scale == displayScale }
+        let nearest = sameStyle.min { lhs, rhs in
+            abs(lhs.request.size.width - size.width) + abs(lhs.request.size.height - size.height)
+                < abs(rhs.request.size.width - size.width) + abs(rhs.request.size.height - size.height)
+        }
+        return nearest?.image ?? bitmap
     }
 
     private static func isTextured(_ style: PencilStyle) -> Bool {
@@ -96,7 +103,13 @@ struct ToolStrokePreview: View {
             guard let next = await renderer.render(request), !Task.isCancelled else { return }
             frames.removeAll { $0.request == request }
             frames.append((request, next))
-            if frames.count > 6 { frames.removeFirst() }
+            // Resize animations produce in-between sizes; keep two sizes per style so they
+            // don't evict the bitmaps prepared for the next instrument.
+            if let oldest = frames.firstIndex(where: { $0.request.style == request.style }),
+               frames.filter({ $0.request.style == request.style }).count > 2 {
+                frames.remove(at: oldest)
+            }
+            if frames.count > 8 { frames.removeFirst() }
             if request.style == style { bitmap = next }
         }
     }
