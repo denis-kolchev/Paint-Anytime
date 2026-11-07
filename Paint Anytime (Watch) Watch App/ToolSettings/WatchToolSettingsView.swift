@@ -11,6 +11,9 @@ struct WatchToolSettingsView: View {
     @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
     @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
     @State private var showsPalette = false
+    /// Add color opens the HSB and RGB editor straight away, not the palette first.
+    @State private var showsColorEditor = false
+    private var showsPaletteCover: Bool { showsPalette || showsColorEditor }
     @State private var selectsAddColor = false
 
     // Decode only when stored palettes change, not for every computed property
@@ -29,8 +32,18 @@ struct WatchToolSettingsView: View {
         if tutorial.isActive {
             tutorial.record(.openedColorList)
         } else {
-            showsPalette = true
+            showsColorEditor = true
         }
+    }
+
+    private func savePalettes(_ library: InkPaletteLibrary) {
+        if let data = try? JSONEncoder().encode(library) { palettesData = data }
+        let updated = library.activePalette
+        if !updated.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
+           let first = updated.selectedColors.first {
+            controller.pencilStyle.color = first.rgba
+        }
+        selectsAddColor = false
     }
 
     private func selectColor(_ index: Int) {
@@ -62,7 +75,7 @@ struct WatchToolSettingsView: View {
 
     private var tutorialCrownFocusRequest: TutorialCrownFocusRequest {
         TutorialCrownFocusRequest(
-            enabled: scenePhase == .active && !showsInformation && !showsPalette && !tutorial.isPaletteLesson
+            enabled: scenePhase == .active && !showsInformation && !showsPaletteCover && !tutorial.isPaletteLesson
                 && tutorial.allowsToolAdjustment(page: selection.rawValue),
             step: tutorial.step, page: selection.rawValue)
     }
@@ -109,7 +122,7 @@ struct WatchToolSettingsView: View {
     }
 
     private var tutorialSwipeTarget: ToolSetting? {
-        guard tutorial.acceptsActions, !showsInformation, !showsPalette else { return nil }
+        guard tutorial.acceptsActions, !showsInformation, !showsPaletteCover else { return nil }
         switch tutorial.step {
         case .openWidth: return .width
         case .openOpacity: return .opacity
@@ -185,7 +198,7 @@ struct WatchToolSettingsView: View {
             case .direction: Double(controller.pencilStyle.reedAngle)
             }
         } set: { value in
-            guard !showsInformation, !showsPalette, !tutorial.isPaletteLesson,
+            guard !showsInformation, !showsPaletteCover, !tutorial.isPaletteLesson,
                   tutorial.allowsToolAdjustment(page: selection.rawValue) else { return }
             tutorial.activity()
             if selection == .instrument {
@@ -450,7 +463,7 @@ struct WatchToolSettingsView: View {
         }
         .environment(\.colorScheme, .dark)
         .contentShape(Rectangle())
-        .focusable(!showsInformation && !showsPalette && !tutorial.isPaletteLesson && tutorial.allowsToolAdjustment(page: selection.rawValue))
+        .focusable(!showsInformation && !showsPaletteCover && !tutorial.isPaletteLesson && tutorial.allowsToolAdjustment(page: selection.rawValue))
         .focused($crownFocused)
         .modifier(SteppedCrownModifier(
             value: crownValue,
@@ -478,7 +491,7 @@ struct WatchToolSettingsView: View {
         .simultaneousGesture(
             DragGesture(minimumDistance: 20)
                 .onEnded { value in
-                    guard !showsInformation, !showsPalette else { return }
+                    guard !showsInformation, !showsPaletteCover else { return }
                     guard abs(value.translation.width) > abs(value.translation.height) else { return }
                     guard let current = availableSettings.firstIndex(of: selection) else { return }
                     // Match the carousel’s mirrored order in Arabic and Hebrew.
@@ -489,7 +502,20 @@ struct WatchToolSettingsView: View {
                 }
         )
         .toolbar {
-            if !tutorial.isPaletteLesson && (tutorial.allowsToolInfo || tutorial.isActive) {
+            if !tutorial.isActive {
+                // Outside the tutorial the corner opens the current palette;
+                // the tutorial still teaches Information here.
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        crownFocused = false
+                        showsPalette = true
+                    } label: {
+                        CurrentPaletteIcon()
+                    }
+                    .watchToolbarButtonStyle()
+                    .accessibilityLabel(L10n.text("Current palette"))
+                }
+            } else if !tutorial.isPaletteLesson {
                 ToolbarItem(placement: .topBarLeading) {
                     // Reference: the compact Information button seen after returning
                     // from Width. The shared modifier fixes that diameter on first
@@ -511,16 +537,15 @@ struct WatchToolSettingsView: View {
             }
         }
         .fullScreenCover(isPresented: $showsPalette, onDismiss: { crownFocused = true }) {
-            InkPaletteBrowser(library: paletteLibrary, controller: controller) { library in
-                if let data = try? JSONEncoder().encode(library) { palettesData = data }
-                let updated = library.activePalette
-                if !updated.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
-                   let first = updated.selectedColors.first {
-                    controller.pencilStyle.color = first.rgba
-                }
-                selectsAddColor = false
-            }
-            .environment(\.colorScheme, .dark)
+            InkPaletteBrowser(library: paletteLibrary, controller: controller, onSave: savePalettes)
+                .environment(\.colorScheme, .dark)
+        }
+        .fullScreenCover(isPresented: $showsColorEditor, onDismiss: { crownFocused = true }) {
+            // Starts from the current color; saving adds it to the active palette and picks it.
+            InkPaletteBrowser(library: paletteLibrary, controller: controller,
+                              initialColor: controller.pencilStyle.color, closesWithColorEditor: true,
+                              onSave: savePalettes)
+                .environment(\.colorScheme, .dark)
         }
         .fullScreenCover(isPresented: $showsInformation, onDismiss: {
             tutorial.record(.closedInfo)

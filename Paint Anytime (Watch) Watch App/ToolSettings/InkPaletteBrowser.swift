@@ -11,6 +11,8 @@ struct InkPaletteBrowser: View {
     @ObservedObject var tutorial = TutorialSession.inactive
     let onSave: (InkPaletteLibrary) -> Void
     private let returnsToCanvasAfterColorSave: Bool
+    /// Opened only to add a color: leaving the color editor closes the browser too.
+    private let closesWithColorEditor: Bool
     private let hiddenNameIDs: Set<PaletteNameID>
     @State private var currentID: String
     @State private var browsing = false
@@ -31,6 +33,7 @@ struct InkPaletteBrowser: View {
 
     init(library: InkPaletteLibrary, controller: CanvasController, initialColor: SIMD4<Float>? = nil,
          tutorial: TutorialSession? = nil, startsBrowsing: Bool = false,
+         closesWithColorEditor: Bool = false,
          onSave: @escaping (InkPaletteLibrary) -> Void) {
         // Opens on the palette carousel instead of the active palette's colors.
         // A sampled color always goes to the color editor first.
@@ -40,6 +43,7 @@ struct InkPaletteBrowser: View {
         self.controller = controller
         self.tutorial = tutorial ?? .inactive
         returnsToCanvasAfterColorSave = initialColor != nil
+        self.closesWithColorEditor = closesWithColorEditor && initialColor != nil
         _sampledColor = State(initialValue: initialColor)
         _showsColorEditor = State(initialValue: initialColor != nil)
         hiddenNameIDs = Set(library.palettes.filter { !$0.isVisible }.compactMap { $0.palette.generatedNameID })
@@ -63,6 +67,9 @@ struct InkPaletteBrowser: View {
         }
         // watchOS supplies a modal close button separately from the navigation back button.
         .interactiveDismissDisabled(tutorial.isActive || browsing || currentID == addID)
+        .onChange(of: showsColorEditor) { _, shows in
+            if !shows && closesWithColorEditor && !tutorial.isActive { dismiss() }
+        }
         .onChange(of: moveGestureActive) { _, active in
             if !active { cancelMove() }
         }
