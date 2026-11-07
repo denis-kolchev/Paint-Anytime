@@ -262,7 +262,7 @@ struct PaletteVisibilitySettingsView: View {
                 Button {
                     showsPalettes = true
                 } label: {
-                    Label(L10n.text("Palettes"), systemImage: "square.stack")
+                    Label { Text(L10n.text("Palettes")) } icon: { PalettesIcon() }
                 }
             }
             if library.palettes.contains(where: { !$0.isBuiltIn }) {

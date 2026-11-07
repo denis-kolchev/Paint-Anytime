@@ -90,7 +90,7 @@ struct InkPaletteEditor: View {
             if !isEditing && (!tutorial.isActive || tutorial.step == .openPalettes) {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(action: onBrowse) {
-                        Image(systemName: "paintpalette.fill")
+                        PalettesIcon()
                             .tutorialHint(tutorial, steps: [.openPalettes])
                     }
                     .accessibilityLabel(L10n.text("Palettes"))
@@ -348,5 +348,15 @@ private struct PaletteSwatchFramesKey: PreferenceKey {
     static let defaultValue: [String: CGRect] = [:]
     static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
         value.merge(nextValue(), uniquingKeysWith: { _, new in new })
+    }
+}
+
+/// The palette cards: a stack turned a quarter to the right, so the cards fan
+/// out sideways like the palettes they lead to. Shared by every way into them.
+struct PalettesIcon: View {
+    var body: some View {
+        Image(systemName: "square.stack")
+            .rotationEffect(.degrees(90))
+            .accessibilityHidden(true)
     }
 }
