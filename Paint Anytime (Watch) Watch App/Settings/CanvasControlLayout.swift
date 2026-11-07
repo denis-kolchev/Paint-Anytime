@@ -33,9 +33,9 @@ struct CanvasControlLayout: Codable, Equatable {
     /// The built-in canvas: two expandable menus and an empty bottom row.
     /// Saving exactly this restores the built-in controls themselves.
     static let original = CanvasControlLayout(slots: [
-        .group([.brush, .undo, .redo], icon: "paintbrush.pointed"),
+        .group([.brush, .undo, .redo, .closeMorph], icon: "paintbrush.pointed"),
         .single(.nothing), .single(.nothing), .single(.nothing), .single(.nothing),
-        .group([.more, .clear, .save, .lasso, .layers], icon: "doc.badge.gearshape")
+        .group([.more, .save, .lasso, .layers, .clear], icon: "doc.badge.gearshape")
     ])
 
     /// More is the only way into settings, so at least one slot must offer it.

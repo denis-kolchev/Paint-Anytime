@@ -386,8 +386,9 @@ struct CanvasMorphPanels: View {
                 let diameter = panelGeometry.diameter
                 let top = trailing.y - 18
                 let centerX = trailing.x
-                let rowHeight = panelGeometry.rowHeight(count: 3, panelTop: top)
-                let panelHeight = showsMorphToolbar ? rowHeight * 3 : diameter
+                let rowCount: CGFloat = 4
+                let rowHeight = panelGeometry.rowHeight(count: rowCount, panelTop: top)
+                let panelHeight = showsMorphToolbar ? rowHeight * rowCount : diameter
                 morphToolbar(diameter: diameter, rowHeight: rowHeight)
                     .position(x: centerX, y: top + panelHeight / 2)
                     .zIndex(3)
@@ -469,11 +470,6 @@ struct CanvasMorphPanels: View {
                     showsAppSettings = true
                 } label: { Image(systemName: "ellipsis") }
                 .accessibilityHidden(true)
-                morphButton("Clear canvas", height: rowHeight) {
-                    collapse { showsContentActions = false }
-                    session.requestCanvasAction(.clear)
-                } label: { BroomIcon() }
-                .disabled(!controller.canClear)
                 morphButton("Save drawing", height: rowHeight) {
                     collapse { showsContentActions = false }
                     session.saveDrawing(size: size, scale: displayScale)
@@ -486,6 +482,11 @@ struct CanvasMorphPanels: View {
                     collapse { showsContentActions = false }
                     showsLayers = true
                 } label: { Image(systemName: "square.3.layers.3d") }
+                morphButton("Clear canvas", height: rowHeight) {
+                    collapse { showsContentActions = false }
+                    session.requestCanvasAction(.clear)
+                } label: { BroomIcon() }
+                .disabled(!controller.canClear)
             }
         } collapsed: {
             VStack(spacing: 0) {
@@ -522,6 +523,9 @@ struct CanvasMorphPanels: View {
                     Image(systemName: "arrow.uturn.forward")
                 }
                 .disabled(!controller.canRedo)
+                morphButton("Close", height: rowHeight) {
+                    collapse { showsMorphToolbar = false }
+                } label: { Image(systemName: "xmark") }
             }
         } collapsed: {
             VStack(spacing: 0) {
