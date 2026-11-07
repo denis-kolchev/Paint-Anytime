@@ -99,6 +99,9 @@ nonisolated extension WatchBitmapRenderer {
             var snapshot: InkSnapshot?
             var travel: Float = 0
             var drawn = false
+            /// Snapped shape moved by the finger: `stroke` stays the exactly drawn reference.
+            var shapePreview: WatchStrokeDrawing.DryShapePreview?
+            var isPreviewing = false
 
             init(layerID: UUID, revisions: [UUID], stroke: Stroke, frame: CGContext,
                  fill: WatchStrokeDrawing.DryPixelFill) {
@@ -126,14 +129,49 @@ nonisolated extension WatchBitmapRenderer {
             return nil
         }
 
+        /// A snapped shape turned or scaled by the finger: the exactly drawn shape moved as an
+        /// image over the layer's committed ink. nil when `stroke` is not such a move.
+        private func shapePreviewInk(_ stroke: Stroke, live: LiveDry, base: InkSnapshot,
+                                     scale: CGFloat) -> InkSnapshot? {
+            guard live.drawn, WatchStrokeDrawing.DryShapePreview.similarity(from: live.stroke, to: stroke) != nil
+            else { return nil }
+            if live.shapePreview?.reference.geometryRevision != live.stroke.geometryRevision {
+                let started = RenderDiagnostics.begin()
+                live.shapePreview = WatchStrokeDrawing.DryShapePreview(
+                    reference: live.stroke, field: live.field, geometry: live.geometry,
+                    width: live.frame.width, height: live.frame.height, scale: scale, floatOutput: true)
+                RenderDiagnostics.end(.shapeLayer, started)
+            }
+            guard let preview = live.shapePreview else { return nil }
+            let started = RenderDiagnostics.begin()
+            guard let image = preview.frame(for: stroke, over: base.image, scale: scale) else { return nil }
+            RenderDiagnostics.end(.shapePreview, started)
+            live.isPreviewing = true
+            return InkSnapshot(image: image)
+        }
+
         /// Pencil/pastel live ink; nil falls back to replaying the stroke.
+        /// `exact`: never show a transformed shape preview (lift).
         fileprivate func renderLiveDry(_ stroke: Stroke, layerID: UUID, revisions: [UUID],
-                                       base: InkSnapshot, scale: CGFloat) -> InkSnapshot? {
+                                       base: InkSnapshot, scale: CGFloat, exact: Bool = false) -> InkSnapshot? {
             liveInk = nil
+            if !exact, let live = liveDry, live.layerID == layerID, live.revisions == revisions,
+               live.stroke.id == stroke.id, !stroke.extends(live.stroke),
+               let ink = shapePreviewInk(stroke, live: live, base: base, scale: scale) {
+                return ink
+            }
             if let live = liveDry, live.layerID == layerID, live.revisions == revisions,
                live.stroke.id == stroke.id, stroke.extends(live.stroke) {
                 // Same gesture: continue.
             } else {
+                let began = RenderDiagnostics.begin()
+                let restart = liveDry?.stroke.id == stroke.id
+                defer {
+                    if let live = liveDry {
+                        RenderDiagnostics.dryBegan(began, restart: restart,
+                                                   bytes: 2 * live.frame.bytesPerRow * live.frame.height)
+                    }
+                }
                 // The new path needs both switches; the lock and lasso cut keep the replay.
                 guard RenderStageSwitches.isOn(.incrementalDryGrains), RenderStageSwitches.isOn(.pixelDryFill),
                       !stroke.locksTransparency, stroke.transform == .identity, stroke.excludedAreas.isEmpty,
@@ -194,14 +232,16 @@ nonisolated extension WatchBitmapRenderer {
                                        grainsBuilt: live.geometry.grainBuildCount - counters.0,
                                        grainHits: result.grains,
                                        probes: live.geometry.coverageProbeCount - counters.1,
-                                       contours: live.geometry.contourBuildCount - counters.2)
+                                       contours: live.geometry.contourBuildCount - counters.2,
+                                       full: previousCount == 0, dirtyPixels: pixels)
             return live.snapshot
         }
 
         fileprivate func renderLive(_ stroke: Stroke, layerID: UUID, revisions: [UUID],
-                                    base: InkSnapshot, scale: CGFloat) -> InkSnapshot? {
+                                    base: InkSnapshot, scale: CGFloat, exact: Bool = false) -> InkSnapshot? {
             if stroke.style.instrument == .pencil || stroke.style.instrument == .crayon {
-                return renderLiveDry(stroke, layerID: layerID, revisions: revisions, base: base, scale: scale)
+                return renderLiveDry(stroke, layerID: layerID, revisions: revisions, base: base,
+                                     scale: scale, exact: exact)
             }
             liveDry = nil
             guard (stroke.style.instrument == .watercolor || stroke.style.instrument == .marker),
@@ -392,9 +432,11 @@ nonisolated extension WatchBitmapRenderer {
         guard let previous, let cache, let live = cache.liveOwner,
               layer.strokes.count == previous.revisions.count + 1, let final = layer.strokes.last,
               live.layerID == layer.id, live.revisions == previous.revisions,
-              final.extends(live.stroke) else { return nil }
+              // A previewed shape is drawn exactly here, once, from a fresh buffer.
+              final.extends(live.stroke) || (final.id == live.stroke.id && cache.liveDry?.isPreviewing == true)
+        else { return nil }
         return cache.renderLive(final, layerID: layer.id, revisions: previous.revisions,
-                                base: previous.ink, scale: scale)
+                                base: previous.ink, scale: scale, exact: true)
     }
 
     /// The live stroke over the layer's committed ink, incrementally when possible.

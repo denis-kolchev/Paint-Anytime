@@ -13,6 +13,9 @@ nonisolated extension WatchBitmapRenderer {
             defer { usesScreenTiles = false }
             guard let image = render(strokes: strokes, activeStroke: activeStroke,
                                      key: key, activeStrokeID: activeStrokeID) else { return nil }
+            if usesScreenTiles, activeStroke != nil, let preview = activeDry?.previewImage {
+                return ScreenFrame(background: preview, tiles: [])
+            }
             if usesScreenTiles, activeStroke != nil, let dry = activeDry, let background = committedImage {
                 return ScreenFrame(background: dry.screenBackground ?? background, tiles: dry.screenTiles.values.sorted {
                     $0.id.y == $1.id.y ? $0.id.x < $1.id.x : $0.id.y < $1.id.y
@@ -105,6 +108,10 @@ nonisolated extension WatchBitmapRenderer {
             /// Display bitmap at the latest tile merge; shown under `screenTiles` instead
             /// of the committed image once tiles were merged.
             var screenBackground: CGImage?
+            /// Snapped shape moved by the finger: `stroke` stays the exactly drawn reference
+            /// and frames show its image transformed (`previewImage`, no tiles).
+            var shapePreview: WatchStrokeDrawing.DryShapePreview?
+            var previewImage: CGImage?
         }
 
         /// Most tile images shown over the background. On the watch the main thread pays
@@ -116,13 +123,25 @@ nonisolated extension WatchBitmapRenderer {
         private typealias DryBatch = (tile: SIMD2<Int>, rect: CGRect, commands: [WatchDrawingCommand], revision: UInt64?)
 
         /// Pencil and crayon: redraw only the 32 px tiles the new samples reach.
-        private func renderDry(_ stroke: Stroke, base: InkSnapshot, key: CacheKey) -> CGImage? {
+        /// `exact`: never show a transformed shape preview (lift).
+        private func renderDry(_ stroke: Stroke, base: InkSnapshot, key: CacheKey, exact: Bool = false) -> CGImage? {
             let previous = activeDry?.stroke
             let extends = previous.map {
                 stroke.extends($0)
             } ?? false
+            if !extends, !exact, previous?.id == stroke.id, let image = shapePreviewFrame(stroke, key: key) {
+                activeImage = image
+                return image
+            }
             if !extends {
+                let began = RenderDiagnostics.begin()
                 guard beginDry(stroke, base: base) else { return nil }
+                if let dry = activeDry {
+                    RenderDiagnostics.dryBegan(began, restart: previous?.id == stroke.id,
+                                               bytes: dry.frame.bytesPerRow * dry.frame.height
+                                                   + dry.display.bytesPerRow * dry.display.height
+                                                   + (dry.pixelFill == nil ? 0 : dry.frame.bytesPerRow * dry.frame.height))
+                }
             }
             guard var dry = activeDry else { return nil }
             if extends && previous?.geometryRevision == stroke.geometryRevision {
@@ -169,13 +188,38 @@ nonisolated extension WatchBitmapRenderer {
                                            grainsBuilt: dry.geometry.grainBuildCount - counters.0,
                                            grainHits: dry.geometry.grainCacheHits - counters.1,
                                            probes: dry.geometry.coverageProbeCount - counters.2,
-                                           contours: dry.geometry.contourBuildCount - counters.3)
+                                           contours: dry.geometry.contourBuildCount - counters.3,
+                                           full: previousCount == 0,
+                                           dirtyPixels: batches.map { $0.rect })
             }
             dry.stroke = stroke
             dry.travel = dry.geometry.travel
             activeDry = dry
             activeImage = usesScreenTiles ? committedImage : dry.display.makeImage()
             return activeImage
+        }
+
+        /// A snapped shape turned or scaled by the finger: the exactly drawn shape moved as an
+        /// image over the committed ink. nil when `stroke` is not such a move of the drawn one.
+        private func shapePreviewFrame(_ stroke: Stroke, key: CacheKey) -> CGImage? {
+            guard var dry = activeDry, let field = dry.geometry.grainField, dry.pixelFill != nil,
+                  let background = committedImage,
+                  WatchStrokeDrawing.DryShapePreview.similarity(from: dry.stroke, to: stroke) != nil
+            else { return nil }
+            if dry.shapePreview?.reference.geometryRevision != dry.stroke.geometryRevision {
+                let started = RenderDiagnostics.begin()
+                dry.shapePreview = WatchStrokeDrawing.DryShapePreview(
+                    reference: dry.stroke, field: field, geometry: dry.geometry,
+                    width: dry.frame.width, height: dry.frame.height, scale: key.scale, floatOutput: false)
+                RenderDiagnostics.end(.shapeLayer, started)
+            }
+            guard let preview = dry.shapePreview else { return nil }
+            let started = RenderDiagnostics.begin()
+            guard let image = preview.frame(for: stroke, over: background, scale: key.scale) else { return nil }
+            RenderDiagnostics.end(.shapePreview, started)
+            dry.previewImage = image
+            activeDry = dry
+            return image
         }
 
         /// Incremental grains: redraw only the rectangles around grains that changed, in one
@@ -254,7 +298,8 @@ nonisolated extension WatchBitmapRenderer {
                                        grainsBuilt: dry.geometry.grainBuildCount - counters.0,
                                        grainHits: dry.geometry.grainCacheHits - counters.1,
                                        probes: dry.geometry.coverageProbeCount - counters.2,
-                                       contours: dry.geometry.contourBuildCount - counters.3)
+                                       contours: dry.geometry.contourBuildCount - counters.3,
+                                       full: previousCount == 0, dirtyPixels: pixels)
             return true
         }
 
@@ -278,7 +323,8 @@ nonisolated extension WatchBitmapRenderer {
                                        grainsBuilt: dry.geometry.grainBuildCount - counters.0,
                                        grainHits: grains,
                                        probes: dry.geometry.coverageProbeCount - counters.2,
-                                       contours: dry.geometry.contourBuildCount - counters.3)
+                                       contours: dry.geometry.contourBuildCount - counters.3,
+                                       full: previousCount == 0, dirtyPixels: pixels)
             return true
         }
 
@@ -417,9 +463,13 @@ nonisolated extension WatchBitmapRenderer {
                     rect: dirty.applying(CGAffineTransform(scaleX: 1 / scale, y: 1 / scale)), image: flat)
             }
             // The display bitmap already holds every flattened tile: one image replaces them.
-            if usesScreenTiles, dry.screenTiles.count > Self.maxScreenTiles, let merged = dry.display.makeImage() {
-                dry.screenBackground = merged
-                dry.screenTiles.removeAll(keepingCapacity: true)
+            if usesScreenTiles, dry.screenTiles.count > Self.maxScreenTiles {
+                let merging = RenderDiagnostics.begin()
+                if let merged = dry.display.makeImage() {
+                    dry.screenBackground = merged
+                    dry.screenTiles.removeAll(keepingCapacity: true)
+                }
+                RenderDiagnostics.end(.screenMerge, merging)
             }
             return true
         }
@@ -499,8 +549,9 @@ nonisolated extension WatchBitmapRenderer {
                   versions.count == committedStrokes.count + 1,
                   versions.starts(with: committedStrokes), let final = strokes.last,
                   let dry = activeDry, dry.stroke.id == final.id, dry.stroke.style == final.style,
-                  final.extends(dry.stroke), let base = committedInk,
-                  let display = renderDry(final, base: base, key: nextKey),
+                  // A previewed shape is drawn exactly here, once, from a fresh buffer.
+                  final.extends(dry.stroke) || dry.previewImage != nil, let base = committedInk,
+                  let display = renderDry(final, base: base, key: nextKey, exact: true),
                   let ink = activeDry?.frame.makeImage(), !Task.isCancelled else { return }
             commit(ink: InkSnapshot(image: ink),
                    image: usesScreenTiles ? activeDry?.display.makeImage() : display,

@@ -342,8 +342,15 @@ struct WatchCanvasView: View {
                             }
                             controller.beginStroke(at: sample(at: ruled(start), time: value.time))
                         }
+                        let adjustStarted = controller.isShapeSnapped ? RenderDiagnostics.begin() : 0
+                        let revisionBefore = controller.activeStroke?.geometryRevision
                         controller.continueStroke(at: sample(
                             at: ruled(canvasPoint(value.location, size: geometry.size)), time: value.time))
+                        if adjustStarted != 0 {
+                            RenderDiagnostics.shapeAdjusted(adjustStarted,
+                                moved: controller.activeStroke?.geometryRevision != revisionBefore,
+                                points: controller.activeStroke?.points.count ?? 0)
+                        }
                         RenderDiagnostics.sampleApplied()
                         liveSubmitter.submitLive(controller.activeStroke, revision: controller.activeStrokeRevision,
                                                  strokeID: controller.activeStrokeID)
@@ -588,7 +595,12 @@ struct WatchCanvasView: View {
                 try Task.checkCancellation()
                 guard controller.activeStroke?.id == gestureID, !isMovingCanvas,
                       tutorial.acceptsActions, tutorial.allowsDrawing else { return }
-                if controller.recognizeActiveShape(adjustmentTolerance: tolerance) {
+                let recognizeStarted = RenderDiagnostics.begin()
+                let snapped = controller.recognizeActiveShape(adjustmentTolerance: tolerance)
+                RenderDiagnostics.shapeRecognized(recognizeStarted,
+                    kind: snapped ? controller.recognizedShapeKind.map { "\($0)" } : nil,
+                    points: controller.activeStroke?.points.count ?? 0)
+                if snapped {
                     WKInterfaceDevice.current().play(.click)
                     tutorial.finishedCircleAttempt(kind: controller.recognizedShapeKind, isStrokeComplete: false)
                 }

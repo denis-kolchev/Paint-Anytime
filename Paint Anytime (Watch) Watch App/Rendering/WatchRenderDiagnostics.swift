@@ -1,15 +1,14 @@
 import Foundation
+import CoreGraphics
 import Dispatch
 
 /// One switch for the canvas speed HUD and the per-stage render switches in the ⋯ menu.
 /// Off: the menu and HUD disappear and every stage runs its shipping default, nothing
 /// is measured. Release builds always compile it off.
 nonisolated enum RenderDebug {
-    #if DEBUG
+    // TEMP (2026-11-08): on in Release too — the watch scheme launches Release and the
+    // shape-adjust measurements need optimized code. Restore `false` in Release afterwards.
     static let isEnabled = true
-    #else
-    static let isEnabled = false
-    #endif
 }
 
 /// Latency optimizations of the live stroke. All ship on; in debug builds the
@@ -112,6 +111,20 @@ nonisolated enum RenderSpan: Int, CaseIterable, Sendable {
     case dryDraw
     /// Pencil/pastel: snapshot and flatten of the changed tiles for display.
     case dryPublish
+    /// Pencil/pastel: start of a live dry buffer (float frame + display copy of the
+    /// committed ink, new geometry and grain field). Once per gesture unless the stroke
+    /// stops extending the previous frame (a snapped shape being resized or turned).
+    case dryBegin
+    /// One-layer dry path: merging > 16 screen tiles into one background image.
+    case screenMerge
+    /// Main actor: `ShapeRecognizer` on the held stroke.
+    case shapeRecognize
+    /// Main actor: one sample of a snapped shape (scale/rotate of every shape point).
+    case shapeAdjust
+    /// Renderer: stroke-only image of the drawn shape, once per snapped shape.
+    case shapeLayer
+    /// Renderer: one moved-shape frame (background + transformed shape image).
+    case shapePreview
 
     var label: String {
         switch self {
@@ -131,6 +144,12 @@ nonisolated enum RenderSpan: Int, CaseIterable, Sendable {
         case .dryGrains: "grain"
         case .dryDraw: "fill"
         case .dryPublish: "pub"
+        case .dryBegin: "begin"
+        case .screenMerge: "merge"
+        case .shapeRecognize: "recog"
+        case .shapeAdjust: "adj"
+        case .shapeLayer: "layer"
+        case .shapePreview: "prev"
         }
     }
 }
@@ -205,6 +224,23 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     private var dryGrainHits = 0
     private var dryProbes = 0
     private var dryContours = 0
+    /// Dry frames that redrew the whole stroke (no previous frame to extend).
+    private var dryFullFrames = 0
+    /// Changed pixels (union of dirty rectangles, may overlap) over the window's dry frames.
+    private var dryDirtyPixels = 0
+    /// Live dry buffers started for a new gesture / restarted inside the same gesture.
+    private var dryStarts = 0
+    private var dryRestarts = 0
+    /// Bytes allocated by those buffer starts.
+    private var dryAllocBytes = 0
+    /// Snapped shape: samples that moved it / samples inside the hold tolerance.
+    private var shapeMoves = 0
+    private var shapeIdle = 0
+    /// Kept across windows: the hold happens once per stroke.
+    private var shapeKind = "—"
+    private var shapePoints = 0
+    private var shapeSeenAt: UInt64 = 0
+    private var lastRecognizeNS: UInt64 = 0
     private var windowStart = RenderDiagnostics.now()
 
     static func now() -> UInt64 { DispatchTime.now().uptimeNanoseconds }
@@ -399,8 +435,14 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     /// One live pencil/pastel frame: stage boundaries (prep, upd, grain, fill, publish),
     /// new input samples, tiles redrawn and the geometry counters' deltas.
     static func dryFrame(stages: [UInt64], incremental: Bool, pixel: Bool = false, samples: Int, tiles: Int,
-                         grainsBuilt: Int, grainHits: Int, probes: Int, contours: Int) {
+                         grainsBuilt: Int, grainHits: Int, probes: Int, contours: Int,
+                         full: Bool = false, dirtyPixels: [CGRect] = []) {
         guard RenderDebug.isEnabled, stages.count == 6, stages[0] != 0 else { return }
+        let dirty = dirtyPixels.reduce(0) { $0 + Int($1.width * $1.height) }
+        shared.locked {
+            if full { shared.dryFullFrames += 1 }
+            shared.dryDirtyPixels += dirty
+        }
         let spans: [RenderSpan] = [.dryPrep, .dryUpdate, .dryGrains, .dryDraw, .dryPublish]
         shared.locked {
             for (index, span) in spans.enumerated() {
@@ -415,6 +457,42 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             shared.dryGrainHits += grainHits
             shared.dryProbes += probes
             shared.dryContours += contours
+        }
+    }
+
+    /// A live dry buffer was set up (`start` from `begin()`). `restart`: the same gesture
+    /// already had one, but the stroke stopped extending it (snapped shape moved).
+    static func dryBegan(_ start: UInt64, restart: Bool, bytes: Int) {
+        guard RenderDebug.isEnabled, start != 0 else { return }
+        let end = now()
+        shared.locked {
+            shared.spans[RenderSpan.dryBegin.rawValue].add(end &- start)
+            if restart { shared.dryRestarts += 1 } else { shared.dryStarts += 1 }
+            shared.dryAllocBytes += bytes
+        }
+    }
+
+    /// The hold recognizer ran; `kind` is nil when nothing snapped.
+    static func shapeRecognized(_ start: UInt64, kind: String?, points: Int) {
+        guard RenderDebug.isEnabled, start != 0 else { return }
+        let end = now()
+        shared.locked {
+            shared.lastRecognizeNS = end &- start
+            shared.shapeKind = kind ?? "none"
+            shared.shapePoints = kind == nil ? 0 : points
+            shared.shapeSeenAt = end
+        }
+    }
+
+    /// One sample applied to a snapped shape; `moved` when its points changed.
+    static func shapeAdjusted(_ start: UInt64, moved: Bool, points: Int) {
+        guard RenderDebug.isEnabled, start != 0 else { return }
+        let end = now()
+        shared.locked {
+            shared.spans[RenderSpan.shapeAdjust.rawValue].add(end &- start)
+            if moved { shared.shapeMoves += 1 } else { shared.shapeIdle += 1 }
+            shared.shapePoints = points
+            shared.shapeSeenAt = end
         }
     }
 
@@ -436,6 +514,35 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             (dryPixel ? "dry·px " : dryIncremental ? "dry·inc " : "dry·old ") + [RenderSpan.dryUpdate, .dryGrains, .dryDraw, .dryPublish].map(ms).joined(separator: " "),
             "pts \(perFrame(drySamples)) · tiles \(perFrame(dryTiles)) · grains \(perFrame(dryGrainsBuilt)) new"
                 + " \(perFrame(dryGrainHits)) \(dryPixel ? "drawn" : "hit")",
+        ]
+    }
+
+    /// Shown for 3 s after shape activity, or while dry buffers restart mid-gesture.
+    /// Called with the lock held.
+    private func shapeLines(seconds: Double, now: UInt64) -> [String] {
+        let recent = shapeSeenAt != 0 && now &- shapeSeenAt < 3_000_000_000
+        guard recent || dryRestarts > 0 else { return [] }
+        func rate(_ count: Int) -> String { String(format: "%.0f", Double(count) / seconds) }
+        func avgMax(_ span: RenderSpan) -> String {
+            let value = spans[span.rawValue]
+            return String(format: "%.1f/%.1f", value.averageMS, value.maximumMS)
+        }
+        let frames = max(1, dryFrames)
+        let begins = dryStarts + dryRestarts
+        let alloc = Double(dryAllocBytes) / 1_048_576 / seconds
+        let dirty = Double(dryDirtyPixels) / Double(frames) / 1000
+        let merges = spans[RenderSpan.screenMerge.rawValue]
+        let previews = spans[RenderSpan.shapePreview.rawValue]
+        let layers = spans[RenderSpan.shapeLayer.rawValue]
+        return [
+            "prev \(rate(previews.count))/s " + (previews.count == 0 ? "—" : avgMax(.shapePreview))
+                + " · layer " + (layers.count == 0 ? "—" : avgMax(.shapeLayer)),
+            "shape \(shapeKind) \(shapePoints)pt · recog " + String(format: "%.1f", Double(lastRecognizeNS) / 1_000_000)
+                + " · adj \(rate(shapeMoves))/s idle \(rate(shapeIdle)) · \(avgMax(.shapeAdjust))",
+            "restart \(rate(dryRestarts))/s new \(dryStarts) · begin \(begins == 0 ? "—" : avgMax(.dryBegin))"
+                + String(format: " · alloc %.0fMB/s", alloc),
+            "full \(dryFullFrames)/\(dryFrames) fr · dirty " + String(format: "%.0fk px/fr", dirty)
+                + " · merge \(rate(merges.count))/s " + (merges.count == 0 ? "—" : avgMax(.screenMerge)) + " · \(path)",
         ]
     }
 
@@ -478,7 +585,8 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
                 "pub→idle \(avgMax(publishToIdle)) · tiles \(tiles) · body \(rate(bodies[RenderCounter.raster.rawValue]))"
                     + "/\(rate(bodies[RenderCounter.canvas.rawValue]))/\(rate(bodies[RenderCounter.screen.rawValue]))",
             ] + (extra.isEmpty ? [] : [extra.joined(separator: " ") + " · \(path)"])
-              + dryLines(ms)).joined(separator: "\n")
+              + dryLines(ms)
+              + shapeLines(seconds: seconds, now: now)).joined(separator: "\n")
             spans = Array(repeating: Accumulator(), count: RenderSpan.allCases.count)
             latency = Accumulator()
             endToEnd = Accumulator()
@@ -492,6 +600,8 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             shownTiles = 0; shownTilesMax = 0; shownFrames = 0
             dryFrames = 0; drySamples = 0; dryTiles = 0; dryGrainsBuilt = 0
             dryGrainHits = 0; dryProbes = 0; dryContours = 0
+            dryFullFrames = 0; dryDirtyPixels = 0; dryStarts = 0; dryRestarts = 0; dryAllocBytes = 0
+            shapeMoves = 0; shapeIdle = 0
             windowStart = now
             return text
         }
