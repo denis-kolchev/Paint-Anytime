@@ -54,6 +54,34 @@ struct CanvasLayoutIcon: View {
     }
 }
 
+/// The current palette's grid of swatches, each dot a different shade, so it
+/// reads as several paints rather than one plain grid. Shades are opacities of
+/// the foreground, so the icon still dims and tints like the symbols beside it.
+struct CurrentPaletteIcon: View {
+    /// Row by row; neighbours differ so no two adjacent swatches look alike.
+    private static let shades: [Double] = [1.0, 0.5, 0.8,
+                                           0.65, 0.92, 0.42,
+                                           0.85, 0.55, 0.72]
+
+    var body: some View {
+        Canvas { context, size in
+            var drawing = context
+            drawing.scaleBy(x: size.width / 24, y: size.height / 24)
+            let diameter: CGFloat = 6.2
+            for (index, shade) in Self.shades.enumerated() {
+                let center = CGPoint(x: 4 + CGFloat(index % 3) * 8, y: 4 + CGFloat(index / 3) * 8)
+                var dot = drawing
+                dot.opacity = shade
+                dot.fill(Path(ellipseIn: CGRect(x: center.x - diameter / 2, y: center.y - diameter / 2,
+                                                width: diameter, height: diameter)),
+                         with: .foreground)
+            }
+        }
+        .frame(width: 19, height: 19)
+        .accessibilityHidden(true)
+    }
+}
+
 // Upright tool tips, rather than the diagonal editing/pencil action symbol.
 struct ToolIcon: View {
     let instrument: DrawingInstrument

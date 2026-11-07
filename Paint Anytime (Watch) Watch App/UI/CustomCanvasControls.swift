@@ -131,6 +131,7 @@ struct CanvasQuickActionIcon: View {
             // The eraser toggle shows the tool in hand: the eraser while erasing.
             else if action == .brush || action == .eraserToggle { ToolIcon(instrument: instrument) }
             else if action == .canvasEditor { CanvasLayoutIcon() }
+            else if action == .palettes { CurrentPaletteIcon() }
             else if action == .sketchAssist {
                 Image(systemName: action.symbol).modifier(SketchAssistLock(isLocked: !sketchAssistOnPhone))
             }
