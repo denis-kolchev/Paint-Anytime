@@ -167,7 +167,7 @@ struct ToolStrokePreview: View {
         return lastMask.map { ($0, false) }
     }
 
-    private static func isTextured(_ style: PencilStyle) -> Bool {
+    nonisolated private static func isTextured(_ style: PencilStyle) -> Bool {
         style.instrument == .pencil || style.instrument == .crayon
     }
 

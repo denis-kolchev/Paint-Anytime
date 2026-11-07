@@ -541,9 +541,9 @@ struct WatchToolSettingsView: View {
                 .environment(\.colorScheme, .dark)
         }
         .fullScreenCover(isPresented: $showsColorEditor, onDismiss: { crownFocused = true }) {
-            // Starts from the current color; saving adds it to the active palette and picks it.
+            // Starts from white; saving adds the color to the active palette and picks it.
             InkPaletteBrowser(library: paletteLibrary, controller: controller,
-                              initialColor: controller.pencilStyle.color, closesWithColorEditor: true,
+                              initialColor: CustomInkEditor.newColor, closesWithColorEditor: true,
                               onSave: savePalettes)
                 .environment(\.colorScheme, .dark)
         }
