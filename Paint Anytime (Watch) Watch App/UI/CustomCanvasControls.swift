@@ -55,7 +55,9 @@ struct CustomCanvasControls: View {
                             .frame(width: diameter, height: diameter)
                             // A plain button hit-tests only the glyph; the interactive glass
                             // still animates, so a tap beside the icon looked accepted.
-                            .contentShape(Rectangle())
+                            // Circle, like the glass: a square's corners took strokes started
+                            // beside the button and the canvas never saw them.
+                            .contentShape(Circle())
                     }
                     .buttonStyle(.plain)
                     .disabled(!assignment.isMorph && !enabled(assignment.actions[0]))

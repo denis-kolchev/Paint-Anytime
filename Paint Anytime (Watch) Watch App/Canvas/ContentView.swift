@@ -110,6 +110,10 @@ struct ContentView: View {
         // item makes watchOS move its clock. CanvasMenuControlVisibility hides the
         // controls and disables their hit targets without changing the clock layout.
         .toolbar { canvasToolbar }
+        // A custom layout draws every control over the canvas. Its native top and bottom
+        // bars only took touches: strokes started in the top strip or beside an empty
+        // bottom slot never reached the canvas. Hide both while that layout is on screen.
+        .toolbar(hidesCanvasBars ? .hidden : .automatic, for: .navigationBar, .bottomBar)
         }
         .requestsHiddenClock(isActive && menuOnboarding.tutorialFolder == nil
             && !showsGallery && !showsToolSettings && !showsAppSettings)
@@ -521,8 +525,24 @@ struct ContentView: View {
         .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsGallery)
         .frame(width: geometry.size.width, height: geometry.size.height)
         .clipped()
+        // Debug only: counts every touch on the canvas screen, including the controls over
+        // the canvas, so the HUD can tell a covering view from a touch that never arrived.
+        .modifier(RenderTouchProbe(isEnabled: RenderDebug.isEnabled && RenderDebugSettings.shared.showsHUD,
+            began: { location in
+                RenderDiagnostics.rootTouch(ended: false, location: location) {
+                    controlRegions.frames.map { ("\($0.key)", $0.value) }
+                }
+            },
+            ended: { RenderDiagnostics.rootTouch(ended: true, location: .zero) { [] } }))
         .onAppear { canvasSize = geometry.size }
         .onChange(of: geometry.size) { _, size in canvasSize = size }
+    }
+
+    /// The custom canvas layout is on screen with no native control of its own:
+    /// the same state that installs only the custom toolbar anchors.
+    private var hidesCanvasBars: Bool {
+        customLayout != nil && isActive && menuOnboarding.tutorialFolder == nil
+            && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive
     }
 
     /// Kept out of `body` so the view stays within type-checking limits.
@@ -799,8 +819,17 @@ struct ContentView: View {
     }
 
     private var drawingPage: some View {
+        if RenderDebug.isEnabled {
+            let blockers: [String] = [
+                isActive ? nil : "inactive", quickSettings == nil ? nil : "quick", showsLayers ? "layers" : nil,
+                showsSampledPalette ? "palette" : nil, showsToolSettings ? "tools" : nil,
+                showsAppSettings ? "settings" : nil, showsGallery ? "gallery" : nil,
+                session.savedDrawing == nil ? nil : "saved", session.pendingCanvasAction == nil ? nil : "pending",
+            ].compactMap { $0 }
+            RenderDiagnostics.setInputBlockers(blockers)
+        }
         // Animate the whole page above, keeping the cached artwork fully visible inside it.
-        WatchCanvasView(controller: controller, lasso: lasso, lassoToolbarInput: lassoToolbarInput, onArtworkPrepared: { succeeded in
+        return WatchCanvasView(controller: controller, lasso: lasso, lassoToolbarInput: lassoToolbarInput, onArtworkPrepared: { succeeded in
             guard session.isPreparingCanvas else { return }
             session.isPreparingCanvas = false
             if succeeded {
@@ -833,9 +862,14 @@ struct ContentView: View {
         return canvasControlFrames.filter { control, _ in
             if lasso.isActive { return (!showsSelectionActions && control == .tools) || control == .canvasToolsMorph || (showsSelectionActions && control == .morph) || (lasso.awaitsSketchAssistConfirmation && control == .more) }
             if isMovingCanvas { return control == .tools || control == .more }
-            if customLayout != nil {
+            if let customLayout {
                 if case .custom = control { return true }
-                return control == .more || CustomCanvasControls.anchors.contains(control)
+                // An empty slot keeps an invisible native anchor only so the clock stays put;
+                // protecting it left a dead zone in an empty corner of the canvas.
+                if let index = CustomCanvasControls.anchors.firstIndex(of: control) {
+                    return customLayout.slots.indices.contains(index) && !customLayout.slots[index].isEmpty
+                }
+                return control == .more
             }
             if case .custom = control { return false }
             if usesMorphToolbar { return control == .morph || control == .contentMorph }

@@ -94,6 +94,10 @@ struct WatchCanvasView: View {
     var body: some View {
         let _ = TutorialDebug.trace("canvas.body", "input=\(acceptsInput) controls=\(protectedControls.count) \(tutorial.debugState)")
         let _ = RenderDiagnostics.bodyEvaluated(.canvas)
+        let _ = RenderDiagnostics.setTouchGate(
+            (acceptsInput ? "in+" : "IN-") + (tutorial.acceptsActions ? " tut+" : " TUT-")
+            + (tutorial.isFadingCircleAttempt ? " FADE" : "") + (scenePhase == .active ? "" : " \(scenePhase)")
+            + (fillRequestID != nil ? " FILL" : "") + (blockedEraserLayerID != nil ? " LOCK" : ""))
         GeometryReader { geometry in
             let paperSize = controller.document.size(fallback: geometry.size)
             let fit = canvasFit(geometry.size)
@@ -259,12 +263,25 @@ struct WatchCanvasView: View {
                         // Speed HUD: touch event age, then handler, stroke geometry, object erasing.
                         let inputStarted = RenderDiagnostics.inputBegan(eventTime: value.time)
                         defer { RenderDiagnostics.end(.input, inputStarted) }
-                        guard fillRequestID == nil, acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt && blockedEraserLayerID == nil else { return }
-                        guard (lasso.isActive ? tutorial.allowsLassoInput : isMovingCanvas ? tutorial.allowsCanvasPan : tutorial.allowsDrawing) else { return }
+                        RenderDiagnostics.touchSample(eventTime: value.time, location: {
+                            let frame = geometry.frame(in: .global)
+                            return CGPoint(x: frame.minX + value.startLocation.x, y: frame.minY + value.startLocation.y)
+                        })
+                        guard fillRequestID == nil, acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt && blockedEraserLayerID == nil else {
+                            RenderDiagnostics.touchOutcome(fillRequestID != nil ? "off:fill busy" : !acceptsInput ? "off:input"
+                                : blockedEraserLayerID != nil ? "off:lock alert" : "off:tutorial")
+                            return
+                        }
+                        guard (lasso.isActive ? tutorial.allowsLassoInput : isMovingCanvas ? tutorial.allowsCanvasPan : tutorial.allowsDrawing) else {
+                            RenderDiagnostics.touchOutcome("off:tutorial mode")
+                            return
+                        }
                         tutorial.activity()
                         if acceptsCurrentGesture == nil {
-                            acceptsCurrentGesture = !isProtectedStart(value.startLocation,
+                            let protected = protectedControl(at: value.startLocation,
                                 canvasFrame: geometry.frame(in: .global))
+                            acceptsCurrentGesture = protected == nil
+                            if let protected { RenderDiagnostics.touchOutcome("prot:\(protected)") }
                             if acceptsCurrentGesture == true {
                                 onCanvasInteraction()
                                 if lasso.isActive {
@@ -277,17 +294,20 @@ struct WatchCanvasView: View {
                             }
                         }
                         // Keep the initial decision even when controls hide or the finger moves away.
-                        guard acceptsCurrentGesture == true else { return }
+                        guard acceptsCurrentGesture == true else { RenderDiagnostics.touchOutcome("off:rejected"); return }
                         if lasso.isActive {
+                            RenderDiagnostics.touchOutcome("lasso")
                             cancelShapeHold()
                             lasso.update(at: canvasPoint(value.location, size: geometry.size), pointSpacing: 1 / (zoom * fit))
                             return
                         }
                         if isMovingCanvas && isEyedropperActive {
+                            RenderDiagnostics.touchOutcome("pick")
                             updateSample(at: value.location, size: geometry.size)
                             return
                         }
                         if isMovingCanvas {
+                            RenderDiagnostics.touchOutcome("pan")
                             cancelShapeHold()
                             if panOrigin == nil { panOrigin = offset }
                             let origin = panOrigin ?? offset
@@ -307,15 +327,17 @@ struct WatchCanvasView: View {
                             return
                         }
                         if let guideDrag {
+                            RenderDiagnostics.touchOutcome("guide")
                             cancelShapeHold()
                             updateGuideDrag(guideDrag, from: value.startLocation, to: value.location, size: geometry.size)
                             return
                         }
-                        guard controller.pencilStyle.instrument != .fill else { return }
+                        guard controller.pencilStyle.instrument != .fill else { RenderDiagnostics.touchOutcome("fill"); return }
                         if controller.pencilStyle.instrument == .eraser,
                            controller.selectedLayer.isVisible,
                            controller.selectedLayer.locksTransparency {
                             // Reject the whole gesture; unlocking requires a fresh touch to erase.
+                            RenderDiagnostics.touchOutcome("off:layer locked")
                             acceptsCurrentGesture = false
                             cancelShapeHold()
                             blockedEraserLayerID = controller.selectedLayer.id
@@ -335,12 +357,13 @@ struct WatchCanvasView: View {
                                 // Choose the ruler from the initial direction, measured on screen.
                                 guard hypot(value.location.x - value.startLocation.x,
                                             value.location.y - value.startLocation.y) >= Self.rulerDecisionDistance
-                                else { return }
+                                else { RenderDiagnostics.touchOutcome("ruler wait"); return }
                                 isRulerPending = false
                                 guides.activeRuler = guides.layout(paperSize: paperSize).ruler(from: start,
                                     toward: canvasPoint(value.location, size: geometry.size), tolerance: tolerance)
                             }
                             controller.beginStroke(at: sample(at: ruled(start), time: value.time))
+                            RenderDiagnostics.touchOutcome(controller.activeStroke == nil ? "off:no stroke" : "draw")
                         }
                         let adjustStarted = controller.isShapeSnapped ? RenderDiagnostics.begin() : 0
                         let revisionBefore = controller.activeStroke?.geometryRevision
@@ -359,6 +382,8 @@ struct WatchCanvasView: View {
                     }
                     .onEnded { value in
                         cancelShapeHold()
+                        var keptStroke: Bool?
+                        defer { RenderDiagnostics.touchEnded(cancelled: false, kept: keptStroke) }
                         defer { acceptsCurrentGesture = nil; panOrigin = nil; lassoGestureStartBounds = nil; endGuideInteraction() }
                         guard acceptsInput && acceptsCurrentGesture == true else { return }
                         if guideDrag != nil { return }
@@ -387,6 +412,7 @@ struct WatchCanvasView: View {
                             // A tap on a guide still leaves a dot.
                             controller.beginStroke(at: sample(
                                 at: canvasPoint(value.startLocation, size: geometry.size), time: value.time))
+                            RenderDiagnostics.touchOutcome(controller.activeStroke == nil ? "off:no stroke" : "draw")
                         }
                         guard controller.activeStroke != nil else { return }
                         let recognizedKind = controller.recognizedShapeKind
@@ -409,6 +435,7 @@ struct WatchCanvasView: View {
                         let previousCount = controller.document.strokes.count
                         controller.endStroke(at: sample(
                             at: ruled(canvasPoint(value.location, size: geometry.size)), time: value.time))
+                        keptStroke = controller.document.strokes.count > previousCount
                         if controller.document.strokes.count > previousCount {
                             tutorial.finishedCircleAttempt(kind: recognizedKind)
                             tutorial.record(.stroke)
@@ -417,6 +444,11 @@ struct WatchCanvasView: View {
                     },
                 including: acceptsInput && tutorial.acceptsActions && !tutorial.isFadingCircleAttempt ? .all : .none
             )
+            // Debug only, never masked: tells touches that reach the canvas while the drawing
+            // gesture is off apart from touches that never reach it (an overlay or the system).
+            .modifier(RenderTouchProbe(isEnabled: RenderDebug.isEnabled && renderDebug.showsHUD,
+                began: { RenderDiagnostics.rawTouch(ended: false, location: $0) },
+                ended: { RenderDiagnostics.rawTouch(ended: true, location: .zero) }))
         }
         .ignoresSafeArea()
         .alert(L10n.text("Layer is locked"), isPresented: Binding(
@@ -472,10 +504,18 @@ struct WatchCanvasView: View {
         }
         .onChange(of: isDragging) { _, dragging in
             if !dragging {
+                // After a normal onEnded the touch is already closed and this does nothing.
+                RenderDiagnostics.touchEnded(cancelled: true)
                 cancelShapeHold()
                 // A normal onEnded already commits and clears the stroke.
-                // A cancelled gesture has no onEnded and must not remain live.
-                if controller.activeStroke != nil { controller.cancelStroke() }
+                // A cancelled gesture has no onEnded and must not remain live. watchOS cancels
+                // strokes started at the screen edge once its edge gesture takes over: keep
+                // what was drawn up to its last sample. The tutorial grades its own strokes.
+                if let last = controller.activeStroke?.points.last, !tutorial.isActive {
+                    controller.endStroke(at: last)
+                } else if controller.activeStroke != nil {
+                    controller.cancelStroke()
+                }
                 lasso.cancelGesture()
                 panOrigin = nil
                 acceptsCurrentGesture = nil
@@ -608,7 +648,7 @@ struct WatchCanvasView: View {
         }
     }
 
-    private func isProtectedStart(_ point: CGPoint, canvasFrame: CGRect) -> Bool {
+    private func protectedControl(at point: CGPoint, canvasFrame: CGRect) -> CanvasToolbarControl? {
         let screenPoint = CGPoint(x: canvasFrame.minX + point.x, y: canvasFrame.minY + point.y)
         for (control, frame) in protectedControlsProvider?() ?? protectedControls {
             guard !frame.isNull && !frame.isEmpty else { continue }
@@ -616,14 +656,18 @@ struct WatchCanvasView: View {
             // There is no extra no-draw zone around it: the canvas is drawable up to it.
             switch control {
             case .morph, .contentMorph, .canvasToolsMorph, .custom:
-                if frame.contains(screenPoint) { return true }
+                // A collapsed (square) control is a round button: protect only its circle,
+                // as its hit shape does. Expanded panels tile their rows as rectangles.
+                if abs(frame.width - frame.height) < 1 {
+                    if hypot(screenPoint.x - frame.midX, screenPoint.y - frame.midY) <= frame.width / 2 { return control }
+                } else if frame.contains(screenPoint) { return control }
             case .more, .tools, .clear, .save, .undo, .redo:
                 // The toolbar reports only the icon bounds; test the round 44 pt button.
                 let radius = max(44, max(frame.width, frame.height)) / 2
-                if hypot(screenPoint.x - frame.midX, screenPoint.y - frame.midY) <= radius { return true }
+                if hypot(screenPoint.x - frame.midX, screenPoint.y - frame.midY) <= radius { return control }
             }
         }
-        return false
+        return nil
     }
 
     // Screen points, so guides feel the same at every zoom level.

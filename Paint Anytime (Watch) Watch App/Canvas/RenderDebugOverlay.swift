@@ -66,3 +66,26 @@ struct RenderDebugOverlay: View {
         return Double(info.phys_footprint) / 1_048_576
     }
 }
+
+/// Debug touch probe: a never-masked simultaneous drag that reports each touch's start and
+/// its end, including a cancellation (no `onEnded`), which `@GestureState` reset reveals.
+/// A modifier of its own, so the reset re-evaluates only this body, not the host screen.
+struct RenderTouchProbe: ViewModifier {
+    let isEnabled: Bool
+    let began: (CGPoint) -> Void
+    let ended: () -> Void
+    @GestureState private var isDown = false
+
+    func body(content: Content) -> some View {
+        content
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0, coordinateSpace: .global)
+                    .updating($isDown) { value, state, _ in
+                        if !state { began(value.startLocation) }
+                        state = true
+                    },
+                including: isEnabled ? .all : .none
+            )
+            .onChange(of: isDown) { _, down in if !down { ended() } }
+    }
+}

@@ -6,9 +6,7 @@ import Dispatch
 /// Off: the menu and HUD disappear and every stage runs its shipping default, nothing
 /// is measured. Release builds always compile it off.
 nonisolated enum RenderDebug {
-    // TEMP (2026-11-08): on in Release too — the watch scheme launches Release and the
-    // shape-adjust measurements need optimized code. Restore `false` in Release afterwards.
-    static let isEnabled = true
+    static let isEnabled = false
 }
 
 /// Latency optimizations of the live stroke. All ship on; in debug builds the
@@ -242,6 +240,38 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     private var shapeSeenAt: UInt64 = 0
     private var lastRecognizeNS: UInt64 = 0
     private var windowStart = RenderDiagnostics.now()
+    /// Touch log, kept across HUD windows: the open touch and the latest finished ones.
+    private var touchSerial = 0
+    private var openTouch: TouchRecord?
+    private var recentTouches: [TouchRecord] = []
+    private var touchTotals: [String: Int] = [:]
+    /// Touches seen by a debug-only simultaneous gesture on the canvas that is never masked:
+    /// it counts touches that reach the canvas even while the drawing gesture is switched off.
+    private var rawTouches = 0
+    private var rawOpen = false
+    private var rawSeenAt: UInt64 = 0
+    private var rawLocation: CGPoint?
+    /// Same probe on the whole canvas screen (canvas plus the controls drawn over it):
+    /// root counts but raw does not → a view over the canvas took the touch;
+    /// neither counts → the touch never reached the app's canvas screen.
+    private var rootTouches = 0
+    private var rootOpen = false
+    private var rootLocation: CGPoint?
+    /// Same probe around the whole app window (navigation, native toolbar, sheets).
+    private var appTouches = 0
+    private var appOpen = false
+    private var appLocation: CGPoint?
+    /// Whether the canvas screen probe saw the open window touch; window touches it never
+    /// saw ("lost" before the canvas screen), newest first, with their start and length.
+    private var appReachedRoot = false
+    private var appStartedAt: UInt64 = 0
+    private var lostTouches: [(location: CGPoint, endedAt: UInt64, ms: Double)] = []
+    private var lostCount = 0
+    /// Nearest canvas control to the latest screen touch: "in name" or "name +distance pt".
+    private var rootNear = "—"
+    /// Drawing gesture mask from the latest canvas body, and the screen's reasons for no input.
+    private var touchGate = "—"
+    private var inputBlockers = "—"
 
     static func now() -> UInt64 { DispatchTime.now().uptimeNanoseconds }
 
@@ -310,6 +340,9 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         let end = now()
         shared.locked {
             if live { shared.liveFrames += 1 } else { shared.committedFrames += 1 }
+            if live, shared.openTouch?.outcome == "draw", shared.openTouch?.firstInkAt == 0 {
+                shared.openTouch?.firstInkAt = end
+            }
             if shared.publishedAt == 0 { shared.publishedAt = end }
             shared.shownTiles += tiles
             shared.shownTilesMax = max(shared.shownTilesMax, tiles)
@@ -496,6 +529,179 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         }
     }
 
+    /// One canvas touch from its first gesture sample to onEnded / cancellation.
+    /// `outcome` is the first decision the handler made about it; nil until one is made.
+    private struct TouchRecord {
+        var id: Int
+        var startedAt: UInt64
+        var eventAt: UInt64
+        /// Start of the touch, global points.
+        var start: CGPoint
+        var samples = 0
+        var outcome: String?
+        var firstInkAt: UInt64 = 0
+        var endedAt: UInt64 = 0
+        var end = ""
+    }
+
+    /// Every canvas gesture sample, before any guard. A sample without an open touch opens one.
+    static func touchSample(eventTime: Date, location: () -> CGPoint) {
+        guard RenderDebug.isEnabled else { return }
+        let time = now()
+        let ageNS = UInt64(eventAge(eventTime) * 1_000_000_000)
+        shared.locked {
+            if shared.openTouch == nil {
+                shared.touchSerial += 1
+                shared.openTouch = TouchRecord(id: shared.touchSerial, startedAt: time,
+                                               eventAt: time &- min(time, ageNS), start: location())
+            }
+            shared.openTouch?.samples += 1
+        }
+    }
+
+    /// Why the open touch draws or does not; the first call per touch wins.
+    static func touchOutcome(_ outcome: String) {
+        guard RenderDebug.isEnabled else { return }
+        shared.locked {
+            guard shared.openTouch != nil, shared.openTouch?.outcome == nil else { return }
+            shared.openTouch?.outcome = outcome
+        }
+    }
+
+    /// The touch finished: `onEnded` ran (`cancelled` false) or the gesture state reset
+    /// without it (system cancellation). `kept`: whether a drawn stroke entered the document.
+    static func touchEnded(cancelled: Bool, kept: Bool? = nil) {
+        guard RenderDebug.isEnabled else { return }
+        let time = now()
+        shared.locked {
+            guard var touch = shared.openTouch else { return }
+            shared.openTouch = nil
+            touch.endedAt = time
+            touch.end = cancelled ? "CANCEL" : kept == false ? "LOST" : ""
+            let key = cancelled ? "cancel" : touch.outcome.map { String($0.prefix { $0 != ":" }) } ?? "none"
+            shared.touchTotals[key, default: 0] += 1
+            shared.recentTouches.insert(touch, at: 0)
+            if shared.recentTouches.count > 3 { shared.recentTouches.removeLast() }
+        }
+    }
+
+    /// Debug-only gesture that is never masked: one call per sample, `ended` on its end.
+    /// `location` in global coordinates.
+    static func rawTouch(ended: Bool, location: CGPoint) {
+        guard RenderDebug.isEnabled else { return }
+        let time = now()
+        shared.locked {
+            if ended { shared.rawOpen = false; return }
+            if !shared.rawOpen { shared.rawTouches += 1; shared.rawOpen = true; shared.rawLocation = location }
+            shared.rawSeenAt = time
+        }
+    }
+
+    /// Window-level probe; `location` in global coordinates.
+    static func appTouch(ended: Bool, location: CGPoint) {
+        guard RenderDebug.isEnabled else { return }
+        shared.locked {
+            if ended {
+                guard shared.appOpen else { return }
+                shared.appOpen = false
+                if !shared.appReachedRoot, let start = shared.appLocation {
+                    let end = now()
+                    shared.lostCount += 1
+                    shared.lostTouches.insert((start, end, Double(end &- shared.appStartedAt) / 1_000_000), at: 0)
+                    if shared.lostTouches.count > 4 { shared.lostTouches.removeLast() }
+                }
+                return
+            }
+            if !shared.appOpen {
+                shared.appTouches += 1
+                shared.appOpen = true
+                shared.appLocation = location
+                // The probes fire in either order for one touch: the screen probe may be first.
+                shared.appReachedRoot = shared.rootOpen
+                shared.appStartedAt = now()
+            }
+        }
+    }
+
+    /// Screen-level probe; `location` in global coordinates.
+    /// `controls`: the canvas control frames in global coordinates, read only on the touch's first sample.
+    static func rootTouch(ended: Bool, location: CGPoint, controls: () -> [(String, CGRect)]) {
+        guard RenderDebug.isEnabled else { return }
+        let isNew = shared.locked { () -> Bool in
+            if ended { shared.rootOpen = false; return false }
+            guard !shared.rootOpen else { return false }
+            shared.rootTouches += 1
+            shared.rootOpen = true
+            shared.appReachedRoot = true
+            shared.rootLocation = location
+            return true
+        }
+        guard isNew else { return }
+        var near = "none"
+        var best = CGFloat.infinity
+        for (name, frame) in controls() where !frame.isNull && !frame.isEmpty {
+            let dx = max(frame.minX - location.x, 0, location.x - frame.maxX)
+            let dy = max(frame.minY - location.y, 0, location.y - frame.maxY)
+            let distance = hypot(dx, dy)
+            if distance < best {
+                best = distance
+                near = distance == 0 ? "in \(name)" : String(format: "%@ +%.0fpt", name, distance)
+                    + String(format: " %.0fx%.0f", frame.width, frame.height)
+            }
+        }
+        shared.locked { shared.rootNear = near }
+    }
+
+    /// The canvas body's gesture mask inputs. Evaluated with the body, so it is current
+    /// whenever any of them changes.
+    static func setTouchGate(_ gate: String) {
+        guard RenderDebug.isEnabled else { return }
+        shared.locked { shared.touchGate = gate }
+    }
+
+    /// Screen-level reasons `acceptsInput` is false ("" when it is true).
+    static func setInputBlockers(_ blockers: [String]) {
+        guard RenderDebug.isEnabled else { return }
+        shared.locked { shared.inputBlockers = blockers.isEmpty ? "none" : blockers.joined(separator: ",") }
+    }
+
+    /// Touch log for the HUD: totals by outcome, then the open touch and the latest three
+    /// (newest first) with outcome, samples, first live frame after the touch and age.
+    /// Called with the lock held.
+    private func touchLines(now: UInt64) -> [String] {
+        func describe(_ touch: TouchRecord) -> String {
+            var text = "#\(touch.id) " + (touch.outcome ?? "none") + " \(touch.samples)s"
+            if touch.outcome == "draw" {
+                text += touch.firstInkAt == 0 ? " NOINK"
+                    : String(format: " %.0fms", Double(touch.firstInkAt &- touch.eventAt) / 1_000_000)
+            }
+            if !touch.end.isEmpty { text += " " + touch.end }
+            // Where the touches that did not end as a kept stroke started.
+            if touch.outcome != "draw" || !touch.end.isEmpty {
+                text += String(format: " @%.0f,%.0f", touch.start.x, touch.start.y)
+            }
+            let reference = touch.endedAt == 0 ? touch.startedAt : touch.endedAt
+            return text + String(format: " %.0fs", Double(now &- reference) / 1_000_000_000)
+        }
+        let totals = touchTotals.sorted { $0.value > $1.value }.map { "\($0.key) \($0.value)" }
+        let header = "touch \(touchSerial)" + (totals.isEmpty ? "" : ": " + totals.joined(separator: " "))
+            + " · raw \(rawTouches)" + (rawOpen ? " DOWN" : "")
+            + " · root \(rootTouches)" + (rootOpen ? " DOWN" : "")
+            + " · app \(appTouches)" + (appOpen ? " DOWN" : "")
+        func point(_ location: CGPoint?) -> String {
+            location.map { String(format: "%.0f,%.0f", $0.x, $0.y) } ?? "—"
+        }
+        let places = "at app \(point(appLocation)) · root \(point(rootLocation)) \(rootNear) · raw \(point(rawLocation))"
+        let gate = "gate \(touchGate) · block \(inputBlockers)"
+        let open = openTouch.map { ["now " + describe($0)] } ?? []
+        // Window touches that never reached the canvas screen: start point, length, age.
+        let lost = lostTouches.isEmpty ? [] : ["lost \(lostCount): " + lostTouches.map {
+            String(format: "@%.0f,%.0f %.0fms %.0fs", $0.location.x, $0.location.y, $0.ms,
+                   Double(now &- $0.endedAt) / 1_000_000_000)
+        }.joined(separator: " · ")]
+        return [header, places, gate] + lost + (open + recentTouches.map(describe)).chunked(2).map { $0.joined(separator: " · ") }
+    }
+
     static func setPath(_ name: String) {
         guard RenderDebug.isEnabled else { return }
         shared.locked { shared.path = name }
@@ -586,7 +792,8 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
                     + "/\(rate(bodies[RenderCounter.canvas.rawValue]))/\(rate(bodies[RenderCounter.screen.rawValue]))",
             ] + (extra.isEmpty ? [] : [extra.joined(separator: " ") + " · \(path)"])
               + dryLines(ms)
-              + shapeLines(seconds: seconds, now: now)).joined(separator: "\n")
+              + shapeLines(seconds: seconds, now: now)
+              + touchLines(now: now)).joined(separator: "\n")
             spans = Array(repeating: Accumulator(), count: RenderSpan.allCases.count)
             latency = Accumulator()
             endToEnd = Accumulator()
@@ -605,5 +812,13 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             windowStart = now
             return text
         }
+    }
+}
+
+// The target defaults to MainActor isolation; the HUD text is built under the
+// diagnostics lock off the main actor.
+nonisolated private extension Array {
+    func chunked(_ size: Int) -> [[Element]] {
+        stride(from: 0, to: count, by: size).map { Array(self[$0..<Swift.min($0 + size, count)]) }
     }
 }

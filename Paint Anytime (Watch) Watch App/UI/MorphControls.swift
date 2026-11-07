@@ -491,7 +491,7 @@ struct CanvasMorphPanels: View {
         } collapsed: {
             VStack(spacing: 0) {
 
-                morphButton("Canvas actions", height: diameter, action: openContentActions) {
+                morphButton("Canvas actions", height: diameter, isCircular: true, action: openContentActions) {
                     Image(systemName: "doc.badge.gearshape")
                 }
                 .accessibilityHidden(true)
@@ -529,7 +529,7 @@ struct CanvasMorphPanels: View {
             }
         } collapsed: {
             VStack(spacing: 0) {
-                morphButton("Open drawing controls", height: diameter) {
+                morphButton("Open drawing controls", height: diameter, isCircular: true) {
                     withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
                         showsContentActions = false
                         showsMorphToolbar = true
@@ -630,14 +630,17 @@ struct CanvasMorphPanels: View {
         .modifier(SketchAssistRequirementsAlert(isPresented: $showsSketchAssistRequirements))
     }
 
-    private func morphButton<Label: View>(_ title: String, height: CGFloat, action: @escaping () -> Void,
+    /// `isCircular`: a collapsed one-button panel, hit-tested like its round glass so the
+    /// corners beside it stay drawable. Rows of an expanded panel tile it as rectangles.
+    private func morphButton<Label: View>(_ title: String, height: CGFloat, isCircular: Bool = false,
+                                          action: @escaping () -> Void,
                                           @ViewBuilder label: () -> Label) -> some View {
         Button(action: action) {
             label()
                 .font(.system(size: 17, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
-                .contentShape(Rectangle())
+                .contentShape(isCircular ? AnyShape(Circle()) : AnyShape(Rectangle()))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.text(title))
