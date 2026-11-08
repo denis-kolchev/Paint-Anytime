@@ -135,24 +135,28 @@ nonisolated enum WatchBlurFilter {
         context.restoreGState()
     }
 
-    /// Softens coverage stored for `domain` (zero outside it) with a box of `radius`
-    /// and writes `target` as rows of `target.width` values in 0…1.
-    static func feather(_ raw: UnsafePointer<UInt8>, stride: Int, domain: PixelRect, target: PixelRect,
-                        radius: Int, into output: UnsafeMutablePointer<Float>, workspace: Workspace) {
+    /// Softens coverage stored for `domain` with a box of `radius` and writes `target`
+    /// as rows of `target.width` values in 0…1. Inside the canvas, coverage outside
+    /// `domain` is zero. Beyond the canvas edge the edge pixel repeats: the stroke
+    /// continues off the paper, so edge pixels keep full strength instead of fading.
+    static func feather(_ raw: UnsafePointer<UInt8>, stride: Int, domain: PixelRect, canvas: PixelRect,
+                        target: PixelRect, radius: Int, into output: UnsafeMutablePointer<Float>,
+                        workspace: Workspace) {
         let width = target.width, rows = target.height + 2 * radius
-        guard width > 0, target.height > 0 else { return }
+        guard width > 0, target.height > 0, !canvas.isEmpty else { return }
         let lines = workspace.scalars(width * (rows + 1))
         let sums = lines + width * rows
         for row in 0..<rows {
-            let y = target.y - radius + row
+            let y = min(canvas.maxY - 1, max(canvas.y, target.y - radius + row))
             let line = lines + row * width
             guard y >= domain.y, y < domain.maxY else {
                 line.update(repeating: 0, count: width)
                 continue
             }
             let source = raw + (y - domain.y) * stride
-            func value(_ x: Int) -> Int {
-                x >= domain.x && x < domain.maxX ? Int(source[x - domain.x]) : 0
+            func value(_ position: Int) -> Int {
+                let x = min(canvas.maxX - 1, max(canvas.x, position))
+                return x >= domain.x && x < domain.maxX ? Int(source[x - domain.x]) : 0
             }
             var sum = 0
             for x in (target.x - radius)...(target.x + radius) { sum += value(x) }
@@ -423,7 +427,7 @@ nonisolated extension WatchBitmapRenderer {
         let coverage = UnsafeMutablePointer<Float>.allocate(capacity: area.width * area.height)
         defer { coverage.deallocate() }
         Filter.feather(maskData.assumingMemoryBound(to: UInt8.self), stride: mask.bytesPerRow, domain: drawn,
-                       target: area, radius: parameters.feather, into: coverage, workspace: tiles.workspace)
+                       canvas: canvas, target: area, radius: parameters.feather, into: coverage, workspace: tiles.workspace)
         guard tiles.prepare(tiles.covered(by: coverage, in: area)) else { return false }
         Filter.mix(area, coverage: coverage, tiles: tiles, original: pixels, originalStride: stride,
                    output: pixels, outputStride: stride,
@@ -544,7 +548,7 @@ nonisolated extension WatchBitmapRenderer {
                 weightsCapacity = count
             }
             guard let weights else { return nil }
-            WatchBlurFilter.feather(raw, stride: coverage.bytesPerRow, domain: canvas, target: area,
+            WatchBlurFilter.feather(raw, stride: coverage.bytesPerRow, domain: canvas, canvas: canvas, target: area,
                                     radius: parameters.feather, into: weights, workspace: tiles.workspace)
             guard tiles.prepare(tiles.covered(by: weights, in: area)) else { return nil }
             WatchBlurFilter.mix(area, coverage: weights, tiles: tiles,
