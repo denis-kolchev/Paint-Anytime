@@ -362,11 +362,25 @@ nonisolated private enum ToolPreviewStroke {
         let b = SIMD2<Float>(Float(size.width * 0.35), Float(size.height * 0.05))
         let c = SIMD2<Float>(Float(size.width * 0.65), Float(size.height * 0.95))
         let d = SIMD2<Float>(Float(size.width * 0.85), Float(size.height * 0.3))
-        let samples = (0...40).map { index -> PointerSample in
+        var samples = (0...40).map { index -> PointerSample in
             let t = Float(index) / 40
             let u = 1 - t
             let position = a * (u*u*u) + b * (3*u*u*t) + c * (3*u*t*t) + d * (t*t*t)
             return PointerSample(position: position, pressure: 1, timestamp: Double(t))
+        }
+        if style.instrument == .pen {
+            // Pen width follows speed: retime the demo like a hand that starts slowly and
+            // steadily speeds up, so the line tapers from the thickest to the thinnest
+            // width in one smooth sweep. A geometric rise reads as an even taper.
+            let slow: Float = 30, fast: Float = 900 // pt/s
+            var time: Double = 0
+            for index in samples.indices.dropFirst() {
+                let t = (Float(index) - 0.5) / Float(samples.count - 1)
+                let speed = slow * exp(log(fast / slow) * t)
+                let delta = samples[index].position - samples[index - 1].position
+                time += Double((delta * delta).sum().squareRoot() / speed)
+                samples[index].timestamp = time
+            }
         }
         var strokes: [Stroke] = []
         if style.instrument == .eraser || style.instrument == .blur {

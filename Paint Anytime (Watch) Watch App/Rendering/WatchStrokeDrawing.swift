@@ -137,7 +137,7 @@ nonisolated enum WatchStrokeDrawing {
                 lineWidth: CGFloat(stroke.style.width), lineCap: .round, lineJoin: .round))
             drawDotIfNeeded(stroke, ink: ink, in: &paint)
         case .pen:
-            paint.fill(shape(BrushGeometry.roundPolygons(for: stroke)), with: .color(ink))
+            paint.fill(Path(BrushGeometry.roundPath(for: stroke)), with: .color(ink))
         case .fountainPen, .reed:
             paint.fill(shape(FountainPenGeometry.polygons(for: stroke)), with: .color(ink))
         case .marker:

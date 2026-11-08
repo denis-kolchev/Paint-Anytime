@@ -304,7 +304,7 @@ private struct InkTipOverlay: View {
             // Speed-dependent radii are smoothed from the stroke's start: take them
             // from the whole stroke, then build discs only for the tail.
             let radii = Array(BrushGeometry.radii(for: stroke)[start...])
-            return .fill(Self.shape(BrushGeometry.roundPolygons(points: points, radii: radii)))
+            return .fill(Path(BrushGeometry.roundPath(points: points, radii: radii)))
         case .fountainPen, .reed:
             // The nib is swept segment by segment, so the tail alone matches exactly.
             var tail = stroke

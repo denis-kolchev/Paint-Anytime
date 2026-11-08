@@ -211,31 +211,35 @@ nonisolated enum BrushGeometry {
         return result
     }
 
-    static func roundPolygons(for stroke: Stroke) -> [[SIMD2<Float>]] {
-        roundPolygons(points: stroke.points.map(\.position), radii: radii(for: stroke))
+    static func roundPath(for stroke: Stroke) -> CGPath {
+        roundPath(points: stroke.points.map(\.position), radii: radii(for: stroke))
     }
 
     /// Discs at each point joined by quads. The live ink tip passes only the stroke's
     /// tail with radii computed over the whole stroke, so widths match the renderer.
-    static func roundPolygons(points: [SIMD2<Float>], radii: [Float]) -> [[SIMD2<Float>]] {
-        var result: [[SIMD2<Float>]] = []
+    /// Discs are true arcs, as in a round line cap: a fixed polygon showed facets on
+    /// wide pens. Discs and quads share one winding, so nonzero filling has no holes.
+    static func roundPath(points: [SIMD2<Float>], radii: [Float]) -> CGPath {
+        func cg(_ p: SIMD2<Float>) -> CGPoint { CGPoint(x: CGFloat(p.x), y: CGFloat(p.y)) }
+        let path = CGMutablePath()
         for index in points.indices {
             let center = points[index]
             let radius = radii[index]
-            result.append((0..<16).map {
-                let angle = Float($0) * 2 * .pi / 16
-                return center + SIMD2(cos(angle), sin(angle)) * radius
-            })
+            path.move(to: cg(center + SIMD2(radius, 0)))
+            path.addArc(center: cg(center), radius: CGFloat(radius),
+                        startAngle: 0, endAngle: 2 * .pi, clockwise: false)
+            path.closeSubpath()
             guard index > 0 else { continue }
             let previous = points[index - 1]
             let delta = center - previous
             guard simd_length(delta) > 0.001 else { continue }
             let normal = simd_normalize(SIMD2<Float>(-delta.y, delta.x))
-            result.append([previous + normal * radii[index - 1],
-                           previous - normal * radii[index - 1],
-                           center - normal * radius, center + normal * radius])
+            path.addLines(between: [cg(previous + normal * radii[index - 1]),
+                                    cg(previous - normal * radii[index - 1]),
+                                    cg(center - normal * radius), cg(center + normal * radius)])
+            path.closeSubpath()
         }
-        return result
+        return path
     }
 
     // Fixed-distance samples: texture density does not depend on event frequency.
