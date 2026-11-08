@@ -126,27 +126,87 @@ nonisolated enum BrushGeometry {
         return polygons
     }
 
+    /// Largest change of the pen radius per point of travel (taper of about 11°).
+    static let penRadiusSlope: Float = 0.2
+    /// Pen width scale at rest and at high speed.
+    static let penSlowScale: Float = 1, penFastScale: Float = 0.28
+    /// Time span over which pen speed is averaged; longer than several input events,
+    /// so uneven event spacing does not read as changes of speed.
+    static let penSpeedWindow: TimeInterval = 0.08
+    /// Width scale before any speed is known: a tap, or the first input event.
+    static let penOpeningScale: Float = 0.55
+
+    static func penScale(speed: Float) -> Float {
+        penFastScale + (penSlowScale - penFastScale) / (1 + speed / 150)
+    }
+
     static func radii(for stroke: Stroke) -> [Float] {
         let base = max(0.1, stroke.style.width) / 2
+        let points = stroke.points
         guard stroke.style.instrument == .pen else {
-            return Array(repeating: base, count: stroke.points.count)
+            return Array(repeating: base, count: points.count)
         }
-        var result: [Float] = []
-        var smoothedScale: Float = 0.85
-        for index in stroke.points.indices {
-            if index > 0 {
-                let previous = stroke.points[index - 1]
-                let current = stroke.points[index]
-                let elapsed = current.timestamp - previous.timestamp
-                // Ignore duplicate timestamps rather than introducing artificial speed spikes.
-                if elapsed.isFinite && elapsed > 0.0001 {
-                    let speed = simd_distance(previous.position, current.position) / Float(elapsed)
-                    let target = 0.28 + 0.72 / (1 + speed / 150)
-                    let blend = Float(1 - exp(-min(elapsed, 0.1) / 0.035))
-                    smoothedScale += (target - smoothedScale) * blend
-                }
+        guard !points.isEmpty else { return [] }
+        // Cumulative travel, for windowed speed.
+        var traveled = [Float](repeating: 0, count: points.count)
+        for index in points.indices.dropFirst() {
+            traveled[index] = traveled[index - 1]
+                + simd_distance(points[index - 1].position, points[index].position)
+        }
+        // The width follows speed along the path, not in time: it changes only while
+        // the pen travels, so slowing at corners, before lifting or while resting
+        // cannot swell the line into a blob. A longer length also absorbs the
+        // remaining speed jitter of a slow, steady hand.
+        let smoothingLength = max(4, base * 1.5)
+        // Start at the width of the opening speed: the average over the first
+        // `penSpeedWindow` of the stroke (or all of it while younger). A quick stroke
+        // starts thin and a slow one starts wide, with no growing or shrinking head.
+        // Only this opening estimate looks ahead; it settles after the window, and
+        // the active stroke is replayed whole, so live and committed ink agree.
+        var scale = penOpeningScale
+        let first = points[0]
+        let opening = points.firstIndex { $0.timestamp - first.timestamp >= penSpeedWindow }
+            ?? points.count - 1
+        do {
+            // Measure over the window's second half: the first touch is still
+            // accelerating from rest and would read too slow, i.e. too wide.
+            var from = points.firstIndex { $0.timestamp - first.timestamp >= penSpeedWindow / 2 } ?? 0
+            if from >= opening { from = 0 }
+            let span = points[opening].timestamp - points[from].timestamp
+            let length = traveled[opening] - traveled[from]
+            if span.isFinite && span > 0.0001 && length > 0 {
+                scale = penScale(speed: length / Float(span))
             }
-            result.append(base * smoothedScale)
+        }
+        var radius = base * scale
+        var result: [Float] = []
+        result.reserveCapacity(points.count)
+        var windowStart = 0
+        for index in points.indices {
+            if index > 0 {
+                let distance = traveled[index] - traveled[index - 1]
+                // Average speed over the last `penSpeedWindow` of input. Duplicate or
+                // missing timestamps leave the target unchanged rather than spiking it.
+                let now = points[index].timestamp
+                while windowStart < index - 1, now - points[windowStart + 1].timestamp >= penSpeedWindow {
+                    windowStart += 1
+                }
+                let span = now - points[windowStart].timestamp
+                // Inside the opening window the running speed still includes the
+                // start from rest; the opening width already stands for it.
+                if index > opening && span.isFinite && span > 0.0001 && distance > 0 {
+                    let speed = (traveled[index] - traveled[windowStart]) / Float(span)
+                    scale += (penScale(speed: speed) - scale) * (1 - exp(-distance / smoothingLength))
+                }
+                // Safety bound on the taper; a slope below 1 keeps every disc inside
+                // its neighbours' outline, leaving round ends only at the caps.
+                // After the opening window earlier radii never change as the stroke
+                // grows, so the live stroke, the ink tip, the committed stroke and
+                // saved output agree.
+                let step = distance * penRadiusSlope
+                radius = min(radius + step, max(radius - step, base * scale))
+            }
+            result.append(radius)
         }
         return result
     }
