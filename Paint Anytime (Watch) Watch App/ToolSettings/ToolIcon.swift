@@ -141,33 +141,24 @@ struct ToolIcon: View {
                 outline([CGPoint(x: 8, y: 17), CGPoint(x: 10, y: 26), CGPoint(x: 14, y: 26), CGPoint(x: 16, y: 17)])
                 line(9, 20, 15, 20)
             case .blur:
-                // A blending stump (tortillon): rolled paper, a graphite-worn tip and a soft halo.
-                var stump = Path()
-                stump.move(to: CGPoint(x: 8, y: 26))
-                stump.addLine(to: CGPoint(x: 8, y: 14))
-                stump.addLine(to: CGPoint(x: 11.3, y: 6.4))
-                stump.addQuadCurve(to: CGPoint(x: 12.7, y: 6.4), control: CGPoint(x: 12, y: 5))
-                stump.addLine(to: CGPoint(x: 16, y: 14))
-                stump.addLine(to: CGPoint(x: 16, y: 26))
-                c.stroke(stump, with: ink, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
-                var tip = Path()
-                tip.move(to: CGPoint(x: 10.2, y: 9))
-                tip.addLine(to: CGPoint(x: 11.3, y: 6.4))
-                tip.addQuadCurve(to: CGPoint(x: 12.7, y: 6.4), control: CGPoint(x: 12, y: 5))
-                tip.addLine(to: CGPoint(x: 13.8, y: 9))
-                tip.closeSubpath()
-                c.fill(tip, with: ink)
-                // The paper seam spiralling down the cone and the body.
-                line(14.2, 10.1, 8.5, 13)
-                line(8, 21, 16, 17)
-                for (radius, opacity) in [(CGFloat(3), 0.6), (5.5, 0.3)] {
-                    var halo = c
-                    halo.opacity = opacity
-                    var arc = Path()
-                    arc.addArc(center: CGPoint(x: 12, y: 6.5), radius: radius,
-                               startAngle: .degrees(215), endAngle: .degrees(325), clockwise: false)
-                    halo.stroke(arc, with: ink, style: StrokeStyle(lineWidth: 1.4, lineCap: .round))
-                }
+                // A flat-top blending brush: a wide, dense head flaring from a short ferrule.
+                var head = Path()
+                head.move(to: CGPoint(x: 8.5, y: 13))
+                head.addCurve(to: CGPoint(x: 4, y: 3.5), control1: CGPoint(x: 6, y: 10.5), control2: CGPoint(x: 4, y: 7))
+                head.addQuadCurve(to: CGPoint(x: 5.5, y: 2), control: CGPoint(x: 4, y: 2))
+                head.addLine(to: CGPoint(x: 18.5, y: 2))
+                head.addQuadCurve(to: CGPoint(x: 20, y: 3.5), control: CGPoint(x: 20, y: 2))
+                head.addCurve(to: CGPoint(x: 15.5, y: 13), control1: CGPoint(x: 20, y: 7), control2: CGPoint(x: 18, y: 10.5))
+                c.stroke(head, with: ink, style: StrokeStyle(lineWidth: 1.6, lineCap: .round, lineJoin: .round))
+                // Darker bristle tips across the flat top, and the glossy ferrule band.
+                let ferrule = Path(roundedRect: CGRect(x: 8.5, y: 13, width: 7, height: 5), cornerRadius: 1)
+                var tint = c
+                tint.opacity = 0.45
+                tint.fill(Path(roundedRect: CGRect(x: 4.7, y: 2.6, width: 14.6, height: 2.4), cornerRadius: 0.8), with: ink)
+                tint.fill(ferrule, with: ink)
+                c.stroke(ferrule, with: ink, lineWidth: 1.6)
+                line(10, 18, 10.5, 26)
+                line(14, 18, 13.5, 26)
             case .fill:
                 outline([CGPoint(x: 3, y: 13), CGPoint(x: 12, y: 4), CGPoint(x: 21, y: 13), CGPoint(x: 12, y: 22)], closed: true)
                 line(3, 13, 21, 13)
