@@ -12,6 +12,8 @@ struct CustomCanvasControls: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let anchors: [CanvasToolbarControl] = [.tools, .clear, .undo, .redo, .save, .more]
+    /// Fallback bottom-row center, measured from the bottom edge.
+    static let bottomRowCenterInset: CGFloat = 38
 
     /// Top slots expand downwards, the bottom row upwards.
     static func isTop(_ index: Int) -> Bool {
@@ -40,6 +42,7 @@ struct CustomCanvasControls: View {
                     }
                 } collapsed: {
                     Button {
+                        RenderDiagnostics.buttonAction("c\(index)")
                         if assignment.isMorph {
                             withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
                                 state.customExpandedSlot = index
@@ -59,12 +62,12 @@ struct CustomCanvasControls: View {
                             // beside the button and the canvas never saw them.
                             .contentShape(Circle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(CanvasMorphButtonStyle(debugName: "c\(index)"))
                     .disabled(!assignment.isMorph && !enabled(assignment.actions[0]))
                     .accessibilityLabel(assignment.isMorph ? "Morph: " + assignment.actions.map { L10n.text($0.title) }.joined(separator: ", ") : L10n.text(assignment.actions[0].title))
                 }
                 .frame(width: diameter)
-                .modifier(CanvasMorphGlass(adaptsToCanvas: true))
+                .modifier(CanvasMorphGlass(adaptsToCanvas: true, isInteractive: false))
                 .trackCanvasControl(.custom(index), frames: frames)
                 .position(x: anchor.x, y: anchor.y + (Self.isTop(index) ? 1 : -1) * (height - diameter) / 2)
                 .zIndex(expanded ? 1 : 0)
@@ -75,6 +78,7 @@ struct CustomCanvasControls: View {
 
     private func actionButton(_ action: CanvasQuickAction, height: CGFloat) -> some View {
         Button {
+            RenderDiagnostics.buttonAction("\(action)")
             // Undo and Redo keep the morph open for repeated taps; any other option
             // collapses it with the same spring as opening.
             if !action.keepsMorphOpen {
@@ -89,7 +93,7 @@ struct CustomCanvasControls: View {
                 // The whole row belongs to its action: rows tile the glass with no gaps.
                 .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(CanvasMorphButtonStyle(debugName: "\(action)"))
         .disabled(!enabled(action))
         .accessibilityLabel(L10n.text(action.title))
     }
@@ -105,12 +109,17 @@ struct CustomCanvasControls: View {
 
     private func position(_ index: Int, geometry: MorphPanelGeometry) -> CGPoint {
         if let frame = regions.toolbarAnchors[Self.anchors[index]], !frame.isEmpty {
-            return CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
+            let point = CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
+            // The canvas hides the native bars for this layout; a hidden bar reports its slots
+            // off screen (the bottom row vanished below the edge). Use only on-screen anchors.
+            if CGRect(origin: .zero, size: size).insetBy(dx: 4, dy: 4).contains(point) { return point }
         }
         if index == 0 { return CGPoint(x: geometry.trailingX, y: geometry.top + 18) }
         if index == CanvasControlLayout.topLeadingSlot { return CGPoint(x: geometry.leadingX, y: geometry.top + 18) }
+        // Bottom row at the native bottom-bar slot height (center about 38 pt above the
+        // bottom edge on Apple Watch Ultra, from device screenshots), clear of the corners.
         return CGPoint(x: geometry.leadingX + (geometry.trailingX - geometry.leadingX) * CGFloat(index - 1) / 3,
-                       y: geometry.bottom - 18)
+                       y: size.height - Self.bottomRowCenterInset)
     }
 }
 

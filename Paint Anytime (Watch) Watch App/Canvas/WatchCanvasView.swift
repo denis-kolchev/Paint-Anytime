@@ -37,6 +37,12 @@ struct WatchCanvasView: View {
     @State private var loupePoint: CGPoint?
     @State private var loupeImage: CGImage?
     var onCanvasInteraction: () -> Void = {}
+    /// A short tap that landed on the canvas inside a protected control's zone. With the
+    /// native bars hidden, taps on a drawn control sometimes reach the canvas under it
+    /// instead of the control; the screen forwards them to that control.
+    var onProtectedTap: (CanvasToolbarControl) -> Void = { _ in }
+    /// The protected control the current gesture started on.
+    @State private var protectedStartControl: CanvasToolbarControl?
     @State private var crownZoom = 1.0
     @State private var offset = CGSize.zero
     @State private var panOrigin: CGSize?
@@ -281,6 +287,7 @@ struct WatchCanvasView: View {
                             let protected = protectedControl(at: value.startLocation,
                                 canvasFrame: geometry.frame(in: .global))
                             acceptsCurrentGesture = protected == nil
+                            protectedStartControl = protected
                             if let protected { RenderDiagnostics.touchOutcome("prot:\(protected)") }
                             if acceptsCurrentGesture == true {
                                 onCanvasInteraction()
@@ -384,7 +391,12 @@ struct WatchCanvasView: View {
                         cancelShapeHold()
                         var keptStroke: Bool?
                         defer { RenderDiagnostics.touchEnded(cancelled: false, kept: keptStroke) }
-                        defer { acceptsCurrentGesture = nil; panOrigin = nil; lassoGestureStartBounds = nil; endGuideInteraction() }
+                        if acceptsCurrentGesture == false, let control = protectedStartControl,
+                           hypot(value.translation.width, value.translation.height) < Self.protectedTapSlop {
+                            // A tap, not a stroke: it belongs to the control it started on.
+                            onProtectedTap(control)
+                        }
+                        defer { acceptsCurrentGesture = nil; protectedStartControl = nil; panOrigin = nil; lassoGestureStartBounds = nil; endGuideInteraction() }
                         guard acceptsInput && acceptsCurrentGesture == true else { return }
                         if guideDrag != nil { return }
                         if lasso.isActive {
@@ -519,6 +531,7 @@ struct WatchCanvasView: View {
                 lasso.cancelGesture()
                 panOrigin = nil
                 acceptsCurrentGesture = nil
+                protectedStartControl = nil
                 endGuideInteraction()
             }
         }
@@ -673,6 +686,8 @@ struct WatchCanvasView: View {
     // Screen points, so guides feel the same at every zoom level.
     private static let rulerTolerance: CGFloat = 10
     private static let rulerDecisionDistance: CGFloat = 6
+    /// A protected-zone touch that moved less than this is a tap for its control.
+    private static let protectedTapSlop: CGFloat = 12
     private static let centerSnapRadius: CGFloat = 8
     private static let rotationSnap = (capture: 5 * Double.pi / 180, release: 8 * Double.pi / 180)
 

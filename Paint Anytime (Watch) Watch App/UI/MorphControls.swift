@@ -651,6 +651,10 @@ struct CanvasMorphPanels: View {
 /// One glass surface persists as the circle expands into a capsule.
 struct CanvasMorphGlass: ViewModifier {
     var adaptsToCanvas = false
+    /// Interactive glass reacts to touches on its own. Over Buttons with no native toolbar
+    /// slot above them it showed the press but the Button often never fired; those
+    /// controls pass false and give press feedback in `CanvasMorphButtonStyle`.
+    var isInteractive = true
     @Environment(\.colorScheme) private var colorScheme
 
     @ViewBuilder
@@ -658,7 +662,7 @@ struct CanvasMorphGlass: ViewModifier {
         if #available(watchOS 26, *) {
             content
                 .foregroundStyle(.primary)
-                .glassEffect(.regular.interactive(), in: Capsule())
+                .glassEffect(isInteractive ? .regular.interactive() : .regular, in: Capsule())
                 // Selection controls need the glass's adaptive foreground;
                 // forcing dark appearance makes white icons vanish on light glass.
                 .environment(\.colorScheme, adaptsToCanvas ? colorScheme : .dark)
@@ -667,5 +671,35 @@ struct CanvasMorphGlass: ViewModifier {
                 .foregroundStyle(.white)
                 .background(.ultraThinMaterial, in: Capsule())
         }
+    }
+}
+
+/// Buttons drawn on the canvas with no native toolbar slot above them (the custom layout
+/// hides the native bars). The surrounding glass is not interactive, so the press feedback
+/// lives on the Button itself and every press it shows also reaches the action.
+struct CanvasMorphButtonStyle: ButtonStyle {
+    /// Name in the debug HUD's button log.
+    var debugName = ""
+
+    func makeBody(configuration: Configuration) -> some View {
+        CanvasMorphButtonLabel(configuration: configuration, debugName: debugName)
+    }
+}
+
+private struct CanvasMorphButtonLabel: View {
+    let configuration: ButtonStyleConfiguration
+    let debugName: String
+    @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        configuration.label
+            .opacity(!isEnabled ? 0.45 : configuration.isPressed ? 0.55 : 1)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.9 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                guard RenderDebug.isEnabled, !debugName.isEmpty else { return }
+                RenderDiagnostics.buttonPress(debugName, down: pressed)
+            }
     }
 }

@@ -6,7 +6,9 @@ import Dispatch
 /// Off: the menu and HUD disappear and every stage runs its shipping default, nothing
 /// is measured. Release builds always compile it off.
 nonisolated enum RenderDebug {
-    static let isEnabled = false
+    // TEMP (2026-11-08): on in Release — diagnosing canvas buttons near the top edge with the
+    // native bars hidden. Restore `false` before shipping.
+    static let isEnabled = true
 }
 
 /// Latency optimizations of the live stroke. All ship on; in debug builds the
@@ -267,6 +269,8 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     private var appStartedAt: UInt64 = 0
     private var lostTouches: [(location: CGPoint, endedAt: UInt64, ms: Double)] = []
     private var lostCount = 0
+    /// Canvas-drawn buttons: each press (isPressed true → false) and whether its action ran.
+    private var buttonPresses: [(name: String, downAt: UInt64, upAt: UInt64, fired: Bool)] = []
     /// Nearest canvas control to the latest screen touch: "in name" or "name +distance pt".
     private var rootNear = "—"
     /// Drawing gesture mask from the latest canvas body, and the screen's reasons for no input.
@@ -597,6 +601,34 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         }
     }
 
+    /// A drawn canvas button's press began (`down`) or ended. A press that ends without
+    /// `buttonAction` was cancelled by the Button (the finger moved or the touch was taken).
+    static func buttonPress(_ name: String, down: Bool) {
+        guard RenderDebug.isEnabled else { return }
+        let time = now()
+        shared.locked {
+            if down {
+                shared.buttonPresses.insert((name, time, 0, false), at: 0)
+                if shared.buttonPresses.count > 4 { shared.buttonPresses.removeLast() }
+            } else if let index = shared.buttonPresses.firstIndex(where: { $0.name == name && $0.upAt == 0 }) {
+                shared.buttonPresses[index].upAt = time
+            }
+        }
+    }
+
+    /// A drawn canvas button's action ran; marks its latest press.
+    static func buttonAction(_ name: String) {
+        guard RenderDebug.isEnabled else { return }
+        shared.locked {
+            if let index = shared.buttonPresses.firstIndex(where: { $0.name == name }) {
+                shared.buttonPresses[index].fired = true
+            } else {
+                // Action without a press seen: the Button fired from a touch the style never showed.
+                shared.buttonPresses.insert((name, now(), now(), true), at: 0)
+            }
+        }
+    }
+
     /// Window-level probe; `location` in global coordinates.
     static func appTouch(ended: Bool, location: CGPoint) {
         guard RenderDebug.isEnabled else { return }
@@ -699,7 +731,14 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             String(format: "@%.0f,%.0f %.0fms %.0fs", $0.location.x, $0.location.y, $0.ms,
                    Double(now &- $0.endedAt) / 1_000_000_000)
         }.joined(separator: " · ")]
-        return [header, places, gate] + lost + (open + recentTouches.map(describe)).chunked(2).map { $0.joined(separator: " · ") }
+        // Drawn buttons, newest first: name, ✓ action ran / ✗ press ended without it / … held,
+        // press length, age.
+        let buttons = buttonPresses.isEmpty ? [] : ["btn " + buttonPresses.map { press in
+            let mark = press.fired ? "✓" : press.upAt == 0 ? "…" : "✗"
+            let length = press.upAt == 0 ? "" : String(format: " %.0fms", Double(press.upAt &- press.downAt) / 1_000_000)
+            return press.name + " " + mark + length + String(format: " %.0fs", Double(now &- press.downAt) / 1_000_000_000)
+        }.joined(separator: " · ")]
+        return [header, places, gate] + lost + buttons + (open + recentTouches.map(describe)).chunked(2).map { $0.joined(separator: " · ") }
     }
 
     static func setPath(_ name: String) {

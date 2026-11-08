@@ -110,9 +110,9 @@ struct ContentView: View {
         // item makes watchOS move its clock. CanvasMenuControlVisibility hides the
         // controls and disables their hit targets without changing the clock layout.
         .toolbar { canvasToolbar }
-        // A custom layout draws every control over the canvas. Its native top and bottom
-        // bars only took touches: strokes started in the top strip or beside an empty
-        // bottom slot never reached the canvas. Hide both while that layout is on screen.
+        // A custom layout draws every control over the canvas, so its native bars only took
+        // touches: strokes started in the top strip or beside an empty bottom slot never
+        // reached the canvas. Tool settings keep the bars for their buttons.
         .toolbar(hidesCanvasBars ? .hidden : .automatic, for: .navigationBar, .bottomBar)
         }
         .requestsHiddenClock(isActive && menuOnboarding.tutorialFolder == nil
@@ -715,7 +715,33 @@ struct ContentView: View {
             .trackCanvasControl(CustomCanvasControls.anchors[index], frames: controlFramesBinding)
             .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil || showsAutosaveProgress))
             .opacity(controller.activeStroke == nil ? 1 : 0)
-            .allowsHitTesting(controller.activeStroke == nil)
+            // The bars are hidden while these anchors exist; they only report frames for the
+            // drawn controls. Taking touches, the hidden slots swallowed taps on the drawn
+            // buttons under them (probe: window saw them, the canvas screen did not).
+            .allowsHitTesting(false)
+    }
+
+    /// A short tap the canvas received inside a drawn custom control's zone: with the native
+    /// bars hidden such taps sometimes reach the canvas under the control instead of it
+    /// (device log: the top-trailing control). Do what that collapsed control does.
+    private func forwardCanvasTap(_ control: CanvasToolbarControl) {
+        guard hidesCanvasBars, let customLayout else { return }
+        let index: Int
+        if case .custom(let slot) = control { index = slot }
+        else if let slot = CustomCanvasControls.anchors.firstIndex(of: control) { index = slot }
+        else { return }
+        guard customLayout.slots.indices.contains(index), !customLayout.slots[index].isEmpty,
+              // An open morph's rows are buttons of their own.
+              morphState.customExpandedSlot != index else { return }
+        let assignment = customLayout.slots[index]
+        RenderDiagnostics.buttonAction("fwd c\(index)")
+        if assignment.isMorph {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                morphState.customExpandedSlot = index
+            }
+        } else if let action = assignment.actions.first {
+            performQuickAction(action)
+        }
     }
 
     private func performQuickAction(_ action: CanvasQuickAction) {
@@ -853,7 +879,7 @@ struct ContentView: View {
                     showsMorphToolbar = false
                 }
             }
-        })
+        }, onProtectedTap: forwardCanvasTap)
             .id(session.canvasSessionID)
     }
 

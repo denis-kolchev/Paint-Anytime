@@ -580,6 +580,16 @@ struct WatchToolSettingsView: View {
             else { selectedPage = selection.rawValue }
             if !tutorial.isActive { crownFocused = true }
         }
+        .task {
+            // The canvas shows its native bars again as these settings open, which rebuilds
+            // the focus tree in the same update; watchOS then drops the request above and
+            // the Crown no longer scrolls the pickers. Ask again once the tree has settled.
+            guard !tutorial.isActive else { return }
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            if !showsInformation && !showsPaletteCover {
+                crownFocused = true
+            }
+        }
         .onDisappear { controller.flushStylePreferences() }
         .onChange(of: tutorial.showsInstruction) { _, showing in
             if !tutorial.isActive {
