@@ -116,9 +116,12 @@ struct CustomCanvasControls: View {
         }
         if index == 0 { return CGPoint(x: geometry.trailingX, y: geometry.top + 18) }
         if index == CanvasControlLayout.topLeadingSlot { return CGPoint(x: geometry.leadingX, y: geometry.top + 18) }
-        // Bottom row at the native bottom-bar slot height (center about 38 pt above the
-        // bottom edge on Apple Watch Ultra, from device screenshots), clear of the corners.
-        return CGPoint(x: geometry.leadingX + (geometry.trailingX - geometry.leadingX) * CGFloat(index - 1) / 3,
+        // Bottom row as the native bottom bar lays it out (Canvas Editor): the outer circles
+        // straight below the top ones, equal spacing between, center about 38 pt above the
+        // bottom edge on Apple Watch Ultra (from device screenshots).
+        let leading = position(CanvasControlLayout.topLeadingSlot, geometry: geometry).x
+        let trailing = position(0, geometry: geometry).x
+        return CGPoint(x: leading + (trailing - leading) * CGFloat(index - 1) / 3,
                        y: size.height - Self.bottomRowCenterInset)
     }
 }
