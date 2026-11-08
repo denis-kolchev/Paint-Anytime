@@ -447,7 +447,13 @@ struct CanvasMorphPanels: View {
 
     private func anchor(_ control: CanvasToolbarControl, fallback: CGPoint) -> CGPoint {
         guard let frame = regions.toolbarAnchors[control], !frame.isEmpty else { return fallback }
-        return CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
+        let point = CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
+        // Frames persist after their toolbar item leaves (a custom layout hides the bars,
+        // then lasso removes its anchors), so a stale slot can sit off screen or at the
+        // wrong edge. Keep only anchors on screen and on the same half as the fallback.
+        guard CGRect(origin: .zero, size: size).insetBy(dx: 4, dy: 4).contains(point),
+              (point.y < size.height / 2) == (fallback.y < size.height / 2) else { return fallback }
+        return point
     }
 
     /// Collapse after choosing an option, with the same spring as opening.
