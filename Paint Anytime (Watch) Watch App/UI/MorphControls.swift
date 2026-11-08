@@ -484,11 +484,10 @@ struct CanvasMorphPanels: View {
                     collapse { showsContentActions = false }
                     showsLayers = true
                 } label: { Image(systemName: "square.3.layers.3d") }
-                morphButton("Clear canvas", height: rowHeight) {
+                morphButton("Clear canvas", height: rowHeight, isUnavailable: !controller.canClear) {
                     collapse { showsContentActions = false }
                     session.requestCanvasAction(.clear)
                 } label: { BroomIcon() }
-                .disabled(!controller.canClear)
             }
         } collapsed: {
             VStack(spacing: 0) {
@@ -517,14 +516,14 @@ struct CanvasMorphPanels: View {
                         .frame(width: 18, height: 18)
                 }
                 .accessibilityHidden(true)
-                morphButton("Undo", height: rowHeight, action: { controller.undo() }) {
+                morphButton("Undo", height: rowHeight, isUnavailable: !controller.canUndo,
+                            action: { controller.undo() }) {
                     Image(systemName: "arrow.uturn.backward")
                 }
-                .disabled(!controller.canUndo)
-                morphButton("Redo", height: rowHeight, action: { controller.redo() }) {
+                morphButton("Redo", height: rowHeight, isUnavailable: !controller.canRedo,
+                            action: { controller.redo() }) {
                     Image(systemName: "arrow.uturn.forward")
                 }
-                .disabled(!controller.canRedo)
                 morphButton("Close", height: rowHeight) {
                     collapse { showsMorphToolbar = false }
                 } label: { Image(systemName: "xmark") }
@@ -555,18 +554,14 @@ struct CanvasMorphPanels: View {
             }
             .accessibilityHidden(true)
 
-            morphButton("Undo", height: rowHeight) {
+            morphButton("Undo", height: rowHeight, isUnavailable: !lasso.canUndo) {
                 onClearLayerMoveName()
                 lasso.undo(controller)
             } label: { Image(systemName: "arrow.uturn.backward") }
-            .disabled(!lasso.canUndo)
-            .opacity(lasso.canUndo ? 1 : 0.35)
-            morphButton("Redo", height: rowHeight) {
+            morphButton("Redo", height: rowHeight, isUnavailable: !lasso.canRedo) {
                 onClearLayerMoveName()
                 lasso.redo(controller)
             } label: { Image(systemName: "arrow.uturn.forward") }
-            .disabled(!lasso.canRedo)
-            .opacity(lasso.canRedo ? 1 : 0.35)
         }
         .frame(width: diameter)
         .modifier(CanvasMorphGlass())
@@ -634,15 +629,21 @@ struct CanvasMorphPanels: View {
 
     /// `isCircular`: a collapsed one-button panel, hit-tested like its round glass so the
     /// corners beside it stay drawable. Rows of an expanded panel tile it as rectangles.
+    /// `isUnavailable` dims the button like `.disabled` but keeps the tap, which then plays
+    /// `UnavailableActionFeedback` instead of the action.
     private func morphButton<Label: View>(_ title: String, height: CGFloat, isCircular: Bool = false,
+                                          isUnavailable: Bool = false,
                                           action: @escaping () -> Void,
                                           @ViewBuilder label: () -> Label) -> some View {
-        Button(action: action) {
+        Button {
+            if isUnavailable { UnavailableActionFeedback.play() } else { action() }
+        } label: {
             label()
                 .font(.system(size: 17, weight: .semibold))
                 .frame(maxWidth: .infinity)
                 .frame(height: height)
                 .contentShape(isCircular ? AnyShape(Circle()) : AnyShape(Rectangle()))
+                .opacity(isUnavailable ? 0.35 : 1)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.text(title))
@@ -688,12 +689,14 @@ struct CanvasMorphButtonStyle: ButtonStyle {
 private struct CanvasMorphButtonLabel: View {
     let configuration: ButtonStyleConfiguration
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.isCanvasActionUnavailable) private var isUnavailable
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
+        let isPressed = configuration.isPressed && !isUnavailable
         configuration.label
-            .opacity(!isEnabled ? 0.45 : configuration.isPressed ? 0.55 : 1)
-            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.9 : 1)
+            .opacity(!isEnabled || isUnavailable ? 0.45 : isPressed ? 0.55 : 1)
+            .scaleEffect(isPressed && !reduceMotion ? 0.9 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }

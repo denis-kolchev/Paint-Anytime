@@ -572,6 +572,6 @@ nonisolated protocol WatchLiveInk: AnyObject {
 
 nonisolated extension WatchBitmapRenderer.LivePenInk: WatchLiveInk {}
 
-private extension CGPoint {
+nonisolated private extension CGPoint {
     init(_ point: SIMD2<Float>) { self.init(x: CGFloat(point.x), y: CGFloat(point.y)) }
 }

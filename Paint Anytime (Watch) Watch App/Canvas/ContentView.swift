@@ -738,6 +738,9 @@ struct ContentView: View {
         guard isActive, controller.activeStroke == nil, !showsAppSettings,
               quickSettings == nil, !showsGallery, !showsToolSettings,
               !isMovingCanvas, !lasso.isActive else { return }
+        // Native toolbar slots stay enabled; a tap with nothing to undo, redo or clear
+        // gets a haptic and leaves the morph open.
+        guard action.isAvailable(in: controller) else { return UnavailableActionFeedback.play() }
         // Every option except Undo and Redo collapses the morph with the same spring as opening.
         if !action.keepsMorphOpen {
             withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {

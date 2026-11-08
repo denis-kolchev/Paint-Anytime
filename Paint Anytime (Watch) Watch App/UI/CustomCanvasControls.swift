@@ -62,7 +62,9 @@ struct CustomCanvasControls: View {
                             .contentShape(Circle())
                     }
                     .buttonStyle(CanvasMorphButtonStyle())
-                    .disabled(!assignment.isMorph && !enabled(assignment.actions[0]))
+                    // Stays enabled: `onAction` answers an unavailable action with a haptic.
+                    .environment(\.isCanvasActionUnavailable,
+                                 !assignment.isMorph && !assignment.actions[0].isAvailable(in: controller))
                     .accessibilityLabel(assignment.isMorph ? "Morph: " + assignment.actions.map { L10n.text($0.title) }.joined(separator: ", ") : L10n.text(assignment.actions[0].title))
                 }
                 .frame(width: diameter)
@@ -77,6 +79,8 @@ struct CustomCanvasControls: View {
 
     private func actionButton(_ action: CanvasQuickAction, height: CGFloat) -> some View {
         Button {
+            // An unavailable action leaves the morph as it is, like the disabled button did.
+            guard action.isAvailable(in: controller) else { return UnavailableActionFeedback.play() }
             // Undo and Redo keep the morph open for repeated taps; any other option
             // collapses it with the same spring as opening.
             if !action.keepsMorphOpen {
@@ -92,17 +96,8 @@ struct CustomCanvasControls: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(CanvasMorphButtonStyle())
-        .disabled(!enabled(action))
+        .environment(\.isCanvasActionUnavailable, !action.isAvailable(in: controller))
         .accessibilityLabel(L10n.text(action.title))
-    }
-
-    private func enabled(_ action: CanvasQuickAction) -> Bool {
-        switch action {
-        case .undo: controller.canUndo
-        case .redo: controller.canRedo
-        case .clear: controller.canClear
-        default: true
-        }
     }
 
     private func position(_ index: Int, geometry: MorphPanelGeometry) -> CGPoint {
@@ -127,6 +122,16 @@ struct CustomCanvasControls: View {
 extension CanvasQuickAction {
     /// Undo and Redo are tapped repeatedly, so choosing them leaves the morph open.
     var keepsMorphOpen: Bool { self == .undo || self == .redo }
+
+    /// Undo, Redo and Clear have nothing to do on an empty history or canvas.
+    func isAvailable(in controller: CanvasController) -> Bool {
+        switch self {
+        case .undo: controller.canUndo
+        case .redo: controller.canRedo
+        case .clear: controller.canClear
+        default: true
+        }
+    }
 }
 
 struct CanvasQuickActionIcon: View {

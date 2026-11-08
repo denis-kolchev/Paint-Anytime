@@ -1,6 +1,25 @@
 import SwiftUI
 import WatchKit
 
+/// Answers a tap on Undo, Redo or Clear while it has nothing to do. Firmer than the
+/// `.click` of canvas snapping, so a refused tap does not read as a successful one.
+enum UnavailableActionFeedback {
+    static func play() { WKInterfaceDevice.current().play(.retry) }
+}
+
+private struct CanvasActionUnavailableKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// The Button looks disabled but stays enabled, so its action can play
+    /// `UnavailableActionFeedback`; a disabled Button never receives the tap.
+    var isCanvasActionUnavailable: Bool {
+        get { self[CanvasActionUnavailableKey.self] }
+        set { self[CanvasActionUnavailableKey.self] = newValue }
+    }
+}
+
 /// Tutorial overlays do not have a native toolbar host to supply a hit target.
 /// Size the label inside ButtonStyle so the whole circle activates the Button;
 /// an outer frame around a borderless Button only sizes its layout container.
