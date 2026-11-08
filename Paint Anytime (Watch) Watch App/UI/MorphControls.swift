@@ -270,10 +270,12 @@ struct CanvasMorphContent<Expanded: View, Collapsed: View>: View {
                           progress: isExpanded ? 1 : 0,
                           interpolatesLayout: usesLegacyMorphAnimation) {
             expanded
-                // Older SwiftUI toolbar hosts animate the hidden, full-size
-                // layout from stale coordinates. Collapse its visual contents
-                // to the current button center instead of merely fading them.
-                .scaleEffect(usesLegacyMorphAnimation && !isExpanded ? 0 : 1, anchor: .center)
+                // Grow the rows out of the button center and collapse them back into it,
+                // instead of fading a full-size column in place. Older SwiftUI toolbar hosts
+                // animate the hidden layout from stale coordinates; on watchOS 27 the column
+                // keeps its full height from the first frame, so its top rows started above
+                // the button (seen once the canvas controls lost their native toolbar slots).
+                .scaleEffect(isExpanded ? 1 : 0, anchor: .center)
                 .opacity(isExpanded ? 1 : 0)
                 .allowsHitTesting(isExpanded)
                 .accessibilityHidden(!isExpanded)
