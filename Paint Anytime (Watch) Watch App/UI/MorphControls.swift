@@ -680,17 +680,13 @@ struct CanvasMorphGlass: ViewModifier {
 /// hides the native bars). The surrounding glass is not interactive, so the press feedback
 /// lives on the Button itself and every press it shows also reaches the action.
 struct CanvasMorphButtonStyle: ButtonStyle {
-    /// Name in the debug HUD's button log.
-    var debugName = ""
-
     func makeBody(configuration: Configuration) -> some View {
-        CanvasMorphButtonLabel(configuration: configuration, debugName: debugName)
+        CanvasMorphButtonLabel(configuration: configuration)
     }
 }
 
 private struct CanvasMorphButtonLabel: View {
     let configuration: ButtonStyleConfiguration
-    let debugName: String
     @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -699,9 +695,5 @@ private struct CanvasMorphButtonLabel: View {
             .opacity(!isEnabled ? 0.45 : configuration.isPressed ? 0.55 : 1)
             .scaleEffect(configuration.isPressed && !reduceMotion ? 0.9 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
-            .onChange(of: configuration.isPressed) { _, pressed in
-                guard RenderDebug.isEnabled, !debugName.isEmpty else { return }
-                RenderDiagnostics.buttonPress(debugName, down: pressed)
-            }
     }
 }

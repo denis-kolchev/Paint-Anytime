@@ -136,12 +136,7 @@ nonisolated extension WatchBitmapRenderer {
             if !extends {
                 let began = RenderDiagnostics.begin()
                 guard beginDry(stroke, base: base) else { return nil }
-                if let dry = activeDry {
-                    RenderDiagnostics.dryBegan(began, restart: previous?.id == stroke.id,
-                                               bytes: dry.frame.bytesPerRow * dry.frame.height
-                                                   + dry.display.bytesPerRow * dry.display.height
-                                                   + (dry.pixelFill == nil ? 0 : dry.frame.bytesPerRow * dry.frame.height))
-                }
+                RenderDiagnostics.dryBegan(began)
             }
             guard var dry = activeDry else { return nil }
             if extends && previous?.geometryRevision == stroke.geometryRevision {
@@ -189,8 +184,7 @@ nonisolated extension WatchBitmapRenderer {
                                            grainHits: dry.geometry.grainCacheHits - counters.1,
                                            probes: dry.geometry.coverageProbeCount - counters.2,
                                            contours: dry.geometry.contourBuildCount - counters.3,
-                                           full: previousCount == 0,
-                                           dirtyPixels: batches.map { $0.rect })
+                                           full: previousCount == 0)
             }
             dry.stroke = stroke
             dry.travel = dry.geometry.travel
@@ -299,7 +293,7 @@ nonisolated extension WatchBitmapRenderer {
                                        grainHits: dry.geometry.grainCacheHits - counters.1,
                                        probes: dry.geometry.coverageProbeCount - counters.2,
                                        contours: dry.geometry.contourBuildCount - counters.3,
-                                       full: previousCount == 0, dirtyPixels: pixels)
+                                       full: previousCount == 0)
             return true
         }
 
@@ -324,7 +318,7 @@ nonisolated extension WatchBitmapRenderer {
                                        grainHits: grains,
                                        probes: dry.geometry.coverageProbeCount - counters.2,
                                        contours: dry.geometry.contourBuildCount - counters.3,
-                                       full: previousCount == 0, dirtyPixels: pixels)
+                                       full: previousCount == 0)
             return true
         }
 
@@ -464,12 +458,10 @@ nonisolated extension WatchBitmapRenderer {
             }
             // The display bitmap already holds every flattened tile: one image replaces them.
             if usesScreenTiles, dry.screenTiles.count > Self.maxScreenTiles {
-                let merging = RenderDiagnostics.begin()
                 if let merged = dry.display.makeImage() {
                     dry.screenBackground = merged
                     dry.screenTiles.removeAll(keepingCapacity: true)
                 }
-                RenderDiagnostics.end(.screenMerge, merging)
             }
             return true
         }
@@ -505,11 +497,19 @@ nonisolated extension WatchBitmapRenderer {
         private func updateCommitted(strokes: [Stroke], key nextKey: CacheKey) -> Bool {
             guard key != nextKey else { return true }
             promoteLiveCoverage(strokes: strokes, key: nextKey)
-            if key != nextKey { promoteLiveDry(strokes: strokes, key: nextKey) }
+            if key != nextKey {
+                let promoting = RenderDiagnostics.begin()
+                let previewed = activeDry?.previewImage != nil
+                promoteLiveDry(strokes: strokes, key: nextKey)
+                if key == nextKey { RenderDiagnostics.shapeCommitted(previewed ? "exact" : "extend", promoting) }
+            }
             guard key != nextKey else { return true }
             retainGeometry(for: strokes, key: nextKey)
             restorePreviousState(strokes: strokes, key: nextKey)
             guard key != nextKey else { return true }
+            // Lift of a snapped shape that could not be promoted: whole artwork replayed.
+            let replaying = RenderDiagnostics.begin()
+            defer { RenderDiagnostics.shapeCommitted("REPLAY \(strokes.count)", replaying) }
             return replayCommitted(strokes: strokes, key: nextKey)
         }
 

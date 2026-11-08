@@ -35,11 +35,6 @@ struct PaintAnytimeWatchApp: App {
                 .environment(\.locale, Locale(identifier: code))
                 .typesettingLanguage(.explicit(Locale.Language(identifier: code)))
                 .environment(\.layoutDirection, .leftToRight)
-                // Debug only: the outermost touch probe, above navigation and the native
-                // toolbar. Counts touches the canvas screen probe ("root") never sees.
-                .modifier(RenderTouchProbe(isEnabled: RenderDebug.isEnabled && RenderDebugSettings.shared.showsHUD,
-                    began: { RenderDiagnostics.appTouch(ended: false, location: $0) },
-                    ended: { RenderDiagnostics.appTouch(ended: true, location: .zero) }))
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { try? CanvasExportStore.refreshWidgets() }
                 }

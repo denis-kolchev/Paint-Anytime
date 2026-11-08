@@ -165,13 +165,7 @@ nonisolated extension WatchBitmapRenderer {
                 // Same gesture: continue.
             } else {
                 let began = RenderDiagnostics.begin()
-                let restart = liveDry?.stroke.id == stroke.id
-                defer {
-                    if let live = liveDry {
-                        RenderDiagnostics.dryBegan(began, restart: restart,
-                                                   bytes: 2 * live.frame.bytesPerRow * live.frame.height)
-                    }
-                }
+                defer { if liveDry != nil { RenderDiagnostics.dryBegan(began) } }
                 // The new path needs both switches; the lock and lasso cut keep the replay.
                 guard RenderStageSwitches.isOn(.incrementalDryGrains), RenderStageSwitches.isOn(.pixelDryFill),
                       !stroke.locksTransparency, stroke.transform == .identity, stroke.excludedAreas.isEmpty,
@@ -233,7 +227,7 @@ nonisolated extension WatchBitmapRenderer {
                                        grainHits: result.grains,
                                        probes: live.geometry.coverageProbeCount - counters.1,
                                        contours: live.geometry.contourBuildCount - counters.2,
-                                       full: previousCount == 0, dirtyPixels: pixels)
+                                       full: previousCount == 0)
             return live.snapshot
         }
 
@@ -412,10 +406,15 @@ nonisolated extension WatchBitmapRenderer {
         }
         let previous = cache?.appendBase(for: layer.id, revisions: revisions)
         let committed: InkSnapshot
+        let promoting = RenderDiagnostics.begin()
+        let previewed = cache?.liveDry?.isPreviewing == true
         if let promoted = promotedLiveInk(layer, previous: previous, cache: cache, scale: scale) {
+            RenderDiagnostics.shapeCommitted(previewed ? "layer exact" : "layer extend", promoting)
             committed = promoted
             cache?.clearLive()
         } else {
+            let replaying = RenderDiagnostics.begin()
+            defer { RenderDiagnostics.shapeCommitted("layer REPLAY", replaying) }
             let pending = previous.map { Array(layer.strokes.dropFirst($0.revisions.count)) } ?? layer.strokes
             guard let ink = renderInk(strokes: pending, size: size, scale: scale,
                                       base: previous?.ink, masks: cache?.masks) else { return nil }

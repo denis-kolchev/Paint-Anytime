@@ -145,7 +145,14 @@ nonisolated enum ShapeRecognizer {
         guard abs(winding) > 5.2, abs(winding) < 7.2, absoluteTurn < 8 else { return nil }
         let initial = atan2(radial[0].y, radial[0].x)
         let direction: Float = winding >= 0 ? 1 : -1
-        let count = min(240, max(48, Int(diagonal * 2)))
+        // Fewest vertices that keep every chord within `chordTolerance` of the curve: with a
+        // uniform parameter step dt the chord sags at most max(radius)·dt²/8. A denser ring
+        // looks the same but is expensive for pencil and pastel: their grain field is rebuilt
+        // for the whole snapped shape, and short overlapping segments multiply that cost
+        // (watch HUD 2026-11-08: 241 points → 458 ms of 556 ms in the snap frame).
+        let chordTolerance: Float = 0.1
+        let steps = 2 * Float.pi * (max(radius.x, radius.y) / (8 * chordTolerance)).squareRoot()
+        let count = min(240, max(24, Int(steps.rounded(.up))))
         var ideal = (0..<count).map { index -> SIMD2<Float> in
             let t = initial + direction * 2 * .pi * Float(index) / Float(count)
             return center + u * (cos(t) * radius.x) + v * (sin(t) * radius.y)

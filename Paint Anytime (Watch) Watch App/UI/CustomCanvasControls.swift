@@ -42,7 +42,6 @@ struct CustomCanvasControls: View {
                     }
                 } collapsed: {
                     Button {
-                        RenderDiagnostics.buttonAction("c\(index)")
                         if assignment.isMorph {
                             withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
                                 state.customExpandedSlot = index
@@ -62,7 +61,7 @@ struct CustomCanvasControls: View {
                             // beside the button and the canvas never saw them.
                             .contentShape(Circle())
                     }
-                    .buttonStyle(CanvasMorphButtonStyle(debugName: "c\(index)"))
+                    .buttonStyle(CanvasMorphButtonStyle())
                     .disabled(!assignment.isMorph && !enabled(assignment.actions[0]))
                     .accessibilityLabel(assignment.isMorph ? "Morph: " + assignment.actions.map { L10n.text($0.title) }.joined(separator: ", ") : L10n.text(assignment.actions[0].title))
                 }
@@ -78,7 +77,6 @@ struct CustomCanvasControls: View {
 
     private func actionButton(_ action: CanvasQuickAction, height: CGFloat) -> some View {
         Button {
-            RenderDiagnostics.buttonAction("\(action)")
             // Undo and Redo keep the morph open for repeated taps; any other option
             // collapses it with the same spring as opening.
             if !action.keepsMorphOpen {
@@ -93,7 +91,7 @@ struct CustomCanvasControls: View {
                 // The whole row belongs to its action: rows tile the glass with no gaps.
                 .contentShape(Rectangle())
         }
-        .buttonStyle(CanvasMorphButtonStyle(debugName: "\(action)"))
+        .buttonStyle(CanvasMorphButtonStyle())
         .disabled(!enabled(action))
         .accessibilityLabel(L10n.text(action.title))
     }

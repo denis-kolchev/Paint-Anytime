@@ -6,9 +6,11 @@ import Dispatch
 /// Off: the menu and HUD disappear and every stage runs its shipping default, nothing
 /// is measured. Release builds always compile it off.
 nonisolated enum RenderDebug {
-    // TEMP (2026-11-08): on in Release — diagnosing canvas buttons near the top edge with the
-    // native bars hidden. Restore `false` before shipping.
+    #if DEBUG
     static let isEnabled = true
+    #else
+    static let isEnabled = false
+    #endif
 }
 
 /// Latency optimizations of the live stroke. All ship on; in debug builds the
@@ -115,12 +117,8 @@ nonisolated enum RenderSpan: Int, CaseIterable, Sendable {
     /// committed ink, new geometry and grain field). Once per gesture unless the stroke
     /// stops extending the previous frame (a snapped shape being resized or turned).
     case dryBegin
-    /// One-layer dry path: merging > 16 screen tiles into one background image.
-    case screenMerge
     /// Main actor: `ShapeRecognizer` on the held stroke.
     case shapeRecognize
-    /// Main actor: one sample of a snapped shape (scale/rotate of every shape point).
-    case shapeAdjust
     /// Renderer: stroke-only image of the drawn shape, once per snapped shape.
     case shapeLayer
     /// Renderer: one moved-shape frame (background + transformed shape image).
@@ -145,9 +143,7 @@ nonisolated enum RenderSpan: Int, CaseIterable, Sendable {
         case .dryDraw: "fill"
         case .dryPublish: "pub"
         case .dryBegin: "begin"
-        case .screenMerge: "merge"
         case .shapeRecognize: "recog"
-        case .shapeAdjust: "adj"
         case .shapeLayer: "layer"
         case .shapePreview: "prev"
         }
@@ -224,58 +220,56 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     private var dryGrainHits = 0
     private var dryProbes = 0
     private var dryContours = 0
-    /// Dry frames that redrew the whole stroke (no previous frame to extend).
-    private var dryFullFrames = 0
-    /// Changed pixels (union of dirty rectangles, may overlap) over the window's dry frames.
-    private var dryDirtyPixels = 0
-    /// Live dry buffers started for a new gesture / restarted inside the same gesture.
-    private var dryStarts = 0
-    private var dryRestarts = 0
-    /// Bytes allocated by those buffer starts.
-    private var dryAllocBytes = 0
-    /// Snapped shape: samples that moved it / samples inside the hold tolerance.
-    private var shapeMoves = 0
-    private var shapeIdle = 0
-    /// Kept across windows: the hold happens once per stroke.
-    private var shapeKind = "—"
-    private var shapePoints = 0
-    private var shapeSeenAt: UInt64 = 0
-    private var lastRecognizeNS: UInt64 = 0
     private var windowStart = RenderDiagnostics.now()
-    /// Touch log, kept across HUD windows: the open touch and the latest finished ones.
-    private var touchSerial = 0
-    private var openTouch: TouchRecord?
-    private var recentTouches: [TouchRecord] = []
-    private var touchTotals: [String: Int] = [:]
-    /// Touches seen by a debug-only simultaneous gesture on the canvas that is never masked:
-    /// it counts touches that reach the canvas even while the drawing gesture is switched off.
-    private var rawTouches = 0
-    private var rawOpen = false
-    private var rawSeenAt: UInt64 = 0
-    private var rawLocation: CGPoint?
-    /// Same probe on the whole canvas screen (canvas plus the controls drawn over it):
-    /// root counts but raw does not → a view over the canvas took the touch;
-    /// neither counts → the touch never reached the app's canvas screen.
-    private var rootTouches = 0
-    private var rootOpen = false
-    private var rootLocation: CGPoint?
-    /// Same probe around the whole app window (navigation, native toolbar, sheets).
-    private var appTouches = 0
-    private var appOpen = false
-    private var appLocation: CGPoint?
-    /// Whether the canvas screen probe saw the open window touch; window touches it never
-    /// saw ("lost" before the canvas screen), newest first, with their start and length.
-    private var appReachedRoot = false
-    private var appStartedAt: UInt64 = 0
-    private var lostTouches: [(location: CGPoint, endedAt: UInt64, ms: Double)] = []
-    private var lostCount = 0
-    /// Canvas-drawn buttons: each press (isPressed true → false) and whether its action ran.
-    private var buttonPresses: [(name: String, downAt: UInt64, upAt: UInt64, fired: Bool)] = []
-    /// Nearest canvas control to the latest screen touch: "in name" or "name +distance pt".
-    private var rootNear = "—"
-    /// Drawing gesture mask from the latest canvas body, and the screen's reasons for no input.
-    private var touchGate = "—"
-    private var inputBlockers = "—"
+    /// Duration of the latest renderer-actor frame call.
+    private var lastWorkNS: UInt64 = 0
+    /// The latest hold-to-shape gesture; kept until the next snap.
+    private var shape = ShapeTimeline()
+
+    /// One hold-to-shape gesture, from the hold timer to the committed ink after the lift.
+    /// All times in ms. "+N" values are measured from the snap (or from the lift).
+    private struct ShapeTimeline {
+        var kind = ""
+        var points = 0
+        /// Hold timer scheduled (finger stopped) → recognizer started: 500 ms sleep + main-actor delay.
+        var waitMS = 0.0
+        var recognizeMS = 0.0
+        var snapAt: UInt64 = 0
+        /// Snap → first live frame queued, and → that frame published.
+        var snapQueuedMS: Double?
+        var snapInkMS: Double?
+        /// That frame: renderer work, dry buffer start, dry stages and grains (full rebuild).
+        var snapWorkMS = 0.0
+        var snapBeginMS = 0.0
+        var snapDry = ""
+        /// Dry buffer restarts after the snap frame (move not similar to the reference).
+        var restarts = 0
+        var restartMaxMS = 0.0
+        /// Shape image for the move preview (once), and when it was built after the snap.
+        var layerMS: Double?
+        var layerAtMS = 0.0
+        var previews = 0
+        var previewMaxMS = 0.0
+        /// Longest touch event → published live frame after the snap: lag the finger feels.
+        var e2eMaxMS = 0.0
+        var liftAt: UInt64 = 0
+        /// Lift → first frame queued / committed frame published.
+        var liftQueuedMS: Double?
+        var liftInkMS: Double?
+        var liftWorkMS = 0.0
+        var liftBeginMS = 0.0
+        var liftDry = ""
+        /// How committed ink was produced on the lift and its duration.
+        var commit = "—"
+        /// Main thread from the snap until the lift's ink: longest probe wait and busy slice.
+        var lagMaxMS = 0.0
+        var sliceMaxMS = 0.0
+
+        /// Snap seen, committed ink after the lift not yet published.
+        func isOpen(_ now: UInt64) -> Bool {
+            snapAt != 0 && liftInkMS == nil && now &- snapAt < 30_000_000_000
+        }
+    }
 
     static func now() -> UInt64 { DispatchTime.now().uptimeNanoseconds }
 
@@ -329,8 +323,17 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     /// Called when a frame is queued. Returns the touch-event time the frame answers
     /// (0 for frames without a live stroke) for the end-to-end figure.
     static func frameSubmitted(live: Bool) -> UInt64 {
-        guard RenderDebug.isEnabled, live else { return 0 }
+        guard RenderDebug.isEnabled else { return 0 }
         return shared.locked { () -> UInt64 in
+            let time = now()
+            if shared.shape.isOpen(time) {
+                if shared.shape.liftAt != 0 {
+                    if shared.shape.liftQueuedMS == nil { shared.shape.liftQueuedMS = ms(time &- shared.shape.liftAt) }
+                } else if live, shared.shape.snapQueuedMS == nil {
+                    shared.shape.snapQueuedMS = ms(time &- shared.shape.snapAt)
+                }
+            }
+            guard live else { return 0 }
             if shared.lastAppliedAt != 0 {
                 shared.spans[RenderSpan.dispatch.rawValue].add(now() &- shared.lastAppliedAt)
                 shared.lastAppliedAt = 0 // Count each sample once, not its duplicate submits.
@@ -344,8 +347,22 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         let end = now()
         shared.locked {
             if live { shared.liveFrames += 1 } else { shared.committedFrames += 1 }
-            if live, shared.openTouch?.outcome == "draw", shared.openTouch?.firstInkAt == 0 {
-                shared.openTouch?.firstInkAt = end
+            if shared.shape.isOpen(end), submittedAt >= shared.shape.snapAt {
+                let work = ms(shared.lastWorkNS)
+                if shared.shape.liftAt != 0 {
+                    if !live, submittedAt >= shared.shape.liftAt {
+                        shared.shape.liftInkMS = ms(end &- shared.shape.liftAt)
+                        shared.shape.liftWorkMS = work
+                    }
+                } else if live {
+                    if shared.shape.snapInkMS == nil {
+                        shared.shape.snapInkMS = ms(end &- shared.shape.snapAt)
+                        shared.shape.snapWorkMS = work
+                    }
+                    if eventAt > shared.shape.snapAt, end > eventAt {
+                        shared.shape.e2eMaxMS = max(shared.shape.e2eMaxMS, ms(end &- eventAt))
+                    }
+                }
             }
             if shared.publishedAt == 0 { shared.publishedAt = end }
             shared.shownTiles += tiles
@@ -363,6 +380,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         shared.locked {
             shared.spans[RenderSpan.work.rawValue].add(end &- start)
             shared.workEndedAt = end
+            shared.lastWorkNS = end &- start
         }
     }
 
@@ -438,7 +456,12 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             guard let self else { return }
             let time = Self.now()
             self.locked {
-                if self.wokeAt != 0, time > self.wokeAt { self.mainSlices.add(time &- self.wokeAt) }
+                if self.wokeAt != 0, time > self.wokeAt {
+                    self.mainSlices.add(time &- self.wokeAt)
+                    if self.shape.isOpen(time) {
+                        self.shape.sliceMaxMS = max(self.shape.sliceMaxMS, Self.ms(time &- self.wokeAt))
+                    }
+                }
                 self.wokeAt = 0
                 if self.publishedAt != 0, time > self.publishedAt { self.publishToIdle.add(time &- self.publishedAt) }
                 self.publishedAt = 0
@@ -465,21 +488,17 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             self.locked {
                 self.probeInFlight = false
                 self.mainLag.add(lag)
+                if self.shape.isOpen(sent) { self.shape.lagMaxMS = max(self.shape.lagMaxMS, Self.ms(lag)) }
             }
         }
     }
 
     /// One live pencil/pastel frame: stage boundaries (prep, upd, grain, fill, publish),
     /// new input samples, tiles redrawn and the geometry counters' deltas.
+    /// `full`: the frame drew the whole stroke from a fresh buffer.
     static func dryFrame(stages: [UInt64], incremental: Bool, pixel: Bool = false, samples: Int, tiles: Int,
-                         grainsBuilt: Int, grainHits: Int, probes: Int, contours: Int,
-                         full: Bool = false, dirtyPixels: [CGRect] = []) {
+                         grainsBuilt: Int, grainHits: Int, probes: Int, contours: Int, full: Bool = false) {
         guard RenderDebug.isEnabled, stages.count == 6, stages[0] != 0 else { return }
-        let dirty = dirtyPixels.reduce(0) { $0 + Int($1.width * $1.height) }
-        shared.locked {
-            if full { shared.dryFullFrames += 1 }
-            shared.dryDirtyPixels += dirty
-        }
         let spans: [RenderSpan] = [.dryPrep, .dryUpdate, .dryGrains, .dryDraw, .dryPublish]
         shared.locked {
             for (index, span) in spans.enumerated() {
@@ -494,251 +513,99 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             shared.dryGrainHits += grainHits
             shared.dryProbes += probes
             shared.dryContours += contours
+            // Full redraws inside a shape gesture: the snap frame and the exact render on lift.
+            guard full, shared.shape.isOpen(stages[0]), stages[0] >= shared.shape.snapAt else { return }
+            let text = "\(Int(ms(stages[2] &- stages[0])))+\(Int(ms(stages[3] &- stages[2])))"
+                + "+\(Int(ms(stages[4] &- stages[3])))+\(Int(ms(stages[5] &- stages[4])))"
+                + " \(grainsBuilt / 1000)k"
+            if shared.shape.liftAt != 0 {
+                shared.shape.liftDry = text
+            } else if shared.shape.snapInkMS == nil, shared.shape.snapDry.isEmpty {
+                shared.shape.snapDry = text
+            }
         }
     }
 
-    /// A live dry buffer was set up (`start` from `begin()`). `restart`: the same gesture
-    /// already had one, but the stroke stopped extending it (snapped shape moved).
-    static func dryBegan(_ start: UInt64, restart: Bool, bytes: Int) {
+    /// A live dry buffer was set up (`start` from `begin()`).
+    static func dryBegan(_ start: UInt64) {
         guard RenderDebug.isEnabled, start != 0 else { return }
         let end = now()
         shared.locked {
             shared.spans[RenderSpan.dryBegin.rawValue].add(end &- start)
-            if restart { shared.dryRestarts += 1 } else { shared.dryStarts += 1 }
-            shared.dryAllocBytes += bytes
-        }
-    }
-
-    /// The hold recognizer ran; `kind` is nil when nothing snapped.
-    static func shapeRecognized(_ start: UInt64, kind: String?, points: Int) {
-        guard RenderDebug.isEnabled, start != 0 else { return }
-        let end = now()
-        shared.locked {
-            shared.lastRecognizeNS = end &- start
-            shared.shapeKind = kind ?? "none"
-            shared.shapePoints = kind == nil ? 0 : points
-            shared.shapeSeenAt = end
-        }
-    }
-
-    /// One sample applied to a snapped shape; `moved` when its points changed.
-    static func shapeAdjusted(_ start: UInt64, moved: Bool, points: Int) {
-        guard RenderDebug.isEnabled, start != 0 else { return }
-        let end = now()
-        shared.locked {
-            shared.spans[RenderSpan.shapeAdjust.rawValue].add(end &- start)
-            if moved { shared.shapeMoves += 1 } else { shared.shapeIdle += 1 }
-            shared.shapePoints = points
-            shared.shapeSeenAt = end
-        }
-    }
-
-    /// One canvas touch from its first gesture sample to onEnded / cancellation.
-    /// `outcome` is the first decision the handler made about it; nil until one is made.
-    private struct TouchRecord {
-        var id: Int
-        var startedAt: UInt64
-        var eventAt: UInt64
-        /// Start of the touch, global points.
-        var start: CGPoint
-        var samples = 0
-        var outcome: String?
-        var firstInkAt: UInt64 = 0
-        var endedAt: UInt64 = 0
-        var end = ""
-    }
-
-    /// Every canvas gesture sample, before any guard. A sample without an open touch opens one.
-    static func touchSample(eventTime: Date, location: () -> CGPoint) {
-        guard RenderDebug.isEnabled else { return }
-        let time = now()
-        let ageNS = UInt64(eventAge(eventTime) * 1_000_000_000)
-        shared.locked {
-            if shared.openTouch == nil {
-                shared.touchSerial += 1
-                shared.openTouch = TouchRecord(id: shared.touchSerial, startedAt: time,
-                                               eventAt: time &- min(time, ageNS), start: location())
-            }
-            shared.openTouch?.samples += 1
-        }
-    }
-
-    /// Why the open touch draws or does not; the first call per touch wins.
-    static func touchOutcome(_ outcome: String) {
-        guard RenderDebug.isEnabled else { return }
-        shared.locked {
-            guard shared.openTouch != nil, shared.openTouch?.outcome == nil else { return }
-            shared.openTouch?.outcome = outcome
-        }
-    }
-
-    /// The touch finished: `onEnded` ran (`cancelled` false) or the gesture state reset
-    /// without it (system cancellation). `kept`: whether a drawn stroke entered the document.
-    static func touchEnded(cancelled: Bool, kept: Bool? = nil) {
-        guard RenderDebug.isEnabled else { return }
-        let time = now()
-        shared.locked {
-            guard var touch = shared.openTouch else { return }
-            shared.openTouch = nil
-            touch.endedAt = time
-            touch.end = cancelled ? "CANCEL" : kept == false ? "LOST" : ""
-            let key = cancelled ? "cancel" : touch.outcome.map { String($0.prefix { $0 != ":" }) } ?? "none"
-            shared.touchTotals[key, default: 0] += 1
-            shared.recentTouches.insert(touch, at: 0)
-            if shared.recentTouches.count > 3 { shared.recentTouches.removeLast() }
-        }
-    }
-
-    /// Debug-only gesture that is never masked: one call per sample, `ended` on its end.
-    /// `location` in global coordinates.
-    static func rawTouch(ended: Bool, location: CGPoint) {
-        guard RenderDebug.isEnabled else { return }
-        let time = now()
-        shared.locked {
-            if ended { shared.rawOpen = false; return }
-            if !shared.rawOpen { shared.rawTouches += 1; shared.rawOpen = true; shared.rawLocation = location }
-            shared.rawSeenAt = time
-        }
-    }
-
-    /// A drawn canvas button's press began (`down`) or ended. A press that ends without
-    /// `buttonAction` was cancelled by the Button (the finger moved or the touch was taken).
-    static func buttonPress(_ name: String, down: Bool) {
-        guard RenderDebug.isEnabled else { return }
-        let time = now()
-        shared.locked {
-            if down {
-                shared.buttonPresses.insert((name, time, 0, false), at: 0)
-                if shared.buttonPresses.count > 4 { shared.buttonPresses.removeLast() }
-            } else if let index = shared.buttonPresses.firstIndex(where: { $0.name == name && $0.upAt == 0 }) {
-                shared.buttonPresses[index].upAt = time
-            }
-        }
-    }
-
-    /// A drawn canvas button's action ran; marks its latest press.
-    static func buttonAction(_ name: String) {
-        guard RenderDebug.isEnabled else { return }
-        shared.locked {
-            if let index = shared.buttonPresses.firstIndex(where: { $0.name == name }) {
-                shared.buttonPresses[index].fired = true
+            guard shared.shape.isOpen(end), start >= shared.shape.snapAt else { return }
+            let value = ms(end &- start)
+            if shared.shape.liftAt != 0 {
+                shared.shape.liftBeginMS = value
+            } else if shared.shape.snapInkMS == nil, shared.shape.snapBeginMS == 0 {
+                shared.shape.snapBeginMS = value
             } else {
-                // Action without a press seen: the Button fired from a touch the style never showed.
-                shared.buttonPresses.insert((name, now(), now(), true), at: 0)
+                shared.shape.restarts += 1
+                shared.shape.restartMaxMS = max(shared.shape.restartMaxMS, value)
             }
         }
     }
 
-    /// Window-level probe; `location` in global coordinates.
-    static func appTouch(ended: Bool, location: CGPoint) {
-        guard RenderDebug.isEnabled else { return }
+    /// The hold recognizer ran. `scheduledAt`: when the hold timer was set (finger stopped).
+    /// `kind` is nil when nothing snapped; a snap starts a new shape timeline.
+    static func shapeRecognized(_ start: UInt64, scheduledAt: UInt64, kind: String?, points: Int) {
+        guard RenderDebug.isEnabled, start != 0 else { return }
+        let end = now()
         shared.locked {
-            if ended {
-                guard shared.appOpen else { return }
-                shared.appOpen = false
-                if !shared.appReachedRoot, let start = shared.appLocation {
-                    let end = now()
-                    shared.lostCount += 1
-                    shared.lostTouches.insert((start, end, Double(end &- shared.appStartedAt) / 1_000_000), at: 0)
-                    if shared.lostTouches.count > 4 { shared.lostTouches.removeLast() }
-                }
+            guard let kind else {
+                shared.shape = ShapeTimeline(kind: "none", points: points,
+                                             waitMS: ms(start &- min(start, scheduledAt)),
+                                             recognizeMS: ms(end &- start))
                 return
             }
-            if !shared.appOpen {
-                shared.appTouches += 1
-                shared.appOpen = true
-                shared.appLocation = location
-                // The probes fire in either order for one touch: the screen probe may be first.
-                shared.appReachedRoot = shared.rootOpen
-                shared.appStartedAt = now()
-            }
+            shared.shape = ShapeTimeline(kind: kind, points: points,
+                                         waitMS: ms(start &- min(start, scheduledAt)),
+                                         recognizeMS: ms(end &- start), snapAt: end)
         }
     }
 
-    /// Screen-level probe; `location` in global coordinates.
-    /// `controls`: the canvas control frames in global coordinates, read only on the touch's first sample.
-    static func rootTouch(ended: Bool, location: CGPoint, controls: () -> [(String, CGRect)]) {
+    /// The finger lifted from a snapped shape.
+    static func shapeLifted() {
         guard RenderDebug.isEnabled else { return }
-        let isNew = shared.locked { () -> Bool in
-            if ended { shared.rootOpen = false; return false }
-            guard !shared.rootOpen else { return false }
-            shared.rootTouches += 1
-            shared.rootOpen = true
-            shared.appReachedRoot = true
-            shared.rootLocation = location
-            return true
+        let time = now()
+        shared.locked {
+            guard shared.shape.isOpen(time), shared.shape.liftAt == 0 else { return }
+            shared.shape.liftAt = time
         }
-        guard isNew else { return }
-        var near = "none"
-        var best = CGFloat.infinity
-        for (name, frame) in controls() where !frame.isNull && !frame.isEmpty {
-            let dx = max(frame.minX - location.x, 0, location.x - frame.maxX)
-            let dy = max(frame.minY - location.y, 0, location.y - frame.maxY)
-            let distance = hypot(dx, dy)
-            if distance < best {
-                best = distance
-                near = distance == 0 ? "in \(name)" : String(format: "%@ +%.0fpt", name, distance)
-                    + String(format: " %.0fx%.0f", frame.width, frame.height)
-            }
-        }
-        shared.locked { shared.rootNear = near }
     }
 
-    /// The canvas body's gesture mask inputs. Evaluated with the body, so it is current
-    /// whenever any of them changes.
-    static func setTouchGate(_ gate: String) {
-        guard RenderDebug.isEnabled else { return }
-        shared.locked { shared.touchGate = gate }
+    /// How the lifted shape became committed ink (`path`), from `start`. First call per lift wins.
+    static func shapeCommitted(_ path: String, _ start: UInt64) {
+        guard RenderDebug.isEnabled, start != 0 else { return }
+        let end = now()
+        shared.locked {
+            guard shared.shape.isOpen(end), shared.shape.liftAt != 0, start >= shared.shape.liftAt,
+                  shared.shape.commit == "—" else { return }
+            shared.shape.commit = "\(path) \(Int(ms(end &- start)))"
+        }
     }
 
-    /// Screen-level reasons `acceptsInput` is false ("" when it is true).
-    static func setInputBlockers(_ blockers: [String]) {
-        guard RenderDebug.isEnabled else { return }
-        shared.locked { shared.inputBlockers = blockers.isEmpty ? "none" : blockers.joined(separator: ",") }
-    }
+    static func ms(_ nanoseconds: UInt64) -> Double { Double(nanoseconds) / 1_000_000 }
 
-    /// Touch log for the HUD: totals by outcome, then the open touch and the latest three
-    /// (newest first) with outcome, samples, first live frame after the touch and age.
-    /// Called with the lock held.
-    private func touchLines(now: UInt64) -> [String] {
-        func describe(_ touch: TouchRecord) -> String {
-            var text = "#\(touch.id) " + (touch.outcome ?? "none") + " \(touch.samples)s"
-            if touch.outcome == "draw" {
-                text += touch.firstInkAt == 0 ? " NOINK"
-                    : String(format: " %.0fms", Double(touch.firstInkAt &- touch.eventAt) / 1_000_000)
-            }
-            if !touch.end.isEmpty { text += " " + touch.end }
-            // Where the touches that did not end as a kept stroke started.
-            if touch.outcome != "draw" || !touch.end.isEmpty {
-                text += String(format: " @%.0f,%.0f", touch.start.x, touch.start.y)
-            }
-            let reference = touch.endedAt == 0 ? touch.startedAt : touch.endedAt
-            return text + String(format: " %.0fs", Double(now &- reference) / 1_000_000_000)
-        }
-        let totals = touchTotals.sorted { $0.value > $1.value }.map { "\($0.key) \($0.value)" }
-        let header = "touch \(touchSerial)" + (totals.isEmpty ? "" : ": " + totals.joined(separator: " "))
-            + " · raw \(rawTouches)" + (rawOpen ? " DOWN" : "")
-            + " · root \(rootTouches)" + (rootOpen ? " DOWN" : "")
-            + " · app \(appTouches)" + (appOpen ? " DOWN" : "")
-        func point(_ location: CGPoint?) -> String {
-            location.map { String(format: "%.0f,%.0f", $0.x, $0.y) } ?? "—"
-        }
-        let places = "at app \(point(appLocation)) · root \(point(rootLocation)) \(rootNear) · raw \(point(rawLocation))"
-        let gate = "gate \(touchGate) · block \(inputBlockers)"
-        let open = openTouch.map { ["now " + describe($0)] } ?? []
-        // Window touches that never reached the canvas screen: start point, length, age.
-        let lost = lostTouches.isEmpty ? [] : ["lost \(lostCount): " + lostTouches.map {
-            String(format: "@%.0f,%.0f %.0fms %.0fs", $0.location.x, $0.location.y, $0.ms,
-                   Double(now &- $0.endedAt) / 1_000_000_000)
-        }.joined(separator: " · ")]
-        // Drawn buttons, newest first: name, ✓ action ran / ✗ press ended without it / … held,
-        // press length, age.
-        let buttons = buttonPresses.isEmpty ? [] : ["btn " + buttonPresses.map { press in
-            let mark = press.fired ? "✓" : press.upAt == 0 ? "…" : "✗"
-            let length = press.upAt == 0 ? "" : String(format: " %.0fms", Double(press.upAt &- press.downAt) / 1_000_000)
-            return press.name + " " + mark + length + String(format: " %.0fs", Double(now &- press.downAt) / 1_000_000_000)
-        }.joined(separator: " · ")]
-        return [header, places, gate] + lost + buttons + (open + recentTouches.map(describe)).chunked(2).map { $0.joined(separator: " · ") }
+    /// Hold-to-shape timeline, kept until the next snap. Called with the lock held.
+    private func shapeLines() -> [String] {
+        let shape = self.shape
+        guard !shape.kind.isEmpty else { return [] }
+        func value(_ ms: Double?) -> String { ms.map { String(format: "%.0f", $0) } ?? "—" }
+        let head = "hold \(shape.kind) \(shape.points)pt · wait \(value(shape.waitMS))"
+            + String(format: " · recog %.1f", shape.recognizeMS)
+        guard shape.snapAt != 0 else { return [head] }
+        let snap = "snap q+\(value(shape.snapQueuedMS)) ink+\(value(shape.snapInkMS))"
+            + " work \(value(shape.snapWorkMS)) begin \(value(shape.snapBeginMS))"
+            + (shape.snapDry.isEmpty ? "" : " · \(shape.snapDry)")
+        let move = "move layer " + (shape.layerMS.map { "\(Int($0))@+\(Int(shape.layerAtMS))" } ?? "—")
+            + " · prev \(shape.previews)× max \(value(shape.previewMaxMS))"
+            + " · rst \(shape.restarts) max \(value(shape.restartMaxMS)) · e2e max \(value(shape.e2eMaxMS))"
+        let lift = shape.liftAt == 0 ? "lift —"
+            : "lift q+\(value(shape.liftQueuedMS)) ink+\(value(shape.liftInkMS)) work \(value(shape.liftWorkMS))"
+                + " begin \(value(shape.liftBeginMS)) · \(shape.commit)"
+                + (shape.liftDry.isEmpty ? "" : " · \(shape.liftDry)")
+        let main = "shape main lag max \(value(shape.lagMaxMS)) · slice max \(value(shape.sliceMaxMS))"
+        return [head, snap, move, lift, main]
     }
 
     static func setPath(_ name: String) {
@@ -747,7 +614,20 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     }
 
     private func record(_ span: RenderSpan, _ value: UInt64) {
-        locked { spans[span.rawValue].add(value) }
+        locked {
+            spans[span.rawValue].add(value)
+            let time = Self.now()
+            guard shape.isOpen(time), shape.liftAt == 0 else { return }
+            switch span {
+            case .shapeLayer:
+                shape.layerMS = Self.ms(value)
+                shape.layerAtMS = Self.ms(time &- shape.snapAt)
+            case .shapePreview:
+                shape.previews += 1
+                shape.previewMaxMS = max(shape.previewMaxMS, Self.ms(value))
+            default: break
+            }
+        }
     }
 
     /// Shown only while a pencil or pastel stroke was drawn in the window.
@@ -759,35 +639,6 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             (dryPixel ? "dry·px " : dryIncremental ? "dry·inc " : "dry·old ") + [RenderSpan.dryUpdate, .dryGrains, .dryDraw, .dryPublish].map(ms).joined(separator: " "),
             "pts \(perFrame(drySamples)) · tiles \(perFrame(dryTiles)) · grains \(perFrame(dryGrainsBuilt)) new"
                 + " \(perFrame(dryGrainHits)) \(dryPixel ? "drawn" : "hit")",
-        ]
-    }
-
-    /// Shown for 3 s after shape activity, or while dry buffers restart mid-gesture.
-    /// Called with the lock held.
-    private func shapeLines(seconds: Double, now: UInt64) -> [String] {
-        let recent = shapeSeenAt != 0 && now &- shapeSeenAt < 3_000_000_000
-        guard recent || dryRestarts > 0 else { return [] }
-        func rate(_ count: Int) -> String { String(format: "%.0f", Double(count) / seconds) }
-        func avgMax(_ span: RenderSpan) -> String {
-            let value = spans[span.rawValue]
-            return String(format: "%.1f/%.1f", value.averageMS, value.maximumMS)
-        }
-        let frames = max(1, dryFrames)
-        let begins = dryStarts + dryRestarts
-        let alloc = Double(dryAllocBytes) / 1_048_576 / seconds
-        let dirty = Double(dryDirtyPixels) / Double(frames) / 1000
-        let merges = spans[RenderSpan.screenMerge.rawValue]
-        let previews = spans[RenderSpan.shapePreview.rawValue]
-        let layers = spans[RenderSpan.shapeLayer.rawValue]
-        return [
-            "prev \(rate(previews.count))/s " + (previews.count == 0 ? "—" : avgMax(.shapePreview))
-                + " · layer " + (layers.count == 0 ? "—" : avgMax(.shapeLayer)),
-            "shape \(shapeKind) \(shapePoints)pt · recog " + String(format: "%.1f", Double(lastRecognizeNS) / 1_000_000)
-                + " · adj \(rate(shapeMoves))/s idle \(rate(shapeIdle)) · \(avgMax(.shapeAdjust))",
-            "restart \(rate(dryRestarts))/s new \(dryStarts) · begin \(begins == 0 ? "—" : avgMax(.dryBegin))"
-                + String(format: " · alloc %.0fMB/s", alloc),
-            "full \(dryFullFrames)/\(dryFrames) fr · dirty " + String(format: "%.0fk px/fr", dirty)
-                + " · merge \(rate(merges.count))/s " + (merges.count == 0 ? "—" : avgMax(.screenMerge)) + " · \(path)",
         ]
     }
 
@@ -831,8 +682,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
                     + "/\(rate(bodies[RenderCounter.canvas.rawValue]))/\(rate(bodies[RenderCounter.screen.rawValue]))",
             ] + (extra.isEmpty ? [] : [extra.joined(separator: " ") + " · \(path)"])
               + dryLines(ms)
-              + shapeLines(seconds: seconds, now: now)
-              + touchLines(now: now)).joined(separator: "\n")
+              + shapeLines()).joined(separator: "\n")
             spans = Array(repeating: Accumulator(), count: RenderSpan.allCases.count)
             latency = Accumulator()
             endToEnd = Accumulator()
@@ -846,18 +696,8 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
             shownTiles = 0; shownTilesMax = 0; shownFrames = 0
             dryFrames = 0; drySamples = 0; dryTiles = 0; dryGrainsBuilt = 0
             dryGrainHits = 0; dryProbes = 0; dryContours = 0
-            dryFullFrames = 0; dryDirtyPixels = 0; dryStarts = 0; dryRestarts = 0; dryAllocBytes = 0
-            shapeMoves = 0; shapeIdle = 0
             windowStart = now
             return text
         }
-    }
-}
-
-// The target defaults to MainActor isolation; the HUD text is built under the
-// diagnostics lock off the main actor.
-nonisolated private extension Array {
-    func chunked(_ size: Int) -> [[Element]] {
-        stride(from: 0, to: count, by: size).map { Array(self[$0..<Swift.min($0 + size, count)]) }
     }
 }

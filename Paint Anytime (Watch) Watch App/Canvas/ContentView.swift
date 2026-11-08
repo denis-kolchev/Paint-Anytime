@@ -525,15 +525,6 @@ struct ContentView: View {
         .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsGallery)
         .frame(width: geometry.size.width, height: geometry.size.height)
         .clipped()
-        // Debug only: counts every touch on the canvas screen, including the controls over
-        // the canvas, so the HUD can tell a covering view from a touch that never arrived.
-        .modifier(RenderTouchProbe(isEnabled: RenderDebug.isEnabled && RenderDebugSettings.shared.showsHUD,
-            began: { location in
-                RenderDiagnostics.rootTouch(ended: false, location: location) {
-                    controlRegions.frames.map { ("\($0.key)", $0.value) }
-                }
-            },
-            ended: { RenderDiagnostics.rootTouch(ended: true, location: .zero) { [] } }))
         .onAppear { canvasSize = geometry.size }
         .onChange(of: geometry.size) { _, size in canvasSize = size }
     }
@@ -734,7 +725,6 @@ struct ContentView: View {
               // An open morph's rows are buttons of their own.
               morphState.customExpandedSlot != index else { return }
         let assignment = customLayout.slots[index]
-        RenderDiagnostics.buttonAction("fwd c\(index)")
         if assignment.isMorph {
             withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
                 morphState.customExpandedSlot = index
@@ -845,15 +835,6 @@ struct ContentView: View {
     }
 
     private var drawingPage: some View {
-        if RenderDebug.isEnabled {
-            let blockers: [String] = [
-                isActive ? nil : "inactive", quickSettings == nil ? nil : "quick", showsLayers ? "layers" : nil,
-                showsSampledPalette ? "palette" : nil, showsToolSettings ? "tools" : nil,
-                showsAppSettings ? "settings" : nil, showsGallery ? "gallery" : nil,
-                session.savedDrawing == nil ? nil : "saved", session.pendingCanvasAction == nil ? nil : "pending",
-            ].compactMap { $0 }
-            RenderDiagnostics.setInputBlockers(blockers)
-        }
         // Animate the whole page above, keeping the cached artwork fully visible inside it.
         return WatchCanvasView(controller: controller, lasso: lasso, lassoToolbarInput: lassoToolbarInput, onArtworkPrepared: { succeeded in
             guard session.isPreparingCanvas else { return }
