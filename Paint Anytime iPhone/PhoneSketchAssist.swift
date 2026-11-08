@@ -23,6 +23,10 @@ final class PhoneSketchAssist: ObservableObject {
     struct Request {
         let id: String
         let sketch: UIImage
+        /// Pixel size of the sent crop; the result is returned with the same aspect.
+        let sketchSize: CGSize
+        /// Pixel bounds of the drawn strokes inside the crop, top-left origin.
+        let sketchContent: CGRect?
         let label: String?
         let maximumPixels: Int
     }
@@ -50,7 +54,9 @@ final class PhoneSketchAssist: ObservableObject {
             }
             let label = await recognize(sketch)
             guard !Task.isCancelled else { return }
-            pending = Request(id: requestID, sketch: UIImage(cgImage: sketch), label: label,
+            pending = Request(id: requestID, sketch: UIImage(cgImage: sketch),
+                              sketchSize: CGSize(width: sketch.width, height: sketch.height),
+                              sketchContent: Self.contentBounds(of: sketch), label: label,
                               maximumPixels: min(1024, max(128, maximumPixels)))
         }
     }
@@ -63,7 +69,12 @@ final class PhoneSketchAssist: ObservableObject {
             guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
                   let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
             else { throw CocoaError(.fileReadCorruptFile) }
-            try send(image, label: request.label, maximumPixels: request.maximumPixels, requestID: request.id)
+            // Image Playground reframes the drawing and picks its own aspect; put the
+            // generated subject back where the strokes were, in a frame of the crop's size.
+            let placed = request.sketchContent.flatMap {
+                Self.aligned(image, contentTo: $0, canvas: request.sketchSize)
+            } ?? image
+            try send(placed, label: request.label, maximumPixels: request.maximumPixels, requestID: request.id)
         } catch {
             fail(.failed, detail: Self.diagnostics(String(reflecting: error)), requestID: request.id)
         }
@@ -160,6 +171,67 @@ final class PhoneSketchAssist: ObservableObject {
             .joined(separator: " · ")
     }
 
+    /// Redraws `result` into a `canvas`-sized image so the bounds of its subject fit
+    /// `target` (top-left pixel coordinates), keeping the subject's aspect. The margin
+    /// takes the result's own background. Nil when the subject cannot be told apart.
+    nonisolated static func aligned(_ result: CGImage, contentTo target: CGRect, canvas: CGSize) -> CGImage? {
+        guard let source = contentBounds(of: result), !target.isEmpty,
+              canvas.width >= 1, canvas.height >= 1,
+              let raster = RGBARaster(result) else { return nil }
+        let scale = min(target.width / source.width, target.height / source.height)
+        let drawn = CGSize(width: CGFloat(result.width) * scale, height: CGFloat(result.height) * scale)
+        let left = target.midX - source.midX * scale
+        let top = target.midY - source.midY * scale
+        let width = Int(canvas.width.rounded()), height = Int(canvas.height.rounded())
+        guard let context = RGBARaster.context(width: width, height: height) else { return nil }
+        let background = raster.background
+        context.setFillColor(red: CGFloat(background.0) / 255, green: CGFloat(background.1) / 255,
+                             blue: CGFloat(background.2) / 255, alpha: CGFloat(background.3) / 255)
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        context.interpolationQuality = .high
+        // Core Graphics draws from the bottom-left corner.
+        context.draw(result, in: CGRect(x: left, y: CGFloat(height) - top - drawn.height,
+                                        width: drawn.width, height: drawn.height))
+        return context.makeImage()
+    }
+
+    /// Pixel bounds (top-left origin) of what differs from the background, sampled at
+    /// the corners. Nil when nothing differs or the picture runs to every edge.
+    nonisolated static func contentBounds(of image: CGImage) -> CGRect? {
+        guard let raster = RGBARaster(image) else { return nil }
+        let width = raster.width, height = raster.height
+        let background = raster.background
+        // Generated images carry soft gradients and compression noise near the background.
+        let tolerance = 40
+        var rows = [Int](repeating: 0, count: height)
+        var columns = [Int](repeating: 0, count: width)
+        raster.pixels.withUnsafeBufferPointer { pixels in
+            for y in 0..<height {
+                var offset = y * width * 4
+                for x in 0..<width {
+                    let differs = abs(Int(pixels[offset]) - Int(background.0)) > tolerance
+                        || abs(Int(pixels[offset + 1]) - Int(background.1)) > tolerance
+                        || abs(Int(pixels[offset + 2]) - Int(background.2)) > tolerance
+                        || abs(Int(pixels[offset + 3]) - Int(background.3)) > tolerance
+                    if differs {
+                        rows[y] += 1
+                        columns[x] += 1
+                    }
+                    offset += 4
+                }
+            }
+        }
+        // Ignore isolated specks so noise does not stretch the bounds.
+        let minimum = 2
+        guard let top = rows.firstIndex(where: { $0 >= minimum }),
+              let bottom = rows.lastIndex(where: { $0 >= minimum }),
+              let left = columns.firstIndex(where: { $0 >= minimum }),
+              let right = columns.lastIndex(where: { $0 >= minimum }) else { return nil }
+        let bounds = CGRect(x: left, y: top, width: right - left + 1, height: bottom - top + 1)
+        let fillsImage = bounds.width >= CGFloat(width) * 0.98 && bounds.height >= CGFloat(height) * 0.98
+        return fillsImage ? nil : bounds
+    }
+
     /// Generated images are 1024 px and larger; the watch canvas usually needs less.
     private static func encodedForWatch(_ image: CGImage, maximumPixels: Int) throws -> Data {
         let scale = min(1, CGFloat(maximumPixels) / CGFloat(max(image.width, image.height)))
@@ -178,6 +250,43 @@ final class PhoneSketchAssist: ObservableObject {
         CGImageDestinationAddImage(destination, scaled, nil)
         guard CGImageDestinationFinalize(destination) else { throw CocoaError(.coderInvalidValue) }
         return data as Data
+    }
+}
+
+/// Premultiplied sRGB RGBA pixels, top row first.
+nonisolated private struct RGBARaster {
+    let width: Int
+    let height: Int
+    let pixels: [UInt8]
+
+    init?(_ image: CGImage) {
+        width = image.width
+        height = image.height
+        guard width > 2, height > 2, let context = Self.context(width: width, height: height) else { return nil }
+        context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+        guard let data = context.data else { return nil }
+        pixels = Array(UnsafeBufferPointer(start: data.assumingMemoryBound(to: UInt8.self),
+                                           count: width * height * 4))
+    }
+
+    static func context(width: Int, height: Int) -> CGContext? {
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB) else { return nil }
+        return CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                         space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+    }
+
+    /// The corner closest to the other three, so one corner the subject reaches does not count.
+    var background: (UInt8, UInt8, UInt8, UInt8) {
+        let corners = [(0, 0), (width - 1, 0), (0, height - 1), (width - 1, height - 1)].map { x, y in
+            let offset = (y * width + x) * 4
+            return (pixels[offset], pixels[offset + 1], pixels[offset + 2], pixels[offset + 3])
+        }
+        func distance(_ a: (UInt8, UInt8, UInt8, UInt8), _ b: (UInt8, UInt8, UInt8, UInt8)) -> Int {
+            abs(Int(a.0) - Int(b.0)) + abs(Int(a.1) - Int(b.1)) + abs(Int(a.2) - Int(b.2)) + abs(Int(a.3) - Int(b.3))
+        }
+        return corners.min { a, b in
+            corners.reduce(0) { $0 + distance(a, $1) } < corners.reduce(0) { $0 + distance(b, $1) }
+        } ?? corners[0]
     }
 }
 
@@ -221,17 +330,19 @@ private struct SketchAssistPlaygroundSheet: ViewModifier {
             // instead of the preferred one; list the styles explicitly, Illustration first.
             .imagePlaygroundGenerationStyle(.illustration, in: [.illustration, .sketch, .animation])
         if #available(iOS 27.0, *) {
-            sheet.imagePlaygroundOptions(Self.editingOptions)
+            sheet.imagePlaygroundOptions(Self.editingOptions(for: request))
         } else {
             sheet
         }
     }
 
-    /// Complete the watch sketch instead of treating it as loose inspiration.
+    /// Complete the watch sketch instead of treating it as loose inspiration, in a
+    /// frame close to the selection's shape so less of it is cropped away.
     @available(iOS 27.0, *)
-    private static var editingOptions: ImagePlaygroundOptions {
+    private static func editingOptions(for request: PhoneSketchAssist.Request?) -> ImagePlaygroundOptions {
         var options = ImagePlaygroundOptions()
         options.creationStrategy = .editExisting
+        if let request { options.sizeSpecification = .closest(to: request.sketchSize) }
         return options
     }
 }
