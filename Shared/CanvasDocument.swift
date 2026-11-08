@@ -13,7 +13,7 @@ nonisolated enum DrawingInstrument: Int, CaseIterable, Codable {
     case monoline = 0, fountainPen = 1, pen, marker, pencil, crayon, reed, watercolor, eraser, fill, blur
 
     @MainActor static var displayOrder: [Self] {
-        let order: [Self] = [.monoline, .pen, .marker, .pencil, .crayon, .fountainPen, .reed, .watercolor, .fill, .blur, .eraser]
+        let order: [Self] = [.monoline, .pen, .marker, .pencil, .crayon, .fountainPen, .reed, .watercolor, .blur, .eraser, .fill]
         return order.filter { AppReleaseFeatures.current.allows($0) }
     }
 

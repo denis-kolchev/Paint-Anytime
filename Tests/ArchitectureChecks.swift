@@ -95,7 +95,7 @@ struct ArchitectureChecks {
         precondition(BrushGeometry.touches(fill, from: SIMD2(40, 40), to: SIMD2(42, 42), radius: 1))
         precondition(!BrushGeometry.touches(fill, from: SIMD2(70, 70), to: SIMD2(80, 80), radius: 1))
         let order = DrawingInstrument.displayOrder
-        precondition(order.firstIndex(of: .fill)! + 1 == order.firstIndex(of: .eraser)!)
+        precondition(order.last == .fill)
         precondition(DrawingInstrument.eraser.rawValue == 8)
         try checkOpacity()
         try checkShapeHistory()
