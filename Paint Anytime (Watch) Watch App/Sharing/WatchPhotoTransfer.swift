@@ -88,7 +88,22 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         } catch { session.transferUserInfo(["projectImportError": error.localizedDescription]) }
     }
 
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        receiveSketchAssistStage(message)
+    }
+
+    /// True when `info` carried a sketch assist stage.
+    @discardableResult
+    private func receiveSketchAssistStage(_ info: [String: Any]) -> Bool {
+        guard let raw = info[SketchAssistProtocol.stageKey] as? String,
+              let stage = SketchAssistProtocol.Stage(rawValue: raw) else { return false }
+        let requestID = info[SketchAssistProtocol.requestIDKey] as? String ?? ""
+        Task { @MainActor in WatchSketchAssist.shared.receive(stage: stage, requestID: requestID) }
+        return true
+    }
+
     func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        if receiveSketchAssistStage(userInfo) { return }
         if let available = userInfo[SketchAssistProtocol.availabilityKey] as? Bool {
             Task { @MainActor in WatchSketchAssist.shared.updatePhoneAvailability(available) }
             return
@@ -103,8 +118,11 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         guard fileTransfer.file.metadata?[SketchAssistProtocol.kindKey] as? String == SketchAssistProtocol.requestKind
         else { return }
         try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)
-        guard error != nil else { return }
         let requestID = fileTransfer.file.metadata?[SketchAssistProtocol.requestIDKey] as? String ?? ""
+        guard error != nil else {
+            Task { @MainActor in WatchSketchAssist.shared.receive(stage: .delivered, requestID: requestID) }
+            return
+        }
         Task { @MainActor in
             WatchSketchAssist.shared.receive(failure: SketchAssistProtocol.Failure.failed.rawValue,
                                              detail: error?.localizedDescription, requestID: requestID)

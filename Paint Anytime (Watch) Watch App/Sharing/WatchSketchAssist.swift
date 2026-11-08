@@ -15,10 +15,14 @@ final class WatchSketchAssist: ObservableObject {
 
     enum Phase: Equatable {
         case idle
-        case waiting
+        case waiting(SketchAssistProtocol.Stage)
         /// `applied` is false when the drawing changed while the user was on the phone.
         case completed(applied: Bool)
         case failed(String, detail: String? = nil)
+
+        var isWaiting: Bool {
+            if case .waiting = self { true } else { false }
+        }
     }
 
     @Published private(set) var phase = Phase.idle
@@ -44,7 +48,7 @@ final class WatchSketchAssist: ObservableObject {
         } catch { return fail(Self.message(for: .failed)) }
         requestID = id
         self.apply = apply
-        phase = .waiting
+        phase = .waiting(.sending)
         // Match the result to the sent pixels, capped to keep saved documents small.
         let pixels = min(1024, max(image.width, image.height))
         // WatchPhotoTransfer removes the temporary file when the transfer finishes.
@@ -69,6 +73,13 @@ final class WatchSketchAssist: ObservableObject {
         phase = .completed(applied: applied)
     }
 
+    /// Moves the notice forward; stale or earlier stages are ignored.
+    func receive(stage: SketchAssistProtocol.Stage, requestID: String) {
+        guard requestID == self.requestID, case .waiting(let current) = phase, stage.order > current.order
+        else { return }
+        phase = .waiting(stage)
+    }
+
     func receive(failure: String, detail: String?, requestID: String) {
         guard requestID == self.requestID else { return }
         let failure = SketchAssistProtocol.Failure(rawValue: failure) ?? .failed
@@ -84,7 +95,7 @@ final class WatchSketchAssist: ObservableObject {
 
     /// Clears a finished notice; a pending request stays visible.
     func dismissNotice() {
-        guard phase != .waiting else { return }
+        guard !phase.isWaiting else { return }
         phase = .idle
     }
 
@@ -141,7 +152,7 @@ struct SketchAssistNotice: View {
         ZStack {
             if let text {
                 HStack(spacing: 6) {
-                    if assist.phase == .waiting { ProgressView().frame(width: 18, height: 18) }
+                    if assist.phase.isWaiting { ProgressView().frame(width: 18, height: 18) }
                     Text(text)
                         .font(.footnote)
                         .multilineTextAlignment(.center)
@@ -154,7 +165,7 @@ struct SketchAssistNotice: View {
                 .padding(.horizontal, 24)
                 .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
                 .task(id: assist.phase) {
-                    guard assist.phase != .waiting else { return }
+                    guard !assist.phase.isWaiting else { return }
                     do { try await Task.sleep(for: .seconds(3)) } catch { return }
                     withAnimation(.easeOut(duration: 0.2)) { assist.dismissNotice() }
                 }
@@ -170,7 +181,10 @@ struct SketchAssistNotice: View {
     private var text: String? {
         switch assist.phase {
         case .idle: nil
-        case .waiting: L10n.text("Choose an image in Paint Anytime on iPhone")
+        case .waiting(.sending): L10n.text("Sending to iPhone…")
+        case .waiting(.delivered): L10n.text("Open Paint Anytime on iPhone")
+        case .waiting(.choosing): L10n.text("Choose an image on iPhone")
+        case .waiting(.returning): L10n.text("Receiving image…")
         case .completed(let applied):
             L10n.text(applied ? "Strokes replaced. Use Undo to bring them back."
                               : "The drawing changed, so the image was not added.")

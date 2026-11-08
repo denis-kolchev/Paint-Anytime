@@ -414,7 +414,7 @@ final class WatchLassoController: ObservableObject {
             switch phase {
             case .failed, .completed(applied: false):
                 self.sketchAssistStage = self.selection == nil ? .idle : .awaitingConfirmation
-            case .idle, .waiting, .completed(applied: true):
+            case .idle, .waiting(_), .completed(applied: true):
                 break
             }
         }

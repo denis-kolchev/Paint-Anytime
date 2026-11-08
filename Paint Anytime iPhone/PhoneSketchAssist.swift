@@ -38,6 +38,7 @@ final class PhoneSketchAssist: ObservableObject {
     @Published private(set) var pending: Request?
     private var preparing: Task<Void, Never>?
     private var publishedAvailability: Bool?
+    private var reportedChoosingID: String?
 
     private init() {}
 
@@ -58,7 +59,29 @@ final class PhoneSketchAssist: ObservableObject {
                               sketchSize: CGSize(width: sketch.width, height: sketch.height),
                               sketchContent: Self.contentBounds(of: sketch), label: label,
                               maximumPixels: min(1024, max(128, maximumPixels)))
+            reportChoosingIfOnScreen()
         }
+    }
+
+    /// Tells the watch that Image Playground is up; call when the app becomes active.
+    func reportChoosingIfOnScreen() {
+        guard let request = pending, reportedChoosingID != request.id,
+              UIApplication.shared.applicationState == .active else { return }
+        reportedChoosingID = request.id
+        report(.choosing, requestID: request.id)
+    }
+
+    /// Live message when the watch app is open, queued user info otherwise.
+    private func report(_ stage: SketchAssistProtocol.Stage, requestID: String) {
+        let session = WCSession.default
+        guard session.activationState == .activated else { return }
+        let info = [SketchAssistProtocol.stageKey: stage.rawValue, SketchAssistProtocol.requestIDKey: requestID]
+        guard session.isReachable else {
+            session.transferUserInfo(info)
+            return
+        }
+        // The error handler runs on a WatchConnectivity queue.
+        session.sendMessage(info, replyHandler: nil) { @Sendable _ in WCSession.default.transferUserInfo(info) }
     }
 
     /// Called with the temporary file Image Playground created; read it before returning.
@@ -150,6 +173,7 @@ final class PhoneSketchAssist: ObservableObject {
         var metadata: [String: Any] = [SketchAssistProtocol.kindKey: SketchAssistProtocol.resultKind,
                                        SketchAssistProtocol.requestIDKey: requestID]
         if let label { metadata[SketchAssistProtocol.labelKey] = label }
+        report(.returning, requestID: requestID)
         // WatchDrawingReceiver removes the temporary file when the transfer finishes.
         session.transferFile(url, metadata: metadata)
     }

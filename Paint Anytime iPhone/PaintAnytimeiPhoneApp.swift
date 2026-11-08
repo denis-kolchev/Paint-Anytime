@@ -14,6 +14,7 @@ struct PaintAnytimeiPhoneApp: App {
                     if phase == .active {
                         photoInbox.refresh(); photoInbox.synchronize()
                         PhoneSketchAssist.shared.publishAvailability()
+                        PhoneSketchAssist.shared.reportChoosingIfOnScreen()
                     }
                 }
         }

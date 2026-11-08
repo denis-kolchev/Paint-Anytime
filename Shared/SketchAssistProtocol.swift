@@ -15,8 +15,26 @@ nonisolated enum SketchAssistProtocol {
     /// Bool sent with `transferUserInfo`: Image Playground can run on the phone
     /// (supported iPhone, Apple Intelligence on, image generation available).
     static let availabilityKey = "sketchAssistAvailable"
+    /// `Stage` raw value the phone reports with `sendMessage`, or `transferUserInfo`
+    /// when the watch app is not reachable.
+    static let stageKey = "sketchAssistStage"
     static let requestKind = "sketchAssistRequest"
     static let resultKind = "sketchAssistResult"
+
+    /// Progress of one request, in order; the watch never moves back to an earlier one
+    /// because messages, user info and files can arrive out of order.
+    enum Stage: String, CaseIterable {
+        /// Watch: the sketch file is on its way to the phone.
+        case sending
+        /// Watch: the phone has the sketch; the user needs to open the iPhone app.
+        case delivered
+        /// Phone: the app is on screen with Image Playground.
+        case choosing
+        /// Phone: the chosen image is on its way back to the watch.
+        case returning
+
+        var order: Int { Self.allCases.firstIndex(of: self) ?? 0 }
+    }
 
     /// Stable codes; the watch owns the localized descriptions.
     enum Failure: String {
