@@ -23,7 +23,9 @@ nonisolated enum WatchTransparencyClipping {
         for stroke in strokes {
             try Task.checkCancellation()
             defer { preceding.append(stroke) }
-            guard stroke.locksTransparency, stroke.style.instrument != .eraser else {
+            // A blur alone renders nothing; it is baked with the ink it reads afterwards.
+            guard stroke.locksTransparency, stroke.style.instrument != .eraser,
+                  stroke.style.instrument != .blur else {
                 result.append(stroke)
                 alpha = nil
                 continue

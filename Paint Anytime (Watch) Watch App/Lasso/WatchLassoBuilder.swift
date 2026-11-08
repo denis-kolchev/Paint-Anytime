@@ -35,6 +35,27 @@ actor WatchLassoBuilder {
     private var clippingSize = CGSize.zero
     private var clippingScale: CGFloat = 0
     private var clippedStrokes: [Stroke] = []
+    private var bakingInput: [Stroke] = []
+    private var bakingSize = CGSize.zero
+    private var bakingScale: CGFloat = 0
+    private var bakedStrokes: [Stroke] = []
+
+    /// Blurs become pixels of the strokes they read (see `WatchBlurBaking`). Cached:
+    /// baked rasters get new revisions, which would otherwise defeat later caches.
+    private func bakingBlurs(in strokes: [Stroke], size: CGSize, scale: CGFloat) throws -> [Stroke] {
+        guard strokes.contains(where: { $0.style.instrument == .blur }) else {
+            bakingInput = []; bakedStrokes = []
+            return strokes
+        }
+        if strokes == bakingInput, size == bakingSize, scale == bakingScale { return bakedStrokes }
+        let bounds = try strokes.map { try cachedBounds($0) }
+        let result = try WatchBlurBaking.prepare(strokes: strokes, bounds: bounds, size: size, scale: scale)
+        bakingInput = strokes
+        bakingSize = size
+        bakingScale = scale
+        bakedStrokes = result
+        return result
+    }
 
     private func clippingTransparency(in strokes: [Stroke], size: CGSize, scale: CGFloat) throws -> [Stroke] {
         guard strokes.contains(where: \.locksTransparency) else {
@@ -151,6 +172,8 @@ actor WatchLassoBuilder {
         let paper = CGRect(origin: .zero, size: size)
         guard path.boundingBoxOfPath.intersects(paper) else { return nil }
         layer.strokes = try clippingTransparency(in: layer.strokes, size: size, scale: scale)
+        // Before erasers: an eraser drawn after a blur must erase the blurred pixels.
+        layer.strokes = try bakingBlurs(in: layer.strokes, size: size, scale: scale)
         layer.strokes = try attachingErasers(in: layer.strokes)
         if mode == .area {
             return try cutArea(document: document, layer: layer, polygon: polygon, path: path, size: size, scale: scale)

@@ -385,7 +385,8 @@ final class CanvasController: ObservableObject {
         guard let style = pencil.activeStroke?.style,
               style.instrument == .eraser, style.eraserMode == .objects else { return }
         let remaining = selectedLayer.strokes.filter { stroke in
-            !(stroke.style.instrument != .eraser && BrushGeometry.touches(stroke, from: a, to: b, radius: style.width / 2))
+            // Like erasers, blurs are effects on other strokes, not objects to remove.
+            !(stroke.style.instrument != .eraser && stroke.style.instrument != .blur && BrushGeometry.touches(stroke, from: a, to: b, radius: style.width / 2))
         }
         if remaining.count != selectedLayer.strokes.count { document.layers[selectedLayerIndex].strokes = remaining }
     }
