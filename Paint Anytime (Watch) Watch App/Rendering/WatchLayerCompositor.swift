@@ -120,6 +120,32 @@ nonisolated extension WatchBitmapRenderer {
         fileprivate func clearLive() {
             liveInk = nil
             liveDry = nil
+            livePen = nil
+        }
+
+        /// Pen buffer of the selected layer; not promoted on lift (the layer replays it).
+        fileprivate var livePen: (layerID: UUID, revisions: [UUID], ink: WatchBitmapRenderer.LivePenInk)?
+
+        fileprivate func renderLivePen(_ stroke: Stroke, layerID: UUID, revisions: [UUID],
+                                       base: InkSnapshot, scale: CGFloat) -> InkSnapshot? {
+            liveInk = nil
+            liveDry = nil
+            guard WatchBitmapRenderer.LivePenInk.supports(stroke) else {
+                livePen = nil
+                return nil
+            }
+            if let live = livePen, live.layerID == layerID, live.revisions == revisions,
+               live.ink.scale == scale, live.ink.frame.width == base.image.width,
+               live.ink.frame.height == base.image.height, live.ink.update(stroke) != nil {
+                // Same gesture: extended.
+            } else {
+                guard let ink = WatchBitmapRenderer.LivePenInk(stroke: stroke, base: base.image, scale: scale) else {
+                    livePen = nil
+                    return nil
+                }
+                livePen = (layerID, revisions, ink)
+            }
+            return livePen?.ink.frame.makeImage().map { InkSnapshot(image: $0) }
         }
 
         /// Layer, prefix and stroke of the live buffer, for promotion on lift.
@@ -237,6 +263,10 @@ nonisolated extension WatchBitmapRenderer {
                 return renderLiveDry(stroke, layerID: layerID, revisions: revisions, base: base,
                                      scale: scale, exact: exact)
             }
+            if stroke.style.instrument == .pen, !exact {
+                return renderLivePen(stroke, layerID: layerID, revisions: revisions, base: base, scale: scale)
+            }
+            livePen = nil
             liveDry = nil
             guard (stroke.style.instrument == .watercolor || stroke.style.instrument == .marker),
                   !stroke.locksTransparency, stroke.transform == .identity,

@@ -136,6 +136,13 @@ nonisolated enum BrushGeometry {
     /// Width scale before any speed is known: a tap, or the first input event.
     static let penOpeningScale: Float = 0.55
 
+    /// Once the stroke spans `penSpeedWindow`, its opening width is final and every
+    /// radius depends only on earlier samples: drawn ink may be extended, not redrawn.
+    static func penRadiiSettled(_ stroke: Stroke) -> Bool {
+        guard let first = stroke.points.first, let last = stroke.points.last else { return false }
+        return last.timestamp - first.timestamp >= penSpeedWindow
+    }
+
     static func penScale(speed: Float) -> Float {
         penFastScale + (penSlowScale - penFastScale) / (1 + speed / 150)
     }
@@ -219,17 +226,20 @@ nonisolated enum BrushGeometry {
     /// tail with radii computed over the whole stroke, so widths match the renderer.
     /// Discs are true arcs, as in a round line cap: a fixed polygon showed facets on
     /// wide pens. Discs and quads share one winding, so nonzero filling has no holes.
-    static func roundPath(points: [SIMD2<Float>], radii: [Float]) -> CGPath {
+    /// `skipsFirstDisc`: the first point's disc is already drawn (an appended batch).
+    static func roundPath(points: [SIMD2<Float>], radii: [Float], skipsFirstDisc: Bool = false) -> CGPath {
         func cg(_ p: SIMD2<Float>) -> CGPoint { CGPoint(x: CGFloat(p.x), y: CGFloat(p.y)) }
         let path = CGMutablePath()
         for index in points.indices {
             let center = points[index]
             let radius = radii[index]
-            path.move(to: cg(center + SIMD2(radius, 0)))
-            path.addArc(center: cg(center), radius: CGFloat(radius),
-                        startAngle: 0, endAngle: 2 * .pi, clockwise: false)
-            path.closeSubpath()
-            guard index > 0 else { continue }
+            if !(skipsFirstDisc && index == points.startIndex) {
+                path.move(to: cg(center + SIMD2(radius, 0)))
+                path.addArc(center: cg(center), radius: CGFloat(radius),
+                            startAngle: 0, endAngle: 2 * .pi, clockwise: false)
+                path.closeSubpath()
+            }
+            guard index > points.startIndex else { continue }
             let previous = points[index - 1]
             let delta = center - previous
             guard simd_length(delta) > 0.001 else { continue }

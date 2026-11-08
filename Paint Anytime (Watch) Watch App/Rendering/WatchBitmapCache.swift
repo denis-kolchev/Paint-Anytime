@@ -1,3 +1,4 @@
+import Accelerate
 import SwiftUI
 import simd
 import ImageIO
@@ -635,9 +636,16 @@ nonisolated extension WatchBitmapRenderer {
                 activeInk = nil
                 activeDry = nil
                 activeImage = nil
+                activePen = nil
                 return committedImage
             }
             let instrument = activeStroke.style.instrument
+            if instrument == .pen, let image = renderPen(activeStroke, over: committedInk, key: nextKey) {
+                activeInk = nil
+                activeDry = nil
+                return image
+            }
+            activePen = nil
             if instrument == .pencil || instrument == .crayon {
                 activeInk = nil
                 return renderDry(activeStroke, base: committedInk, key: nextKey)
@@ -736,6 +744,61 @@ nonisolated extension WatchBitmapRenderer {
             return true
         }
 
+        private var activePen: LivePenInk?
+        /// Display bitmap of `activePen` for screen tiles, flattened by dirty tiles.
+        private var activePenDisplay: CGContext?
+
+        /// Pen: extend the live buffer by the new samples; nil falls back to replay.
+        private func renderPen(_ activeStroke: Stroke, over committedInk: InkSnapshot,
+                               key nextKey: CacheKey) -> CGImage? {
+            guard LivePenInk.supports(activeStroke) else {
+                activePen = nil
+                activePenDisplay = nil
+                return nil
+            }
+            let pen: LivePenInk
+            var dirty: CGRect?
+            if let current = activePen, current.base === committedInk.image, current.scale == nextKey.scale,
+               (activePenDisplay != nil) == usesScreenTiles {
+                pen = current
+                dirty = current.update(activeStroke)
+            } else {
+                guard let created = LivePenInk(stroke: activeStroke, base: committedInk.image,
+                                               scale: nextKey.scale) else { return nil }
+                pen = created
+                activePenDisplay = nil
+                if usesScreenTiles {
+                    guard let display = WatchBitmapRenderer.makeDisplayContext(
+                        width: created.frame.width, height: created.frame.height) else { return nil }
+                    activePenDisplay = display
+                }
+                dirty = CGRect(x: 0, y: 0, width: created.frame.width, height: created.frame.height)
+            }
+            guard let dirty else {
+                activePen = nil
+                activePenDisplay = nil
+                return nil
+            }
+            activePen = pen
+            let full = CGRect(x: 0, y: 0, width: pen.frame.width, height: pen.frame.height)
+            if let display = activePenDisplay {
+                if dirty == full {
+                    guard let ink = pen.frame.makeImage(),
+                          let flat = WatchBitmapRenderer.flatten(InkSnapshot(image: ink), paperWhite: 1)
+                    else { return nil }
+                    display.draw(flat, in: full)
+                } else if !dirty.isNull, !dirty.isEmpty {
+                    guard Self.flattenTiles(of: pen.frame, dirty: dirty, into: display) else { return nil }
+                }
+                activeImage = display.makeImage()
+                return activeImage
+            }
+            if dirty.isNull || dirty.isEmpty, let activeImage { return activeImage }
+            guard let ink = pen.frame.makeImage() else { return nil }
+            activeImage = WatchBitmapRenderer.flatten(InkSnapshot(image: ink), paperWhite: 1)
+            return activeImage
+        }
+
         /// Other instruments: replay the whole live stroke over committed ink.
         private func replayActive(_ activeStroke: Stroke, over committedInk: InkSnapshot,
                                   key nextKey: CacheKey) -> CGImage? {
@@ -745,6 +808,133 @@ nonisolated extension WatchBitmapRenderer {
                                                             scale: nextKey.scale, base: committedInk)
             else { return nil }
             return WatchBitmapRenderer.flatten(frame, paperWhite: 1)
+        }
+    }
+}
+
+nonisolated extension WatchBitmapRenderer {
+    /// Live Pen stroke over committed ink, extended by its new samples only.
+    /// Replaying the whole stroke each frame made its cost grow with stroke length.
+    /// Until the opening width settles (`BrushGeometry.penRadiiSettled`) every update
+    /// redraws the stroke; afterwards radii of drawn samples never change, so only
+    /// new segments and discs are added. They are drawn opaque into a coverage mask,
+    /// and only the changed rectangle is composited as `base + ink × coverage × density`.
+    /// That equals `renderInk`'s single fill inside a transparency layer, so translucent
+    /// ink gets no darker seams. The committed stroke is replayed whole on lift.
+    final class LivePenInk {
+        let frame: CGContext
+        let base: CGImage
+        let scale: CGFloat
+        private(set) var stroke: Stroke
+        private var settled = false
+        private let backdrop: CGContext
+        private let coverage: CGContext
+        private let scratch: UnsafeMutablePointer<Float>
+
+        static func supports(_ stroke: Stroke) -> Bool {
+            stroke.style.instrument == .pen && !stroke.points.isEmpty
+                && !stroke.locksTransparency && stroke.transform == .identity
+                && stroke.excludedAreas.isEmpty && stroke.erasures.isEmpty && stroke.raster == nil
+        }
+
+        init?(stroke: Stroke, base: CGImage, scale: CGFloat) {
+            let width = base.width, height = base.height
+            guard Self.supports(stroke), width > 0, height > 0,
+                  let frame = WatchBitmapRenderer.makeFloatContext(width: width, height: height),
+                  let backdrop = WatchBitmapRenderer.makeFloatContext(width: width, height: height),
+                  let coverage = CGContext(data: nil, width: width, height: height, bitsPerComponent: 32,
+                                           bytesPerRow: 0, space: CGColorSpaceCreateDeviceGray(),
+                                           bitmapInfo: CGImageAlphaInfo.none.rawValue
+                                               | CGBitmapInfo.floatComponents.rawValue
+                                               | CGBitmapInfo.byteOrder32Little.rawValue),
+                  frame.data != nil, backdrop.data != nil, coverage.data != nil
+            else { return nil }
+            backdrop.draw(base, in: CGRect(x: 0, y: 0, width: width, height: height))
+            self.frame = frame
+            self.backdrop = backdrop
+            self.coverage = coverage
+            self.base = base
+            self.scale = scale
+            self.stroke = stroke
+            scratch = .allocate(capacity: width * 2)
+            scratch.initialize(repeating: 0, count: width * 2)
+            redraw(stroke)
+        }
+
+        deinit { scratch.deallocate() }
+
+        private var canvas: CGRect { CGRect(x: 0, y: 0, width: frame.width, height: frame.height) }
+
+        /// Pixel rectangle (rows top to bottom) changed by `stroke`; the whole frame
+        /// when it had to be redrawn. nil when this buffer cannot show `stroke`.
+        func update(_ next: Stroke) -> CGRect? {
+            guard Self.supports(next), next.id == stroke.id else { return nil }
+            guard settled, next.extends(stroke) else {
+                redraw(next)
+                return canvas
+            }
+            let drawn = stroke.points.count
+            stroke = next
+            guard next.points.count > drawn, drawn > 0 else { return .null }
+            let radii = BrushGeometry.radii(for: next)
+            let path = BrushGeometry.roundPath(points: next.points[(drawn - 1)...].map(\.position),
+                                               radii: Array(radii[(drawn - 1)...]), skipsFirstDisc: true)
+            fillCoverage(path)
+            // Paper space to pixels: y already runs down in both.
+            let dirty = path.boundingBoxOfPath.applying(CGAffineTransform(scaleX: scale, y: scale))
+                .insetBy(dx: -2, dy: -2).integral.intersection(canvas)
+            composite(dirty)
+            return dirty
+        }
+
+        private func redraw(_ next: Stroke) {
+            stroke = next
+            settled = BrushGeometry.penRadiiSettled(next)
+            coverage.data?.initializeMemory(as: UInt8.self, repeating: 0,
+                                            count: coverage.bytesPerRow * coverage.height)
+            fillCoverage(BrushGeometry.roundPath(for: next))
+            composite(canvas)
+        }
+
+        /// Same transform as `renderInk`; coverage only, the ink is applied in `composite`.
+        private func fillCoverage(_ path: CGPath) {
+            coverage.saveGState()
+            coverage.translateBy(x: 0, y: CGFloat(coverage.height))
+            coverage.scaleBy(x: scale, y: -scale)
+            coverage.setFillColor(gray: 1, alpha: 1)
+            coverage.addPath(path)
+            coverage.fillPath()
+            coverage.restoreGState()
+        }
+
+        /// Premultiplied normal blend: out = ink·a + base·(1−a), a = coverage × ink alpha × density.
+        private func composite(_ rect: CGRect) {
+            guard !rect.isNull, !rect.isEmpty,
+                  let output = frame.data?.assumingMemoryBound(to: Float.self),
+                  let below = backdrop.data?.assumingMemoryBound(to: Float.self),
+                  let mask = coverage.data?.assumingMemoryBound(to: Float.self) else { return }
+            let frameStride = frame.bytesPerRow / MemoryLayout<Float>.stride
+            let backdropStride = backdrop.bytesPerRow / MemoryLayout<Float>.stride
+            let maskStride = coverage.bytesPerRow / MemoryLayout<Float>.stride
+            let x = Int(rect.minX), count = Int(rect.width)
+            let n = vDSP_Length(count)
+            let alpha = scratch, remaining = scratch + frame.width
+            let ink = stroke.style.color
+            var inkAlpha = min(1, max(0, ink.w * stroke.style.effectiveOpacity))
+            var one: Float = 1, minusOne: Float = -1
+            for y in Int(rect.minY)..<Int(rect.maxY) {
+                let source = below + y * backdropStride + x * 4
+                let destination = output + y * frameStride + x * 4
+                vDSP_vsmul(mask + y * maskStride + x, 1, &inkAlpha, alpha, 1, n)
+                vDSP_vsmsa(alpha, 1, &minusOne, &one, remaining, 1, n)
+                for channel in 0..<3 {
+                    var color = ink[channel]
+                    vDSP_vmul(source + channel, 4, remaining, 1, destination + channel, 4, n)
+                    vDSP_vsma(alpha, 1, &color, destination + channel, 4, destination + channel, 4, n)
+                }
+                vDSP_vmul(source + 3, 4, remaining, 1, destination + 3, 4, n)
+                vDSP_vadd(destination + 3, 4, alpha, 1, destination + 3, 4, n)
+            }
         }
     }
 }
