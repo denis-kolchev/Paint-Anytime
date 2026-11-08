@@ -6,7 +6,9 @@ struct WatchLassoOverlay: View {
 
     var body: some View {
         Canvas { context, _ in
-            if !lasso.outline.isEmpty {
+            if !lasso.outline.isEmpty, lasso.mode == .sketchAssist {
+                WatchCometTrail.draw(lasso.outline, transform: canvasToScreen, in: &context)
+            } else if !lasso.outline.isEmpty {
                 // Only show the finger's trail. Selection calculation closes
                 // the contour separately, without drawing a line to its start.
                 let path = Path(WatchLassoGeometry.path(lasso.outline, closed: false)).applying(canvasToScreen)

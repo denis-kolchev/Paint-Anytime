@@ -559,13 +559,16 @@ struct ContentView: View {
         }
         if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && lasso.isActive {
             ToolbarItem(placement: .topBarLeading) {
-                if lasso.awaitsSketchAssistConfirmation {
-                    sketchAssistCancelControl
-                } else {
+                // Both stay installed, like the trailing Done: swapping them with if/else
+                // left the ✕ unrendered when Complete strokes opened from a custom layout,
+                // whose hidden bars reappear with the lasso.
+                ZStack {
                     // Balance Done to center the system clock, and forward this
                     // native toolbar region's drags to the same lasso controller.
                     WatchLassoToolbarTouchRegion(input: lassoToolbarInput, lasso: lasso,
                         controller: controller, diameter: canvasToolbarDiameter)
+                        .allowsHitTesting(!lasso.awaitsSketchAssistConfirmation)
+                    sketchAssistCancelControl
                 }
             }
         }
@@ -626,8 +629,10 @@ struct ContentView: View {
     }
 
     /// Complete strokes: discards the outlined strokes instead of sending them.
+    /// Shown only while the outlined strokes wait for confirmation.
     private var sketchAssistCancelControl: some View {
-        MorphControlsScope {
+        let isShown = lasso.awaitsSketchAssistConfirmation && !lasso.hidesControls
+        return MorphControlsScope {
             Button {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { lasso.resetSelection() }
             } label: {
@@ -637,12 +642,12 @@ struct ContentView: View {
                     .contentShape(Rectangle())
             }
             .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true,
-                                     hidesNativeChrome: lasso.hidesControls)
+                                     hidesNativeChrome: !isShown)
             .accessibilityLabel(L10n.text("Cancel"))
             .trackCanvasControl(.more, frames: controlFramesBinding)
-            .opacity(lasso.hidesControls ? 0 : 1)
-            .allowsHitTesting(!lasso.hidesControls)
-            .accessibilityHidden(lasso.hidesControls)
+            .opacity(isShown ? 1 : 0)
+            .allowsHitTesting(isShown)
+            .accessibilityHidden(!isShown)
         }
     }
 
