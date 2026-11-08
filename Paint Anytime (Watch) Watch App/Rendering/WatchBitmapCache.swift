@@ -636,16 +636,25 @@ nonisolated extension WatchBitmapRenderer {
                 activeInk = nil
                 activeDry = nil
                 activeImage = nil
-                activePen = nil
+                activeLive = nil
+                activeLiveDisplay = nil
                 return committedImage
             }
             let instrument = activeStroke.style.instrument
-            if instrument == .pen, let image = renderPen(activeStroke, over: committedInk, key: nextKey) {
+            if instrument == .pen, LivePenInk.supports(activeStroke),
+               let image = renderLive(activeStroke, over: committedInk, key: nextKey, create: LivePenInk.init) {
                 activeInk = nil
                 activeDry = nil
                 return image
             }
-            activePen = nil
+            if instrument == .blur, LiveBlurInk.supports(activeStroke),
+               let image = renderLive(activeStroke, over: committedInk, key: nextKey, create: LiveBlurInk.init) {
+                activeInk = nil
+                activeDry = nil
+                return image
+            }
+            activeLive = nil
+            activeLiveDisplay = nil
             if instrument == .pencil || instrument == .crayon {
                 activeInk = nil
                 return renderDry(activeStroke, base: committedInk, key: nextKey)
@@ -744,57 +753,54 @@ nonisolated extension WatchBitmapRenderer {
             return true
         }
 
-        private var activePen: LivePenInk?
-        /// Display bitmap of `activePen` for screen tiles, flattened by dirty tiles.
-        private var activePenDisplay: CGContext?
+        /// Live Pen or Blur buffer extended by new samples (see `WatchLiveInk`).
+        private var activeLive: (any WatchLiveInk)?
+        /// Display bitmap of `activeLive` for screen tiles, flattened by dirty tiles.
+        private var activeLiveDisplay: CGContext?
 
-        /// Pen: extend the live buffer by the new samples; nil falls back to replay.
-        private func renderPen(_ activeStroke: Stroke, over committedInk: InkSnapshot,
-                               key nextKey: CacheKey) -> CGImage? {
-            guard LivePenInk.supports(activeStroke) else {
-                activePen = nil
-                activePenDisplay = nil
-                return nil
-            }
-            let pen: LivePenInk
+        /// Pen and Blur: extend the live buffer by the new samples; nil falls back to replay.
+        private func renderLive<Ink: WatchLiveInk>(_ activeStroke: Stroke, over committedInk: InkSnapshot,
+                                                   key nextKey: CacheKey,
+                                                   create: (Stroke, CGImage, CGFloat) -> Ink?) -> CGImage? {
+            let live: Ink
             var dirty: CGRect?
-            if let current = activePen, current.base === committedInk.image, current.scale == nextKey.scale,
-               (activePenDisplay != nil) == usesScreenTiles {
-                pen = current
+            if let current = activeLive as? Ink, current.base === committedInk.image,
+               current.scale == nextKey.scale, (activeLiveDisplay != nil) == usesScreenTiles {
+                live = current
                 dirty = current.update(activeStroke)
             } else {
-                guard let created = LivePenInk(stroke: activeStroke, base: committedInk.image,
-                                               scale: nextKey.scale) else { return nil }
-                pen = created
-                activePenDisplay = nil
+                activeLive = nil
+                activeLiveDisplay = nil
+                guard let created = create(activeStroke, committedInk.image, nextKey.scale) else { return nil }
+                live = created
                 if usesScreenTiles {
                     guard let display = WatchBitmapRenderer.makeDisplayContext(
                         width: created.frame.width, height: created.frame.height) else { return nil }
-                    activePenDisplay = display
+                    activeLiveDisplay = display
                 }
                 dirty = CGRect(x: 0, y: 0, width: created.frame.width, height: created.frame.height)
             }
             guard let dirty else {
-                activePen = nil
-                activePenDisplay = nil
+                activeLive = nil
+                activeLiveDisplay = nil
                 return nil
             }
-            activePen = pen
-            let full = CGRect(x: 0, y: 0, width: pen.frame.width, height: pen.frame.height)
-            if let display = activePenDisplay {
+            activeLive = live
+            let full = CGRect(x: 0, y: 0, width: live.frame.width, height: live.frame.height)
+            if let display = activeLiveDisplay {
                 if dirty == full {
-                    guard let ink = pen.frame.makeImage(),
+                    guard let ink = live.frame.makeImage(),
                           let flat = WatchBitmapRenderer.flatten(InkSnapshot(image: ink), paperWhite: 1)
                     else { return nil }
                     display.draw(flat, in: full)
                 } else if !dirty.isNull, !dirty.isEmpty {
-                    guard Self.flattenTiles(of: pen.frame, dirty: dirty, into: display) else { return nil }
+                    guard Self.flattenTiles(of: live.frame, dirty: dirty, into: display) else { return nil }
                 }
                 activeImage = display.makeImage()
                 return activeImage
             }
             if dirty.isNull || dirty.isEmpty, let activeImage { return activeImage }
-            guard let ink = pen.frame.makeImage() else { return nil }
+            guard let ink = live.frame.makeImage() else { return nil }
             activeImage = WatchBitmapRenderer.flatten(InkSnapshot(image: ink), paperWhite: 1)
             return activeImage
         }
