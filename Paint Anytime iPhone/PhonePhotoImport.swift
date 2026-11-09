@@ -78,109 +78,21 @@ nonisolated enum PhonePhotoImport {
             NSLog("Photo import gallery preview failed: %@", error.localizedDescription)
         }
     }
-}
 
-struct PhonePhotoImportView: View {
-    /// Receives the confirmation or error text to show after the sheet closes.
-    let onFinish: (String) -> Void
-
-    @Environment(\.dismiss) private var dismiss
-    @AppStorage("photoImportFitsWatch") private var fitsWatch = true
-    @State private var selection: PhotosPickerItem?
-    @State private var png: Data?
-    @State private var original: Data?
-    @State private var preview: UIImage?
-    @State private var loading = false
-    @State private var errorMessage: String?
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    PhotosPicker(selection: $selection, matching: .images) {
-                        photoLabel
-                    }
-                }
-                Section {
-                    Toggle("Fit to Apple Watch screen", isOn: $fitsWatch)
-                } footer: {
-                    if fitsWatch {
-                        Text("The canvas takes the photo's shape and fits your watch screen.")
-                    } else {
-                        Text("The canvas takes the photo's shape and resolution, up to 1024 pixels on the longer side, the largest canvas Apple Watch can edit. Larger photos keep twice that detail for zooming in.")
-                    }
-                }
-                Section {
-                    Text("The photo becomes a new drawing in your watch gallery. It has its own layer, with an empty layer above it for drawing. Edit it on Apple Watch.")
-                    Text("Saving or sharing on iPhone uses the original photo at full resolution, with your drawing on top. Erasing or blurring the photo, or using the marker or watercolor on its layer, keeps the Apple Watch resolution.")
-                }
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-            }
-            .navigationTitle("New Drawing from Photo")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Send", action: send).disabled(png == nil || loading)
-                }
-            }
-            .task(id: selection) { await load(selection) }
-            .alert("Could not complete action",
-                   isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
-                Button("OK") { errorMessage = nil }
-            } message: { Text(errorMessage ?? "") }
+    /// Loads the picked photo, prepares it for the watch and sends it. Returns the
+    /// confirmation to show; throws with the error text otherwise.
+    @MainActor
+    static func importPhoto(_ item: PhotosPickerItem) async throws -> String {
+        guard let original = try await item.loadTransferable(type: Data.self) else {
+            throw ImportError.unreadable
         }
-    }
-
-    @ViewBuilder private var photoLabel: some View {
-        if loading {
-            HStack { ProgressView(); Text("Preparing Photo…") }
-        } else if let preview {
-            Image(uiImage: preview)
-                .resizable()
-                .scaledToFit()
-                .frame(maxWidth: .infinity, maxHeight: 280)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .accessibilityLabel(Text("Selected photo. Choose another photo"))
-        } else {
-            Label("Choose Photo", systemImage: "photo.on.rectangle")
-        }
-    }
-
-    private func load(_ item: PhotosPickerItem?) async {
-        guard let item else { return }
-        loading = true
-        defer { loading = false }
-        do {
-            guard let data = try await item.loadTransferable(type: Data.self) else {
-                throw PhonePhotoImport.ImportError.unreadable
-            }
-            // Full camera photos are large; decode and encode away from the main actor.
-            let prepared = try await Task.detached(priority: .userInitiated) {
-                try PhonePhotoImport.preparedPNG(from: data)
-            }.value
-            guard !Task.isCancelled else { return }
-            png = prepared
-            original = data
-            preview = UIImage(data: prepared)
-        } catch {
-            guard !Task.isCancelled else { return }
-            png = nil
-            original = nil
-            preview = nil
-            errorMessage = error.localizedDescription
-        }
-    }
-
-    private func send() {
-        guard let png, let original else { return }
-        do {
-            try PhonePhotoImport.send(png: png, original: original, fitsWatch: fitsWatch)
-            dismiss()
-            onFinish(String(localized: "Photo queued. It will appear in your watch gallery as a new drawing when the transfer finishes. Open it there to edit."))
-        } catch { errorMessage = error.localizedDescription }
+        // Full camera photos are large; decode and encode away from the main actor.
+        let png = try await Task.detached(priority: .userInitiated) {
+            try preparedPNG(from: original)
+        }.value
+        // Always keeps the photo's resolution: tools that edit the photo's own layer
+        // reduce it to the watch resolution anyway, so fitting it first gains nothing.
+        try send(png: png, original: original, fitsWatch: false)
+        return String(localized: "Photo queued. It will appear in your watch gallery as a new drawing when the transfer finishes. Open it there to edit.")
     }
 }

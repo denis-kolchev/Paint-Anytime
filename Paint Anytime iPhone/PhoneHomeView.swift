@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
 import ImageIO
@@ -121,6 +122,8 @@ struct PhoneHomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var importingProject = false
     @State private var importingPhoto = false
+    @State private var pickedPhoto: PhotosPickerItem?
+    @State private var preparingPhoto = false
     @State private var showingInboxError = false
     @State private var projectMessage: String?
     @State private var watchDestination: PaintDeepLink?
@@ -497,7 +500,8 @@ struct PhoneHomeView: View {
                 PhoneGalleryHeader(
                     importPhoto: { importingPhoto = true },
                     importProject: { importingProject = true },
-                    synchronize: { photoInbox.synchronize() })
+                    synchronize: { photoInbox.synchronize() },
+                    isPreparingPhoto: preparingPhoto)
                     .padding(.top, container.safeAreaInsets.top)
                     .background {
                         // The header's bottom edge in window space, which includes
@@ -518,11 +522,22 @@ struct PhoneHomeView: View {
                 case .failure(let error): projectMessage = error.localizedDescription
                 }
             }
-            .sheet(isPresented: $importingPhoto) {
-                PhonePhotoImportView { message in
+            .photosPicker(isPresented: $importingPhoto, selection: $pickedPhoto, matching: .images)
+            .task(id: pickedPhoto) {
+                guard let item = pickedPhoto else { return }
+                preparingPhoto = true
+                defer {
+                    preparingPhoto = false
+                    pickedPhoto = nil
+                }
+                do {
+                    let message = try await PhonePhotoImport.importPhoto(item)
                     // Shows the photo the import just added to the phone gallery.
                     photoInbox.refresh()
                     projectMessage = message
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    projectMessage = error.localizedDescription
                 }
             }
             .alert("Project", isPresented: Binding(get: { projectMessage != nil }, set: { if !$0 { projectMessage = nil } })) {

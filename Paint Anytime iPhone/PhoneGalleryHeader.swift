@@ -5,6 +5,8 @@ struct PhoneGalleryHeader: View {
     let importPhoto: () -> Void
     let importProject: () -> Void
     let synchronize: () -> Void
+    /// True while a picked photo is decoded and sent to the watch.
+    var isPreparingPhoto = false
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
@@ -82,8 +84,9 @@ struct PhoneGalleryHeader: View {
     private var actionButtons: some View {
         Menu {
             Button(action: importPhoto) {
-                Label("New Drawing from Photo", systemImage: "photo.badge.plus")
+                Label("Import Photo", systemImage: "photo.badge.plus")
             }
+            .disabled(isPreparingPhoto)
             Button(action: importProject) {
                 Label("Import Project", systemImage: "square.and.arrow.down")
             }
@@ -95,10 +98,19 @@ struct PhoneGalleryHeader: View {
             // Only the header button is icon-only; menu items keep their titles.
             // A fixed frame gives the exact system bar height; button styles add
             // their own padding around the icon and come out smaller.
-            Label("More", systemImage: "ellipsis")
-                .labelStyle(.iconOnly)
-                .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
-                .contentShape(.circle)
+            Group {
+                // Large camera photos take a moment to prepare; the spinner replaces
+                // the icon so the button keeps its size.
+                if isPreparingPhoto {
+                    ProgressView()
+                        .accessibilityLabel(Text("Preparing Photo…"))
+                } else {
+                    Label("More", systemImage: "ellipsis")
+                        .labelStyle(.iconOnly)
+                }
+            }
+            .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
+            .contentShape(.circle)
         }
         .buttonStyle(.plain)
     }
