@@ -1183,6 +1183,7 @@ private struct PhoneDrawingView: View {
                     url: url,
                     projectURL: projectURL,
                     hasProject: hasProject,
+                    hasPhotoOriginal: PhotoOriginalStore().hasOriginal(for: url),
                     isSaving: inbox.isSaving,
                     saveToPhotos: { inbox.saveToPhotos(url) },
                     exportImage: { exporting = true },
@@ -1215,7 +1216,7 @@ private struct PhoneDrawingView: View {
         .onChange(of: inbox.images) { _, images in
             if !images.contains(url) { close() }
         }
-        .fileExporter(isPresented: $exporting, document: DrawingFile(url: url), contentType: .png,
+        .fileExporter(isPresented: $exporting, document: DrawingFile(url: url, fullResolution: true), contentType: .png,
                       defaultFilename: url.deletingPathExtension().lastPathComponent) { result in
             if case .failure(let error) = result { exportError = error.localizedDescription }
         }
@@ -1275,10 +1276,15 @@ private struct DrawingFile: FileDocument {
     static var readableContentTypes: [UTType] { [.png, .paintAnytimeProject] }
     let url: URL?
     let data: Data?
-    init(url: URL) { self.url = url; data = nil }
+    /// Exports an imported photo's original at full resolution, with the drawing on top.
+    var fullResolution = false
+    init(url: URL, fullResolution: Bool = false) { self.url = url; data = nil; self.fullResolution = fullResolution }
     init(configuration: ReadConfiguration) throws { url = nil; data = configuration.file.regularFileContents }
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        if let url { return try FileWrapper(url: url, options: .immediate) }
+        if let url {
+            let source = fullResolution ? try PhotoOriginalStore().outputImage(for: url) : url
+            return try FileWrapper(url: source, options: .immediate)
+        }
         return FileWrapper(regularFileWithContents: data ?? Data())
     }
 }

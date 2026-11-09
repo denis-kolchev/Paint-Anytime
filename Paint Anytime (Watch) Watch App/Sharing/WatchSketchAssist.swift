@@ -121,14 +121,14 @@ final class WatchSketchAssist: ObservableObject {
     }
 
     /// Fits the whole image into `rect`, centered; existing paint shows in any margin.
-    static func rasterStroke(png: Data, imageSize: CGSize, in rect: CGRect) -> Stroke {
+    static func rasterStroke(png: Data, imageSize: CGSize, in rect: CGRect, id: UUID = UUID()) -> Stroke {
         let scale = min(rect.width / imageSize.width, rect.height / imageSize.height)
         let size = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
         let bounds = CGRect(x: rect.midX - size.width / 2, y: rect.midY - size.height / 2,
                             width: size.width, height: size.height)
         var style = PencilStyle()
         style.blendingMode = .normal
-        var stroke = Stroke(points: [], style: style)
+        var stroke = Stroke(points: [], style: style, id: id)
         stroke.raster = StrokeRaster(png: png, bounds: bounds)
         return stroke
     }

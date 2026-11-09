@@ -27,8 +27,10 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
                 let project = image.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
                 return [image.lastPathComponent] + (FileManager.default.fileExists(atPath: project.path) ? [project.lastPathComponent] : [])
             }
+            let deleted = try (store as? IncomingDrawingStore)?.deletedNames() ?? []
             try session.updateApplicationContext(["galleryRequest": UUID().uuidString, "knownDrawings": names,
-                                                  GalleryDeletionStore.contextKey: try (store as? IncomingDrawingStore)?.deletedNames() ?? []])
+                                                  GalleryDeletionStore.contextKey: deleted])
+            PhotoOriginalStore().prune(galleryImages: try store.pendingImages(), deleted: deleted)
         } catch { onReceive?(.failure(error)) }
     }
 
@@ -48,6 +50,7 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
               let gallery = store as? IncomingDrawingStore else { return }
         do {
             try gallery.applyDeletions(names)
+            PhotoOriginalStore().prune(galleryImages: try gallery.pendingImages(), deleted: try gallery.deletedNames())
             onReceive?(.success(()))
         } catch { onReceive?(.failure(error)) }
     }
@@ -90,6 +93,20 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
             }
             return
         }
+        if file.metadata?[PhotoImportProtocol.kindKey] as? String == PhotoImportProtocol.overlayKind {
+            let metadata = file.metadata ?? [:]
+            let stem = metadata[PhotoImportProtocol.overlayForKey] as? String ?? ""
+            do {
+                // A deleted drawing must not keep its photo; prune removes the rest.
+                let deleted = try (store as? IncomingDrawingStore)?.deletedNames() ?? []
+                guard !deleted.contains(stem + ".png") else { return }
+                try PhotoOriginalStore().receiveOverlay(file.fileURL, metadata: metadata)
+            } catch {
+                // Saving and sharing then use the watch's image of this drawing.
+                NSLog("Photo overlay was not kept: %@", error.localizedDescription)
+            }
+            return
+        }
         let result = Result {
             if let gallery = store as? IncomingDrawingStore, let name = file.metadata?["drawingName"] as? String {
                 try gallery.receive(file.fileURL, name: name)
@@ -103,6 +120,7 @@ extension WatchPhotoInbox {
     static let shared: WatchPhotoInbox = {
         let store = IncomingDrawingStore()
         return WatchPhotoInbox(store: store, writer: PhotoLibraryWriter(),
-                               receiver: WatchDrawingReceiver(store: store))
+                               receiver: WatchDrawingReceiver(store: store),
+                               imageOutput: { try PhotoOriginalStore().outputImage(for: $0) })
     }()
 }

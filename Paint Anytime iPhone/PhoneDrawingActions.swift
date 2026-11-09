@@ -4,6 +4,8 @@ struct PhoneDrawingActions: ToolbarContent {
     let url: URL
     let projectURL: URL
     let hasProject: Bool
+    /// The drawing started from a photo whose original this iPhone keeps.
+    let hasPhotoOriginal: Bool
     let isSaving: Bool
     let saveToPhotos: () -> Void
     let exportImage: () -> Void
@@ -15,8 +17,15 @@ struct PhoneDrawingActions: ToolbarContent {
     var body: some ToolbarContent {
         ToolbarItem(placement: .bottomBar) {
             Menu {
-                ShareLink(item: url) {
-                    Label("Image (.png)", systemImage: "photo")
+                if hasPhotoOriginal {
+                    // Composed at full resolution only once the share sheet asks for it.
+                    ShareLink(item: DrawingImageExport(url: url), preview: SharePreview("Drawing")) {
+                        Label("Image (.png)", systemImage: "photo")
+                    }
+                } else {
+                    ShareLink(item: url) {
+                        Label("Image (.png)", systemImage: "photo")
+                    }
                 }
                 ShareLink(item: projectURL) {
                     Label("Project (.paintanytime)", systemImage: "doc")

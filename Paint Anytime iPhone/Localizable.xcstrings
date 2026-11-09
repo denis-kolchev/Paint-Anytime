@@ -11603,6 +11603,179 @@
           }
         }
       }
+    },
+    "Saving or sharing on iPhone uses the original photo at full resolution, with your drawing on top. Erasing or blurring the photo, or using the marker or watercolor on its layer, keeps the Apple Watch resolution." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "عند الحفظ أو المشاركة على iPhone تُستخدم الصورة الأصلية بدقتها الكاملة مع رسمك فوقها. يؤدي مسح الصورة أو تمويهها، أو استخدام القلم العريض أو الألوان المائية على طبقتها، إلى الإبقاء على دقة Apple Watch."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uložení nebo sdílení na iPhonu použije původní fotku v plném rozlišení s vaší kresbou navrchu. Pokud fotku gumujete nebo rozmazáváte nebo na její vrstvě použijete fix či akvarel, zůstane rozlišení Apple Watch."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du gemmer eller deler på iPhone, bruges det originale foto i fuld opløsning med din tegning ovenpå. Hvis du viskelæder eller slører fotoet eller bruger tusch eller akvarel på dets lag, bevares Apple Watch-opløsningen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beim Sichern oder Teilen auf dem iPhone wird das Originalfoto in voller Auflösung mit deiner Zeichnung darüber verwendet. Wenn du das Foto radierst oder weichzeichnest oder auf seiner Ebene Marker oder Aquarell verwendest, bleibt die Apple Watch-Auflösung erhalten."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Η αποθήκευση ή η κοινή χρήση στο iPhone χρησιμοποιεί την αρχική φωτογραφία σε πλήρη ανάλυση με το σχέδιό σας από πάνω. Αν σβήσετε ή θολώσετε τη φωτογραφία ή χρησιμοποιήσετε μαρκαδόρο ή ακουαρέλα στο επίπεδό της, διατηρείται η ανάλυση του Apple Watch."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saving or sharing on iPhone uses the original photo at full resolution, with your drawing on top. Erasing or blurring the photo, or using the marker or watercolor on its layer, keeps the Apple Watch resolution."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Al guardar o compartir en el iPhone se usa la foto original a resolución completa, con tu dibujo encima. Si borras o difuminas la foto, o usas el rotulador o la acuarela en su capa, se mantiene la resolución del Apple Watch."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tallennus tai jakaminen iPhonella käyttää alkuperäistä kuvaa täydellä tarkkuudella piirroksesi kanssa. Jos pyyhit tai sumennat kuvaa tai käytät tussia tai vesiväriä sen tasolla, käytetään Apple Watchin tarkkuutta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’enregistrement ou le partage sur l’iPhone utilise la photo d’origine en pleine résolution, avec votre dessin par-dessus. Si vous gommez ou floutez la photo, ou utilisez le marqueur ou l’aquarelle sur son calque, la résolution de l’Apple Watch est conservée."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "שמירה או שיתוף ב‑iPhone משתמשים בתמונה המקורית ברזולוציה מלאה, עם הציור שלכם מעליה. מחיקה או טשטוש של התמונה, או שימוש בטוש או בצבעי מים בשכבה שלה, משאירים את הרזולוציה של Apple Watch."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Az iPhone-on mentéskor vagy megosztáskor az eredeti fotó teljes felbontásban kerül felhasználásra a rajzával együtt. Ha radírozza vagy elmossa a fotót, vagy filcet vagy akvarellt használ a rétegén, az Apple Watch felbontása marad."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menyimpan atau membagikan di iPhone menggunakan foto asli dengan resolusi penuh, dengan gambar Anda di atasnya. Menghapus atau mengaburkan foto, atau memakai spidol atau cat air di lapisannya, mempertahankan resolusi Apple Watch."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il salvataggio o la condivisione su iPhone usano la foto originale a piena risoluzione, con il tuo disegno sopra. Se cancelli o sfochi la foto, o usi il pennarello o l’acquerello sul suo livello, resta la risoluzione di Apple Watch."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneで保存または共有すると、元の写真がフル解像度で使われ、その上に描画が重なります。写真を消去したりぼかしたり、写真のレイヤーでマーカーや水彩を使ったりすると、Apple Watchの解像度のままになります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone에서 저장하거나 공유하면 원본 사진이 최대 해상도로 사용되고 그 위에 그림이 겹쳐집니다. 사진을 지우거나 흐리게 하거나 사진 레이어에서 마커나 수채화를 사용하면 Apple Watch 해상도가 유지됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Når du arkiverer eller deler på iPhone, brukes originalbildet i full oppløsning med tegningen din over. Hvis du visker ut eller gjør bildet uskarpt, eller bruker tusj eller akvarell på laget, beholdes Apple Watch-oppløsningen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bewaren of delen op de iPhone gebruikt de originele foto op volledige resolutie met je tekening erop. Als je de foto gumt of vervaagt, of marker of waterverf op de laag ervan gebruikt, blijft de resolutie van de Apple Watch behouden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisywanie lub udostępnianie na iPhonie używa oryginalnego zdjęcia w pełnej rozdzielczości z Twoim rysunkiem na wierzchu. Wymazywanie lub rozmywanie zdjęcia albo używanie markera lub akwareli na jego warstwie zachowuje rozdzielczość Apple Watch."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvar ou compartilhar no iPhone usa a foto original em resolução total, com seu desenho por cima. Apagar ou desfocar a foto, ou usar o marcador ou a aquarela na camada dela, mantém a resolução do Apple Watch."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar ou partilhar no iPhone usa a fotografia original em resolução total, com o seu desenho por cima. Apagar ou desfocar a fotografia, ou usar o marcador ou a aguarela na camada dela, mantém a resolução do Apple Watch."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "При сохранении или отправке с iPhone используется оригинальное фото в полном разрешении с вашим рисунком поверх. Если стирать или размывать фото либо использовать маркер или акварель на его слое, останется разрешение Apple Watch."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "När du sparar eller delar på iPhone används originalbilden i full upplösning med din teckning ovanpå. Om du suddar eller gör bilden suddig, eller använder märkpenna eller akvarell på dess lager, behålls Apple Watch-upplösningen."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "การบันทึกหรือแชร์บน iPhone จะใช้รูปภาพต้นฉบับที่ความละเอียดเต็ม พร้อมภาพวาดของคุณด้านบน การลบหรือเบลอรูปภาพ หรือใช้ปากกามาร์กเกอร์หรือสีน้ำบนเลเยอร์ของรูปภาพ จะคงความละเอียดของ Apple Watch ไว้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone’da kaydetme veya paylaşma, orijinal fotoğrafı tam çözünürlükte ve çiziminiz üstünde olacak şekilde kullanır. Fotoğrafı silmek veya bulanıklaştırmak ya da katmanında keçeli kalem veya suluboya kullanmak Apple Watch çözünürlüğünü korur."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Під час збереження або надсилання з iPhone використовується оригінальне фото в повній роздільності з вашим малюнком поверх. Якщо стирати чи розмивати фото або використовувати маркер чи акварель на його шарі, залишиться роздільність Apple Watch."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Khi lưu hoặc chia sẻ trên iPhone, ảnh gốc ở độ phân giải đầy đủ sẽ được dùng, với bản vẽ của bạn ở trên. Nếu tẩy hoặc làm mờ ảnh, hoặc dùng bút dạ hay màu nước trên lớp của ảnh, độ phân giải Apple Watch sẽ được giữ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 iPhone 上存储或共享时会使用全分辨率的原始照片，并将你的绘图叠加在上面。擦除或模糊照片，或在照片所在图层上使用记号笔或水彩，会保留 Apple Watch 的分辨率。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在 iPhone 上儲存或分享時會使用全解析度的原始照片，並將你的繪圖疊加在上面。擦除或模糊照片，或在照片所在圖層上使用麥克筆或水彩，會保留 Apple Watch 的解析度。"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

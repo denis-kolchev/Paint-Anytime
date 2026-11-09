@@ -24,12 +24,17 @@ final class WatchPhotoInbox: ObservableObject {
     private let store: any IncomingDrawingStoring
     private let writer: any PhotoLibraryWriting
     private let receiver: any WatchDrawingReceiving
+    /// The file to save for a gallery image; the app composes imported photos at their
+    /// original resolution here. May take a while, so it runs off the main actor.
+    private let imageOutput: @Sendable (URL) throws -> URL
 
     init(store: any IncomingDrawingStoring, writer: any PhotoLibraryWriting,
-         receiver: any WatchDrawingReceiving) {
+         receiver: any WatchDrawingReceiving,
+         imageOutput: @escaping @Sendable (URL) throws -> URL = { $0 }) {
         self.store = store
         self.writer = writer
         self.receiver = receiver
+        self.imageOutput = imageOutput
     }
 
     func start() {
@@ -97,7 +102,9 @@ final class WatchPhotoInbox: ObservableObject {
                 return
             }
             do {
-                try await writer.save(image)
+                let output = imageOutput
+                let file = try await Task.detached(priority: .userInitiated) { try output(image) }.value
+                try await writer.save(file)
                 savedToPhotos = true
             } catch { errorMessage = error.localizedDescription }
         }

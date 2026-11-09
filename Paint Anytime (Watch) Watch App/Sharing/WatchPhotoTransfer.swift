@@ -25,16 +25,24 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         if replacingPending {
             let stem = imageURL.deletingPathExtension().lastPathComponent
             for transfer in session.outstandingFileTransfers {
+                if transfer.file.metadata?[PhotoImportProtocol.overlayForKey] as? String == stem {
+                    // Superseded by the overlay of this save; its file is temporary.
+                    transfer.cancel()
+                    try? FileManager.default.removeItem(at: transfer.file.fileURL)
+                    continue
+                }
                 guard let name = transfer.file.metadata?["drawingName"] as? String,
                       URL(fileURLWithPath: name).deletingPathExtension().lastPathComponent == stem else { continue }
                 transfer.cancel()
             }
         }
         guard replacingPending || !session.outstandingFileTransfers.contains(where: { $0.file.metadata?["drawingName"] as? String == imageURL.lastPathComponent }) else { return true }
+        var photoDocument: CanvasDocument?
         if imageURL.pathExtension == "png" {
             let projectURL = imageURL.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
             do {
                 let document = try CanvasExportStore.loadDocument(at: imageURL)
+                photoDocument = document
                 try PaintProject(document: JSONEncoder().encode(document), preview: Data(contentsOf: imageURL)).write(to: projectURL)
                 if replacingPending || !session.outstandingFileTransfers.contains(where: { $0.file.fileURL == projectURL }) {
                     session.transferFile(projectURL, metadata: ["drawingName": projectURL.lastPathComponent])
@@ -42,6 +50,9 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
             } catch { NSLog("Project transfer preparation failed: %@", error.localizedDescription) }
         }
         session.transferFile(imageURL, metadata: ["drawingName": imageURL.lastPathComponent])
+        if let photoDocument {
+            WatchPhotoOverlay.send(document: photoDocument, imageURL: imageURL, session: session)
+        }
         return true
     }
 
@@ -78,10 +89,12 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
             let fitsWatch = file.metadata?[PhotoImportProtocol.fitsWatchKey] as? Bool ?? true
             let name = (file.metadata?[PhotoImportProtocol.nameKey] as? String)
                 .flatMap { PhotoImportProtocol.isValidDrawingName($0) ? $0 : nil }
+            let photoID = (file.metadata?[PhotoImportProtocol.photoIDKey] as? String)
+                .flatMap(UUID.init(uuidString:)).flatMap { PhotoImportProtocol.isPhotoID($0) ? $0 : nil }
             Task { @MainActor in
                 do {
                     guard let drawing = try WatchPhotoImport.save(imageData: imageData, fitsWatch: fitsWatch,
-                                                                  name: name) else { return }
+                                                                  name: name, photoID: photoID) else { return }
                     NotificationCenter.default.post(name: .paintProjectImported, object: nil)
                     // The phone holds only a preview; send the drawing with its project.
                     _ = WatchPhotoTransfer.shared.queue(drawing.url)
@@ -131,6 +144,11 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
     }
 
     func session(_ session: WCSession, didFinish fileTransfer: WCSessionFileTransfer, error: Error?) {
+        if fileTransfer.file.metadata?[PhotoImportProtocol.kindKey] as? String == PhotoImportProtocol.overlayKind {
+            // A lost overlay only means the phone uses this save's watch image.
+            try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)
+            return
+        }
         guard fileTransfer.file.metadata?[SketchAssistProtocol.kindKey] as? String == SketchAssistProtocol.requestKind
         else { return }
         try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)

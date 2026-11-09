@@ -37,7 +37,9 @@ nonisolated enum PhonePhotoImport {
         return output as Data
     }
 
-    static func send(png: Data, fitsWatch: Bool) throws {
+    /// `original` is the photo as picked. The phone keeps it, so saving and sharing
+    /// can use it at full resolution with the drawing from the watch on top.
+    static func send(png: Data, original: Data, fitsWatch: Bool) throws {
         let session = WCSession.default
         guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled
         else { throw ImportError.watchUnavailable }
@@ -46,10 +48,18 @@ nonisolated enum PhonePhotoImport {
             .appendingPathExtension("png")
         try png.write(to: url, options: .atomic)
         let name = PhotoImportProtocol.newDrawingName()
+        let photoID = PhotoImportProtocol.newPhotoID()
         // WatchDrawingReceiver removes the temporary file when the transfer finishes.
         session.transferFile(url, metadata: [PhotoImportProtocol.kindKey: PhotoImportProtocol.kind,
                                              PhotoImportProtocol.fitsWatchKey: fitsWatch,
-                                             PhotoImportProtocol.nameKey: name])
+                                             PhotoImportProtocol.nameKey: name,
+                                             PhotoImportProtocol.photoIDKey: photoID.uuidString])
+        do {
+            try PhotoOriginalStore().storeOriginal(original, photoID: photoID, stem: name, preview: png)
+        } catch {
+            // The drawing still works; saving and sharing then use the watch's resolution.
+            NSLog("Photo original could not be kept: %@", error.localizedDescription)
+        }
         addToGallery(png, name: name)
     }
 
@@ -78,6 +88,7 @@ struct PhonePhotoImportView: View {
     @AppStorage("photoImportFitsWatch") private var fitsWatch = true
     @State private var selection: PhotosPickerItem?
     @State private var png: Data?
+    @State private var original: Data?
     @State private var preview: UIImage?
     @State private var loading = false
     @State private var errorMessage: String?
@@ -101,9 +112,10 @@ struct PhonePhotoImportView: View {
                 }
                 Section {
                     Text("The photo becomes a new drawing in your watch gallery. It has its own layer, with an empty layer above it for drawing. Edit it on Apple Watch.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    Text("Saving or sharing on iPhone uses the original photo at full resolution, with your drawing on top. Erasing or blurring the photo, or using the marker or watercolor on its layer, keeps the Apple Watch resolution.")
                 }
+                .font(.footnote)
+                .foregroundStyle(.secondary)
             }
             .navigationTitle("New Drawing from Photo")
             .navigationBarTitleDisplayMode(.inline)
@@ -152,19 +164,21 @@ struct PhonePhotoImportView: View {
             }.value
             guard !Task.isCancelled else { return }
             png = prepared
+            original = data
             preview = UIImage(data: prepared)
         } catch {
             guard !Task.isCancelled else { return }
             png = nil
+            original = nil
             preview = nil
             errorMessage = error.localizedDescription
         }
     }
 
     private func send() {
-        guard let png else { return }
+        guard let png, let original else { return }
         do {
-            try PhonePhotoImport.send(png: png, fitsWatch: fitsWatch)
+            try PhonePhotoImport.send(png: png, original: original, fitsWatch: fitsWatch)
             dismiss()
             onFinish(String(localized: "Photo queued. It will appear in your watch gallery as a new drawing when the transfer finishes. Open it there to edit."))
         } catch { errorMessage = error.localizedDescription }

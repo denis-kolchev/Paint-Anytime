@@ -5,17 +5,19 @@ import UniformTypeIdentifiers
 import WatchKit
 
 /// Turns a photo sent from the iPhone (see `PhotoImportProtocol`) into a new gallery
-/// drawing: the photo on its own bottom layer and an empty layer above it to draw on.
+/// drawing whose only layer starts with the photo.
 enum WatchPhotoImport {
     enum ImportError: LocalizedError {
         case unreadable
         var errorDescription: String? { L10n.text("The photo could not be opened on Apple Watch.") }
     }
 
-    /// `name` is the gallery stem the phone already lists the photo under. Nil when
-    /// that entry was deleted before the photo arrived.
+    /// `name` is the gallery stem the phone already lists the photo under. `photoID`
+    /// links the photo stroke to the original the phone keeps; without one (an older
+    /// iPhone app) the drawing is never paired with an original. Nil when the phone's
+    /// entry was deleted before the photo arrived.
     @MainActor
-    static func save(imageData: Data?, fitsWatch: Bool, name: String?) throws -> CanvasExport? {
+    static func save(imageData: Data?, fitsWatch: Bool, name: String?, photoID: UUID?) throws -> CanvasExport? {
         let folder = try CanvasExportStore.directory()
         let existing = name.map { CanvasExport(url: folder.appendingPathComponent($0).appendingPathExtension("png")) }
         if let existing,
@@ -44,10 +46,10 @@ enum WatchPhotoImport {
         // The canvas has the photo's aspect; covering it exactly avoids a hairline of
         // paper where pixel rounding makes the two differ by a fraction of a pixel.
         let photo = WatchSketchAssist.rasterStroke(png: png, imageSize: canvas,
-                                                   in: CGRect(origin: .zero, size: canvas))
-        // Loading selects the last layer, so drawing starts above the photo.
-        document.layers = [CanvasLayer(name: L10n.text("Photo"), strokes: [photo]),
-                           CanvasLayer(name: "Layer 2")]
+                                                   in: CGRect(origin: .zero, size: canvas),
+                                                   id: photoID ?? UUID())
+        // An ordinary one-layer drawing: the photo is the first stroke of Layer 1.
+        document.layers = [CanvasLayer(strokes: [photo])]
         // Saving "over" the phone's entry only reuses its name; nothing exists here yet.
         return try CanvasExporter.save(document: document, size: canvas, scale: scale, replacing: existing)
     }
@@ -76,7 +78,7 @@ enum WatchPhotoImport {
         return context.makeImage()
     }
 
-    private static func png(_ image: CGImage) -> Data? {
+    nonisolated static func png(_ image: CGImage) -> Data? {
         let data = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(data, UTType.png.identifier as CFString, 1, nil)
         else { return nil }
