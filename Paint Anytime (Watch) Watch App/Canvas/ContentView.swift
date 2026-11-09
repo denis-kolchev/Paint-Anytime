@@ -329,7 +329,7 @@ struct ContentView: View {
                 while controller.activeStroke != nil || lasso.isActive || lasso.isPreparing
                     || showsGallery || showsAppSettings || showsLayers || showsToolSettings
                     || showsSampledPalette || quickSettings != nil || isMovingCanvas
-                    || session.isPreparingCanvas || session.pendingCanvasAction != nil
+                    || session.isPreparingCanvas || session.isSavingDrawing || session.pendingCanvasAction != nil
                     || session.savedDrawing != nil || session.exportError != nil {
                     try await Task.sleep(for: .seconds(1))
                 }
@@ -491,6 +491,19 @@ struct ContentView: View {
                 .compositingGroup()
                 .transition(.opacity)
                 .zIndex(2)
+            }
+
+            if session.isSavingDrawing {
+                // Same overlay and fade as opening a drawing from the gallery:
+                // appears at once, fades out as the "saved" notice springs in.
+                // The fade is scoped to this transition: an `.animation(value:)` on the
+                // whole stack would retime the morph collapse that starts in the same update.
+                LoadingDimOverlay()
+                    .ignoresSafeArea()
+                    .transition(.asymmetric(
+                        insertion: .identity,
+                        removal: .opacity.animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3))))
+                    .zIndex(5)
             }
 
             if let savedNoticeID, !showsGallery {
@@ -747,19 +760,32 @@ struct ContentView: View {
         // gets a haptic and leaves the morph open.
         guard action.isAvailable(in: controller) else { return UnavailableActionFeedback.play() }
         // Every option except Undo and Redo collapses the morph with the same spring as opening.
+        // Save shows its overlay now and exports only after the collapse settles:
+        // the synchronous exporter would otherwise freeze the spring mid-flight.
+        var afterCollapse: (() -> Void)?
+        if case .save = action {
+            guard session.beginSavingDrawing() else { return }
+            let size = canvasSize, scale = displayScale
+            afterCollapse = { session.completeSavingDrawing(size: size, scale: scale) }
+        }
         if !action.keepsMorphOpen {
-            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+                          completionCriteria: .removed) {
                 morphState.customExpandedSlot = nil
                 showsMorphToolbar = false
                 showsContentActions = false
+            } completion: {
+                afterCollapse?()
             }
+        } else {
+            afterCollapse?()
         }
         controller.cancelStroke()
         switch action {
         case .brush: showsToolSettings = true
         case .clear:
             if controller.canClear { session.requestCanvasAction(.clear) }
-        case .save: session.saveDrawing(size: canvasSize, scale: displayScale)
+        case .save: break // Started above, after the collapse.
         case .lasso: startLasso()
         case .undo:
             if controller.canUndo { controller.undo() }
@@ -852,7 +878,7 @@ struct ContentView: View {
             } else {
                 session.canvasPreparationError = L10n.text("Could not open the image.")
             }
-        }, acceptsInput: isActive && quickSettings == nil && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
+        }, acceptsInput: isActive && quickSettings == nil && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil && !session.isSavingDrawing, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
             cameraSampledColor = color
         }, onCanvasInteraction: {
             if morphState.customExpandedSlot != nil {

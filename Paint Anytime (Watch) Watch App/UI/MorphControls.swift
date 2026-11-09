@@ -479,8 +479,15 @@ struct CanvasMorphPanels: View {
                 } label: { Image(systemName: "ellipsis") }
                 .accessibilityHidden(true)
                 morphButton("Save drawing", height: rowHeight) {
-                    collapse { showsContentActions = false }
-                    session.saveDrawing(size: size, scale: displayScale)
+                    guard session.beginSavingDrawing() else { return }
+                    let scale = displayScale
+                    // Export only after the collapse settles: it blocks the main thread.
+                    withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+                                  completionCriteria: .removed) {
+                        showsContentActions = false
+                    } completion: {
+                        session.completeSavingDrawing(size: size, scale: scale)
+                    }
                 } label: { Image(systemName: "square.and.arrow.down") }
                 morphButton("Lasso", height: rowHeight, action: onStartLasso) {
                     Image(systemName: "lasso")

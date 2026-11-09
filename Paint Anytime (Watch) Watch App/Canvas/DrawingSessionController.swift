@@ -13,6 +13,9 @@ final class DrawingSessionController: ObservableObject {
     @Published private(set) var autosaveNoticeID: UUID?
     @Published var pendingCanvasAction: PendingCanvasAction?
     @Published var exportError: String?
+    /// Explicit Save in progress; shows the same loading overlay as opening from the gallery.
+    @Published private(set) var isSavingDrawing = false
+    private var savingStartedAt = ContinuousClock.now
 
     init(canvas: CanvasController? = nil) {
         self.canvas = canvas ?? CanvasController()
@@ -21,12 +24,38 @@ final class DrawingSessionController: ObservableObject {
         }
     }
 
+    /// Explicit Save, step 1: show the gallery's loading overlay right away.
+    /// Returns false when a save is already running.
+    func beginSavingDrawing() -> Bool {
+        guard !isSavingDrawing else { return false }
+        canvas.cancelStroke()
+        savingStartedAt = .now
+        isSavingDrawing = true
+        return true
+    }
+
+    /// Explicit Save, step 2: call after interface animations (the morph collapse)
+    /// have finished. The exporter is synchronous on the main thread and would
+    /// freeze any running animation. Toolbar-hosted morphs are not always tracked by
+    /// animation completion, so also wait out the collapse spring from the tap.
+    func completeSavingDrawing(size: CGSize, scale: CGFloat) {
+        guard isSavingDrawing else { return }
+        let earliest = savingStartedAt.advanced(by: .milliseconds(600))
+        Task { @MainActor [weak self] in
+            let minimum = ContinuousClock.now.advanced(by: .milliseconds(100))
+            try? await Task.sleep(until: max(earliest, minimum), clock: .continuous)
+            guard let self else { return }
+            self.saveDrawing(size: size, scale: scale)
+            self.isSavingDrawing = false
+        }
+    }
+
     func saveDrawing(size: CGSize, scale: CGFloat, automatically: Bool = false) {
         if automatically {
             // Autosave is periodic even when the previous tick marked this canvas saved.
             // Keep updating the same working copy until the user explicitly saves it.
             guard canvas.activeStroke == nil, canvas.canClear,
-                  !isPreparingCanvas, pendingCanvasAction == nil,
+                  !isPreparingCanvas, !isSavingDrawing, pendingCanvasAction == nil,
                   savedDrawing == nil, exportError == nil else { return }
         }
         do {

@@ -188,11 +188,7 @@ struct SavedDrawingsView: View {
             }
             .overlay {
                 if isLoading {
-                    ZStack {
-                        Color.black.opacity(0.3)
-                        ProgressView().tint(.white)
-                    }
-                    .contentShape(Rectangle())
+                    LoadingDimOverlay()
                 }
             }
             #if DEBUG
