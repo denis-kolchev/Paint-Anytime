@@ -61,6 +61,18 @@ struct InkPaletteBrowser: View {
                 // The tutorial already owns a NavigationStack. Reuse its safe
                 // area so the content starts below the native toolbar.
                 browserContent
+            } else if closesWithColorEditor {
+                // Only adding a color: the editor is the root, so Back closes the
+                // cover directly instead of popping to the palette for a frame.
+                NavigationStack {
+                    colorEditor
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button { dismiss() } label: { Image(systemName: "chevron.backward") }
+                                    .accessibilityLabel(L10n.text("Back"))
+                            }
+                        }
+                }
             } else {
                 NavigationStack { browserContent }
             }
