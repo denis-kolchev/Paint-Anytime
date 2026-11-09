@@ -193,6 +193,7 @@ struct InkPaletteBrowser: View {
 
     private var colorEditor: some View {
         CustomInkEditor(initialColor: sampledColor, dismissesOnSave: !returnsToCanvasAfterColorSave && !tutorial.isActive,
+                        eyedropperController: tutorial.isActive ? nil : controller,
                         tutorial: tutorial) { preset in
             guard let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
             if let existing = library.palettes[index].palette.allColors.first(where: { $0.rgba == preset.rgba }) {

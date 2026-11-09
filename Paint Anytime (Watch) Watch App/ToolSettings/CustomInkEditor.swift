@@ -4,6 +4,8 @@ struct CustomInkEditor: View {
     var initialColor: SIMD4<Float>? = nil
     var saveTitle = "Add color"
     var dismissesOnSave = true
+    /// Supplies the canvas for the eyedropper. Without it the editor has no eyedropper.
+    var eyedropperController: CanvasController? = nil
     @ObservedObject var tutorial = TutorialSession.inactive
     @State private var acceptsColorChanges = false
     @Environment(\.layoutDirection) private var layoutDirection
@@ -13,6 +15,7 @@ struct CustomInkEditor: View {
     @State private var hsb = [0.0, 0.0, (128.0 / 255 * 100).rounded()]
     /// 0 the color wheel, 1 HSB, 2 RGB. The tutorial teaches the sliders, so it opens on HSB.
     @State private var pageSelection: Int?
+    @State private var showsEyedropper = false
     private var page: Int { pageSelection ?? (tutorial.isActive ? 1 : 0) }
     private static let lastPage = 2
     let onSave: (InkPreset) -> Void
@@ -119,13 +122,24 @@ struct CustomInkEditor: View {
             // position, so navigation and dismissal animations carry the wheel
             // along instead of holding it at the screen centre.
             GeometryReader { geometry in
-                ColorWheelEditor(values: hsbBinding, isActive: page == 0, size: geometry.size)
+                ColorWheelEditor(values: hsbBinding, isActive: page == 0 && !showsEyedropper, size: geometry.size)
                     .offset(x: -CGFloat(page) * geometry.size.width)
                     .opacity(page == 0 ? 1 : 0)
                     .allowsHitTesting(page == 0)
                     .accessibilityHidden(page != 0)
             }
             .ignoresSafeArea()
+        }
+        .fullScreenCover(isPresented: $showsEyedropper) {
+            if let controller = eyedropperController {
+                PaletteEyedropperView(controller: controller, onCancel: {
+                    showsEyedropper = false
+                }) { color in
+                    rgbBinding.wrappedValue = [Double(color.x) * 255, Double(color.y) * 255,
+                                               Double(color.z) * 255].map { $0.rounded() }
+                    showsEyedropper = false
+                }
+            }
         }
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -145,6 +159,24 @@ struct CustomInkEditor: View {
                 .disabled(!tutorial.permits([.savePaletteColor]))
                 .accessibilityHidden(!tutorial.permits([.savePaletteColor]))
                 .accessibilityLabel(L10n.text(saveTitle))
+            }
+            if eyedropperController != nil {
+                // A native bottom-bar item gets the same size, glass and corner
+                // insets as Back and the checkmark above it.
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button { showsEyedropper = true } label: {
+                        Image(systemName: "eyedropper")
+                    }
+                    .watchToolbarButtonStyle()
+                    .accessibilityLabel(L10n.text("Eyedropper"))
+                    // Stays installed on every page so the bar does not relayout;
+                    // the HSB and RGB pages put the "Wheel" label in this corner.
+                    .opacity(page == 0 ? 1 : 0)
+                    .allowsHitTesting(page == 0)
+                    .accessibilityHidden(page != 0)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: page)
+                    Spacer(minLength: 0)
+                }
             }
         }
     }

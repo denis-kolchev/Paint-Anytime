@@ -17,11 +17,16 @@ struct PaletteEyedropperView: View {
                 .ignoresSafeArea()
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
+                        // Styled like the canvas camera tool's Done: canvas glass,
+                        // not the native chrome that renders as a ring over the drawing.
                         Button { if let color { onConfirm(color) } } label: {
-                            Image(systemName: "checkmark").foregroundStyle(.green)
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(.green)
+                                .frame(width: 18, height: 18)
                         }
                         .disabled(color == nil)
-                        .watchToolbarButtonStyle()
+                        .watchToolbarButtonStyle(usesCanvasMaterial: true)
                         .accessibilityLabel(L10n.text("Done"))
                         .trackCanvasControl(.tools, frames: $controls)
                     }
@@ -36,7 +41,8 @@ struct PaletteEyedropperView: View {
                 Button(action: onCancel) {
                     Image(systemName: "xmark")
                         .font(.system(size: 17, weight: .semibold))
-                        .frame(width: 32, height: 32)
+                        .foregroundStyle(.white)
+                        .frame(width: 18, height: 18)
                 }
                 .watchToolbarButtonStyle(usesCanvasMaterial: true)
                 .accessibilityLabel(L10n.text("Cancel"))
@@ -45,6 +51,9 @@ struct PaletteEyedropperView: View {
                           y: doneFrame.map { $0.midY - origin.y } ?? 30)
             }
         }
+        // A cover nested in another cover does not reliably keep the canvas's
+        // dark appearance; light glass dimmed the icons over a pale drawing.
+        .environment(\.colorScheme, .dark)
     }
 
 }
