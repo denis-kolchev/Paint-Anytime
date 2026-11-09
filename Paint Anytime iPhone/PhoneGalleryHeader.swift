@@ -58,18 +58,22 @@ struct PhoneGalleryHeader: View {
             .layoutPriority(1)
     }
 
+    /// Matches the height of system navigation bar buttons such as Cancel and
+    /// Send in sheets, so the header button reads as part of the same family.
+    private static let buttonDiameter: CGFloat = 44
+
     private var actions: some View {
         Group {
             if #available(iOS 26.0, *) {
-                actionButtons.buttonStyle(.glass)
+                actionButtons
+                    .glassEffect(.regular.interactive(), in: .circle)
             } else {
-                actionButtons.buttonStyle(.bordered)
+                actionButtons
+                    .background(.fill.tertiary, in: .circle)
             }
         }
-        .font(.body)
-        .controlSize(.large)
-        .buttonBorderShape(.circle)
-        .tint(.primary)
+        .font(.body.weight(.medium))
+        .foregroundStyle(.primary)
         .fixedSize()
     }
 
@@ -89,8 +93,13 @@ struct PhoneGalleryHeader: View {
             }
         } label: {
             // Only the header button is icon-only; menu items keep their titles.
+            // A fixed frame gives the exact system bar height; button styles add
+            // their own padding around the icon and come out smaller.
             Label("More", systemImage: "ellipsis")
                 .labelStyle(.iconOnly)
+                .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
+                .contentShape(.circle)
         }
+        .buttonStyle(.plain)
     }
 }
