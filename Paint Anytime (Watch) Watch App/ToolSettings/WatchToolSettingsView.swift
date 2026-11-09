@@ -114,7 +114,7 @@ struct WatchToolSettingsView: View {
         if isEraser { pages = controller.pencilStyle.eraserMode == .pixels
             ? [.width, .opacity, .instrument, .mode]
             : [.width, .instrument, .mode] }
-        else if controller.pencilStyle.instrument == .blur { pages = [.width, .blurStrength, .blurRadius, .instrument] }
+        else if controller.pencilStyle.instrument == .blur { pages = [.blurStrength, .width, .blurRadius, .instrument] }
         else if controller.pencilStyle.instrument == .fill { pages = [.color, .sensitivity, .opacity, .instrument] }
         else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .opacity, .instrument, .direction] }
         else { pages = [.color, .width, .opacity, .instrument] }
