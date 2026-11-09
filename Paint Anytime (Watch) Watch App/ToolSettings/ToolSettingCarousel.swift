@@ -37,6 +37,16 @@ struct ToolSettingCarousel: View {
         return availableSettings.enumerated().map { Slot(id: $0.offset - anchor, setting: $0.element) }
     }
 
+    /// The most settings any brush shows before and after Tool. Empty slots keep their
+    /// width as padding, so Tool stays at one content offset and the scroll never moves.
+    private static let reservedLeadingSlots = 3
+    private static let reservedTrailingSlots = 1
+
+    private var missingLeadingSlots: Int { max(0, Self.reservedLeadingSlots - anchorIndex) }
+    private var missingTrailingSlots: Int {
+        max(0, Self.reservedTrailingSlots - (availableSettings.count - anchorIndex - 1))
+    }
+
     private func slotID(of setting: ToolSetting) -> Int {
         (availableSettings.firstIndex(of: setting) ?? anchorIndex) - anchorIndex
     }
@@ -107,7 +117,9 @@ struct ToolSettingCarousel: View {
                             .transition(reduceMotion ? .opacity : .scale(scale: 0.7).combined(with: .opacity))
                         }
                     }
-                    .padding(.horizontal, sideInset)
+                    .padding(.leading, sideInset + CGFloat(missingLeadingSlots) * width)
+                    .padding(.trailing, sideInset + CGFloat(missingTrailingSlots) * width)
+                    // Padding and removed slots animate together, cancelling out around Tool.
                     .animation(pageAnimation, value: availableSettings)
                 }
                 .scrollIndicators(.hidden)
