@@ -503,17 +503,30 @@ struct WatchToolSettingsView: View {
         )
         .toolbar {
             if !tutorial.isActive {
-                // Outside the tutorial the corner opens the current palette;
-                // the tutorial still teaches Information here.
+                // Outside the tutorial the corner opens the current palette on the
+                // Color page and Information on every other page; the icons cross-fade.
                 ToolbarItem(placement: .topBarLeading) {
+                    let opensPalette = selection == .color
                     Button {
                         crownFocused = false
-                        showsPalette = true
+                        if opensPalette {
+                            showsPalette = true
+                        } else {
+                            showsInformation = true
+                        }
                     } label: {
-                        CurrentPaletteIcon()
+                        ZStack {
+                            Image(systemName: "info.circle")
+                                .opacity(opensPalette ? 0 : 1)
+                                .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
+                            CurrentPaletteIcon()
+                                .opacity(opensPalette ? 1 : 0)
+                                .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
+                        }
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: opensPalette)
                     }
                     .watchToolbarButtonStyle()
-                    .accessibilityLabel(L10n.text("Current palette"))
+                    .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
                 }
             } else if !tutorial.isPaletteLesson {
                 ToolbarItem(placement: .topBarLeading) {
