@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Stays outside the scroll content so the title never collapses into a toolbar.
 struct PhoneGalleryHeader: View {
+    let importPhoto: () -> Void
     let importProject: () -> Void
     let synchronize: () -> Void
 
@@ -65,7 +66,6 @@ struct PhoneGalleryHeader: View {
                 actionButtons.buttonStyle(.bordered)
             }
         }
-        .labelStyle(.iconOnly)
         .font(.body)
         .controlSize(.large)
         .buttonBorderShape(.circle)
@@ -73,14 +73,24 @@ struct PhoneGalleryHeader: View {
         .fixedSize()
     }
 
+    /// One button keeps the actions beside the title; three icon buttons no longer
+    /// fitted, so `ViewThatFits` moved them below it. Menu items also show titles.
     private var actionButtons: some View {
-        HStack(spacing: 8) {
+        Menu {
+            Button(action: importPhoto) {
+                Label("New Drawing from Photo", systemImage: "photo.badge.plus")
+            }
             Button(action: importProject) {
                 Label("Import Project", systemImage: "square.and.arrow.down")
             }
+            Divider()
             Button(action: synchronize) {
                 Label("Sync", systemImage: "arrow.triangle.2.circlepath")
             }
+        } label: {
+            // Only the header button is icon-only; menu items keep their titles.
+            Label("More", systemImage: "ellipsis")
+                .labelStyle(.iconOnly)
         }
     }
 }

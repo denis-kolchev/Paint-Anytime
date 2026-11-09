@@ -64,6 +64,10 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
             try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)
             return
         }
+        if fileTransfer.file.metadata?[PhotoImportProtocol.kindKey] as? String == PhotoImportProtocol.kind {
+            // Still report a failed photo transfer below.
+            try? FileManager.default.removeItem(at: fileTransfer.file.fileURL)
+        }
         guard let error else { return }
         Task { @MainActor in onReceive?(.failure(error)) }
     }

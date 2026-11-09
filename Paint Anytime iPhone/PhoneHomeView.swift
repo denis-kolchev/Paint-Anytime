@@ -120,6 +120,7 @@ struct PhoneHomeView: View {
     @State private var suppressOpeningUntil = Date.distantPast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var importingProject = false
+    @State private var importingPhoto = false
     @State private var showingInboxError = false
     @State private var projectMessage: String?
     @State private var watchDestination: PaintDeepLink?
@@ -494,6 +495,7 @@ struct PhoneHomeView: View {
             // reserves a separate top region and shifts the gallery viewport.
             .overlay(alignment: .top) {
                 PhoneGalleryHeader(
+                    importPhoto: { importingPhoto = true },
                     importProject: { importingProject = true },
                     synchronize: { photoInbox.synchronize() })
                     .padding(.top, container.safeAreaInsets.top)
@@ -514,6 +516,13 @@ struct PhoneHomeView: View {
                 switch result {
                 case .success(let url): importProject(url)
                 case .failure(let error): projectMessage = error.localizedDescription
+                }
+            }
+            .sheet(isPresented: $importingPhoto) {
+                PhonePhotoImportView { message in
+                    // Shows the photo the import just added to the phone gallery.
+                    photoInbox.refresh()
+                    projectMessage = message
                 }
             }
             .alert("Project", isPresented: Binding(get: { projectMessage != nil }, set: { if !$0 { projectMessage = nil } })) {

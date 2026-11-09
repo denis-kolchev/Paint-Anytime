@@ -73,6 +73,22 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
             }
             return
         }
+        if file.metadata?[PhotoImportProtocol.kindKey] as? String == PhotoImportProtocol.kind {
+            let imageData = try? Data(contentsOf: file.fileURL)
+            let fitsWatch = file.metadata?[PhotoImportProtocol.fitsWatchKey] as? Bool ?? true
+            let name = (file.metadata?[PhotoImportProtocol.nameKey] as? String)
+                .flatMap { PhotoImportProtocol.isValidDrawingName($0) ? $0 : nil }
+            Task { @MainActor in
+                do {
+                    guard let drawing = try WatchPhotoImport.save(imageData: imageData, fitsWatch: fitsWatch,
+                                                                  name: name) else { return }
+                    NotificationCenter.default.post(name: .paintProjectImported, object: nil)
+                    // The phone holds only a preview; send the drawing with its project.
+                    _ = WatchPhotoTransfer.shared.queue(drawing.url)
+                } catch { session.transferUserInfo(["projectImportError": error.localizedDescription]) }
+            }
+            return
+        }
         do {
             let project = try PaintProject.read(file.fileURL)
             var document = try JSONDecoder().decode(CanvasDocument.self, from: project.document)

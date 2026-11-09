@@ -9700,6 +9700,1909 @@
           }
         }
       }
+    },
+    "New Drawing from Photo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "رسم جديد من صورة"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nová kresba z fotky"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny tegning fra foto"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue Zeichnung aus Foto"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Νέο σχέδιο από φωτογραφία"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Drawing from Photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo dibujo desde foto"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uusi piirros kuvasta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouveau dessin à partir d’une photo"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ציור חדש מתמונה"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Új rajz fotóból"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gambar Baru dari Foto"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuovo disegno da foto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真から新規描画"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진으로 새 그림"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny tegning fra bilde"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe tekening van foto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nowy rysunek ze zdjęcia"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo desenho a partir de foto"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Novo desenho a partir de fotografia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новый рисунок из фото"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny teckning från bild"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ภาพวาดใหม่จากรูปภาพ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraftan Yeni Çizim"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Новий малюнок із фото"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bản vẽ mới từ ảnh"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从照片新建绘图"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從照片新增繪圖"
+          }
+        }
+      }
+    },
+    "Fit to Apple Watch screen" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ملاءمة شاشة Apple Watch"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Přizpůsobit displeji Apple Watch"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilpas til Apple Watch-skærmen"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An Apple Watch-Display anpassen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Προσαρμογή στην οθόνη του Apple Watch"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fit to Apple Watch screen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustar a la pantalla del Apple Watch"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sovita Apple Watchin näyttöön"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adapter à l’écran de l’Apple Watch"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "התאמה למסך ה‑Apple Watch"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Igazítás az Apple Watch kijelzőjéhez"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sesuaikan dengan layar Apple Watch"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adatta allo schermo di Apple Watch"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Watchの画面に合わせる"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Watch 화면에 맞추기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilpass Apple Watch-skjermen"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aanpassen aan Apple Watch-scherm"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dopasuj do ekranu Apple Watch"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustar à tela do Apple Watch"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajustar ao ecrã do Apple Watch"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Уменьшить до экрана Apple Watch"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anpassa till Apple Watch-skärmen"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ปรับให้พอดีกับหน้าจอ Apple Watch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Watch ekranına sığdır"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зменшити до екрана Apple Watch"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vừa với màn hình Apple Watch"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "适合 Apple Watch 屏幕"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "符合 Apple Watch 螢幕"
+          }
+        }
+      }
+    },
+    "The photo becomes a new drawing in your watch gallery. It has its own layer, with an empty layer above it for drawing. Edit it on Apple Watch." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تصبح الصورة رسمًا جديدًا في معرض ساعتك. لها طبقة خاصة بها، وفوقها طبقة فارغة للرسم. حرّرها على Apple Watch."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotka se stane novou kresbou v galerii hodinek. Má vlastní vrstvu a nad ní prázdnou vrstvu na kreslení. Upravte ji na Apple Watch."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoet bliver en ny tegning i urets galleri. Det har sit eget lag med et tomt lag ovenover til at tegne på. Rediger det på Apple Watch."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Foto wird zu einer neuen Zeichnung in der Galerie deiner Watch. Es liegt auf einer eigenen Ebene, darüber eine leere Ebene zum Zeichnen. Bearbeite es auf der Apple Watch."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Η φωτογραφία γίνεται νέο σχέδιο στη συλλογή του ρολογιού σας. Έχει δικό της επίπεδο, με ένα κενό επίπεδο από πάνω για σχεδίαση. Επεξεργαστείτε το στο Apple Watch."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The photo becomes a new drawing in your watch gallery. It has its own layer, with an empty layer above it for drawing. Edit it on Apple Watch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La foto se convierte en un nuevo dibujo en la galería del reloj. Tiene su propia capa, con una capa vacía encima para dibujar. Edítalo en el Apple Watch."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuvasta tulee uusi piirros kellon galleriaan. Sillä on oma tasonsa ja sen päällä tyhjä taso piirtämistä varten. Muokkaa sitä Apple Watchilla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La photo devient un nouveau dessin dans la galerie de votre montre. Elle a son propre calque, avec un calque vide au-dessus pour dessiner. Modifiez-le sur l’Apple Watch."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "התמונה הופכת לציור חדש בגלריית השעון. יש לה שכבה משלה, ומעליה שכבה ריקה לציור. ערכו אותה ב‑Apple Watch."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A fotó új rajz lesz az óra galériájában. Saját rétegen van, fölötte egy üres réteggel a rajzoláshoz. Szerkessze az Apple Watchon."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto menjadi gambar baru di galeri jam Anda. Foto memiliki lapisan sendiri, dengan lapisan kosong di atasnya untuk menggambar. Edit di Apple Watch."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La foto diventa un nuovo disegno nella galleria dell’orologio. Ha un livello proprio, con un livello vuoto sopra per disegnare. Modificalo su Apple Watch."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真はWatchギャラリーの新しい描画になります。写真専用のレイヤーの上に、描画用の空のレイヤーがあります。Apple Watchで編集してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진이 워치 갤러리의 새 그림이 됩니다. 사진 전용 레이어 위에 그리기용 빈 레이어가 있습니다. Apple Watch에서 편집하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildet blir en ny tegning i klokkegalleriet. Det har sitt eget lag, med et tomt lag over for tegning. Rediger det på Apple Watch."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De foto wordt een nieuwe tekening in de galerie van je horloge. Hij heeft een eigen laag, met een lege laag erboven om op te tekenen. Bewerk hem op Apple Watch."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdjęcie stanie się nowym rysunkiem w galerii zegarka. Ma własną warstwę, a nad nią pustą warstwę do rysowania. Edytuj je na Apple Watch."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A foto vira um novo desenho na galeria do relógio. Ela tem sua própria camada, com uma camada vazia acima para desenhar. Edite no Apple Watch."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A fotografia torna-se um novo desenho na galeria do relógio. Tem a sua própria camada, com uma camada vazia por cima para desenhar. Edite-o no Apple Watch."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото станет новым рисунком в галерее часов. Оно лежит на отдельном слое, а над ним — пустой слой для рисования. Редактируйте рисунок на Apple Watch."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilden blir en ny teckning i klockans galleri. Den har ett eget lager med ett tomt lager ovanför att rita på. Redigera den på Apple Watch."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "รูปภาพจะกลายเป็นภาพวาดใหม่ในแกลเลอรีของนาฬิกา โดยอยู่ในเลเยอร์ของตัวเอง และมีเลเยอร์ว่างด้านบนสำหรับวาด แก้ไขได้บน Apple Watch"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf, saat galerinizde yeni bir çizim olur. Kendi katmanı ve üstünde çizim için boş bir katman bulunur. Apple Watch’ta düzenleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото стане новим малюнком у галереї годинника. Воно лежить на окремому шарі, а над ним — порожній шар для малювання. Редагуйте малюнок на Apple Watch."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh sẽ trở thành bản vẽ mới trong thư viện của đồng hồ. Ảnh có lớp riêng, phía trên là một lớp trống để vẽ. Hãy chỉnh sửa trên Apple Watch."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片会成为手表图库中的新绘图。照片位于单独的图层，上方有一个用于绘画的空白图层。请在 Apple Watch 上编辑。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片會成為手錶圖庫中的新繪圖。照片位於獨立的圖層，上方有一個用於繪畫的空白圖層。請在 Apple Watch 上編輯。"
+          }
+        }
+      }
+    },
+    "Send" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إرسال"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odeslat"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senden"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αποστολή"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lähetä"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "שליחה"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Küldés"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kirim"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "送信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "보내기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verstuur"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ส่ง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gönder"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Надіслати"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gửi"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳送"
+          }
+        }
+      }
+    },
+    "Preparing Photo…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جارٍ تجهيز الصورة…"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Připravuje se fotka…"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forbereder foto…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto wird vorbereitet …"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Προετοιμασία φωτογραφίας…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparing Photo…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparando foto…"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valmistellaan kuvaa…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Préparation de la photo…"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "מכין תמונה…"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotó előkészítése…"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menyiapkan Foto…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparazione della foto…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を準備中…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진 준비 중…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klargjør bilde …"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto voorbereiden…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przygotowywanie zdjęcia…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preparando foto…"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A preparar fotografia…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подготовка фото…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Förbereder bild …"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำลังเตรียมรูปภาพ…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf hazırlanıyor…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Підготовка фото…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang chuẩn bị ảnh…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在准备照片…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在準備照片…"
+          }
+        }
+      }
+    },
+    "Choose Photo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اختيار صورة"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vybrat fotku"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vælg foto"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto auswählen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Επιλογή φωτογραφίας"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir foto"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valitse kuva"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir une photo"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "בחירת תמונה"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotó kiválasztása"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pilih Foto"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli foto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진 선택"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Velg bilde"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kies foto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz zdjęcie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher foto"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher fotografia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбрать фото"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Välj bild"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เลือกรูปภาพ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf Seç"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вибрати фото"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chọn ảnh"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选取照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選擇照片"
+          }
+        }
+      }
+    },
+    "Selected photo. Choose another photo" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الصورة المحددة. اختر صورة أخرى"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vybraná fotka. Vybrat jinou fotku"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valgt foto. Vælg et andet foto"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ausgewähltes Foto. Anderes Foto auswählen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Επιλεγμένη φωτογραφία. Επιλογή άλλης φωτογραφίας"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selected photo. Choose another photo"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto seleccionada. Elegir otra foto"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valittu kuva. Valitse toinen kuva"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo sélectionnée. Choisir une autre photo"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "התמונה שנבחרה. בחירת תמונה אחרת"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kiválasztott fotó. Másik fotó kiválasztása"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto terpilih. Pilih foto lain"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto selezionata. Scegli un’altra foto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択した写真。別の写真を選択"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선택한 사진. 다른 사진 선택"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valgt bilde. Velg et annet bilde"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geselecteerde foto. Kies een andere foto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybrane zdjęcie. Wybierz inne zdjęcie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto selecionada. Escolher outra foto"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotografia selecionada. Escolher outra fotografia"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выбранное фото. Выбрать другое фото"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vald bild. Välj en annan bild"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "รูปภาพที่เลือก เลือกรูปภาพอื่น"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seçilen fotoğraf. Başka bir fotoğraf seç"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вибране фото. Вибрати інше фото"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh đã chọn. Chọn ảnh khác"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已选照片。选取其他照片"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已選照片。選擇其他照片"
+          }
+        }
+      }
+    },
+    "This photo could not be opened." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تعذر فتح هذه الصورة."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuto fotku nelze otevřít."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dette foto kunne ikke åbnes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Foto konnte nicht geöffnet werden."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Δεν ήταν δυνατό το άνοιγμα αυτής της φωτογραφίας."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This photo could not be opened."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido abrir esta foto."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuvaa ei voitu avata."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’ouvrir cette photo."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "לא ניתן לפתוח את התמונה הזו."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ezt a fotót nem sikerült megnyitni."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto ini tidak dapat dibuka."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile aprire questa foto."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この写真を開けませんでした。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 사진을 열 수 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunne ikke åpne dette bildet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze foto kan niet worden geopend."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można otworzyć tego zdjęcia."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível abrir esta foto."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível abrir esta fotografia."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось открыть это фото."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Det gick inte att öppna bilden."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่สามารถเปิดรูปภาพนี้ได้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu fotoğraf açılamadı."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося відкрити це фото."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không thể mở ảnh này."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法打开此照片。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法打開此照片。"
+          }
+        }
+      }
+    },
+    "Photo queued. It will appear in your watch gallery as a new drawing when the transfer finishes. Open it there to edit." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تمت إضافة الصورة إلى قائمة الانتظار. ستظهر في معرض ساعتك كرسم جديد عند اكتمال النقل. افتحها هناك لتحريرها."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotka je ve frontě. Po dokončení přenosu se objeví v galerii hodinek jako nová kresba. Tam ji otevřete a upravte."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoet er sat i kø. Det vises i urets galleri som en ny tegning, når overførslen er færdig. Åbn det der for at redigere."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto in der Warteschlange. Es erscheint nach der Übertragung als neue Zeichnung in der Galerie deiner Watch. Öffne es dort zum Bearbeiten."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Η φωτογραφία μπήκε στην ουρά. Θα εμφανιστεί στη συλλογή του ρολογιού ως νέο σχέδιο μόλις ολοκληρωθεί η μεταφορά. Ανοίξτε το εκεί για επεξεργασία."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo queued. It will appear in your watch gallery as a new drawing when the transfer finishes. Open it there to edit."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto en cola. Aparecerá en la galería del reloj como un nuevo dibujo cuando termine la transferencia. Ábrelo allí para editarlo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kuva on jonossa. Se näkyy kellon galleriassa uutena piirroksena, kun siirto on valmis. Avaa se siellä muokataksesi."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photo en file d’attente. Elle apparaîtra dans la galerie de votre montre comme nouveau dessin une fois le transfert terminé. Ouvrez-la là-bas pour la modifier."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "התמונה בתור. היא תופיע בגלריית השעון כציור חדש בסיום ההעברה. פתחו אותה שם כדי לערוך."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A fotó sorba állítva. Az átvitel végén új rajzként jelenik meg az óra galériájában. Ott nyissa meg a szerkesztéshez."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto dalam antrean. Foto akan muncul di galeri jam Anda sebagai gambar baru saat transfer selesai. Buka di sana untuk mengedit."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto in coda. Apparirà nella galleria dell’orologio come nuovo disegno al termine del trasferimento. Aprilo lì per modificarlo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真を送信待ちに追加しました。転送が完了すると、Watchギャラリーに新しい描画として表示されます。そこで開いて編集してください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "사진이 대기열에 추가되었습니다. 전송이 끝나면 워치 갤러리에 새 그림으로 나타납니다. 거기서 열어 편집하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildet er i kø. Det vises i klokkegalleriet som en ny tegning når overføringen er ferdig. Åpne det der for å redigere."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto in de wachtrij. Hij verschijnt als nieuwe tekening in de galerie van je horloge zodra de overdracht klaar is. Open hem daar om te bewerken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zdjęcie w kolejce. Po zakończeniu przesyłania pojawi się w galerii zegarka jako nowy rysunek. Otwórz je tam, aby edytować."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Foto na fila. Ela aparecerá na galeria do relógio como um novo desenho quando a transferência terminar. Abra lá para editar."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotografia em fila. Aparecerá na galeria do relógio como um novo desenho quando a transferência terminar. Abra-a lá para editar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото поставлено в очередь. Когда передача завершится, оно появится в галерее часов как новый рисунок. Откройте его там, чтобы редактировать."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilden står i kö. Den visas i klockans galleri som en ny teckning när överföringen är klar. Öppna den där för att redigera."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "รูปภาพอยู่ในคิวแล้ว จะปรากฏในแกลเลอรีของนาฬิกาเป็นภาพวาดใหม่เมื่อการโอนเสร็จสิ้น เปิดที่นั่นเพื่อแก้ไข"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fotoğraf sıraya alındı. Aktarım bitince saat galerinizde yeni bir çizim olarak görünecek. Düzenlemek için orada açın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Фото поставлено в чергу. Коли передавання завершиться, воно з’явиться в галереї годинника як новий малюнок. Відкрийте його там, щоб редагувати."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ảnh đã được xếp hàng. Ảnh sẽ xuất hiện trong thư viện của đồng hồ dưới dạng bản vẽ mới khi quá trình truyền hoàn tất. Mở ảnh ở đó để chỉnh sửa."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片已加入队列。传输完成后，它会作为新绘图出现在手表图库中。请在那里打开以编辑。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "照片已加入佇列。傳輸完成後，它會以新繪圖出現在手錶圖庫中。請在那裡打開以編輯。"
+          }
+        }
+      }
+    },
+    "The canvas takes the photo's shape and fits your watch screen." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تأخذ اللوحة شكل الصورة وتتلاءم مع شاشة ساعتك."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plátno převezme tvar fotky a vejde se na displej hodinek."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lærredet får fotoets form og passer til urets skærm."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Leinwand übernimmt die Form des Fotos und passt auf das Display deiner Watch."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ο καμβάς παίρνει το σχήμα της φωτογραφίας και χωράει στην οθόνη του ρολογιού σας."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The canvas takes the photo's shape and fits your watch screen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El lienzo adopta la forma de la foto y se ajusta a la pantalla del reloj."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piirtoalue saa kuvan muodon ja mahtuu kellon näyttöön."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La toile prend la forme de la photo et s’adapte à l’écran de votre montre."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקנבס מקבל את צורת התמונה ומתאים למסך השעון."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A vászon felveszi a fotó alakját, és elfér az óra kijelzőjén."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanvas mengikuti bentuk foto dan pas di layar jam Anda."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tela assume la forma della foto e si adatta allo schermo dell’orologio."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンバスは写真と同じ形になり、Watchの画面に収まります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캔버스가 사진과 같은 모양이 되어 워치 화면에 맞춰집니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lerretet får bildets form og passer til klokkeskjermen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het canvas krijgt de vorm van de foto en past op het scherm van je horloge."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Płótno przyjmuje kształt zdjęcia i mieści się na ekranie zegarka."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tela de desenho assume o formato da foto e cabe na tela do relógio."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tela assume a forma da fotografia e cabe no ecrã do relógio."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Холст принимает пропорции фото и вписывается в экран часов."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duken får bildens form och ryms på klockans skärm."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ผืนผ้าใบจะมีรูปทรงเดียวกับรูปภาพและพอดีกับหน้าจอนาฬิกา"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuval fotoğrafın şeklini alır ve saat ekranınıza sığar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Полотно набуває пропорцій фото й вміщується на екран годинника."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Khung vẽ lấy hình dạng của ảnh và vừa với màn hình đồng hồ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画布采用照片的形状，并适合手表屏幕。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布採用照片的形狀，並符合手錶螢幕。"
+          }
+        }
+      }
+    },
+    "The canvas takes the photo's shape and resolution, up to 1024 pixels on the longer side, the largest canvas Apple Watch can edit. Larger photos keep twice that detail for zooming in." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تأخذ اللوحة شكل الصورة ودقتها، حتى 1024 بكسل للضلع الأطول، وهي أكبر لوحة يمكن لـ Apple Watch تحريرها. تحتفظ الصور الأكبر بضعف هذه التفاصيل عند التكبير."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plátno převezme tvar a rozlišení fotky, nejvýše 1024 pixelů na delší straně – největší plátno, které Apple Watch dokáže upravit. Větší fotky si pro přiblížení zachovají dvojnásobek detailů."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lærredet får fotoets form og opløsning, op til 1024 pixels på den længste side – det største lærred, Apple Watch kan redigere. Større fotos bevarer dobbelt så mange detaljer, når du zoomer ind."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Leinwand übernimmt Form und Auflösung des Fotos, bis zu 1024 Pixel an der längeren Seite – die größte Leinwand, die die Apple Watch bearbeiten kann. Größere Fotos behalten zum Heranzoomen doppelt so viele Details."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ο καμβάς παίρνει το σχήμα και την ανάλυση της φωτογραφίας, έως 1024 pixel στη μεγαλύτερη πλευρά, τον μεγαλύτερο καμβά που μπορεί να επεξεργαστεί το Apple Watch. Οι μεγαλύτερες φωτογραφίες διατηρούν διπλάσια λεπτομέρεια για μεγέθυνση."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The canvas takes the photo's shape and resolution, up to 1024 pixels on the longer side, the largest canvas Apple Watch can edit. Larger photos keep twice that detail for zooming in."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El lienzo adopta la forma y la resolución de la foto, hasta 1024 píxeles en el lado más largo, el lienzo más grande que puede editar el Apple Watch. Las fotos más grandes conservan el doble de detalle para ampliar."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piirtoalue saa kuvan muodon ja tarkkuuden, enintään 1024 pikseliä pidemmällä sivulla – suurin alue, jota Apple Watch voi muokata. Suuremmat kuvat säilyttävät kaksinkertaisen tarkkuuden lähentämistä varten."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La toile prend la forme et la résolution de la photo, jusqu’à 1024 pixels sur le côté le plus long, la plus grande toile que l’Apple Watch peut modifier. Les photos plus grandes gardent deux fois plus de détails pour le zoom."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקנבס מקבל את צורת התמונה והרזולוציה שלה, עד 1024 פיקסלים בצלע הארוכה, הקנבס הגדול ביותר שה‑Apple Watch יכול לערוך. תמונות גדולות יותר שומרות על פי שניים פרטים להגדלה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A vászon felveszi a fotó alakját és felbontását, a hosszabbik oldalon legfeljebb 1024 képpontig – ez a legnagyobb vászon, amelyet az Apple Watch szerkeszteni tud. A nagyobb fotók nagyításhoz kétszer ennyi részletet őriznek meg."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kanvas mengikuti bentuk dan resolusi foto, hingga 1024 piksel pada sisi terpanjang, kanvas terbesar yang dapat diedit Apple Watch. Foto yang lebih besar menyimpan detail dua kali lipat untuk diperbesar."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tela assume forma e risoluzione della foto, fino a 1024 pixel sul lato più lungo, la tela più grande che Apple Watch può modificare. Le foto più grandi mantengono il doppio dei dettagli per lo zoom."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンバスは写真と同じ形と解像度になります。長辺は最大1024ピクセルで、これはApple Watchで編集できる最大のキャンバスです。大きな写真は、拡大表示用にその2倍の精細さを保ちます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캔버스가 사진의 모양과 해상도를 따르며, 긴 변 기준 최대 1024픽셀로 Apple Watch에서 편집할 수 있는 가장 큰 캔버스입니다. 더 큰 사진은 확대할 때를 위해 두 배의 디테일을 유지합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lerretet får bildets form og oppløsning, opptil 1024 piksler på den lengste siden – det største lerretet Apple Watch kan redigere. Større bilder beholder dobbelt så mange detaljer for zooming."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Het canvas krijgt de vorm en resolutie van de foto, tot 1024 pixels aan de langste zijde, het grootste canvas dat Apple Watch kan bewerken. Grotere foto’s behouden twee keer zoveel detail om in te zoomen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Płótno przyjmuje kształt i rozdzielczość zdjęcia, do 1024 pikseli na dłuższym boku – to największe płótno, jakie Apple Watch może edytować. Większe zdjęcia zachowują dwa razy więcej szczegółów do powiększania."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tela assume o formato e a resolução da foto, até 1024 pixels no lado maior, a maior tela que o Apple Watch pode editar. Fotos maiores mantêm o dobro de detalhes para ampliar."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tela assume a forma e a resolução da fotografia, até 1024 píxeis no lado maior, a maior tela que o Apple Watch consegue editar. Fotografias maiores mantêm o dobro do detalhe para ampliar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Холст принимает пропорции и разрешение фото — до 1024 пикселей по длинной стороне. Это самый большой холст, который можно редактировать на Apple Watch. Для большого фото сохраняется вдвое больше деталей, чтобы приближать его без потери чёткости."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duken får bildens form och upplösning, upp till 1024 pixlar på den längsta sidan – den största duk Apple Watch kan redigera. Större bilder behåller dubbelt så många detaljer för inzoomning."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ผืนผ้าใบจะมีรูปทรงและความละเอียดเดียวกับรูปภาพ สูงสุด 1024 พิกเซลด้านที่ยาวกว่า ซึ่งเป็นผืนผ้าใบใหญ่ที่สุดที่ Apple Watch แก้ไขได้ รูปภาพที่ใหญ่กว่าจะเก็บรายละเอียดไว้สองเท่าสำหรับการซูมเข้า"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuval fotoğrafın şeklini ve çözünürlüğünü alır; uzun kenarda en fazla 1024 piksel, Apple Watch’un düzenleyebildiği en büyük tuval. Daha büyük fotoğraflar yakınlaştırma için iki kat ayrıntı korur."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Полотно набуває пропорцій і роздільності фото — до 1024 пікселів за довшою стороною. Це найбільше полотно, яке можна редагувати на Apple Watch. Для великого фото зберігається вдвічі більше деталей, щоб наближати його без втрати чіткості."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Khung vẽ lấy hình dạng và độ phân giải của ảnh, tối đa 1024 pixel ở cạnh dài hơn, là khung vẽ lớn nhất Apple Watch có thể chỉnh sửa. Ảnh lớn hơn giữ gấp đôi độ chi tiết để phóng to."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画布采用照片的形状和分辨率，长边最多 1024 像素，这是 Apple Watch 可编辑的最大画布。更大的照片会保留两倍细节，便于放大查看。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫布採用照片的形狀和解析度，長邊最多 1024 像素，這是 Apple Watch 可編輯的最大畫布。更大的照片會保留兩倍細節，方便放大檢視。"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"
