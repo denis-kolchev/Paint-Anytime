@@ -41,6 +41,8 @@ struct WatchWelcomeView: View {
                             .transition(pageTransition(for: welcomePage))
                     }
                     .opacity(showsWelcomeContent ? 1 : 0)
+                    // On the container, not the pages, so the slots stay put while pages crossfade.
+                    .toolbar { centeredClockSlots }
                     // The question stays visible while the tutorial prepares, as the menu does.
                     .allowsHitTesting(!onboarding.preparesTutorial)
                     .transition(.opacity)
@@ -104,6 +106,13 @@ struct WatchWelcomeView: View {
         }
     }
 
+    /// watchOS centers the system clock when both top toolbar corners hold an item,
+    /// as on the tutorial's tools page. These slots are invisible and inert.
+    @ToolbarContentBuilder private var centeredClockSlots: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) { ClockCenteringSlot() }
+        ToolbarItem(placement: .topBarTrailing) { ClockCenteringSlot() }
+    }
+
     /// A crossfade: the previous page fades out over most of the time the next one
     /// fades in, so neither vanishes at once nor leaves an empty black gap.
     private func pageTransition(for page: WelcomePage) -> AnyTransition {
@@ -164,11 +173,9 @@ struct WatchWelcomeView: View {
                 show(.chooseLanguage)
             }
         case .chooseLanguage:
-            // No title: the bar would flash for a frame before the toolbar hides it.
+            // No title: a title appearing mid-crossfade would flash and shift both pages.
+            // Every welcome page shares the same bar of clock slots, so the layout holds.
             AppLanguageSelectionView(showsTitle: false, onSelection: { show(.language) })
-                // A title bar appearing mid-crossfade changes the safe area and makes
-                // both pages jump; the previous question already names the topic.
-                .toolbar(.hidden, for: .navigationBar)
         case .offer:
             WelcomeQuestion(text: L10n.text("Would you like a guided tour?")) {
                 onboarding.requestTutorial()
@@ -204,6 +211,17 @@ extension EnvironmentValues {
     var restartWelcome: RestartWelcomeAction? {
         get { self[RestartWelcomeKey.self] }
         set { self[RestartWelcomeKey.self] = newValue }
+    }
+}
+
+private struct ClockCenteringSlot: View {
+    var body: some View {
+        Button {} label: {
+            Color.clear.frame(width: 18, height: 18)
+        }
+        .disabled(true)
+        .watchToolbarButtonStyle(hidesNativeChrome: true)
+        .accessibilityHidden(true)
     }
 }
 
