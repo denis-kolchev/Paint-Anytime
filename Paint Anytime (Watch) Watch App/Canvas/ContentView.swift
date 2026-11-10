@@ -479,15 +479,26 @@ struct ContentView: View {
         .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsGallery)
         .frame(width: geometry.size.width, height: geometry.size.height)
         .clipped()
-        .onAppear { canvasSize = geometry.size }
-        .onChange(of: geometry.size) { _, size in canvasSize = size }
+        .onAppear {
+            canvasSize = geometry.size
+            controlRegions.screenBounds = geometry.frame(in: .global)
+        }
+        .onChange(of: geometry.size) { _, size in
+            canvasSize = size
+            controlRegions.screenBounds = geometry.frame(in: .global)
+        }
     }
 
     /// The custom canvas layout is on screen with no native control of its own:
     /// the same state that installs only the custom toolbar anchors.
+    /// The bars stay up until every anchor has been measured on screen once. Leaving the
+    /// first-launch tutorial (its finish confirmation hides the bars) inserted the anchors
+    /// straight into hidden bars, so the drawn controls fell back to estimated corners.
+    /// The anchors are invisible, so the bars show nothing for that one layout pass.
     private var hidesCanvasBars: Bool {
         customLayout != nil && isActive && menuOnboarding.tutorialFolder == nil
             && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive
+            && controlRegions.hasCustomLayoutAnchors
     }
 
     /// Kept out of `body` so the view stays within type-checking limits.

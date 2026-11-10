@@ -16,11 +16,31 @@ final class CanvasMorphState {
 final class CanvasControlRegions {
     @ObservationIgnored var frames: [CanvasToolbarControl: CGRect] = [:]
     private(set) var toolbarAnchors: [CanvasToolbarControl: CGRect] = [:]
+    /// The canvas in global coordinates; `.null` until the canvas is laid out.
+    @ObservationIgnored var screenBounds: CGRect = .null
 
     func updateToolbarFrames(_ frames: [CanvasToolbarControl: CGRect]) {
         self.frames = frames
-        let anchors = frames.filter { [.more, .tools, .clear, .undo, .redo, .save].contains($0.key) }
+        // A hidden bar reports its slots off screen. Keep the last on-screen slot instead,
+        // so hiding the bars for a custom layout never discards a measured position.
+        var anchors = toolbarAnchors
+        for (control, frame) in frames where Self.anchorControls.contains(control) && isOnScreen(frame) {
+            anchors[control] = frame
+        }
         if toolbarAnchors != anchors { toolbarAnchors = anchors }
+    }
+
+    /// Every custom-layout slot has a native position measured on screen.
+    var hasCustomLayoutAnchors: Bool {
+        CustomCanvasControls.anchors.allSatisfy { toolbarAnchors[$0] != nil }
+    }
+
+    private static let anchorControls: Set<CanvasToolbarControl> = [.more, .tools, .clear, .undo, .redo, .save]
+
+    private func isOnScreen(_ frame: CGRect) -> Bool {
+        guard !frame.isEmpty else { return false }
+        guard !screenBounds.isNull else { return true }
+        return screenBounds.insetBy(dx: 4, dy: 4).contains(CGPoint(x: frame.midX, y: frame.midY))
     }
 }
 
