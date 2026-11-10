@@ -4,8 +4,8 @@ cd "$(dirname "$0")/.."
 check_dir="$(mktemp -d "${TMPDIR:-/tmp}/paint-transparency-check.XXXXXX")"
 trap 'rm -rf "$check_dir"' EXIT
 xcrun swiftc -parse-as-library \
-  Shared/CanvasDocument.swift Shared/AppLanguage.swift Shared/AppReleaseFeatures.swift \
-  Shared/BrushGeometry.swift Shared/FountainPenGeometry.swift Shared/PencilTool.swift Shared/ShapeRecognizer.swift \
+  Shared/Document/CanvasDocument.swift Shared/Localization/AppLanguage.swift Shared/App/AppReleaseFeatures.swift \
+  Shared/Drawing/BrushGeometry.swift Shared/Drawing/FountainPenGeometry.swift Shared/Drawing/PencilTool.swift Shared/Drawing/ShapeRecognizer.swift \
   "Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift" \

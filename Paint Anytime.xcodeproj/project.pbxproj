@@ -8,21 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		257D4058305EA358002072CB /* Paint Anytime (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		AB1000000000000000000001 /* Shared/PaintProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1000000000000000000002 /* Shared/PaintProject.swift */; };
-		AC1000000000000000000001 /* Shared/GalleryDeletionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1000000000000000000002 /* Shared/GalleryDeletionStore.swift */; };
-		AE1030000000000000000001 /* Shared/GalleryImageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1030000000000000000002 /* Shared/GalleryImageLayout.swift */; };
-		AF1030000000000000000012 /* Shared/GalleryDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000011 /* Shared/GalleryDebug.swift */; };
-		AF1030000000000000000022 /* Shared/DebugGallerySamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000021 /* Shared/DebugGallerySamples.swift */; };
+		AB1000000000000000000001 /* Shared/Document/PaintProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1000000000000000000002 /* Shared/Document/PaintProject.swift */; };
+		AC1000000000000000000001 /* Shared/Gallery/GalleryDeletionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */; };
+		AE1030000000000000000001 /* Shared/Gallery/GalleryImageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */; };
+		AF1030000000000000000012 /* Shared/Debug/GalleryDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000011 /* Shared/Debug/GalleryDebug.swift */; };
+		AF1030000000000000000022 /* Shared/Debug/DebugGallerySamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000021 /* Shared/Debug/DebugGallerySamples.swift */; };
 		AF1030000000000000000041 /* DebugGallerySamples in Resources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000031 /* DebugGallerySamples */; };
 		AF1030000000000000000042 /* DebugGallerySamples in Resources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000031 /* DebugGallerySamples */; };
-		AF1030010000000000000011 /* Shared/GalleryZoomSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000001 /* Shared/GalleryZoomSlot.swift */; };
-		AF1030010000000000000012 /* Shared/GalleryZoomRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000002 /* Shared/GalleryZoomRules.swift */; };
-		AF1030100000000000000001 /* Shared/PaintDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030100000000000000002 /* Shared/PaintDeepLink.swift */; };
-		AF1030200000000000000001 /* Shared/SketchAssistProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030200000000000000002 /* Shared/SketchAssistProtocol.swift */; };
-		AF1030300000000000000001 /* Shared/PhotoImportProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030300000000000000002 /* Shared/PhotoImportProtocol.swift */; };
+		AF1030010000000000000011 /* Shared/Gallery/GalleryZoomSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000001 /* Shared/Gallery/GalleryZoomSlot.swift */; };
+		AF1030010000000000000012 /* Shared/Gallery/GalleryZoomRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000002 /* Shared/Gallery/GalleryZoomRules.swift */; };
+		AF1030100000000000000001 /* Shared/App/PaintDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */; };
+		AF1030200000000000000001 /* Shared/Connectivity/SketchAssistProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */; };
+		AF1030300000000000000001 /* Shared/Connectivity/PhotoImportProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
 		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		D40000000000000000000001 /* Shared/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */; };
+		D40000000000000000000001 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */; };
 		F60000000000000000000001 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon in Resources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */; };
 /* End PBXBuildFile section */
 
@@ -67,22 +67,21 @@
 /* Begin PBXFileReference section */
 		257D4052305EA358002072CB /* Paint Anytime (Watch).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		25AC8197305D90C700C8F69E /* Paint Anytime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		AB1000000000000000000002 /* Shared/PaintProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/PaintProject.swift; sourceTree = SOURCE_ROOT; };
-		AC1000000000000000000002 /* Shared/GalleryDeletionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryDeletionStore.swift; sourceTree = SOURCE_ROOT; };
-		AE1030000000000000000002 /* Shared/GalleryImageLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryImageLayout.swift; sourceTree = SOURCE_ROOT; };
-		AF1030000000000000000011 /* Shared/GalleryDebug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryDebug.swift; sourceTree = SOURCE_ROOT; };
-		AF1030000000000000000021 /* Shared/DebugGallerySamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/DebugGallerySamples.swift; sourceTree = SOURCE_ROOT; };
+		AB1000000000000000000002 /* Shared/Document/PaintProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Document/PaintProject.swift; sourceTree = SOURCE_ROOT; };
+		AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryDeletionStore.swift; sourceTree = SOURCE_ROOT; };
+		AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryImageLayout.swift; sourceTree = SOURCE_ROOT; };
+		AF1030000000000000000011 /* Shared/Debug/GalleryDebug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Debug/GalleryDebug.swift; sourceTree = SOURCE_ROOT; };
+		AF1030000000000000000021 /* Shared/Debug/DebugGallerySamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Debug/DebugGallerySamples.swift; sourceTree = SOURCE_ROOT; };
 		AF1030000000000000000031 /* DebugGallerySamples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DebugGallerySamples; sourceTree = SOURCE_ROOT; };
-		AF1030010000000000000001 /* Shared/GalleryZoomSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryZoomSlot.swift; sourceTree = SOURCE_ROOT; };
-		AF1030010000000000000002 /* Shared/GalleryZoomRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryZoomRules.swift; sourceTree = SOURCE_ROOT; };
-		AF1030100000000000000002 /* Shared/PaintDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/PaintDeepLink.swift; sourceTree = SOURCE_ROOT; };
-		AF1030200000000000000002 /* Shared/SketchAssistProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/SketchAssistProtocol.swift; sourceTree = SOURCE_ROOT; };
-		AF1030300000000000000002 /* Shared/PhotoImportProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/PhotoImportProtocol.swift; sourceTree = SOURCE_ROOT; };
+		AF1030010000000000000001 /* Shared/Gallery/GalleryZoomSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryZoomSlot.swift; sourceTree = SOURCE_ROOT; };
+		AF1030010000000000000002 /* Shared/Gallery/GalleryZoomRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryZoomRules.swift; sourceTree = SOURCE_ROOT; };
+		AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/App/PaintDeepLink.swift; sourceTree = SOURCE_ROOT; };
+		AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Connectivity/SketchAssistProtocol.swift; sourceTree = SOURCE_ROOT; };
+		AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Connectivity/PhotoImportProtocol.swift; sourceTree = SOURCE_ROOT; };
 		B20000020000000000000002 /* Preset Photos */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preset Photos"; sourceTree = "<group>"; };
 		C30000000000000000000002 /* PaintAnytimeComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
-		E50000000000000000000002 /* Shared/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Shared/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
+		E50000000000000000000002 /* Shared/Localization/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Shared/Localization/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
 		F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.icon; path = "Paint Anytime (Watch) Watch App/Paint-Anytime.icon"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -95,11 +94,6 @@
 		257D405B305EA358002072CB /* Paint Anytime (Watch) Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Paint Anytime (Watch) Watch App";
-			sourceTree = "<group>";
-		};
-		25AC8199305D90C700C8F69E /* Paint Anytime */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Paint Anytime";
 			sourceTree = "<group>";
 		};
 		A10000050000000000000005 /* Paint Anytime iPhone */ = {
@@ -120,11 +114,6 @@
 			files = (
 			);
 		};
-		25AC8194305D90C700C8F69E /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			files = (
-			);
-		};
 		C30000000000000000000008 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
@@ -136,18 +125,18 @@
 		259166BF307D5FE20044FEF7 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
-				D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */,
-				AF1030100000000000000002 /* Shared/PaintDeepLink.swift */,
-				AF1030200000000000000002 /* Shared/SketchAssistProtocol.swift */,
-				AF1030300000000000000002 /* Shared/PhotoImportProtocol.swift */,
-				AB1000000000000000000002 /* Shared/PaintProject.swift */,
-				AC1000000000000000000002 /* Shared/GalleryDeletionStore.swift */,
-				AE1030000000000000000002 /* Shared/GalleryImageLayout.swift */,
-				AF1030010000000000000001 /* Shared/GalleryZoomSlot.swift */,
-				AF1030010000000000000002 /* Shared/GalleryZoomRules.swift */,
+				D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */,
+				AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */,
+				AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */,
+				AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */,
+				AB1000000000000000000002 /* Shared/Document/PaintProject.swift */,
+				AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */,
+				AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */,
+				AF1030010000000000000001 /* Shared/Gallery/GalleryZoomSlot.swift */,
+				AF1030010000000000000002 /* Shared/Gallery/GalleryZoomRules.swift */,
 				AF1030000000000000000031 /* DebugGallerySamples */,
-				AF1030000000000000000021 /* Shared/DebugGallerySamples.swift */,
-				AF1030000000000000000011 /* Shared/GalleryDebug.swift */,
+				AF1030000000000000000021 /* Shared/Debug/DebugGallerySamples.swift */,
+				AF1030000000000000000011 /* Shared/Debug/GalleryDebug.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -157,21 +146,19 @@
 			children = (
 				C30000000000000000000003 /* Paint Anytime Complications */,
 				B20000020000000000000002 /* Preset Photos */,
-				25AC8199305D90C700C8F69E /* Paint Anytime */,
 				A10000050000000000000005 /* Paint Anytime iPhone */,
 				F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */,
 				257D405B305EA358002072CB /* Paint Anytime (Watch) Watch App */,
 				25AC8198305D90C700C8F69E /* Products */,
 				2523992A3060233F00774395 /* Shared */,
 				259166BF307D5FE20044FEF7 /* Recovered References */,
-				E50000000000000000000002 /* Shared/Localizable.xcstrings */,
+				E50000000000000000000002 /* Shared/Localization/Localizable.xcstrings */,
 			);
 			sourceTree = "<group>";
 		};
 		25AC8198305D90C700C8F69E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				25AC8197305D90C700C8F69E /* Paint Anytime.app */,
 				C30000000000000000000002 /* PaintAnytimeComplications.appex */,
 				257D4052305EA358002072CB /* Paint Anytime (Watch).app */,
 				257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */,
@@ -226,25 +213,6 @@
 			productReference = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */;
 			productType = "com.apple.product-type.application";
 		};
-		25AC8196305D90C700C8F69E /* Paint Anytime */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 25AC81A2305D90C900C8F69E /* Build configuration list for PBXNativeTarget "Paint Anytime" */;
-			buildPhases = (
-				25AC8193305D90C700C8F69E /* Sources */,
-				25AC8194305D90C700C8F69E /* Frameworks */,
-				25AC8195305D90C700C8F69E /* Resources */,
-			);
-			buildRules = (
-			);
-			fileSystemSynchronizedGroups = (
-				2523992A3060233F00774395 /* Shared */,
-				25AC8199305D90C700C8F69E /* Paint Anytime */,
-			);
-			name = "Paint Anytime";
-			productName = "Paint Anytime";
-			productReference = 25AC8197305D90C700C8F69E /* Paint Anytime.app */;
-			productType = "com.apple.product-type.application";
-		};
 		C30000000000000000000005 /* PaintAnytimeComplications */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C30000000000000000000006 /* Build configuration list for PBXNativeTarget "PaintAnytimeComplications" */;
@@ -277,9 +245,6 @@
 						CreatedOnToolsVersion = 27.0;
 					};
 					257D4056305EA358002072CB = {
-						CreatedOnToolsVersion = 27.0;
-					};
-					25AC8196305D90C700C8F69E = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
@@ -326,7 +291,6 @@
 			projectRoot = "";
 			targets = (
 				C30000000000000000000005 /* PaintAnytimeComplications */,
-				25AC8196305D90C700C8F69E /* Paint Anytime */,
 				257D4051305EA358002072CB /* Paint Anytime (Watch) */,
 				257D4056305EA358002072CB /* Paint Anytime (Watch) Watch App */,
 			);
@@ -348,11 +312,6 @@
 				B20000010000000000000001 /* Preset Photos in Resources */,
 			);
 		};
-		25AC8195305D90C700C8F69E /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			files = (
-			);
-		};
 		C30000000000000000000009 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
@@ -366,30 +325,25 @@
 			files = (
 			);
 		};
-		25AC8193305D90C700C8F69E /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			files = (
-			);
-		};
 		A10000060000000000000006 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				AF1030100000000000000001 /* Shared/PaintDeepLink.swift in Sources */,
-				AF1030200000000000000001 /* Shared/SketchAssistProtocol.swift in Sources */,
-				AF1030300000000000000001 /* Shared/PhotoImportProtocol.swift in Sources */,
-				AB1000000000000000000001 /* Shared/PaintProject.swift in Sources */,
-				AC1000000000000000000001 /* Shared/GalleryDeletionStore.swift in Sources */,
-				AE1030000000000000000001 /* Shared/GalleryImageLayout.swift in Sources */,
-				AF1030010000000000000011 /* Shared/GalleryZoomSlot.swift in Sources */,
-				AF1030010000000000000012 /* Shared/GalleryZoomRules.swift in Sources */,
-				AF1030000000000000000022 /* Shared/DebugGallerySamples.swift in Sources */,
-				AF1030000000000000000012 /* Shared/GalleryDebug.swift in Sources */,
+				AF1030100000000000000001 /* Shared/App/PaintDeepLink.swift in Sources */,
+				AF1030200000000000000001 /* Shared/Connectivity/SketchAssistProtocol.swift in Sources */,
+				AF1030300000000000000001 /* Shared/Connectivity/PhotoImportProtocol.swift in Sources */,
+				AB1000000000000000000001 /* Shared/Document/PaintProject.swift in Sources */,
+				AC1000000000000000000001 /* Shared/Gallery/GalleryDeletionStore.swift in Sources */,
+				AE1030000000000000000001 /* Shared/Gallery/GalleryImageLayout.swift in Sources */,
+				AF1030010000000000000011 /* Shared/Gallery/GalleryZoomSlot.swift in Sources */,
+				AF1030010000000000000012 /* Shared/Gallery/GalleryZoomRules.swift in Sources */,
+				AF1030000000000000000022 /* Shared/Debug/DebugGallerySamples.swift in Sources */,
+				AF1030000000000000000012 /* Shared/Debug/GalleryDebug.swift in Sources */,
 			);
 		};
 		C30000000000000000000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				D40000000000000000000001 /* Shared/GalleryWidgetStore.swift in Sources */,
+				D40000000000000000000001 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */
@@ -682,78 +636,6 @@
 			};
 			name = Release;
 		};
-		25AC81A3305D90C900C8F69E /* Debug configuration for PBXNativeTarget "Paint Anytime" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 7H7XHY3693;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		25AC81A4305D90C900C8F69E /* Release configuration for PBXNativeTarget "Paint Anytime" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
-				DEAD_CODE_STRIPPING = YES;
-				DEVELOPMENT_TEAM = 7H7XHY3693;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Release;
-		};
 		C3000000000000000000000A /* Debug configuration for PBXNativeTarget "PaintAnytimeComplications" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -836,14 +718,6 @@
 			buildConfigurations = (
 				25AC81A0305D90C900C8F69E /* Debug configuration for PBXProject "Paint Anytime" */,
 				25AC81A1305D90C900C8F69E /* Release configuration for PBXProject "Paint Anytime" */,
-			);
-			defaultConfigurationName = Release;
-		};
-		25AC81A2305D90C900C8F69E /* Build configuration list for PBXNativeTarget "Paint Anytime" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				25AC81A3305D90C900C8F69E /* Debug configuration for PBXNativeTarget "Paint Anytime" */,
-				25AC81A4305D90C900C8F69E /* Release configuration for PBXNativeTarget "Paint Anytime" */,
 			);
 			defaultConfigurationName = Release;
 		};

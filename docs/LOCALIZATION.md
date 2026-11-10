@@ -3,15 +3,15 @@
 ## Source of truth
 
 The supported languages and their native names are defined in
-[`AppLanguage.supported`](../Shared/AppLanguage.swift). Translations live in
-[`Shared/Localizable.xcstrings`](../Shared/Localizable.xcstrings) and the
+[`AppLanguage.supported`](../Shared/Localization/AppLanguage.swift). Translations live in
+[`Shared/Localization/Localizable.xcstrings`](../Shared/Localization/Localizable.xcstrings) and the
 [complication catalog](../Paint%20Anytime%20Complications/Localizable.xcstrings), and project
 localizations are registered in the [Xcode project](../Paint%20Anytime.xcodeproj/project.pbxproj).
 Use these files for the current language list and translation coverage; this guide
 does not duplicate counts that change as the app grows.
 
 The watch-only distribution container (`Paint Anytime (Watch)`) also includes
-`Shared/Localizable.xcstrings` in its Resources phase. This produces localized
+`Shared/Localization/Localizable.xcstrings` in its Resources phase. This produces localized
 resources in the outer app bundle as well as the watch app, so the submitted
 package exposes the supported languages to the App Store. Keep this reference
 pointing to the shared catalog instead of maintaining a separate language list.
@@ -64,13 +64,13 @@ does not guarantee that the runtime has the fonts to render it.
 ## Adding or updating translations
 
 1. Add a new language to the project's localizations in Xcode.
-2. Translate every translatable entry in `Shared/Localizable.xcstrings` and
+2. Translate every translatable entry in `Shared/Localization/Localizable.xcstrings` and
    `Paint Anytime Complications/Localizable.xcstrings`. Preserve
    format placeholders and their types; use positional placeholders such as
    `%1$d` and `%2$d` when word order changes. Keep language-neutral entries marked
    as non-translatable.
 3. For a new language, add its identifier and native name to `AppLanguage.supported`
-   in `Shared/AppLanguage.swift`. The picker uses this registry automatically.
+   in `Shared/Localization/AppLanguage.swift`. The picker uses this registry automatically.
 4. Check catalog coverage against the supported registry and verify placeholders.
    Translation presence alone does not establish linguistic quality.
 5. Build and review the onboarding, menus, tools, gallery, confirmations, and
@@ -85,7 +85,7 @@ formatted values. Use `L10n.percent` with a fractional value (0.5 for fifty perc
 for percentages. In prose, substitute that formatted string through `%@` and
 `L10n.format`; do not embed a raw percent sign in translated sentences, where
 catalog format parsing may interpret surrounding letters as a conversion specifier.
-These helpers are defined in `Shared/AppLanguage.swift`. Add new
+These helpers are defined in `Shared/Localization/AppLanguage.swift`. Add new
 English keys and translations to the catalog.
 
 Views resolving strings through these helpers observe `AppLanguage.storageKey`
