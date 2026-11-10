@@ -116,8 +116,9 @@ struct WatchWelcomeView: View {
     /// A crossfade: the previous page fades out over most of the time the next one
     /// fades in, so neither vanishes at once nor leaves an empty black gap.
     private func pageTransition(for page: WelcomePage) -> AnyTransition {
-        // Scaling a List shrinks its scroll frame and shows black bands above and below it.
-        let scales = !reduceMotion && page != .chooseLanguage
+        // A scaling page is laid out without its ignored safe area until the transition
+        // ends: the List shows black bands and the OK button jumps down on the last frame.
+        let scales = !reduceMotion && page != .chooseLanguage && page != .later
         let insertion: AnyTransition = scales ? .opacity.combined(with: .scale(scale: 0.94)) : .opacity
         return .asymmetric(
             insertion: insertion.animation(.easeInOut(duration: reduceMotion ? 0.25 : 0.35).delay(0.05)),
@@ -183,16 +184,23 @@ struct WatchWelcomeView: View {
                 show(.later)
             }
         case .later:
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 ScrollView {
                     Text(L10n.text("You can start the tutorial anytime: tap the three dots, then Tutorial."))
                         .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .padding(.horizontal)
                 Button(L10n.text("OK"), action: finishWelcome)
                     .watchActionButtonStyle()
+                    // Inset from the rounded bottom corners of the display.
+                    .padding(.horizontal, 10)
+                    .padding(.bottom, 4)
             }
-            // No bottom padding: the button sits at the bottom of the safe area.
-            .padding([.horizontal, .top])
+            // The bar above already spaces the text from the clock.
+            .padding(.top, 2)
+            // The button moves into the bottom safe area, leaving the text more room.
+            .ignoresSafeArea(.container, edges: .bottom)
         }
     }
 }

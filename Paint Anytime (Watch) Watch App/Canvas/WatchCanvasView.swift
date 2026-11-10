@@ -89,6 +89,14 @@ struct WatchCanvasView: View {
 
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
     @FocusState private var crownFocused: Bool
+    /// watchOS flashes the Crown indicator when the canvas takes Crown focus, for example
+    /// as it appears after the welcome flow. The system can focus the canvas itself in the
+    /// same update that makes it focusable, before any task runs, so the indicator is
+    /// derived: hidden for every new focus request until this request has settled.
+    @State private var crownIndicatorRequest: CrownFocusRequest?
+    private var hidesCrownIndicator: Bool {
+        crownIndicatorRequest != CrownFocusRequest(enabled: shouldFocusCrown, step: tutorial.step)
+    }
     private var shouldFocusCrown: Bool {
         scenePhase == .active && (acceptsInput || acceptsZoomOnlyInput) && tutorial.allowsCanvasZoom
     }
@@ -465,6 +473,7 @@ struct WatchCanvasView: View {
            onChange: { [step = tutorial.step] event in
                 tutorial.usedCrown(in: step, velocity: event.velocity)
             })
+        .digitalCrownAccessory(hidesCrownIndicator ? .hidden : .automatic)
         .accessibilityLabel(lasso.isActive ? L10n.text(lasso.mode.title) : isMovingCanvas ? L10n.text("Moving canvas") : L10n.text("Finger drawing canvas"))
         .accessibilityValue(L10n.format("Zoom %d percent", Int(zoom * 100)))
         .task(id: CrownFocusRequest(enabled: shouldFocusCrown, step: tutorial.step)) {
@@ -475,10 +484,15 @@ struct WatchCanvasView: View {
             // watchOS 10 can discard focus requested in the same update that
             // enables a target. Wait for it to be installed in the focus tree.
             // Cancellation prevents a hidden canvas stealing focus from tools.
+            let request = CrownFocusRequest(enabled: shouldFocusCrown, step: tutorial.step)
             do {
                 try await Task.sleep(for: .milliseconds(100))
                 try Task.checkCancellation()
                 crownFocused = true
+                // Long enough for the focus flash; turning in the meantime still zooms.
+                try await Task.sleep(for: .milliseconds(800))
+                try Task.checkCancellation()
+                crownIndicatorRequest = request
             } catch {}
         }
         .onChange(of: isDragging) { _, dragging in
