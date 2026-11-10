@@ -4501,10 +4501,172 @@
     "Only the PNG preview is on this iPhone. Open the updated Paint Anytime app on your Apple Watch, then sync to receive the editable project." : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا توجد على هذا الـ iPhone سوى معاينة PNG. افتح النسخة المحدثة من تطبيق Paint Anytime على Apple Watch، ثم زامن لاستلام المشروع القابل للتحرير."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tomto iPhonu je jen náhled PNG. Otevřete aktualizovanou aplikaci Paint Anytime na Apple Watch a synchronizujte, abyste získali upravitelný projekt."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kun PNG-eksemplet findes på denne iPhone. Åbn den opdaterede Paint Anytime-app på dit Apple Watch, og synkroniser for at modtage det redigerbare projekt."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auf diesem iPhone ist nur die PNG-Vorschau vorhanden. Öffne die aktualisierte Paint Anytime-App auf deiner Apple Watch und synchronisiere dann, um das bearbeitbare Projekt zu erhalten."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Σε αυτό το iPhone υπάρχει μόνο η προεπισκόπηση PNG. Ανοίξτε την ενημερωμένη εφαρμογή Paint Anytime στο Apple Watch και, στη συνέχεια, συγχρονίστε για να λάβετε το επεξεργάσιμο έργο."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only the PNG preview is on this iPhone. Open the updated Paint Anytime app on your Apple Watch, then sync to receive the editable project."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En este iPhone solo está la vista previa PNG. Abre la app Paint Anytime actualizada en el Apple Watch y sincroniza para recibir el proyecto editable."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tässä iPhonessa on vain PNG-esikatselu. Avaa päivitetty Paint Anytime -sovellus Apple Watchissa ja synkronoi saadaksesi muokattavan projektin."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seul l’aperçu PNG se trouve sur cet iPhone. Ouvrez l’app Paint Anytime mise à jour sur votre Apple Watch, puis synchronisez pour recevoir le projet modifiable."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ב‑iPhone הזה יש רק תצוגה מקדימה בפורמט PNG. פתח את אפליקציית Paint Anytime המעודכנת ב‑Apple Watch ולאחר מכן סנכרן כדי לקבל את הפרויקט הניתן לעריכה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ezen az iPhone-on csak a PNG-előnézet van meg. Nyissa meg a frissített Paint Anytime alkalmazást az Apple Watchon, majd szinkronizáljon a szerkeszthető projekt fogadásához."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hanya pratinjau PNG yang ada di iPhone ini. Buka aplikasi Paint Anytime yang diperbarui di Apple Watch, lalu sinkronkan untuk menerima proyek yang dapat diedit."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Su questo iPhone c’è solo l’anteprima PNG. Apri l’app Paint Anytime aggiornata su Apple Watch, quindi sincronizza per ricevere il progetto modificabile."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このiPhoneにはPNGプレビューしかありません。Apple Watchで最新のPaint Anytimeアプリを開いてから同期すると、編集可能なプロジェクトを受け取れます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 iPhone에는 PNG 미리보기만 있습니다. Apple Watch에서 업데이트된 Paint Anytime 앱을 연 다음 동기화하여 편집 가능한 프로젝트를 받으십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bare PNG-forhåndsvisningen finnes på denne iPhonen. Åpne den oppdaterte Paint Anytime-appen på Apple Watch, og synkroniser for å motta det redigerbare prosjektet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Op deze iPhone staat alleen de PNG-voorvertoning. Open de bijgewerkte Paint Anytime-app op je Apple Watch en synchroniseer om het bewerkbare project te ontvangen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Na tym iPhonie jest tylko podgląd PNG. Otwórz zaktualizowaną aplikację Paint Anytime na Apple Watch, a następnie zsynchronizuj, aby otrzymać edytowalny projekt."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este iPhone tem apenas a pré-visualização em PNG. Abra o app Paint Anytime atualizado no Apple Watch e sincronize para receber o projeto editável."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este iPhone tem apenas a pré-visualização em PNG. Abra a app Paint Anytime atualizada no Apple Watch e sincronize para receber o projeto editável."
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "На iPhone пока есть только PNG. Откройте обновлённое приложение Paint Anytime на Apple Watch и запустите синхронизацию, чтобы получить проект для редактирования."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Den här iPhonen har bara PNG-förhandsvisningen. Öppna den uppdaterade Paint Anytime-appen på din Apple Watch och synkronisera för att ta emot det redigerbara projektet."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone เครื่องนี้มีเพียงภาพตัวอย่าง PNG เปิดแอป Paint Anytime เวอร์ชันอัปเดตบน Apple Watch แล้วซิงค์เพื่อรับโปรเจกต์ที่แก้ไขได้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu iPhone’da yalnızca PNG önizlemesi var. Düzenlenebilir projeyi almak için Apple Watch’unuzda güncellenmiş Paint Anytime uygulamasını açın ve eşzamanlayın."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На цьому iPhone є лише PNG-попередній перегляд. Відкрийте оновлений застосунок Paint Anytime на Apple Watch і синхронізуйте, щоб отримати проєкт для редагування."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone này chỉ có bản xem trước PNG. Hãy mở ứng dụng Paint Anytime đã cập nhật trên Apple Watch, sau đó đồng bộ để nhận dự án có thể chỉnh sửa."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 iPhone 上只有 PNG 预览。请在 Apple Watch 上打开已更新的 Paint Anytime App，然后同步以接收可编辑的项目。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 iPhone 上只有 PNG 預覽。請在 Apple Watch 上開啟已更新的 Paint Anytime App，然後同步以接收可編輯的專案。"
           }
         }
       }

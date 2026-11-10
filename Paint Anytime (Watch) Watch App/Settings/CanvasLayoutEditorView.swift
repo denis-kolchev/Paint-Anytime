@@ -103,7 +103,7 @@ struct CanvasLayoutEditorView: View {
         .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { slotFrames[index] = $0 }
         .accessibilityLabel(slotLabel(index))
         .accessibilityValue(assignment.isMorph
-            ? "Morph: " + assignment.actions.map { L10n.text($0.title) }.joined(separator: ", ")
+            ? L10n.format("Morph: %@", assignment.actions.map { L10n.text($0.title) }.joined(separator: ", "))
             : L10n.text(assignment.actions[0].title))
     }
 

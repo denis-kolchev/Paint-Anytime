@@ -65,7 +65,7 @@ struct CustomCanvasControls: View {
                     // Stays enabled: `onAction` answers an unavailable action with a haptic.
                     .environment(\.isCanvasActionUnavailable,
                                  !assignment.isMorph && !assignment.actions[0].isAvailable(in: controller))
-                    .accessibilityLabel(assignment.isMorph ? "Morph: " + assignment.actions.map { L10n.text($0.title) }.joined(separator: ", ") : L10n.text(assignment.actions[0].title))
+                    .accessibilityLabel(assignment.isMorph ? L10n.format("Morph: %@", assignment.actions.map { L10n.text($0.title) }.joined(separator: ", ")) : L10n.text(assignment.actions[0].title))
                 }
                 .frame(width: diameter)
                 .modifier(CanvasMorphGlass(adaptsToCanvas: true, isInteractive: false))

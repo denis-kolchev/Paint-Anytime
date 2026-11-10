@@ -2437,6 +2437,354 @@
         }
       }
     },
+    "Morph: %@" : {
+      "comment" : "VoiceOver label/value of a canvas control that unfolds into several actions. %@ is a comma-separated list of action names.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مجموعة: %@"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skupina: %@"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppe: %@"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppe: %@"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ομάδα: %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Morph: %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grupo: %@"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ryhmä: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groupe : %@"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קבוצה: %@"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Csoport: %@"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grup: %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppo: %@"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループ：%@"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "그룹: %@"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppe: %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Groep: %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grupa: %@"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grupo: %@"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grupo: %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Группа: %@"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grupp: %@"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กลุ่ม: %@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grup: %@"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Група: %@"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhóm: %@"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "组：%@"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "群組：%@"
+          }
+        }
+      }
+    },
+    "Send to iPhone" : {
+      "comment" : "VoiceOver label of the canvas confirm button while a lasso selection waits to be sent to iPhone for Sketch Assist.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إرسال إلى iPhone"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odeslat do iPhonu"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send til iPhone"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An iPhone senden"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αποστολή στο iPhone"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send to iPhone"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar al iPhone"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lähetä iPhoneen"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer vers l’iPhone"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "שליחה ל‑iPhone"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Küldés az iPhone-ra"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kirim ke iPhone"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia a iPhone"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneに送信"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone으로 보내기"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send til iPhone"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verstuur naar iPhone"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij na iPhone’a"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar para o iPhone"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar para o iPhone"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить на iPhone"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka till iPhone"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ส่งไปยัง iPhone"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone’a gönder"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Надіслати на iPhone"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gửi đến iPhone"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "发送到 iPhone"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "傳送到 iPhone"
+          }
+        }
+      }
+    },
     "Start over" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -3657,16 +4005,172 @@
     "3-point perspective" : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "منظور بثلاث نقاط"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tříbodová perspektiva"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3-punktsperspektiv"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3-Punkt-Perspektive"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Προοπτική 3 σημείων"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "3-point perspective"
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perspectiva de 3 puntos"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kolmen pisteen perspektiivi"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perspective à 3 points"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "פרספקטיבה של שלוש נקודות"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hárompontos perspektíva"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perspektif 3 titik"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prospettiva a 3 punti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3点透視"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3점 원근"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3-punktsperspektiv"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3-puntsperspectief"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perspektywa 3-punktowa"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perspectiva de 3 pontos"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perspetiva de 3 pontos"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "3 точки схода"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3-punktsperspektiv"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เพอร์สเปกทีฟ 3 จุด"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "3 noktalı perspektif"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перспектива з 3 точками"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Phối cảnh 3 điểm"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "三点透视"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "三點透視"
           }
         }
       }
@@ -4020,10 +4524,124 @@
     "A stroke that starts on a guide follows it or runs toward a vanishing point. Drag the round handles on the horizon to move or rotate the guides." : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الخط الذي يبدأ على دليل يتبعه أو يتجه نحو نقطة تلاشٍ. اسحب المقابض المستديرة على خط الأفق لتحريك الأدلة أو تدويرها."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tah začatý na vodítku jde po něm nebo k úběžníku. Přetažením kulatých úchytů na horizontu vodítka posunete nebo otočíte."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et strøg, der starter på en hjælpelinje, følger den eller går mod et forsvindingspunkt. Træk i de runde håndtag på horisonten for at flytte eller rotere hjælpelinjerne."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein Strich, der auf einer Hilfslinie beginnt, folgt ihr oder läuft zu einem Fluchtpunkt. Ziehe die runden Griffe am Horizont, um die Hilfslinien zu verschieben oder zu drehen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Μια πινελιά που ξεκινά πάνω σε οδηγό τον ακολουθεί ή κατευθύνεται προς ένα σημείο φυγής. Σύρετε τις στρογγυλές λαβές στον ορίζοντα για να μετακινήσετε ή να περιστρέψετε τους οδηγούς."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "A stroke that starts on a guide follows it or runs toward a vanishing point. Drag the round handles on the horizon to move or rotate the guides."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un trazo que empieza en una guía la sigue o va hacia un punto de fuga. Arrastra los tiradores redondos del horizonte para mover o girar las guías."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apuviivalta alkava veto seuraa sitä tai kulkee kohti pakopistettä. Siirrä tai kierrä apuviivoja vetämällä horisontin pyöreitä kahvoja."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un trait qui commence sur un repère le suit ou se dirige vers un point de fuite. Faites glisser les poignées rondes sur l’horizon pour déplacer ou faire pivoter les repères."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "משיכה שמתחילה על קו עזר עוקבת אחריו או נמשכת לעבר נקודת מגוז. גרור את הידיות העגולות על קו האופק כדי להזיז או לסובב את קווי העזר."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A segédvonalon kezdett vonás követi azt, vagy egy enyészpont felé halad. A horizonton lévő kerek fogantyúk húzásával mozgathatja vagy forgathatja a segédvonalakat."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Goresan yang dimulai pada panduan akan mengikutinya atau menuju titik hilang. Seret gagang bulat di cakrawala untuk memindahkan atau memutar panduan."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un tratto che inizia su una guida la segue o va verso un punto di fuga. Trascina le maniglie rotonde sull’orizzonte per spostare o ruotare le guide."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ガイド上で始めたストロークは、ガイドに沿うか消失点に向かいます。地平線上の丸いハンドルをドラッグすると、ガイドを移動または回転できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "안내선에서 시작한 획은 안내선을 따라가거나 소실점을 향합니다. 지평선의 둥근 핸들을 드래그하여 안내선을 이동하거나 회전하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Et strøk som starter på en hjelpelinje, følger den eller går mot et forsvinningspunkt. Dra de runde håndtakene på horisonten for å flytte eller rotere hjelpelinjene."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een streek die op een hulplijn begint, volgt die of loopt naar een verdwijnpunt. Sleep de ronde grepen op de horizon om de hulplijnen te verplaatsen of te draaien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pociągnięcie rozpoczęte na linii biegnie wzdłuż niej lub do punktu zbiegu. Przeciągnij okrągłe uchwyty na horyzoncie, aby przesunąć lub obrócić linie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um traço que começa em uma guia a segue ou vai em direção a um ponto de fuga. Arraste as alças redondas no horizonte para mover ou girar as guias."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um traço que começa numa guia segue-a ou vai em direção a um ponto de fuga. Arraste as pegas redondas no horizonte para mover ou rodar as guias."
           }
         },
         "ru" : {
@@ -4031,22 +4649,220 @@
             "state" : "translated",
             "value" : "Штрих, начатый на направляющей, идёт по ней или к точке схода. Перетаскивайте круглые маркеры на горизонте, чтобы переместить или повернуть направляющие."
           }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ett drag som börjar på en stödlinje följer den eller går mot en flyktpunkt. Dra i de runda handtagen på horisonten för att flytta eller rotera stödlinjerna."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เส้นที่เริ่มบนเส้นนำทางจะลากตามเส้นนั้นหรือมุ่งไปยังจุดอันตรธาน ลากจุดจับทรงกลมบนเส้นขอบฟ้าเพื่อย้ายหรือหมุนเส้นนำทาง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir kılavuz üzerinde başlayan çizgi onu izler veya bir kaçış noktasına doğru ilerler. Kılavuzları taşımak veya döndürmek için ufuk çizgisindeki yuvarlak tutamaçları sürükleyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Штрих, розпочатий на напрямній, іде вздовж неї або до точки сходу. Перетягуйте круглі маркери на горизонті, щоб перемістити або повернути напрямні."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nét vẽ bắt đầu trên đường dẫn sẽ đi theo nó hoặc hướng về điểm tụ. Kéo các tay cầm tròn trên đường chân trời để di chuyển hoặc xoay đường dẫn."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从参考线上开始的笔画会沿着参考线或朝消失点延伸。拖动地平线上的圆形控制点可移动或旋转参考线。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "從參考線上開始的筆畫會沿著參考線或朝消失點延伸。拖移地平線上的圓形控點可移動或旋轉參考線。"
+          }
         }
       }
     },
     "A wider angle brings the vanishing points closer and makes the lines steeper. With one point, it sets the spacing between lines." : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "كلما اتسعت الزاوية اقتربت نقاط التلاشي وأصبحت الخطوط أكثر انحدارًا. ومع نقطة واحدة، تحدد الزاوية المسافة بين الخطوط."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Širší úhel přiblíží úběžníky a zvětší sklon čar. U jednoho úběžníku určuje rozestup čar."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bredere vinkel bringer forsvindingspunkterne tættere på og gør linjerne stejlere. Med ét punkt bestemmer den afstanden mellem linjerne."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ein größerer Winkel rückt die Fluchtpunkte näher zusammen und macht die Linien steiler. Bei einem Fluchtpunkt legt er den Abstand zwischen den Linien fest."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Μια ευρύτερη γωνία φέρνει τα σημεία φυγής πιο κοντά και κάνει τις γραμμές πιο απότομες. Με ένα σημείο, ορίζει την απόσταση μεταξύ των γραμμών."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "A wider angle brings the vanishing points closer and makes the lines steeper. With one point, it sets the spacing between lines."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un ángulo más amplio acerca los puntos de fuga y hace las líneas más inclinadas. Con un punto, define la separación entre líneas."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laajempi kulma tuo pakopisteet lähemmäs ja jyrkentää viivoja. Yhdellä pisteellä se määrää viivojen välin."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un angle plus large rapproche les points de fuite et rend les lignes plus inclinées. Avec un seul point, il définit l’espacement entre les lignes."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "זווית רחבה יותר מקרבת את נקודות המגוז והופכת את הקווים לתלולים יותר. עם נקודה אחת, היא קובעת את המרווח בין הקווים."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szélesebb szögnél közelebb kerülnek az enyészpontok, és meredekebbek lesznek a vonalak. Egy enyészpontnál a vonalak közötti távolságot adja meg."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sudut yang lebih lebar mendekatkan titik hilang dan membuat garis lebih curam. Dengan satu titik, sudut menentukan jarak antargaris."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un angolo più ampio avvicina i punti di fuga e rende le linee più inclinate. Con un solo punto, imposta la spaziatura tra le linee."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "角度を広げると消失点が近づき、線の傾きが急になります。消失点が1つの場合は、線の間隔を設定します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "각도를 넓히면 소실점이 가까워지고 선이 더 가팔라집니다. 소실점이 하나일 때는 선 사이의 간격을 정합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bredere vinkel bringer forsvinningspunktene nærmere og gjør linjene brattere. Med ett punkt angir den avstanden mellom linjene."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Een grotere hoek brengt de verdwijnpunten dichterbij en maakt de lijnen steiler. Met één punt bepaalt hij de afstand tussen de lijnen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szerszy kąt przybliża punkty zbiegu i sprawia, że linie są bardziej strome. Przy jednym punkcie określa odstęp między liniami."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um ângulo maior aproxima os pontos de fuga e deixa as linhas mais inclinadas. Com um ponto, ele define o espaçamento entre as linhas."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um ângulo mais amplo aproxima os pontos de fuga e torna as linhas mais inclinadas. Com um ponto, define o espaçamento entre as linhas."
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Чем шире угол, тем ближе точки схода и круче линии. С одной точкой схода он задаёт шаг между линиями."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En bredare vinkel för flyktpunkterna närmare och gör linjerna brantare. Med en punkt anger den avståndet mellan linjerna."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "มุมที่กว้างขึ้นทำให้จุดอันตรธานเข้าใกล้กันและเส้นชันขึ้น เมื่อมีจุดเดียว มุมจะกำหนดระยะห่างระหว่างเส้น"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha geniş bir açı kaçış noktalarını yaklaştırır ve çizgileri dikleştirir. Tek noktada çizgiler arasındaki aralığı belirler."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ширший кут наближає точки сходу й робить лінії крутішими. З однією точкою він задає відстань між лініями."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Góc rộng hơn đưa các điểm tụ lại gần và làm đường dốc hơn. Với một điểm, góc đặt khoảng cách giữa các đường."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "角度越大，消失点越近，线条越陡。只有一个消失点时，它用于设置线条间距。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "角度越大，消失點越近，線條越陡。只有一個消失點時，它用於設定線條間距。"
           }
         }
       }
@@ -36105,16 +36921,172 @@
     "More — fixed position" : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "المزيد — موضع ثابت"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Další možnosti — pevná pozice"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mere — fast placering"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr – feste Position"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Περισσότερα — σταθερή θέση"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "More — fixed position"
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más: posición fija"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lisää – kiinteä sijainti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus — position fixe"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "עוד — מיקום קבוע"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Továbbiak – rögzített hely"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lainnya — posisi tetap"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altro — posizione fissa"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "その他 — 固定位置"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "더 보기 — 고정 위치"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mer – fast plassering"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meer — vaste positie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Więcej — stała pozycja"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais — posição fixa"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais — posição fixa"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Дополнительно — закреплено"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mer – fast position"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เพิ่มเติม — ตำแหน่งคงที่"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diğer — sabit konum"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ще — фіксоване місце"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thêm — vị trí cố định"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多 — 固定位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更多 — 固定位置"
           }
         }
       }
@@ -48771,16 +49743,172 @@
     "Reset position" : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إعادة تعيين الموضع"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obnovit pozici"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nulstil placering"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Position zurücksetzen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Επαναφορά θέσης"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reset position"
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restablecer posición"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palauta sijainti"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réinitialiser la position"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "איפוס מיקום"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pozíció visszaállítása"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atur ulang posisi"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ripristina posizione"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "位置をリセット"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "위치 재설정"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tilbakestill plassering"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Herstel positie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Resetuj pozycję"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redefinir posição"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Repor posição"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сбросить положение"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Återställ position"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "รีเซ็ตตำแหน่ง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konumu sıfırla"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скинути положення"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đặt lại vị trí"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重置位置"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "重設位置"
           }
         }
       }
@@ -50866,16 +51994,172 @@
     "Saves changed artwork to the gallery while the app is active." : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يحفظ الرسم المعدَّل في المعرض أثناء نشاط التطبيق."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Při aktivní aplikaci ukládá změněnou kresbu do galerie."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gemmer ændrede tegninger i galleriet, mens appen er aktiv."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sichert geänderte Zeichnungen in der Galerie, solange die App aktiv ist."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αποθηκεύει το τροποποιημένο σχέδιο στη συλλογή όσο η εφαρμογή είναι ενεργή."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Saves changed artwork to the gallery while the app is active."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda el dibujo modificado en la galería mientras la app está activa."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tallentaa muuttuneen piirroksen galleriaan, kun sovellus on aktiivinen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistre le dessin modifié dans la galerie tant que l’app est active."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "שומר יצירה שהשתנתה בגלריה כל עוד האפליקציה פעילה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Az alkalmazás aktív állapotában a galériába menti a módosított rajzot."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menyimpan gambar yang diubah ke galeri saat aplikasi aktif."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salva il disegno modificato nella galleria mentre l’app è attiva."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリがアクティブな間、変更した絵をギャラリーに保存します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "앱이 활성 상태일 때 변경된 그림을 갤러리에 저장합니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lagrer endrede tegninger i galleriet mens appen er aktiv."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bewaart gewijzigde tekeningen in de galerie zolang de app actief is."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisuje zmieniony rysunek w galerii, gdy aplikacja jest aktywna."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salva o desenho alterado na galeria enquanto o app está ativo."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda o desenho alterado na galeria enquanto a app está ativa."
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сохраняет изменённый рисунок в галерею, пока приложение активно."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sparar ändrade teckningar i galleriet medan appen är aktiv."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "บันทึกงานที่เปลี่ยนแปลงลงในแกลเลอรีขณะที่แอปทำงานอยู่"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uygulama etkinken değiştirilen çizimi galeriye kaydeder."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Зберігає змінений малюнок у галерею, поки застосунок активний."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lưu tác phẩm đã thay đổi vào thư viện khi ứng dụng đang hoạt động."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 处于活跃状态时，将更改过的作品存储到图库。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App 處於使用中時，將更改過的作品儲存至圖庫。"
           }
         }
       }
@@ -59030,16 +60314,172 @@
     "Tap a circle to choose its action. More stays at the top left." : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط على دائرة لاختيار إجرائها. يبقى «المزيد» في أعلى اليسار."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepnutím na kroužek vyberete jeho akci. Další možnosti zůstávají vlevo nahoře."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på en cirkel for at vælge dens handling. Mere bliver øverst til venstre."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf einen Kreis, um seine Aktion zu wählen. „Mehr“ bleibt oben links."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αγγίξτε έναν κύκλο για να επιλέξετε την ενέργειά του. Το «Περισσότερα» μένει πάνω αριστερά."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tap a circle to choose its action. More stays at the top left."
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca un círculo para elegir su acción. «Más» se queda arriba a la izquierda."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valitse ympyrän toiminto napauttamalla sitä. Lisää pysyy vasemmassa yläkulmassa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez un cercle pour choisir son action. « Plus » reste en haut à gauche."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקש על עיגול כדי לבחור את הפעולה שלו. ״עוד״ נשאר בפינה השמאלית העליונה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppintson egy körre a művelet kiválasztásához. A Továbbiak bal felül marad."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk lingkaran untuk memilih tindakannya. Lainnya tetap di kiri atas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca un cerchio per sceglierne l’azione. Altro resta in alto a sinistra."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "円をタップして操作を選びます。「その他」は左上に固定されます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "원을 탭하여 동작을 선택하십시오. 더 보기는 왼쪽 위에 고정됩니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på en sirkel for å velge handlingen. Mer blir værende øverst til venstre."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op een cirkel om de actie te kiezen. Meer blijft linksboven."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij kółko, aby wybrać jego akcję. Więcej pozostaje w lewym górnym rogu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em um círculo para escolher a ação. Mais fica no canto superior esquerdo."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque num círculo para escolher a ação. Mais fica no canto superior esquerdo."
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Нажмите на кружок, чтобы выбрать действие. «Дополнительно» всегда слева сверху."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på en cirkel för att välja dess åtgärd. Mer stannar uppe till vänster."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะวงกลมเพื่อเลือกการทำงาน เพิ่มเติมจะอยู่ที่มุมซ้ายบนเสมอ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eylemini seçmek için bir daireye dokunun. Diğer sol üstte kalır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Торкніться кружечка, щоб вибрати його дію. «Ще» завжди вгорі ліворуч."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm vào một vòng tròn để chọn tác vụ. Thêm luôn ở góc trên bên trái."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点圆圈以选择其操作。“更多”固定在左上角。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下圓圈以選擇其動作。「更多」固定在左上角。"
           }
         }
       }
@@ -68243,16 +69683,172 @@
     "Use standard layout" : {
       "extractionState" : "manual",
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "استخدام التخطيط القياسي"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Použít standardní rozvržení"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brug standardlayout"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standardlayout verwenden"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Χρήση τυπικής διάταξης"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Use standard layout"
           }
         },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar disposición estándar"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Käytä vakioasettelua"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser la disposition standard"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "שימוש בפריסה רגילה"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Normál elrendezés használata"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gunakan tata letak standar"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa layout standard"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "標準レイアウトを使用"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "표준 레이아웃 사용"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bruk standardoppsett"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebruik standaardindeling"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Użyj układu standardowego"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar layout padrão"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar disposição padrão"
+          }
+        },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Стандартная раскладка"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd standardlayout"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ใช้เลย์เอาต์มาตรฐาน"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standart düzeni kullan"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Стандартне розташування"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dùng bố cục chuẩn"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用标准布局"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "使用標準佈局"
           }
         }
       }
@@ -69992,176 +71588,176 @@
         }
       }
     },
-    "Where the iPhone photo-transfer feature is available, drawings you choose to transfer are sent from your Apple Watch to the companion iPhone app using Apple's WatchConnectivity framework. The iPhone app requests permission to add images to Photos; it does not request access to read your existing photo library. Received images are kept in a local queue until successfully saved to Photos, after which the app removes the queued copy. If permission is denied or saving fails, images can remain queued locally." : {
+    "Where the iPhone photo-transfer feature is available, drawings you choose to transfer are sent from your Apple Watch to the companion iPhone app using Apple's WatchConnectivity framework. The iPhone app requests permission to add images to Photos; it does not request access to read your existing photo library. Received images remain in the companion app’s local gallery. Saving to Photos, exporting PNG files, and sharing are user-initiated actions. Deleting a drawing on the watch does not delete its iPhone copy." : {
       "comment" : "Privacy policy, paragraph 9 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "حيثما تتوفر ميزة نقل الصور إلى iPhone، تُرسَل الرسومات التي تختار نقلها من Apple Watch إلى التطبيق المصاحب على iPhone باستخدام إطار عمل WatchConnectivity من Apple. يطلب تطبيق iPhone إذنًا لإضافة الصور إلى «الصور»؛ ولا يطلب صلاحية قراءة مكتبة صورك الحالية. تبقى الصور المستلمة في قائمة انتظار محلية إلى أن تُحفَظ بنجاح في «الصور»، وبعد ذلك يحذف التطبيق النسخة من قائمة الانتظار. إذا رُفض الإذن أو فشل الحفظ، فقد تبقى الصور في قائمة الانتظار المحلية."
+            "value" : "حيثما تتوفر ميزة نقل الصور إلى iPhone، تُرسَل الرسومات التي تختار نقلها من Apple Watch إلى التطبيق المصاحب على iPhone باستخدام إطار عمل WatchConnectivity من Apple. يطلب تطبيق iPhone إذنًا لإضافة الصور إلى «الصور»؛ ولا يطلب صلاحية قراءة مكتبة صورك الحالية. تبقى الصور المستلمة في المعرض المحلي للتطبيق المصاحب. ويتم الحفظ في «الصور» وتصدير ملفات PNG والمشاركة بمبادرة منك فقط. ولا يؤدي حذف رسم على الساعة إلى حذف نسخته على iPhone."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pokud je dostupný přenos fotek na iPhone, vybrané kresby se odesílají z Apple Watch do doprovodné aplikace pro iPhone pomocí frameworku WatchConnectivity společnosti Apple. Aplikace pro iPhone žádá o oprávnění přidávat obrázky do Fotek; nežádá o přístup ke čtení vaší stávající knihovny fotek. Přijaté obrázky zůstávají v místní frontě do úspěšného uložení do Fotek, poté aplikace kopii z fronty odstraní. Pokud je oprávnění zamítnuto nebo ukládání selže, obrázky mohou zůstat v místní frontě."
+            "value" : "Pokud je dostupný přenos fotek na iPhone, vybrané kresby se odesílají z Apple Watch do doprovodné aplikace pro iPhone pomocí frameworku WatchConnectivity společnosti Apple. Aplikace pro iPhone žádá o oprávnění přidávat obrázky do Fotek; nežádá o přístup ke čtení vaší stávající knihovny fotek. Přijaté obrázky zůstávají v místní galerii doprovodné aplikace. Uložení do Fotek, export souborů PNG a sdílení spouštíte vždy sami. Smazání kresby na hodinkách nesmaže její kopii na iPhonu."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hvor funktionen til fotooverførsel til iPhone er tilgængelig, sendes de valgte tegninger fra dit Apple Watch til den tilhørende iPhone-app via Apples WatchConnectivity-framework. iPhone-appen beder om tilladelse til at føje billeder til Fotos; den beder ikke om læseadgang til dit eksisterende fotobibliotek. Modtagne billeder gemmes i en lokal kø, indtil de er gemt i Fotos, hvorefter appen fjerner kopien fra køen. Hvis tilladelsen afvises, eller lagringen mislykkes, kan billederne blive i den lokale kø."
+            "value" : "Hvor funktionen til fotooverførsel til iPhone er tilgængelig, sendes de valgte tegninger fra dit Apple Watch til den tilhørende iPhone-app via Apples WatchConnectivity-framework. iPhone-appen beder om tilladelse til at føje billeder til Fotos; den beder ikke om læseadgang til dit eksisterende fotobibliotek. Modtagne billeder forbliver i den tilhørende apps lokale galleri. Arkivering i Fotos, eksport af PNG-filer og deling sker kun, når du selv vælger det. Hvis du sletter en tegning på uret, slettes kopien på iPhone ikke."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Soweit die Fotoübertragung auf das iPhone verfügbar ist, werden ausgewählte Zeichnungen mithilfe von Apples WatchConnectivity-Framework von deiner Apple Watch an die zugehörige iPhone-App gesendet. Die iPhone-App bittet um Erlaubnis, Bilder zu Fotos hinzuzufügen; sie fordert keinen Lesezugriff auf deine bestehende Fotomediathek an. Empfangene Bilder bleiben in einer lokalen Warteschlange, bis sie erfolgreich in Fotos gespeichert wurden. Anschließend entfernt die App die Kopie aus der Warteschlange. Wird die Erlaubnis verweigert oder schlägt das Speichern fehl, können die Bilder lokal in der Warteschlange verbleiben."
+            "value" : "Soweit die Fotoübertragung auf das iPhone verfügbar ist, werden ausgewählte Zeichnungen mithilfe von Apples WatchConnectivity-Framework von deiner Apple Watch an die zugehörige iPhone-App gesendet. Die iPhone-App bittet um Erlaubnis, Bilder zu Fotos hinzuzufügen; sie fordert keinen Lesezugriff auf deine bestehende Fotomediathek an. Empfangene Bilder bleiben in der lokalen Galerie der zugehörigen App. Das Sichern in Fotos, der Export von PNG-Dateien und das Teilen erfolgen nur auf deine Veranlassung. Wenn du eine Zeichnung auf der Watch löschst, wird ihre Kopie auf dem iPhone nicht gelöscht."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Όπου είναι διαθέσιμη η μεταφορά φωτογραφιών στο iPhone, τα σχέδια που επιλέγετε αποστέλλονται από το Apple Watch στη συνοδευτική εφαρμογή για iPhone μέσω του πλαισίου WatchConnectivity της Apple. Η εφαρμογή iPhone ζητά άδεια προσθήκης εικόνων στις Φωτογραφίες· δεν ζητά πρόσβαση ανάγνωσης στην υπάρχουσα βιβλιοθήκη φωτογραφιών σας. Οι ληφθείσες εικόνες παραμένουν σε τοπική ουρά μέχρι να αποθηκευτούν επιτυχώς στις Φωτογραφίες και κατόπιν η εφαρμογή αφαιρεί το αντίγραφο από την ουρά. Αν η άδεια απορριφθεί ή η αποθήκευση αποτύχει, οι εικόνες μπορεί να παραμείνουν στην τοπική ουρά."
+            "value" : "Όπου είναι διαθέσιμη η μεταφορά φωτογραφιών στο iPhone, τα σχέδια που επιλέγετε αποστέλλονται από το Apple Watch στη συνοδευτική εφαρμογή για iPhone μέσω του πλαισίου WatchConnectivity της Apple. Η εφαρμογή iPhone ζητά άδεια προσθήκης εικόνων στις Φωτογραφίες· δεν ζητά πρόσβαση ανάγνωσης στην υπάρχουσα βιβλιοθήκη φωτογραφιών σας. Οι ληφθείσες εικόνες παραμένουν στην τοπική συλλογή της συνοδευτικής εφαρμογής. Η αποθήκευση στις Φωτογραφίες, η εξαγωγή αρχείων PNG και η κοινοποίηση γίνονται μόνο όταν το επιλέξετε εσείς. Η διαγραφή ενός σχεδίου στο ρολόι δεν διαγράφει το αντίγραφό του στο iPhone."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Where the iPhone photo-transfer feature is available, drawings you choose to transfer are sent from your Apple Watch to the companion iPhone app using Apple's WatchConnectivity framework. The iPhone app requests permission to add images to Photos; it does not request access to read your existing photo library. Received images are kept in a local queue until successfully saved to Photos, after which the app removes the queued copy. If permission is denied or saving fails, images can remain queued locally."
+            "value" : "Where the iPhone photo-transfer feature is available, drawings you choose to transfer are sent from your Apple Watch to the companion iPhone app using Apple's WatchConnectivity framework. The iPhone app requests permission to add images to Photos; it does not request access to read your existing photo library. Received images remain in the companion app’s local gallery. Saving to Photos, exporting PNG files, and sharing are user-initiated actions. Deleting a drawing on the watch does not delete its iPhone copy."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cuando está disponible la función de transferencia de fotos al iPhone, los dibujos que eliges transferir se envían desde el Apple Watch a la aplicación complementaria del iPhone mediante el framework WatchConnectivity de Apple. La aplicación para iPhone solicita permiso para añadir imágenes a Fotos; no solicita acceso de lectura a tu fototeca existente. Las imágenes recibidas se mantienen en una cola local hasta que se guardan correctamente en Fotos, tras lo cual la aplicación elimina la copia de la cola. Si se deniega el permiso o falla el guardado, las imágenes pueden permanecer en la cola local."
+            "value" : "Cuando está disponible la función de transferencia de fotos al iPhone, los dibujos que eliges transferir se envían desde el Apple Watch a la aplicación complementaria del iPhone mediante el framework WatchConnectivity de Apple. La aplicación para iPhone solicita permiso para añadir imágenes a Fotos; no solicita acceso de lectura a tu fototeca existente. Las imágenes recibidas permanecen en la galería local de la aplicación complementaria. Guardar en Fotos, exportar archivos PNG y compartir son acciones que solo inicias tú. Eliminar un dibujo en el reloj no elimina su copia en el iPhone."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kun kuvien siirtäminen iPhoneen on käytettävissä, valitsemasi piirrokset lähetetään Apple Watchista iPhone-kumppanisovellukseen Applen WatchConnectivity-kehyksen avulla. iPhone-sovellus pyytää lupaa lisätä kuvia Kuvat-sovellukseen; se ei pyydä lukuoikeutta olemassa olevaan kuvakirjastoosi. Vastaanotetut kuvat säilyvät paikallisessa jonossa, kunnes ne on tallennettu onnistuneesti Kuviin. Sen jälkeen sovellus poistaa jonossa olevan kopion. Jos lupa evätään tai tallentaminen epäonnistuu, kuvat voivat jäädä paikalliseen jonoon."
+            "value" : "Kun kuvien siirtäminen iPhoneen on käytettävissä, valitsemasi piirrokset lähetetään Apple Watchista iPhone-kumppanisovellukseen Applen WatchConnectivity-kehyksen avulla. iPhone-sovellus pyytää lupaa lisätä kuvia Kuvat-sovellukseen; se ei pyydä lukuoikeutta olemassa olevaan kuvakirjastoosi. Vastaanotetut kuvat säilyvät kumppanisovelluksen paikallisessa galleriassa. Tallennus Kuviin, PNG-tiedostojen vienti ja jakaminen tapahtuvat vain, kun itse valitset niin. Piirroksen poistaminen kellosta ei poista sen kopiota iPhonesta."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lorsque le transfert de photos vers l’iPhone est disponible, les dessins que vous choisissez de transférer sont envoyés de votre Apple Watch à l’application compagnon pour iPhone via le framework WatchConnectivity d’Apple. L’application iPhone demande l’autorisation d’ajouter des images à Photos, mais pas de lire votre photothèque existante. Les images reçues sont conservées dans une file d’attente locale jusqu’à leur enregistrement réussi dans Photos, puis l’application supprime la copie en attente. Si l’autorisation est refusée ou si l’enregistrement échoue, les images peuvent rester dans la file d’attente locale."
+            "value" : "Lorsque le transfert de photos vers l’iPhone est disponible, les dessins que vous choisissez de transférer sont envoyés de votre Apple Watch à l’application compagnon pour iPhone via le framework WatchConnectivity d’Apple. L’application iPhone demande l’autorisation d’ajouter des images à Photos, mais pas de lire votre photothèque existante. Les images reçues restent dans la galerie locale de l’application compagnon. L’enregistrement dans Photos, l’exportation de fichiers PNG et le partage ne se font qu’à votre initiative. Supprimer un dessin sur la montre ne supprime pas sa copie sur l’iPhone."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "כאשר תכונת העברת התמונות ל-iPhone זמינה, הציורים שנבחרו להעברה נשלחים מה-Apple Watch לאפליקציה הנלווית ב-iPhone באמצעות מסגרת WatchConnectivity של Apple. אפליקציית ה-iPhone מבקשת הרשאה להוסיף תמונות ל״תמונות״; היא אינה מבקשת גישת קריאה לספריית התמונות הקיימת שלך. התמונות שהתקבלו נשמרות בתור מקומי עד לשמירתן בהצלחה ב״תמונות״, ולאחר מכן האפליקציה מסירה את העותק מהתור. אם ההרשאה נדחית או השמירה נכשלת, התמונות עשויות להישאר בתור המקומי."
+            "value" : "כאשר תכונת העברת התמונות ל-iPhone זמינה, הציורים שנבחרו להעברה נשלחים מה-Apple Watch לאפליקציה הנלווית ב-iPhone באמצעות מסגרת WatchConnectivity של Apple. אפליקציית ה-iPhone מבקשת הרשאה להוסיף תמונות ל״תמונות״; היא אינה מבקשת גישת קריאה לספריית התמונות הקיימת שלך. התמונות שהתקבלו נשארות בגלריה המקומית של האפליקציה הנלווית. שמירה ב״תמונות״, ייצוא קובצי PNG ושיתוף מתבצעים רק לבקשתך. מחיקת ציור בשעון אינה מוחקת את העותק שלו ב‑iPhone."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ahol elérhető az iPhone-ra történő képátvitel, a kiválasztott rajzok az Apple Watchról az iPhone-társalkalmazásba kerülnek az Apple WatchConnectivity keretrendszerével. Az iPhone-alkalmazás engedélyt kér képek hozzáadására a Fotókhoz; nem kér olvasási hozzáférést a meglévő fotókönyvtárhoz. A fogadott képek helyi várólistán maradnak, amíg sikeresen a Fotókba nem mentődnek; ezután az alkalmazás törli a várólistán lévő másolatot. Ha az engedélyt megtagadják vagy a mentés sikertelen, a képek a helyi várólistán maradhatnak."
+            "value" : "Ahol elérhető az iPhone-ra történő képátvitel, a kiválasztott rajzok az Apple Watchról az iPhone-társalkalmazásba kerülnek az Apple WatchConnectivity keretrendszerével. Az iPhone-alkalmazás engedélyt kér képek hozzáadására a Fotókhoz; nem kér olvasási hozzáférést a meglévő fotókönyvtárhoz. A fogadott képek a társalkalmazás helyi galériájában maradnak. A Fotókba mentés, a PNG-fájlok exportálása és a megosztás csak az Ön kezdeményezésére történik. Ha töröl egy rajzot az órán, az iPhone-on lévő másolata nem törlődik."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jika fitur transfer foto ke iPhone tersedia, gambar yang Anda pilih untuk ditransfer dikirim dari Apple Watch ke aplikasi pendamping iPhone menggunakan kerangka kerja WatchConnectivity milik Apple. Aplikasi iPhone meminta izin menambahkan gambar ke Foto; aplikasi tidak meminta akses untuk membaca perpustakaan foto yang sudah ada. Gambar yang diterima disimpan dalam antrean lokal hingga berhasil disimpan ke Foto, lalu aplikasi menghapus salinan dalam antrean. Jika izin ditolak atau penyimpanan gagal, gambar dapat tetap berada dalam antrean lokal."
+            "value" : "Jika fitur transfer foto ke iPhone tersedia, gambar yang Anda pilih untuk ditransfer dikirim dari Apple Watch ke aplikasi pendamping iPhone menggunakan kerangka kerja WatchConnectivity milik Apple. Aplikasi iPhone meminta izin menambahkan gambar ke Foto; aplikasi tidak meminta akses untuk membaca perpustakaan foto yang sudah ada. Gambar yang diterima tetap berada di galeri lokal aplikasi pendamping. Menyimpan ke Foto, mengekspor file PNG, dan berbagi hanya dilakukan atas tindakan Anda. Menghapus gambar di jam tidak menghapus salinannya di iPhone."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dove è disponibile il trasferimento di foto su iPhone, i disegni che scegli di trasferire vengono inviati dall’Apple Watch all’app complementare per iPhone tramite il framework WatchConnectivity di Apple. L’app per iPhone richiede l’autorizzazione ad aggiungere immagini a Foto; non richiede accesso in lettura alla libreria fotografica esistente. Le immagini ricevute restano in una coda locale fino al corretto salvataggio in Foto, dopodiché l’app rimuove la copia dalla coda. Se l’autorizzazione viene negata o il salvataggio non riesce, le immagini possono restare nella coda locale."
+            "value" : "Dove è disponibile il trasferimento di foto su iPhone, i disegni che scegli di trasferire vengono inviati dall’Apple Watch all’app complementare per iPhone tramite il framework WatchConnectivity di Apple. L’app per iPhone richiede l’autorizzazione ad aggiungere immagini a Foto; non richiede accesso in lettura alla libreria fotografica esistente. Le immagini ricevute restano nella galleria locale dell’app complementare. Il salvataggio in Foto, l’esportazione di file PNG e la condivisione avvengono solo su tua iniziativa. Eliminare un disegno sull’orologio non elimina la sua copia su iPhone."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iPhoneへの写真転送機能が利用できる場合、転送対象として選んだ絵は、AppleのWatchConnectivityフレームワークを通じてApple WatchからiPhoneコンパニオンアプリに送られます。iPhoneアプリは「写真」に画像を追加する許可を求めますが、既存の写真ライブラリを読み取るためのアクセスは求めません。受信した画像は「写真」への保存が成功するまでローカルの待機キューに保持され、保存後にアプリがキュー内のコピーを削除します。許可が拒否された場合や保存に失敗した場合、画像がローカルのキューに残ることがあります。"
+            "value" : "iPhoneへの写真転送機能が利用できる場合、転送対象として選んだ絵は、AppleのWatchConnectivityフレームワークを通じてApple WatchからiPhoneコンパニオンアプリに送られます。iPhoneアプリは「写真」に画像を追加する許可を求めますが、既存の写真ライブラリを読み取るためのアクセスは求めません。受信した画像はコンパニオンアプリのローカルギャラリーに保持されます。「写真」への保存、PNGファイルの書き出し、共有は、ユーザが操作した場合にのみ行われます。Apple Watchで絵を削除しても、iPhone上のコピーは削除されません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iPhone 사진 전송 기능을 사용할 수 있는 경우, 전송하도록 선택한 그림은 Apple의 WatchConnectivity 프레임워크를 통해 Apple Watch에서 iPhone 보조 앱으로 전송됩니다. iPhone 앱은 사진 앱에 이미지를 추가할 권한을 요청하지만 기존 사진 보관함을 읽을 수 있는 접근 권한은 요청하지 않습니다. 수신한 이미지는 사진 앱에 성공적으로 저장될 때까지 로컬 대기열에 보관되며, 저장 후 앱이 대기열의 사본을 제거합니다. 권한이 거부되거나 저장에 실패하면 이미지가 로컬 대기열에 남을 수 있습니다."
+            "value" : "iPhone 사진 전송 기능을 사용할 수 있는 경우, 전송하도록 선택한 그림은 Apple의 WatchConnectivity 프레임워크를 통해 Apple Watch에서 iPhone 보조 앱으로 전송됩니다. iPhone 앱은 사진 앱에 이미지를 추가할 권한을 요청하지만 기존 사진 보관함을 읽을 수 있는 접근 권한은 요청하지 않습니다. 수신한 이미지는 보조 앱의 로컬 갤러리에 보관됩니다. 사진 앱에 저장, PNG 파일 내보내기 및 공유는 사용자가 직접 실행할 때만 이루어집니다. 워치에서 그림을 삭제해도 iPhone의 사본은 삭제되지 않습니다."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Der bildeoverføring til iPhone er tilgjengelig, sendes tegningene du velger, fra Apple Watch til den tilhørende iPhone-appen via Apples WatchConnectivity-rammeverk. iPhone-appen ber om tillatelse til å legge til bilder i Bilder; den ber ikke om lesetilgang til det eksisterende bildebiblioteket ditt. Mottatte bilder beholdes i en lokal kø til de er lagret i Bilder. Deretter fjerner appen kopien fra køen. Hvis tillatelsen avslås eller lagringen mislykkes, kan bildene bli liggende i den lokale køen."
+            "value" : "Der bildeoverføring til iPhone er tilgjengelig, sendes tegningene du velger, fra Apple Watch til den tilhørende iPhone-appen via Apples WatchConnectivity-rammeverk. iPhone-appen ber om tillatelse til å legge til bilder i Bilder; den ber ikke om lesetilgang til det eksisterende bildebiblioteket ditt. Mottatte bilder blir værende i det lokale galleriet i den tilhørende appen. Lagring i Bilder, eksport av PNG-filer og deling skjer bare når du selv velger det. Hvis du sletter en tegning på klokken, slettes ikke kopien på iPhone."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Waar foto-overdracht naar de iPhone beschikbaar is, worden de gekozen tekeningen via Apples WatchConnectivity-framework van je Apple Watch naar de bijbehorende iPhone-app verstuurd. De iPhone-app vraagt toestemming om afbeeldingen aan Foto’s toe te voegen, maar vraagt geen leestoegang tot je bestaande fotobibliotheek. Ontvangen afbeeldingen blijven in een lokale wachtrij totdat ze succesvol in Foto’s zijn opgeslagen; daarna verwijdert de app de kopie uit de wachtrij. Als toestemming wordt geweigerd of opslaan mislukt, kunnen afbeeldingen in de lokale wachtrij blijven staan."
+            "value" : "Waar foto-overdracht naar de iPhone beschikbaar is, worden de gekozen tekeningen via Apples WatchConnectivity-framework van je Apple Watch naar de bijbehorende iPhone-app verstuurd. De iPhone-app vraagt toestemming om afbeeldingen aan Foto’s toe te voegen, maar vraagt geen leestoegang tot je bestaande fotobibliotheek. Ontvangen afbeeldingen blijven in de lokale galerie van de bijbehorende app. Bewaren in Foto’s, PNG-bestanden exporteren en delen gebeuren alleen als je daar zelf voor kiest. Als je een tekening op de watch verwijdert, wordt de kopie op de iPhone niet verwijderd."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jeśli dostępna jest funkcja przesyłania zdjęć na iPhone’a, wybrane rysunki są wysyłane z Apple Watch do towarzyszącej aplikacji na iPhone’a za pomocą platformy WatchConnectivity firmy Apple. Aplikacja na iPhone’a prosi o pozwolenie na dodawanie obrazów do Zdjęć; nie prosi o dostęp do odczytu istniejącej biblioteki zdjęć. Odebrane obrazy pozostają w lokalnej kolejce do pomyślnego zapisania w Zdjęciach, po czym aplikacja usuwa kopię z kolejki. Jeśli odmówisz pozwolenia lub zapis się nie powiedzie, obrazy mogą pozostać w lokalnej kolejce."
+            "value" : "Jeśli dostępna jest funkcja przesyłania zdjęć na iPhone’a, wybrane rysunki są wysyłane z Apple Watch do towarzyszącej aplikacji na iPhone’a za pomocą platformy WatchConnectivity firmy Apple. Aplikacja na iPhone’a prosi o pozwolenie na dodawanie obrazów do Zdjęć; nie prosi o dostęp do odczytu istniejącej biblioteki zdjęć. Odebrane obrazy pozostają w lokalnej galerii aplikacji towarzyszącej. Zapis w Zdjęciach, eksport plików PNG i udostępnianie odbywają się wyłącznie z Twojej inicjatywy. Usunięcie rysunku na zegarku nie usuwa jego kopii na iPhonie."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quando o recurso de transferência de fotos para o iPhone está disponível, os desenhos escolhidos são enviados do Apple Watch ao aplicativo complementar para iPhone usando o framework WatchConnectivity da Apple. O aplicativo para iPhone solicita permissão para adicionar imagens ao Fotos; não solicita acesso para ler sua fototeca existente. As imagens recebidas ficam em uma fila local até serem salvas com sucesso no Fotos; depois, o aplicativo remove a cópia da fila. Se a permissão for negada ou o salvamento falhar, as imagens poderão permanecer na fila local."
+            "value" : "Quando o recurso de transferência de fotos para o iPhone está disponível, os desenhos escolhidos são enviados do Apple Watch ao aplicativo complementar para iPhone usando o framework WatchConnectivity da Apple. O aplicativo para iPhone solicita permissão para adicionar imagens ao Fotos; não solicita acesso para ler sua fototeca existente. As imagens recebidas permanecem na galeria local do aplicativo complementar. Salvar no Fotos, exportar arquivos PNG e compartilhar são ações iniciadas apenas por você. Apagar um desenho no relógio não apaga a cópia dele no iPhone."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quando a funcionalidade de transferência de fotografias para o iPhone está disponível, os desenhos escolhidos são enviados do Apple Watch para a aplicação complementar para iPhone através da framework WatchConnectivity da Apple. A aplicação para iPhone pede autorização para adicionar imagens a Fotografias; não pede acesso de leitura à sua fototeca existente. As imagens recebidas ficam numa fila local até serem guardadas com sucesso em Fotografias; depois, a aplicação remove a cópia da fila. Se a autorização for recusada ou a gravação falhar, as imagens podem permanecer na fila local."
+            "value" : "Quando a funcionalidade de transferência de fotografias para o iPhone está disponível, os desenhos escolhidos são enviados do Apple Watch para a aplicação complementar para iPhone através da framework WatchConnectivity da Apple. A aplicação para iPhone pede autorização para adicionar imagens a Fotografias; não pede acesso de leitura à sua fototeca existente. As imagens recebidas permanecem na galeria local da aplicação complementar. Guardar em Fotografias, exportar ficheiros PNG e partilhar são ações iniciadas apenas por si. Apagar um desenho no relógio não apaga a respetiva cópia no iPhone."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Если доступна передача изображений на iPhone, выбранные рисунки отправляются с Apple Watch в сопутствующее приложение для iPhone с помощью платформы Apple WatchConnectivity. Приложение для iPhone запрашивает разрешение добавлять изображения в «Фото», но не запрашивает доступ для чтения существующей медиатеки. Полученные изображения хранятся в локальной очереди до успешного сохранения в «Фото», после чего приложение удаляет копию из очереди. Если разрешение отклонено или сохранение не удалось, изображения могут остаться в локальной очереди."
+            "value" : "Если доступна передача изображений на iPhone, выбранные рисунки отправляются с Apple Watch в сопутствующее приложение для iPhone с помощью платформы Apple WatchConnectivity. Приложение для iPhone запрашивает разрешение добавлять изображения в «Фото», но не запрашивает доступ для чтения существующей медиатеки. Полученные изображения остаются в локальной галерее сопутствующего приложения. Сохранение в «Фото», экспорт файлов PNG и отправка выполняются только по вашему действию. Удаление рисунка на часах не удаляет его копию на iPhone."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Där funktionen för bildöverföring till iPhone är tillgänglig skickas valda teckningar från din Apple Watch till den tillhörande iPhone-appen med Apples WatchConnectivity-ramverk. iPhone-appen begär tillstånd att lägga till bilder i Bilder; den begär inte läsåtkomst till ditt befintliga bildbibliotek. Mottagna bilder lagras i en lokal kö tills de har sparats i Bilder. Därefter tar appen bort kopian från kön. Om tillstånd nekas eller sparandet misslyckas kan bilderna bli kvar i den lokala kön."
+            "value" : "Där funktionen för bildöverföring till iPhone är tillgänglig skickas valda teckningar från din Apple Watch till den tillhörande iPhone-appen med Apples WatchConnectivity-ramverk. iPhone-appen begär tillstånd att lägga till bilder i Bilder; den begär inte läsåtkomst till ditt befintliga bildbibliotek. Mottagna bilder finns kvar i det lokala galleriet i den tillhörande appen. Att spara i Bilder, exportera PNG-filer och dela sker bara när du själv väljer det. Om du raderar en teckning på klockan raderas inte kopian på iPhone."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "เมื่อมีคุณสมบัติถ่ายโอนรูปภาพไปยัง iPhone ภาพวาดที่คุณเลือกถ่ายโอนจะถูกส่งจาก Apple Watch ไปยังแอปคู่กันบน iPhone ผ่านเฟรมเวิร์ก WatchConnectivity ของ Apple แอป iPhone ขอสิทธิ์เพิ่มภาพลงในรูปภาพ แต่ไม่ขอสิทธิ์อ่านคลังรูปภาพที่มีอยู่ของคุณ ภาพที่ได้รับจะเก็บอยู่ในคิวภายในอุปกรณ์จนกว่าจะบันทึกลงในรูปภาพสำเร็จ จากนั้นแอปจะลบสำเนาออกจากคิว หากไม่ได้รับอนุญาตหรือบันทึกไม่สำเร็จ ภาพอาจยังคงอยู่ในคิวภายในอุปกรณ์"
+            "value" : "เมื่อมีคุณสมบัติถ่ายโอนรูปภาพไปยัง iPhone ภาพวาดที่คุณเลือกถ่ายโอนจะถูกส่งจาก Apple Watch ไปยังแอปคู่กันบน iPhone ผ่านเฟรมเวิร์ก WatchConnectivity ของ Apple แอป iPhone ขอสิทธิ์เพิ่มภาพลงในรูปภาพ แต่ไม่ขอสิทธิ์อ่านคลังรูปภาพที่มีอยู่ของคุณ ภาพที่ได้รับจะยังคงอยู่ในแกลเลอรีภายในเครื่องของแอปคู่กัน การบันทึกลงในรูปภาพ การส่งออกไฟล์ PNG และการแชร์จะเกิดขึ้นเมื่อคุณสั่งเท่านั้น การลบภาพวาดบนนาฬิกาจะไม่ลบสำเนาบน iPhone"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "iPhone’a fotoğraf aktarma özelliğinin bulunduğu sürümlerde, aktarmayı seçtiğiniz çizimler Apple’ın WatchConnectivity çerçevesi aracılığıyla Apple Watch’unuzdan eşlik eden iPhone uygulamasına gönderilir. iPhone uygulaması Fotoğraflar’a görüntü eklemek için izin ister; mevcut fotoğraf arşivinizi okumak için erişim istemez. Alınan görüntüler Fotoğraflar’a başarıyla kaydedilene kadar yerel bir kuyrukta tutulur; ardından uygulama kuyruktaki kopyayı siler. İzin reddedilirse veya kaydetme başarısız olursa görüntüler yerel kuyrukta kalabilir."
+            "value" : "iPhone’a fotoğraf aktarma özelliğinin bulunduğu sürümlerde, aktarmayı seçtiğiniz çizimler Apple’ın WatchConnectivity çerçevesi aracılığıyla Apple Watch’unuzdan eşlik eden iPhone uygulamasına gönderilir. iPhone uygulaması Fotoğraflar’a görüntü eklemek için izin ister; mevcut fotoğraf arşivinizi okumak için erişim istemez. Alınan görüntüler eşlik eden uygulamanın yerel galerisinde kalır. Fotoğraflar’a kaydetme, PNG dosyalarını dışa aktarma ve paylaşma yalnızca sizin başlattığınız işlemlerdir. Saatteki bir çizimi silmek, iPhone’daki kopyasını silmez."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Якщо доступна функція передавання зображень на iPhone, вибрані малюнки надсилаються з Apple Watch до супутнього застосунку для iPhone через платформу Apple WatchConnectivity. Застосунок для iPhone запитує дозвіл додавати зображення у «Фотографії», але не запитує доступу для читання наявної фототеки. Отримані зображення зберігаються в локальній черзі до успішного збереження у «Фотографії», після чого застосунок видаляє копію з черги. Якщо в дозволі відмовлено або збереження не вдалося, зображення можуть залишитися в локальній черзі."
+            "value" : "Якщо доступна функція передавання зображень на iPhone, вибрані малюнки надсилаються з Apple Watch до супутнього застосунку для iPhone через платформу Apple WatchConnectivity. Застосунок для iPhone запитує дозвіл додавати зображення у «Фотографії», але не запитує доступу для читання наявної фототеки. Отримані зображення залишаються в локальній галереї супутнього застосунку. Збереження у «Фотографії», експорт файлів PNG і поширення виконуються лише за вашою дією. Видалення малюнка на годиннику не видаляє його копію на iPhone."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Khi có tính năng chuyển ảnh sang iPhone, những bản vẽ bạn chọn chuyển sẽ được gửi từ Apple Watch đến ứng dụng đồng hành trên iPhone qua khung WatchConnectivity của Apple. Ứng dụng iPhone xin quyền thêm hình ảnh vào Ảnh; không xin quyền đọc thư viện ảnh hiện có của bạn. Hình ảnh nhận được được giữ trong hàng đợi cục bộ cho đến khi lưu thành công vào Ảnh, sau đó ứng dụng xóa bản sao trong hàng đợi. Nếu quyền bị từ chối hoặc lưu không thành công, hình ảnh có thể vẫn nằm trong hàng đợi cục bộ."
+            "value" : "Khi có tính năng chuyển ảnh sang iPhone, những bản vẽ bạn chọn chuyển sẽ được gửi từ Apple Watch đến ứng dụng đồng hành trên iPhone qua khung WatchConnectivity của Apple. Ứng dụng iPhone xin quyền thêm hình ảnh vào Ảnh; không xin quyền đọc thư viện ảnh hiện có của bạn. Hình ảnh nhận được vẫn nằm trong thư viện cục bộ của ứng dụng đồng hành. Lưu vào Ảnh, xuất tệp PNG và chia sẻ chỉ diễn ra khi bạn thực hiện. Xóa bản vẽ trên đồng hồ không xóa bản sao của nó trên iPhone."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "如果提供向 iPhone 传输照片的功能，您选择传输的画作会通过 Apple 的 WatchConnectivity 框架，从 Apple Watch 发送到配套的 iPhone 应用。iPhone 应用会请求向“照片”添加图像的权限，不会请求读取您现有照片图库的权限。收到的图像会保留在本地队列中，直至成功保存到“照片”，之后应用会移除队列中的副本。如果权限被拒绝或保存失败，图像可能会继续保留在本地队列中。"
+            "value" : "如果提供向 iPhone 传输照片的功能，您选择传输的画作会通过 Apple 的 WatchConnectivity 框架，从 Apple Watch 发送到配套的 iPhone 应用。iPhone 应用会请求向“照片”添加图像的权限，不会请求读取您现有照片图库的权限。收到的图像会保留在配套应用的本地图库中。存储到“照片”、导出 PNG 文件和共享均只在您主动操作时进行。在手表上删除画作不会删除其在 iPhone 上的副本。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "若提供傳送照片至 iPhone 的功能，您選擇傳送的畫作會透過 Apple 的 WatchConnectivity 框架，從 Apple Watch 傳送至配套的 iPhone App。iPhone App 會要求將影像加入「照片」的權限，不會要求讀取您現有照片圖庫的權限。收到的影像會保留在本機佇列中，直到成功儲存至「照片」，之後 App 便會移除佇列中的副本。如果權限遭拒或儲存失敗，影像可能會繼續留在本機佇列中。"
+            "value" : "若提供傳送照片至 iPhone 的功能，您選擇傳送的畫作會透過 Apple 的 WatchConnectivity 框架，從 Apple Watch 傳送至配套的 iPhone App。iPhone App 會要求將影像加入「照片」的權限，不會要求讀取您現有照片圖庫的權限。收到的影像會保留在配套 App 的本機圖庫中。儲存至「照片」、匯出 PNG 檔案和分享都只會在您主動操作時進行。在手錶上刪除畫作不會刪除其在 iPhone 上的副本。"
           }
         }
       }
