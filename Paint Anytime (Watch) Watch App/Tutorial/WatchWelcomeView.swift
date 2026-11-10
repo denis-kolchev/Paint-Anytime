@@ -11,6 +11,12 @@ struct WatchWelcomeView: View {
     /// Hole of the black iris as a fraction of the half-diagonal; 1 leaves the screen open.
     @State private var irisFraction: CGFloat = 1
     @State private var irisIsRunning = false
+    /// The iris has closed for the guided tour and opens once the tutorial is prepared.
+    @State private var irisAwaitsTutorial = false
+    /// Hides the clock while the iris closes, before the question and its clock-centering
+    /// slots leave. Removing the slots first let the visible clock slide to the trailing
+    /// corner on its way out, since the canvas and the tutorial both hide it.
+    @State private var hidesClockForIris = false
 
     private enum WelcomePage { case language, chooseLanguage, offer, later }
 
@@ -43,6 +49,7 @@ struct WatchWelcomeView: View {
                     .opacity(showsWelcomeContent ? 1 : 0)
                     // On the container, not the pages, so the slots stay put while pages crossfade.
                     .toolbar { centeredClockSlots }
+                    .requestsHiddenClock(hidesClockForIris)
                     // The question stays visible while the tutorial prepares, as the menu does.
                     .allowsHitTesting(!onboarding.preparesTutorial)
                     .transition(.opacity)
@@ -52,7 +59,8 @@ struct WatchWelcomeView: View {
                     .onDisappear { showsWelcomeContent = false }
                 }
             }
-            // The same crossfade as a tutorial started from the editor menu.
+            // The same crossfade as a tutorial started from the editor menu. Yes on the welcome
+            // question sets the folder behind the closed iris, so this fade runs unseen there.
             .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: onboarding.tutorialFolder)
             // Keep both toolbar hosts in the same scheme when conditional items
             // are removed/reinserted while switching between tools and canvas.
@@ -88,6 +96,13 @@ struct WatchWelcomeView: View {
         .task(id: onboarding.preparesTutorial) {
             await onboarding.prepareTutorial()
         }
+        .onChange(of: onboarding.preparesTutorial) { _, prepares in
+            // Ready or failed: open the iris onto the tutorial, or back onto the question
+            // so the error alert is readable.
+            guard !prepares, irisAwaitsTutorial else { return }
+            irisAwaitsTutorial = false
+            Task { @MainActor in await openIrisAfterPause() }
+        }
         .alert(L10n.text("Tutorial"), isPresented: $onboarding.tutorialError) {
             Button(L10n.text("OK"), role: .cancel) {}
         } message: {
@@ -99,6 +114,8 @@ struct WatchWelcomeView: View {
         RestartWelcomeAction {
             welcomePage = .language
             irisIsRunning = false
+            irisAwaitsTutorial = false
+            hidesClockForIris = false
             irisFraction = 1
             withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
                 onboarding.restartWelcome()
@@ -131,33 +148,66 @@ struct WatchWelcomeView: View {
     }
 
     /// Closes the screen with a shrinking black circle, then opens it over the canvas.
-    /// SwiftUI springs solve m·x″ = −k·x − b·x′; zero bounce is critical damping,
-    /// so the circle settles without overshooting past fully closed or fully open.
     private func finishWelcome() {
         guard !irisIsRunning else { return }
         guard !reduceMotion else {
             withAnimation(.easeInOut(duration: 0.3)) { onboarding.completeWelcome() }
             return
         }
+        closeIris {
+            // The editor activates and draws its first frames unseen.
+            onboarding.completeWelcome()
+            Task { @MainActor in await openIrisAfterPause() }
+        }
+    }
+
+    /// Yes to the guided tour: the same iris as No → OK, opening onto the tutorial.
+    /// The tutorial from the editor menu keeps its crossfade; that path never comes here.
+    private func startTutorial() {
+        guard !irisIsRunning else { return }
+        guard !reduceMotion else {
+            onboarding.requestTutorial()
+            return
+        }
+        closeIris {
+            // Prepare behind the black screen; `preparesTutorial` turning false opens the iris.
+            irisAwaitsTutorial = true
+            onboarding.requestTutorial()
+            if !onboarding.preparesTutorial {
+                // The request was refused (a run is already in progress): do not stay black.
+                irisAwaitsTutorial = false
+                Task { @MainActor in await openIrisAfterPause() }
+            }
+        }
+    }
+
+    /// SwiftUI springs solve m·x″ = −k·x − b·x′; zero bounce is critical damping,
+    /// so the circle settles without overshooting past fully closed or fully open.
+    private func closeIris(then whenClosed: @escaping @MainActor () -> Void) {
         irisFraction = 1
         irisIsRunning = true
-        // 1. Close: wait for the spring to settle, not its logical end, so the
-        //    circle shrinks all the way instead of stopping at a visible dot.
+        hidesClockForIris = true
+        // Wait for the spring to settle, not its logical end, so the circle shrinks
+        // all the way instead of stopping at a visible dot.
         withAnimation(.spring(duration: 0.6, bounce: 0), completionCriteria: .removed) {
             irisFraction = 0
         } completion: {
-            Task { @MainActor in
-                // 2. Pause on black: the editor activates and draws its first frames unseen.
-                onboarding.completeWelcome()
-                await Task.yield()
-                try? await Task.sleep(for: .milliseconds(Self.irisPauseMilliseconds))
-                // 3. Open: a separate animation that starts from rest.
-                withAnimation(.spring(duration: 0.7, bounce: 0), completionCriteria: .removed) {
-                    irisFraction = 1
-                } completion: {
-                    irisIsRunning = false
-                }
-            }
+            Task { @MainActor in whenClosed() }
+        }
+    }
+
+    /// Pauses on black so the next screen draws unseen, then opens with a separate
+    /// animation that starts from rest.
+    private func openIrisAfterPause() async {
+        await Task.yield()
+        try? await Task.sleep(for: .milliseconds(Self.irisPauseMilliseconds))
+        guard irisIsRunning else { return }
+        // Only a failed tutorial start reopens onto the question; its clock returns centered.
+        hidesClockForIris = false
+        withAnimation(.spring(duration: 0.7, bounce: 0), completionCriteria: .removed) {
+            irisFraction = 1
+        } completion: {
+            irisIsRunning = false
         }
     }
 
@@ -179,7 +229,7 @@ struct WatchWelcomeView: View {
             AppLanguageSelectionView(showsTitle: false, onSelection: { show(.language) })
         case .offer:
             WelcomeQuestion(text: L10n.text("Would you like a guided tour?")) {
-                onboarding.requestTutorial()
+                startTutorial()
             } onNo: {
                 show(.later)
             }
