@@ -131,18 +131,28 @@ struct WatchWelcomeView: View {
         }
         irisFraction = 1
         irisIsRunning = true
-        withAnimation(.spring(duration: 0.55, bounce: 0), completionCriteria: .logicallyComplete) {
+        // 1. Close: wait for the spring to settle, not its logical end, so the
+        //    circle shrinks all the way instead of stopping at a visible dot.
+        withAnimation(.spring(duration: 0.6, bounce: 0), completionCriteria: .removed) {
             irisFraction = 0
         } completion: {
-            // Swap the screens while everything is black.
-            onboarding.completeWelcome()
-            withAnimation(.spring(duration: 0.7, bounce: 0), completionCriteria: .removed) {
-                irisFraction = 1
-            } completion: {
-                irisIsRunning = false
+            Task { @MainActor in
+                // 2. Pause on black: the editor activates and draws its first frames unseen.
+                onboarding.completeWelcome()
+                await Task.yield()
+                try? await Task.sleep(for: .milliseconds(Self.irisPauseMilliseconds))
+                // 3. Open: a separate animation that starts from rest.
+                withAnimation(.spring(duration: 0.7, bounce: 0), completionCriteria: .removed) {
+                    irisFraction = 1
+                } completion: {
+                    irisIsRunning = false
+                }
             }
         }
     }
+
+    /// Time the screen stays black between closing and opening.
+    private static let irisPauseMilliseconds = 400
 
     @ViewBuilder private var welcome: some View {
         switch welcomePage {
