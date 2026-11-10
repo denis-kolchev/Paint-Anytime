@@ -130,8 +130,9 @@ struct InkPaletteBrowser: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .animation(tutorial.isActive ? .easeInOut(duration: reduceMotion ? 0.15 : 0.3) : nil,
-                   value: browsing)
+        // The palette and the stack always cross-fade, in and out of the tutorial.
+        // A nil animation here used to cancel setBrowsing's own, so the switch was a hard cut.
+        .animation(browsingAnimation, value: browsing)
         .animation(tutorial.isActive ? .easeInOut(duration: reduceMotion ? 0.15 : 0.3) : nil,
                    value: showsColorEditor)
         .navigationBarBackButtonHidden(true)
@@ -214,8 +215,13 @@ struct InkPaletteBrowser: View {
         }
     }
 
+    /// Reduce Motion keeps a short cross-fade: opacity alone does not move anything.
+    private var browsingAnimation: Animation {
+        .easeInOut(duration: reduceMotion ? 0.15 : 0.3)
+    }
+
     private func setBrowsing(_ value: Bool) {
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
+        withAnimation(browsingAnimation) {
             browsing = value
         }
     }
@@ -671,7 +677,8 @@ struct InkPaletteBrowser: View {
         guard showsEmptyPaletteClose,
               let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
         let discardedID = currentID
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.16)) {
+        // The top-leading button on an empty palette also returns to the stack: same fade.
+        withAnimation(browsingAnimation) {
             library.palettes.remove(at: index)
             addedColors.removeAll { $0.paletteID == discardedID }
             if library.activeID == discardedID {
