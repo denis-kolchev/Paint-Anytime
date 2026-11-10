@@ -471,10 +471,10 @@ struct CanvasMorphPanels: View {
     private func morphContentActions(diameter: CGFloat, rowHeight: CGFloat) -> some View {
         CanvasMorphContent(isExpanded: showsContentActions) {
             VStack(spacing: 0) {
-                // Options collapse the morph with its spring; Undo and Redo keep it open.
+                // Options collapse the morph with its spring. More keeps it open:
+                // a collapse would fight the push transition into the menu.
                 morphButton("More", height: rowHeight) {
                     controller.cancelStroke()
-                    collapse { showsContentActions = false }
                     showsAppSettings = true
                 } label: { Image(systemName: "ellipsis") }
                 .accessibilityHidden(true)
@@ -520,9 +520,10 @@ struct CanvasMorphPanels: View {
     private func morphToolbar(diameter: CGFloat, rowHeight: CGFloat) -> some View {
         CanvasMorphContent(isExpanded: showsMorphToolbar) {
             VStack(spacing: 0) {
+                // Tool settings keeps the morph open: a collapse would fight the
+                // transition into the brush editor.
                 morphButton("Tool settings", height: rowHeight) {
                     controller.cancelStroke()
-                    collapse { showsMorphToolbar = false }
                     showsToolSettings = true
                 } label: {
                     ToolIcon(instrument: controller.pencilStyle.instrument)

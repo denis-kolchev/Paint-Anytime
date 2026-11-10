@@ -81,7 +81,7 @@ struct CustomCanvasControls: View {
         Button {
             // An unavailable action leaves the morph as it is, like the disabled button did.
             guard action.isAvailable(in: controller) else { return UnavailableActionFeedback.play() }
-            // Undo and Redo keep the morph open for repeated taps; any other option
+            // Undo, Redo, Tool settings and More keep the morph open; any other option
             // collapses it with the same spring as opening.
             if !action.keepsMorphOpen {
                 withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
@@ -121,7 +121,8 @@ struct CustomCanvasControls: View {
 
 extension CanvasQuickAction {
     /// Undo and Redo are tapped repeatedly, so choosing them leaves the morph open.
-    var keepsMorphOpen: Bool { self == .undo || self == .redo }
+    /// Tool settings and More open a screen whose transition a collapse would fight.
+    var keepsMorphOpen: Bool { self == .undo || self == .redo || self == .brush || self == .more }
 
     /// Undo, Redo and Clear have nothing to do on an empty history or canvas.
     func isAvailable(in controller: CanvasController) -> Bool {

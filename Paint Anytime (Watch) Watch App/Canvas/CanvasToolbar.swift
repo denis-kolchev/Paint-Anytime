@@ -134,9 +134,7 @@ struct CanvasToolbar: ToolbarContent {
             if !isEyedropperActive { cameraSampledColor = nil }
         } else if usesMorphToolbar {
             if showsContentActions {
-                withAnimation(morphSpring) {
-                    morphState.showsContentActions = false
-                }
+                // The morph stays open: collapsing it fights the transition into the menu.
                 showsAppSettings = true
             } else {
                 withAnimation(morphSpring) {
@@ -212,9 +210,7 @@ struct CanvasToolbar: ToolbarContent {
         }
         else if usesMorphToolbar && !showsToolSettings {
             if showsMorphToolbar {
-                withAnimation(morphSpring) {
-                    morphState.showsMorphToolbar = false
-                }
+                // The morph stays open: collapsing it fights the transition into the brush editor.
                 showsToolSettings = true
             } else {
                 withAnimation(morphSpring) {

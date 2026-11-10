@@ -137,6 +137,7 @@ struct ContentView: View {
             WatchLayersView(controller: controller, canvasSize: controller.document.size(fallback: canvasSize))
         }
         .onChange(of: showsAppSettings) { _, shows in
+            if !shows { foldMorphsWithoutAnimation() }
             if !shows { opensTutorialChapters = false }
             if !shows, menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
         }
@@ -235,6 +236,9 @@ struct ContentView: View {
         .onChange(of: usesMorphToolbar) { _, _ in
             showsContentActions = false
             showsMorphToolbar = false
+        }
+        .onChange(of: showsToolSettings) { _, shows in
+            if !shows { foldMorphsWithoutAnimation() }
         }
         .onChange(of: isActive) { _, active in
             if !active { morphState.customExpandedSlot = nil }
@@ -538,6 +542,20 @@ struct ContentView: View {
         }
     }
 
+    /// Tool settings and More leave the morph open so a collapse does not fight their
+    /// transition. Fold it as the screen starts to close: the menu's controls are still
+    /// faded out and the tool settings hide the panels, so the canvas returns folded
+    /// without a visible jump.
+    private func foldMorphsWithoutAnimation() {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            morphState.customExpandedSlot = nil
+            showsMorphToolbar = false
+            showsContentActions = false
+        }
+    }
+
     private func performQuickAction(_ action: CanvasQuickAction) {
         guard isActive, controller.activeStroke == nil, !showsAppSettings,
               quickSettings == nil, !showsGallery, !showsToolSettings,
@@ -545,7 +563,8 @@ struct ContentView: View {
         // Native toolbar slots stay enabled; a tap with nothing to undo, redo or clear
         // gets a haptic and leaves the morph open.
         guard action.isAvailable(in: controller) else { return UnavailableActionFeedback.play() }
-        // Every option except Undo and Redo collapses the morph with the same spring as opening.
+        // Every option except Undo, Redo, Tool settings and More collapses the morph with the
+        // same spring as opening; those two screens push in, and a collapse fights that transition.
         // Save shows its overlay now and exports only after the collapse settles:
         // the synchronous exporter would otherwise freeze the spring mid-flight.
         var afterCollapse: (() -> Void)?
