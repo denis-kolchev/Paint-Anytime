@@ -18,7 +18,7 @@ struct WatchWelcomeView: View {
     /// corner on its way out, since the canvas and the tutorial both hide it.
     @State private var hidesClockForIris = false
 
-    private enum WelcomePage { case language, chooseLanguage, offer, later }
+    private enum WelcomePage { case language, chooseLanguage, offer, course, later }
 
     var body: some View {
         // One navigation host owns the clock and toolbars throughout onboarding,
@@ -161,18 +161,18 @@ struct WatchWelcomeView: View {
         }
     }
 
-    /// Yes to the guided tour: the same iris as No → OK, opening onto the tutorial.
+    /// A chosen course: the same iris as No → OK, opening onto the tutorial.
     /// The tutorial from the editor menu keeps its crossfade; that path never comes here.
-    private func startTutorial() {
+    private func startTutorial(_ course: WelcomeCourse) {
         guard !irisIsRunning else { return }
         guard !reduceMotion else {
-            onboarding.requestTutorial()
+            onboarding.requestTutorial(chapters: course.chapters)
             return
         }
         closeIris {
             // Prepare behind the black screen; `preparesTutorial` turning false opens the iris.
             irisAwaitsTutorial = true
-            onboarding.requestTutorial()
+            onboarding.requestTutorial(chapters: course.chapters)
             if !onboarding.preparesTutorial {
                 // The request was refused (a run is already in progress): do not stay black.
                 irisAwaitsTutorial = false
@@ -229,10 +229,12 @@ struct WatchWelcomeView: View {
             AppLanguageSelectionView(showsTitle: false, onSelection: { show(.language) })
         case .offer:
             WelcomeQuestion(text: L10n.text("Would you like a guided tour?")) {
-                startTutorial()
+                show(.course)
             } onNo: {
                 show(.later)
             }
+        case .course:
+            WelcomeCoursePicker(onSelect: startTutorial)
         case .later:
             VStack(spacing: 6) {
                 ScrollView {
@@ -323,6 +325,78 @@ private struct WelcomeQuestion: View {
             .watchActionButtonStyle()
         }
         .padding()
+    }
+}
+
+/// The first-launch tour: Basic teaches the first drawing, Advanced runs every chapter.
+private enum WelcomeCourse: CaseIterable, Identifiable {
+    case basic, advanced
+
+    var id: Self { self }
+
+    var chapters: [TutorialChapter] {
+        switch self {
+        case .basic: [.firstDrawing]
+        case .advanced: TutorialChapter.allCases
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .basic: L10n.text("Basic")
+        case .advanced: L10n.text("Advanced")
+        }
+    }
+
+    var caption: String {
+        switch self {
+        case .basic: TutorialChapter.firstDrawing.title
+        case .advanced: L10n.text("All three chapters")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .basic: TutorialChapter.firstDrawing.systemImage
+        case .advanced: "square.stack.3d.up"
+        }
+    }
+}
+
+private struct WelcomeCoursePicker: View {
+    let onSelect: (WelcomeCourse) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 8) {
+                Text(L10n.text("Choose a course"))
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .fixedSize(horizontal: false, vertical: true)
+                ForEach(WelcomeCourse.allCases) { course in
+                    Button { onSelect(course) } label: {
+                        // An HStack, not a Label: a Label pins the icon to the title's
+                        // first line instead of centering it on both lines.
+                        HStack(spacing: 8) {
+                            Image(systemName: course.systemImage)
+                                .imageScale(.large)
+                                .frame(width: 24)
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(course.title)
+                                Text(course.caption)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .watchActionButtonStyle()
+                }
+            }
+            .padding(.horizontal)
+        }
     }
 }
 
