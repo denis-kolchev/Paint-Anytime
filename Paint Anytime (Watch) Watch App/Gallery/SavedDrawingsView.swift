@@ -45,10 +45,7 @@ struct SavedDrawingsView: View {
     @State private var galleryScrollTarget: URL?
     @State private var gridStorage = GalleryGridStorage()
     private var thumbnailFrames: [URL: CGRect] { gridStorage.frames }
-    private var thumbnailBitmaps: [URL: GalleryBitmap] {
-        get { gridStorage.bitmaps }
-        nonmutating set { gridStorage.bitmaps = newValue }
-    }
+    private var thumbnailBitmaps: [URL: GalleryBitmap] { gridStorage.bitmaps }
     @State private var gridZoom = GalleryGridZoom()
     @State private var galleryViewport: CGSize = .zero
     @State private var galleryTopInset: CGFloat = 0
@@ -94,7 +91,15 @@ struct SavedDrawingsView: View {
                 Color.black
                 ScrollViewReader { scrollProxy in
                     ScrollView {
-                        galleryGrid(spacing: spacing, width: width, thumbnailPixels: thumbnailPixels)
+                        SavedDrawingsGrid(
+                            drawings: drawings, errorMessage: controller.errorMessage,
+                            columns: columnCount, spacing: spacing, side: width,
+                            leadingSlots: leadingSlots, thumbnailPixels: thumbnailPixels,
+                            displayScale: displayScale,
+                            loadsImages: !gridZoom.active || gridZoom.pendingCommit != nil,
+                            isSelecting: isSelecting, selectedURLs: selectedURLs,
+                            allowsOpening: tutorial.allowsGalleryZoom,
+                            gridStorage: gridStorage, onTap: tapThumbnail)
                             .reportLegacyScrollPosition()
                     }
                     .modifier(crownInput(for: .grid))
@@ -133,8 +138,16 @@ struct SavedDrawingsView: View {
 
                 if showsFullscreen {
                     Color.black.allowsHitTesting(false)
-                    fullscreenGallery(size: geometry.size, canvasOriginX: geometry.frame(in: .global).minX, canvasOriginY: geometry.frame(in: .global).minY,
-                                      thumbnailPixels: thumbnailPixels)
+                    GalleryFullscreenPager(
+                        drawings: drawings, selectedID: selectedDrawing?.id, size: geometry.size,
+                        canvasOriginX: geometry.frame(in: .global).minX,
+                        canvasOriginY: geometry.frame(in: .global).minY,
+                        thumbnailPixels: thumbnailPixels, displayScale: displayScale,
+                        loadsNearbyPages: !gridZoom.active || gridZoom.pendingCommit?.columns == 1,
+                        isTransitioning: isTransitioning, transitionBitmap: transitionBitmap,
+                        respectsSafeArea: tutorial.isActive,
+                        onSelect: selectPage, onDisplayedBitmap: pageDisplayed,
+                        onTap: toggleCleanViewing, onVisibilityChange: setPageVisibility)
                         .allowsHitTesting(!isTransitioning && tutorial.allowsGalleryPaging)
                         .accessibilityHidden(isTransitioning)
                 }
@@ -272,108 +285,27 @@ struct SavedDrawingsView: View {
         .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
         .requestsHiddenClock(isCleanViewing)
         .toolbar {
-            if showsFullscreen && !isTransitioning && !tutorial.isActive {
-                ToolbarItemGroup(placement: .bottomBar) {
-                    GalleryMorphToolbarButton(state: morphState)
-                        .disabled(isCleanViewing || isLoading || isTransitioning)
-                        .accessibilityHidden(isCleanViewing || isTransitioning)
-                    Spacer(minLength: 0)
-                }
-            }
-            if hostsSelectButton {
-                ToolbarItem(placement: .topBarTrailing) {
-                    // Same hidden-chrome slot and glass circle as the back button.
-                    Button {
-                        setSelecting(!isSelecting)
-                    } label: {
-                        Image(systemName: "checkmark.circle")
-                            .opacity(0)
-                    }
-                    .disabled(isLoading || isTransitioning || !showsSelectButton)
-                    .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
-                    .overlay {
-                        Image(systemName: isSelecting ? "xmark" : "checkmark.circle")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .contentTransition(.opacity)
-                            .frame(width: GalleryMorphState.buttonDiameter,
-                                   height: GalleryMorphState.buttonDiameter)
-                            .modifier(CanvasMorphGlass(adaptsToCanvas: true))
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                    }
-                    // The 1:1 photo has its own morph actions; fade rather than remove.
-                    .opacity(showsSelectButton ? 1 : 0)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: showsSelectButton)
-                    .allowsHitTesting(showsSelectButton)
-                    .accessibilityHidden(!showsSelectButton)
-                    .accessibilityLabel(L10n.text(isSelecting ? "Cancel" : "Select"))
-                }
-            }
-            if tutorial.allowsGalleryBack {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: goBack) {
-                        Image(systemName: "chevron.left")
-                            .opacity(0)
-                            .tutorialHint(tutorial, steps: [.returnToCanvas])
-                    }
-                    .disabled(isTransitioning || isCleanViewing || isLoading)
-                    .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
-                    .overlay {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: GalleryMorphState.buttonDiameter,
-                                   height: GalleryMorphState.buttonDiameter)
-                            .modifier(CanvasMorphGlass(adaptsToCanvas: true))
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                    }
-                    .opacity(isCleanViewing ? 0 : 1)
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
-                    .allowsHitTesting(!isCleanViewing)
-                    .accessibilityHidden(isCleanViewing)
-                    .accessibilityLabel(L10n.text("Back"))
-                    .onGeometryChange(for: CGRect.self) { geometry in
-                        geometry.frame(in: .global)
-                    } action: { frame in
-                        if morphState.backButtonFrame != frame { morphState.backButtonFrame = frame }
-                    }
-                }
-            }
+            SavedDrawingsToolbar(
+                tutorial: tutorial, morphState: morphState,
+                showsMorphButton: showsFullscreen && !isTransitioning && !tutorial.isActive,
+                hostsSelectButton: hostsSelectButton, showsSelectButton: showsSelectButton,
+                allowsBack: tutorial.allowsGalleryBack, isSelecting: isSelecting,
+                isLoading: isLoading, isTransitioning: isTransitioning,
+                isCleanViewing: isCleanViewing, reduceMotion: reduceMotion,
+                onToggleSelecting: { setSelecting(!isSelecting) }, onBack: goBack)
         }
 
         .overlay {
             if tutorial.isActive && showsFullscreen,
                !isTransitioning,
                tutorial.allowsGalleryDelete, let selectedDrawing {
-                GeometryReader { geometry in
-                    let centerX = morphState.backButtonFrame.map {
-                        $0.midX - geometry.frame(in: .global).minX
-                    } ?? 30
-                    Button(role: .destructive) {
-                        crownFocused = false
-                        tutorial.pauseReminders()
-                        pendingDeletion = selectedDrawing
-                    } label: {
-                        Image(systemName: "trash")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .frame(width: GalleryMorphState.buttonDiameter,
-                                   height: GalleryMorphState.buttonDiameter)
-                            .modifier(CanvasMorphGlass(adaptsToCanvas: true))
-                            .tutorialHint(tutorial, steps: [.deleteDrawing])
-                            .frame(width: 44, height: 44)
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .position(x: centerX,
-                              y: max(22, geometry.size.height - tutorialHintReservedHeight - 22))
-                    .opacity(showsFullscreenActions ? 1 : 0)
-                    .disabled(!showsFullscreenActions || isTransitioning || isLoading)
-                    .allowsHitTesting(showsFullscreenActions && !isTransitioning)
-                    .accessibilityHidden(!showsFullscreenActions || isTransitioning)
-                    .accessibilityLabel(L10n.text("Delete drawing"))
+                GalleryTutorialDeleteButton(
+                    tutorial: tutorial, morphState: morphState,
+                    showsActions: showsFullscreenActions, isTransitioning: isTransitioning,
+                    isLoading: isLoading) {
+                    crownFocused = false
+                    tutorial.pauseReminders()
+                    pendingDeletion = selectedDrawing
                 }
             }
         }
@@ -590,85 +522,16 @@ struct SavedDrawingsView: View {
         }
     }
 
-    @ViewBuilder
-    private func galleryGrid(spacing: CGFloat, width: CGFloat, thumbnailPixels: Int) -> some View {
-        if let errorMessage = controller.errorMessage {
-            Text(errorMessage).foregroundStyle(.red).padding()
-        } else if drawings.isEmpty {
-            ContentUnavailableView(L10n.text("No drawings"), systemImage: "photo.on.rectangle")
-        } else {
-            GalleryThumbnailGrid(columns: columnCount, spacing: spacing, side: width, leading: leadingSlots) {
-                ForEach(drawings) { drawing in
-                    Button {
-                        if isSelecting {
-                            toggleSelection(drawing)
-                            return
-                        }
-                        guard Date() >= suppressOpeningUntil else { return }
-                        tutorial.activity()
-                        focusedDrawing = drawing
-                        if zoomLevel == 0 { setZoom(1) }
-                        else { open(drawing) }
-                    } label: {
-                        GalleryThumbnailView(request: GalleryImageRequest(
-                            url: drawing.url, shortSidePixels: thumbnailPixels, displayScale: displayScale),
-                            loadsImage: !gridZoom.active || gridZoom.pendingCommit != nil,
-                            visibility: gridStorage.visibility(for: drawing.id),
-                            isFavorite: drawing.isFavorite,
-                            onDisplayedBitmap: { bitmap in
-                                thumbnailBitmaps[drawing.id] = bitmap
-                            })
-                            .frame(width: width, height: width)
-                            .clipped()
-                            .overlay(alignment: .bottomTrailing) {
-                                if isSelecting {
-                                    selectionMark(selectedURLs.contains(drawing.url), side: width)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!tutorial.allowsGalleryZoom)
-                    .accessibilityLabel(L10n.text("Open drawing"))
-                    .accessibilityAddTraits(isSelecting && selectedURLs.contains(drawing.url) ? .isSelected : [])
-                    .id(drawing.id)
-                }
-            }
-            .background {
-                GeometryReader { gridGeometry in
-                    // The layout is regular: one measured origin is enough for
-                    // every tile, including offscreen zoom destinations.
-                    let origin = gridGeometry.frame(in: .named("drawingGallery")).origin
-                    Color.clear.preference(key: GalleryThumbnailFramesKey.self,
-                        value: Dictionary(uniqueKeysWithValues: drawings.enumerated().map { index, drawing in
-                            let slot = index + leadingSlots
-                            return (drawing.id, CGRect(
-                                x: origin.x + CGFloat(slot % columnCount) * (width + spacing),
-                                y: origin.y + CGFloat(slot / columnCount) * (width + spacing),
-                                width: width, height: width))
-                        }))
-                }
-            }
-            .padding(.bottom, 12)
+    private func tapThumbnail(_ drawing: CanvasExport) {
+        if isSelecting {
+            toggleSelection(drawing)
+            return
         }
-    }
-
-    private func selectionMark(_ selected: Bool, side: CGFloat) -> some View {
-        let diameter = min(18, side * 0.4)
-        return ZStack {
-            if selected {
-                Color.black.opacity(0.25)
-            }
-            Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                .font(.system(size: diameter, weight: .semibold))
-                .symbolRenderingMode(.palette)
-                .foregroundStyle(.white, selected ? Color.accentColor : .clear)
-                .shadow(color: .black.opacity(0.4), radius: 1)
-                .padding(3)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-        }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+        guard Date() >= suppressOpeningUntil else { return }
+        tutorial.activity()
+        focusedDrawing = drawing
+        if zoomLevel == 0 { setZoom(1) }
+        else { open(drawing) }
     }
 
     private func goBack() {
@@ -850,72 +713,35 @@ struct SavedDrawingsView: View {
         return visible.reduce(0.0) { $0 + ($1.0.isFavorite ? $1.1 : 0) } / total
     }
 
-    private func fullscreenGallery(size: CGSize, canvasOriginX: CGFloat, canvasOriginY: CGFloat, thumbnailPixels: Int) -> some View {
-        let selectedIndex = drawings.firstIndex(where: { $0.id == selectedDrawing?.id }) ?? 0
-        return TabView(selection: Binding<URL?>(
-            get: { selectedDrawing?.id },
-            set: { id in
-                guard tutorial.allowsGalleryPaging, !isTransitioning, id != selectedDrawing?.id,
-                      let drawing = drawings.first(where: { $0.id == id }) else { return }
-                tutorial.activity()
-                selectedDrawing = drawing
-                focusedDrawing = drawing
-                galleryScrollTarget = drawing.id
-            }
-        )) {
-            ForEach(Array(drawings.enumerated()), id: \.element.id) { index, drawing in
-                GalleryFullscreenPage(url: drawing.url, size: size, canvasOriginY: canvasOriginY,
-                                      thumbnailPixels: thumbnailPixels,
-                                      displayScale: displayScale,
-                                      isNearby: abs(index - selectedIndex) <= 1 && (!gridZoom.active || gridZoom.pendingCommit?.columns == 1),
-                                      loadsOriginal: abs(index - selectedIndex) <= 1 && (!gridZoom.active || gridZoom.pendingCommit?.columns == 1),
-                                      fallback: transitionBitmap?.url == drawing.url ? transitionBitmap : nil,
-                                      respectsSafeArea: tutorial.isActive,
-                                      fitsViewport: true,
-                                      isSelected: drawing.id == selectedDrawing?.id,
-                                      onDisplayedBitmap: { bitmap in
-                                          guard drawing.id == selectedDrawing?.id else { return }
-                                          if gridZoom.pendingCommit?.columns == 1 {
-                                              displayedBitmap = bitmap
-                                              completeGridZoom()
-                                          } else if !isTransitioning {
-                                              displayedBitmap = bitmap
-                                          }
-                                      })
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        guard showsFullscreen, zoomLevel == fullscreenLevel, !isTransitioning,
-                              !tutorial.isActive else { return }
-                        morphState.isExpanded = false
-                        isCleanViewing.toggle()
-                    }
-                    .onGeometryChange(for: Double.self) { page in
-                        let distance = abs(page.frame(in: .global).minX - canvasOriginX)
-                        return max(0, 1 - Double(distance / max(size.width, 1)))
-                    } action: { visibility in
-                        // Read each native page directly; no preference propagation through TabView.
-                        // Geometry supplies the animation progress, so do not ease these updates.
-                        withoutAnimation { pageVisibility[drawing.id] = visibility }
-                    }
-                    .onDisappear {
-                        withoutAnimation { pageVisibility.removeValue(forKey: drawing.id) }
-                    }
-                    .tag(Optional(drawing.id))
-            }
+    private func selectPage(_ id: URL?) {
+        guard tutorial.allowsGalleryPaging, !isTransitioning, id != selectedDrawing?.id,
+              let drawing = drawings.first(where: { $0.id == id }) else { return }
+        tutorial.activity()
+        selectedDrawing = drawing
+        focusedDrawing = drawing
+        galleryScrollTarget = drawing.id
+    }
+
+    private func pageDisplayed(_ drawing: CanvasExport, bitmap: GalleryBitmap) {
+        guard drawing.id == selectedDrawing?.id else { return }
+        if gridZoom.pendingCommit?.columns == 1 {
+            displayedBitmap = bitmap
+            completeGridZoom()
+        } else if !isTransitioning {
+            displayedBitmap = bitmap
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
-        .frame(width: size.width, height: size.height, alignment: .topLeading)
-        .position(x: size.width / 2, y: size.height / 2)
-        .task(id: isTransitioning ? nil : selectedDrawing?.id) {
-            // Warm adjacent originals even if TabView has not mounted those pages yet.
-            for index in [selectedIndex, selectedIndex - 1, selectedIndex + 1] {
-                guard !Task.isCancelled, !isTransitioning else { return }
-                guard drawings.indices.contains(index) else { continue }
-                _ = await GalleryImageCache.shared.load(GalleryImageRequest(
-                    url: drawings[index].url, shortSidePixels: nil, displayScale: displayScale))
-            }
-        }
+    }
+
+    private func toggleCleanViewing() {
+        guard showsFullscreen, zoomLevel == fullscreenLevel, !isTransitioning,
+              !tutorial.isActive else { return }
+        morphState.isExpanded = false
+        isCleanViewing.toggle()
+    }
+
+    private func setPageVisibility(_ id: URL, _ visibility: Double?) {
+        // Geometry supplies the animation progress, so do not ease these updates.
+        withoutAnimation { pageVisibility[id] = visibility }
     }
 
     private func deleteDrawing(_ drawing: CanvasExport) {
@@ -937,36 +763,4 @@ struct SavedDrawingsView: View {
         }
     }
 
-}
-
-/// Keep tile identities and offscreen positions alive across column changes.
-/// Bitmap loading remains limited to the viewport and its prefetch margin.
-private struct GalleryThumbnailGrid: Layout {
-    let columns: Int
-    let spacing: CGFloat
-    let side: CGFloat
-    let leading: Int
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let rows = (subviews.count + leading + columns - 1) / columns
-        return CGSize(width: CGFloat(columns) * side + CGFloat(columns - 1) * spacing,
-                      height: CGFloat(rows) * side + CGFloat(max(0, rows - 1)) * spacing)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        for (index, subview) in subviews.enumerated() {
-            subview.place(at: CGPoint(x: bounds.minX + CGFloat((index + leading) % columns) * (side + spacing),
-                                     y: bounds.minY + CGFloat((index + leading) / columns) * (side + spacing)),
-                          anchor: .topLeading,
-                          proposal: ProposedViewSize(width: side, height: side))
-        }
-    }
-}
-
-private struct GalleryThumbnailFramesKey: PreferenceKey {
-    static var defaultValue: [URL: CGRect] { [:] }
-
-    static func reduce(value: inout [URL: CGRect], nextValue: () -> [URL: CGRect]) {
-        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
-    }
 }

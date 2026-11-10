@@ -1,12 +1,6 @@
 import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
-import ImageIO
-import WatchConnectivity
-
-extension UTType {
-    static let paintAnytimeProject = UTType(exportedAs: PaintProject.typeIdentifier)
-}
 
 @MainActor
 struct PhoneHomeView: View {
@@ -14,111 +8,18 @@ struct PhoneHomeView: View {
 
     @AppStorage("phoneGalleryColumnCount") private var storedColumnCount = 5
     @State private var previewCache = PhoneGalleryPreviewCache()
-    @State private var zoomPresentation = PhoneGalleryZoomPresentation()
-    @State private var zoomAnchorIndex: Int?
-    @State private var zoomSnapshot: [URL] = []
-    @State private var zoomSessionID: UUID?
-    @State private var zoomMissingPreviews: [URL] = []
-    @State private var measuredGridColumns = 0
-    @State private var zoomSlots: [PhoneGalleryZoomSlot] = []
-    @State private var zoomPreviews: [URL: UIImage] = [:]
-    @State private var zoomPreviewSize = 640
-    @State private var zoomSideBackdrops: [Int: UIImage] = [:]
-    @State private var zoomSideBackdropFrame: CGRect = .zero
+    @State private var zoom = PhoneGalleryZoomController()
     @State private var imageLayout = GalleryImageLayout()
     @Environment(\.displayScale) private var displayScale
     @Environment(\.colorScheme) private var colorScheme
-    @State private var zoomBaseColumns = 5
-    @State private var zoomGestureBaseSide: CGFloat?
-    @State private var zoomBaseLeadingSlots = 0
-    @State private var zoomBaseFrame: CGRect = .zero
-    @State private var pendingZoomViewportTop: CGFloat?
-    @State private var pendingZoomMeasuredFrame: PhoneGalleryLayout?
-    @State private var zoomPanLastY: CGFloat?
-    @State private var zoomSettledColumns: Int?
-    @State private var zoomAnchorTops: [Int: CGFloat] = [:]
-    @State private var zoomPreparedPanRange: CGFloat = 0
-    // Leading slots change row alignment without changing document order.
-    @State private var leadingSlots = 0
-    @State private var zoomLeadingSlots: [Int: Int] = [:]
-    @State private var settlingZoom = false
-    @State private var zoomSettlementID: UUID?
-    @State private var gridFrame: CGRect = .zero
     @State private var galleryHeaderBottom: CGFloat = 0
     // The header's material fade extends 40 pt below its bottom edge.
     private var galleryScrollTopInset: CGFloat { galleryHeaderBottom + 40 }
-    @State private var pinchTarget: URL?
-    @State private var pinchTargetFractionY: CGFloat = 0.5
-    @State private var pinchViewportY: CGFloat = 0
-    @State private var pendingZoomAnchor: UnitPoint?
-    @State private var pendingZoomTarget: URL?
-    @State private var pendingZoomColumns: Int?
-    @State private var hasTwoFingerContact = false
     @GestureState private var isPinching = false
-    @State private var measuredTiles = PhoneGalleryMeasuredTiles()
-    #if DEBUG
-    @State private var debugScrollMoving = false
-    @State private var zoomDiagnostics = PhoneGalleryZoomDiagnostics()
-
-    private func debugNumber(_ value: CGFloat) -> String {
-        String(format: "%.1f", Double(value))
-    }
-
-    private func debugRect(_ frame: CGRect) -> String {
-        "\(debugNumber(frame.minX)),\(debugNumber(frame.minY)) \(debugNumber(frame.width))x\(debugNumber(frame.height))"
-    }
-
-    private func debugZoomGeometry(width: CGFloat) -> String {
-        func identity(_ url: URL?) -> String {
-            guard let url else { return "—" }
-            return photoInbox.images.firstIndex(of: url).map { "#\($0)" } ?? "missing"
-        }
-        var lines = ["target \(identity(pinchTarget)) captured #\(zoomAnchorIndex.map(String.init) ?? "—")",
-                     "native \(columnCount)c measured \(measuredGridColumns)c L\(leadingSlots)",
-                     "grid \(debugRect(gridFrame))",
-                     "pos \(debugNumber(zoomPresentation.position)) pan \(debugNumber(zoomPresentation.offsetY))"]
-        if let index = zoomAnchorIndex, photoInbox.images.indices.contains(index) {
-            for density in columnOptions {
-                let leading = slots(for: density)
-                let top = zoomAnchorTops[density] ?? 0
-                let itemTop = galleryItemTop(index: index, columns: density, width: width, leading: leading)
-                lines.append("\(density)c L\(leading) r\((index + leading) / density)c\((index + leading) % density) y\(debugNumber(top)) scroll\(debugNumber(itemTop - top))")
-            }
-        }
-        if let target = pinchTarget, let index = photoInbox.images.firstIndex(of: target),
-           let measured = measuredTiles.frames[target], measured.columns == columnCount {
-            let predicted = gridFrame.minY + galleryItemTop(index: index, columns: columnCount,
-                width: width, leading: leadingSlots)
-            lines.append("native tile \(debugRect(measured.frame))")
-            lines.append("native dy \(debugNumber(measured.frame.minY - predicted)) (actual-calc)")
-        } else {
-            lines.append("native tile — (not measured)")
-        }
-        lines.append("return \(identity(pendingZoomTarget)) \(pendingZoomColumns.map(String.init) ?? "—")c y\(pendingZoomViewportTop.map(debugNumber) ?? "—")")
-        if let measured = pendingZoomMeasuredFrame {
-            lines.append("measured \(measured.columns)c \(debugRect(measured.frame))")
-            if let top = pendingZoomViewportTop {
-                lines.append("return dy \(debugNumber(measured.frame.minY - top))")
-            }
-        }
-        return lines.joined(separator: "\n")
-    }
-
-    private var debugInteraction: String {
-        if pendingZoomColumns != nil { return "Zoom: restoring position" }
-        if settlingZoom { return "Zoom: settling" }
-        if isPinching { return "Gesture: pinch" }
-        if hasTwoFingerContact { return "Zoom: two fingers" }
-        if pinchTarget != nil { return "Zoom: finishing" }
-        if debugScrollMoving { return "Scroll: moving" }
-        return "Gesture: idle"
-    }
-    #endif
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var selectedDrawing: URL?
     @State private var navigationPath: [URL] = []
-    @State private var suppressOpeningUntil = Date.distantPast
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var importingProject = false
     @State private var importingPhoto = false
@@ -127,9 +28,17 @@ struct PhoneHomeView: View {
     @State private var showingInboxError = false
     @State private var projectMessage: String?
     @State private var watchDestination: PaintDeepLink?
-    private let columnOptions = [1, 3, 5]
-    private let gallerySpacing: CGFloat = 2
+    private var columnOptions: [Int] { PhoneGalleryZoomController.columnOptions }
     private var columnCount: Int { columnOptions.contains(storedColumnCount) ? storedColumnCount : 5 }
+
+    /// Current gallery values for the zoom controller's entry points.
+    private var zoomContext: PhoneGalleryZoomContext {
+        PhoneGalleryZoomContext(
+            images: photoInbox.images, columnCount: columnCount, imageLayout: imageLayout,
+            previewCache: previewCache, displayScale: displayScale, colorScheme: colorScheme,
+            reduceMotion: reduceMotion, topInset: galleryScrollTopInset,
+            setColumnCount: { storedColumnCount = $0 })
+    }
 
     var body: some View {
         GeometryReader { container in
@@ -140,337 +49,7 @@ struct PhoneHomeView: View {
             // changes. The detail pane slides independently from the right edge.
             ZStack(alignment: .leading) {
                 NavigationStack(path: $navigationPath) {
-            GeometryReader { geometry in
-                ScrollViewReader { scrollProxy in
-                ZStack {
-                ScrollView {
-                    if photoInbox.images.isEmpty {
-                        ContentUnavailableView {
-                            Label("Your Watch Gallery", systemImage: "applewatch")
-                        } description: {
-                            Text("Save a drawing in Paint Anytime on your Apple Watch. Open the watch app to sync your existing drawings. Transfers may take a few minutes.")
-                        } actions: {
-                            Button("Sync with Apple Watch") { photoInbox.synchronize() }
-                        }
-                        .padding(.top, 80)
-                        Text("Deleting a drawing removes it from both Apple Watch and iPhone. Save a copy to Photos, Files, or another app before deleting.")
-                            .font(.footnote).foregroundStyle(.secondary).padding()
-                    } else {
-                        let spacing = gallerySpacing
-                        let tileSize = max(1, (geometry.size.width - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount))
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: spacing), count: columnCount), spacing: spacing) {
-                            ForEach(0..<leadingSlots, id: \.self) { _ in
-                                Color(uiColor: .systemBackground).frame(height: tileSize).accessibilityHidden(true)
-                            }
-                            ForEach(photoInbox.images, id: \.self) { url in
-                                Button {
-                                    openDrawing(url, besideGallery: showsBook)
-                                } label: {
-                                    PhoneGalleryZoomTile(source: url, destination: nil,
-                                                         blend: 0, side: tileSize, cache: previewCache,
-                                                         height: columnCount == 1 ? imageLayout.height(for: url, width: tileSize) : tileSize,
-                                                         preparesOtherSizes: pinchTarget == nil)
-                                }
-                                .buttonStyle(.plain)
-                                .id(url)
-                                .background {
-                                    if url == pendingZoomTarget {
-                                        GeometryReader { tile in
-                                            Color.clear.preference(key: PhoneGalleryTargetFrameKey.self,
-                                                value: PhoneGalleryLayout(columns: columnCount,
-                                                    frame: tile.frame(in: .named("phoneGalleryViewport"))))
-                                        }
-                                    }
-                                }
-                                .background {
-                                    GeometryReader { tile in
-                                        Color.clear.preference(key: PhoneGalleryMeasuredTilesKey.self,
-                                            value: [url: PhoneGalleryLayout(columns: columnCount,
-                                                frame: tile.frame(in: .named("phoneGalleryViewport")))])
-                                    }
-                                }
-                                .accessibilityLabel(Text(url.deletingPathExtension().lastPathComponent))
-                            }
-                            let trailingSlots = (columnCount - (leadingSlots + photoInbox.images.count) % columnCount) % columnCount
-                            ForEach(0..<trailingSlots, id: \.self) { _ in
-                                Color(uiColor: .systemBackground)
-                                    .frame(height: tileSize)
-                                    .allowsHitTesting(false)
-                                    .accessibilityHidden(true)
-                            }
-                        }
-                        // Keep the scroll layout and gesture host alive, but draw
-                        // the zoom independently of LazyVGrid's source-row culling.
-                        .opacity(pinchTarget == nil ? 1 : 0)
-                        .background {
-                            GeometryReader { grid in
-                                Color.clear.preference(key: PhoneGalleryFrameKey.self,
-                                    value: PhoneGalleryLayout(columns: columnCount,
-                                        frame: grid.frame(in: .named("phoneGalleryViewport"))))
-                            }
-                        }
-
-                    }
-                }
-                // Rest the grid below the header and its blur fade, so the first
-                // row is never covered by the title, buttons or material.
-                // Tile coordinates remain relative to the unpadded grid.
-                .contentMargins(.top, galleryScrollTopInset, for: .scrollContent)
-                // While Canvas is visible it owns both scale and translation.
-                // Raw one-finger movement below pans it immediately; the hidden
-                // native grid must not scroll in a different coordinate system.
-                .scrollDisabled(pinchTarget != nil || hasTwoFingerContact || isPinching)
-                // Let scrolling artwork remain visible through the header material.
-                .scrollClipDisabled()
-                }
-                .overlay(alignment: .topLeading) {
-                            if pinchTarget != nil {
-                                PhoneGalleryZoomOverlay(
-                                    presentation: zoomPresentation, slots: zoomSlots,
-                                    previews: zoomPreviews,
-                                    sideBackdrops: zoomSideBackdrops, sideBackdropFrame: zoomSideBackdropFrame,
-                                    viewportInsets: geometry.safeAreaInsets)
-                            }
-                        }
-                .highPriorityGesture(
-                    MagnifyGesture(minimumScaleDelta: 0)
-                        .updating($isPinching) { _, active, _ in active = true }
-                        .onChanged { value in
-                            #if DEBUG
-                            if zoomDiagnostics.startedAt == nil { zoomDiagnostics.begin() }
-                            if zoomDiagnostics.recognizedMS == nil {
-                                zoomDiagnostics.recognizedMS = zoomDiagnostics.elapsedMS()
-                            }
-                            #endif
-                            if settlingZoom, pendingZoomColumns == nil {
-                                interruptGalleryZoom(width: geometry.size.width)
-                            }
-                            guard pendingZoomColumns == nil else { return }
-                            suppressOpeningUntil = .distantFuture
-                            if pinchTarget == nil {
-                                beginGalleryZoom(anchor: value.startAnchor, width: geometry.size.width,
-                                                 viewportHeight: geometry.size.height)
-                            }
-                            updateGalleryZoom(value.magnification, width: geometry.size.width,
-                                              viewportHeight: geometry.size.height)
-                        }
-                        .onEnded { value in
-                            guard !settlingZoom else { return }
-                            suppressOpeningUntil = Date().addingTimeInterval(0.3)
-                            if pinchTarget == nil {
-                                beginGalleryZoom(anchor: value.startAnchor, width: geometry.size.width,
-                                                 viewportHeight: geometry.size.height)
-                            }
-                            updateGalleryZoom(value.magnification, width: geometry.size.width,
-                                              viewportHeight: geometry.size.height)
-                            finishGalleryZoom(width: geometry.size.width,
-                                              viewportHeight: geometry.size.height)
-                        }
-                )
-                .onChange(of: isPinching) { _, active in
-                    guard !active else { return }
-                    // onEnded must get a chance to start its settlement first.
-                    DispatchQueue.main.async {
-                        guard !isPinching, !settlingZoom else { return }
-                        guard pinchTarget != nil else {
-                            suppressOpeningUntil = Date().addingTimeInterval(0.3)
-                            return
-                        }
-                        finishGalleryZoom(width: geometry.size.width,
-                                          viewportHeight: geometry.size.height)
-                    }
-                }
-                .overlay {
-                    PhoneGalleryTouchOverlay(onMovement: { positions in
-                        #if DEBUG
-                        if positions.count >= 2, zoomDiagnostics.movementMS == nil {
-                            zoomDiagnostics.movementMS = zoomDiagnostics.elapsedMS()
-                        }
-                        #endif
-                        guard positions.count == 1, pinchTarget != nil else { return }
-                        moveGalleryZoomPan(to: positions[0].y, width: geometry.size.width,
-                                           viewportHeight: geometry.size.height)
-                    }) { positions in
-                        #if DEBUG
-                        if positions.count >= 2, !hasTwoFingerContact { zoomDiagnostics.begin() }
-                        #endif
-                        if positions.count == 1, pinchTarget != nil {
-                            beginGalleryZoomPan(at: positions[0].y)
-                        } else {
-                            zoomPanLastY = nil
-                        }
-                        if pendingZoomColumns != nil, positions.count >= 2 {
-                            // Reuse the prepared overlay while the hidden grid is
-                            // being restored. A second pinch must not rebuild from
-                            // a grid frame that may still belong to the old layout.
-                            pendingZoomColumns = nil
-                            pendingZoomTarget = nil
-                            pendingZoomAnchor = nil
-                            pendingZoomViewportTop = nil
-                            pendingZoomMeasuredFrame = nil
-                            interruptGalleryZoom(width: geometry.size.width)
-                        }
-                        hasTwoFingerContact = positions.count >= 2
-                        if positions.isEmpty, let columns = zoomSettledColumns {
-                            commitGalleryZoom(columns: columns, width: geometry.size.width,
-                                              viewportHeight: geometry.size.height)
-                        }
-                        if hasTwoFingerContact, settlingZoom, pendingZoomColumns == nil {
-                            interruptGalleryZoom(width: geometry.size.width)
-                        }
-                        if hasTwoFingerContact {
-                            guard !settlingZoom, pinchTarget == nil,
-                                  geometry.size.width > 0, geometry.size.height > 0 else { return }
-                            let center = positions.reduce(CGPoint.zero) {
-                                CGPoint(x: $0.x + $1.x, y: $0.y + $1.y)
-                            }
-                            let count = CGFloat(positions.count)
-                            suppressOpeningUntil = .distantFuture
-                            beginGalleryZoom(
-                                anchor: UnitPoint(x: center.x / count / geometry.size.width,
-                                                  y: center.y / count / geometry.size.height),
-                                width: geometry.size.width, viewportHeight: geometry.size.height)
-                        } else {
-                            // Give MagnifyGesture.onEnded priority if scale was
-                            // recognized. Also finish two-finger taps with no zoom.
-                            DispatchQueue.main.async {
-                                guard !hasTwoFingerContact, !isPinching, !settlingZoom,
-                                      pinchTarget != nil else { return }
-                                if zoomPresentation.scale == 1,
-                                   zoomPresentation.position == PhoneGalleryZoomPresentation.position(for: zoomBaseColumns),
-                                   zoomPresentation.offsetY == 0, zoomPanLastY == nil {
-                                    completeGalleryZoom()
-                                    return
-                                }
-                                finishGalleryZoom(width: geometry.size.width,
-                                                  viewportHeight: geometry.size.height)
-                            }
-                        }
-                    }
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                }
-                #if DEBUG
-                .overlay(alignment: .topTrailing) {
-                    if PhoneGalleryDebug.showsDiagnostics {
-                    PhoneGalleryFPSOverlay()
-                        .frame(width: 140, height: 48)
-                        .padding(8)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                    }
-                }
-                .overlay(alignment: .bottomTrailing) {
-                    if PhoneGalleryDebug.showsDiagnostics {
-                    PhoneGalleryGeometryDebugOverlay {
-                        debugInteraction + "\n" + zoomDiagnostics.text + "\n"
-                            + zoomDiagnostics.sourceText + "\n"
-                            + (pinchTarget == nil ? "LAST\n" + zoomDiagnostics.completedGeometry
-                               : "LIVE\n" + debugZoomGeometry(width: geometry.size.width))
-                    }
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 5)
-                        .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 6))
-                        .padding(8)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                    }
-                }
-                .task(id: gridFrame.minY) {
-                    guard debugScrollMoving else { return }
-                    do {
-                        try await Task.sleep(for: .milliseconds(150))
-                        guard !Task.isCancelled else { return }
-                        debugScrollMoving = false
-                    } catch { /* A newer scroll position restarts the idle delay. */ }
-                }
-                #endif
-                .coordinateSpace(name: "phoneGalleryViewport")
-                .task(id: zoomSessionID) {
-                    guard let sessionID = zoomSessionID else { return }
-                    await prepareZoomSideBackdrop(width: geometry.size.width,
-                        viewportHeight: geometry.size.height, sessionID: sessionID)
-                }
-                .task(id: zoomSessionID) {
-                    guard let sessionID = zoomSessionID else { return }
-                    #if DEBUG
-                    let loadingStarted = CACurrentMediaTime()
-                    let diagnosticSession = zoomDiagnostics.session
-                    #endif
-                    let cache = previewCache
-                    for url in zoomMissingPreviews {
-                        guard !Task.isCancelled, zoomSessionID == sessionID else { return }
-                        let image = await cache.load(url, maximumSize: 320)
-                        guard !Task.isCancelled, zoomSessionID == sessionID else { return }
-                        if let image { zoomPreviews[url] = image }
-                    }
-                    #if DEBUG
-                    if zoomDiagnostics.session == diagnosticSession {
-                        zoomDiagnostics.loadingMS = (CACurrentMediaTime() - loadingStarted) * 1000
-                    }
-                    #endif
-                }
-                .task(id: pendingZoomColumns) {
-                    guard let columns = pendingZoomColumns,
-                          let target = pendingZoomTarget,
-                          let anchor = pendingZoomAnchor,
-                          let viewportTop = pendingZoomViewportTop else { return }
-                    let settlementID = zoomSettlementID
-                    var attempts = 0
-                    // Scroll only after layout has returned to the run loop.
-                    // Lazy rows may need a second pass after materialization.
-                    while !Task.isCancelled {
-                        do { try await Task.sleep(for: .milliseconds(32)) }
-                        catch { return }
-                        guard !Task.isCancelled, zoomSettlementID == settlementID,
-                              pendingZoomColumns == columns, pendingZoomTarget == target else { return }
-                        guard measuredGridColumns == columns else { continue }
-                        if let measured = pendingZoomMeasuredFrame, measured.columns == columns,
-                           abs(measured.frame.minY - viewportTop) < 1 {
-                            completeGalleryZoom()
-                            return
-                        }
-                        // If exact alignment is unavailable (for example at a
-                        // content edge), retain the focal photo rather than
-                        // exposing an unconfirmed grid at its initial offset.
-                        if attempts >= 4, let measured = pendingZoomMeasuredFrame,
-                           measured.columns == columns,
-                           measured.frame.maxY > 0, measured.frame.minY < geometry.size.height {
-                            completeGalleryZoom()
-                            return
-                        }
-                        var transaction = Transaction()
-                        transaction.disablesAnimations = true
-                        withTransaction(transaction) {
-                            scrollProxy.scrollTo(target, anchor: attempts < 4 ? anchor : .center)
-                        }
-                        attempts += 1
-                    }
-                }
-                .onPreferenceChange(PhoneGalleryMeasuredTilesKey.self) { frames in
-                    measuredTiles.frames = frames
-                    measuredTiles.updatedAt = ProcessInfo.processInfo.systemUptime
-                }
-                .onPreferenceChange(PhoneGalleryTargetFrameKey.self) { layout in
-                    pendingZoomMeasuredFrame = layout
-                }
-                .onPreferenceChange(PhoneGalleryFrameKey.self) { layout in
-                    guard layout.columns > 0 else { return }
-                    #if DEBUG
-                    // Observe movement without adding a competing drag recognizer.
-                    // This includes inertial scrolling, not just finger dragging.
-                    if gridFrame != .zero, gridFrame.minY != layout.frame.minY,
-                       pinchTarget == nil, !isPinching, !settlingZoom {
-                        debugScrollMoving = true
-                    }
-                    #endif
-                    gridFrame = layout.frame
-                    measuredGridColumns = layout.columns
-                }
-                }
-            }
+                    galleryViewport(showsBook: showsBook)
             // Artwork may extend beneath every system safe area; the header
             // keeps its own safe-area placement and material backdrop.
             .ignoresSafeArea(.container, edges: .all)
@@ -488,8 +67,8 @@ struct PhoneHomeView: View {
                 imageLayout = GalleryImageLayout(images: images)
                 previewCache.invalidate()
                 previewCache = PhoneGalleryPreviewCache()
-                if pinchTarget != nil, images != zoomSnapshot { resetGalleryZoom() }
-                previewCache.preparationPaused = pinchTarget != nil
+                if zoom.pinchTarget != nil, images != zoom.zoomSnapshot { resetGalleryZoom() }
+                previewCache.preparationPaused = zoom.pinchTarget != nil
             }
             .onDisappear { resetGalleryZoom() }
             .navigationTitle("Watch Gallery")
@@ -523,23 +102,7 @@ struct PhoneHomeView: View {
                 }
             }
             .photosPicker(isPresented: $importingPhoto, selection: $pickedPhoto, matching: .images)
-            .task(id: pickedPhoto) {
-                guard let item = pickedPhoto else { return }
-                preparingPhoto = true
-                defer {
-                    preparingPhoto = false
-                    pickedPhoto = nil
-                }
-                do {
-                    let message = try await PhonePhotoImport.importPhoto(item)
-                    // Shows the photo the import just added to the phone gallery.
-                    photoInbox.refresh()
-                    projectMessage = message
-                } catch {
-                    guard !Task.isCancelled else { return }
-                    projectMessage = error.localizedDescription
-                }
-            }
+            .task(id: pickedPhoto) { await importPickedPhoto() }
             .alert("Project", isPresented: Binding(get: { projectMessage != nil }, set: { if !$0 { projectMessage = nil } })) {
                 Button("OK") { projectMessage = nil }
             } message: { Text(projectMessage ?? "") }
@@ -553,9 +116,7 @@ struct PhoneHomeView: View {
             }
             .alert("Could not complete action", isPresented: $showingInboxError) {
                 if photoInbox.photoPermissionRequiresSettings {
-                    Button("Open Settings") {
-                        if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
-                    }
+                    Button("Open Settings", action: openSettings)
                 }
                 Button("OK", role: .cancel) { showingInboxError = false }
             } message: { Text(photoInbox.errorMessage ?? "") }
@@ -565,11 +126,7 @@ struct PhoneHomeView: View {
                 .clipped()
                 if let divisionX, let url = selectedDrawing {
                     NavigationStack {
-                        PhoneDrawingView(url: url, inbox: photoInbox, closeDrawing: {
-                            withAnimation(drawingPresentationAnimation) {
-                                selectedDrawing = nil
-                            }
-                        })
+                        PhoneDrawingView(url: url, inbox: photoInbox, closeDrawing: closeSelectedDrawing)
                         .id(url)
                     }
                     .frame(width: container.size.width - divisionX)
@@ -589,20 +146,7 @@ struct PhoneHomeView: View {
             .frame(width: container.size.width, height: container.size.height, alignment: .leading)
             .clipped()
             .onChange(of: showsBook) { _, expanded in
-                resetGalleryZoom()
-                // Moving an existing selection between layouts is not a new
-                // presentation. Suppress inherited navigation animations too.
-                var transaction = Transaction()
-                transaction.disablesAnimations = true
-                withTransaction(transaction) {
-                    if expanded {
-                        selectedDrawing = navigationPath.last
-                        navigationPath = []
-                    } else {
-                        navigationPath = selectedDrawing.map { [$0] } ?? []
-                        selectedDrawing = nil
-                    }
-                }
+                moveSelection(toBook: expanded)
             }
             .onChange(of: container.size) { _, _ in
                 resetGalleryZoom()
@@ -620,6 +164,129 @@ struct PhoneHomeView: View {
                 }
             }
         }
+    }
+
+    /// The scrolling grid, its zoom overlay and the gestures that drive it.
+    /// Kept in this view because `isPinching` and the scroll proxy live here.
+    private func galleryViewport(showsBook: Bool) -> some View {
+            GeometryReader { geometry in
+                let width = geometry.size.width
+                let height = geometry.size.height
+                ScrollViewReader { scrollProxy in
+                ZStack {
+                ScrollView {
+                    if photoInbox.images.isEmpty {
+                        PhoneGalleryEmptyState { photoInbox.synchronize() }
+                    } else {
+                        PhoneGalleryGrid(
+                            images: photoInbox.images, columnCount: columnCount,
+                            leadingSlots: zoom.leadingSlots, width: width,
+                            previewCache: previewCache, imageLayout: imageLayout,
+                            isZooming: zoom.pinchTarget != nil,
+                            pendingZoomTarget: zoom.pendingZoomTarget) { url in
+                            openDrawing(url, besideGallery: showsBook)
+                        }
+                    }
+                }
+                // Rest the grid below the header and its blur fade, so the first
+                // row is never covered by the title, buttons or material.
+                // Tile coordinates remain relative to the unpadded grid.
+                .contentMargins(.top, galleryScrollTopInset, for: .scrollContent)
+                // While Canvas is visible it owns both scale and translation.
+                // Raw one-finger movement below pans it immediately; the hidden
+                // native grid must not scroll in a different coordinate system.
+                .scrollDisabled(zoom.pinchTarget != nil || zoom.hasTwoFingerContact || isPinching)
+                // Let scrolling artwork remain visible through the header material.
+                .scrollClipDisabled()
+                }
+                .overlay(alignment: .topLeading) {
+                    if zoom.pinchTarget != nil {
+                        PhoneGalleryZoomOverlay(
+                            presentation: zoom.zoomPresentation, slots: zoom.zoomSlots,
+                            previews: zoom.zoomPreviews,
+                            sideBackdrops: zoom.zoomSideBackdrops, sideBackdropFrame: zoom.zoomSideBackdropFrame,
+                            viewportInsets: geometry.safeAreaInsets)
+                    }
+                }
+                .highPriorityGesture(
+                    MagnifyGesture(minimumScaleDelta: 0)
+                        .updating($isPinching) { _, active, _ in active = true }
+                        .onChanged { value in
+                            zoom.magnifyChanged(startAnchor: value.startAnchor, magnification: value.magnification,
+                                                width: width, viewportHeight: height, context: zoomContext)
+                        }
+                        .onEnded { value in
+                            zoom.magnifyEnded(startAnchor: value.startAnchor, magnification: value.magnification,
+                                              width: width, viewportHeight: height, context: zoomContext)
+                        }
+                )
+                .onChange(of: isPinching) { _, active in
+                    guard !active else { return }
+                    zoom.pinchEnded(width: width, viewportHeight: height,
+                                    isPinching: { isPinching }, context: zoomContext)
+                }
+                .overlay {
+                    PhoneGalleryTouchOverlay(onMovement: { positions in
+                        zoom.touchesMoved(positions, width: width, viewportHeight: height, context: zoomContext)
+                    }) { positions in
+                        zoom.touchContactsChanged(positions, width: width, viewportHeight: height,
+                                                  isPinching: { isPinching }, context: zoomContext)
+                    }
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                #if DEBUG
+                .overlay(alignment: .topTrailing) {
+                    if PhoneGalleryDebug.showsDiagnostics {
+                    PhoneGalleryFPSOverlay()
+                        .frame(width: 140, height: 48)
+                        .padding(8)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                    }
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if PhoneGalleryDebug.showsDiagnostics {
+                    PhoneGalleryGeometryDebugOverlay {
+                        zoom.debugOverlayText(width: width, isPinching: isPinching)
+                    }
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 5)
+                        .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 6))
+                        .padding(8)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                    }
+                }
+                .task(id: zoom.gridFrame.minY) { await zoom.settleDebugScroll() }
+                #endif
+                .coordinateSpace(name: "phoneGalleryViewport")
+                .task(id: zoom.zoomSessionID) {
+                    guard let sessionID = zoom.zoomSessionID else { return }
+                    await zoom.prepareZoomSideBackdrop(width: width, viewportHeight: height, sessionID: sessionID)
+                }
+                .task(id: zoom.zoomSessionID) {
+                    guard let sessionID = zoom.zoomSessionID else { return }
+                    await zoom.loadMissingPreviews(sessionID: sessionID)
+                }
+                .task(id: zoom.pendingZoomColumns) {
+                    await zoom.restorePendingPosition(viewportHeight: height) { target, anchor in
+                        scrollProxy.scrollTo(target, anchor: anchor)
+                    }
+                }
+                .onPreferenceChange(PhoneGalleryMeasuredTilesKey.self) { frames in
+                    zoom.updateMeasuredTiles(frames)
+                }
+                .onPreferenceChange(PhoneGalleryTargetFrameKey.self) { layout in
+                    zoom.pendingZoomMeasuredFrame = layout
+                }
+                .onPreferenceChange(PhoneGalleryFrameKey.self) { layout in
+                    zoom.updateGridLayout(layout, isPinching: isPinching)
+                }
+                }
+            }
     }
 
     private func bookDivisionX(in geometry: GeometryProxy) -> CGFloat? {
@@ -645,10 +312,14 @@ struct PhoneHomeView: View {
         reduceMotion ? .easeInOut(duration: 0.18) : .smooth(duration: 0.38)
     }
 
+    private func resetGalleryZoom() {
+        zoom.resetGalleryZoom(context: zoomContext)
+    }
+
     private func openDrawing(_ url: URL, besideGallery: Bool) {
         // A recognized pinch owns the touch sequence, including release events.
         // A single route also prevents multiple tiles from opening together.
-        guard !isPinching, !settlingZoom, Date() >= suppressOpeningUntil,
+        guard !isPinching, !zoom.settlingZoom, Date() >= zoom.suppressOpeningUntil,
               navigationPath.isEmpty, photoInbox.images.contains(url) else { return }
         if besideGallery {
             withAnimation(drawingPresentationAnimation) {
@@ -656,6 +327,29 @@ struct PhoneHomeView: View {
             }
         } else {
             navigationPath = [url]
+        }
+    }
+
+    private func closeSelectedDrawing() {
+        withAnimation(drawingPresentationAnimation) {
+            selectedDrawing = nil
+        }
+    }
+
+    private func moveSelection(toBook expanded: Bool) {
+        resetGalleryZoom()
+        // Moving an existing selection between layouts is not a new
+        // presentation. Suppress inherited navigation animations too.
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            if expanded {
+                selectedDrawing = navigationPath.last
+                navigationPath = []
+            } else {
+                navigationPath = selectedDrawing.map { [$0] } ?? []
+                selectedDrawing = nil
+            }
         }
     }
 
@@ -674,6 +368,28 @@ struct PhoneHomeView: View {
         watchDestination = destination == .gallery ? nil : destination
     }
 
+    private func openSettings() {
+        if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+    }
+
+    private func importPickedPhoto() async {
+        guard let item = pickedPhoto else { return }
+        preparingPhoto = true
+        defer {
+            preparingPhoto = false
+            pickedPhoto = nil
+        }
+        do {
+            let message = try await PhonePhotoImport.importPhoto(item)
+            // Shows the photo the import just added to the phone gallery.
+            photoInbox.refresh()
+            projectMessage = message
+        } catch {
+            guard !Task.isCancelled else { return }
+            projectMessage = error.localizedDescription
+        }
+    }
+
     private func importProject(_ url: URL) {
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
@@ -686,710 +402,5 @@ struct PhoneHomeView: View {
             photoInbox.refresh()
             projectMessage = String(localized: "Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch.")
         } catch { projectMessage = error.localizedDescription }
-    }
-
-    private func tileSide(columns: Int, width: CGFloat) -> CGFloat {
-        GalleryZoomRules.side(columns, width: width)
-    }
-
-    private func beginGalleryZoom(anchor viewportAnchor: UnitPoint, width: CGFloat,
-                                  viewportHeight: CGFloat) {
-        guard !photoInbox.images.isEmpty, gridFrame.height > 0 else { return }
-        #if DEBUG
-        let preparationStarted = CACurrentMediaTime()
-        defer { zoomDiagnostics.preparationMS = (CACurrentMediaTime() - preparationStarted) * 1000 }
-        #endif
-        zoomPresentation.stopAnimation()
-        zoomGestureBaseSide = nil
-        zoomBaseColumns = columnCount
-        zoomBaseLeadingSlots = leadingSlots
-        zoomBaseFrame = gridFrame
-        zoomAnchorTops = [:]
-        zoomPreparedPanRange = 0
-        zoomSettledColumns = nil
-        zoomPanLastY = nil
-        // The recognizer lives on the viewport, not on the disappearing grid.
-        let anchor = UnitPoint(
-            x: viewportAnchor.x,
-            y: (viewportAnchor.y * viewportHeight - gridFrame.minY) / gridFrame.height)
-        zoomPresentation.position = PhoneGalleryZoomPresentation.position(for: columnCount)
-        zoomPresentation.offsetY = 0
-        zoomPresentation.elasticAnchor = CGPoint(
-            x: viewportAnchor.x * width, y: viewportAnchor.y * viewportHeight)
-        let side = tileSide(columns: columnCount, width: width)
-        let stride = side + gallerySpacing
-        let point = CGPoint(x: anchor.x * gridFrame.width, y: anchor.y * gridFrame.height)
-        // Choose the nearest tile if the midpoint falls in the spacing or the
-        // empty cells of the last row. Keep that identity for the entire gesture.
-        let row = max(0, Int(((point.y - side / 2) / stride).rounded()))
-        let column = min(columnCount - 1, max(0, Int(((point.x - side / 2) / stride).rounded())))
-        let touch = CGPoint(x: viewportAnchor.x * width, y: viewportAnchor.y * viewportHeight)
-        let viewport = CGRect(x: 0, y: 0, width: width, height: viewportHeight)
-        // LazyVGrid's estimated origin can disagree with its materialized rows.
-        // Pick by distance to actual tile bounds (zero inside a tile), so a
-        // portrait under the fingers wins over a neighboring tile's center.
-        let measuredSource = measuredTiles.frames.filter {
-            $0.value.columns == columnCount && abs($0.value.frame.width - side) < 1
-                && $0.value.frame.height > 0 && $0.value.frame.intersects(viewport)
-                && photoInbox.images.contains($0.key)
-        }.min { lhs, rhs in
-            func distance(_ frame: CGRect) -> CGFloat {
-                let dx = max(frame.minX - touch.x, max(0, touch.x - frame.maxX))
-                let dy = max(frame.minY - touch.y, max(0, touch.y - frame.maxY))
-                return dx * dx + dy * dy
-            }
-            let left = distance(lhs.value.frame), right = distance(rhs.value.frame)
-            return left == right ? lhs.key.absoluteString < rhs.key.absoluteString : left < right
-        }
-        let index: Int
-        if let measuredSource, let measuredIndex = photoInbox.images.firstIndex(of: measuredSource.key) {
-            index = measuredIndex
-        } else if columnCount == 1 {
-            // Use the containing tile, not its center: a tall portrait can
-            // contain the touch even when a neighboring short tile is nearer.
-            index = photoInbox.images.indices.first {
-                imageLayout.top(at: $0 + 1, width: side, spacing: gallerySpacing)
-                    - gallerySpacing / 2 > point.y
-            } ?? (photoInbox.images.count - 1)
-        } else {
-            index = min(photoInbox.images.count - 1, max(0, row * columnCount + column - leadingSlots))
-        }
-        zoomAnchorIndex = index
-        zoomSnapshot = photoInbox.images
-        previewCache.preparationPaused = true
-        pinchTarget = photoInbox.images[index]
-        let tileTop = galleryItemTop(index: index, columns: columnCount, width: width, leading: leadingSlots)
-        let tileHeight = galleryItemHeight(index: index, columns: columnCount, width: width)
-        let sourceTop = measuredSource?.value.frame.minY ?? (gridFrame.minY + tileTop)
-        let sourceHeight = measuredSource?.value.frame.height ?? tileHeight
-        // Translate the captured model to the visible row, then freeze it for
-        // this session. Subsequent pan/zoom keeps using that same coordinate space.
-        zoomBaseFrame.origin.y = sourceTop - tileTop
-        pinchTargetFractionY = min(1, max(0, (touch.y - sourceTop) / sourceHeight))
-        pinchViewportY = touch.y
-        zoomLeadingSlots = [columnCount: leadingSlots]
-        for density in columnOptions where density != columnCount {
-            // Zooming out reveals neighbors around the focal tile. Zooming in
-            // keeps its approximate horizontal position until it fills the width.
-            let slots = GalleryZoomRules.leading(index: index, sourceColumns: columnCount,
-                sourceLeading: leadingSlots, destination: density)
-            zoomLeadingSlots[density] = slots
-            let destinationSide = tileSide(columns: density, width: width)
-            let targetTop = galleryItemTop(index: index, columns: density, width: width, leading: slots)
-            if let placement = settledGalleryPlacement(columns: density, width: width,
-                                                       viewportHeight: viewportHeight),
-               targetTop - placement.viewportTop <= destinationSide + gallerySpacing {
-                // Only regroup when the incomplete first row is offscreen.
-                zoomLeadingSlots[density] = 0
-            }
-        }
-        #if DEBUG
-        if PhoneGalleryDebug.showsDiagnostics {
-            zoomDiagnostics.sourceText = "start \(columnCount)c L\(leadingSlots) grid \(debugRect(gridFrame))\n"
-                + "touch screen \(debugNumber(viewportAnchor.x * width)),\(debugNumber(pinchViewportY))\n"
-                + "touch grid \(debugNumber(point.x)),\(debugNumber(point.y)) frac \(debugNumber(pinchTargetFractionY))\n"
-                + "pick #\(index) \(photoInbox.images[index].lastPathComponent)\n"
-                + "tile screen y \(debugNumber(gridFrame.minY + tileTop)) h \(debugNumber(tileHeight))"
-                + "\nsource \(measuredSource == nil ? "fallback" : "measured") y \(debugNumber(sourceTop))"
-                + " shift \(debugNumber(zoomBaseFrame.minY - gridFrame.minY))"
-            let touched = measuredTiles.frames.filter {
-                $0.value.columns == columnCount && $0.value.frame.contains(touch)
-            }.min { $0.key.absoluteString < $1.key.absoluteString }
-            let touchedIndex = touched.flatMap { photoInbox.images.firstIndex(of: $0.key) }
-            zoomDiagnostics.sourceText += "\nactual hit \(touchedIndex.map { "#\($0)" } ?? "— (gap/unmeasured)")"
-            if let measured = measuredTiles.frames[photoInbox.images[index]],
-               measured.columns == columnCount {
-                let expectedY = gridFrame.minY + tileTop
-                zoomDiagnostics.sourceText += "\nactual pick \(debugRect(measured.frame))"
-                    + "\nstart dy \(debugNumber(measured.frame.minY - expectedY)) dh \(debugNumber(measured.frame.height - tileHeight))"
-            } else {
-                zoomDiagnostics.sourceText += "\nactual pick — (not measured)"
-            }
-            let age = (ProcessInfo.processInfo.systemUptime - measuredTiles.updatedAt) * 1000
-            zoomDiagnostics.sourceText += "\ngeometry age \(String(format: "%.0f", age))ms"
-
-        }
-        #endif
-        prepareZoomSlots(width: width, viewportHeight: viewportHeight)
-    }
-
-    private func prepareZoomSlots(width: CGFloat, viewportHeight: CGFloat) {
-        guard let index = zoomAnchorIndex else { return }
-        #if DEBUG
-        let slotsStarted = CACurrentMediaTime()
-        defer {
-            zoomDiagnostics.slotsMS = (CACurrentMediaTime() - slotsStarted) * 1000
-            zoomDiagnostics.slotCount = zoomSlots.count
-            zoomDiagnostics.missingCount = zoomMissingPreviews.count
-        }
-        #endif
-        let side = tileSide(columns: zoomBaseColumns, width: width)
-        let anchorTops = zoomAnchorTops.isEmpty ? Dictionary(uniqueKeysWithValues: columnOptions.map { density in
-            let top = density == zoomBaseColumns
-                ? zoomBaseFrame.minY + galleryItemTop(index: index, columns: density, width: width, leading: zoomBaseLeadingSlots)
-                : settledGalleryPlacement(columns: density, width: width, viewportHeight: viewportHeight)?.viewportTop ?? 0
-            return (density, top)
-        }) : zoomAnchorTops
-        zoomAnchorTops = anchorTops
-        let prepared = GalleryZoomRules.slots(images: zoomSnapshot, index: index,
-            baseColumns: zoomBaseColumns, baseLeading: zoomBaseLeadingSlots,
-            leading: zoomLeadingSlots, tops: anchorTops, width: width, height: viewportHeight,
-            layout: imageLayout, panRange: zoomPreparedPanRange)
-        let urls = Set(prepared.flatMap { $0.images.values })
-        zoomPreviewSize = PhoneGalleryPreviewCache.size(for: side * displayScale)
-        zoomPreviews = urls.reduce(into: [:]) { result, url in
-            // Hold the best prepared copy through the entire gesture, including
-            // changes between density pairs. Never evict a displayed transition.
-            if let image = previewCache.availableImage(for: url, maximumSize: 1600) {
-                result[url] = image
-            }
-        }
-        zoomSlots = prepared
-        // Load only absent snapshots, once per session, through the serial decoder.
-        // The render loop itself never starts requests or changes image tiers.
-        zoomMissingPreviews = urls.filter { zoomPreviews[$0] == nil }.sorted {
-            let left = zoomSnapshot.firstIndex(of: $0) ?? 0
-            let right = zoomSnapshot.firstIndex(of: $1) ?? 0
-            return abs(left - index) < abs(right - index)
-        }
-        zoomSessionID = UUID()
-    }
-
-    /// Capture prepared previews on the main actor, then rasterize independently
-    /// of gesture delivery and missing-preview loading.
-    private func prepareZoomSideBackdrop(width: CGFloat, viewportHeight: CGFloat, sessionID: UUID) async {
-        guard !Task.isCancelled, zoomSessionID == sessionID else { return }
-        #if DEBUG
-        let backdropStarted = CACurrentMediaTime()
-        let diagnosticSession = zoomDiagnostics.session
-        #endif
-        let side = tileSide(columns: 5, width: width)
-        let stride = side + gallerySpacing
-        let leading = slots(for: 5)
-        guard let anchorIndex = zoomAnchorIndex,
-              let anchorFrame = zoomSlots.first(where: { $0.images[5] == zoomSnapshot[anchorIndex] })?.frames[5] else {
-            zoomSideBackdrops = [:]
-            return
-        }
-        let originY = anchorFrame.minY - CGFloat((anchorIndex + leading) / 5) * stride
-        // Bound destination rows, not source rows: partial rows still need
-        // side copies, but nothing may extend vertically beyond real content.
-        let tiles = zoomSlots.filter { slot in
-            guard let column = slot.columns[5], let rect = slot.frames[5] else { return false }
-            return (0..<5).contains(column) && rect.maxY >= -3 * stride
-                && rect.minY <= viewportHeight + 3 * stride
-        }
-        guard let top = tiles.compactMap({ $0.frames[5]?.minY }).min(),
-              let bottom = tiles.compactMap({ $0.frames[5]?.maxY }).max() else {
-            zoomSideBackdrops = [:]
-            return
-        }
-        // Five full column strides keep the seam identical to internal spacing.
-        let bounds = CGRect(x: 0, y: top, width: width + gallerySpacing, height: bottom - top)
-        var drawTiles: [Int: [PhoneGalleryBackdropRenderer.Tile]] = [:]
-        for direction in [-1, 1] {
-                for slot in tiles {
-                    guard let rect = slot.frames[5], let column = slot.columns[5] else { continue }
-                    let destinationRow = Int(((rect.minY - originY) / stride).rounded())
-                    guard let url = GalleryZoomRules.backdropURL(images: zoomSnapshot,
-                        leading: leading, row: destinationRow, column: column, direction: direction) else { continue }
-                    guard let image = zoomPreviews[url] ?? previewCache.availableImage(for: url, maximumSize: zoomPreviewSize),
-                          image.size.width > 0, image.size.height > 0 else { continue }
-                    let tile = rect.offsetBy(dx: 0, dy: -top)
-                    drawTiles[direction, default: []].append(.init(image: image, rect: tile))
-                }
-        }
-        // Resolve dynamic colors here: a background actor has no view trait environment.
-        let background = UIColor.systemBackground.resolvedColor(with:
-            UITraitCollection(userInterfaceStyle: colorScheme == .dark ? .dark : .light))
-        guard let backdrops = await PhoneGalleryBackdropRenderer.shared.render(
-            tiles: drawTiles, size: bounds.size, scale: min(displayScale, 2), background: background),
-            !Task.isCancelled, zoomSessionID == sessionID else { return }
-        zoomSideBackdrops = backdrops
-        zoomSideBackdropFrame = bounds
-        #if DEBUG
-        if zoomDiagnostics.session == diagnosticSession {
-            zoomDiagnostics.backdropMS = (CACurrentMediaTime() - backdropStarted) * 1000
-        }
-        #endif
-    }
-
-    private func updateGalleryZoom(_ magnification: CGFloat, width: CGFloat, viewportHeight: CGFloat) {
-        #if DEBUG
-        defer {
-            if zoomDiagnostics.appliedMS == nil {
-                zoomDiagnostics.appliedMS = zoomDiagnostics.elapsedMS()
-            }
-        }
-        #endif
-        let initialSide = tileSide(columns: zoomBaseColumns, width: width)
-        let minimumSide = tileSide(columns: 5, width: width)
-        let maximumSide = tileSide(columns: 1, width: width)
-        let requestedSide = (zoomGestureBaseSide ?? initialSide) * magnification
-        let side = min(maximumSide, max(minimumSide, requestedSide))
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            // One continuous value owns the entire 5 ↔ 3 ↔ 1 transition.
-            // Crossing three columns cannot pair a new grid with old progress.
-            zoomPresentation.scale = side / initialSide
-            // Convert rubber-band distance back to a relative scale, keeping
-            // resistance and normal zoom on the same animation coordinate.
-            zoomPresentation.position = GalleryZoomRules.position(requestedSide: requestedSide, width: width)
-        }
-    }
-
-    private func slots(for columns: Int) -> Int {
-        zoomLeadingSlots[columns] ?? 0
-    }
-
-    private func galleryItemHeight(index: Int, columns: Int, width: CGFloat) -> CGFloat {
-        let side = tileSide(columns: columns, width: width)
-        return columns == 1 ? imageLayout.height(for: photoInbox.images[index], width: side) : side
-    }
-
-    private func galleryItemTop(index: Int, columns: Int, width: CGFloat, leading: Int) -> CGFloat {
-        let side = tileSide(columns: columns, width: width)
-        return columns == 1 ? imageLayout.top(at: index, width: side, spacing: gallerySpacing)
-            : CGFloat((index + leading) / columns) * (side + gallerySpacing)
-    }
-
-    private func beginGalleryZoomPan(at y: CGFloat) {
-        zoomPanLastY = y
-        // Cancels the restoration task without stopping the scale animation.
-        pendingZoomColumns = nil
-        pendingZoomTarget = nil
-        pendingZoomAnchor = nil
-        pendingZoomViewportTop = nil
-        pendingZoomMeasuredFrame = nil
-    }
-
-    private func moveGalleryZoomPan(to y: CGFloat, width: CGFloat, viewportHeight: CGFloat) {
-        guard let previousY = zoomPanLastY else {
-            beginGalleryZoomPan(at: y)
-            return
-        }
-        zoomPanLastY = y
-        guard let index = zoomAnchorIndex else { return }
-        let bounded = min(2, max(0, zoomPresentation.position))
-        let from = bounded <= 1 ? 5 : 3
-        let to = bounded <= 1 ? 3 : 1
-        let progress = bounded <= 1 ? bounded : bounded - 1
-        func bounds(for columns: Int) -> (top: CGFloat, bottom: CGFloat) {
-            let side = tileSide(columns: columns, width: width)
-            let top = (zoomAnchorTops[columns] ?? 0)
-                - galleryItemTop(index: index, columns: columns, width: width, leading: slots(for: columns))
-            let rows = (zoomSnapshot.count + slots(for: columns) + columns - 1) / columns
-            let height = columns == 1
-                ? imageLayout.top(at: zoomSnapshot.count, width: side, spacing: gallerySpacing) - gallerySpacing
-                : CGFloat(rows) * side + CGFloat(max(0, rows - 1)) * gallerySpacing
-            return (top, top + height)
-        }
-        let start = bounds(for: from)
-        let end = bounds(for: to)
-        let scale = 1 + zoomPresentation.position - bounded
-        let anchorY = zoomPresentation.elasticAnchor.y
-        let top = anchorY + (start.top + (end.top - start.top) * progress - anchorY) * scale
-        let bottom = anchorY + (start.bottom + (end.bottom - start.bottom) * progress - anchorY) * scale
-        let maximumOffset = galleryScrollTopInset - top
-        let minimumOffset = min(maximumOffset, viewportHeight - bottom)
-        zoomPresentation.offsetY = min(maximumOffset, max(minimumOffset,
-            zoomPresentation.offsetY + y - previousY))
-        // Keep enough prepared rows for a long drag while scale is settling.
-        if abs(zoomPresentation.offsetY) > zoomPreparedPanRange {
-            zoomPreparedPanRange = abs(zoomPresentation.offsetY) + viewportHeight
-            prepareZoomSlots(width: width, viewportHeight: viewportHeight)
-        }
-    }
-
-    private func finishGalleryZoom(width: CGFloat, viewportHeight: CGFloat) {
-        let destination = GalleryZoomRules.nearest(position: zoomPresentation.position,
-            baseColumns: zoomBaseColumns, width: width)
-        settleGalleryZoom(columns: destination, width: width, viewportHeight: viewportHeight)
-    }
-
-    private func settleGalleryZoom(columns nearest: Int, width: CGFloat, viewportHeight: CGFloat) {
-        guard !settlingZoom else { return }
-        settlingZoom = true
-        let settlementID = UUID()
-        zoomSettlementID = settlementID
-        suppressOpeningUntil = .distantFuture
-        let finalScale = tileSide(columns: nearest, width: width) / tileSide(columns: zoomBaseColumns, width: width)
-        let finalPosition = PhoneGalleryZoomPresentation.position(for: nearest)
-        let timing = GalleryZoomRules.settlement(position: zoomPresentation.position,
-            baseColumns: zoomBaseColumns, destination: nearest)
-        let duration = reduceMotion ? 0 : timing.duration
-        let gridTransition = timing.gridTransition
-        zoomPresentation.animate(to: finalPosition, duration: duration,
-                                 gridTransition: gridTransition) {
-            guard zoomSettlementID == settlementID else { return }
-            zoomPresentation.scale = finalScale
-            zoomSettledColumns = nearest
-            commitGalleryZoom(columns: nearest, width: width, viewportHeight: viewportHeight)
-        }
-    }
-
-    private func interruptGalleryZoom(width: CGFloat) {
-        // Keep the current drawing and its focal image. Rebase the new gesture
-        // from the displayed size, not the previous animation's endpoint.
-        zoomPresentation.stopAnimation()
-        zoomSettledColumns = nil
-        zoomSettlementID = nil
-        settlingZoom = false
-        let position = zoomPresentation.position
-        let small = tileSide(columns: 5, width: width)
-        let large = tileSide(columns: 1, width: width)
-        let side = GalleryZoomRules.requestedSide(position: position, width: width)
-        zoomGestureBaseSide = side
-        zoomPresentation.scale = min(large, max(small, side)) / tileSide(columns: zoomBaseColumns, width: width)
-    }
-
-    private func resetGalleryZoom() {
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            zoomPresentation.stopAnimation()
-            zoomGestureBaseSide = nil
-            zoomSettlementID = nil
-            zoomPanLastY = nil
-            zoomSettledColumns = nil
-            zoomAnchorTops = [:]
-            zoomPreparedPanRange = 0
-            previewCache.preparationPaused = false
-            zoomSessionID = nil
-            zoomMissingPreviews = []
-            zoomSlots = []
-            zoomPreviews = [:]
-            zoomSideBackdrops = [:]
-            zoomSideBackdropFrame = .zero
-            zoomSnapshot = []
-            zoomAnchorIndex = nil
-            hasTwoFingerContact = false
-            settlingZoom = false
-            pinchTarget = nil
-            zoomPresentation.scale = 1
-            zoomPresentation.position = PhoneGalleryZoomPresentation.position(for: columnCount)
-            zoomPresentation.offsetY = 0
-            pendingZoomAnchor = nil
-            pendingZoomTarget = nil
-            pendingZoomColumns = nil
-            pendingZoomViewportTop = nil
-            pendingZoomMeasuredFrame = nil
-            suppressOpeningUntil = .distantPast
-        }
-    }
-
-    /// Predict the same bounded scroll position used by the committed grid.
-    /// Near either end, the focal image must move because there are no more rows.
-    private func settledGalleryPlacement(columns: Int, width: CGFloat,
-                                         viewportHeight: CGFloat) -> (anchor: UnitPoint, viewportTop: CGFloat)? {
-        guard let target = pinchTarget,
-              let index = photoInbox.images.firstIndex(of: target) else { return nil }
-        let placement = GalleryZoomRules.placement(index: index, images: photoInbox.images,
-            columns: columns, leading: slots(for: columns), width: width, height: viewportHeight,
-            layout: imageLayout, fractionY: pinchTargetFractionY, viewportY: pinchViewportY,
-            capturedTop: zoomAnchorTops[columns], offsetY: zoomPresentation.offsetY,
-            topInset: galleryScrollTopInset)
-        return (UnitPoint(x: 0.5, y: placement.anchorY), placement.top)
-    }
-
-    private func commitGalleryZoom(columns nearest: Int, width: CGFloat, viewportHeight: CGFloat) {
-        // A finger always owns the visible position. Defer only the invisible
-        // grid handoff, never movement of the images under that finger.
-        guard zoomPanLastY == nil else { return }
-        // An unchanged layout with no Canvas pan already has the right offset.
-        // Once Canvas has moved, even this layout needs a position handoff.
-        if zoomPresentation.offsetY == 0, nearest == zoomBaseColumns, columnCount == nearest,
-           leadingSlots == slots(for: nearest) {
-            completeGalleryZoom()
-            return
-        }
-        let placement = settledGalleryPlacement(columns: nearest, width: width, viewportHeight: viewportHeight)
-        var transaction = Transaction()
-        transaction.disablesAnimations = true
-        withTransaction(transaction) {
-            if let placement, let original = pinchTarget,
-               let originalIndex = photoInbox.images.firstIndex(of: original) {
-                let scroll = galleryItemTop(index: originalIndex, columns: nearest,
-                    width: width, leading: slots(for: nearest)) - placement.viewportTop
-                let center = scroll + viewportHeight / 2
-                let side = tileSide(columns: nearest, width: width)
-                let index: Int
-                if nearest == 1 {
-                    index = photoInbox.images.indices.first {
-                        imageLayout.top(at: $0 + 1, width: side, spacing: gallerySpacing) > center
-                    } ?? (photoInbox.images.count - 1)
-                } else {
-                    let row = max(0, Int(center / (side + gallerySpacing)))
-                    index = min(photoInbox.images.count - 1, max(0, row * nearest - slots(for: nearest)))
-                }
-                let top = galleryItemTop(index: index, columns: nearest, width: width,
-                                         leading: slots(for: nearest)) - scroll
-                let denominator = viewportHeight - galleryScrollTopInset
-                    - galleryItemHeight(index: index, columns: nearest, width: width)
-                pendingZoomAnchor = UnitPoint(x: 0.5,
-                    y: abs(denominator) > 1 ? (top - galleryScrollTopInset) / denominator : 0.5)
-                pendingZoomTarget = photoInbox.images[index]
-                pendingZoomColumns = nearest
-                pendingZoomViewportTop = top
-                pendingZoomMeasuredFrame = nil
-                leadingSlots = slots(for: nearest)
-                storedColumnCount = nearest
-                // The overlay still uses the captured source geometry. Relayout
-                // and scroll correction underneath cannot move it or expose a frame.
-            } else {
-                completeGalleryZoom()
-            }
-        }
-    }
-
-    private func completeGalleryZoom() {
-        #if DEBUG
-        if PhoneGalleryDebug.showsDiagnostics {
-            zoomDiagnostics.completedGeometry = debugZoomGeometry(width: zoomBaseFrame.width)
-        }
-        #endif
-        resetGalleryZoom()
-        suppressOpeningUntil = Date().addingTimeInterval(0.3)
-    }
-
-}
-
-private struct PhoneDrawingView: View {
-    let url: URL
-    @ObservedObject var inbox: WatchPhotoInbox
-    var closeDrawing: (() -> Void)? = nil
-    @Environment(\.dismiss) private var dismiss
-    @State private var confirmingDeletion = false
-    @State private var exporting = false
-    @State private var showingPhotoConfirmation = false
-    @State private var exportingProject = false
-    @State private var transferMessage: String?
-    private var projectURL: URL { url.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension) }
-    private var hasProject: Bool { FileManager.default.fileExists(atPath: projectURL.path) }
-    @State private var exportError: String?
-
-    private var drawingContent: some View {
-        GeometryReader { geometry in
-            DrawingPreview(url: url, maximumSize: 2400)
-                .frame(width: geometry.size.width, height: geometry.size.height)
-        }
-        .ignoresSafeArea(.container)
-        .overlay(alignment: .bottom) {
-            if inbox.isSaving {
-                ProgressView("Saving…")
-                    .padding(12)
-                    .background(.regularMaterial, in: Capsule())
-                    .padding(.bottom, 12)
-            }
-        }
-    }
-
-    private var drawingNavigation: some View {
-        drawingContent
-        .toolbarBackground(.hidden, for: .bottomBar)
-        .toolbar(.visible, for: .bottomBar)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .navigationTitle("Drawing")
-        .toolbar(.visible, for: .navigationBar)
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-                PhoneDrawingActions(
-                    url: url,
-                    projectURL: projectURL,
-                    hasProject: hasProject,
-                    hasPhotoOriginal: PhotoOriginalStore().hasOriginal(for: url),
-                    isSaving: inbox.isSaving,
-                    saveToPhotos: { inbox.saveToPhotos(url) },
-                    exportImage: { exporting = true },
-                    exportProject: { exportingProject = true },
-                    synchronize: { inbox.synchronize() },
-                    sendToWatch: sendToWatch,
-                    delete: { confirmingDeletion = true }
-                )
-
-            if let closeDrawing {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button(action: closeDrawing) {
-                        Label("Back", systemImage: "chevron.backward")
-                    }
-                }
-            }
-        }
-    }
-
-    private var drawingExports: some View {
-        drawingNavigation
-        .confirmationDialog("Delete from Apple Watch and iPhone?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
-            Button("Delete", role: .destructive) {
-                if inbox.delete(url) { close() }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Save a copy to Photos, Files, or another app first. Deletion will sync when your devices reconnect.")
-        }
-        .onChange(of: inbox.images) { _, images in
-            if !images.contains(url) { close() }
-        }
-        .fileExporter(isPresented: $exporting, document: DrawingFile(url: url, fullResolution: true), contentType: .png,
-                      defaultFilename: url.deletingPathExtension().lastPathComponent) { result in
-            if case .failure(let error) = result { exportError = error.localizedDescription }
-        }
-        .fileExporter(isPresented: $exportingProject, document: DrawingFile(url: projectURL), contentType: .paintAnytimeProject,
-                      defaultFilename: projectURL.deletingPathExtension().lastPathComponent) { result in
-            if case .failure(let error) = result { exportError = error.localizedDescription }
-        }
-    }
-
-    var body: some View {
-        drawingExports
-        .alert("Project queued", isPresented: showingTransferMessage) {
-            Button("OK") { transferMessage = nil }
-        } message: { Text(transferMessage ?? "") }
-        .onChange(of: inbox.savedToPhotos, initial: true) { _, saved in
-            showingPhotoConfirmation = saved
-        }
-        .onChange(of: showingPhotoConfirmation) { _, presented in
-            if !presented { inbox.clearConfirmation() }
-        }
-        .alert("Saved to Photos", isPresented: $showingPhotoConfirmation) {
-            Button("OK") { showingPhotoConfirmation = false }
-        }
-        .alert("Could not export", isPresented: showingExportError) {
-            Button("OK") { exportError = nil }
-        } message: { Text(exportError ?? "") }
-    }
-
-    private var showingTransferMessage: Binding<Bool> {
-        Binding(get: { transferMessage != nil }, set: { if !$0 { transferMessage = nil } })
-    }
-
-    private var showingExportError: Binding<Bool> {
-        Binding(get: { exportError != nil }, set: { if !$0 { exportError = nil } })
-    }
-
-    private func sendToWatch() {
-        let session = WCSession.default
-        guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
-            exportError = String(localized: "Connect your Apple Watch and install Paint Anytime before sending a project.")
-            return
-        }
-        session.transferFile(projectURL, metadata: ["project": true])
-        transferMessage = String(localized: "Project queued. It will appear in your watch gallery when the transfer finishes. Open it there to edit.")
-    }
-
-    private func close() {
-        if let closeDrawing {
-            closeDrawing()
-        } else {
-            dismiss()
-        }
-    }
-}
-
-private struct DrawingFile: FileDocument {
-    static var readableContentTypes: [UTType] { [.png, .paintAnytimeProject] }
-    let url: URL?
-    let data: Data?
-    /// Exports an imported photo's original at full resolution, with the drawing on top.
-    var fullResolution = false
-    init(url: URL, fullResolution: Bool = false) { self.url = url; data = nil; self.fullResolution = fullResolution }
-    init(configuration: ReadConfiguration) throws { url = nil; data = configuration.file.regularFileContents }
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        if let url {
-            let source = fullResolution ? try PhotoOriginalStore().outputImage(for: url) : url
-            return try FileWrapper(url: source, options: .immediate)
-        }
-        return FileWrapper(regularFileWithContents: data ?? Data())
-    }
-}
-
-@MainActor
-struct DrawingPreview: View {
-    let url: URL
-    let maximumSize: Int
-    var fillsFrame = false
-    var cache: PhoneGalleryPreviewCache? = nil
-    var preparesOtherSizes = false
-    var isTransitionDestination = false
-    var frozenPreview: UIImage? = nil
-    var viewportSize: CGSize? = nil
-    @State private var previewOwner = UUID()
-    @State private var preview: UIImage?
-    @State private var failed = false
-
-    var body: some View {
-        Group {
-            if let image = frozenPreview ?? cache?.image(for: url, maximumSize: maximumSize)
-                ?? preview ?? cache?.availableImage(for: url, maximumSize: maximumSize) {
-                if let viewportSize {
-                    // Use the same dimensions as the tile's clip. A fixed inner
-                    // frame also prevents an oversized aspect-fill image from
-                    // changing the ZStack's layout and centering during a pinch.
-                    let scale = max(viewportSize.width / max(image.size.width, 1),
-                                    viewportSize.height / max(image.size.height, 1))
-                    Image(uiImage: image)
-                        .resizable()
-                        .frame(width: image.size.width * scale, height: image.size.height * scale)
-                        .frame(width: viewportSize.width, height: viewportSize.height)
-                        .background {
-                            if isTransitionDestination { Color(uiColor: .systemBackground) }
-                        }
-                        .clipped()
-                } else {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: fillsFrame ? .fill : .fit)
-                        .background {
-                            if isTransitionDestination { Color(uiColor: .systemBackground) }
-                        }
-                }
-            }
-            else if isTransitionDestination { Color.clear }
-            else if failed { Label("Preview unavailable", systemImage: "photo") }
-            else { ProgressView() }
-        }
-        .onAppear {
-            if let cache, let image = frozenPreview ?? cache.availableImage(for: url, maximumSize: maximumSize) ?? preview {
-                preview = image
-                cache.retainDisplayed(image, for: url, owner: previewOwner)
-            }
-        }
-        .onDisappear { cache?.releaseDisplayed(owner: previewOwner) }
-        .task(id: "\(url.absoluteString)|\(maximumSize)|\(cache?.id.uuidString ?? "detail")|\(preparesOtherSizes)") {
-            failed = false
-            if let frozenPreview {
-                preview = frozenPreview
-                cache?.retainDisplayed(frozenPreview, for: url, owner: previewOwner)
-                return
-            }
-            if let cache {
-                let image = await cache.load(url, maximumSize: maximumSize)
-                guard !Task.isCancelled else { return }
-                if let image {
-                    cache.retainDisplayed(image, for: url, owner: previewOwner)
-                    preview = image
-                }
-                failed = image == nil
-                if preparesOtherSizes, image != nil {
-                    await cache.prepareOtherSizes(for: url, excluding: maximumSize)
-                }
-                return
-            }
-            let sourceURL = url
-            let size = maximumSize
-            let image = await Task.detached(priority: .userInitiated) {
-                guard let source = CGImageSourceCreateWithURL(sourceURL as CFURL, nil) else { return Optional<CGImage>.none }
-                return CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                    kCGImageSourceCreateThumbnailFromImageAlways: true,
-                    kCGImageSourceCreateThumbnailWithTransform: true,
-                    kCGImageSourceThumbnailMaxPixelSize: size
-                ] as CFDictionary)
-            }.value
-            if !Task.isCancelled {
-                if let image { preview = UIImage(cgImage: image) }
-                else { failed = true }
-            }
-        }
     }
 }

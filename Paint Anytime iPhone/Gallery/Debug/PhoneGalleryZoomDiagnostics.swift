@@ -1,7 +1,8 @@
-#if DEBUG
 import Foundation
 import QuartzCore
 
+/// Compiled in every configuration so the zoom controller's stored layout is
+/// fixed; only DEBUG code records or shows it.
 /// Milestones are retained after release; synchronous stalls cannot display
 /// their intermediate state while the main thread is busy.
 struct PhoneGalleryZoomDiagnostics {
@@ -42,4 +43,3 @@ struct PhoneGalleryZoomDiagnostics {
         + "slots \(slotCount) · missing snapshots \(missingCount)"
     }
 }
-#endif

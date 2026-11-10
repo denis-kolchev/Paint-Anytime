@@ -10,10 +10,7 @@ struct ContentView: View {
     @AppStorage(AutosaveSettings.enabledKey) private var autosaveEnabled = false
     @AppStorage(AutosaveSettings.intervalKey) private var autosaveMinutes = AutosaveSettings.defaultMinutes
     @AppStorage(AutosaveSettings.showsTimerKey) private var showsAutosaveTimer = AutosaveSettings.defaultShowsTimer
-    @State private var autosaveTimerRange: ClosedRange<Date>?
-    @State private var autosaveScheduleID: String?
-    @State private var showsAutosaveProgress = false
-    @State private var autosaveCompleted = false
+    @State private var autosave = CanvasAutosave()
     @StateObject private var menuOnboarding = OnboardingController()
     private var controller: CanvasController { session.canvas }
     @AppStorage(CanvasControlLayout.storageKey) private var controlLayoutData = Data()
@@ -29,9 +26,6 @@ struct ContentView: View {
     }
     /// The built-in controls are the morph menus; any other arrangement is a custom layout.
     private var usesMorphToolbar: Bool { customLayout == nil }
-    private var canvasToolbarDiameter: CGFloat {
-        usesMorphToolbar ? 32 : MorphPanelGeometry.buttonDiameter
-    }
     private var showsMorphToolbar: Bool {
         get { morphState.showsMorphToolbar }
         nonmutating set { morphState.showsMorphToolbar = newValue }
@@ -88,11 +82,11 @@ struct ContentView: View {
         .overlay {
             // The canvas hides the system clock, so the countdown takes its place:
             // centered at the clock's height.
-            if autosaveEnabled, showsAutosaveTimer, isActive, scenePhase == .active, !showsAutosaveProgress,
+            if autosaveEnabled, showsAutosaveTimer, isActive, scenePhase == .active, !autosave.showsProgress,
                menuOnboarding.tutorialFolder == nil,
                !showsGallery, !showsAppSettings, !showsToolSettings, !showsLayers,
                !showsSampledPalette, quickSettings == nil,
-               let autosaveTimerRange {
+               let autosaveTimerRange = autosave.timerRange {
                 GeometryReader { overlay in
                     let frame = overlay.frame(in: .global)
                     // Fixed screen height of the hidden clock's center (measured on Apple Watch
@@ -282,15 +276,15 @@ struct ContentView: View {
         .task(id: autosaveTaskID) {
             await runAutosave()
         }
-        .disabled(showsAutosaveProgress)
+        .disabled(autosave.showsProgress)
         .overlay {
-            if showsAutosaveProgress {
-                AutosaveProgressView(completed: autosaveCompleted)
+            if autosave.showsProgress {
+                AutosaveProgressView(completed: autosave.completed)
                     .ignoresSafeArea()
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.22), value: showsAutosaveProgress)
+        .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.22), value: autosave.showsProgress)
     }
 
     private var autosaveConfigurationID: String {
@@ -301,69 +295,31 @@ struct ContentView: View {
         "\(autosaveConfigurationID)-\(scenePhase == .active)"
     }
 
-    @MainActor
     private func runAutosave() async {
-        guard !Task.isCancelled else { return }
-        if autosaveScheduleID != autosaveConfigurationID {
-            autosaveScheduleID = autosaveConfigurationID
-            autosaveTimerRange = nil
-        }
-        guard autosaveEnabled, isActive, scenePhase == .active else { return }
-        let seconds = AutosaveSettings.minutes(autosaveMinutes) * 60
-        do {
-            while !Task.isCancelled {
-                // Preserve the deadline across wrist-down and background transitions.
-                // An overdue save runs on activation once the canvas is idle.
-                if autosaveTimerRange == nil {
-                    let start = Date()
-                    autosaveTimerRange = start...start.addingTimeInterval(TimeInterval(seconds))
-                }
-                if let deadline = autosaveTimerRange?.upperBound {
-                    let remaining = deadline.timeIntervalSinceNow
-                    if remaining > 0 {
-                        try await Task.sleep(for: .seconds(remaining))
-                    }
-                }
-                // Wait for interaction and presentations to finish without cancelling a stroke
-                // or saving a temporary selection state. Retry promptly once the canvas is idle.
-                while controller.activeStroke != nil || lasso.isActive || lasso.isPreparing
-                    || showsGallery || showsAppSettings || showsLayers || showsToolSettings
-                    || showsSampledPalette || quickSettings != nil || isMovingCanvas
-                    || session.isPreparingCanvas || session.isSavingDrawing || session.pendingCanvasAction != nil
-                    || session.savedDrawing != nil || session.exportError != nil {
-                    try await Task.sleep(for: .seconds(1))
-                }
-                try Task.checkCancellation()
-                guard autosaveEnabled, isActive, scenePhase == .active else { return }
-                try await saveWithProgress()
-                autosaveTimerRange = nil
-            }
-        } catch {
-            // Cancellation stops execution, but keeps the deadline for activation.
-        }
+        await autosave.run(
+            configurationID: autosaveConfigurationID,
+            seconds: AutosaveSettings.minutes(autosaveMinutes) * 60,
+            canRun: { autosaveEnabled && isActive && scenePhase == .active },
+            isBusy: { isBusyForAutosave },
+            prepare: {
+                guard controller.canClear else { return false }
+                savedNoticeID = nil
+                return true
+            },
+            save: {
+                let previousNotice = session.autosaveNoticeID
+                session.saveDrawing(size: canvasSize, scale: displayScale, automatically: true)
+                return session.autosaveNoticeID != previousNotice
+            })
     }
 
-    @MainActor
-    private func saveWithProgress() async throws {
-        guard controller.canClear else { return }
-        autosaveCompleted = false
-        savedNoticeID = nil
-        showsAutosaveProgress = true
-        defer {
-            // Retain the checkmark while the overlay fades out.
-            showsAutosaveProgress = false
-        }
-        // Present the overlay before the existing synchronous exporter starts.
-        try await Task.sleep(for: .milliseconds(250))
-        try Task.checkCancellation()
-        guard autosaveEnabled, isActive, scenePhase == .active else { return }
-        let previousNotice = session.autosaveNoticeID
-        session.saveDrawing(size: canvasSize, scale: displayScale, automatically: true)
-        guard session.autosaveNoticeID != previousNotice else { return }
-        // The save is complete even if sleep cancels the checkmark animation.
-        autosaveTimerRange = nil
-        autosaveCompleted = true
-        try await Task.sleep(for: .milliseconds(300))
+    /// Interaction and presentations an autosave waits for.
+    private var isBusyForAutosave: Bool {
+        controller.activeStroke != nil || lasso.isActive || lasso.isPreparing
+            || showsGallery || showsAppSettings || showsLayers || showsToolSettings
+            || showsSampledPalette || quickSettings != nil || isMovingCanvas
+            || session.isPreparingCanvas || session.isSavingDrawing || session.pendingCanvasAction != nil
+            || session.savedDrawing != nil || session.exportError != nil
     }
 
     @MainActor
@@ -409,10 +365,6 @@ struct ContentView: View {
         launchRequest = nil
     }
 
-    private var morphOwnsTrailingControl: Bool {
-        !showsToolSettings && (isMovingCanvas || (lasso.isActive && showsSelectionActions) ||
-            (!lasso.isActive && usesMorphToolbar))
-    }
 
     private func canvasStack(_ geometry: GeometryProxy) -> some View {
         ZStack {
@@ -427,14 +379,7 @@ struct ContentView: View {
                 .zIndex(0)
 
             if let layerMoveName, lasso.isActive, !showsGallery, !showsToolSettings {
-                Text(layerMoveName)
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-                    .padding(.horizontal, 42)
+                CanvasNoticeLabel(text: layerMoveName)
                     .id(layerMoveID)
                     .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
                     .allowsHitTesting(false)
@@ -457,7 +402,7 @@ struct ContentView: View {
                               onStartLasso: { startLasso() }, onFinishLasso: finishLasso,
                               onMoveSelectionLayer: moveSelectionLayer,
                               onClearLayerMoveName: { layerMoveName = nil })
-                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
+                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || autosave.showsProgress))
                 .zIndex(3)
 
             if let customLayout, isActive, !showsGallery, !showsToolSettings,
@@ -467,7 +412,7 @@ struct ContentView: View {
                                      size: geometry.size,
                                      canvasOrigin: geometry.frame(in: .global).origin,
                                      onAction: performQuickAction)
-                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil || showsAutosaveProgress))
+                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil || autosave.showsProgress))
                     .zIndex(3)
             }
 
@@ -507,15 +452,7 @@ struct ContentView: View {
             }
 
             if let savedNoticeID, !showsGallery {
-                Text(L10n.text("Artwork saved to gallery"))
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.5)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-                    .padding(.horizontal, 42)
+                CanvasNoticeLabel(text: L10n.text("Artwork saved to gallery"), minimumScaleFactor: 0.5)
                     .id(savedNoticeID)
                     .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
                     .allowsHitTesting(false)
@@ -550,185 +487,34 @@ struct ContentView: View {
     }
 
     /// Kept out of `body` so the view stays within type-checking limits.
-    @ToolbarContentBuilder
-    private var canvasToolbar: some ToolbarContent {
-        if let customLayout, isActive, menuOnboarding.tutorialFolder == nil,
-           !showsGallery, !showsToolSettings, !isMovingCanvas, !lasso.isActive {
-            ToolbarItem(placement: .topBarTrailing) {
-                customToolbarAnchor(0, layout: customLayout)
-            }
-            ToolbarItem(placement: .topBarLeading) {
-                customToolbarAnchor(CanvasControlLayout.topLeadingSlot, layout: customLayout)
-            }
-            ToolbarItemGroup(placement: .bottomBar) {
-                customToolbarAnchor(1, layout: customLayout)
-                Spacer(minLength: 0)
-                customToolbarAnchor(2, layout: customLayout)
-                Spacer(minLength: 0)
-                customToolbarAnchor(3, layout: customLayout)
-                Spacer(minLength: 0)
-                customToolbarAnchor(4, layout: customLayout)
-            }
-        }
-        if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && lasso.isActive {
-            ToolbarItem(placement: .topBarLeading) {
-                // Both stay installed, like the trailing Done: swapping them with if/else
-                // left the ✕ unrendered when Complete strokes opened from a custom layout,
-                // whose hidden bars reappear with the lasso.
-                ZStack {
-                    // Balance Done to center the system clock, and forward this
-                    // native toolbar region's drags to the same lasso controller.
-                    WatchLassoToolbarTouchRegion(input: lassoToolbarInput, lasso: lasso,
-                        controller: controller, diameter: canvasToolbarDiameter)
-                        .allowsHitTesting(!lasso.awaitsSketchAssistConfirmation)
-                    sketchAssistCancelControl
-                }
-            }
-        }
-        // A custom layout assigns the top-left slot itself, except while the
-        // free camera borrows it for the eyedropper.
-        if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery && !showsToolSettings && !lasso.isActive &&
-            (customLayout == nil || isMovingCanvas) {
-            ToolbarItem(placement: .topBarLeading) {
-                MorphControlsScope {
-                    Button {
-                        if lasso.isActive {
-                            if showsSelectionActions { moveSelectionLayer(1) }
-                            else { lasso.setMode(.strokes) }
-                        } else if isMovingCanvas {
-                            controller.cancelStroke()
-                            isEyedropperActive.toggle()
-                            // Deselecting cancels the pick, so ✓ won't open the color editor.
-                            hasEyedropperSession = isEyedropperActive
-                            if !isEyedropperActive { cameraSampledColor = nil }
-                        } else if usesMorphToolbar {
-                            if showsContentActions {
-                                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                                    showsContentActions = false
-                                }
-                                showsAppSettings = true
-                            } else {
-                                withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                                    showsMorphToolbar = false
-                                    showsContentActions = true
-                                }
-                            }
-                        } else { showsAppSettings = true }
-                    } label: {
-                        Image(systemName: lasso.isActive ? "checkmark" : isMovingCanvas ? "eyedropper" : usesMorphToolbar ? "doc.badge.gearshape" : "ellipsis")
-                            .foregroundStyle(lasso.isActive || isEyedropperActive ? .green : .primary)
-                            .frame(width: 18, height: 18, alignment: .center)
-                            .opacity(lasso.isActive || isMovingCanvas || usesMorphToolbar ? 0 : 1)
-                            .contentShape(Rectangle())
-                    }
-                    .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: lasso.isActive ? true : (usesMorphToolbar || isMovingCanvas) || controller.activeStroke != nil)
-                    .accessibilityLabel(L10n.text(lasso.isActive ? (showsSelectionActions ? "Move to layer above" : WatchLassoMode.strokes.title) : isMovingCanvas ? "Eyedropper" : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
-                    .disabled(lasso.isActive && showsSelectionActions && !lasso.canMoveLayer(1, controller: controller))
-                    .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
-                    .trackCanvasControl(.more, frames: controlFramesBinding)
-                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
-                    .opacity(controller.activeStroke != nil ? 0 : 1)
-                    .allowsHitTesting(controller.activeStroke == nil)
-                    .accessibilityHidden(controller.activeStroke != nil)
-                }
-            }
-        }
-        if isActive && menuOnboarding.tutorialFolder == nil && !showsGallery &&
-            (customLayout == nil || showsToolSettings || isMovingCanvas || lasso.isActive) {
-            ToolbarItem(placement: .topBarTrailing) {
-                trailingToolControl
-            }
-        }
+    private var canvasToolbar: CanvasToolbar {
+        CanvasToolbar(
+            controller: controller, lasso: lasso, lassoToolbarInput: lassoToolbarInput,
+            morphState: morphState, customLayout: customLayout,
+            isShown: isActive && menuOnboarding.tutorialFolder == nil && !showsGallery,
+            isMovingCanvas: isMovingCanvas,
+            hasActiveStroke: controller.activeStroke != nil,
+            instrument: controller.pencilStyle.instrument,
+            lassoIsActive: lasso.isActive,
+            awaitsSketchAssistConfirmation: lasso.awaitsSketchAssistConfirmation,
+            lassoHidesControls: lasso.hidesControls,
+            canMoveSelectionUp: lasso.canMoveLayer(1, controller: controller),
+            showsMorphToolbar: showsMorphToolbar,
+            showsContentActions: showsContentActions,
+            showsSelectionActions: showsSelectionActions,
+            hidesMenuControls: showsAppSettings || autosave.showsProgress,
+            hidesCustomAnchors: showsAppSettings || quickSettings != nil || autosave.showsProgress,
+            reduceMotion: reduceMotion,
+            showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
+            isEyedropperActive: $isEyedropperActive, hasEyedropperSession: $hasEyedropperSession,
+            cameraSampledColor: $cameraSampledColor,
+            controlFrames: controlFramesBinding,
+            onMoveSelectionLayer: moveSelectionLayer,
+            onFinishLasso: finishLasso,
+            onFinishCameraTool: finishCameraTool,
+            onAction: performQuickAction)
     }
 
-    /// Complete strokes: discards the outlined strokes instead of sending them.
-    /// Shown only while the outlined strokes wait for confirmation.
-    private var sketchAssistCancelControl: some View {
-        let isShown = lasso.awaitsSketchAssistConfirmation && !lasso.hidesControls
-        return MorphControlsScope {
-            Button {
-                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { lasso.resetSelection() }
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 17, weight: .semibold))
-                    .frame(width: 18, height: 18, alignment: .center)
-                    .contentShape(Rectangle())
-            }
-            .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true,
-                                     hidesNativeChrome: !isShown)
-            .accessibilityLabel(L10n.text("Cancel"))
-            .trackCanvasControl(.more, frames: controlFramesBinding)
-            .opacity(isShown ? 1 : 0)
-            .allowsHitTesting(isShown)
-            .accessibilityHidden(!isShown)
-        }
-    }
-
-    /// The trailing toolbar control: tool settings, Done or the drawing morph.
-    /// Kept apart from `body` so the toolbar stays within type-checking limits.
-    private var trailingToolControl: some View {
-        MorphControlsScope {
-            Button {
-                if lasso.isActive {
-                    if lasso.awaitsSketchAssistConfirmation { lasso.confirmSketchAssist(controller) }
-                    else { finishLasso() }
-                } else if isMovingCanvas {
-                    finishCameraTool()
-                }
-                else if usesMorphToolbar && !showsToolSettings {
-                    if showsMorphToolbar {
-                        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                            showsMorphToolbar = false
-                        }
-                        showsToolSettings = true
-                    } else {
-                        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                            showsContentActions = false
-                            showsMorphToolbar = true
-                        }
-                    }
-                } else { showsToolSettings.toggle() }
-            } label: {
-                Group {
-                    if showsToolSettings || isMovingCanvas || lasso.isActive {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundStyle(.green)
-                    } else if usesMorphToolbar {
-                        Image(systemName: "paintbrush.pointed")
-                    } else {
-                        ToolIcon(instrument: controller.pencilStyle.instrument)
-                    }
-                }
-                // Keep the label bounds identical when switching to Done,
-                // so the toolbar centers the checkmark like the tool icon.
-                .frame(width: 18, height: 18, alignment: .center)
-                .opacity(morphOwnsTrailingControl ? 0 : 1)
-                .contentShape(Rectangle())
-            }
-            .watchToolbarButtonStyle(diameter: showsToolSettings ? 32 : canvasToolbarDiameter, usesCanvasMaterial: !showsToolSettings, hidesNativeChrome: morphOwnsTrailingControl || lasso.hidesControls || (!showsToolSettings && controller.activeStroke != nil))
-            .accessibilityLabel(lasso.isActive && lasso.awaitsSketchAssistConfirmation ? L10n.text("Send to iPhone") : showsToolSettings || isMovingCanvas || lasso.isActive ? L10n.text("Done") : L10n.text(usesMorphToolbar && !showsMorphToolbar ? "Open drawing controls" : "Tool settings"))
-            .trackCanvasControl(.tools, frames: controlFramesBinding)
-            .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || showsAutosaveProgress))
-            // Keep the toolbar slot installed so the system clock does not
-            // move when drawing temporarily hides the button.
-            .opacity((!showsToolSettings && controller.activeStroke != nil) || lasso.hidesControls ? 0 : 1)
-            .allowsHitTesting((showsToolSettings || controller.activeStroke == nil) && !lasso.hidesControls)
-            .accessibilityHidden((!showsToolSettings && controller.activeStroke != nil) || lasso.hidesControls)
-        }
-    }
-
-    private func customToolbarAnchor(_ index: Int, layout: CanvasControlLayout) -> some View {
-        CustomCanvasToolbarAnchor(index: index, assignment: layout.slots[index],
-                                  state: morphState, onAction: performQuickAction)
-            .trackCanvasControl(CustomCanvasControls.anchors[index], frames: controlFramesBinding)
-            .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil || showsAutosaveProgress))
-            .opacity(controller.activeStroke == nil ? 1 : 0)
-            // The bars are hidden while these anchors exist; they only report frames for the
-            // drawn controls. Taking touches, the hidden slots swallowed taps on the drawn
-            // buttons under them (probe: window saw them, the canvas screen did not).
-            .allowsHitTesting(false)
-    }
 
     /// A short tap the canvas received inside a drawn custom control's zone: with the native
     /// bars hidden such taps sometimes reach the canvas under the control instead of it
@@ -916,166 +702,5 @@ struct ContentView: View {
             if usesMorphToolbar { return control == .morph || control == .contentMorph }
             return control != .morph && control != .canvasToolsMorph && control != .clear
         }
-    }
-}
-
-extension View {
-    func trackCanvasControl(_ control: CanvasToolbarControl,
-                            frames: Binding<[CanvasToolbarControl: CGRect]>) -> some View {
-        onGeometryChange(for: CGRect.self) { geometry in
-            // Toolbar items and the canvas have different local coordinate spaces.
-            TutorialDebug.measure("toolbar.geometry.read") { geometry.frame(in: .global) }
-        } action: { frame in
-            guard frames.wrappedValue[control] != frame else { return }
-            TutorialDebug.trace("toolbar.geometry.beforeWrite", "control=\(control) old=\(String(describing: frames.wrappedValue[control])) new=\(frame)")
-            frames.wrappedValue[control] = frame
-            TutorialDebug.trace("toolbar.geometry.afterWrite", "control=\(control)")
-        }
-    }
-}
-
-struct DestructiveConfirmationView: View {
-    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
-    @Environment(\.layoutDirection) private var layoutDirection
-    let title: String
-    let confirmTitle: String
-    var cancelTitle: String = L10n.text("No")
-    /// Fit one screen: no scrolling, and the title shrinks so both buttons stay visible.
-    var fitsScreen = false
-    var onCancel: () -> Void
-    var onConfirm: () -> Void
-
-    var body: some View {
-        if fitsScreen {
-            VStack(spacing: 12) {
-                Text(title)
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
-                    .minimumScaleFactor(0.5)
-                    .allowsTightening(true)
-                    // Take only the height the buttons leave; the text scales into it.
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                buttons
-                    .fixedSize(horizontal: false, vertical: true)
-                    .layoutPriority(1)
-            }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
-            .background(.black)
-        } else {
-            ScrollView {
-                VStack(spacing: 20) {
-                    Text(title)
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                    buttons
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 16)
-            }
-            .background(.black)
-        }
-    }
-
-    private var buttons: some View {
-        ConfirmationButtonsLayout(layoutDirection: layoutDirection) {
-            Button(action: onCancel) {
-                Text(cancelTitle)
-                    .frame(maxWidth: .infinity, minHeight: 32)
-            }
-            .watchActionButtonStyle()
-
-            Button(role: .destructive, action: onConfirm) {
-                Text(confirmTitle)
-                    .frame(maxWidth: .infinity, minHeight: 32)
-            }
-            .watchActionButtonStyle()
-            .tint(.red)
-            .foregroundStyle(.red)
-        }
-        .font(.caption.weight(.semibold))
-        .lineLimit(1)
-        .minimumScaleFactor(0.75)
-    }
-}
-
-/// Share spare width equally after measuring the localized button labels.
-private struct ConfirmationButtonsLayout: Layout {
-    let layoutDirection: LayoutDirection
-    private let spacing: CGFloat = 8
-
-    private func widths(for proposedWidth: CGFloat?, subviews: Subviews) -> [CGFloat] {
-        let ideal = subviews.map { $0.sizeThatFits(.unspecified).width }
-        guard ideal.count == 2 else { return ideal }
-        let available = max(0, (proposedWidth ?? (ideal[0] + ideal[1] + spacing)) - spacing)
-        let minimum = min(44, available / 2)
-        let first = min(available - minimum, max(minimum, (available + ideal[0] - ideal[1]) / 2))
-        return [first, available - first]
-    }
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let widths = widths(for: proposal.width, subviews: subviews)
-        let height = zip(subviews, widths).map { view, width in
-            view.sizeThatFits(ProposedViewSize(width: width, height: nil)).height
-        }.max() ?? 0
-        return CGSize(width: widths.reduce(0, +) + spacing, height: height)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let widths = widths(for: bounds.width, subviews: subviews)
-        var offset: CGFloat = 0
-        for (view, width) in zip(subviews, widths) {
-            let x = layoutDirection == .rightToLeft
-                ? bounds.maxX - offset - width / 2
-                : bounds.minX + offset + width / 2
-            view.place(at: CGPoint(x: x, y: bounds.midY), anchor: .center,
-                       proposal: ProposedViewSize(width: width, height: bounds.height))
-            offset += width + spacing
-        }
-    }
-}
-
-/// Retain toolbar slots while fading every canvas control behind the menu.
-private struct CanvasMenuControlVisibility: ViewModifier {
-    let isHidden: Bool
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    func body(content: Content) -> some View {
-        content
-            .opacity(isHidden ? 0 : 1)
-            .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.22), value: isHidden)
-            .allowsHitTesting(!isHidden)
-            .accessibilityHidden(isHidden)
-    }
-}
-
-/// Presents a quick action's settings. Kept out of `ContentView.body`, which is
-/// already at the type checker's limit.
-private struct QuickSettingsPresentation: ViewModifier {
-    @Binding var action: CanvasQuickAction?
-    // Not observed: the presented views observe it themselves, and drawing must not
-    // re-evaluate this modifier.
-    let controller: CanvasController
-    let viewportSize: CGSize
-
-    private var settingsAction: Binding<CanvasQuickAction?> {
-        Binding(get: { action == .canvasEditor ? nil : action }, set: { action = $0 })
-    }
-
-    private var showsEditor: Binding<Bool> {
-        Binding(get: { action == .canvasEditor }, set: { if !$0 { action = nil } })
-    }
-
-    func body(content: Content) -> some View {
-        content
-            .sheet(item: settingsAction) { action in
-                CanvasQuickSettingsView(action: action, controller: controller, viewportSize: viewportSize)
-            }
-            // The editor opens directly, full screen: a sheet's clock band would take
-            // the taps of its Reset and Save buttons.
-            .fullScreenCover(isPresented: showsEditor) {
-                CanvasLayoutEditorView(instrument: controller.pencilStyle.instrument)
-            }
     }
 }
