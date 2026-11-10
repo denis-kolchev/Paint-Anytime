@@ -53,6 +53,8 @@ struct WatchWelcomeView: View {
             // A plain app launch preserves the current screen and document.
             launchRequest = request.destination == .app ? nil : request
         }
+        // The editor menu owns its own controller, so it restarts the flow through this action.
+        .environment(\.restartWelcome, restartWelcome)
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
         .task(id: onboarding.preparesTutorial) {
@@ -62,6 +64,13 @@ struct WatchWelcomeView: View {
             Button(L10n.text("OK"), role: .cancel) {}
         } message: {
             Text(L10n.text("The tutorial could not start. Please try again."))
+        }
+    }
+
+    private var restartWelcome: RestartWelcomeAction {
+        RestartWelcomeAction {
+            welcomePage = .language
+            onboarding.restartWelcome()
         }
     }
 
@@ -93,6 +102,23 @@ struct WatchWelcomeView: View {
             }
             .padding()
         }
+    }
+}
+
+/// Returns the app to its first-launch questions while the editor stays alive underneath.
+struct RestartWelcomeAction {
+    let perform: @MainActor () -> Void
+    @MainActor func callAsFunction() { perform() }
+}
+
+private struct RestartWelcomeKey: EnvironmentKey {
+    static let defaultValue: RestartWelcomeAction? = nil
+}
+
+extension EnvironmentValues {
+    var restartWelcome: RestartWelcomeAction? {
+        get { self[RestartWelcomeKey.self] }
+        set { self[RestartWelcomeKey.self] = newValue }
     }
 }
 

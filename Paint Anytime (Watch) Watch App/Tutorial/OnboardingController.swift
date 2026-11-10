@@ -44,6 +44,14 @@ final class OnboardingController: ObservableObject {
         defaults.set(true, forKey: Self.completionKey)
     }
 
+    /// Shows the first-launch questions again. Drawings, the open document and
+    /// settings are untouched; only the welcome flag is cleared.
+    func restartWelcome() {
+        guard tutorialFolder == nil, !preparesTutorial else { return }
+        hasCompletedWelcome = false
+        defaults.set(false, forKey: Self.completionKey)
+    }
+
     func completeChapter(_ chapter: TutorialChapter) {
         objectWillChange.send()
         chapter.markCompleted(in: defaults)

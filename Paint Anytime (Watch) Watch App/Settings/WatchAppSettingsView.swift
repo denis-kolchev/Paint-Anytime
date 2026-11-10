@@ -5,6 +5,8 @@ struct WatchAppSettingsView: View {
     @AppStorage(CanvasControlLayout.storageKey) private var controlLayoutData = Data()
     @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
     @Environment(\.openURL) private var openURL
+    @Environment(\.restartWelcome) private var restartWelcome
+    @State private var confirmsStartOver = false
     private let supportEmail = "paintanytime.app@gmail.com"
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
@@ -70,6 +72,11 @@ struct WatchAppSettingsView: View {
                 } label: {
                     Label(L10n.text("Tutorial"), systemImage: "graduationcap")
                 }
+                if restartWelcome != nil {
+                    Button { confirmsStartOver = true } label: {
+                        Label(L10n.text("Start over"), systemImage: "arrow.counterclockwise")
+                    }
+                }
                 NavigationLink {
                     AutosaveSettingsView()
                 } label: {
@@ -102,6 +109,16 @@ struct WatchAppSettingsView: View {
         .navigationTitle(L10n.text("More"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar { closeToolbar }
+        .alert(L10n.text("Start over?"), isPresented: $confirmsStartOver) {
+            Button(L10n.text("Start over")) {
+                // Close the menu, then show the first-launch questions over the kept editor.
+                onClose?()
+                restartWelcome?()
+            }
+            Button(L10n.text("Cancel"), role: .cancel) {}
+        } message: {
+            Text(L10n.text("The language and tutorial questions will appear again. Your drawings and the current canvas stay as they are."))
+        }
     }
 
     /// Tool settings, Layers, Save, Lasso and Clear appear here only once the canvas
