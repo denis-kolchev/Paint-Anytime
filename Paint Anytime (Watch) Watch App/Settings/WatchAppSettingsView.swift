@@ -109,7 +109,7 @@ struct WatchAppSettingsView: View {
         .navigationTitle(L10n.text("More"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar { closeToolbar }
-        .alert(L10n.text("Start over?"), isPresented: $confirmsStartOver) {
+        .alert(L10n.text("Show the welcome screen again?"), isPresented: $confirmsStartOver) {
             Button(L10n.text("Start over")) {
                 // Close the menu, then show the first-launch questions over the kept editor.
                 onClose?()
@@ -483,6 +483,7 @@ private struct SettingsInformationView: View {
 }
 
 struct AppLanguageSelectionView: View {
+    var showsTitle = true
     var onSelection: (() -> Void)? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @State private var pendingLanguageCode: String?
@@ -514,7 +515,12 @@ struct AppLanguageSelectionView: View {
                 .accessibilityAddTraits(AppLanguage.currentCode == language.id ? .isSelected : [])
             }
             .onAppear {
-                proxy.scrollTo(AppLanguage.currentCode, anchor: .center)
+                // Position the list before it shows; an animated scroll during a page transition jerks.
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
+                    proxy.scrollTo(AppLanguage.currentCode, anchor: .center)
+                }
             }
         }
         .disabled(pendingLanguageCode != nil)
@@ -536,7 +542,7 @@ struct AppLanguageSelectionView: View {
         }
         .navigationBarBackButtonHidden(pendingLanguageCode != nil)
         .interactiveDismissDisabled(pendingLanguageCode != nil)
-        .navigationTitle(L10n.text("Language"))
+        .navigationTitle(showsTitle ? L10n.text("Language") : "")
         .task(id: pendingLanguageCode) {
             guard let code = pendingLanguageCode else { return }
             defer { pendingLanguageCode = nil }

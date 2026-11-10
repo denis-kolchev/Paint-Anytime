@@ -1914,175 +1914,175 @@
         }
       }
     },
-    "Start over?" : {
+    "Show the welcome screen again?" : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "هل تريد البدء من جديد؟"
+            "value" : "هل تريد عرض شاشة الترحيب مرة أخرى؟"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Začít znovu?"
+            "value" : "Znovu zobrazit uvítací obrazovku?"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start forfra?"
+            "value" : "Vis velkomstskærmen igen?"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Neu beginnen?"
+            "value" : "Begrüßungsbildschirm erneut anzeigen?"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Έναρξη από την αρχή;"
+            "value" : "Να εμφανιστεί ξανά η οθόνη καλωσορίσματος;"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Start over?"
+            "value" : "Show the welcome screen again?"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Empezar de nuevo?"
+            "value" : "¿Mostrar de nuevo la pantalla de bienvenida?"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aloitetaanko alusta?"
+            "value" : "Näytetäänkö tervetulonäkymä uudelleen?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recommencer ?"
+            "value" : "Afficher à nouveau l’écran de bienvenue ?"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "להתחיל מחדש?"
+            "value" : "להציג שוב את מסך הפתיחה?"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Újrakezdés?"
+            "value" : "Újra megjelenjen az üdvözlőképernyő?"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mulai dari awal?"
+            "value" : "Tampilkan layar sambutan lagi?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ricominciare?"
+            "value" : "Mostrare di nuovo la schermata di benvenuto?"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "最初から始めますか？"
+            "value" : "ようこそ画面をもう一度表示しますか？"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "처음부터 시작할까요?"
+            "value" : "환영 화면을 다시 표시할까요?"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Starte på nytt?"
+            "value" : "Vise velkomstskjermen igjen?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opnieuw beginnen?"
+            "value" : "Welkomstscherm opnieuw tonen?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zacząć od nowa?"
+            "value" : "Pokazać ponownie ekran powitalny?"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Começar de novo?"
+            "value" : "Mostrar a tela de boas-vindas novamente?"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recomeçar?"
+            "value" : "Mostrar novamente o ecrã de boas-vindas?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Начать сначала?"
+            "value" : "Снова показать экран приветствия?"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Börja om?"
+            "value" : "Visa välkomstskärmen igen?"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "เริ่มใหม่ไหม"
+            "value" : "แสดงหน้าจอต้อนรับอีกครั้งไหม"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Baştan başlansın mı?"
+            "value" : "Karşılama ekranı yeniden gösterilsin mi?"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Почати спочатку?"
+            "value" : "Знову показати екран привітання?"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bắt đầu lại?"
+            "value" : "Hiển thị lại màn hình chào mừng?"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "要重新开始吗？"
+            "value" : "要再次显示欢迎屏幕吗？"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "要重新開始嗎？"
+            "value" : "要再次顯示歡迎畫面嗎？"
           }
         }
       }

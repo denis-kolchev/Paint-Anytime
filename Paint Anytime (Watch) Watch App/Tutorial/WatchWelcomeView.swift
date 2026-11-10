@@ -5,6 +5,12 @@ struct WatchWelcomeView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @State private var launchRequest: WatchLaunchRequest?
     @State private var welcomePage: WelcomePage = .language
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Fades the first question in instead of showing it with the first frame.
+    @State private var showsWelcomeContent = false
+    /// Hole of the black iris as a fraction of the half-diagonal; 1 leaves the screen open.
+    @State private var irisFraction: CGFloat = 1
+    @State private var irisIsRunning = false
 
     private enum WelcomePage { case language, chooseLanguage, offer, later }
 
@@ -27,16 +33,25 @@ struct WatchWelcomeView: View {
                     .id(tutorialFolder)
                     .transition(.opacity)
                 } else if !onboarding.hasCompletedWelcome {
-                    welcome
-                        .background(Color.black.ignoresSafeArea())
-                }
-
-                if onboarding.preparesTutorial {
-                    ProgressView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black.ignoresSafeArea())
+                    ZStack {
+                        // The backdrop stays put while the pages crossfade above it.
+                        Color.black.ignoresSafeArea()
+                        welcome
+                            .id(welcomePage)
+                            .transition(pageTransition(for: welcomePage))
+                    }
+                    .opacity(showsWelcomeContent ? 1 : 0)
+                    // The question stays visible while the tutorial prepares, as the menu does.
+                    .allowsHitTesting(!onboarding.preparesTutorial)
+                    .transition(.opacity)
+                    .onAppear {
+                        withAnimation(.easeOut(duration: reduceMotion ? 0.2 : 0.6)) { showsWelcomeContent = true }
+                    }
+                    .onDisappear { showsWelcomeContent = false }
                 }
             }
+            // The same crossfade as a tutorial started from the editor menu.
+            .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: onboarding.tutorialFolder)
             // Keep both toolbar hosts in the same scheme when conditional items
             // are removed/reinserted while switching between tools and canvas.
             // A colorScheme environment override on a button only affects its
@@ -47,6 +62,17 @@ struct WatchWelcomeView: View {
             .modifier(ClockVisibilityHost())
             // Each tutorial page owns its top background; forcing a native
             // background here overrides the settings preview’s bounded material.
+        }
+        // Above the navigation host so the canvas toolbars appear inside the opening circle too.
+        .overlay {
+            IrisShape(fraction: irisFraction)
+                .fill(.black, style: FillStyle(eoFill: true))
+                .ignoresSafeArea()
+                // Hidden layers are skipped, so the idle iris costs the canvas nothing.
+                .opacity(irisIsRunning ? 1 : 0)
+                // Block taps only while closing; the canvas responds as soon as it starts to open.
+                .allowsHitTesting(irisIsRunning && irisFraction == 0)
+                .accessibilityHidden(true)
         }
         .onOpenURL { url in
             guard let request = WatchLaunchRequest(url: url) else { return }
@@ -70,7 +96,51 @@ struct WatchWelcomeView: View {
     private var restartWelcome: RestartWelcomeAction {
         RestartWelcomeAction {
             welcomePage = .language
-            onboarding.restartWelcome()
+            irisIsRunning = false
+            irisFraction = 1
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                onboarding.restartWelcome()
+            }
+        }
+    }
+
+    /// A crossfade: the previous page fades out over most of the time the next one
+    /// fades in, so neither vanishes at once nor leaves an empty black gap.
+    private func pageTransition(for page: WelcomePage) -> AnyTransition {
+        // Scaling a List shrinks its scroll frame and shows black bands above and below it.
+        let scales = !reduceMotion && page != .chooseLanguage
+        let insertion: AnyTransition = scales ? .opacity.combined(with: .scale(scale: 0.94)) : .opacity
+        return .asymmetric(
+            insertion: insertion.animation(.easeInOut(duration: reduceMotion ? 0.25 : 0.35).delay(0.05)),
+            removal: .opacity.animation(.easeInOut(duration: reduceMotion ? 0.2 : 0.3))
+        )
+    }
+
+    private func show(_ page: WelcomePage) {
+        withAnimation { welcomePage = page }
+    }
+
+    /// Closes the screen with a shrinking black circle, then opens it over the canvas.
+    /// SwiftUI springs solve m·x″ = −k·x − b·x′; zero bounce is critical damping,
+    /// so the circle settles without overshooting past fully closed or fully open.
+    private func finishWelcome() {
+        guard !irisIsRunning else { return }
+        guard !reduceMotion else {
+            withAnimation(.easeInOut(duration: 0.3)) { onboarding.completeWelcome() }
+            return
+        }
+        irisFraction = 1
+        irisIsRunning = true
+        withAnimation(.spring(duration: 0.55, bounce: 0), completionCriteria: .logicallyComplete) {
+            irisFraction = 0
+        } completion: {
+            // Swap the screens while everything is black.
+            onboarding.completeWelcome()
+            withAnimation(.spring(duration: 0.7, bounce: 0), completionCriteria: .removed) {
+                irisFraction = 1
+            } completion: {
+                irisIsRunning = false
+            }
         }
     }
 
@@ -79,17 +149,21 @@ struct WatchWelcomeView: View {
         case .language:
             let name = AppLanguage.supported.first { $0.id == AppLanguage.currentCode }?.nativeName ?? "English"
             WelcomeQuestion(text: L10n.format("Is %@ your language?", name)) {
-                welcomePage = .offer
+                show(.offer)
             } onNo: {
-                welcomePage = .chooseLanguage
+                show(.chooseLanguage)
             }
         case .chooseLanguage:
-            AppLanguageSelectionView(onSelection: { welcomePage = .language })
+            // No title: the bar would flash for a frame before the toolbar hides it.
+            AppLanguageSelectionView(showsTitle: false, onSelection: { show(.language) })
+                // A title bar appearing mid-crossfade changes the safe area and makes
+                // both pages jump; the previous question already names the topic.
+                .toolbar(.hidden, for: .navigationBar)
         case .offer:
             WelcomeQuestion(text: L10n.text("Would you like a guided tour?")) {
                 onboarding.requestTutorial()
             } onNo: {
-                welcomePage = .later
+                show(.later)
             }
         case .later:
             VStack(spacing: 8) {
@@ -97,10 +171,11 @@ struct WatchWelcomeView: View {
                     Text(L10n.text("You can start the tutorial anytime: tap the three dots, then Tutorial."))
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Button(L10n.text("OK")) { onboarding.completeWelcome() }
+                Button(L10n.text("OK"), action: finishWelcome)
                     .watchActionButtonStyle()
             }
-            .padding()
+            // No bottom padding: the button sits at the bottom of the safe area.
+            .padding([.horizontal, .top])
         }
     }
 }
@@ -119,6 +194,25 @@ extension EnvironmentValues {
     var restartWelcome: RestartWelcomeAction? {
         get { self[RestartWelcomeKey.self] }
         set { self[RestartWelcomeKey.self] = newValue }
+    }
+}
+
+/// A black screen with a centered circular hole; `fraction` 1 reaches the corners.
+private struct IrisShape: Shape {
+    var fraction: CGFloat
+
+    var animatableData: CGFloat {
+        get { fraction }
+        set { fraction = newValue }
+    }
+
+    func path(in rect: CGRect) -> Path {
+        let radius = max(0, fraction) * hypot(rect.width, rect.height) / 2
+        // Overfill the rectangle so no edge shows while the hole reaches the corners.
+        var path = Path(rect.insetBy(dx: -rect.width, dy: -rect.height))
+        path.addEllipse(in: CGRect(x: rect.midX - radius, y: rect.midY - radius,
+                                   width: radius * 2, height: radius * 2))
+        return path
     }
 }
 
