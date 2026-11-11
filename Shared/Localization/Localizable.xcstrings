@@ -1741,698 +1741,698 @@
         }
       }
     },
-    "Advanced" : {
-      "comment" : "Guided tour course with every chapter.",
+    "Chapter complete!" : {
+      "comment" : "Short tutorial result before the first-launch tour asks whether to continue. Keep concise for Apple Watch.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "متقدم"
+            "value" : "اكتمل الفصل!"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pokročilý"
+            "value" : "Kapitola dokončena!"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avanceret"
+            "value" : "Kapitlet er færdigt!"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fortgeschritten"
+            "value" : "Kapitel abgeschlossen!"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Προχωρημένο"
+            "value" : "Το κεφάλαιο ολοκληρώθηκε!"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Advanced"
+            "value" : "Chapter complete!"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avanzado"
+            "value" : "¡Capítulo completado!"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edistynyt"
+            "value" : "Luku on valmis!"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avancé"
+            "value" : "Chapitre terminé !"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "מתקדם"
+            "value" : "הפרק הושלם!"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Haladó"
+            "value" : "A fejezet kész!"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lanjutan"
+            "value" : "Bab selesai!"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avanzato"
+            "value" : "Capitolo completato!"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "アドバンス"
+            "value" : "章が完了！"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "고급"
+            "value" : "챕터 완료!"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avansert"
+            "value" : "Kapittelet er fullført!"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gevorderd"
+            "value" : "Hoofdstuk voltooid!"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zaawansowany"
+            "value" : "Rozdział ukończony!"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avançado"
+            "value" : "Capítulo concluído!"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avançado"
+            "value" : "Capítulo concluído!"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Продвинутый"
+            "value" : "Глава пройдена!"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avancerad"
+            "value" : "Kapitlet är klart!"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ขั้นสูง"
+            "value" : "จบบทนี้แล้ว!"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "İleri"
+            "value" : "Bölüm tamamlandı!"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Просунутий"
+            "value" : "Розділ пройдено!"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nâng cao"
+            "value" : "Đã xong chương!"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "进阶"
+            "value" : "本章完成！"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "進階"
+            "value" : "本章完成！"
           }
         }
       }
     },
-    "All three chapters" : {
-      "comment" : "Caption under the Advanced course button.",
+    "Continue" : {
+      "comment" : "Button that continues the guided tour with the remaining chapters.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "الفصول الثلاثة كلها"
+            "value" : "متابعة"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Všechny tři kapitoly"
+            "value" : "Pokračovat"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle tre kapitler"
+            "value" : "Fortsæt"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle drei Kapitel"
+            "value" : "Weiter"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Και τα τρία κεφάλαια"
+            "value" : "Συνέχεια"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "All three chapters"
+            "value" : "Continue"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los tres capítulos"
+            "value" : "Continuar"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kaikki kolme lukua"
+            "value" : "Jatka"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les trois chapitres"
+            "value" : "Continuer"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "כל שלושת הפרקים"
+            "value" : "המשך"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mindhárom fejezet"
+            "value" : "Tovább"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ketiga bab"
+            "value" : "Lanjut"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tutti e tre i capitoli"
+            "value" : "Continua"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "3つの章すべて"
+            "value" : "続ける"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "세 챕터 모두"
+            "value" : "계속"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle tre kapitlene"
+            "value" : "Fortsett"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alle drie hoofdstukken"
+            "value" : "Doorgaan"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wszystkie trzy rozdziały"
+            "value" : "Dalej"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Os três capítulos"
+            "value" : "Continuar"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Os três capítulos"
+            "value" : "Continuar"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Все три главы"
+            "value" : "Продолжить"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alla tre kapitel"
+            "value" : "Fortsätt"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ครบทั้ง 3 บท"
+            "value" : "ต่อไป"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Üç bölümün hepsi"
+            "value" : "Devam"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Усі три розділи"
+            "value" : "Продовжити"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cả ba chương"
+            "value" : "Tiếp tục"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全部三章"
+            "value" : "继续"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "全部三章"
+            "value" : "繼續"
           }
         }
       }
     },
-    "Basic" : {
-      "comment" : "Guided tour course with only the first chapter.",
+    "Continue the tour?" : {
+      "comment" : "Question after the first chapter of the first-launch guided tour. Keep concise for Apple Watch.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "أساسي"
+            "value" : "هل تريد متابعة الجولة؟"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Základní"
+            "value" : "Pokračovat v prohlídce?"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Grundlæggende"
+            "value" : "Vil du fortsætte rundvisningen?"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Basis"
+            "value" : "Tour fortsetzen?"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Βασικό"
+            "value" : "Συνέχεια της περιήγησης;"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Basic"
+            "value" : "Continue the tour?"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Básico"
+            "value" : "¿Continuar el recorrido?"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Perus"
+            "value" : "Jatketaanko esittelyä?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Basique"
+            "value" : "Continuer la visite ?"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "בסיסי"
+            "value" : "להמשיך בסיור?"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alap"
+            "value" : "Folytatod a bemutatót?"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dasar"
+            "value" : "Lanjutkan tur?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Base"
+            "value" : "Continuare il tour?"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ベーシック"
+            "value" : "ツアーを続けますか？"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "기본"
+            "value" : "투어를 계속할까요?"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Grunnleggende"
+            "value" : "Vil du fortsette omvisningen?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Basis"
+            "value" : "Doorgaan met de rondleiding?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Podstawowy"
+            "value" : "Kontynuować przewodnik?"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Básico"
+            "value" : "Continuar o tour?"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Básico"
+            "value" : "Continuar a visita?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Базовый"
+            "value" : "Продолжить обучение?"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Grundläggande"
+            "value" : "Fortsätta rundturen?"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "พื้นฐาน"
+            "value" : "ดูบทเรียนต่อไหม"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Temel"
+            "value" : "Tura devam edilsin mi?"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Базовий"
+            "value" : "Продовжити навчання?"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cơ bản"
+            "value" : "Tiếp tục hướng dẫn?"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "基础"
+            "value" : "要继续导览吗？"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "基礎"
+            "value" : "要繼續導覽嗎？"
           }
         }
       }
     },
-    "Choose a course" : {
-      "comment" : "Welcome question after accepting the guided tour.",
+    "Later" : {
+      "comment" : "Button that ends the guided tour now; the remaining chapters stay available in the menu.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اختر مستوى الدورة"
+            "value" : "لاحقًا"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vyberte kurz"
+            "value" : "Později"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vælg et kursus"
+            "value" : "Senere"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wähle einen Kurs"
+            "value" : "Später"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Επιλέξτε μάθημα"
+            "value" : "Αργότερα"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose a course"
+            "value" : "Later"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elige un curso"
+            "value" : "Más tarde"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Valitse kurssi"
+            "value" : "Myöhemmin"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choisissez un cours"
+            "value" : "Plus tard"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "בחרו מסלול"
+            "value" : "אחר כך"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Válassz kurzust"
+            "value" : "Később"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pilih kursus"
+            "value" : "Nanti"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scegli un corso"
+            "value" : "Più tardi"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "コースを選択"
+            "value" : "あとで"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "코스를 선택하세요"
+            "value" : "나중에"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Velg et kurs"
+            "value" : "Senere"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kies een cursus"
+            "value" : "Later"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wybierz kurs"
+            "value" : "Później"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Escolha um curso"
+            "value" : "Depois"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Escolha um curso"
+            "value" : "Mais tarde"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выберите курс"
+            "value" : "Позже"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Välj en kurs"
+            "value" : "Senare"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "เลือกหลักสูตร"
+            "value" : "ไว้ทีหลัง"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bir kurs seçin"
+            "value" : "Sonra"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Оберіть курс"
+            "value" : "Пізніше"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chọn khóa học"
+            "value" : "Để sau"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择课程"
+            "value" : "稍后"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇課程"
+            "value" : "稍後"
           }
         }
       }

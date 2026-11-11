@@ -3,8 +3,18 @@ import WatchKit
 
 struct TutorialPlayerView: View {
     let folder: URL
+    /// The first chapter result asks whether to go on instead of only offering Next.
+    let offersRemainingChapters: Bool
     let onCompleteChapter: (TutorialChapter) -> Void
     let onFinish: () -> Void
+    /// Later on the continuation question; the host plays its own exit. Without it,
+    /// Later crossfades out through `onFinish`.
+    let onDeclineContinuation: (() -> Void)?
+    private let chapters: [TutorialChapter]
+    @State private var offersContinuation = false
+    @State private var hasOfferedContinuation = false
+    /// Later or Continue was tapped; further taps on the fading question are ignored.
+    @State private var answeredContinuation = false
     @StateObject private var player: TutorialPlayerController
     private var tutorial: TutorialSession { player.tutorial }
     private var controller: CanvasController { player.canvas }
@@ -26,11 +36,16 @@ struct TutorialPlayerView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     init(folder: URL, chapters: [TutorialChapter] = TutorialChapter.allCases,
+         offersRemainingChapters: Bool = false,
          onCompleteChapter: @escaping (TutorialChapter) -> Void = { _ in },
+         onDeclineContinuation: (() -> Void)? = nil,
          onFinish: @escaping () -> Void) {
         self.folder = folder
+        self.chapters = chapters.isEmpty ? TutorialChapter.allCases : chapters
+        self.offersRemainingChapters = offersRemainingChapters
         self.onCompleteChapter = onCompleteChapter
         self.onFinish = onFinish
+        self.onDeclineContinuation = onDeclineContinuation
         _player = StateObject(wrappedValue: TutorialPlayerController(folder: folder, chapters: chapters))
     }
 
@@ -342,19 +357,10 @@ struct TutorialPlayerView: View {
                 .frame(width: screen.size.width, height: screen.size.height)
                 .environment(\.tutorialHintReservedHeight, hintReservedHeight)
 
-                TutorialLessonView(tutorial: tutorial, onFinish: {
-                    if player.preserveDrawing() { onFinish() }
-                },
-                                   screenWidth: hintWidth,
-                                   screenHeight: screen.size.height,
-                                   // Reserve the tool chrome, carousel, and a readable
-                                   // three-item control. The card already scrolls overflow.
-                                   maximumCardHeight: page == .tools && !tutorial.isPaletteLesson
-                                    ? max(32, screen.size.height - 40 - 30
-                                          - ToolValueControl.minimumHeight - 12) : nil,
-                                   confirmsFinish: $confirmsFinish)
+                lessonCard(width: hintWidth, screenHeight: screen.size.height)
                     .frame(width: hintWidth)
-                    .fixedSize(horizontal: false, vertical: true)
+                    // The continuation question grows the card to the whole screen.
+                    .fixedSize(horizontal: false, vertical: !offersContinuation)
                     .background {
                         GeometryReader { hintGeometry in
                             Color.clear.preference(key: TutorialHintHeightKey.self,
@@ -370,7 +376,8 @@ struct TutorialPlayerView: View {
         .ignoresSafeArea(.container, edges: [.menu, .layers, .layerSettings].contains(page)
                          || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
-            if height > 0 { hintHeight = height }
+            // The full-screen question must not move the controls reserved for the compact card.
+            if height > 0, !offersContinuation { hintHeight = height }
         }
         .background(Color.black.ignoresSafeArea())
         .overlay {
@@ -405,8 +412,9 @@ struct TutorialPlayerView: View {
         // Flatten the opaque confirmation and lesson before the host applies
         // its exit opacity; otherwise the lesson can show through fading children.
         .compositingGroup()
-        .toolbar(confirmsFinish ? .hidden : .automatic, for: .navigationBar, .bottomBar)
-        .requestsHiddenClock((page == .canvas || page == .saved) && !confirmsFinish)
+        .toolbar(coversLesson ? .hidden : .automatic, for: .navigationBar, .bottomBar)
+        // The expanded card is the whole screen, so the clock stays hidden over it.
+        .requestsHiddenClock(((page == .canvas || page == .saved) && !confirmsFinish) || offersContinuation)
         .modifier(TutorialCrownHint(tutorial: tutorial))
         .onAppear {
             player.startOrResume()
@@ -420,6 +428,13 @@ struct TutorialPlayerView: View {
             }
             applyCircleInk(for: step)
             applyLayerBrush(for: step)
+        }
+        .task(id: tutorial.step) {
+            // Ask once: the ring fills (~1.5 s), then the checkmark blinks and bounces for about
+            // 2.5 s inviting a tap; without one the card grows into the question by itself.
+            guard awaitsContinuation else { return }
+            do { try await Task.sleep(for: .milliseconds(reduceMotion ? 2500 : 4000)) } catch { return }
+            showContinuationOffer()
         }
         .task(id: tutorial.step) {
             guard tutorial.step == .history else { return }
@@ -852,5 +867,85 @@ private struct TutorialLassoGuide: View {
             }
         }
         .onAppear { startedAt = Date() }
+    }
+}
+
+private extension TutorialPlayerView {
+    /// A full-screen question or confirmation hides the lesson and its toolbars.
+    var coversLesson: Bool { confirmsFinish || offersContinuation }
+
+    /// Split out of `body`: inline, the optional closures and the height ternary
+    /// exceed the type checker's time limit.
+    func lessonCard(width: CGFloat, screenHeight: CGFloat) -> TutorialLessonView {
+        // Reserve the tool chrome, carousel, and a readable
+        // three-item control. The card already scrolls overflow.
+        var maximumCardHeight: CGFloat? = nil
+        if page == .tools && !tutorial.isPaletteLesson {
+            let reserved: CGFloat = 40 + 30 + ToolValueControl.minimumHeight + 12
+            maximumCardHeight = max(32, screenHeight - reserved)
+        }
+        var onShowContinuation: (() -> Void)? = nil
+        if awaitsContinuation { onShowContinuation = { showContinuationOffer() } }
+        let continuation: TutorialContinuationActions? = offersContinuation ? continuationActions : nil
+        let preserveAndFinish: () -> Void = {
+            if player.preserveDrawing() { onFinish() }
+        }
+        return TutorialLessonView(tutorial: tutorial, onFinish: preserveAndFinish,
+                                  screenWidth: width, screenHeight: screenHeight,
+                                  maximumCardHeight: maximumCardHeight,
+                                  confirmsFinish: $confirmsFinish,
+                                  onShowContinuation: onShowContinuation,
+                                  continuation: continuation)
+    }
+
+    /// The first chapter's result of a run that asks before the rest: its card shows a
+    /// checkmark, not Next, and grows into the question.
+    var awaitsContinuation: Bool {
+        offersRemainingChapters && !hasOfferedContinuation && tutorial.step == .chapterComplete
+            && tutorial.chapter == chapters.first && !remainingChapters.isEmpty
+    }
+
+    func showContinuationOffer() {
+        guard awaitsContinuation, !confirmsFinish else { return }
+        hasOfferedContinuation = true
+        tutorial.pauseReminders()
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0)) {
+            offersContinuation = true
+        }
+    }
+
+    var continuationActions: TutorialContinuationActions {
+        TutorialContinuationActions {
+            guard !answeredContinuation else { return }
+            guard player.preserveDrawing() else {
+                // The save error alert is shown; return to the result, where Next still works.
+                withAnimation(.easeInOut(duration: 0.3)) { offersContinuation = false }
+                return
+            }
+            answeredContinuation = true
+            if let onDeclineContinuation {
+                onDeclineContinuation()
+            } else {
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                    onFinish()
+                }
+            }
+        } onContinue: {
+            guard !answeredContinuation else { return }
+            answeredContinuation = true
+            tutorial.resumeReminders()
+            // One transaction: the compact card measures the next chapter's first instruction,
+            // so the card shrinks straight to that hint's height, not to the result's.
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.5, bounce: 0)) {
+                offersContinuation = false
+                tutorial.continueToNext()
+            }
+        }
+    }
+
+    /// Chapters of this run that follow the one just completed.
+    var remainingChapters: [TutorialChapter] {
+        guard let chapter = tutorial.chapter, let index = chapters.firstIndex(of: chapter) else { return [] }
+        return Array(chapters[(index + 1)...])
     }
 }

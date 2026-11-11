@@ -62,6 +62,16 @@ extension View {
         }
     }
 
+    /// The suggested action of a choice: filled with the view's tint.
+    @ViewBuilder
+    func watchProminentActionButtonStyle() -> some View {
+        if #available(watchOS 26, *) {
+            buttonStyle(.glassProminent)
+        } else {
+            buttonStyle(.borderedProminent)
+        }
+    }
+
     /// All toolbar icons, including Information, use one explicit circle size.
     func watchToolbarButtonStyle(diameter: CGFloat = 32, usesCanvasMaterial: Bool = false, hidesNativeChrome: Bool = false) -> some View {
         modifier(WatchToolbarButtonModifier(diameter: diameter, usesCanvasMaterial: usesCanvasMaterial, hidesNativeChrome: hidesNativeChrome))

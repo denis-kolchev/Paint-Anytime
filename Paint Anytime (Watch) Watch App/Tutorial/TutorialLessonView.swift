@@ -10,22 +10,66 @@ struct TutorialLessonView: View {
     let screenHeight: CGFloat
     var maximumCardHeight: CGFloat? = nil
     @Binding var confirmsFinish: Bool
+    /// Set while a chapter result will grow into the continuation question: the result
+    /// shows a checkmark instead of Next, and tapping it asks at once.
+    var onShowContinuation: (() -> Void)? = nil
+    /// Set while the card fills the screen and asks whether to continue the tour.
+    var continuation: TutorialContinuationActions? = nil
     @State private var completionProgress: CGFloat = 0
     @State private var revealsResultAction = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ScaledMetric(relativeTo: .body) private var instructionFontSize: CGFloat = 11
 
     var body: some View {
+        ZStack {
+            if let continuation {
+                // Inserted without a fade: the copy and buttons fade in on their own once the card has grown.
+                TutorialContinuationContent(actions: continuation)
+                    .transition(.asymmetric(insertion: .identity,
+                                            removal: .opacity.animation(.easeInOut(duration: 0.15))))
+            } else {
+                compactCard
+                    .transition(.opacity.animation(.easeInOut(duration: 0.15)))
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: continuation == nil ? nil : .infinity)
+        .background(.regularMaterial, in: cardShape)
+        .overlay {
+            cardShape.stroke(.white.opacity(0.16), lineWidth: 0.5)
+                .allowsHitTesting(false)
+        }
+        .environment(\.colorScheme, .dark)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: displayedInstruction)
+        // The expanded card reaches the display edges; its rounded corners lie beyond the screen's.
+        .padding(continuation == nil ? edgeGap : 0)
+        .task(id: tutorial.step) {
+            await animateCompletion()
+        }
+        .onChange(of: action) { _, action in
+            if action != .exit {
+                WKInterfaceDevice.current().play(.success)
+            }
+        }
+    }
+
+    /// Before and during the continuation question the result only says it is done;
+    /// the question itself asks about the rest.
+    private var displayedInstruction: String {
+        tutorial.step == .chapterComplete && (onShowContinuation != nil || continuation != nil)
+            ? L10n.text("Chapter complete!") : tutorial.instruction
+    }
+
+    private var compactCard: some View {
         TutorialHintLayout(maximumHeight: min(screenHeight * 0.32, maximumCardHeight ?? .infinity)) {
             // Keep one layout child while the old and new copy crossfade.
             // The independent measurement below sizes the card for the new copy.
             ZStack {
                 TutorialInstructionText(
-                    text: tutorial.instruction,
+                    text: displayedInstruction,
                     isPaused: confirmsFinish,
                     fontSize: instructionFontSize
                 )
-                .id(tutorial.instruction)
+                .id(displayedInstruction)
                 .transition(.opacity)
             }
 
@@ -39,8 +83,12 @@ struct TutorialLessonView: View {
                         tutorial.continueToNext()
                     }
                 case .done:
-                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                        onFinish()
+                    if let onShowContinuation, tutorial.step == .chapterComplete {
+                        onShowContinuation()
+                    } else {
+                        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                            onFinish()
+                        }
                     }
                 }
             } label: {
@@ -59,7 +107,9 @@ struct TutorialLessonView: View {
                         .foregroundStyle(.white)
                         .opacity(action == .done ? 1 : 0)
                         .scaleEffect(action == .done || reduceMotion ? 1 : 0.6)
-                        .tutorialHint(tutorial, steps: [.finished], isSuggested: action == .done)
+                        // Before the continuation question it also blinks, inviting a tap.
+                        .modifier(TutorialResultBlink(isActive: action == .done && onShowContinuation != nil))
+                        .tutorialHint(tutorial, steps: [.chapterComplete, .finished], isSuggested: action == .done)
                 }
                 .font(.system(size: 11, weight: .semibold))
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: action)
@@ -77,30 +127,13 @@ struct TutorialLessonView: View {
                                             tutorial.completedLessonCount, tutorial.lessonCount))
 
             // Measure the full copy independently of the scroll viewport.
-            Text(tutorial.instruction)
+            Text(displayedInstruction)
                 .font(.system(size: instructionFontSize, weight: .medium))
                 .fixedSize(horizontal: false, vertical: true)
                 .hidden()
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
-        .background(.regularMaterial, in: cardShape)
-        .overlay {
-            cardShape.stroke(.white.opacity(0.16), lineWidth: 0.5)
-                .allowsHitTesting(false)
-        }
-        .environment(\.colorScheme, .dark)
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: tutorial.instruction)
-        .padding(edgeGap)
-        .task(id: tutorial.step) {
-            await animateCompletion()
-        }
-        .onChange(of: action) { _, action in
-            if action != .exit {
-                WKInterfaceDevice.current().play(.success)
-            }
-        }
-
     }
 
     @MainActor
@@ -136,7 +169,7 @@ struct TutorialLessonView: View {
 
     private var action: Action {
         switch tutorial.step {
-        case .chapterComplete where revealsResultAction: .next
+        case .chapterComplete where revealsResultAction: onShowContinuation == nil ? .next : .done
         case .finished where revealsResultAction: .done
         default: .exit
         }
@@ -169,6 +202,117 @@ private struct TutorialProgressRing: View {
                 .rotationEffect(.degrees(-90))
         }
         .padding(2)
+    }
+}
+
+/// Dims and restores the result checkmark in step with the bounce of `tutorialHint`.
+private struct TutorialResultBlink: ViewModifier {
+    let isActive: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var dimmed = false
+
+    func body(content: Content) -> some View {
+        let blinks = isActive && !reduceMotion && scenePhase == .active
+        content
+            .opacity(blinks && dimmed ? 0.35 : 1)
+            .task(id: blinks) {
+                dimmed = false
+                guard blinks else { return }
+                do {
+                    while !Task.isCancelled {
+                        try await Task.sleep(for: .milliseconds(450))
+                        withAnimation(.easeInOut(duration: 0.3)) { dimmed = true }
+                        try await Task.sleep(for: .milliseconds(450))
+                        withAnimation(.easeInOut(duration: 0.3)) { dimmed = false }
+                    }
+                } catch {
+                    dimmed = false
+                }
+            }
+    }
+}
+
+/// Later and Continue on the expanded first-chapter result.
+struct TutorialContinuationActions {
+    let onLater: () -> Void
+    let onContinue: () -> Void
+}
+
+/// The lesson card grown to the whole screen after the first chapter of the first-launch
+/// tour: the question fades in, then the choice below it. The compact card's green ring
+/// and checkmark have already shown the success, so nothing travels between the two.
+/// A ScrollView is safe here: the card covers the canvas, so nothing else wants the Crown.
+private struct TutorialContinuationContent: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    let actions: TutorialContinuationActions
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showsTitle = false
+    @State private var showsChoices = false
+
+    var body: some View {
+        GeometryReader { viewport in
+            ScrollView {
+                VStack(spacing: 12) {
+                    Text(L10n.text("Continue the tour?"))
+                        .font(.headline)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .opacity(showsTitle ? 1 : 0)
+                    VStack(spacing: 10) {
+                        HStack(spacing: 8) {
+                            Button(action: actions.onLater) {
+                                Text(L10n.text("Later"))
+                                    .frame(maxWidth: .infinity, minHeight: 32)
+                            }
+                            .watchActionButtonStyle()
+                            // Green like the completed ring: the chapter went well, go on.
+                            Button(action: actions.onContinue) {
+                                Text(L10n.text("Continue"))
+                                    .frame(maxWidth: .infinity, minHeight: 32)
+                            }
+                            .watchProminentActionButtonStyle()
+                            .tint(.green)
+                        }
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
+                        Text(L10n.text("You can start the tutorial anytime: tap the three dots, then Tutorial."))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .opacity(showsChoices ? 1 : 0)
+                    .offset(y: showsChoices || reduceMotion ? 0 : 6)
+                    .allowsHitTesting(showsChoices)
+                    .accessibilityHidden(!showsChoices)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 16)
+                // Centered on a large display; scrolls from the top when the copy is longer.
+                .frame(minHeight: viewport.size.height)
+            }
+        }
+        .task { await reveal() }
+    }
+
+    /// Lets the card finish growing, shows the question, then the choice.
+    @MainActor
+    private func reveal() async {
+        guard !reduceMotion else {
+            showsTitle = true
+            showsChoices = true
+            return
+        }
+        withAnimation(.easeInOut(duration: 0.25).delay(0.2)) { showsTitle = true }
+        do {
+            try await Task.sleep(for: .milliseconds(550))
+            withAnimation(.easeOut(duration: 0.3)) { showsChoices = true }
+        } catch {
+            // Leaving the question cancels the sequence.
+        }
     }
 }
 
