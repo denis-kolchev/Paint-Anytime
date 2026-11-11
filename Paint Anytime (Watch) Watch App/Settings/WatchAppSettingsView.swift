@@ -492,6 +492,9 @@ struct AppLanguageSelectionView: View {
     var onSelection: ((_ previousCode: String?) -> Void)? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @State private var pendingLanguageCode: String?
+    /// Captured in the outgoing language so the overlay never switches mid-change.
+    @State private var changingLanguageMessage = ""
+    @State private var changingFromCode = AppLanguage.currentCode
     /// Fixed when the list appears, so the pinned row never jumps while a change applies.
     @State private var pinnedCode = AppLanguage.currentCode
 
@@ -538,7 +541,9 @@ struct AppLanguageSelectionView: View {
                 VStack(spacing: 12) {
                     ProgressView()
                         .controlSize(.large)
-                    Text(L10n.text("Changing language…"))
+                    Text(verbatim: changingLanguageMessage)
+                        .typesettingLanguage(.explicit(Locale.Language(identifier: changingFromCode)))
+                        .environment(\.locale, Locale(identifier: changingFromCode))
                         .font(.footnote)
                         .multilineTextAlignment(.center)
                 }
@@ -577,6 +582,8 @@ struct AppLanguageSelectionView: View {
                 onSelection?(nil)
                 return
             }
+            changingFromCode = AppLanguage.currentCode
+            changingLanguageMessage = L10n.text("Changing language…")
             pendingLanguageCode = language.id
         } label: {
             HStack {
