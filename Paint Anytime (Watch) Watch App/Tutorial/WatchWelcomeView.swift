@@ -18,11 +18,12 @@ struct WatchWelcomeView: View {
     /// corner on its way out, since the canvas and the tutorial both hide it.
     @State private var hidesClockForIris = false
 
-    /// The list opens first, the detected language on top. Only a different choice is
-    /// confirmed, already shown in that language, so a mistaken tap is easy to see and undo.
+    /// The list opens first, the detected language on top. A different choice is not
+    /// applied yet: the question asks in that language, and only ✓ switches the app.
     private enum WelcomePage { case language, confirmLanguage, offer, later }
-    /// The language before a different one was chosen; ✕ on the confirmation restores it.
-    @State private var languageBeforeChoice: String?
+    /// The language tapped in the list, awaiting confirmation. Kept after ✓ or ✕ so the
+    /// confirmation can still fade out with it.
+    @State private var chosenLanguageCode: String?
 
     var body: some View {
         // One navigation host owns the clock and toolbars throughout onboarding,
@@ -50,8 +51,16 @@ struct WatchWelcomeView: View {
                         // The backdrop stays put while the pages crossfade above it.
                         Color.black.ignoresSafeArea()
                         welcome
-                            .id(welcomePage)
-                            .transition(pageTransition(for: welcomePage))
+                            .id(listedPage)
+                            .transition(pageTransition(for: listedPage))
+                        if welcomePage == .confirmLanguage, let chosenLanguage {
+                            WelcomeLanguageConfirmation(language: chosenLanguage) {
+                                show(.offer)
+                            } onReject: {
+                                show(.language)
+                            }
+                            .transition(pageTransition(for: .confirmLanguage))
+                        }
                     }
                     .opacity(showsWelcomeContent ? 1 : 0)
                     // On the container, not the pages, so the slots stay put while pages crossfade.
@@ -120,6 +129,7 @@ struct WatchWelcomeView: View {
     private var restartWelcome: RestartWelcomeAction {
         RestartWelcomeAction {
             welcomePage = .language
+            chosenLanguageCode = nil
             irisIsRunning = false
             irisAwaitsTutorial = false
             hidesClockForIris = false
@@ -236,29 +246,32 @@ struct WatchWelcomeView: View {
     /// Time the screen stays black between closing and opening.
     private static let irisPauseMilliseconds = 400
 
+    private static let laterButtonInset: CGFloat = 10
+
+    /// The confirmation covers the language list instead of replacing it, so ✕ returns
+    /// to the list exactly where it was scrolled.
+    private var listedPage: WelcomePage {
+        welcomePage == .confirmLanguage ? .language : welcomePage
+    }
+
+    private var chosenLanguage: AppLanguage? {
+        AppLanguage.supported.first { $0.id == chosenLanguageCode }
+    }
+
     @ViewBuilder private var welcome: some View {
-        switch welcomePage {
-        case .language:
+        switch listedPage {
+        case .language, .confirmLanguage:
             // No title: a title appearing mid-crossfade would flash and shift both pages.
             // Every welcome page shares the same bar of clock slots, so the layout holds.
-            AppLanguageSelectionView(showsTitle: false, pinsCurrentLanguage: true) { previousCode in
-                guard let previousCode else {
-                    // The detected language: nothing to confirm.
-                    show(.offer)
-                    return
-                }
-                languageBeforeChoice = previousCode
-                show(.confirmLanguage)
-            }
-        case .confirmLanguage:
-            WelcomeLanguageConfirmation {
-                languageBeforeChoice = nil
-                show(.offer)
-            } onReject: {
-                if let languageBeforeChoice { languageCode = languageBeforeChoice }
-                languageBeforeChoice = nil
-                show(.language)
-            }
+            AppLanguageSelectionView(showsTitle: false, pinsCurrentLanguage: true,
+                                     // The detected language: nothing to confirm.
+                                     onSelection: { _ in show(.offer) },
+                                     onChooseWithoutApplying: { code in
+                                         chosenLanguageCode = code
+                                         show(.confirmLanguage)
+                                     },
+                                     // Kept alive under the confirmation, so ✕ returns to the same offset.
+                                     isCovered: welcomePage == .confirmLanguage)
         case .offer:
             WelcomeQuestion(text: L10n.text("Would you like a guided tour?")) {
                 startTutorial()
@@ -272,11 +285,12 @@ struct WatchWelcomeView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.horizontal)
+                // A little inside the button's edges, as on the tour's continuation card.
+                .padding(.horizontal, Self.laterButtonInset + 6)
                 Button(L10n.text("OK"), action: finishWelcome)
                     .watchActionButtonStyle()
                     // Inset from the rounded bottom corners of the display.
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, Self.laterButtonInset)
                     .padding(.bottom, 4)
             }
             // The bar above already spaces the text from the clock.
@@ -334,29 +348,30 @@ private struct IrisShape: Shape {
     }
 }
 
-/// Shown in the newly chosen language, which names itself in its own script; the buttons
-/// are icons, so someone who cannot read this language can still tap ✕ to go back.
+/// Asks in the chosen language, which names itself in its own script, while the app
+/// keeps its current language. The buttons are icons, so someone who cannot read this
+/// language can still tap ✕ to go back; only ✓ applies it, behind a progress overlay.
 private struct WelcomeLanguageConfirmation: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    let language: AppLanguage
     let onConfirm: () -> Void
     let onReject: () -> Void
-
-    private var language: AppLanguage? {
-        AppLanguage.supported.first { $0.id == AppLanguage.currentCode }
-    }
+    @State private var isApplying = false
+    /// Captured in the outgoing language so the overlay never switches mid-change.
+    @State private var changingLanguageMessage = ""
+    @State private var changingFromCode = AppLanguage.currentCode
 
     var body: some View {
         VStack(spacing: 12) {
             ScrollView {
-                if let language {
-                    // The question already names the language; it is the only text on the page.
-                    Text(L10n.format("Is %@ your language?", language.nativeName))
-                        .font(.headline)
-                        .typesettingLanguage(.explicit(Locale.Language(identifier: language.id)))
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                // The question already names the language; it is the only text on the page.
+                Text(verbatim: L10n.format(in: language.id, "Is %@ your language?", language.nativeName))
+                    .font(.headline)
+                    .typesettingLanguage(.explicit(Locale.Language(identifier: language.id)))
+                    .environment(\.locale, Locale(identifier: language.id))
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             HStack {
                 Button(action: onReject) {
@@ -365,18 +380,42 @@ private struct WelcomeLanguageConfirmation: View {
                         .frame(maxWidth: .infinity, minHeight: 32)
                 }
                 .watchActionButtonStyle()
-                .accessibilityLabel(L10n.text("No"))
-                Button(action: onConfirm) {
+                .accessibilityLabel(L10n.text("No", in: language.id))
+                Button(action: confirm) {
                     Image(systemName: "checkmark")
                         .font(.body.weight(.semibold))
                         .frame(maxWidth: .infinity, minHeight: 32)
                 }
                 .watchProminentActionButtonStyle()
                 .tint(.green)
-                .accessibilityLabel(L10n.text("Yes"))
+                .accessibilityLabel(L10n.text("Yes", in: language.id))
             }
         }
         .padding()
+        .disabled(isApplying)
+        .accessibilityHidden(isApplying)
+        .overlay {
+            if isApplying {
+                LanguageChangeOverlay(message: changingLanguageMessage, languageCode: changingFromCode)
+            }
+        }
+        .task(id: isApplying) {
+            guard isApplying else { return }
+            do {
+                try await LanguageChangeOverlay.apply { languageCode = language.id }
+                onConfirm()
+            } catch {
+                // SwiftUI cancels this task if the page disappears.
+            }
+        }
+    }
+
+    private func confirm() {
+        guard !isApplying else { return }
+        guard language.id != AppLanguage.currentCode else { return onConfirm() }
+        changingFromCode = AppLanguage.currentCode
+        changingLanguageMessage = L10n.text("Changing language…")
+        isApplying = true
     }
 }
 

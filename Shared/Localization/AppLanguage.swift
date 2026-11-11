@@ -92,7 +92,11 @@ enum L10n {
     }()
 
     static func text(_ key: String) -> String {
-        let code = AppLanguage.currentCode
+        text(key, in: AppLanguage.currentCode)
+    }
+
+    /// Text in a specific language without switching the app to it.
+    static func text(_ key: String, in code: String) -> String {
         let cacheKey = (code + "\u{001F}" + key) as NSString
         if let cached = strings.object(forKey: cacheKey) { return cached as String }
         let fallback = bundle(for: "en")?.localizedString(forKey: key, value: key, table: nil) ?? key
@@ -104,6 +108,10 @@ enum L10n {
 
     static func format(_ key: String, _ arguments: CVarArg...) -> String {
         String(format: text(key), locale: Locale(identifier: AppLanguage.currentCode), arguments: arguments)
+    }
+
+    static func format(in code: String, _ key: String, _ arguments: CVarArg...) -> String {
+        String(format: text(key, in: code), locale: Locale(identifier: code), arguments: arguments)
     }
 
     /// Accepts a fraction (0.5 = 50%) and follows the selected app language.

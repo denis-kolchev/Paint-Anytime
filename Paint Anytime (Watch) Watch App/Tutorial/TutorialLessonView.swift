@@ -296,6 +296,8 @@ private struct TutorialContinuationContent: View {
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .fixedSize(horizontal: false, vertical: true)
+                            // Inside the buttons' outer edges, not flush with or beyond them.
+                            .padding(.horizontal, 6)
                     }
                     .opacity(showsChoices ? 1 : 0)
                     .offset(y: showsChoices || reduceMotion ? 0 : 6)

@@ -490,6 +490,13 @@ struct AppLanguageSelectionView: View {
     /// Receives the language that was active before a different one was applied,
     /// or nil when the current language was tapped.
     var onSelection: ((_ previousCode: String?) -> Void)? = nil
+    /// When set, a different language is only reported here and not applied;
+    /// the caller confirms it first and applies it itself.
+    var onChooseWithoutApplying: ((_ code: String) -> Void)? = nil
+    /// Another page covers the list but keeps it alive, so its scroll offset survives.
+    var isCovered = false
+    /// The cover takes the Digital Crown; the list must ask for it back when uncovered.
+    @FocusState private var listHasCrownFocus: Bool
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @State private var pendingLanguageCode: String?
     /// Captured in the outgoing language so the overlay never switches mid-change.
@@ -523,6 +530,7 @@ struct AppLanguageSelectionView: View {
                     }
                 }
             }
+            .focused($listHasCrownFocus)
             .onAppear {
                 // The pinned language is already on top; there is nothing to scroll to.
                 guard pinnedLanguage == nil else { return }
@@ -534,23 +542,19 @@ struct AppLanguageSelectionView: View {
                 }
             }
         }
+        // Hidden, not removed, while covered; the fade crossfades with the cover.
+        .opacity(isCovered ? 0 : 1)
+        .allowsHitTesting(!isCovered)
+        .onChange(of: isCovered) { _, covered in
+            guard !covered else { return }
+            // After the update that uncovers the list, so focus is not refused mid-transition.
+            Task { @MainActor in listHasCrownFocus = true }
+        }
         .disabled(pendingLanguageCode != nil)
-        .accessibilityHidden(pendingLanguageCode != nil)
+        .accessibilityHidden(pendingLanguageCode != nil || isCovered)
         .overlay {
             if pendingLanguageCode != nil {
-                VStack(spacing: 12) {
-                    ProgressView()
-                        .controlSize(.large)
-                    Text(verbatim: changingLanguageMessage)
-                        .typesettingLanguage(.explicit(Locale.Language(identifier: changingFromCode)))
-                        .environment(\.locale, Locale(identifier: changingFromCode))
-                        .font(.footnote)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(.black.opacity(0.9))
-                .accessibilityElement(children: .combine)
+                LanguageChangeOverlay(message: changingLanguageMessage, languageCode: changingFromCode)
             }
         }
         .navigationBarBackButtonHidden(pendingLanguageCode != nil)
@@ -561,13 +565,7 @@ struct AppLanguageSelectionView: View {
             defer { pendingLanguageCode = nil }
             let previousCode = AppLanguage.currentCode
             do {
-                // Let the indicator render before invalidating all localized views.
-                try await Task.sleep(for: .milliseconds(100))
-                try Task.checkCancellation()
-                languageCode = code
-                // Keep the overlay through the first layout of the updated interface.
-                try await Task.sleep(for: .milliseconds(150))
-                try Task.checkCancellation()
+                try await LanguageChangeOverlay.apply { languageCode = code }
                 onSelection?(previousCode)
             } catch {
                 // SwiftUI cancels this task if the selection screen disappears.
@@ -580,6 +578,10 @@ struct AppLanguageSelectionView: View {
             guard pendingLanguageCode == nil else { return }
             if language.id == AppLanguage.currentCode {
                 onSelection?(nil)
+                return
+            }
+            if let onChooseWithoutApplying {
+                onChooseWithoutApplying(language.id)
                 return
             }
             changingFromCode = AppLanguage.currentCode
@@ -600,6 +602,39 @@ struct AppLanguageSelectionView: View {
         }
         .id(language.id)
         .accessibilityAddTraits(AppLanguage.currentCode == language.id ? .isSelected : [])
+    }
+}
+
+/// Covers the screen while a new language applies. The message is captured in the
+/// outgoing language before the change, so it never switches halfway through.
+struct LanguageChangeOverlay: View {
+    let message: String
+    let languageCode: String
+
+    var body: some View {
+        VStack(spacing: 12) {
+            ProgressView()
+                .controlSize(.large)
+            Text(verbatim: message)
+                .typesettingLanguage(.explicit(Locale.Language(identifier: languageCode)))
+                .environment(\.locale, Locale(identifier: languageCode))
+                .font(.footnote)
+                .multilineTextAlignment(.center)
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.black.opacity(0.9))
+        .accessibilityElement(children: .combine)
+    }
+
+    /// Lets the overlay render, applies the language, then holds the overlay
+    /// through the first layout of the updated interface.
+    @MainActor static func apply(_ change: () -> Void) async throws {
+        try await Task.sleep(for: .milliseconds(100))
+        try Task.checkCancellation()
+        change()
+        try await Task.sleep(for: .milliseconds(150))
+        try Task.checkCancellation()
     }
 }
 
