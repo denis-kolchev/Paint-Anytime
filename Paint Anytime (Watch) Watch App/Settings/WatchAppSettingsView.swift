@@ -484,37 +484,45 @@ private struct SettingsInformationView: View {
 
 struct AppLanguageSelectionView: View {
     var showsTitle = true
-    var onSelection: (() -> Void)? = nil
+    /// First launch: the current (detected) language sits alone on top, highlighted,
+    /// so most people confirm it with one tap; the rest follow in display order.
+    var pinsCurrentLanguage = false
+    /// Receives the language that was active before a different one was applied,
+    /// or nil when the current language was tapped.
+    var onSelection: ((_ previousCode: String?) -> Void)? = nil
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @State private var pendingLanguageCode: String?
+    /// Fixed when the list appears, so the pinned row never jumps while a change applies.
+    @State private var pinnedCode = AppLanguage.currentCode
+
+    private var pinnedLanguage: AppLanguage? {
+        pinsCurrentLanguage ? AppLanguage.supported.first { $0.id == pinnedCode } : nil
+    }
+
+    private var listedLanguages: [AppLanguage] {
+        guard let pinnedLanguage else { return AppLanguage.displayOrder }
+        return AppLanguage.displayOrder.filter { $0.id != pinnedLanguage.id }
+    }
 
     var body: some View {
         ScrollViewReader { proxy in
-            List(AppLanguage.displayOrder) { language in
-                Button {
-                    guard pendingLanguageCode == nil else { return }
-                    if language.id == AppLanguage.currentCode {
-                        onSelection?()
-                        return
-                    }
-                    pendingLanguageCode = language.id
-                } label: {
-                    HStack {
-                        Text(verbatim: language.nativeName)
-                            // Native names must use their own script, not the selected UI language.
-                            .typesettingLanguage(.explicit(Locale.Language(identifier: language.id)))
-                            .environment(\.locale, Locale(identifier: language.id))
-                        Spacer()
-                        if AppLanguage.currentCode == language.id {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(.green)
-                        }
+            List {
+                if let pinnedLanguage {
+                    Section {
+                        row(for: pinnedLanguage)
+                            .listRowBackground(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(.green.opacity(0.22)))
                     }
                 }
-                .id(language.id)
-                .accessibilityAddTraits(AppLanguage.currentCode == language.id ? .isSelected : [])
+                Section {
+                    ForEach(listedLanguages) { language in
+                        row(for: language)
+                    }
+                }
             }
             .onAppear {
+                // The pinned language is already on top; there is nothing to scroll to.
+                guard pinnedLanguage == nil else { return }
                 // Position the list before it shows; an animated scroll during a page transition jerks.
                 var transaction = Transaction(animation: nil)
                 transaction.disablesAnimations = true
@@ -546,6 +554,7 @@ struct AppLanguageSelectionView: View {
         .task(id: pendingLanguageCode) {
             guard let code = pendingLanguageCode else { return }
             defer { pendingLanguageCode = nil }
+            let previousCode = AppLanguage.currentCode
             do {
                 // Let the indicator render before invalidating all localized views.
                 try await Task.sleep(for: .milliseconds(100))
@@ -554,11 +563,36 @@ struct AppLanguageSelectionView: View {
                 // Keep the overlay through the first layout of the updated interface.
                 try await Task.sleep(for: .milliseconds(150))
                 try Task.checkCancellation()
-                onSelection?()
+                onSelection?(previousCode)
             } catch {
                 // SwiftUI cancels this task if the selection screen disappears.
             }
         }
+    }
+
+    private func row(for language: AppLanguage) -> some View {
+        Button {
+            guard pendingLanguageCode == nil else { return }
+            if language.id == AppLanguage.currentCode {
+                onSelection?(nil)
+                return
+            }
+            pendingLanguageCode = language.id
+        } label: {
+            HStack {
+                Text(verbatim: language.nativeName)
+                    // Native names must use their own script, not the selected UI language.
+                    .typesettingLanguage(.explicit(Locale.Language(identifier: language.id)))
+                    .environment(\.locale, Locale(identifier: language.id))
+                Spacer()
+                if AppLanguage.currentCode == language.id {
+                    Image(systemName: "checkmark")
+                        .foregroundStyle(.green)
+                }
+            }
+        }
+        .id(language.id)
+        .accessibilityAddTraits(AppLanguage.currentCode == language.id ? .isSelected : [])
     }
 }
 

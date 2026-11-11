@@ -66,8 +66,10 @@ struct DestructiveConfirmationView: View {
     }
 }
 
-/// Share spare width equally after measuring the localized button labels.
-private struct ConfirmationButtonsLayout: Layout {
+/// Share spare width equally after measuring the localized button labels, so a long
+/// label takes the room a short one does not need instead of shrinking or truncating.
+/// Also used by the tutorial's Later / Continue question.
+struct ConfirmationButtonsLayout: Layout {
     let layoutDirection: LayoutDirection
     private let spacing: CGFloat = 8
 

@@ -18,7 +18,11 @@ struct WatchWelcomeView: View {
     /// corner on its way out, since the canvas and the tutorial both hide it.
     @State private var hidesClockForIris = false
 
-    private enum WelcomePage { case language, chooseLanguage, offer, later }
+    /// The list opens first, the detected language on top. Only a different choice is
+    /// confirmed, already shown in that language, so a mistaken tap is easy to see and undo.
+    private enum WelcomePage { case language, confirmLanguage, offer, later }
+    /// The language before a different one was chosen; ✕ on the confirmation restores it.
+    @State private var languageBeforeChoice: String?
 
     var body: some View {
         // One navigation host owns the clock and toolbars throughout onboarding,
@@ -138,7 +142,7 @@ struct WatchWelcomeView: View {
     private func pageTransition(for page: WelcomePage) -> AnyTransition {
         // A scaling page is laid out without its ignored safe area until the transition
         // ends: the List shows black bands and the OK button jumps down on the last frame.
-        let scales = !reduceMotion && page != .chooseLanguage && page != .later
+        let scales = !reduceMotion && page != .language && page != .later
         let insertion: AnyTransition = scales ? .opacity.combined(with: .scale(scale: 0.94)) : .opacity
         return .asymmetric(
             insertion: insertion.animation(.easeInOut(duration: reduceMotion ? 0.25 : 0.35).delay(0.05)),
@@ -235,16 +239,26 @@ struct WatchWelcomeView: View {
     @ViewBuilder private var welcome: some View {
         switch welcomePage {
         case .language:
-            let name = AppLanguage.supported.first { $0.id == AppLanguage.currentCode }?.nativeName ?? "English"
-            WelcomeQuestion(text: L10n.format("Is %@ your language?", name)) {
-                show(.offer)
-            } onNo: {
-                show(.chooseLanguage)
-            }
-        case .chooseLanguage:
             // No title: a title appearing mid-crossfade would flash and shift both pages.
             // Every welcome page shares the same bar of clock slots, so the layout holds.
-            AppLanguageSelectionView(showsTitle: false, onSelection: { show(.language) })
+            AppLanguageSelectionView(showsTitle: false, pinsCurrentLanguage: true) { previousCode in
+                guard let previousCode else {
+                    // The detected language: nothing to confirm.
+                    show(.offer)
+                    return
+                }
+                languageBeforeChoice = previousCode
+                show(.confirmLanguage)
+            }
+        case .confirmLanguage:
+            WelcomeLanguageConfirmation {
+                languageBeforeChoice = nil
+                show(.offer)
+            } onReject: {
+                if let languageBeforeChoice { languageCode = languageBeforeChoice }
+                languageBeforeChoice = nil
+                show(.language)
+            }
         case .offer:
             WelcomeQuestion(text: L10n.text("Would you like a guided tour?")) {
                 startTutorial()
@@ -320,6 +334,52 @@ private struct IrisShape: Shape {
     }
 }
 
+/// Shown in the newly chosen language, which names itself in its own script; the buttons
+/// are icons, so someone who cannot read this language can still tap ✕ to go back.
+private struct WelcomeLanguageConfirmation: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    let onConfirm: () -> Void
+    let onReject: () -> Void
+
+    private var language: AppLanguage? {
+        AppLanguage.supported.first { $0.id == AppLanguage.currentCode }
+    }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            ScrollView {
+                if let language {
+                    // The question already names the language; it is the only text on the page.
+                    Text(L10n.format("Is %@ your language?", language.nativeName))
+                        .font(.headline)
+                        .typesettingLanguage(.explicit(Locale.Language(identifier: language.id)))
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack {
+                Button(action: onReject) {
+                    Image(systemName: "xmark")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: 32)
+                }
+                .watchActionButtonStyle()
+                .accessibilityLabel(L10n.text("No"))
+                Button(action: onConfirm) {
+                    Image(systemName: "checkmark")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: 32)
+                }
+                .watchProminentActionButtonStyle()
+                .tint(.green)
+                .accessibilityLabel(L10n.text("Yes"))
+            }
+        }
+        .padding()
+    }
+}
+
 private struct WelcomeQuestion: View {
     let text: String
     let onYes: () -> Void
@@ -334,9 +394,10 @@ private struct WelcomeQuestion: View {
                     .frame(maxWidth: .infinity)
                     .fixedSize(horizontal: false, vertical: true)
             }
+            // No on the leading side, Yes on the trailing one, like ✕ / ✓ and Later / Continue.
             HStack {
-                Button(L10n.text("Yes"), action: onYes)
                 Button(L10n.text("No"), action: onNo)
+                Button(L10n.text("Yes"), action: onYes)
             }
             .watchActionButtonStyle()
         }

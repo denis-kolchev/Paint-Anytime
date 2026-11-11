@@ -28,8 +28,13 @@ struct TutorialLessonView: View {
                     .transition(.asymmetric(insertion: .identity,
                                             removal: .opacity.animation(.easeInOut(duration: 0.15))))
             } else {
+                // Returning from the question, the next hint waits until the card has nearly
+                // finished shrinking; leaving for it, the result fades out at once.
                 compactCard
-                    .transition(.opacity.animation(.easeInOut(duration: 0.15)))
+                    .transition(.asymmetric(
+                        insertion: .opacity.animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25)
+                            .delay(reduceMotion ? 0 : 0.32)),
+                        removal: .opacity.animation(.easeInOut(duration: 0.15))))
             }
         }
         .frame(maxWidth: .infinity, maxHeight: continuation == nil ? nil : .infinity)
@@ -247,8 +252,10 @@ private struct TutorialContinuationContent: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     let actions: TutorialContinuationActions
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
     @State private var showsTitle = false
     @State private var showsChoices = false
+    @State private var isLeaving = false
 
     var body: some View {
         GeometryReader { viewport in
@@ -261,14 +268,20 @@ private struct TutorialContinuationContent: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .opacity(showsTitle ? 1 : 0)
                     VStack(spacing: 10) {
-                        HStack(spacing: 8) {
-                            Button(action: actions.onLater) {
+                        // Measures both labels: the longer one gets the width the other spares.
+                        ConfirmationButtonsLayout(layoutDirection: layoutDirection) {
+                            Button {
+                                guard !isLeaving else { return }
+                                isLeaving = true
+                                // The iris covers the screen, so nothing needs to fade first.
+                                actions.onLater()
+                            } label: {
                                 Text(L10n.text("Later"))
                                     .frame(maxWidth: .infinity, minHeight: 32)
                             }
                             .watchActionButtonStyle()
                             // Green like the completed ring: the chapter went well, go on.
-                            Button(action: actions.onContinue) {
+                            Button(action: continueTour) {
                                 Text(L10n.text("Continue"))
                                     .frame(maxWidth: .infinity, minHeight: 32)
                             }
@@ -296,6 +309,25 @@ private struct TutorialContinuationContent: View {
             }
         }
         .task { await reveal() }
+    }
+
+    /// The question fades out on the full-size card first; only then does the card shrink
+    /// onto the next hint, so the two texts never overlap.
+    private func continueTour() {
+        guard !isLeaving else { return }
+        isLeaving = true
+        guard !reduceMotion else {
+            actions.onContinue()
+            return
+        }
+        withAnimation(.easeOut(duration: 0.2)) {
+            showsTitle = false
+            showsChoices = false
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(220))
+            actions.onContinue()
+        }
     }
 
     /// Lets the card finish growing, shows the question, then the choice.
