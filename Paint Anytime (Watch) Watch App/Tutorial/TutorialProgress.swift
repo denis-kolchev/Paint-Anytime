@@ -12,7 +12,7 @@ enum TutorialStep: Int, CaseIterable {
     case openLayers, openLayerSettings, lockTransparency, closeLayerSettings, closeLayers
     case paintOverStroke, addLayer, moveLayerDown, drawBehindStroke
     case openLasso, selectLasso, transformLasso, finishLasso
-    case history, saveDrawing, shareDrawing, openMenu, openGallery
+    case history, saveDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
     // Results, not lessons: they wait for Next (or Done after the last chapter).
     case chapterComplete, finished
@@ -34,7 +34,7 @@ struct TutorialProgress {
     enum Event {
         case openedLasso, selectedLasso, failedLassoSelection, transformedLasso, finishedLasso
         case heldCircle, stroke, filled, openedTools, closedTools, openedInfo, closedInfo, browsedTools
-        case panned, finishedCamera, history, saved, closedSave, openedMenu, openedGallery
+        case panned, finishedCamera, history, saved, openedMenu, openedGallery
         case galleryFullscreen, deleted, returnedToCanvas, cleared
         case reachedAddColor, returnedToColorSelection, openedColorList, browsedPalettes, foundNewPalette
         case returnedToPalettes
@@ -172,7 +172,7 @@ struct TutorialProgress {
              (.transformLasso, .transformedLasso), (.finishLasso, .finishedLasso): return .advance
         case (.clearCanvas, .cleared): return .showResult
         case (.openTools, .openedTools), (.closeTools, .closedTools), (.reedStrokes, .stroke), (.reedStrokes, .filled),
-             (.saveDrawing, .saved), (.shareDrawing, .closedSave), (.openMenu, .openedMenu),
+             (.saveDrawing, .saved), (.openMenu, .openedMenu),
              (.openGallery, .openedGallery), (.galleryFullscreen, .galleryFullscreen),
              (.deleteDrawing, .deleted), (.returnToCanvas, .returnedToCanvas),
              (.fillCanvas, .filled), (.openLayers, .openedLayers),

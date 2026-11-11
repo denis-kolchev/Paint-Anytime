@@ -35,7 +35,7 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             Lesson(steps: [.zoomCanvas, .panCanvas, .finishCamera]),
             Lesson(steps: [.openTools, .pickColor, .openWidth, .setWidth, .openOpacity, .setOpacity,
                            .openTool, .selectReed, .closeTools, .reedStrokes]),
-            Lesson(steps: [.saveDrawing, .shareDrawing, .openMenu, .openGallery, .galleryFullscreen,
+            Lesson(steps: [.saveDrawing, .openMenu, .openGallery, .galleryFullscreen,
                            .deleteDrawing, .returnToCanvas, .clearCanvas])
         ]
         case .tools: [

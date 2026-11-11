@@ -112,7 +112,7 @@ struct TutorialChecks {
         progress.advance()
         precondition(progress.step == .saveDrawing && progress.completedLessonCount == 3)
         for (step, event, effect): (TutorialStep, TutorialProgress.Event, TutorialProgress.Effect) in [
-            (.saveDrawing, .saved, .advance), (.shareDrawing, .closedSave, .advance),
+            (.saveDrawing, .saved, .advance),
             (.openMenu, .openedMenu, .advance), (.openGallery, .openedGallery, .advance),
             (.galleryFullscreen, .galleryFullscreen, .advance), (.deleteDrawing, .deleted, .advance),
             (.returnToCanvas, .returnedToCanvas, .advance), (.clearCanvas, .cleared, .showResult)

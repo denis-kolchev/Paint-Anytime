@@ -24,14 +24,12 @@ struct TutorialPlayerView: View {
     @State private var isMovingCanvas = false
     @State private var canvasSize = CGSize.zero
     @State private var hintHeight: CGFloat = 0
-    @State private var savedExitCenterX: CGFloat?
     @State private var savedNoticeID: UUID?
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var panGuideOffset = CGSize.zero
     @State private var panGuideVisible = false
     @State private var historyEmphasizesRedo = false
-    @State private var shareEmphasizesExit = false
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
 
@@ -64,15 +62,15 @@ struct TutorialPlayerView: View {
                     GeometryReader { geometry in
                         ZStack {
                             WatchCanvasView(controller: controller, lasso: player.lasso, tutorial: tutorial,
-                                            rendersArtwork: page == .canvas || page == .saved,
+                                            rendersArtwork: page == .canvas,
                                             acceptsInput: page == .canvas && tutorial.acceptsActions,
-                                            acceptsZoomOnlyInput: page == .saved && tutorial.acceptsActions,
+                                            acceptsZoomOnlyInput: false,
                                             protectedControls: canvasProtectedControls, isMovingCanvas: $isMovingCanvas)
                                 // A new chapter also starts from the default camera.
                                 .id(tutorial.chapterRevision)
-                                .opacity(page == .canvas || page == .saved ? 1 : 0)
-                                .allowsHitTesting((page == .canvas || page == .saved) && tutorial.acceptsActions)
-                                .accessibilityHidden(page != .canvas && page != .saved)
+                                .opacity(page == .canvas ? 1 : 0)
+                                .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
+                                .accessibilityHidden(page != .canvas)
 
                             if showsCircleGuide {
                                 TutorialCirclePresentation(guideHeight: max(0, geometry.size.height - hintReservedHeight),
@@ -189,30 +187,6 @@ struct TutorialPlayerView: View {
                         .onChange(of: geometry.size) { _, size in canvasSize = size }
                     }
 
-                    if page == .saved, let savedDrawing = player.savedDrawing {
-                        // Keep the existing canvas visible for the share lesson instead
-                        // of mounting a gallery pager that starts with an empty black frame.
-                        Color.clear
-                            .overlay(alignment: .bottom) {
-                                ShareLink(item: DrawingShareItem(url: savedDrawing.url),
-                                          preview: SharePreview("Paint Anytime", image: DrawingShareItem(url: savedDrawing.url))) {
-                                    Image(systemName: "square.and.arrow.up")
-                                        .font(.system(size: 17))
-                                        .frame(width: 24, height: 24, alignment: .center)
-                                        .tutorialHint(tutorial, steps: [.shareDrawing], isSuggested: !shareEmphasizesExit)
-                                }
-                                .accessibilityLabel(L10n.text("Share"))
-                                .simultaneousGesture(TapGesture().onEnded { tutorial.activity() })
-                                .buttonStyle(TutorialOverlayButtonStyle())
-                                // Follow the measured, localized tip with a little breathing room.
-                                .padding(.bottom, hintReservedHeight + 8)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .offset(x: (savedExitCenterX.map {
-                                    $0 - screen.frame(in: .global).minX
-                                } ?? 38) - 22)
-                            }
-                    }
-
                     if page == .menu {
                         WatchAppSettingsView(controller: controller, viewportSize: screen.size,
                                              onOpenDrawings: { player.openGallery() },
@@ -220,7 +194,7 @@ struct TutorialPlayerView: View {
                                              tutorial: tutorial)
                     }
 
-                    if let savedNoticeID, page == .saved {
+                    if let savedNoticeID, page == .canvas {
                         Text(L10n.text("Artwork saved to gallery"))
                             .font(.headline)
                             .multilineTextAlignment(.center)
@@ -257,7 +231,7 @@ struct TutorialPlayerView: View {
                     // system clock stays centered between them. Canvas and share pages
                     // hide the clock, and an installed slot swallows touch-down even
                     // when its button is transparent, so unavailable controls leave them.
-                    if (page == .canvas || page == .tools || page == .saved) && !tutorial.isPaletteLesson
+                    if (page == .canvas || page == .tools) && !tutorial.isPaletteLesson
                         && installsPrimaryControl {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
@@ -295,28 +269,6 @@ struct TutorialPlayerView: View {
                             .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsPrimaryControl)
                             .allowsHitTesting(showsPrimaryControl)
                             .accessibilityHidden(!showsPrimaryControl)
-                        }
-                    }
-                    if page == .saved {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button {
-                                player.closeSavedDrawing()
-                            } label: {
-                                Image(systemName: "xmark")
-                                    .tutorialHint(tutorial, steps: [.shareDrawing], isSuggested: shareEmphasizesExit)
-                                    .frame(width: 32, height: 32)
-                                    .contentShape(Circle())
-                            }
-                            .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: !tutorial.permits([.shareDrawing]))
-                            .accessibilityLabel(L10n.text("Back"))
-                            .onGeometryChange(for: CGFloat.self) { geometry in
-                                geometry.frame(in: .global).midX
-                            } action: { centerX in
-                                savedExitCenterX = centerX
-                            }
-                            .opacity(tutorial.permits([.shareDrawing]) ? 1 : 0)
-                            .allowsHitTesting(tutorial.permits([.shareDrawing]))
-                            .accessibilityHidden(!tutorial.permits([.shareDrawing]))
                         }
                     }
                     if page == .layers || page == .layerSettings {
@@ -414,7 +366,7 @@ struct TutorialPlayerView: View {
         .compositingGroup()
         .toolbar(coversLesson ? .hidden : .automatic, for: .navigationBar, .bottomBar)
         // The expanded card is the whole screen, so the clock stays hidden over it.
-        .requestsHiddenClock(((page == .canvas || page == .saved) && !confirmsFinish) || offersContinuation)
+        .requestsHiddenClock((page == .canvas && !confirmsFinish) || offersContinuation)
         .modifier(TutorialCrownHint(tutorial: tutorial))
         .onAppear {
             player.startOrResume()
@@ -449,16 +401,6 @@ struct TutorialPlayerView: View {
         .onChange(of: controller.canRedo) { _, canRedo in
             if canRedo { historyEmphasizesRedo = true }
         }
-        .task(id: tutorial.step) {
-            shareEmphasizesExit = false
-            guard tutorial.step == .shareDrawing else { return }
-            do {
-                while !Task.isCancelled {
-                    try await Task.sleep(for: .milliseconds(1400))
-                    shareEmphasizesExit.toggle()
-                }
-            } catch {}
-        }
         .onChange(of: tutorial.chapterRevision) { _, _ in
             isMovingCanvas = false
             player.beginChapter()
@@ -466,9 +408,9 @@ struct TutorialPlayerView: View {
             applyCircleInk(for: tutorial.step)
             applyLayerBrush(for: tutorial.step)
         }
-        .onChange(of: page) { _, page in
+        .onChange(of: player.saveRevision) { _, _ in
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-                savedNoticeID = page == .saved ? UUID() : nil
+                savedNoticeID = UUID()
             }
         }
         .onChange(of: scenePhase) { _, phase in

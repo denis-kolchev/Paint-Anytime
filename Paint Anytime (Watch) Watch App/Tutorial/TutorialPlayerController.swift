@@ -4,13 +4,15 @@ import CoreGraphics
 
 @MainActor
 final class TutorialPlayerController: ObservableObject {
-    enum Page { case canvas, tools, saved, menu, gallery, layers, layerSettings }
+    enum Page { case canvas, tools, menu, gallery, layers, layerSettings }
 
     let tutorial = TutorialSession()
     let lasso = WatchLassoController()
     let canvas = CanvasController(persistsPreferences: false)
     @Published private(set) var page: Page = .canvas
     @Published private(set) var savedDrawing: CanvasExport?
+    /// Bumped on every tutorial save so the view can show the saved notice on the canvas.
+    @Published private(set) var saveRevision = 0
     @Published var confirmsClear = false
     @Published private(set) var saveError: String?
     @Published private(set) var editedLayerID: UUID?
@@ -123,11 +125,6 @@ final class TutorialPlayerController: ObservableObject {
             page = .menu
         }
     }
-    func closeSavedDrawing() {
-        guard page == .saved, tutorial.permits([.shareDrawing]) else { return }
-        page = .canvas
-        tutorial.record(.closedSave)
-    }
     func undo() {
         guard page == .canvas, tutorial.permits([.history]), canvas.canUndo else { return }
         canvas.undo()
@@ -166,7 +163,7 @@ final class TutorialPlayerController: ObservableObject {
                                                   size: size, scale: scale, in: folder)
             canvas.markSaved()
             // Training never queues files to the real iPhone photo library.
-            page = .saved
+            saveRevision += 1
             tutorial.record(.saved)
         } catch {
             tutorial.pauseReminders()

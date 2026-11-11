@@ -50,7 +50,7 @@ final class TutorialSession: ObservableObject {
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
     // Free drawing stays available wherever the canvas is the current page and a stroke
     // cannot disturb the exercise; camera, lasso, and gallery steps keep their own input.
-    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .shareDrawing, .openMenu, .chapterComplete]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .openMenu, .chapterComplete]) }
     var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }

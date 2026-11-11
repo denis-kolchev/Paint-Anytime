@@ -45,7 +45,6 @@ enum TutorialLesson {
         case .finishLasso: return L10n.text("Tap ✓ when ready.")
         case .history: return L10n.text("Use the arrows to undo and redo.")
         case .saveDrawing: return L10n.text("Tap the button to save your drawing.")
-        case .shareDrawing: return L10n.text("Tap Share to share your drawing, or tap × to close.")
         case .openMenu: return L10n.text("Tap ••• to visit the gallery.")
         case .openGallery: return L10n.text("Tap Gallery to see your saved drawings.")
         case .galleryFullscreen: return L10n.text("Turn the Crown or double-tap a picture.")
