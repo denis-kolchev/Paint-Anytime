@@ -329,6 +329,7 @@ struct PaletteVisibilitySettingsView: View {
                 setVisible(!entry.isVisible, id: entry.id)
             } label: {
                 HStack {
+                    PaletteSwatchIcon(palette: entry.palette)
                     Text(entry.palette.displayTitle)
                     Spacer()
                     Image(systemName: entry.isVisible ? "checkmark.circle.fill" : "circle")
@@ -818,6 +819,37 @@ private struct ColorBlendingSwatchIcon: View {
         .frame(width: side, height: side)
         .clipShape(RoundedRectangle(cornerRadius: side * 0.2, style: .continuous))
         // Decorative: the mode's title and reference already say what it does.
+        .accessibilityHidden(true)
+    }
+}
+
+/// The palette card shrunk to an icon: its first nine colors in the card's order, 3×3.
+/// Derived from the saved palette, so it follows edits, reordering and deletions.
+private struct PaletteSwatchIcon: View {
+    let palette: InkPalette
+    @ScaledMetric(relativeTo: .body) private var side = 28.0
+    private static let columns = 3
+
+    var body: some View {
+        let colors = palette.allColors.prefix(Self.columns * Self.columns).map(\.color)
+        Canvas { context, size in
+            let cell = size.width / CGFloat(Self.columns)
+            for index in 0..<(Self.columns * Self.columns) {
+                // A hair of overlap hides seams between neighbouring cells.
+                let rect = CGRect(x: CGFloat(index % Self.columns) * cell, y: CGFloat(index / Self.columns) * cell,
+                                  width: cell + 0.25, height: cell + 0.25)
+                // Empty cells stay faint, so a short palette still reads as a palette.
+                let fill = index < colors.count ? colors[index] : Color.white.opacity(0.08)
+                context.fill(Path(rect), with: .color(fill))
+            }
+        }
+        .frame(width: side, height: side)
+        .clipShape(RoundedRectangle(cornerRadius: side * 0.2, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: side * 0.2, style: .continuous)
+                .strokeBorder(.white.opacity(0.25), lineWidth: 1)
+        }
+        // Decorative: the palette's title already names it.
         .accessibilityHidden(true)
     }
 }
