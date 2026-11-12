@@ -715,9 +715,10 @@ struct WatchCanvasView: View {
             let scale = zoom * canvasFit(size)
             var point = CGPoint(x: startCenter.x * paper.width + (location.x - start.x) / scale,
                                 y: startCenter.y * paper.height + (location.y - start.y) / scale)
-            // Keep the handles reachable on the paper.
-            point.x = min(paper.width, max(0, point.x))
-            point.y = min(paper.height, max(0, point.y))
+            // A vanishing point may lie off the paper. One paper size of margin keeps the
+            // handles reachable: at the 25% minimum zoom the viewport spans that far.
+            point.x = min(2 * paper.width, max(-paper.width, point.x))
+            point.y = min(2 * paper.height, max(-paper.height, point.y))
             let radius = (wasCentered ? 1.5 : 1) * Self.centerSnapRadius / scale
             let isCentered = hypot(point.x - paper.width / 2, point.y - paper.height / 2) <= radius
             if isCentered { point = CGPoint(x: paper.width / 2, y: paper.height / 2) }
