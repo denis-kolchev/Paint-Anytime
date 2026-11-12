@@ -15,11 +15,23 @@ struct CanvasLayoutEditorView: View {
     /// Global frames of the slot circles, for drawing morph contents beside them.
     @State private var slotFrames: [Int: CGRect] = [:]
     @State private var loaded = false
+    /// The checkmark was tapped and the layout is being applied.
+    @State private var isSaving = false
+    /// Debug builds: on-screen touch readout for Reset and the checkmark.
+    @State private var touchDebug: CanvasLayoutTouchDebug? = RenderDebug.isEnabled ? CanvasLayoutTouchDebug() : nil
+    /// Global frames of Reset and the checkmark.
+    @State private var topActionFrames: [CanvasLayoutTopAction: CGRect] = [:]
 
     var body: some View {
         NavigationStack {
             Color.white
                 .ignoresSafeArea()
+                // Most taps on Reset and the checkmark reach this content under them instead of
+                // their Buttons (device readout: touches inside the checkmark's frame recorded
+                // here, its Button saw none, though the glass still flashed). Do what they do,
+                // like `forwardCanvasTap` on the canvas.
+                .onTapGesture(coordinateSpace: .global) { forwardTopActionTap(at: $0) }
+                .canvasLayoutTouchProbe("bg", debug: touchDebug)
                 .overlay { morphPreviews }
                 // Native toolbar slots, as on the canvas: the system clock
                 // centres between the top buttons before it is hidden.
@@ -33,6 +45,7 @@ struct CanvasLayoutEditorView: View {
                             // Toolbar items live in another coordinate space.
                             .onGeometryChange(for: CGFloat.self) { $0.frame(in: .global).midY } action: {
                                 topControlMidY = $0
+                                touchDebug?.topControlMidY = $0
                             }
                     }
                     ToolbarItemGroup(placement: .bottomBar) {
@@ -49,6 +62,12 @@ struct CanvasLayoutEditorView: View {
         // Above the navigation bar: on watchOS 26 its clock area takes the
         // taps of anything drawn beneath it inside the stack.
         .overlay { topActions }
+        .overlay {
+            if let touchDebug {
+                CanvasLayoutTouchDebugPanel(debug: touchDebug, isClockHiddenRequested: editingSlot == nil)
+                    .padding(.horizontal, 30)
+            }
+        }
         // Slides up like Layers and the More menu instead of a zooming push.
         .sheet(isPresented: Binding(
             get: { editingSlot != nil },
@@ -79,7 +98,50 @@ struct CanvasLayoutEditorView: View {
     private var topActions: some View {
         CanvasLayoutTopActions(topControlMidY: topControlMidY,
                                resetMidX: slotFrames[2]?.midX, saveMidX: slotFrames[3]?.midX,
-                               canReset: draft != .original, onReset: reset, onSave: save)
+                               canReset: draft != .original && !isSaving, isSaving: isSaving,
+                               debug: touchDebug,
+                               onReset: { perform(.reset, source: "action") },
+                               onSave: { perform(.save, source: "action") },
+                               onFrame: { topActionFrames[$0] = $1 })
+    }
+
+    /// Finger slop around the circles for forwarded taps; the two stay ~46 pt apart.
+    private static let forwardedTapSlop: CGFloat = 6
+
+    private func forwardTopActionTap(at location: CGPoint) {
+        let nearest = topActionFrames
+            .map { (action: $0.key, frame: $0.value,
+                    distance: hypot(location.x - $0.value.midX, location.y - $0.value.midY)) }
+            .filter { $0.distance <= $0.frame.width / 2 + Self.forwardedTapSlop }
+            .min { $0.distance < $1.distance }
+        guard let nearest else { return }
+        perform(nearest.action, source: "fwd")
+    }
+
+    /// `source`: "action" from the Button, "fwd" from a tap forwarded by the content.
+    private func perform(_ action: CanvasLayoutTopAction, source: String) {
+        switch action {
+        case .reset:
+            touchDebug?.record("reset", source)
+            // The Button is disabled then; a forwarded tap must not bypass that.
+            guard draft != .original, !isSaving else { return }
+            reset()
+        case .save:
+            touchDebug?.record("save", source)
+            requestSave()
+        }
+    }
+
+    /// Applying the layout rebuilds the canvas controls behind the cover on the main thread,
+    /// and the dismissal waits for that work, so the tap looked ignored. Show the spinner
+    /// first and apply once it is on screen.
+    private func requestSave() {
+        guard !isSaving else { return }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.15)) { isSaving = true }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(200))
+            if !save() { isSaving = false }
+        }
     }
 
     /// Previews the original interface; like any edit it applies only with the checkmark.
@@ -90,6 +152,8 @@ struct CanvasLayoutEditorView: View {
     private func slotButton(_ index: Int) -> some View {
         let assignment = draft.slots[index]
         return Button {
+            touchDebug?.record("slot\(index)", "action")
+            guard !isSaving else { return }
             editingSlot = index
         } label: {
             CanvasQuickActionIcon(action: assignment.actions[0], instrument: instrument,
@@ -214,21 +278,25 @@ struct CanvasLayoutEditorView: View {
         }
     }
 
-    private func save() {
+    /// Returns false when the draft could not be stored and the editor stays open.
+    private func save() -> Bool {
         // Restore the original interface itself, not a custom layout that merely copies it.
         if draft == .original {
             storedLayout = Data()
             customLayoutEnabled = false
             dismiss()
-            return
+            return true
         }
         guard let data = try? JSONEncoder().encode(draft),
-              CanvasControlLayout.decode(data) != nil else { return }
+              CanvasControlLayout.decode(data) != nil else { return false }
         storedLayout = data
         customLayoutEnabled = true
         dismiss()
+        return true
     }
 }
+
+private enum CanvasLayoutTopAction { case reset, save }
 
 /// Reset and the checkmark are no toolbar items, so they play the bottom bar's entrance themselves.
 private struct CanvasLayoutTopActions: View {
@@ -237,8 +305,12 @@ private struct CanvasLayoutTopActions: View {
     let resetMidX: CGFloat?
     let saveMidX: CGFloat?
     let canReset: Bool
+    let isSaving: Bool
+    let debug: CanvasLayoutTouchDebug?
     let onReset: () -> Void
     let onSave: () -> Void
+    /// Global frames, for the editor to forward taps that miss these Buttons.
+    let onFrame: (CanvasLayoutTopAction, CGRect) -> Void
 
     var body: some View {
         GeometryReader { proxy in
@@ -254,16 +326,32 @@ private struct CanvasLayoutTopActions: View {
             .buttonStyle(.plain)
             .disabled(!canReset)
             .accessibilityLabel(L10n.text("Reset interface"))
+            .canvasLayoutTouchProbe("reset", debug: debug)
+            // Inside the entrance, so the frame stays unscaled.
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { onFrame(.reset, $0) }
             .modifier(CanvasLayoutEntrance())
             .position(x: resetMidX.map { $0 - frame.minX } ?? proxy.size.width * 0.375, y: y)
 
             Button(action: onSave) {
                 CanvasLayoutCircle {
-                    Image(systemName: "checkmark").foregroundStyle(.green)
+                    // The checkmark cross-fades into a spinner while the layout is applied.
+                    ZStack {
+                        Image(systemName: "checkmark").foregroundStyle(.green)
+                            .opacity(isSaving ? 0 : 1)
+                        if isSaving {
+                            ProgressView()
+                                .tint(.green)
+                                .frame(width: 18, height: 18)
+                                .transition(.opacity)
+                        }
+                    }
                 }
             }
+            // `requestSave` ignores repeated taps.
             .buttonStyle(.plain)
             .accessibilityLabel(L10n.text("Save and apply"))
+            .canvasLayoutTouchProbe("save", debug: debug)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { onFrame(.save, $0) }
             .modifier(CanvasLayoutEntrance())
             .position(x: saveMidX.map { $0 - frame.minX } ?? proxy.size.width * 0.625, y: y)
         }
