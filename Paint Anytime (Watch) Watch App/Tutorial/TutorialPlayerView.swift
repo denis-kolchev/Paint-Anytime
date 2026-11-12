@@ -25,6 +25,8 @@ struct TutorialPlayerView: View {
     @State private var canvasSize = CGSize.zero
     @State private var hintHeight: CGFloat = 0
     @State private var savedNoticeID: UUID?
+    /// The menu mounts below the screen, then rises like the editor's sheet.
+    @State private var menuRevealed = false
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var panGuideOffset = CGSize.zero
@@ -62,13 +64,14 @@ struct TutorialPlayerView: View {
                     GeometryReader { geometry in
                         ZStack {
                             WatchCanvasView(controller: controller, lasso: player.lasso, tutorial: tutorial,
-                                            rendersArtwork: page == .canvas,
+                                            // The menu slides over the drawing, as the editor's sheet does.
+                                            rendersArtwork: page == .canvas || page == .menu,
                                             acceptsInput: page == .canvas && tutorial.acceptsActions,
                                             acceptsZoomOnlyInput: false,
                                             protectedControls: canvasProtectedControls, isMovingCanvas: $isMovingCanvas)
                                 // A new chapter also starts from the default camera.
                                 .id(tutorial.chapterRevision)
-                                .opacity(page == .canvas ? 1 : 0)
+                                .opacity(page == .canvas || page == .menu ? 1 : 0)
                                 .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
                                 .accessibilityHidden(page != .canvas)
 
@@ -188,10 +191,24 @@ struct TutorialPlayerView: View {
                     }
 
                     if page == .menu {
+                        // Rise from below the screen like the editor's menu sheet, over the drawing.
+                        // An explicit offset animates the native List reliably, where an insertion
+                        // transition collapses into a crossfade.
                         WatchAppSettingsView(controller: controller, viewportSize: screen.size,
                                              onOpenDrawings: { player.openGallery() },
                                              onStartTutorial: { _ in },
                                              tutorial: tutorial)
+                            // The screen ignores every safe area, so the menu restores the top inset
+                            // itself instead of relaying out the canvas beneath it.
+                            .safeAreaPadding(.top, screen.safeAreaInsets.top)
+                            .background(Color.black)
+                            .offset(y: menuRevealed || reduceMotion
+                                    ? 0 : screen.size.height + screen.safeAreaInsets.top + screen.safeAreaInsets.bottom)
+                            .onAppear {
+                                withAnimation(.spring(duration: 0.45, bounce: 0)) { menuRevealed = true }
+                            }
+                            .onDisappear { menuRevealed = false }
+                            .zIndex(2)
                     }
 
                     if let savedNoticeID, page == .canvas {
@@ -325,7 +342,7 @@ struct TutorialPlayerView: View {
         // Native menu and palette content start below the navigation toolbar.
         // Their full-height layouts extend through the bottom safe area,
         // with the lesson card layered above rather than reserving space.
-        .ignoresSafeArea(.container, edges: [.menu, .layers, .layerSettings].contains(page)
+        .ignoresSafeArea(.container, edges: [.layers, .layerSettings].contains(page)
                          || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
             // The full-screen question must not move the controls reserved for the compact card.
