@@ -125,16 +125,18 @@ struct CustomInkEditor: View {
             acceptsColorChanges = true
         }
         .onDisappear {
-            // Back keeps the wheel's color. The eyedropper's cover is not a departure.
-            guard palette != nil, !finished, !showsEyedropper, let initialRGB, rgb != initialRGB else { return }
-            finished = true
-            onSave(currentPreset)
+            // Back saves before the pop starts. This only catches other ways out,
+            // which report after their animation. The eyedropper's cover is not a departure.
+            guard !showsEyedropper else { return }
+            saveWheelColorIfChanged()
         }
         .padding(.bottom, 8)
         // Use the empty space below the clock in tutorial color lessons.
         // Move the editor content together; the native toolbar stays in place.
         .offset(y: tutorial.isActive ? -20 : 0)
-        .navigationBarBackButtonHidden(tutorial.isActive || showsPaletteList)
+        // With a palette our own Back saves the color as it is tapped; the
+        // system one only reports after the pop, so the paper changed late.
+        .navigationBarBackButtonHidden(tutorial.isActive || palette != nil)
         .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
         .overlay {
             // Spans the whole screen at rest. Only its size is used, never its
@@ -174,13 +176,18 @@ struct CustomInkEditor: View {
         }
         .toolbar {
             if palette != nil {
-                if showsPaletteList {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button { setPaletteListShown(false) } label: {
-                            Image(systemName: "chevron.backward")
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        if showsPaletteList {
+                            setPaletteListShown(false)
+                        } else {
+                            saveWheelColorIfChanged()
+                            dismiss()
                         }
-                        .accessibilityLabel(L10n.text("Back"))
+                    } label: {
+                        Image(systemName: "chevron.backward")
                     }
+                    .accessibilityLabel(L10n.text("Back"))
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button {
@@ -263,6 +270,13 @@ struct CustomInkEditor: View {
         withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.38, dampingFraction: 0.86)) {
             showsPaletteList = shown
         }
+    }
+
+    /// Hands back the wheel's color once, and only if it was changed.
+    private func saveWheelColorIfChanged() {
+        guard palette != nil, !finished, let initialRGB, rgb != initialRGB else { return }
+        finished = true
+        onSave(currentPreset)
     }
 
     private func confirmPaletteColor() {

@@ -26,6 +26,8 @@ final class CanvasController: ObservableObject {
 
     // Revisions make raster invalidation independent of the number of saved points.
     private(set) var documentRevision: UInt64 = 0
+    /// The revision the raster view cross-fades into from its previous frame:
+    /// clearing, and changes to the paper's color or visibility.
     private(set) var clearDocumentRevision: UInt64?
     private(set) var activeStrokeRevision: UInt64 = 0
     private(set) var activeStrokeID: UInt64 = 0
@@ -148,9 +150,12 @@ final class CanvasController: ObservableObject {
 
     func setBackgroundColor(_ color: SIMD4<Float>) {
         editLayers { $0.backgroundColor = color }
+        // The paper tints the interface behind menus; fade it instead of cutting.
+        clearDocumentRevision = documentRevision
     }
     func setBackgroundVisible(_ visible: Bool) {
         editLayers { $0.backgroundIsVisible = visible }
+        clearDocumentRevision = documentRevision
     }
 
     /// Geometry stays editable; the complete document participates in history.
