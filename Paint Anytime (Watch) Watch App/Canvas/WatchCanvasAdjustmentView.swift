@@ -192,13 +192,12 @@ struct WatchCanvasAdjustmentView: View {
         }
     }
 
-    // Preserve the existing 5% size and 10% position increments.
-    private var cropStep: Double { cropPage == 0 ? 5 : 10 }
+    // Size and position both move in 1% increments.
     private var cropMinimum: Double { cropPage == 0 ? 10 : 0 }
-    private var cropStepRange: ClosedRange<Double> { 0...((100 - cropMinimum) / cropStep) }
+    private var cropRange: ClosedRange<Double> { cropMinimum...100 }
     private var cropStepValue: Binding<Double> {
-        Binding(get: { (cropValue - cropMinimum) / cropStep }, set: { position in
-            let value = min(100, max(cropMinimum, cropMinimum + position.rounded() * cropStep))
+        Binding(get: { cropValue }, set: { next in
+            let value = min(100, max(cropMinimum, next.rounded()))
             switch cropPage {
             case 0: cropPercent = value
             case 1: cropX = value
@@ -209,23 +208,28 @@ struct WatchCanvasAdjustmentView: View {
 
     private func cropEditor(height availableHeight: CGFloat) -> some View {
         VStack(spacing: 4) {
+            // The cropped size stands beside the preview, as on the Resize page.
             HStack(spacing: 8) {
                 canvasPreview(mode: 1)
-                ToolValueControl(value: cropStepValue, range: cropStepRange,
-                                 valueTitle: L10n.percent(cropValue / 100),
-                                 title: L10n.text(cropTitle), isEnabled: true)
+                VStack(spacing: 1) {
+                    Text(verbatim: "\(Int(cropSize.width * displayScale)) px")
+                    Text(verbatim: "\(Int(cropSize.height * displayScale)) px")
+                }
+                .font(.caption2).monospacedDigit().foregroundStyle(.secondary)
+                .lineLimit(1).minimumScaleFactor(0.6)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(verbatim:
+                    "\(Int(cropSize.width * displayScale)) × \(Int(cropSize.height * displayScale)) px"))
+                // Clear the toolbar's checkmark, which overlaps the top of this column.
+                .padding(.top, 26)
+                .frame(width: 48)
+                .frame(maxHeight: .infinity, alignment: .top)
             }
             .frame(maxHeight: .infinity)
-            Text("\(Int(cropSize.width * displayScale)) × \(Int(cropSize.height * displayScale)) px")
-                .font(.caption2).monospacedDigit().foregroundStyle(.secondary)
-                .lineLimit(1).minimumScaleFactor(0.65)
+            valueRow(value: cropStepValue, range: cropRange, valueTitle: L10n.percent(cropValue / 100),
+                     title: cropTitle, focus: "Crop")
             CanvasResizeCarousel(selection: $cropPage, titles: ["Keep", "Horizontal", "Vertical"])
                 .frame(height: 28)
-            Text(L10n.text("Trim canvas edges. Hidden strokes remain editable."))
-                .font(.system(size: 10)).foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2).minimumScaleFactor(0.8)
-                .frame(height: 30)
         }
         .padding(.horizontal, 10)
         .padding(.top, 42)
@@ -241,7 +245,7 @@ struct WatchCanvasAdjustmentView: View {
         })
         .focusable()
         .focused($focusedAdjustment, equals: "Crop")
-        .modifier(SteppedCrownModifier(value: cropStepValue, range: cropStepRange,
+        .modifier(SteppedCrownModifier(value: cropStepValue, range: cropRange,
                                       sensitivity: .low, crownUnitsPerStep: 1, context: cropPage))
         .onChange(of: cropPage) { _, _ in focusedAdjustment = "Crop" }
     }
@@ -326,26 +330,8 @@ struct WatchCanvasAdjustmentView: View {
                 .frame(width: 48)
             }
             .frame(maxHeight: .infinity)
-            HStack(spacing: 4) {
-                resizeStepButton("minus", by: -1)
-                Text(verbatim: resizeValueTitle)
-                    .font(.system(size: 14, weight: .semibold))
-                    .monospacedDigit()
-                    .lineLimit(1).minimumScaleFactor(0.7)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityLabel(L10n.text(resizeTitle))
-                    .accessibilityValue(resizeValueTitle)
-                    .accessibilityAdjustableAction { direction in
-                        switch direction {
-                        case .increment: resizeValue.wrappedValue += 1
-                        case .decrement: resizeValue.wrappedValue -= 1
-                        @unknown default: break
-                        }
-                    }
-                resizeStepButton("plus", by: 1)
-            }
-            .environment(\.layoutDirection, .leftToRight)
-            .frame(height: 28)
+            valueRow(value: resizeValue, range: resizeRange, valueTitle: resizeValueTitle,
+                     title: resizeTitle, focus: "Resize")
             CanvasResizeCarousel(selection: $resizePage)
                 .frame(height: 28)
         }
@@ -368,10 +354,36 @@ struct WatchCanvasAdjustmentView: View {
         .onChange(of: resizePage) { _, _ in focusedAdjustment = "Resize" }
     }
 
-    private func resizeStepButton(_ symbol: String, by delta: Double) -> some View {
+    /// A horizontal − value + row above the carousel, as in perspective guides.
+    private func valueRow(value: Binding<Double>, range: ClosedRange<Double>, valueTitle: String,
+                          title: String, focus: String) -> some View {
+        HStack(spacing: 4) {
+            stepButton("minus", by: -1, value: value, range: range, title: title, focus: focus)
+            Text(verbatim: valueTitle)
+                .font(.system(size: 14, weight: .semibold))
+                .monospacedDigit()
+                .lineLimit(1).minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity)
+                .accessibilityLabel(L10n.text(title))
+                .accessibilityValue(valueTitle)
+                .accessibilityAdjustableAction { direction in
+                    switch direction {
+                    case .increment: value.wrappedValue += 1
+                    case .decrement: value.wrappedValue -= 1
+                    @unknown default: break
+                    }
+                }
+            stepButton("plus", by: 1, value: value, range: range, title: title, focus: focus)
+        }
+        .environment(\.layoutDirection, .leftToRight)
+        .frame(height: 28)
+    }
+
+    private func stepButton(_ symbol: String, by delta: Double, value: Binding<Double>,
+                            range: ClosedRange<Double>, title: String, focus: String) -> some View {
         Button {
-            resizeValue.wrappedValue += delta
-            focusedAdjustment = "Resize"
+            value.wrappedValue += delta
+            focusedAdjustment = focus
         } label: {
             Image(systemName: symbol)
                 .font(.system(size: 14, weight: .medium))
@@ -380,8 +392,8 @@ struct WatchCanvasAdjustmentView: View {
         }
         .buttonStyle(.plain)
         .buttonRepeatBehavior(.enabled)
-        .disabled(!resizeRange.contains(resizeValue.wrappedValue + delta))
-        .accessibilityLabel(L10n.text(resizeTitle) + (delta > 0 ? " +1" : " −1"))
+        .disabled(!range.contains(value.wrappedValue + delta))
+        .accessibilityLabel(L10n.text(title) + (delta > 0 ? " +1" : " −1"))
     }
 
     private func resizeOption(_ title: String, symbol: String, isSlashed: Bool = false,

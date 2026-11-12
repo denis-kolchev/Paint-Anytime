@@ -1045,6 +1045,7 @@
     },
     "%lld × %lld px" : {
       "comment" : "Language-neutral numeric notation or symbol; no words to translate. Numeric values are supplied by the UI.",
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
