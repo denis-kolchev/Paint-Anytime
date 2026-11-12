@@ -225,13 +225,15 @@ struct ContentView: View {
         } message: {
             Text(session.exportError ?? "")
         }
+        // Selection actions morph out of the lasso's Done and mode picker with the same
+        // spring as the other canvas morphs.
         .onChange(of: lasso.bounds) { _, bounds in
-            if bounds != nil && !lasso.hidesSelectionActions { showsSelectionActions = true }
+            if bounds != nil && !lasso.hidesSelectionActions { setShowsSelectionActions(true) }
         }
         .onChange(of: lasso.hidesSelectionActions) { _, hides in
             // Complete strokes shows object actions only for the generated image.
-            if hides { showsSelectionActions = false }
-            else if lasso.bounds != nil { showsSelectionActions = true }
+            if hides { setShowsSelectionActions(false) }
+            else if lasso.bounds != nil { setShowsSelectionActions(true) }
         }
         .onChange(of: usesMorphToolbar) { _, _ in
             showsContentActions = false
@@ -668,6 +670,13 @@ struct ContentView: View {
         showsMorphToolbar = false
         showsSelectionActions = false
         lasso.activate(lockedTo: lockedMode)
+    }
+
+    private func setShowsSelectionActions(_ shows: Bool) {
+        guard showsSelectionActions != shows else { return }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            showsSelectionActions = shows
+        }
     }
 
     private func finishLasso() {

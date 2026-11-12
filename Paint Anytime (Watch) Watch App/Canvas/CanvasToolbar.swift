@@ -45,9 +45,10 @@ struct CanvasToolbar: ToolbarContent {
     private var canvasToolbarDiameter: CGFloat {
         usesMorphToolbar ? 32 : MorphPanelGeometry.buttonDiameter
     }
+    /// The canvas draws this corner's glass; the native button keeps only the slot and taps.
+    /// The lasso's Done is drawn there too, sharing one glass with the drawing morph.
     private var morphOwnsTrailingControl: Bool {
-        !showsToolSettings && (isMovingCanvas || (lassoIsActive && showsSelectionActions) ||
-            (!lassoIsActive && usesMorphToolbar))
+        !showsToolSettings && (isMovingCanvas || lassoIsActive || usesMorphToolbar)
     }
     private var morphSpring: Animation? {
         reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)

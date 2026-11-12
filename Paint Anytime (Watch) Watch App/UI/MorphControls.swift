@@ -404,17 +404,37 @@ struct CanvasMorphPanels: View {
                 cameraIcon("checkmark", diameter: panelGeometry.diameter, isHighlighted: true)
                     .position(trailing)
             }
-            if usesMorphToolbar && isVisible && !isMovingCanvas && !lasso.isActive && controller.activeStroke == nil {
-                let diameter = panelGeometry.diameter
-                let top = trailing.y - 18
-                let centerX = trailing.x
-                let rowCount: CGFloat = 4
-                let rowHeight = panelGeometry.rowHeight(count: rowCount, panelTop: top)
-                let panelHeight = showsMorphToolbar ? rowHeight * rowCount : diameter
-                morphToolbar(diameter: diameter, rowHeight: rowHeight)
-                    .position(x: centerX, y: top + panelHeight / 2)
-                    .zIndex(3)
+            let showsDrawingMorph = usesMorphToolbar && isVisible && !isMovingCanvas && !lasso.isActive
+                && controller.activeStroke == nil
+            let showsLassoDone = isVisible && lasso.isActive && !lasso.hidesControls
+            // One branch for both modes: the drawing morph and the lasso's Done share the
+            // same glass, so starting or finishing the lasso cross-fades the symbol in place
+            // (like the gallery's Select / Cancel) instead of swapping buttons on one frame.
+            // Its own container, so the lasso's changes animate only this panel.
+            ZStack {
+                if showsDrawingMorph || showsLassoDone {
+                    let diameter = panelGeometry.diameter
+                    let top = trailing.y - 18
+                    let rowCount: CGFloat = lasso.isActive ? 3 : 4
+                    let rowHeight = panelGeometry.rowHeight(count: rowCount, panelTop: top)
+                    let isExpanded = lasso.isActive ? showsSelectionActions : showsMorphToolbar
+                    let panelHeight = isExpanded ? rowHeight * rowCount : diameter
+                    let center = CGPoint(x: trailing.x, y: top + panelHeight / 2)
+                    // With the built-in controls this view persists and only the symbol inside
+                    // cross-fades (see `trailingMorph`). A custom layout has no drawing morph
+                    // here, so Done is inserted and removed: scale it around its own center.
+                    trailingMorph(diameter: diameter, rowHeight: rowHeight)
+                        .position(center)
+                        .transition(morphTransition(anchor: unitPoint(center)))
+                }
+            }
+            .animation(lassoPanelAnimation, value: lasso.isActive)
+            // The lasso hides its controls while an outline is drawn or prepared.
+            .animation(lassoPanelAnimation, value: lasso.hidesControls)
+            .zIndex(3)
 
+            if showsDrawingMorph {
+                let diameter = panelGeometry.diameter
                 // Both controls use the same glass and explicit outer diameter.
                 // Native toolbar buttons handle taps in their slots; other rows stay interactive.
 
@@ -428,31 +448,48 @@ struct CanvasMorphPanels: View {
                     .zIndex(3)
             }
 
-            if isVisible && lasso.isActive && !lasso.hidesControls {
-                let diameter = panelGeometry.diameter
-                let left = bottom.x - diameter / 2
-                let availableWidth = max(0, size.width - left * 2)
-                let panelWidth = min(diameter * (showsSelectionActions ? 4 : CGFloat(lassoModes.count)), availableWidth)
-                // A lasso opened into one mode skips the mode picker; Complete strokes
-                // leaves only the send checkmark until its image arrives.
-                if showsSelectionActions || (!lasso.isModeLocked && !(lasso.hidesSelectionActions && lasso.bounds != nil)) {
-                    lassoMorph(diameter: diameter, panelWidth: panelWidth)
-                        .position(x: size.width / 2, y: bottom.y)
-                        .zIndex(3)
-                }
-
-                if showsSelectionActions {
-                    let trailingTop = trailing.y - 18
-                    let historyRowHeight = panelGeometry.rowHeight(count: 3, panelTop: trailingTop)
-                    lassoHistoryMorph(diameter: diameter, rowHeight: historyRowHeight)
-                        .position(x: trailing.x,
-                                  y: trailingTop + historyRowHeight * 3 / 2)
-                        .zIndex(3)
+            // Its own container, so the lasso's start and finish animate only this panel.
+            ZStack {
+                if isVisible && lasso.isActive && !lasso.hidesControls {
+                    let diameter = panelGeometry.diameter
+                    let left = bottom.x - diameter / 2
+                    let availableWidth = max(0, size.width - left * 2)
+                    let panelWidth = min(diameter * (showsSelectionActions ? 4 : CGFloat(lassoModes.count)), availableWidth)
+                    // A lasso opened into one mode skips the mode picker; Complete strokes
+                    // leaves only the send checkmark until its image arrives.
+                    if showsSelectionActions || (!lasso.isModeLocked && !(lasso.hidesSelectionActions && lasso.bounds != nil)) {
+                        lassoMorph(diameter: diameter, panelWidth: panelWidth)
+                            .position(x: size.width / 2, y: bottom.y)
+                            // Same entrance as the gallery's selection actions.
+                            .transition(morphTransition(anchor: unitPoint(
+                                CGPoint(x: size.width / 2, y: bottom.y))))
+                    }
                 }
             }
+            // Starting and finishing the lasso are not animated by their callers.
+            .animation(lassoPanelAnimation, value: lasso.isActive)
+            .animation(lassoPanelAnimation, value: lasso.hidesControls)
+            .zIndex(3)
 
         }
         .frame(width: size.width, height: size.height)
+    }
+
+    private var lassoPanelAnimation: Animation? {
+        reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)
+    }
+
+    /// The gallery's selection-actions transition, scaled around the panel's own center.
+    /// `.position` makes a panel canvas-sized, so the default center anchor would pull it
+    /// toward the middle of the screen.
+    private func morphTransition(anchor: UnitPoint) -> AnyTransition {
+        reduceMotion ? .opacity : .scale(scale: 0.6, anchor: anchor).combined(with: .opacity)
+    }
+
+    /// A canvas point as a unit point of the canvas, for transition anchors.
+    private func unitPoint(_ point: CGPoint) -> UnitPoint {
+        UnitPoint(x: size.width > 0 ? point.x / size.width : 0.5,
+                  y: size.height > 0 ? point.y / size.height : 0.5)
     }
 
     private func cameraIcon(_ symbol: String, diameter: CGFloat, isHighlighted: Bool) -> some View {
@@ -537,43 +574,44 @@ struct CanvasMorphPanels: View {
         .trackCanvasControl(.contentMorph, frames: framesBinding)
     }
 
-    private func morphToolbar(diameter: CGFloat, rowHeight: CGFloat) -> some View {
-        CanvasMorphContent(isExpanded: showsMorphToolbar) {
-            VStack(spacing: 0) {
-                // Tool settings keeps the morph open: a collapse would fight the
-                // transition into the brush editor.
-                morphButton("Tool settings", height: rowHeight) {
-                    controller.cancelStroke()
-                    showsToolSettings = true
-                } label: {
-                    ToolIcon(instrument: controller.pencilStyle.instrument)
-                        .frame(width: 18, height: 18)
-                }
-                .accessibilityHidden(true)
-                morphButton("Undo", height: rowHeight, isUnavailable: !controller.canUndo,
-                            action: { controller.undo() }) {
-                    Image(systemName: "arrow.uturn.backward")
-                }
-                morphButton("Redo", height: rowHeight, isUnavailable: !controller.canRedo,
-                            action: { controller.redo() }) {
-                    Image(systemName: "arrow.uturn.forward")
-                }
-                morphButton("Close", height: rowHeight) {
-                    collapse { showsMorphToolbar = false }
-                } label: { Image(systemName: "xmark") }
+    /// The trailing morph: the drawing controls, or the lasso's Done with its history.
+    /// Collapsed, both are one glass circle whose symbol cross-fades between modes.
+    private func trailingMorph(diameter: CGFloat, rowHeight: CGFloat) -> some View {
+        let isLasso = lasso.isActive
+        return CanvasMorphContent(isExpanded: isLasso ? showsSelectionActions : showsMorphToolbar) {
+            if isLasso {
+                lassoHistoryRows(rowHeight: rowHeight)
+            } else {
+                drawingToolRows(rowHeight: rowHeight)
             }
         } collapsed: {
             VStack(spacing: 0) {
-                morphButton("Open drawing controls", height: diameter, isCircular: true) {
-                    withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                        showsContentActions = false
-                        showsMorphToolbar = true
+                morphButton(isLasso ? "Done" : "Open drawing controls", height: diameter, isCircular: true) {
+                    if isLasso {
+                        if lasso.awaitsSketchAssistConfirmation { lasso.confirmSketchAssist(controller) }
+                        else { onFinishLasso() }
+                    } else {
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                            showsContentActions = false
+                            showsMorphToolbar = true
+                        }
                     }
                 } label: {
-                    Image(systemName: "paintbrush.pointed")
+                    // Like the gallery's Select / Cancel: the glass stays put and only the
+                    // symbol cross-fades. The animation is scoped to the symbol, so neither
+                    // the glass position nor its size animates when the mode changes.
+                    // Both symbols stay mounted and cross-fade by opacity: swapping one Image's
+                    // symbol with `.contentTransition(.opacity)` switched on a single frame here.
+                    ZStack {
+                        Image(systemName: "paintbrush.pointed")
+                            .opacity(isLasso ? 0 : 1)
+                        Image(systemName: "checkmark")
+                            .foregroundStyle(.green)
+                            .opacity(isLasso ? 1 : 0)
+                    }
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isLasso)
                 }
                 .accessibilityHidden(true)
-
             }
         }
         .frame(width: diameter)
@@ -581,7 +619,33 @@ struct CanvasMorphPanels: View {
         .trackCanvasControl(.morph, frames: framesBinding)
     }
 
-    private func lassoHistoryMorph(diameter: CGFloat, rowHeight: CGFloat) -> some View {
+    private func drawingToolRows(rowHeight: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            // Tool settings keeps the morph open: a collapse would fight the
+            // transition into the brush editor.
+            morphButton("Tool settings", height: rowHeight) {
+                controller.cancelStroke()
+                showsToolSettings = true
+            } label: {
+                ToolIcon(instrument: controller.pencilStyle.instrument)
+                    .frame(width: 18, height: 18)
+            }
+            .accessibilityHidden(true)
+            morphButton("Undo", height: rowHeight, isUnavailable: !controller.canUndo,
+                        action: { controller.undo() }) {
+                Image(systemName: "arrow.uturn.backward")
+            }
+            morphButton("Redo", height: rowHeight, isUnavailable: !controller.canRedo,
+                        action: { controller.redo() }) {
+                Image(systemName: "arrow.uturn.forward")
+            }
+            morphButton("Close", height: rowHeight) {
+                collapse { showsMorphToolbar = false }
+            } label: { Image(systemName: "xmark") }
+        }
+    }
+
+    private func lassoHistoryRows(rowHeight: CGFloat) -> some View {
         VStack(spacing: 0) {
             morphButton("Done", height: rowHeight) { onFinishLasso() } label: {
                 Image(systemName: "checkmark").foregroundStyle(.green)
@@ -597,9 +661,6 @@ struct CanvasMorphPanels: View {
                 lasso.redo(controller)
             } label: { Image(systemName: "arrow.uturn.forward") }
         }
-        .frame(width: diameter)
-        .modifier(CanvasMorphGlass())
-        .trackCanvasControl(.morph, frames: framesBinding)
     }
 
     /// Sketch assist ships with 1.3; it stays visible but locked until the iPhone reports support.
