@@ -14,7 +14,9 @@ struct WatchCanvasAdjustmentView: View {
     @State private var cropPercent = 90.0
     @State private var cropX = 50.0
     @State private var cropY = 50.0
-    @State private var turns = 0
+    /// Unbounded quarter-turn count so the preview always animates the short way.
+    @State private var rotationSteps = 0
+    private var turns: Int { ((rotationSteps % 4) + 4) % 4 }
     let mode: Int
     @FocusState private var focusedAdjustment: String?
     @State private var preview: CGImage?
@@ -48,17 +50,7 @@ struct WatchCanvasAdjustmentView: View {
                 } else if mode == 1 {
                     cropEditor(height: geometry.size.height)
                 } else {
-                page("Rotate", mode: 2, height: geometry.size.height) { _ in
-                    ForEach(0...3, id: \.self) { turn in
-                        compactButton(turn == 0 ? "0°" : turn == 1 ? "90° ↻" : turn == 2 ? "180°" : "90° ↺") {
-                            turns = turn
-                        }
-                        .background(turns == turn ? Color.accentColor.opacity(0.35) : .clear,
-                                    in: RoundedRectangle(cornerRadius: 8))
-                        .accessibilityAddTraits(turns == turn ? .isSelected : [])
-                    }
-                    Spacer(minLength: 0)
-                }
+                    rotateEditor(height: geometry.size.height)
                 }
             }
         }
@@ -100,13 +92,15 @@ struct WatchCanvasAdjustmentView: View {
             let scale = min(geometry.size.width / max(1, previewBounds.width),
                             geometry.size.height / max(1, previewBounds.height))
             ZStack {
+                // Rotate draws the bare image: the frame swaps its aspect while the
+                // image turns, so a background, clip or border would show mid-animation.
                 ZStack(alignment: .topLeading) {
-                    Rectangle().fill(.gray.opacity(0.3))
+                    Rectangle().fill(.gray.opacity(mode == 2 ? 0 : 0.3))
                     if let preview {
                         Image(decorative: preview, scale: 1).resizable()
                             .frame(width: (mode == 0 && resample ? target.width : original.width) * scale,
                                    height: (mode == 0 && resample ? target.height : original.height) * scale)
-                            .rotationEffect(.degrees(mode == 2 ? Double(turns * 90) : 0))
+                            .rotationEffect(.degrees(mode == 2 ? Double(rotationSteps * 90) : 0))
                             .frame(width: target.width * scale, height: target.height * scale,
                                    alignment: mode == 0 ? .topLeading : .center)
                     }
@@ -117,21 +111,11 @@ struct WatchCanvasAdjustmentView: View {
                     }
                 }
                 .frame(width: target.width * scale, height: target.height * scale)
-                .clipped()
-                .overlay(Rectangle().stroke(.white.opacity(0.5), lineWidth: 0.5))
+                .modifier(PreviewClip(isEnabled: mode != 2))
+                .overlay(Rectangle().stroke(.white.opacity(mode == 2 ? 0 : 0.5), lineWidth: 0.5))
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .accessibilityLabel(L10n.text(mode == 1 ? "Crop area" : "Canvas size"))
-    }
-
-    private func compactButton(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title).lineLimit(1).minimumScaleFactor(0.7)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .background(.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
     }
 
     private func applyChanges() {
@@ -155,30 +139,48 @@ struct WatchCanvasAdjustmentView: View {
         dismiss()
     }
 
-    private func page<Content: View>(_ title: String, mode: Int, height: CGFloat,
-                                    @ViewBuilder content: (CGFloat) -> Content) -> some View {
-        let rowHeight = max(20, min(28, (height - 125) / 5))
-        return VStack(spacing: 3) {
-            HStack(spacing: 6) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(L10n.text(title)).font(.system(size: 12, weight: .semibold))
-                        .lineLimit(2).minimumScaleFactor(0.8)
-                    Text(mode == 0 ? "\(Int(width)) × \(Int(self.height)) px"
-                         : mode == 1 ? "\(Int(cropSize.width * displayScale)) × \(Int(cropSize.height * displayScale)) px"
-                         : "\(Int((turns % 2 == 0 ? original.width : original.height) * displayScale)) × \(Int((turns % 2 == 0 ? original.height : original.width) * displayScale)) px")
-                        .font(.system(size: 9)).foregroundStyle(.secondary)
-                        .lineLimit(1).minimumScaleFactor(0.7)
+    // MARK: Rotate
 
-                }.frame(maxWidth: .infinity, alignment: .leading)
-                canvasPreview(mode: mode).frame(width: 52, height: 44)
-            }.frame(height: 52)
-            content(rowHeight)
+    private var rotatedPixelSize: String {
+        let size = turns % 2 == 0 ? original : CGSize(width: original.height, height: original.width)
+        return "\(Int(size.width * displayScale)) × \(Int(size.height * displayScale)) px · \(Int(resolution)) DPI"
+    }
+
+    /// Large centered preview with its caption, then two round glass buttons.
+    /// The preview gets every point the buttons do not need, so both portrait and
+    /// landscape canvases grow compared to the old list layout.
+    private func rotateEditor(height availableHeight: CGFloat) -> some View {
+        VStack(spacing: 6) {
+            canvasPreview(mode: 2)
+                .padding(.horizontal, 6)
+                .frame(maxHeight: .infinity)
+                .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: rotationSteps)
+            Text(rotatedPixelSize)
+                .font(.system(size: 12, weight: .medium)).monospacedDigit()
+                .foregroundStyle(.white)
+                .lineLimit(1).minimumScaleFactor(0.7)
+            HStack(spacing: 24) {
+                rotateButton(step: -1, symbol: "arrow.counterclockwise", label: "90° ↺")
+                rotateButton(step: 1, symbol: "arrow.clockwise", label: "90° ↻")
+            }
         }
-        .font(.system(size: 11))
         .padding(.horizontal, 10)
         .padding(.top, 40)
-        .padding(.bottom, 22)
-        .frame(height: height)
+        .padding(.bottom, 12)
+        .frame(height: availableHeight)
+    }
+
+    private func rotateButton(step: Int, symbol: String, label: String) -> some View {
+        Button { rotationSteps += step } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 42, height: 42)
+                .modifier(RotateGlassCircle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: label))
     }
 
     private var cropTitle: String { ["Keep", "Horizontal", "Vertical"][cropPage] }
@@ -355,4 +357,27 @@ struct WatchCanvasAdjustmentView: View {
         .accessibilityAddTraits(value.wrappedValue ? .isSelected : [])
     }
 
+}
+
+/// Liquid Glass circle on watchOS 26+; a material circle on earlier systems.
+private struct RotateGlassCircle: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(watchOS 26, *) {
+            content
+                .glassEffect(.regular.interactive(), in: Circle())
+                .environment(\.colorScheme, .dark)
+        } else {
+            content.background(.ultraThinMaterial, in: Circle())
+        }
+    }
+}
+
+/// Clips the preview to its canvas bounds except while rotating, where the
+/// turning image must not be cut by the interpolating frame.
+private struct PreviewClip: ViewModifier {
+    let isEnabled: Bool
+
+    func body(content: Content) -> some View {
+        if isEnabled { content.clipped() } else { content }
+    }
 }
