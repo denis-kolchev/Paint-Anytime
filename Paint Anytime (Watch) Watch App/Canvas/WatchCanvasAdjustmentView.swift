@@ -211,8 +211,6 @@ struct WatchCanvasAdjustmentView: View {
         VStack(spacing: 4) {
             HStack(spacing: 8) {
                 canvasPreview(mode: 1)
-                    .padding(5)
-                    .background(.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
                 ToolValueControl(value: cropStepValue, range: cropStepRange,
                                  valueTitle: L10n.percent(cropValue / 100),
                                  title: L10n.text(cropTitle), isEnabled: true)
@@ -303,26 +301,53 @@ struct WatchCanvasAdjustmentView: View {
 
     private func resizeEditor(height availableHeight: CGFloat) -> some View {
         VStack(spacing: 4) {
+            // Options stand beside the preview, as the presets do in perspective guides.
             HStack(spacing: 8) {
                 canvasPreview(mode: 0)
-                    .padding(5)
-                    .background(.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
-                ToolValueControl(value: resizeValue, range: resizeRange,
-                                 valueTitle: resizeValueTitle, title: L10n.text(resizeTitle),
-                                 isEnabled: true)
+                VStack(spacing: 0) {
+                    // Width, height and resolution, one per line above the options.
+                    VStack(spacing: 1) {
+                        Text(verbatim: "\(Int(width)) px")
+                        Text(verbatim: "\(Int(height)) px")
+                        Text(verbatim: "\(Int(resolution)) DPI")
+                    }
+                    .font(.caption2).monospacedDigit()
+                    .foregroundStyle(validSize ? Color.secondary : .orange)
+                    .lineLimit(1).minimumScaleFactor(0.6)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text(verbatim: "\(Int(width)) × \(Int(height)) px, \(Int(resolution)) DPI"))
+                    resizeOption("Scale proportionally", symbol: "link", isSlashed: !proportional, value: $proportional)
+                        .frame(maxHeight: .infinity)
+                    resizeOption("Resample image", symbol: "arrow.up.left.and.arrow.down.right", value: $resample)
+                        .frame(maxHeight: .infinity)
+                }
+                // Clear the toolbar's checkmark, which overlaps the top of this column.
+                .padding(.top, 26)
+                .frame(width: 48)
             }
             .frame(maxHeight: .infinity)
-            Text("\(Int(width)) × \(Int(height)) px · \(Int(resolution)) DPI")
-                .font(.caption2).monospacedDigit()
-                .foregroundStyle(validSize ? Color.secondary : .orange)
-                .lineLimit(1).minimumScaleFactor(0.65)
+            HStack(spacing: 4) {
+                resizeStepButton("minus", by: -1)
+                Text(verbatim: resizeValueTitle)
+                    .font(.system(size: 14, weight: .semibold))
+                    .monospacedDigit()
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel(L10n.text(resizeTitle))
+                    .accessibilityValue(resizeValueTitle)
+                    .accessibilityAdjustableAction { direction in
+                        switch direction {
+                        case .increment: resizeValue.wrappedValue += 1
+                        case .decrement: resizeValue.wrappedValue -= 1
+                        @unknown default: break
+                        }
+                    }
+                resizeStepButton("plus", by: 1)
+            }
+            .environment(\.layoutDirection, .leftToRight)
+            .frame(height: 28)
             CanvasResizeCarousel(selection: $resizePage)
                 .frame(height: 28)
-            HStack(spacing: 18) {
-                resizeOption("Scale proportionally", symbol: proportional ? "link" : "link.slash", value: $proportional)
-                resizeOption("Resample image", symbol: "arrow.up.left.and.arrow.down.right", value: $resample)
-            }
-            .frame(height: 30)
         }
         .padding(.horizontal, 10)
         .padding(.top, 42)
@@ -343,16 +368,57 @@ struct WatchCanvasAdjustmentView: View {
         .onChange(of: resizePage) { _, _ in focusedAdjustment = "Resize" }
     }
 
-    private func resizeOption(_ title: String, symbol: String, value: Binding<Bool>) -> some View {
-        Button { value.wrappedValue.toggle() } label: {
+    private func resizeStepButton(_ symbol: String, by delta: Double) -> some View {
+        Button {
+            resizeValue.wrappedValue += delta
+            focusedAdjustment = "Resize"
+        } label: {
             Image(systemName: symbol)
-                .font(.system(size: 15, weight: .semibold))
-                .frame(width: 36, height: 30)
-                .background(value.wrappedValue ? Color.accentColor.opacity(0.3) : Color.white.opacity(0.08),
-                            in: Capsule())
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: 28, height: 28)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(value.wrappedValue ? Color.accentColor : Color.secondary)
+        .buttonRepeatBehavior(.enabled)
+        .disabled(!resizeRange.contains(resizeValue.wrappedValue + delta))
+        .accessibilityLabel(L10n.text(resizeTitle) + (delta > 0 ? " +1" : " −1"))
+    }
+
+    private func resizeOption(_ title: String, symbol: String, isSlashed: Bool = false,
+                              value: Binding<Bool>) -> some View {
+        // The same round toggle as the perspective guide presets.
+        let isOn = value.wrappedValue
+        return Button { value.wrappedValue.toggle() } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .bold))
+                // SF Symbols has no "link.slash"; cut a gap and draw the slash like system slash symbols.
+                .mask {
+                    Rectangle()
+                        .overlay {
+                            if isSlashed {
+                                Capsule().frame(width: 5, height: 24).rotationEffect(.degrees(-45))
+                                    .blendMode(.destinationOut)
+                            }
+                        }
+                        .compositingGroup()
+                }
+                .overlay {
+                    if isSlashed {
+                        Capsule().frame(width: 1.75, height: 20).rotationEffect(.degrees(-45))
+                    }
+                }
+                .foregroundStyle(isOn ? Color.black : Color.white)
+                .frame(width: 28, height: 28)
+                .background {
+                    Circle().fill(isOn ? Color.accentColor : Color.white.opacity(0.12))
+                }
+                .overlay {
+                    Circle().strokeBorder(isOn ? Color.accentColor : Color.white.opacity(0.35), lineWidth: 1.5)
+                }
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
         .accessibilityLabel(L10n.text(title))
         .accessibilityAddTraits(value.wrappedValue ? .isSelected : [])
     }
