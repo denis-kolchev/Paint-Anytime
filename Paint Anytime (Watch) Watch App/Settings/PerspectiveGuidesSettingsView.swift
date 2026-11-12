@@ -1,20 +1,33 @@
 import SwiftUI
 
-/// Previews the guides over the current drawing. The carousel picks which angle the
+/// Previews the guides over the current drawing. The carousel picks which value the
 /// value row and the Digital Crown adjust; the column on the right picks the preset.
 struct PerspectiveGuidesSettingsView: View {
+    private enum Page: Int, CaseIterable {
+        case viewAngle, tilt, rays
+
+        var title: String {
+            switch self {
+            case .viewAngle: "View angle"
+            case .tilt: "Tilt"
+            case .rays: "Rays"
+            }
+        }
+
+        var step: Double { self == .rays ? 2 : 5 }
+        var unit: String { self == .rays ? "" : "°" }
+    }
+
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
     @ObservedObject var guides = PerspectiveGuides.shared
     @FocusState private var crownFocused: Bool
-    @State private var page = 0
+    @State private var selectedPage = Page.viewAngle
     @State private var preview: CGImage?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.layoutDirection) private var layoutDirection
 
-    private static let titles = ["View angle", "Tilt"]
-    private static let step = 5.0
     private static let tiltRange: ClosedRange<Double> = -180...180
 
     private var paperSize: CGSize {
@@ -22,27 +35,50 @@ struct PerspectiveGuidesSettingsView: View {
         return size.width > 0 && size.height > 0 ? size : CGSize(width: 200, height: 240)
     }
 
-    private var range: ClosedRange<Double> { page == 0 ? PerspectiveGuides.viewAngleRange : Self.tiltRange }
-
-    private var degrees: Double {
-        page == 0 ? guides.viewAngle : (guides.rotation * 180 / .pi).rounded()
+    /// One vanishing point has no side points for the view angle to place.
+    private var pages: [Page] { guides.preset == .one ? [.tilt, .rays] : Page.allCases }
+    private var page: Page { pages.contains(selectedPage) ? selectedPage : pages[0] }
+    private var pageIndex: Binding<Int> {
+        Binding(get: { pages.firstIndex(of: page) ?? 0 },
+                set: { selectedPage = pages[min(pages.count - 1, max(0, $0))] })
     }
 
-    private func setDegrees(_ next: Double) {
-        let value = min(range.upperBound, max(range.lowerBound, next))
-        if page == 0 {
-            guides.viewAngle = value
-        } else {
-            guides.rotation = PerspectiveGuides.normalizedRotation(value * .pi / 180)
-            guides.savePlacement()
+    private var range: ClosedRange<Double> {
+        switch page {
+        case .viewAngle: PerspectiveGuides.viewAngleRange
+        case .tilt: Self.tiltRange
+        case .rays: Double(PerspectiveGuides.rayCountRange.lowerBound)...Double(PerspectiveGuides.rayCountRange.upperBound)
         }
     }
 
-    // The Crown moves in the same 5° increments as the buttons.
-    private var stepRange: ClosedRange<Double> { 0...((range.upperBound - range.lowerBound) / Self.step) }
+    private var value: Double {
+        switch page {
+        case .viewAngle: guides.viewAngle
+        case .tilt: (guides.rotation * 180 / .pi).rounded()
+        case .rays: Double(guides.rayCount)
+        }
+    }
+
+    private var valueText: String { "\(Int(value))\(page.unit)" }
+
+    private func setValue(_ next: Double) {
+        let value = min(range.upperBound, max(range.lowerBound, next))
+        switch page {
+        case .viewAngle:
+            guides.viewAngle = value
+        case .tilt:
+            guides.rotation = PerspectiveGuides.normalizedRotation(value * .pi / 180)
+            guides.savePlacement()
+        case .rays:
+            guides.setRayCount(Int(value.rounded()))
+        }
+    }
+
+    // The Crown moves in the same increments as the buttons.
+    private var stepRange: ClosedRange<Double> { 0...((range.upperBound - range.lowerBound) / page.step) }
     private var stepValue: Binding<Double> {
-        Binding(get: { ((degrees - range.lowerBound) / Self.step).rounded() },
-                set: { setDegrees(range.lowerBound + $0.rounded() * Self.step) })
+        Binding(get: { ((value - range.lowerBound) / page.step).rounded() },
+                set: { setValue(range.lowerBound + $0.rounded() * page.step) })
     }
 
     var body: some View {
@@ -88,27 +124,27 @@ struct PerspectiveGuidesSettingsView: View {
 
             VStack(spacing: 0) {
                 HStack(spacing: 4) {
-                    stepButton("minus", by: -Self.step)
-                    Text(verbatim: "\(Int(degrees))°")
+                    stepButton("minus", by: -page.step)
+                    Text(verbatim: valueText)
                         .font(.system(size: 14, weight: .semibold))
                         .monospacedDigit()
                         .frame(maxWidth: .infinity)
-                        .accessibilityLabel(L10n.text(Self.titles[page]))
-                        .accessibilityValue("\(Int(degrees))°")
+                        .accessibilityLabel(L10n.text(page.title))
+                        .accessibilityValue(valueText)
                         .accessibilityAdjustableAction { direction in
                             switch direction {
-                            case .increment: setDegrees(degrees + Self.step)
-                            case .decrement: setDegrees(degrees - Self.step)
+                            case .increment: setValue(value + page.step)
+                            case .decrement: setValue(value - page.step)
                             @unknown default: break
                             }
                         }
-                    stepButton("plus", by: Self.step)
+                    stepButton("plus", by: page.step)
                 }
                 .environment(\.layoutDirection, .leftToRight)
                 .frame(height: 28)
                 .padding(.top, 4)
 
-                CanvasResizeCarousel(selection: $page, titles: Self.titles)
+                CanvasResizeCarousel(selection: pageIndex, titles: pages.map(\.title))
                     .frame(height: 28)
             }
             .padding(.bottom, 8)
@@ -120,13 +156,13 @@ struct PerspectiveGuidesSettingsView: View {
             guard abs(value.translation.width) > abs(value.translation.height) else { return }
             let forward = (value.translation.width < 0) == (layoutDirection == .leftToRight)
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                page = min(Self.titles.count - 1, max(0, page + (forward ? 1 : -1)))
+                pageIndex.wrappedValue += forward ? 1 : -1
             }
         })
         .focusable()
         .focused($crownFocused)
         .modifier(SteppedCrownModifier(value: stepValue, range: stepRange,
-                                      sensitivity: .low, crownUnitsPerStep: 1, context: page))
+                                      sensitivity: .low, crownUnitsPerStep: 1, context: page.rawValue))
         .onChange(of: page) { _, _ in crownFocused = true }
         .navigationTitle(L10n.text("Perspective"))
         .toolbar {
@@ -186,7 +222,7 @@ struct PerspectiveGuidesSettingsView: View {
 
     private func stepButton(_ symbol: String, by delta: Double) -> some View {
         Button {
-            setDegrees(degrees + delta)
+            setValue(value + delta)
             crownFocused = true
         } label: {
             Image(systemName: symbol)
@@ -196,8 +232,8 @@ struct PerspectiveGuidesSettingsView: View {
         }
         .buttonStyle(.plain)
         .buttonRepeatBehavior(.enabled)
-        .disabled(!range.contains(degrees + delta))
-        .accessibilityLabel(L10n.text(Self.titles[page]) + (delta > 0 ? " +5°" : " −5°"))
+        .disabled(!range.contains(value + delta))
+        .accessibilityLabel(L10n.text(page.title) + (delta > 0 ? " +" : " −") + "\(Int(abs(delta)))\(page.unit)")
     }
 }
 
