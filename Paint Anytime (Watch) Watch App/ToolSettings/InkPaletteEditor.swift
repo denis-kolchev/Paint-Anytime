@@ -256,7 +256,7 @@ struct InkPaletteEditor: View {
 
 }
 
-private struct PaletteSwatchLabel: View {
+struct PaletteSwatchLabel: View {
     let preset: InkPreset
     let selected: Bool
 

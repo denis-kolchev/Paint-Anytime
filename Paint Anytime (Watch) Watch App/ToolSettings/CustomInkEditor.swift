@@ -6,7 +6,15 @@ struct CustomInkEditor: View {
     var dismissesOnSave = true
     /// Supplies the canvas for the eyedropper. Without it the editor has no eyedropper.
     var eyedropperController: CanvasController? = nil
+    /// With a palette the checkmark corner opens its colors instead: a swatch is
+    /// confirmed there, and the wheel's own color is kept on Back.
+    var palette: InkPalette? = nil
     @ObservedObject var tutorial = TutorialSession.inactive
+    @State private var showsPaletteList = false
+    @State private var paletteSelectionID: String?
+    @State private var initialRGB: [Double]?
+    /// Set once a color is handed back, so leaving does not save it again.
+    @State private var finished = false
     @State private var acceptsColorChanges = false
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.dismiss) private var dismiss
@@ -103,32 +111,55 @@ struct CustomInkEditor: View {
             schemeCarousel
                 .frame(height: 24)
         }
+        // The palette list replaces the pages in place; nothing covers them.
+        .opacity(showsPaletteList ? 0 : 1)
+        .allowsHitTesting(!showsPaletteList)
+        .accessibilityHidden(showsPaletteList)
         .onAppear {
             // A new color starts from white unless the eyedropper supplied one.
             // The tutorial keeps the middle gray its slider lesson starts from.
             if let c = initialColor ?? (tutorial.isActive ? nil : Self.newColor) {
                 rgbBinding.wrappedValue = [Double(c.x) * 255, Double(c.y) * 255, Double(c.z) * 255].map { $0.rounded() }
             }
+            if initialRGB == nil { initialRGB = rgb }
             acceptsColorChanges = true
+        }
+        .onDisappear {
+            // Back keeps the wheel's color. The eyedropper's cover is not a departure.
+            guard palette != nil, !finished, !showsEyedropper, let initialRGB, rgb != initialRGB else { return }
+            finished = true
+            onSave(currentPreset)
         }
         .padding(.bottom, 8)
         // Use the empty space below the clock in tutorial color lessons.
         // Move the editor content together; the native toolbar stays in place.
         .offset(y: tutorial.isActive ? -20 : 0)
-        .navigationBarBackButtonHidden(tutorial.isActive)
+        .navigationBarBackButtonHidden(tutorial.isActive || showsPaletteList)
         .ignoresSafeArea(.container, edges: [.horizontal, .bottom])
         .overlay {
             // Spans the whole screen at rest. Only its size is used, never its
             // position, so navigation and dismissal animations carry the wheel
             // along instead of holding it at the screen centre.
             GeometryReader { geometry in
-                ColorWheelEditor(values: hsbBinding, isActive: page == 0 && !showsEyedropper, size: geometry.size)
+                ColorWheelEditor(values: hsbBinding, isActive: page == 0 && !showsEyedropper && !showsPaletteList,
+                                 size: geometry.size)
                     .offset(x: -CGFloat(page) * geometry.size.width)
-                    .opacity(page == 0 ? 1 : 0)
-                    .allowsHitTesting(page == 0)
+                    .opacity(page == 0 && !showsPaletteList ? 1 : 0)
+                    .scaleEffect(showsPaletteList && !reduceMotion ? 0.9 : 1)
+                    .allowsHitTesting(page == 0 && !showsPaletteList)
                     .accessibilityHidden(page != 0)
             }
             .ignoresSafeArea()
+        }
+        .overlay {
+            // Above the wheel, which is laid out against the whole screen.
+            if showsPaletteList, let palette {
+                PaletteColorList(palette: palette, selectionID: $paletteSelectionID)
+                    // Grows out of the shrinking wheel; no backdrop of its own,
+                    // so no rectangle edge shows during the cross-fade.
+                    .transition(reduceMotion ? .opacity
+                                : .opacity.combined(with: .scale(scale: 1.08)))
+            }
         }
         .fullScreenCover(isPresented: $showsEyedropper) {
             if let controller = eyedropperController {
@@ -142,23 +173,51 @@ struct CustomInkEditor: View {
             }
         }
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
-                Button {
-                    guard tutorial.permits([.savePaletteColor]) else { return }
-                    onSave(InkPreset(customID: UUID().uuidString, nameKey: colorName,
-                                     rgba: SIMD4(Float(rgb[0] / 255), Float(rgb[1] / 255), Float(rgb[2] / 255), 1)))
-                    if dismissesOnSave { dismiss() }
-                } label: {
-                    Image(systemName: "checkmark")
-                        .tutorialHint(tutorial, steps: [.savePaletteColor])
+            if palette != nil {
+                if showsPaletteList {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button { setPaletteListShown(false) } label: {
+                            Image(systemName: "chevron.backward")
+                        }
+                        .accessibilityLabel(L10n.text("Back"))
+                    }
                 }
-                .watchToolbarButtonStyle(usesCanvasMaterial: tutorial.isActive)
-                .opacity(tutorial.permits([.savePaletteColor]) ? 1 : 0)
-                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
-                           value: tutorial.permits([.savePaletteColor]))
-                .disabled(!tutorial.permits([.savePaletteColor]))
-                .accessibilityHidden(!tutorial.permits([.savePaletteColor]))
-                .accessibilityLabel(L10n.text(saveTitle))
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        if showsPaletteList { confirmPaletteColor() } else { setPaletteListShown(true) }
+                    } label: {
+                        ZStack {
+                            CurrentPaletteIcon()
+                                .opacity(showsPaletteList ? 0 : 1)
+                                .scaleEffect(reduceMotion || !showsPaletteList ? 1 : 0.6)
+                            Image(systemName: "checkmark")
+                                .opacity(showsPaletteList ? 1 : 0)
+                                .scaleEffect(reduceMotion || showsPaletteList ? 1 : 0.6)
+                        }
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: showsPaletteList)
+                    }
+                    .watchToolbarButtonStyle()
+                    .disabled(showsPaletteList && selectedPaletteColor == nil)
+                    .accessibilityLabel(L10n.text(showsPaletteList ? saveTitle : "Current palette"))
+                }
+            } else {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button {
+                        guard tutorial.permits([.savePaletteColor]) else { return }
+                        onSave(currentPreset)
+                        if dismissesOnSave { dismiss() }
+                    } label: {
+                        Image(systemName: "checkmark")
+                            .tutorialHint(tutorial, steps: [.savePaletteColor])
+                    }
+                    .watchToolbarButtonStyle(usesCanvasMaterial: tutorial.isActive)
+                    .opacity(tutorial.permits([.savePaletteColor]) ? 1 : 0)
+                    .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
+                               value: tutorial.permits([.savePaletteColor]))
+                    .disabled(!tutorial.permits([.savePaletteColor]))
+                    .accessibilityHidden(!tutorial.permits([.savePaletteColor]))
+                    .accessibilityLabel(L10n.text(saveTitle))
+                }
             }
             if eyedropperController != nil {
                 // A native bottom-bar item gets the same size, glass and corner
@@ -171,14 +230,46 @@ struct CustomInkEditor: View {
                     .accessibilityLabel(L10n.text("Eyedropper"))
                     // Stays installed on every page so the bar does not relayout;
                     // the HSB and RGB pages put the "Wheel" label in this corner.
-                    .opacity(page == 0 ? 1 : 0)
-                    .allowsHitTesting(page == 0)
-                    .accessibilityHidden(page != 0)
+                    // The palette list hides it too.
+                    .opacity(page == 0 && !showsPaletteList ? 1 : 0)
+                    .allowsHitTesting(page == 0 && !showsPaletteList)
+                    .accessibilityHidden(page != 0 || showsPaletteList)
                     .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: page)
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: showsPaletteList)
                     Spacer(minLength: 0)
                 }
             }
         }
+    }
+
+    private var currentPreset: InkPreset {
+        InkPreset(customID: UUID().uuidString, nameKey: colorName,
+                  rgba: SIMD4(Float(rgb[0] / 255), Float(rgb[1] / 255), Float(rgb[2] / 255), 1))
+    }
+
+    private var selectedPaletteColor: InkPreset? {
+        palette?.allColors.first { $0.id == paletteSelectionID }
+    }
+
+    private func setPaletteListShown(_ shown: Bool) {
+        if shown, let palette {
+            // Start on the swatch matching the current color, if there is one.
+            let current = SIMD3(Float(rgb[0] / 255), Float(rgb[1] / 255), Float(rgb[2] / 255))
+            paletteSelectionID = palette.allColors.first { preset in
+                let c = SIMD3(preset.rgba.x, preset.rgba.y, preset.rgba.z)
+                return ((c - current) * (c - current)).sum() < 1e-5
+            }?.id
+        }
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.15) : .spring(response: 0.38, dampingFraction: 0.86)) {
+            showsPaletteList = shown
+        }
+    }
+
+    private func confirmPaletteColor() {
+        guard let preset = selectedPaletteColor else { return }
+        finished = true
+        onSave(preset)
+        dismiss()
     }
 
     private var schemeCarousel: some View {
@@ -234,4 +325,41 @@ struct CustomInkEditor: View {
         .id(target)
     }
 
+}
+
+/// The current palette's swatches for picking one of them. Unlike the palette
+/// editor it selects a single color and changes nothing in the palette.
+private struct PaletteColorList: View {
+    let palette: InkPalette
+    @Binding var selectionID: String?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                Text(palette.displayTitle)
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 16) {
+                    ForEach(palette.allColors) { preset in
+                        let selected = selectionID == preset.id
+                        Button {
+                            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) {
+                                selectionID = preset.id
+                            }
+                        } label: {
+                            PaletteSwatchLabel(preset: preset, selected: selected)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(preset.name)
+                        .accessibilityAddTraits(selected ? [.isSelected] : [])
+                    }
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.bottom, 12)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 }

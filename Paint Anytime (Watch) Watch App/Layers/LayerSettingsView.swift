@@ -13,6 +13,8 @@ struct LayerSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showsColorEditor = false
     @State private var showsDeleteConfirmation = false
+    @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
+    @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
     private var layer: CanvasLayer? {
         guard let layerID else {
             return CanvasLayer(name: L10n.text("Canvas"),
@@ -224,7 +226,9 @@ struct LayerSettingsView: View {
                 }
             }
             .navigationDestination(isPresented: $showsColorEditor) {
-                CustomInkEditor(initialColor: controller.document.backgroundColor, saveTitle: "Done") { preset in
+                CustomInkEditor(initialColor: controller.document.backgroundColor, saveTitle: "Done",
+                                eyedropperController: controller,
+                                palette: InkPaletteLibrary.decode(palettesData, legacy: paletteData).activePalette) { preset in
                     var color = preset.rgba
                     color.w = Float(opacity)
                     controller.setBackgroundColor(color)
