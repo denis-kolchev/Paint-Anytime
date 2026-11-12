@@ -48,8 +48,6 @@ struct PerspectiveGuideLayout: Equatable {
     var paperSize: CGSize
 
     var axis: CGPoint { CGPoint(x: cos(rotation), y: sin(rotation)) }
-    /// Perpendicular to the horizon, pointing down when the guides are not rotated.
-    var normal: CGPoint { CGPoint(x: -sin(rotation), y: cos(rotation)) }
 
     /// Distance from the center of vision to the side vanishing points. A wider view
     /// angle brings them closer, like a wider lens, and steepens the vanishing lines.
@@ -110,29 +108,16 @@ struct PerspectiveGuideLayout: Equatable {
             || lines.contains { $0.distance(to: location) <= tolerance }
     }
 
-    /// The ruler for a stroke that starts at `start` on a guide, chosen by the stroke's initial
-    /// direction: the guide itself, a line toward a vanishing point or a horizon-aligned line.
+    /// The ruler for a stroke that starts at `start` on a guide: the displayed guide near the start
+    /// that best matches the stroke's initial direction. Only drawn lines are offered as rulers.
     func ruler(from start: CGPoint, toward location: CGPoint, tolerance: CGFloat) -> PerspectiveGuideLine? {
         let movement = CGPoint(x: location.x - start.x, y: location.y - start.y)
         let length = hypot(movement.x, movement.y)
         guard length > 0.001 else { return nil }
         let heading = CGPoint(x: movement.x / length, y: movement.y / length)
-        if let point = vanishingPoints.first(where: { hypot($0.x - start.x, $0.y - start.y) <= tolerance }) {
-            // Any direction out of a vanishing point is a valid vanishing line.
-            return PerspectiveGuideLine(point: point, direction: heading, kind: .ruler)
-        }
-        var candidates = lines.filter { $0.distance(to: start) <= tolerance }
+        // Every displayed line through a vanishing point is within tolerance when the stroke starts there.
+        let candidates = lines.filter { $0.distance(to: start) <= tolerance }
         guard !candidates.isEmpty else { return nil }
-        for point in vanishingPoints {
-            let dx = point.x - start.x, dy = point.y - start.y
-            let distance = hypot(dx, dy)
-            guard distance > tolerance else { continue }
-            candidates.append(PerspectiveGuideLine(point: start,
-                direction: CGPoint(x: dx / distance, y: dy / distance), kind: .ruler))
-        }
-        candidates.append(PerspectiveGuideLine(point: start, direction: axis, kind: .ruler))
-        // Verticals stay parallel without a third vanishing point.
-        candidates.append(PerspectiveGuideLine(point: start, direction: normal, kind: .ruler))
         var best = candidates[0]
         var bestAlignment = -CGFloat.infinity
         for candidate in candidates {
