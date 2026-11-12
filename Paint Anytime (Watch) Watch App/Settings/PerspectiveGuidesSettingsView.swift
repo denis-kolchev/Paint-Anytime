@@ -8,7 +8,7 @@ struct PerspectiveGuidesSettingsView: View {
 
         var title: String {
             switch self {
-            case .viewAngle: "View angle"
+            case .viewAngle: "Angle"
             case .tilt: "Tilt"
             case .rays: "Rays"
             }
