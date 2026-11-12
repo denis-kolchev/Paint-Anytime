@@ -68,6 +68,15 @@ struct CanvasLayoutEditorView: View {
                     .padding(.horizontal, 30)
             }
         }
+        // The shared loading state, centred over the whole editor; it also takes the taps
+        // while the layout is applied.
+        .overlay {
+            if isSaving {
+                LoadingDimOverlay()
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+            }
+        }
         // Slides up like Layers and the More menu instead of a zooming push.
         .sheet(isPresented: Binding(
             get: { editingSlot != nil },
@@ -98,7 +107,7 @@ struct CanvasLayoutEditorView: View {
     private var topActions: some View {
         CanvasLayoutTopActions(topControlMidY: topControlMidY,
                                resetMidX: slotFrames[2]?.midX, saveMidX: slotFrames[3]?.midX,
-                               canReset: draft != .original && !isSaving, isSaving: isSaving,
+                               canReset: draft != .original && !isSaving,
                                debug: touchDebug,
                                onReset: { perform(.reset, source: "action") },
                                onSave: { perform(.save, source: "action") },
@@ -133,14 +142,16 @@ struct CanvasLayoutEditorView: View {
     }
 
     /// Applying the layout rebuilds the canvas controls behind the cover on the main thread,
-    /// and the dismissal waits for that work, so the tap looked ignored. Show the spinner
-    /// first and apply once it is on screen.
+    /// and the dismissal waits for that work, so the tap looked ignored. Show the loading
+    /// overlay first and apply once it is on screen.
     private func requestSave() {
         guard !isSaving else { return }
         withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.15)) { isSaving = true }
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(200))
-            if !save() { isSaving = false }
+            if !save() {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.15)) { isSaving = false }
+            }
         }
     }
 
@@ -305,7 +316,6 @@ private struct CanvasLayoutTopActions: View {
     let resetMidX: CGFloat?
     let saveMidX: CGFloat?
     let canReset: Bool
-    let isSaving: Bool
     let debug: CanvasLayoutTouchDebug?
     let onReset: () -> Void
     let onSave: () -> Void
@@ -334,17 +344,7 @@ private struct CanvasLayoutTopActions: View {
 
             Button(action: onSave) {
                 CanvasLayoutCircle {
-                    // The checkmark cross-fades into a spinner while the layout is applied.
-                    ZStack {
-                        Image(systemName: "checkmark").foregroundStyle(.green)
-                            .opacity(isSaving ? 0 : 1)
-                        if isSaving {
-                            ProgressView()
-                                .tint(.green)
-                                .frame(width: 18, height: 18)
-                                .transition(.opacity)
-                        }
-                    }
+                    Image(systemName: "checkmark").foregroundStyle(.green)
                 }
             }
             // `requestSave` ignores repeated taps.
