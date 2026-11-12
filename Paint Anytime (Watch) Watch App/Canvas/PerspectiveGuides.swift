@@ -131,10 +131,12 @@ struct PerspectiveGuideLayout: Equatable {
         return best
     }
 
-    /// Screen positions of the move and rotation handles on the horizon.
+    /// Screen positions of the move and rotation handles, across the horizon so they never
+    /// cover vanishing points, which lie on it. Move sits above the horizon, rotation below.
     func handles(_ canvasToScreen: CGAffineTransform) -> (move: CGPoint, rotate: CGPoint) {
         let screenCenter = center.applying(canvasToScreen)
-        return (offset(screenCenter, axis, -Self.handleDistance), offset(screenCenter, axis, Self.handleDistance))
+        let normal = CGPoint(x: -sin(rotation), y: cos(rotation))
+        return (offset(screenCenter, normal, -Self.handleDistance), offset(screenCenter, normal, Self.handleDistance))
     }
 
     private func offset(_ point: CGPoint, _ direction: CGPoint, _ distance: CGFloat) -> CGPoint {
@@ -145,7 +147,7 @@ struct PerspectiveGuideLayout: Equatable {
 /// Perspective guide preferences and placement. Kept outside the document, history and exports.
 final class PerspectiveGuides: ObservableObject {
     static let shared = PerspectiveGuides()
-    static let viewAngleRange: ClosedRange<Double> = 30...90
+    static let viewAngleRange: ClosedRange<Double> = 20...150
     static let rayCountRange: ClosedRange<Int> = 4...24
     static let defaultRayCount = 12
 

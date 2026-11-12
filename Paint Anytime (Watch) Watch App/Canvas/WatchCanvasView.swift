@@ -67,6 +67,8 @@ struct WatchCanvasView: View {
     private enum GuideDrag {
         case rotate(startAngle: CGFloat, startRotation: Double, snappedQuarter: Int?)
         case move(startCenter: CGPoint, isCentered: Bool)
+        /// One of two vanishing points; the other stays fixed and the horizon passes through both.
+        case vanishingPoint(index: Int, fixed: CGPoint, startPoint: CGPoint, snappedQuarter: Int?)
     }
 
     private var showsGuides: Bool {
@@ -691,6 +693,21 @@ struct WatchCanvasView: View {
         if hypot(location.x - handles.move.x, location.y - handles.move.y) <= radius {
             return .move(startCenter: guides.center, isCentered: guides.center == CGPoint(x: 0.5, y: 0.5))
         }
+        let points = layout.vanishingPoints
+        if layout.preset == .two, points.count == 2 {
+            let transform = canvasToScreen(size)
+            let distances = points.map { point -> CGFloat in
+                let screen = point.applying(transform)
+                return hypot(location.x - screen.x, location.y - screen.y)
+            }
+            let index = distances[0] <= distances[1] ? 0 : 1
+            if distances[index] <= radius {
+                let quarter = Int((guides.rotation / (.pi / 2)).rounded())
+                let isAligned = abs(guides.rotation - Double(quarter) * .pi / 2) < 0.0001
+                return .vanishingPoint(index: index, fixed: points[1 - index], startPoint: points[index],
+                                       snappedQuarter: isAligned ? (quarter % 4 + 4) % 4 : nil)
+            }
+        }
         return nil
     }
 
@@ -725,6 +742,40 @@ struct WatchCanvasView: View {
             guides.center = CGPoint(x: point.x / max(paper.width, 1), y: point.y / max(paper.height, 1))
             if isCentered && !wasCentered { WKInterfaceDevice.current().play(.click) }
             guideDrag = .move(startCenter: startCenter, isCentered: isCentered)
+        case let .vanishingPoint(index, fixed, startPoint, snappedQuarter):
+            let scale = zoom * canvasFit(size)
+            var point = CGPoint(x: startPoint.x + (location.x - start.x) / scale,
+                                y: startPoint.y + (location.y - start.y) / scale)
+            // The same reachable margin as the guide center.
+            point.x = min(2 * paper.width, max(-paper.width, point.x))
+            point.y = min(2 * paper.height, max(-paper.height, point.y))
+            // The horizon runs from the first point to the second.
+            let delta = index == 1 ? CGPoint(x: point.x - fixed.x, y: point.y - fixed.y)
+                                   : CGPoint(x: fixed.x - point.x, y: fixed.y - point.y)
+            guard hypot(delta.x, delta.y) * scale >= 1 else { return }
+            let proposed = Double(atan2(delta.y, delta.x))
+            // Keep a level horizon easy to hit, like the rotation handle.
+            let quarter = Int((proposed / (.pi / 2)).rounded())
+            let quadrant = (quarter % 4 + 4) % 4
+            let deviation = abs(proposed - Double(quarter) * .pi / 2)
+            let snapped = deviation <= (snappedQuarter == quadrant ? Self.rotationSnap.release : Self.rotationSnap.capture)
+            let rotation = snapped ? PerspectiveGuides.normalizedRotation(Double(quarter) * .pi / 2) : proposed
+            let axis = CGPoint(x: cos(rotation), y: sin(rotation))
+            // Half the distance between the points maps to the view angle; the angle range limits it.
+            let along = abs(delta.x * axis.x + delta.y * axis.y)
+            let half = max(paper.width, paper.height) / 2
+            let range = PerspectiveGuides.viewAngleRange
+            let angle = min(range.upperBound, max(range.lowerBound,
+                Double(2 * atan(half / max(along / 2, 0.001))) * 180 / .pi))
+            let distance = half / CGFloat(tan(angle * .pi / 360))
+            let sign: CGFloat = index == 1 ? 1 : -1
+            let center = CGPoint(x: fixed.x + sign * axis.x * distance, y: fixed.y + sign * axis.y * distance)
+            guides.rotation = rotation
+            guides.viewAngle = angle
+            guides.center = CGPoint(x: center.x / max(paper.width, 1), y: center.y / max(paper.height, 1))
+            if snapped && snappedQuarter != quadrant { WKInterfaceDevice.current().play(.click) }
+            guideDrag = .vanishingPoint(index: index, fixed: fixed, startPoint: startPoint,
+                                        snappedQuarter: snapped ? quadrant : nil)
         }
     }
 
