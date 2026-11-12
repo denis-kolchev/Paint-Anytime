@@ -13,6 +13,8 @@ struct ColorWheelEditor: View {
     let size: CGSize
 
     private static let diameterRatio: CGFloat = 0.8
+    /// Leaves room above and below for the thumb and the brightness arc's ends.
+    private static let heightRatio: CGFloat = 0.9
     private static let thumbDiameter: CGFloat = 22
     /// Degrees of the brightness arc beside the Crown.
     private static let arcSpan: Double = 70
@@ -35,7 +37,8 @@ struct ColorWheelEditor: View {
 
     var body: some View {
         let device = WKInterfaceDevice.current()
-        let radius = size.width * Self.diameterRatio / 2
+        // Height only limits it in a short area, as in the tutorial above its lesson card.
+        let radius = min(size.width * Self.diameterRatio, size.height * Self.heightRatio) / 2
         let center = CGPoint(x: size.width / 2, y: size.height / 2)
         let crownOnLeft = device.crownOrientation == .left
         return ZStack {

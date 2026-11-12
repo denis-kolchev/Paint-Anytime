@@ -155,7 +155,8 @@ struct InkPaletteBrowser: View {
                     .accessibilityHidden(true)
                 }
             }
-            if tutorial.isActive && tutorial.step != .openPalettes {
+            // The color editor puts its eyedropper in this slot itself.
+            if tutorial.isActive && tutorial.step != .openPalettes && !showsColorEditor {
                 ToolbarItem(placement: .cancellationAction) {
                     Color.clear
                         .frame(width: 1, height: 1)
@@ -194,7 +195,7 @@ struct InkPaletteBrowser: View {
 
     private var colorEditor: some View {
         CustomInkEditor(initialColor: sampledColor, dismissesOnSave: !returnsToCanvasAfterColorSave && !tutorial.isActive,
-                        eyedropperController: tutorial.isActive ? nil : controller,
+                        eyedropperController: controller,
                         tutorial: tutorial) { preset in
             guard let index = library.palettes.firstIndex(where: { $0.id == currentID }) else { return }
             if let existing = library.palettes[index].palette.allColors.first(where: { $0.rgba == preset.rgba }) {

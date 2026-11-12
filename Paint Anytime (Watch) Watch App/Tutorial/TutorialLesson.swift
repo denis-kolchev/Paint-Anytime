@@ -16,7 +16,7 @@ enum TutorialLesson {
         case .openPalettes: return L10n.text("Tap the palette button above.")
         case .findNewPalette: return L10n.text("Swipe Left to New palette.")
         case .createPalette: return L10n.text("Tap New palette.")
-        case .adjustPaletteColor: return L10n.text("Move a slider to set a color.")
+        case .adjustPaletteColor: return L10n.text("Drag on the wheel to pick a color.")
         case .savePaletteColor: return L10n.text("Tap ✓ to use this color.")
         case .openWidth: return L10n.text("Swipe left to Width.")
         case .setWidth: return L10n.text("Turn the Crown to change width.")

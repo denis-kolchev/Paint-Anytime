@@ -19,12 +19,15 @@ struct CustomInkEditor: View {
     @Environment(\.layoutDirection) private var layoutDirection
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
+    /// Global frames of the tutorial's top corner buttons, which the wheel must clear.
+    @State private var topButtonFrames: [Int: CGRect] = [:]
     @State private var rgb = [128.0, 128.0, 128.0]
     @State private var hsb = [0.0, 0.0, (128.0 / 255 * 100).rounded()]
-    /// 0 the color wheel, 1 HSB, 2 RGB. The tutorial teaches the sliders, so it opens on HSB.
+    /// 0 the color wheel, 1 HSB, 2 RGB. Every editor, the tutorial's too, opens on the wheel.
     @State private var pageSelection: Int?
     @State private var showsEyedropper = false
-    private var page: Int { pageSelection ?? (tutorial.isActive ? 1 : 0) }
+    private var page: Int { pageSelection ?? 0 }
     private static let lastPage = 2
     let onSave: (InkPreset) -> Void
 
@@ -98,7 +101,6 @@ struct CustomInkEditor: View {
                 .frame(width: geometry.size.width, height: geometry.size.height, alignment: .leading)
                 .clipped()
                 .contentShape(Rectangle())
-
             }
             Text(colorName)
                 .font(.caption2.monospaced())
@@ -117,10 +119,9 @@ struct CustomInkEditor: View {
         .accessibilityHidden(showsPaletteList)
         .onAppear {
             // A new color starts from white unless the eyedropper supplied one.
-            // The tutorial keeps the middle gray its slider lesson starts from.
-            if let c = initialColor ?? (tutorial.isActive ? nil : Self.newColor) {
-                rgbBinding.wrappedValue = [Double(c.x) * 255, Double(c.y) * 255, Double(c.z) * 255].map { $0.rounded() }
-            }
+            // White is the wheel's centre at full brightness, so the wheel is never dimmed.
+            let c = initialColor ?? Self.newColor
+            rgbBinding.wrappedValue = [Double(c.x) * 255, Double(c.y) * 255, Double(c.z) * 255].map { $0.rounded() }
             if initialRGB == nil { initialRGB = rgb }
             acceptsColorChanges = true
         }
@@ -143,9 +144,10 @@ struct CustomInkEditor: View {
             // position, so navigation and dismissal animations carry the wheel
             // along instead of holding it at the screen centre.
             GeometryReader { geometry in
+                let band = wheelBand(in: geometry)
                 ColorWheelEditor(values: hsbBinding, isActive: page == 0 && !showsEyedropper && !showsPaletteList,
-                                 size: geometry.size)
-                    .offset(x: -CGFloat(page) * geometry.size.width)
+                                 size: band.size)
+                    .offset(x: -CGFloat(page) * geometry.size.width, y: band.minY)
                     .opacity(page == 0 && !showsPaletteList ? 1 : 0)
                     .scaleEffect(showsPaletteList && !reduceMotion ? 0.9 : 1)
                     .allowsHitTesting(page == 0 && !showsPaletteList)
@@ -218,6 +220,7 @@ struct CustomInkEditor: View {
                             .tutorialHint(tutorial, steps: [.savePaletteColor])
                     }
                     .watchToolbarButtonStyle(usesCanvasMaterial: tutorial.isActive)
+                    .modifier(TopButtonFrame(id: 1, isTracked: tutorial.isActive, frames: $topButtonFrames))
                     .opacity(tutorial.permits([.savePaletteColor]) ? 1 : 0)
                     .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
                                value: tutorial.permits([.savePaletteColor]))
@@ -226,7 +229,27 @@ struct CustomInkEditor: View {
                     .accessibilityLabel(L10n.text(saveTitle))
                 }
             }
-            if eyedropperController != nil {
+            if eyedropperController != nil && tutorial.isActive && palette == nil {
+                // The lesson card covers the bottom corners, and the tutorial hides
+                // Back, so the eyedropper takes the free leading slot at the top.
+                // Always installed so the slot stays occupied; hidden until the lesson allows it.
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        guard tutorial.permits(Self.tutorialEyedropperSteps) else { return }
+                        showsEyedropper = true
+                    } label: {
+                        Image(systemName: "eyedropper")
+                    }
+                    .watchToolbarButtonStyle(usesCanvasMaterial: true)
+                    .modifier(TopButtonFrame(id: 0, isTracked: true, frames: $topButtonFrames))
+                    .opacity(tutorial.permits(Self.tutorialEyedropperSteps) ? 1 : 0)
+                    .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
+                               value: tutorial.permits(Self.tutorialEyedropperSteps))
+                    .disabled(!tutorial.permits(Self.tutorialEyedropperSteps))
+                    .accessibilityHidden(!tutorial.permits(Self.tutorialEyedropperSteps))
+                    .accessibilityLabel(L10n.text("Eyedropper"))
+                }
+            } else if eyedropperController != nil {
                 // A native bottom-bar item gets the same size, glass and corner
                 // insets as Back and the checkmark above it.
                 ToolbarItemGroup(placement: .bottomBar) {
@@ -247,6 +270,55 @@ struct CustomInkEditor: View {
                 }
             }
         }
+    }
+
+    private static let tutorialEyedropperSteps: Set<TutorialStep> = [.adjustPaletteColor, .savePaletteColor]
+
+    /// Where the wheel is centred, in the full-screen overlay. Outside the tutorial
+    /// it is the whole screen; only its size is used there, so navigation carries the wheel.
+    /// In the tutorial the lesson card covers the bottom, so the wheel sits just above it
+    /// and grows up into the top safe area, as large as it can be without reaching
+    /// the toolbar buttons in the top corners.
+    private func wheelBand(in geometry: GeometryProxy) -> CGRect {
+        let full = CGRect(origin: .zero, size: geometry.size)
+        let width = geometry.size.width
+        // Room under the rim for the thumb when saturation is full.
+        let bottom = geometry.size.height - tutorialHintReservedHeight - 10
+        guard tutorial.isActive, bottom > 0 else { return full }
+        let origin = geometry.frame(in: .global).origin
+        let buttons = topButtonFrames.values.map { frame in
+            (center: CGPoint(x: frame.midX - origin.x, y: frame.midY - origin.y),
+             radius: min(frame.width, frame.height) / 2)
+        }
+        // Brightness arc: its ends lie this far out, 35° above the horizontal.
+        let arcAngle = 35 * CGFloat.pi / 180
+        func fits(_ radius: CGFloat) -> Bool {
+            let center = CGPoint(x: width / 2, y: bottom - radius)
+            guard center.y - radius >= 0 else { return false }
+            let arcRadius = radius + 9
+            let arcEnds = [-1, 1].map { side in
+                CGPoint(x: center.x + CGFloat(side) * cos(arcAngle) * arcRadius,
+                        y: center.y - sin(arcAngle) * arcRadius)
+            }
+            return buttons.allSatisfy { button in
+                hypot(center.x - button.center.x, center.y - button.center.y) >= radius + button.radius + 4
+                    && arcEnds.allSatisfy { end in
+                        hypot(end.x - button.center.x, end.y - button.center.y) >= button.radius + 4
+                    }
+            }
+        }
+        // The largest fitting radius, never past the full-screen wheel's size.
+        var low: CGFloat = 0, high = width * 0.4
+        if fits(high) { low = high } else {
+            for _ in 0..<12 {
+                let middle = (low + high) / 2
+                if fits(middle) { low = middle } else { high = middle }
+            }
+        }
+        guard low > 20 else { return full }
+        // The wheel takes 0.9 of the band's height, so this band yields exactly 2 × low.
+        let height = 2 * low / 0.9
+        return CGRect(x: 0, y: bottom - low - height / 2, width: width, height: height)
     }
 
     private var currentPreset: InkPreset {
@@ -375,5 +447,19 @@ private struct PaletteColorList: View {
             .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// Records a toolbar button's global frame while `isTracked`.
+private struct TopButtonFrame: ViewModifier {
+    let id: Int
+    let isTracked: Bool
+    @Binding var frames: [Int: CGRect]
+
+    func body(content: Content) -> some View {
+        content.onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+            guard isTracked, frames[id] != frame else { return }
+            frames[id] = frame
+        }
     }
 }
