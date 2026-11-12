@@ -57,6 +57,10 @@ struct ContentView: View {
     @State private var pendingMenuAction: CanvasQuickAction?
     /// The canvas Tutorial button presents the menu sheet on the chapter choice.
     @State private var opensTutorialChapters = false
+    /// The menu's tutorial is on screen. Set behind the closed iris once the tutorial
+    /// is prepared, not with the folder, so it never appears before the circle closes.
+    @State private var showsMenuTutorial = false
+    @Environment(\.irisTransition) private var irisTransition
     @State private var showsGallery = false
     @State private var galleryArtworkFilename: String?
     @State private var galleryInitialBitmap: GalleryBitmap?
@@ -139,6 +143,7 @@ struct ContentView: View {
         .onChange(of: showsAppSettings) { _, shows in
             if !shows { foldMorphsWithoutAnimation() }
             if !shows { opensTutorialChapters = false }
+            if !shows { showsMenuTutorial = false }
             if !shows, menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
         }
         .accessibilityHidden(showsAppSettings)
@@ -171,11 +176,12 @@ struct ContentView: View {
             })
         }
         .overlay {
-            if showsAppSettings, let folder = menuOnboarding.tutorialFolder {
+            if showsAppSettings, showsMenuTutorial, let folder = menuOnboarding.tutorialFolder {
                 NavigationStack {
                     TutorialPlayerView(folder: folder, chapters: menuOnboarding.tutorialChapters,
                                        onCompleteChapter: menuOnboarding.completeChapter) {
-                        showsAppSettings = false
+                        // The editor returns behind the closed iris.
+                        switchMenuTutorialMode { showsAppSettings = false }
                     }
                     .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
                 }
@@ -183,14 +189,20 @@ struct ContentView: View {
                 .preferredColorScheme(.dark)
                 .environment(\.colorScheme, .dark)
                 .compositingGroup()
-                // Crossfade over the preserved drawing as the menu sheet closes.
-                // Inserting an opaque tutorial instantly removes the artwork
-                // from the sheet's live backdrop before dismissal finishes.
+                // Only the Reduce Motion fallback animates this; the iris swaps it unseen.
                 .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
-                   value: menuOnboarding.tutorialFolder)
+        .onChange(of: menuOnboarding.tutorialFolder) { _, folder in
+            // The menu sheet slides away over the canvas while the iris closes;
+            // the tutorial is inserted behind black and the circle opens onto it.
+            guard folder != nil, showsAppSettings, !showsMenuTutorial else { return }
+            switchMenuTutorialMode {
+                // The run may have ended while the circle was closing.
+                guard showsAppSettings, menuOnboarding.tutorialFolder != nil else { return }
+                showsMenuTutorial = true
+            }
+        }
         .task(id: session.savedDrawing?.id) {
             guard session.savedDrawing != nil else { return }
             var transaction = Transaction(animation: nil)
@@ -552,6 +564,16 @@ struct ContentView: View {
             }
         } else if let action = assignment.actions.first {
             performQuickAction(action)
+        }
+    }
+
+    /// Enters or leaves the menu's tutorial behind the welcome host's iris, as the
+    /// first-launch tour does; crossfades when no iris is installed.
+    private func switchMenuTutorialMode(_ swap: @escaping @MainActor () -> Void) {
+        if let irisTransition {
+            irisTransition(swap)
+        } else {
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { swap() }
         }
     }
 

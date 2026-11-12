@@ -41,9 +41,7 @@ struct WatchWelcomeView: View {
                     TutorialPlayerView(folder: tutorialFolder, chapters: onboarding.tutorialChapters,
                                        offersRemainingChapters: true,
                                        onCompleteChapter: onboarding.completeChapter,
-                                       onDeclineContinuation: finishTutorialThroughIris) {
-                        onboarding.finishTutorial()
-                    }
+                                       onFinish: finishTutorialThroughIris)
                     .id(tutorialFolder)
                     .transition(.opacity)
                 } else if !onboarding.hasCompletedWelcome {
@@ -107,6 +105,8 @@ struct WatchWelcomeView: View {
         }
         // The editor menu owns its own controller, so it restarts the flow through this action.
         .environment(\.restartWelcome, restartWelcome)
+        // The editor menu's tutorial opens and closes through the same circle.
+        .environment(\.irisTransition, IrisTransitionAction { runThroughIris($0) })
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
         .task(id: onboarding.preparesTutorial) {
@@ -181,7 +181,7 @@ struct WatchWelcomeView: View {
     /// Yes on the tour question: the same iris as No → OK, opening onto the tutorial.
     /// Every chapter is queued, but the player asks after the first one whether to go on,
     /// so nobody has to choose a course before seeing what the tour is like.
-    /// The tutorial from the editor menu keeps its crossfade; that path never comes here.
+    /// The tutorial from the editor menu uses the same circle through `irisTransition`.
     private func startTutorial() {
         guard !irisIsRunning else { return }
         guard !reduceMotion else {
@@ -200,15 +200,22 @@ struct WatchWelcomeView: View {
         }
     }
 
-    /// Later after the first chapter: the same iris that opened the tour closes it,
-    /// and the editor appears behind the black screen.
+    /// Later after the first chapter, or finishing the tour: the same iris that opened
+    /// the tour closes it, and the editor appears behind the black screen.
     private func finishTutorialThroughIris() {
+        runThroughIris { onboarding.finishTutorial() }
+    }
+
+    /// Switches app modes behind the iris: closes the circle, runs `swap` unseen,
+    /// then opens onto the new screen. Reduce Motion, or an iris already running,
+    /// crossfades instead.
+    private func runThroughIris(_ swap: @escaping @MainActor () -> Void) {
         guard !irisIsRunning, !reduceMotion else {
-            withAnimation(.easeInOut(duration: 0.3)) { onboarding.finishTutorial() }
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { swap() }
             return
         }
         closeIris {
-            onboarding.finishTutorial()
+            swap()
             Task { @MainActor in await openIrisAfterPause() }
         }
     }
@@ -307,6 +314,17 @@ struct RestartWelcomeAction {
     @MainActor func callAsFunction() { perform() }
 }
 
+/// Closes the screen with the black iris, runs the change unseen, then opens onto it.
+/// Provided by the welcome host, whose overlay sits above the editor and its tutorial.
+struct IrisTransitionAction {
+    let perform: @MainActor (@escaping @MainActor () -> Void) -> Void
+    @MainActor func callAsFunction(_ swap: @escaping @MainActor () -> Void) { perform(swap) }
+}
+
+private struct IrisTransitionKey: EnvironmentKey {
+    static let defaultValue: IrisTransitionAction? = nil
+}
+
 private struct RestartWelcomeKey: EnvironmentKey {
     static let defaultValue: RestartWelcomeAction? = nil
 }
@@ -315,6 +333,10 @@ extension EnvironmentValues {
     var restartWelcome: RestartWelcomeAction? {
         get { self[RestartWelcomeKey.self] }
         set { self[RestartWelcomeKey.self] = newValue }
+    }
+    var irisTransition: IrisTransitionAction? {
+        get { self[IrisTransitionKey.self] }
+        set { self[IrisTransitionKey.self] = newValue }
     }
 }
 

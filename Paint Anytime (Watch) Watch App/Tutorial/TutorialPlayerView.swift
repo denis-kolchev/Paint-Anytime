@@ -6,10 +6,8 @@ struct TutorialPlayerView: View {
     /// The first chapter result asks whether to go on instead of only offering Next.
     let offersRemainingChapters: Bool
     let onCompleteChapter: (TutorialChapter) -> Void
+    /// The host plays the exit: both hosts close the tutorial through the iris.
     let onFinish: () -> Void
-    /// Later on the continuation question; the host plays its own exit. Without it,
-    /// Later crossfades out through `onFinish`.
-    let onDeclineContinuation: (() -> Void)?
     private let chapters: [TutorialChapter]
     @State private var offersContinuation = false
     @State private var hasOfferedContinuation = false
@@ -38,14 +36,12 @@ struct TutorialPlayerView: View {
     init(folder: URL, chapters: [TutorialChapter] = TutorialChapter.allCases,
          offersRemainingChapters: Bool = false,
          onCompleteChapter: @escaping (TutorialChapter) -> Void = { _ in },
-         onDeclineContinuation: (() -> Void)? = nil,
          onFinish: @escaping () -> Void) {
         self.folder = folder
         self.chapters = chapters.isEmpty ? TutorialChapter.allCases : chapters
         self.offersRemainingChapters = offersRemainingChapters
         self.onCompleteChapter = onCompleteChapter
         self.onFinish = onFinish
-        self.onDeclineContinuation = onDeclineContinuation
         _player = StateObject(wrappedValue: TutorialPlayerController(folder: folder, chapters: chapters))
     }
 
@@ -351,8 +347,8 @@ struct TutorialPlayerView: View {
         .background(Color.black.ignoresSafeArea())
         .overlay {
             if confirmsFinish {
-                // Keep confirmation in the outgoing tutorial hierarchy so it
-                // crossfades directly to the editor without revealing the lesson.
+                // Keep confirmation in the outgoing tutorial hierarchy so the exit
+                // goes straight to the editor without revealing the lesson.
                 ZStack {
                     Color.black.ignoresSafeArea()
                     DestructiveConfirmationView(
@@ -367,9 +363,8 @@ struct TutorialPlayerView: View {
                             confirmsFinish = false
                             return
                         }
-                        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                            onFinish()
-                        }
+                        // The host's iris closes over this confirmation.
+                        onFinish()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -882,13 +877,7 @@ private extension TutorialPlayerView {
                 return
             }
             answeredContinuation = true
-            if let onDeclineContinuation {
-                onDeclineContinuation()
-            } else {
-                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                    onFinish()
-                }
-            }
+            onFinish()
         } onContinue: {
             guard !answeredContinuation else { return }
             answeredContinuation = true
