@@ -185,7 +185,7 @@ struct TutorialAttentionMotion: ViewModifier {
 }
 
 /// A tutorial-owned overlay remains visible independently of the system Crown indicator.
-/// The first Crown hint of the basic course opens with a mini watch at the centre of the screen that then
+/// The zoom lesson of the basic course always opens with a mini watch at the centre of the screen that then
 /// flies into the pill beside the physical Crown, so the pill reads as "that wheel".
 struct TutorialCrownHint: ViewModifier {
     @ObservedObject var tutorial: TutorialSession
@@ -193,8 +193,8 @@ struct TutorialCrownHint: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = false
     @State private var intro = Intro.hidden
-    /// The mini watch plays once ever: on the first Crown hint of the basic course.
-    @AppStorage("tutorial.crownWatchIntroShown.v1") private var introShown = false
+    /// Keeps a pause or a return from the background from replaying it within the same lesson.
+    @State private var introPlayed = false
 
     private enum Intro { case hidden, shown, collapsing }
 
@@ -219,7 +219,7 @@ struct TutorialCrownHint: ViewModifier {
                     )
                     if eligible && intro != .hidden {
                         let collapsing = intro == .collapsing
-                        TutorialCrownWatchIntro(zooms: tutorial.step == .zoomCanvas)
+                        TutorialCrownWatchIntro()
                             // Left-Crown orientation turns the physical case by 180 degrees.
                             .rotationEffect(.degrees(
                                 WKInterfaceDevice.current().crownOrientation == .left ? 180 : 0))
@@ -246,12 +246,14 @@ struct TutorialCrownHint: ViewModifier {
             .task(id: Request(eligible: eligible, step: tutorial.step)) {
                 revealed = false
                 intro = .hidden
+                let introLesson = tutorial.chapter == .basic && tutorial.step == .zoomCanvas
+                if !introLesson { introPlayed = false }
                 guard eligible else { return }
                 do {
                     try await Task.sleep(for: .milliseconds(550))
                     try Task.checkCancellation()
-                    if !introShown && tutorial.chapter == .basic {
-                        introShown = true
+                    if introLesson && !introPlayed {
+                        introPlayed = true
                         withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.3)) {
                             intro = .shown
                         }

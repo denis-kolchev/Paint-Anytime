@@ -287,6 +287,8 @@ struct TutorialPlayerView: View {
                     tutorialBottomControls(hitDiameter: min(44, (screen.size.width - 16) / 4))
                         .padding(.horizontal, 8)
                         .padding(.bottom, hintReservedHeight)
+                        // The step changes outside withAnimation; drive the transition here.
+                        .animation(.easeInOut(duration: 0.35), value: showsTutorialBottomControls)
                 }
                 .toolbar {
                     // Keep one native toolbar item and Button alive when Done
@@ -589,8 +591,12 @@ struct TutorialPlayerView: View {
     }
 
     // Four targets must also fit the narrower 40 mm watches without overlap.
+    private var showsTutorialBottomControls: Bool {
+        page == .canvas && tutorial.permits([.history, .saveDrawing])
+    }
+
     @ViewBuilder private func tutorialBottomControls(hitDiameter: CGFloat) -> some View {
-        if page == .canvas && tutorial.permits([.history, .saveDrawing]) {
+        if showsTutorialBottomControls {
             HStack {
                 // Keep the same four slots as the regular canvas toolbar.
                 Button {} label: { BroomIcon() }
@@ -633,6 +639,7 @@ struct TutorialPlayerView: View {
                 .accessibilityLabel(L10n.text("Save drawing"))
                 .trackCanvasControl(.save, frames: $controls)
             }
+            .transition(.opacity)
         }
         if page == .canvas && tutorial.step == .openLasso {
             HStack {

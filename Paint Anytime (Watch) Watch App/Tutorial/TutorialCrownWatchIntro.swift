@@ -50,12 +50,10 @@ struct TutorialCrownCylinder: View {
     }
 }
 
-/// A stylized watch whose Crown turns, shown once at the centre of the screen before
-/// the hint settles into the pill beside the physical Crown. Drawn from shapes only:
+/// A stylized watch whose Crown turns, shown in the basic course's zoom lesson at the
+/// centre of the screen before the hint settles into the pill beside the physical Crown. Drawn from shapes only:
 /// no product imagery, no recognizable watch face.
 struct TutorialCrownWatchIntro: View {
-    /// Zoom steps grow content on the mini screen; other steps fill a value ring.
-    var zooms: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var startedAt = Date()
 
@@ -119,23 +117,11 @@ struct TutorialCrownWatchIntro: View {
             .frame(width: 32 * k, height: 14 * k)
     }
 
-    /// The screen shows what the Crown does while it turns up.
-    @ViewBuilder
+    /// The screen shows what the Crown does: content grows while it turns up.
     private func screenContent(_ travel: Double) -> some View {
-        if zooms {
-            Circle()
-                .fill(.white.opacity(0.85))
-                .frame(width: 10 * k, height: 10 * k)
-                .scaleEffect(1 + travel * 1.2)
-        } else {
-            ZStack {
-                Circle().stroke(.white.opacity(0.2), lineWidth: 3 * k)
-                Circle()
-                    .trim(from: 0, to: 0.2 + 0.7 * travel)
-                    .stroke(.white.opacity(0.9), style: StrokeStyle(lineWidth: 3 * k, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-            }
-            .padding(2 * k)
-        }
+        Circle()
+            .fill(.white.opacity(0.85))
+            .frame(width: 10 * k, height: 10 * k)
+            .scaleEffect(1 + travel * 1.2)
     }
 }
