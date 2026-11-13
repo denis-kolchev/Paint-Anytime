@@ -35,6 +35,8 @@ struct TutorialProgress {
     private(set) var lessonIndex = 0
     private var stepIndex = 0
     private var unlockedToolPages: Set<Int> = [1]
+    /// Changes when a lesson within a chapter starts on a fresh canvas.
+    private(set) var freshLessonRevision = 0
 
     enum Event {
         case openedLasso, selectedLasso, failedLassoSelection, transformedLasso, finishedLasso
@@ -113,6 +115,7 @@ struct TutorialProgress {
         count = 0
         if lessonIndex + 1 < (chapter?.lessons.count ?? 0) {
             lessonIndex += 1
+            if chapters[chapterIndex].lessons[lessonIndex].startsFresh { freshLessonRevision &+= 1 }
             beginLesson()
         } else if chapterIndex + 1 < chapters.count { step = .chapterComplete }
         else { step = .finished }

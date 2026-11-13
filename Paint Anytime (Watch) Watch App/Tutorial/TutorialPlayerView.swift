@@ -531,7 +531,7 @@ struct TutorialPlayerView: View {
 
     /// Layer lessons use a wide brush so painting inside earlier strokes stays visible.
     private func applyLayerBrush(for step: TutorialStep) {
-        guard tutorial.chapter == .composition, step == .firstStrokes else { return }
+        guard tutorial.chapter == .advanced, step == .firstStrokes else { return }
         var style = controller.pencilStyle
         style.width = 8
         controller.pencilStyle = style

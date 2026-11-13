@@ -3,27 +3,27 @@ import Foundation
 /// Self-contained parts of the guided tour. Each chapter starts on a cleared canvas
 /// with the default brush, so it never depends on another chapter's result.
 enum TutorialChapter: Int, CaseIterable, Identifiable {
-    case firstDrawing, tools, composition
+    case basic, advanced
 
     struct Lesson: Equatable {
         let steps: [TutorialStep]
+        /// Clears the canvas and restores the default brush, as a new chapter does.
+        var startsFresh = false
     }
 
     var id: Int { rawValue }
 
     var title: String {
         switch self {
-        case .firstDrawing: L10n.text("First drawing")
-        case .tools: L10n.text("Drawing tools")
-        case .composition: L10n.text("Composition")
+        case .basic: L10n.text("Basic course")
+        case .advanced: L10n.text("Advanced course")
         }
     }
 
     var systemImage: String {
         switch self {
-        case .firstDrawing: "hand.draw"
-        case .tools: "paintbrush.pointed"
-        case .composition: "lasso"
+        case .basic: "hand.draw"
+        case .advanced: "paintbrush.pointed"
         }
     }
 
@@ -33,7 +33,7 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
     /// Lessons for features of the given release; Canvas size arrives in 1.2.
     func lessons(features: AppReleaseFeatures) -> [Lesson] {
         switch self {
-        case .firstDrawing: [
+        case .basic: [
             Lesson(steps: [.firstStrokes, .history]),
             Lesson(steps: [.zoomCanvas, .panCanvas, .finishCamera]),
             Lesson(steps: [.openTools, .pickColor, .openWidth, .setWidth, .openOpacity, .setOpacity,
@@ -41,7 +41,13 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             Lesson(steps: [.saveDrawing, .openMenu, .openGallery, .galleryFullscreen,
                            .deleteDrawing, .returnToCanvas, .clearCanvas])
         ]
-        case .tools: [
+        case .advanced:
+            toolLessons + compositionLessons(includesCrop: features.showsCanvasSizeControls)
+        }
+    }
+
+    private var toolLessons: [Lesson] {
+        [
             Lesson(steps: [.holdCircle]),
             // Guides straighten a stroke, like the held shape before them.
             // Choosing the guides returns to the canvas by itself: a toolbar ✕ would push
@@ -60,16 +66,14 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
                            .createPalette, .addPaletteColor, .adjustPaletteColor, .savePaletteColor,
                            .closeTools])
         ]
-        case .composition:
-            compositionLessons(includesCrop: features.showsCanvasSizeControls)
-        }
     }
 
     private func compositionLessons(includesCrop: Bool) -> [Lesson] {
         var lessons = [
-            // Draw first, so the layer lessons never rely on an earlier chapter's artwork.
+            // Draw first on a fresh canvas, so the layer lessons never rely on the
+            // tool lessons' artwork, brush or blending mode.
             Lesson(steps: [.firstStrokes, .openLayers, .openLayerSettings, .lockTransparency,
-                           .closeLayerSettings, .closeLayers]),
+                           .closeLayerSettings, .closeLayers], startsFresh: true),
             Lesson(steps: [.openTools, .pickColor, .closeTools, .paintOverStroke]),
             // Moving the new layer under the first one shows which layer covers the other;
             // a third color keeps the strokes behind distinct from both earlier ones.
@@ -88,11 +92,21 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
         return lessons
     }
 
-    private static let completionKey = "tutorial.completedChapters.v1"
+    private static let completionKey = "tutorial.completedChapters.v2"
+    /// Three chapters: 0 First drawing, 1 Drawing tools, 2 Composition.
+    private static let legacyCompletionKey = "tutorial.completedChapters.v1"
 
     static func completed(in defaults: UserDefaults) -> Set<TutorialChapter> {
-        let values = defaults.array(forKey: completionKey) as? [Int] ?? []
-        return Set(values.compactMap(TutorialChapter.init(rawValue:)))
+        if let values = defaults.array(forKey: completionKey) as? [Int] {
+            return Set(values.compactMap(TutorialChapter.init(rawValue:)))
+        }
+        // The advanced course joins the old second and third chapters; it counts as
+        // completed only when both were.
+        let legacy = Set(defaults.array(forKey: legacyCompletionKey) as? [Int] ?? [])
+        var chapters: Set<TutorialChapter> = []
+        if legacy.contains(0) { chapters.insert(.basic) }
+        if legacy.isSuperset(of: [1, 2]) { chapters.insert(.advanced) }
+        return chapters
     }
 
     func markCompleted(in defaults: UserDefaults) {

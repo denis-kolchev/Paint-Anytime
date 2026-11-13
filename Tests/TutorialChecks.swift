@@ -33,19 +33,19 @@ struct TutorialChecks {
     }
 
     static func checkProgress() {
-        precondition(TutorialChapter.allCases.count == 3)
+        precondition(TutorialChapter.allCases.count == 2)
         for chapter in TutorialChapter.allCases {
             precondition(!chapter.lessons.isEmpty)
             precondition(chapter.lessons.allSatisfy { !$0.steps.isEmpty && !$0.steps.contains(where: \.isResult) })
         }
         // Canvas size arrives in 1.2, so its crop lesson follows the same release gate.
         let teachesCrop: (AppReleaseFeatures) -> Bool = { features in
-            TutorialChapter.composition.lessons(features: features).contains { $0.steps.contains(.applyCrop) }
+            TutorialChapter.advanced.lessons(features: features).contains { $0.steps.contains(.applyCrop) }
         }
         precondition(teachesCrop(AppReleaseFeatures(version: "1.2")) && !teachesCrop(AppReleaseFeatures(version: "1.1")))
         var progress = TutorialProgress()
         progress.start()
-        precondition(progress.chapter == .firstDrawing && progress.step == .firstStrokes)
+        precondition(progress.chapter == .basic && progress.step == .firstStrokes)
         precondition(progress.chapterProgress == 0 && progress.completedLessonCount == 0)
         precondition(progress.record(.stroke) == .none)
         precondition(progress.record(.stroke) == .advance)
@@ -126,11 +126,11 @@ struct TutorialChecks {
             progress.advance()
         }
         precondition(progress.step == .chapterComplete && progress.chapterProgress == 1)
-        precondition(progress.completedLessonCount == TutorialChapter.firstDrawing.lessons.count)
+        precondition(progress.completedLessonCount == TutorialChapter.basic.lessons.count)
 
         // The next chapter restarts the ring and needs nothing from the first one.
         precondition(progress.continueToNext())
-        precondition(progress.chapter == .tools && progress.step == .holdCircle && progress.chapterProgress == 0)
+        precondition(progress.chapter == .advanced && progress.step == .holdCircle && progress.chapterProgress == 0)
         precondition(progress.record(.heldCircle) == .advance)
         progress.advance()
         // Perspective: the menu leads to the guides, then a stroke starts on one.
@@ -219,15 +219,14 @@ struct TutorialChecks {
         precondition(progress.record(.returnedToPalettes) == .none && progress.step == .findNewPalette)
         precondition(progress.record(.foundNewPalette) == .advance)
         progress.advance()
+        let freshLessons = progress.freshLessonRevision
         for event: TutorialProgress.Event in [.createdPalette, .openedColorEditor, .adjustedColor, .savedColor, .closedTools] {
             precondition(progress.record(event) == .advance)
             progress.advance()
         }
-        // The palette lesson closes the chapter; it no longer asks for a nib angle.
-        precondition(progress.step == .chapterComplete)
-
-        precondition(progress.continueToNext())
-        precondition(progress.chapter == .composition && progress.step == .firstStrokes)
+        // The composition lessons follow in the same chapter, on a fresh canvas.
+        precondition(progress.chapter == .advanced && progress.step == .firstStrokes)
+        precondition(progress.freshLessonRevision != freshLessons, "Layer lessons start on a cleared canvas")
         _ = progress.record(.stroke)
         precondition(progress.record(.stroke) == .advance)
         progress.advance()
@@ -314,12 +313,12 @@ struct TutorialChecks {
         progress.advance()
         precondition(progress.step == .finished && !progress.continueToNext())
 
-        progress.start(chapters: [.composition])
-        precondition(progress.chapter == .composition && progress.step == .firstStrokes)
+        progress.start(chapters: [.advanced])
+        precondition(progress.chapter == .advanced && progress.step == .holdCircle)
         progress.stop()
         precondition(progress.chapter == nil)
         progress.start()
-        precondition(progress.step == .firstStrokes && !progress.hasPanned && progress.chapter == .firstDrawing)
+        precondition(progress.step == .firstStrokes && !progress.hasPanned && progress.chapter == .basic)
     }
 
     static func checkStrokeOverlap() {
@@ -361,7 +360,7 @@ struct TutorialChecks {
         session.start()
         session.record(.stroke)
         session.record(.stroke)
-        precondition(session.step == .history && session.chapter == .firstDrawing)
+        precondition(session.step == .history && session.chapter == .basic)
         session.record(.history)
         session.record(.history)
         precondition(session.step == .zoomCanvas && session.completedLessonCount == 1 && session.lessonCount == 4)
@@ -462,13 +461,13 @@ struct TutorialChecks {
         precondition(onboarding.hasCompletedWelcome && onboarding.tutorialFolder == nil)
         precondition(!FileManager.default.fileExists(atPath: folder.path))
         precondition(OnboardingController(defaults: defaults, workspace: workspace).hasCompletedWelcome)
-        onboarding.requestTutorial(chapters: [.tools])
-        precondition(onboarding.tutorialChapters == [.tools])
+        onboarding.requestTutorial(chapters: [.advanced])
+        precondition(onboarding.tutorialChapters == [.advanced])
         await onboarding.prepareTutorial()
         precondition(onboarding.tutorialFolder != nil, "A completed tour can be repeated")
-        onboarding.completeChapter(.tools)
+        onboarding.completeChapter(.advanced)
         onboarding.finishTutorial()
-        precondition(OnboardingController(defaults: defaults, workspace: workspace).completedChapters == [.tools])
+        precondition(OnboardingController(defaults: defaults, workspace: workspace).completedChapters == [.advanced])
         onboarding.requestTutorial()
         precondition(onboarding.tutorialChapters == TutorialChapter.allCases)
         onboarding.finishTutorial()

@@ -110,7 +110,8 @@ final class TutorialSession: ObservableObject {
     var chapterProgress: Double { progress.chapterProgress }
     var completedLessonCount: Int { progress.completedLessonCount }
     var lessonCount: Int { progress.chapter?.lessons.count ?? 0 }
-    /// Changes whenever the following chapter begins, so the player can reset its canvas.
+    /// Changes whenever the following chapter, or a lesson that starts fresh, begins,
+    /// so the player can reset its canvas.
     @Published private(set) var chapterRevision = 0
 
     func permits(_ steps: Set<TutorialStep>) -> Bool {
@@ -299,7 +300,9 @@ final class TutorialSession: ObservableObject {
     private func advance() {
         guard step != .inactive, !step.isResult else { return }
         cancelPendingAdvance()
+        let freshLessons = progress.freshLessonRevision
         progress.advance()
+        if progress.freshLessonRevision != freshLessons { chapterRevision &+= 1 }
         showsInstruction = false
         activity()
     }
