@@ -9,6 +9,8 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
         let steps: [TutorialStep]
         /// Clears the canvas and restores the default brush, as a new chapter does.
         var startsFresh = false
+        /// With `startsFresh`, clears only the canvas and keeps the brush in use.
+        var keepsBrush = false
     }
 
     var id: Int { rawValue }
@@ -57,18 +59,10 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
     private var toolLessons: [Lesson] {
         [
             Lesson(steps: [.holdCircle]),
-            // Guides straighten a stroke, like the held shape before them.
-            // Choosing the guides returns to the canvas by itself: a toolbar ✕ would push
-            // the tutorial menu's rows under its navigation bar.
+            // Guides straighten a stroke, like the held shape before them. Back leads
+            // from the guides to the menu, and from the menu to the canvas.
             Lesson(steps: [.openMenu, .openCanvasSettings, .openPerspective, .choosePerspective,
-                           .perspectiveStroke]),
-            Lesson(steps: [.openTools, .chooseFill, .closeTools, .fillCanvas]),
-            // Blur softens the filled edges, so it follows the fill.
-            Lesson(steps: [.openTools, .chooseBlur, .closeTools, .blurCanvas]),
-            // The lesson clears the canvas and draws a yellow marker line itself; the user's
-            // light blue marker mixes with it, then Color inversion changes the overlap.
-            Lesson(steps: [.crossMarkerLine, .openMenu, .openDrawingSettings, .openColorBlending,
-                           .chooseColorInversion, .redrawMarkerLine]),
+                           .leavePerspective, .leaveMenu, .perspectiveStroke]),
             // The corner button opens the palette in use, as in the editor.
             Lesson(steps: [.openTools, .openCurrentPalette, .openPalettes, .findNewPalette,
                            .createPalette, .addPaletteColor, .adjustPaletteColor, .savePaletteColor,
@@ -78,18 +72,26 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
 
     private func compositionLessons(includesCrop: Bool) -> [Lesson] {
         var lessons = [
-            // Draw first on a fresh canvas, so the layer lessons never rely on the
-            // tool lessons' artwork, brush or blending mode.
+            // Draw first on a fresh canvas, so the layer lessons never rely on the earlier
+            // artwork. The brush stays: the first strokes use the color made in the palette.
             Lesson(steps: [.firstStrokes, .openLayers, .openLayerSettings, .lockTransparency,
-                           .closeLayerSettings, .closeLayers], startsFresh: true),
+                           .closeLayerSettings, .closeLayers], startsFresh: true, keepsBrush: true),
             Lesson(steps: [.openTools, .pickColor, .closeTools, .paintOverStroke]),
             // Moving the new layer under the first one shows which layer covers the other;
             // a third color keeps the strokes behind distinct from both earlier ones.
             Lesson(steps: [.openLayers, .addLayer, .moveLayerDown, .closeLayers,
                            .openTools, .pickColor, .closeTools, .drawBehindStroke]),
-            Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso])
+            Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso]),
+            // The lesson clears the canvas and draws a yellow marker line itself; the user's
+            // light blue marker mixes with it, then Color inversion changes the overlap.
+            Lesson(steps: [.crossMarkerLine, .openMenu, .openDrawingSettings, .openColorBlending,
+                           .chooseColorInversion, .redrawMarkerLine]),
+            // The tutorial's editor starts from the original menus and never changes the
+            // user's layout; the new eraser button then appears on the tutorial canvas.
+            Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasEditor, .chooseEditorSlot,
+                           .chooseEraserAction, .saveCanvasLayout, .toggleEraser, .eraseStroke])
         ]
-        // The lasso changes part of the picture; cropping frames all of it, and undo restores the edges.
+        // Cropping frames the whole picture, and undo restores the edges.
         if includesCrop {
             lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize, .openCrop,
                                           .applyCrop, .history]))

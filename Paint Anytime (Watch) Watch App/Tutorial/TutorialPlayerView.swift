@@ -219,6 +219,27 @@ struct TutorialPlayerView: View {
                             .tutorialChromeFade()
                         }
                     }
+                    if page == .perspective && tutorial.teachesPerspective {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                guard tutorial.permits([.leavePerspective]) else { return }
+                                // The menu returns in place instead of rising again from below.
+                                menuRevealed = true
+                                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                    player.leavePerspective()
+                                }
+                            } label: {
+                                Image(systemName: "chevron.backward")
+                                    .tutorialHint(tutorial, steps: [.leavePerspective])
+                                    .frame(width: 32, height: 32)
+                                    .contentShape(Circle())
+                            }
+                            .watchToolbarButtonStyle()
+                            .disabled(!tutorial.permits([.leavePerspective]) || isLeavingPage)
+                            .accessibilityLabel(L10n.text("Back"))
+                            .tutorialChromeFade()
+                        }
+                    }
                     if page == .canvas && tutorial.permits([.openMenu]) {
                         ToolbarItem(placement: .topBarLeading) {
                             Button { player.openMenu() } label: {
@@ -262,7 +283,7 @@ struct TutorialPlayerView: View {
         // padding inside the menu left the first row under the bar's blur.
         .ignoresSafeArea(.container, edges: [.menu, .layers, .layerSettings, .canvasSettings,
                                              .canvasSize, .perspective, .crop,
-                                             .drawingSettings, .colorBlending].contains(page)
+                                             .drawingSettings, .colorBlending, .canvasEditor].contains(page)
                          || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
             // The full-screen question must not move the controls reserved for the compact card.
@@ -353,7 +374,7 @@ struct TutorialPlayerView: View {
             isMovingCanvas = false
             // A palette made in the palette lesson must not replace the colors later lessons use.
             tutorialPaletteLibrary = InkPaletteLibrary.tutorial
-            player.beginChapter()
+            player.beginChapter(keepsBrush: tutorial.lessonKeepsBrush)
             // The step change may be handled first; the reset must not drop the lesson ink.
             applyCircleInk(for: tutorial.step)
             applyLayerBrush(for: tutorial.step)
@@ -459,7 +480,9 @@ struct TutorialPlayerView: View {
                              },
                              onOpenDrawingSettings: {
                                  withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openDrawingSettings() }
-                             })
+                             },
+                             // Installed for the whole lesson, so the bar never changes while the menu is open.
+                             onTutorialBack: tutorial.teachesPerspective ? { closeMenu() } : nil)
             .background(Color.black)
             .offset(y: menuRevealed || reduceMotion
                     ? 0 : screen.size.height + screen.safeAreaInsets.top + screen.safeAreaInsets.bottom)
@@ -468,6 +491,18 @@ struct TutorialPlayerView: View {
             }
             .onDisappear { menuRevealed = false }
             .zIndex(2)
+    }
+
+    /// Back from the menu: it slides down over the drawing, as the editor's sheet does,
+    /// and the canvas takes input once it has gone.
+    private func closeMenu() {
+        guard page == .menu, tutorial.permits([.leaveMenu]), menuRevealed else { return }
+        guard !reduceMotion else { player.leaveMenu(); return }
+        withAnimation(.spring(duration: 0.45, bounce: 0)) { menuRevealed = false }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            player.leaveMenu()
+        }
     }
 
     /// The full-screen pages over the canvas. Siblings in the canvas ZStack, so their
@@ -535,13 +570,23 @@ struct TutorialPlayerView: View {
             CanvasSettingsView(controller: controller, viewportSize: screen.size,
                                tutorial: tutorial, guides: player.guides,
                                onOpenCanvasSize: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasSize() } },
-                               onOpenPerspective: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openPerspective() } })
+                               onOpenPerspective: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openPerspective() } },
+                               onOpenCanvasEditor: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasEditor() } })
             .background(Color.black.ignoresSafeArea())
             .transition(.opacity)
             .zIndex(1)
         }
+        if page == .canvasEditor {
+            // The checkmark fades the editor out over the canvas that shows the new button.
+            CanvasLayoutEditorView(instrument: controller.pencilStyle.instrument, tutorial: tutorial,
+                                   onTutorialSave: { layout in leavePage { player.finishCanvasEditor(layout) } })
+            .opacity(isLeavingPage ? 0 : 1)
+            .allowsHitTesting(!isLeavingPage)
+            .transition(.opacity)
+            .zIndex(1)
+        }
         if page == .canvasSize {
-            WatchCanvasSizeView(controller: controller, viewportSize: screen.size,
+            WatchCanvasSizeView(controller: controller, viewportSize: paperSize(screen),
                                 displayScale: displayScale, tutorial: tutorial,
                                 onOpenCrop: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCrop() } })
             .background(Color.black.ignoresSafeArea())
@@ -571,7 +616,7 @@ struct TutorialPlayerView: View {
         }
         if page == .crop {
             // Apply records the crop; the lesson then returns to the canvas itself.
-            WatchCanvasAdjustmentView(controller: controller, viewportSize: screen.size,
+            WatchCanvasAdjustmentView(controller: controller, viewportSize: paperSize(screen),
                                       displayScale: displayScale, mode: 1,
                                       tutorial: tutorial, onApplied: {})
             .background(Color.black.ignoresSafeArea())
@@ -589,6 +634,15 @@ struct TutorialPlayerView: View {
             .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.94)))
             .zIndex(1)
         }
+    }
+
+    /// The whole watch screen, as the full-screen canvas sees it. Setting pages keep the
+    /// top safe area, so their `screen.size` lacks the clock band and an unsized canvas
+    /// looked almost square in the crop preview.
+    private func paperSize(_ screen: GeometryProxy) -> CGSize {
+        let insets = screen.safeAreaInsets
+        return CGSize(width: screen.size.width + insets.leading + insets.trailing,
+                      height: screen.size.height + insets.top + insets.bottom)
     }
 
     /// Kept out of `body` so the compiler type-checks it on its own.
@@ -687,7 +741,9 @@ struct TutorialPlayerView: View {
         guard page == .canvas else { return [:] }
         // Retain measurements for stable toolbar items across lessons. A frame
         // may not be reported again when only the button's label changes.
+        let eraserControl = player.practiceEraserSlot.map { CustomCanvasControls.anchors[$0] }
         return controls.filter { control, _ in
+            if control == eraserControl { return true }
             switch control {
             case .morph, .contentMorph, .custom: return false
             case .canvasToolsMorph: return tutorial.permits([.openLasso, .openLayers])
@@ -706,7 +762,7 @@ struct TutorialPlayerView: View {
         switch page {
         case .canvas, .menu, .tools: false
         case .gallery, .layers, .layerSettings, .canvasSettings, .canvasSize, .perspective, .crop,
-             .drawingSettings, .colorBlending: true
+             .drawingSettings, .colorBlending, .canvasEditor: true
         }
     }
 
@@ -757,6 +813,32 @@ struct TutorialPlayerView: View {
                 .accessibilityHidden(tutorial.step != .saveDrawing)
                 .accessibilityLabel(L10n.text("Save drawing"))
                 .trackCanvasControl(.save, frames: $controls)
+            }
+            .transition(.opacity)
+        }
+        if let slot = player.practiceEraserSlot {
+            // The circle the lesson's canvas editor filled, in the same bottom slot.
+            HStack {
+                ForEach(1...4, id: \.self) { index in
+                    if index > 1 { Spacer(minLength: 0) }
+                    if index == slot {
+                        Button { player.toggleEraser() } label: {
+                            CanvasQuickActionIcon(action: .eraserToggle, instrument: controller.pencilStyle.instrument)
+                                .tutorialHint(tutorial, steps: [.toggleEraser])
+                        }
+                        .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
+                        .disabled(!tutorial.permits([.toggleEraser, .eraseStroke]))
+                        .accessibilityLabel(L10n.text("Eraser ↔ tool"))
+                        .trackCanvasControl(CustomCanvasControls.anchors[index], frames: $controls)
+                    } else {
+                        // Keeps the four slots of the canvas toolbar.
+                        Button {} label: { BroomIcon() }
+                            .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
+                            .hidden()
+                            .disabled(true)
+                            .accessibilityHidden(true)
+                    }
+                }
             }
             .transition(.opacity)
         }

@@ -25,6 +25,8 @@ struct WatchAppSettingsView: View {
     var onOpenCanvasSettings: (() -> Void)? = nil
     /// The tutorial opens Drawing as its own page, as it does Canvas.
     var onOpenDrawingSettings: (() -> Void)? = nil
+    /// The tutorial's Back to the canvas; shown only while the lesson asks for it.
+    var onTutorialBack: (() -> Void)? = nil
 
     var body: some View {
         NavigationStack {
@@ -58,15 +60,16 @@ struct WatchAppSettingsView: View {
                         // Closer to the clock, with room below so the title does not touch Gallery.
                         .padding(.bottom, 4)
                         .offset(y: -10)
-                        // Shrinks the header from the top, so the title and Gallery rise
-                        // together and the gap between them stays the same.
-                        .padding(.top, -12)
                         .accessibilityAddTraits(.isHeader)
                 }
             } else {
                 menuRows
             }
         }
+        // Raise the title and Gallery together, keeping the gap between them. An offset
+        // only moves the drawing: a header that overflowed upward through negative padding
+        // was handed to the host's bar and no longer rose with the menu.
+        .offset(y: tutorial.isActive ? -12 : 0)
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(tutorial.isActive ? "" : L10n.text("More"))
         .toolbarTitleDisplayMode(.inline)
@@ -154,7 +157,7 @@ struct WatchAppSettingsView: View {
                         .tutorialHint(tutorial, steps: [.openDrawingSettings])
                 }
             }
-            if tutorial.teachesPerspective || tutorial.teachesCrop {
+            if tutorial.teachesPerspective || tutorial.teachesCrop || tutorial.teachesCanvasEditor {
                 if let onOpenCanvasSettings {
                     Button(action: onOpenCanvasSettings) {
                         canvasLabel.tutorialHint(tutorial, steps: [.openCanvasSettings])
@@ -210,6 +213,23 @@ struct WatchAppSettingsView: View {
                 }
                 .watchToolbarButtonStyle()
                 .accessibilityLabel(L10n.text("Close"))
+            }
+        } else if let onTutorialBack {
+            ToolbarItem(placement: .topBarLeading) {
+                let permitted = tutorial.permits([.leaveMenu])
+                Button(action: onTutorialBack) {
+                    Image(systemName: "chevron.backward")
+                        .tutorialHint(tutorial, steps: [.leaveMenu])
+                        .frame(width: 32, height: 32, alignment: .center)
+                        .contentShape(Circle())
+                }
+                .watchToolbarButtonStyle(hidesNativeChrome: !permitted)
+                .disabled(!permitted)
+                // Keeps its slot while hidden, so the bar never changes under the open menu.
+                .opacity(permitted ? 1 : 0)
+                .animation(.easeInOut(duration: 0.25), value: permitted)
+                .accessibilityHidden(!permitted)
+                .accessibilityLabel(L10n.text("Back"))
             }
         }
     }
@@ -290,6 +310,7 @@ struct CanvasSettingsView: View {
     /// The tutorial shows these pages itself; without them the rows push their pages.
     var onOpenCanvasSize: (() -> Void)? = nil
     var onOpenPerspective: (() -> Void)? = nil
+    var onOpenCanvasEditor: (() -> Void)? = nil
     @Environment(\.displayScale) private var displayScale
     @State private var showsEditor = false
 
@@ -312,7 +333,16 @@ struct CanvasSettingsView: View {
                     }
                 }
             }
-            if !tutorial.isActive {
+            if tutorial.teachesCanvasEditor, let onOpenCanvasEditor {
+                Button(action: onOpenCanvasEditor) {
+                    Label {
+                        Text(L10n.text("Canvas editor"))
+                    } icon: {
+                        CanvasLayoutIcon()
+                    }
+                    .tutorialHint(tutorial, steps: [.openCanvasEditor])
+                }
+            } else if !tutorial.isActive {
                 // Opens the editor itself: Reset and Save live on its canvas preview.
                 Button {
                     showsEditor = true

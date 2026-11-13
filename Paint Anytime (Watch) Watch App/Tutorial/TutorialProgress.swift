@@ -16,9 +16,10 @@ enum TutorialStep: Int, CaseIterable {
     case openLasso, selectLasso, transformLasso, finishLasso
     case history, saveDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
-    case openCanvasSettings, openPerspective, choosePerspective, perspectiveStroke
+    case openCanvasSettings, openPerspective, choosePerspective, leavePerspective, leaveMenu, perspectiveStroke
     case openCanvasSize, openCrop, applyCrop
     case startSelection, selectDrawings, favoriteSelection
+    case openCanvasEditor, chooseEditorSlot, chooseEraserAction, saveCanvasLayout, toggleEraser, eraseStroke
     // Results, not lessons: they wait for Next (or Done after the last chapter).
     case chapterComplete, finished
 
@@ -37,6 +38,12 @@ struct TutorialProgress {
     private var unlockedToolPages: Set<Int> = [1]
     /// Changes when a lesson within a chapter starts on a fresh canvas.
     private(set) var freshLessonRevision = 0
+    /// Whether the current lesson keeps the brush of the lesson before it.
+    var lessonKeepsBrush: Bool {
+        guard chapters.indices.contains(chapterIndex) else { return false }
+        let lessons = chapters[chapterIndex].lessons
+        return lessons.indices.contains(lessonIndex) && lessons[lessonIndex].keepsBrush
+    }
 
     enum Event {
         case openedLasso, selectedLasso, failedLassoSelection, transformedLasso, finishedLasso
@@ -49,6 +56,8 @@ struct TutorialProgress {
         case paintedOver, addedLayer, movedLayerDown, drewBehind
         case createdPalette, openedColorEditor, adjustedColor, savedColor
         case openedCanvasSettings, openedPerspective, choseVanishingPoints, drewAlongGuide
+        case leftPerspective, leftMenu
+        case openedCanvasEditor, choseEditorSlot, choseEraserAction, savedCanvasLayout, toggledEraser, erased
         case openedCanvasSize, openedCrop, croppedCanvas
         case startedSelection, cancelledSelection, selectedDrawings, deselectedDrawings, favoritedSelection
         case crossedMarkerLine, openedDrawingSettings, openedColorBlending, choseColorInversion
@@ -188,8 +197,16 @@ struct TutorialProgress {
         case (.favoriteSelection, .deselectedDrawings):
             returnTo(.selectDrawings)
             return .none
-        // The applied setting stays visible briefly; the next step then returns to the canvas.
-        case (.choosePerspective, .choseVanishingPoints), (.applyCrop, .croppedCanvas): return .showResult
+        // The chosen guides stay visible briefly; Back then leads to the menu and the canvas.
+        case (.choosePerspective, .choseVanishingPoints): return .showResult
+        case (.leavePerspective, .leftPerspective), (.leaveMenu, .leftMenu): return .advance
+        // The chosen action stays visible briefly; the next step then closes the action list.
+        case (.chooseEraserAction, .choseEraserAction): return .showResult
+        case (.openCanvasEditor, .openedCanvasEditor), (.chooseEditorSlot, .choseEditorSlot),
+             (.saveCanvasLayout, .savedCanvasLayout), (.toggleEraser, .toggledEraser),
+             (.eraseStroke, .erased): return .advance
+        // The applied crop stays visible briefly; the next step then returns to the canvas.
+        case (.applyCrop, .croppedCanvas): return .showResult
         // The mixed and the inverted overlap each stay visible before the lesson moves on.
         case (.crossMarkerLine, .crossedMarkerLine), (.chooseColorInversion, .choseColorInversion),
              (.redrawMarkerLine, .crossedMarkerLine): return .showResult
@@ -222,6 +239,7 @@ struct TutorialProgress {
     var teachesCrop: Bool { step != .inactive && lessonSteps.contains(.openCrop) }
     var teachesGallerySelection: Bool { step != .inactive && lessonSteps.contains(.startSelection) }
     var teachesBlending: Bool { step != .inactive && lessonSteps.contains(.openColorBlending) }
+    var teachesCanvasEditor: Bool { step != .inactive && lessonSteps.contains(.openCanvasEditor) }
     /// The fill and blur lessons offer only the lesson's brush and their tool until the settings close.
     var lessonInstrument: DrawingInstrument? {
         guard step == .chooseFill || step == .chooseBlur || step == .closeTools else { return nil }

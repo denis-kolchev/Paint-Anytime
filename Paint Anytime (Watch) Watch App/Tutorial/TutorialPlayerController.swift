@@ -8,7 +8,7 @@ final class TutorialPlayerController: ObservableObject {
     /// NavigationStack is nested in the host's, so its links would push over the whole lesson.
     enum Page {
         case canvas, tools, menu, gallery, layers, layerSettings, canvasSettings, canvasSize, perspective, crop
-        case drawingSettings, colorBlending
+        case drawingSettings, colorBlending, canvasEditor
     }
 
     let tutorial = TutorialSession()
@@ -23,6 +23,8 @@ final class TutorialPlayerController: ObservableObject {
     @Published var confirmsClear = false
     @Published private(set) var saveError: String?
     @Published private(set) var editedLayerID: UUID?
+    /// The layout saved in the tutorial's canvas editor; the user's own layout never changes.
+    @Published private(set) var practiceLayout: CanvasControlLayout?
     /// The lesson draws or erases on the canvas itself; the user's input waits.
     @Published private(set) var isDemonstrating = false
     private var demonstration: Task<Void, Never>?
@@ -71,7 +73,8 @@ final class TutorialPlayerController: ObservableObject {
     }
 
     /// Chapters stay independent: each one starts on a clean canvas with the default brush.
-    func beginChapter() {
+    /// A lesson that keeps the brush clears only the canvas.
+    func beginChapter(keepsBrush: Bool = false) {
         stopDemonstration()
         tutorial.markerLineStrokeID = nil
         canvas.cancelStroke()
@@ -79,7 +82,8 @@ final class TutorialPlayerController: ObservableObject {
         canvas.clear()
         // A blending lesson must not carry its mode into later chapters.
         canvas.setBlendingMode(initialStyle.blendingMode)
-        canvas.pencilStyle = initialStyle
+        if !keepsBrush { canvas.pencilStyle = initialStyle }
+        practiceLayout = nil
         page = .canvas
     }
 
@@ -151,6 +155,43 @@ final class TutorialPlayerController: ObservableObject {
         page = .perspective
         tutorial.record(.openedPerspective)
     }
+    /// Back from the chosen guides leads to the menu, as the lesson card asks.
+    func leavePerspective() {
+        guard page == .perspective, tutorial.permits([.leavePerspective]) else { return }
+        page = .menu
+        tutorial.record(.leftPerspective)
+    }
+    func leaveMenu() {
+        guard page == .menu, tutorial.permits([.leaveMenu]) else { return }
+        page = .canvas
+        tutorial.record(.leftMenu)
+    }
+    func openCanvasEditor() {
+        guard page == .canvasSettings, tutorial.permits([.openCanvasEditor]) else { return }
+        practiceLayout = nil
+        page = .canvasEditor
+        tutorial.record(.openedCanvasEditor)
+    }
+    /// The checkmark keeps the layout for the tutorial canvas and returns to it.
+    func finishCanvasEditor(_ layout: CanvasControlLayout) {
+        guard page == .canvasEditor, tutorial.permits([.saveCanvasLayout]) else { return }
+        practiceLayout = layout
+        page = .canvas
+        tutorial.record(.savedCanvasLayout)
+    }
+    /// The bottom slot the practice layout gave the eraser toggle, while the lesson uses it.
+    var practiceEraserSlot: Int? {
+        guard page == .canvas, [.toggleEraser, .eraseStroke].contains(tutorial.step) else { return nil }
+        return practiceLayout?.slots.indices.first { index in
+            !CustomCanvasControls.isTop(index) && practiceLayout?.slots[index] == .single(.eraserToggle)
+        }
+    }
+    func toggleEraser() {
+        guard practiceEraserSlot != nil, tutorial.permits([.toggleEraser, .eraseStroke]) else { return }
+        canvas.cancelStroke()
+        canvas.toggleEraser()
+        tutorial.record(.toggledEraser)
+    }
     func openCanvasSize() {
         guard page == .canvasSettings, tutorial.permits([.openCanvasSize]) else { return }
         page = .canvasSize
@@ -172,12 +213,13 @@ final class TutorialPlayerController: ObservableObject {
         tutorial.record(.openedColorBlending)
     }
 
-    /// Setting lessons leave their pages once the setting is applied.
+    /// Crop and blending lessons leave their pages once the setting is applied;
+    /// the perspective lesson returns through Back instead.
     func returnToCanvasAfterSetting() {
-        guard [.menu, .canvasSettings, .perspective, .canvasSize, .crop,
+        guard [.menu, .canvasSettings, .canvasSize, .crop,
                .drawingSettings, .colorBlending].contains(page),
-              tutorial.teachesPerspective || tutorial.teachesCrop || tutorial.teachesBlending,
-              [.perspectiveStroke, .history, .redrawMarkerLine].contains(tutorial.step) else { return }
+              tutorial.teachesCrop || tutorial.teachesBlending,
+              [.history, .redrawMarkerLine].contains(tutorial.step) else { return }
         page = .canvas
     }
 

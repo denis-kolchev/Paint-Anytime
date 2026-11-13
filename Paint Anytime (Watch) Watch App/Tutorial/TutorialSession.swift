@@ -40,7 +40,8 @@ final class TutorialSession: ObservableObject {
         case .galleryFullscreen where !galleryIsOpen, .deleteDrawing where !galleryIsOpen: return L10n.text("Tap Gallery to see your pictures.")
         case .deleteDrawing where !galleryIsFullscreen:
             return L10n.text("Turn the Crown or double-tap a picture.")
-        case .openMenu where progress.teachesPerspective || progress.teachesCrop || progress.teachesBlending:
+        case .openMenu where progress.teachesPerspective || progress.teachesCrop || progress.teachesBlending
+                || progress.teachesCanvasEditor:
             return L10n.text("Tap ••• to open the menu.")
         case .openGallery where progress.teachesGallerySelection:
             return L10n.text("Autosave in this menu can fill the gallery for you. Tap Gallery.")
@@ -59,7 +60,7 @@ final class TutorialSession: ObservableObject {
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
     // Free drawing stays available wherever the canvas is the current page and a stroke
     // cannot disturb the exercise; camera, lasso, and gallery steps keep their own input.
-    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .perspectiveStroke, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .blurCanvas, .crossMarkerLine, .redrawMarkerLine, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .openMenu, .chapterComplete]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .perspectiveStroke, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .blurCanvas, .crossMarkerLine, .redrawMarkerLine, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .openMenu, .toggleEraser, .eraseStroke, .chapterComplete]) }
     var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
@@ -71,6 +72,7 @@ final class TutorialSession: ObservableObject {
     var teachesCrop: Bool { progress.teachesCrop }
     var teachesGallerySelection: Bool { progress.teachesGallerySelection }
     var teachesBlending: Bool { progress.teachesBlending }
+    var teachesCanvasEditor: Bool { progress.teachesCanvasEditor }
     /// The tutorial's own guides appear only in their lesson; the editor always shows its guides.
     var showsPerspectiveGuides: Bool { !isActive || progress.teachesPerspective }
     var allowsGalleryPaging: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
@@ -108,6 +110,7 @@ final class TutorialSession: ObservableObject {
     var visibleToolPages: Set<Int> { progress.visibleToolPages }
     var initialToolPage: Int { progress.initialToolPage }
     var lessonInstrument: DrawingInstrument? { progress.lessonInstrument }
+    var lessonKeepsBrush: Bool { progress.lessonKeepsBrush }
     var locksLessonColor: Bool { progress.locksLessonColor }
     var chapter: TutorialChapter? { progress.chapter }
     var chapterProgress: Double { progress.chapterProgress }

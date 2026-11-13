@@ -141,72 +141,20 @@ struct TutorialChecks {
             precondition(progress.step == step && progress.teachesPerspective && progress.record(event) == .advance)
             progress.advance()
         }
-        // The chosen guides stay visible briefly before the tour returns to the canvas.
+        // The chosen guides stay visible briefly; Back then leads to the menu and the canvas.
         precondition(progress.step == .choosePerspective && progress.record(.choseVanishingPoints) == .showResult)
+        progress.advance()
+        precondition(progress.step == .leavePerspective && progress.record(.leftMenu) == .none)
+        precondition(progress.record(.leftPerspective) == .advance)
+        progress.advance()
+        precondition(progress.step == .leaveMenu && progress.record(.leftMenu) == .advance)
         progress.advance()
         precondition(progress.step == .perspectiveStroke && !progress.teachesCrop)
         precondition(progress.record(.stroke) == .none, "A stroke off the guides is a miss")
         precondition(progress.record(.drewAlongGuide) == .advance)
         progress.advance()
         precondition(!progress.teachesPerspective)
-        // Fill: the settings open on Tool and stay there until Fill is chosen.
-        precondition(progress.step == .openTools && progress.initialToolPage == 1 && progress.lessonInstrument == nil)
-        precondition(progress.record(.openedTools) == .advance)
-        progress.advance()
-        precondition(progress.step == .chooseFill && progress.initialToolPage == 2 && progress.lessonInstrument == .fill)
-        precondition(progress.allowsToolPage(2) && !progress.allowsToolPage(1) && !progress.allowsToolPage(0))
-        var fill = PencilStyle()
-        fill.instrument = .fill
-        var blur = PencilStyle()
-        blur.instrument = .blur
-        precondition(!progress.changedStyle(from: PencilStyle(), to: blur, page: 2))
-        precondition(progress.changedStyle(from: blur, to: fill, page: 2))
-        progress.advance()
-        precondition(progress.step == .closeTools && !progress.allowsToolPage(1))
-        var eraserAfterFill = fill
-        eraserAfterFill.instrument = .eraser
-        precondition(!progress.changedStyle(from: fill, to: eraserAfterFill, page: 2))
-        precondition(progress.step == .chooseFill, "Leaving Fill before closing restores the choice")
-        precondition(progress.changedStyle(from: eraserAfterFill, to: fill, page: 2))
-        progress.advance()
-        precondition(progress.record(.closedTools) == .advance)
-        progress.advance()
-        precondition(progress.step == .fillCanvas && progress.lessonInstrument == nil)
-        precondition(progress.record(.stroke) == .none)
-        precondition(progress.record(.filled) == .advance)
-        progress.advance()
-        // Blur: the same Tool-page choice, then any blur stroke softens the drawing.
-        precondition(progress.step == .openTools && progress.record(.openedTools) == .advance)
-        progress.advance()
-        precondition(progress.step == .chooseBlur && progress.initialToolPage == 2 && progress.lessonInstrument == .blur)
-        precondition(!progress.changedStyle(from: blur, to: fill, page: 2))
-        precondition(progress.changedStyle(from: fill, to: blur, page: 2))
-        progress.advance()
-        precondition(!progress.changedStyle(from: blur, to: fill, page: 2))
-        precondition(progress.step == .chooseBlur, "Leaving Blur before closing restores the choice")
-        precondition(progress.changedStyle(from: fill, to: blur, page: 2))
-        progress.advance()
-        precondition(progress.record(.closedTools) == .advance)
-        progress.advance()
-        precondition(progress.step == .blurCanvas && progress.record(.stroke) == .advance)
-        progress.advance()
-        // Blending: crossing the demonstrated line shows the mix, then Color inversion.
-        precondition(progress.step == .crossMarkerLine && progress.record(.stroke) == .none)
-        precondition(progress.record(.crossedMarkerLine) == .showResult)
-        progress.advance()
-        precondition(progress.step == .openMenu && progress.teachesBlending)
-        for (step, event): (TutorialStep, TutorialProgress.Event) in [
-            (.openMenu, .openedMenu), (.openDrawingSettings, .openedDrawingSettings),
-            (.openColorBlending, .openedColorBlending)
-        ] {
-            precondition(progress.step == step && progress.record(event) == .advance)
-            progress.advance()
-        }
-        precondition(progress.step == .chooseColorInversion && progress.record(.choseColorInversion) == .showResult)
-        progress.advance()
-        precondition(progress.step == .redrawMarkerLine && progress.record(.crossedMarkerLine) == .showResult)
-        progress.advance()
-        precondition(!progress.teachesBlending)
+        // The palette lesson follows directly: fill and blur are no longer taught.
         precondition(progress.step == .openTools && progress.record(.openedTools) == .advance)
         progress.advance()
         precondition(progress.step == .openCurrentPalette && progress.record(.openedCurrentPalette) == .advance,
@@ -227,6 +175,7 @@ struct TutorialChecks {
         // The composition lessons follow in the same chapter, on a fresh canvas.
         precondition(progress.chapter == .advanced && progress.step == .firstStrokes)
         precondition(progress.freshLessonRevision != freshLessons, "Layer lessons start on a cleared canvas")
+        precondition(progress.lessonKeepsBrush, "The first strokes use the color made in the palette")
         _ = progress.record(.stroke)
         precondition(progress.record(.stroke) == .advance)
         progress.advance()
@@ -273,7 +222,44 @@ struct TutorialChecks {
         precondition(progress.record(.openedLasso) == .advance)
         progress.advance()
         for _ in 0..<3 { precondition(progress.record(.failedLassoSelection) == .none) }
-        precondition(progress.step == .openMenu, "Repeated misses end the lasso lesson")
+        precondition(!progress.lessonKeepsBrush)
+        // Blending, after the lasso: crossing the demonstrated line shows the mix, then Color inversion.
+        precondition(progress.step == .crossMarkerLine, "Repeated misses end the lasso lesson")
+        precondition(progress.record(.stroke) == .none)
+        precondition(progress.record(.crossedMarkerLine) == .showResult)
+        progress.advance()
+        precondition(progress.step == .openMenu && progress.teachesBlending)
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.openMenu, .openedMenu), (.openDrawingSettings, .openedDrawingSettings),
+            (.openColorBlending, .openedColorBlending)
+        ] {
+            precondition(progress.step == step && progress.record(event) == .advance)
+            progress.advance()
+        }
+        precondition(progress.step == .chooseColorInversion && progress.record(.choseColorInversion) == .showResult)
+        progress.advance()
+        precondition(progress.step == .redrawMarkerLine && progress.record(.crossedMarkerLine) == .showResult)
+        progress.advance()
+        precondition(!progress.teachesBlending && progress.step == .openMenu)
+        // Canvas editor: the eraser toggle in an empty bottom circle, then used on the canvas.
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),
+            (.openCanvasEditor, .openedCanvasEditor), (.chooseEditorSlot, .choseEditorSlot)
+        ] {
+            precondition(progress.step == step && progress.teachesCanvasEditor && progress.record(event) == .advance)
+            progress.advance()
+        }
+        precondition(progress.step == .chooseEraserAction && progress.record(.choseEraserAction) == .showResult)
+        progress.advance()
+        precondition(progress.step == .saveCanvasLayout && progress.record(.savedCanvasLayout) == .advance)
+        progress.advance()
+        precondition(progress.step == .toggleEraser && progress.record(.toggledEraser) == .advance)
+        progress.advance()
+        precondition(progress.step == .eraseStroke && progress.record(.stroke) == .none,
+                     "Only an eraser stroke completes the lesson")
+        precondition(progress.record(.erased) == .advance)
+        progress.advance()
+        precondition(!progress.teachesCanvasEditor && progress.step == .openMenu)
         if AppReleaseFeatures.current.showsCanvasSizeControls {
             for (step, event): (TutorialStep, TutorialProgress.Event) in [
                 (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),

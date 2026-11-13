@@ -436,6 +436,7 @@ struct WatchCanvasView: View {
                             tutorial.finishedCircleAttempt(kind: recognizedKind)
                             // Before .stroke, which counts a miss in the guide lesson.
                             if followedGuide { tutorial.record(.drewAlongGuide) }
+                            if controller.pencilStyle.instrument == .eraser { tutorial.record(.erased) }
                             tutorial.record(.stroke)
                             tutorial.finishedStroke(in: controller.selectedLayer)
                         }
