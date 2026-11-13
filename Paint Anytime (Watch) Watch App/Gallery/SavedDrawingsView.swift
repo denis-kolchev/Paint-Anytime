@@ -35,8 +35,14 @@ struct SavedDrawingsView: View {
     private var selectedDrawings: [CanvasExport] { drawings.filter { selectedURLs.contains($0.url) } }
     // Keep the toolbar item mounted through grid zoom: inserting or removing it
     // mid-transition makes the native toolbar drop the icon.
-    private var hostsSelectButton: Bool { !tutorial.isActive && !drawings.isEmpty }
-    private var showsSelectButton: Bool { hostsSelectButton && !showsFullscreen }
+    // The tutorial installs the button for its whole selection lesson and shows it per step.
+    private var hostsSelectButton: Bool { (!tutorial.isActive || tutorial.teachesGallerySelection) && !drawings.isEmpty }
+    private var showsSelectButton: Bool {
+        hostsSelectButton && !showsFullscreen
+            && tutorial.permits([.startSelection, .selectDrawings, .favoriteSelection])
+    }
+    /// Tiles respond while the tour lets them open, or toggle them in its selection lesson.
+    private var allowsTileInput: Bool { tutorial.allowsGalleryZoom || (isSelecting && tutorial.allowsGallerySelection) }
     @State private var showsFullscreen = false
     @State private var isCleanViewing = false
     @State private var showsFullscreenActions = false
@@ -98,7 +104,7 @@ struct SavedDrawingsView: View {
                             displayScale: displayScale,
                             loadsImages: !gridZoom.active || gridZoom.pendingCommit != nil,
                             isSelecting: isSelecting, selectedURLs: selectedURLs,
-                            allowsOpening: tutorial.allowsGalleryZoom,
+                            allowsOpening: allowsTileInput,
                             gridStorage: gridStorage, onTap: tapThumbnail)
                             .reportLegacyScrollPosition()
                     }
@@ -114,7 +120,7 @@ struct SavedDrawingsView: View {
                     // Observe native scrolling without competing with its swipe gesture.
                     .onTutorialScrollActivity { tutorial.activity() }
                     .galleryInputScrollDiagnostics()
-                    .allowsHitTesting(!showsFullscreen && !isTransitioning && tutorial.allowsGalleryZoom)
+                    .allowsHitTesting(!showsFullscreen && !isTransitioning && allowsTileInput)
                     .accessibilityHidden(showsFullscreen || gridZoom.active)
                     .onChange(of: zoomLevel) { previousLevel, level in
                         if !gridZoom.active, previousLevel != fullscreenLevel, level < fullscreenLevel, let drawing = focusedDrawing {
@@ -186,16 +192,22 @@ struct SavedDrawingsView: View {
                 if isSelecting && !showsFullscreen && !isTransitioning {
                     GallerySelectionActions(
                         drawings: selectedDrawings,
+                        tutorial: tutorial,
                         onFavorite: { favorite in
                             for drawing in selectedDrawings {
                                 controller.setFavorite(favorite, for: drawing, in: galleryFolder)
                             }
+                            guard tutorial.isActive else { return }
+                            tutorial.record(.favoritedSelection)
+                            // Leave selection so the hearts show on the tiles and Back leaves the gallery.
+                            setSelecting(false)
                         },
                         onDelete: {
                             crownFocused = false
                             confirmsSelectionDeletion = true
                         })
-                        .padding(.bottom, 8)
+                        // In the tutorial the panel sits just above the lesson card.
+                        .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight + 6 : 8)
                         .transition(.scale(scale: 0.6).combined(with: .opacity))
                 }
             }
@@ -492,12 +504,14 @@ struct SavedDrawingsView: View {
             isSelecting = selecting
             if !selecting { selectedURLs = [] }
         }
+        tutorial.record(selecting ? .startedSelection : .cancelledSelection)
     }
 
     private func toggleSelection(_ drawing: CanvasExport) {
         if selectedURLs.contains(drawing.url) { selectedURLs.remove(drawing.url) }
         else { selectedURLs.insert(drawing.url) }
         WKInterfaceDevice.current().play(.click)
+        tutorial.record(selectedURLs.count >= 2 ? .selectedDrawings : .deselectedDrawings)
     }
 
     private func deleteSelectedDrawings() {
@@ -527,7 +541,7 @@ struct SavedDrawingsView: View {
             toggleSelection(drawing)
             return
         }
-        guard Date() >= suppressOpeningUntil else { return }
+        guard Date() >= suppressOpeningUntil, tutorial.allowsGalleryZoom else { return }
         tutorial.activity()
         focusedDrawing = drawing
         if zoomLevel == 0 { setZoom(1) }

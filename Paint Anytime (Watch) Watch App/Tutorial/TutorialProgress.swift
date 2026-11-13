@@ -14,6 +14,9 @@ enum TutorialStep: Int, CaseIterable {
     case openLasso, selectLasso, transformLasso, finishLasso
     case history, saveDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
+    case openCanvasSettings, openPerspective, choosePerspective, perspectiveStroke
+    case openCanvasSize, openCrop, applyCrop
+    case startSelection, selectDrawings, favoriteSelection
     // Results, not lessons: they wait for Next (or Done after the last chapter).
     case chapterComplete, finished
 
@@ -41,6 +44,9 @@ struct TutorialProgress {
         case openedLayers, openedLayerSettings, lockedTransparency, closedLayerSettings, closedLayers
         case paintedOver, addedLayer, movedLayerDown, drewBehind
         case createdPalette, openedColorEditor, adjustedColor, savedColor
+        case openedCanvasSettings, openedPerspective, choseVanishingPoints, drewAlongGuide
+        case openedCanvasSize, openedCrop, croppedCanvas
+        case startedSelection, cancelledSelection, selectedDrawings, deselectedDrawings, favoritedSelection
     }
     enum Effect: Equatable {
         case none, advance, showResult, pauseReminders
@@ -168,6 +174,24 @@ struct TutorialProgress {
             // Repeated misses end the lesson instead of blocking the tour.
             if count >= 3 { finishLesson() }
             return .none
+        // A stroke that misses the guides three times still ends the lesson.
+        case (.perspectiveStroke, .stroke):
+            count += 1
+            return count >= 3 ? .advance : .none
+        // Leaving selection mode, or keeping fewer than two pictures, restores that exercise.
+        case (.selectDrawings, .cancelledSelection), (.favoriteSelection, .cancelledSelection):
+            returnTo(.startSelection)
+            return .none
+        case (.favoriteSelection, .deselectedDrawings):
+            returnTo(.selectDrawings)
+            return .none
+        // The applied setting stays visible briefly; the next step then returns to the canvas.
+        case (.choosePerspective, .choseVanishingPoints), (.applyCrop, .croppedCanvas): return .showResult
+        case (.openCanvasSettings, .openedCanvasSettings), (.openPerspective, .openedPerspective),
+             (.perspectiveStroke, .drewAlongGuide), (.openCanvasSize, .openedCanvasSize),
+             (.openCrop, .openedCrop),
+             (.startSelection, .startedSelection), (.selectDrawings, .selectedDrawings),
+             (.favoriteSelection, .favoritedSelection): return .advance
         case (.openLasso, .openedLasso), (.selectLasso, .selectedLasso),
              (.transformLasso, .transformedLasso), (.finishLasso, .finishedLasso): return .advance
         case (.clearCanvas, .cleared): return .showResult
@@ -185,6 +209,10 @@ struct TutorialProgress {
         return .none
     }
     var visibleToolPages: Set<Int> { [0, 1, 2, 3, 4, 5, 6] }
+    /// Lesson-wide, so menu rows stay installed while their pages are pushed.
+    var teachesPerspective: Bool { step != .inactive && lessonSteps.contains(.openPerspective) }
+    var teachesCrop: Bool { step != .inactive && lessonSteps.contains(.openCrop) }
+    var teachesGallerySelection: Bool { step != .inactive && lessonSteps.contains(.startSelection) }
     /// The fill lesson offers only the lesson's brush and Fill until the settings close.
     var limitsToolsToFill: Bool {
         (step == .chooseFill || step == .closeTools) && lessonSteps.contains(.chooseFill)

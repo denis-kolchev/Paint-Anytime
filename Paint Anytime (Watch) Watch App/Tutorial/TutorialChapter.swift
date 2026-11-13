@@ -28,7 +28,10 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
     }
 
     /// Every lesson begins on the canvas and ends there, so the next one can start fresh.
-    var lessons: [Lesson] {
+    var lessons: [Lesson] { lessons(features: .current) }
+
+    /// Lessons for features of the given release; Canvas size arrives in 1.2.
+    func lessons(features: AppReleaseFeatures) -> [Lesson] {
         switch self {
         case .firstDrawing: [
             Lesson(steps: [.firstStrokes, .history]),
@@ -40,14 +43,23 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
         ]
         case .tools: [
             Lesson(steps: [.holdCircle]),
+            // Guides straighten a stroke, like the held shape before them.
+            // Choosing the guides returns to the canvas by itself: a toolbar ✕ would push
+            // the tutorial menu's rows under its navigation bar.
+            Lesson(steps: [.openMenu, .openCanvasSettings, .openPerspective, .choosePerspective,
+                           .perspectiveStroke]),
             Lesson(steps: [.openTools, .chooseFill, .closeTools, .fillCanvas]),
             Lesson(steps: [.openTools, .selectColor, .tapAddColor, .openPalettes, .findNewPalette,
                            .createPalette, .addPaletteColor, .adjustPaletteColor, .savePaletteColor,
-                           .closeTools]),
-            Lesson(steps: [.openTools, .openTool, .chooseReed, .openAngle, .setAngle, .closeTools,
-                           .reedStrokes])
+                           .closeTools])
         ]
-        case .composition: [
+        case .composition:
+            compositionLessons(includesCrop: features.showsCanvasSizeControls)
+        }
+    }
+
+    private func compositionLessons(includesCrop: Bool) -> [Lesson] {
+        var lessons = [
             // Draw first, so the layer lessons never rely on an earlier chapter's artwork.
             Lesson(steps: [.firstStrokes, .openLayers, .openLayerSettings, .lockTransparency,
                            .closeLayerSettings, .closeLayers]),
@@ -56,7 +68,15 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             Lesson(steps: [.openLayers, .addLayer, .moveLayerDown, .closeLayers, .drawBehindStroke]),
             Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso])
         ]
+        // The lasso changes part of the picture; cropping frames all of it, and undo restores the edges.
+        if includesCrop {
+            lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize, .openCrop,
+                                          .applyCrop, .history]))
         }
+        // The tutorial gallery starts with practice pictures, so selection needs no saved drawing.
+        lessons.append(Lesson(steps: [.openMenu, .openGallery, .startSelection, .selectDrawings,
+                                      .favoriteSelection, .returnToCanvas]))
+        return lessons
     }
 
     private static let completionKey = "tutorial.completedChapters.v1"

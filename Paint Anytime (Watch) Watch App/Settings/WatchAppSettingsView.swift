@@ -19,6 +19,10 @@ struct WatchAppSettingsView: View {
     /// Without it the menu offers no canvas actions.
     var onCanvasAction: ((CanvasQuickAction) -> Void)? = nil
     @ObservedObject var tutorial = TutorialSession.inactive
+    /// The tutorial passes its own practice guides; the editor uses the saved ones.
+    var guides = PerspectiveGuides.shared
+    /// The tutorial opens Canvas as its own page instead of pushing it.
+    var onOpenCanvasSettings: (() -> Void)? = nil
 
     var body: some View {
         NavigationStack {
@@ -49,24 +53,7 @@ struct WatchAppSettingsView: View {
                 } label: {
                     Label(L10n.text("Drawing"), systemImage: "paintbrush")
                 }
-                NavigationLink {
-                    CanvasSettingsView(controller: controller, viewportSize: viewportSize)
-                } label: {
-                    Label {
-                        Text(L10n.text("Canvas"))
-                    } icon: {
-                        // The current name arrived in watchOS 11; watchOS 10 has the older one.
-                        Group {
-                            if #available(watchOS 11, *) {
-                                Image(systemName: "inset.filled.applewatch.case")
-                            } else {
-                                Image(systemName: "applewatch.case.inset.filled")
-                            }
-                        }
-                        // The narrow watch outline looks smaller than its neighbours at the default scale.
-                        .imageScale(.large)
-                    }
-                }
+                canvasLink
                 NavigationLink {
                     TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
                 } label: {
@@ -103,6 +90,26 @@ struct WatchAppSettingsView: View {
                         Label { Text(verbatim: "Render debug") } icon: { Image(systemName: "speedometer") }
                     }
                 }
+            } else {
+                // A lesson shows only the rows on its path. They stay installed for the whole
+                // lesson, so removing a row never pops the page it pushed.
+                if tutorial.teachesGallerySelection {
+                    // Optional: the real setting, reachable here as the lesson tip suggests.
+                    NavigationLink {
+                        AutosaveSettingsView()
+                    } label: {
+                        Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+                    }
+                }
+                if tutorial.teachesPerspective || tutorial.teachesCrop {
+                    if let onOpenCanvasSettings {
+                        Button(action: onOpenCanvasSettings) {
+                            canvasLabel.tutorialHint(tutorial, steps: [.openCanvasSettings])
+                        }
+                    } else {
+                        canvasLink
+                    }
+                }
             }
         }
         .labelStyle(CenteredMenuLabelStyle())
@@ -126,6 +133,31 @@ struct WatchAppSettingsView: View {
     private var actionsMissingFromCanvas: [CanvasQuickAction] {
         let onCanvas = CanvasControlLayout.current(from: controlLayoutData, enabled: customLayoutEnabled).actions
         return [CanvasQuickAction.brush, .layers, .save, .lasso, .clear].filter { !onCanvas.contains($0) }
+    }
+
+    private var canvasLink: some View {
+        NavigationLink {
+            CanvasSettingsView(controller: controller, viewportSize: viewportSize, guides: guides)
+        } label: {
+            canvasLabel
+        }
+    }
+
+    private var canvasLabel: some View {
+        Label {
+            Text(L10n.text("Canvas"))
+        } icon: {
+            // The current name arrived in watchOS 11; watchOS 10 has the older one.
+            Group {
+                if #available(watchOS 11, *) {
+                    Image(systemName: "inset.filled.applewatch.case")
+                } else {
+                    Image(systemName: "applewatch.case.inset.filled")
+                }
+            }
+            // The narrow watch outline looks smaller than its neighbours at the default scale.
+            .imageScale(.large)
+        }
     }
 
     @ToolbarContentBuilder private var closeToolbar: some ToolbarContent {
@@ -201,38 +233,63 @@ private struct DrawingSettingsView: View {
 }
 
 /// The canvas itself: its size, the arrangement of its controls and its guides.
-private struct CanvasSettingsView: View {
+struct CanvasSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
+    @ObservedObject var tutorial = TutorialSession.inactive
+    var guides = PerspectiveGuides.shared
+    /// The tutorial shows these pages itself; without them the rows push their pages.
+    var onOpenCanvasSize: (() -> Void)? = nil
+    var onOpenPerspective: (() -> Void)? = nil
     @Environment(\.displayScale) private var displayScale
     @State private var showsEditor = false
 
     var body: some View {
         List {
-            if AppReleaseFeatures.current.showsCanvasSizeControls {
-                NavigationLink {
-                    WatchCanvasSizeView(controller: controller, viewportSize: viewportSize,
-                                        displayScale: displayScale)
-                        .onAppear { controller.cancelStroke() }
+            // A tutorial lesson keeps only the row it teaches.
+            if AppReleaseFeatures.current.showsCanvasSizeControls && (!tutorial.isActive || tutorial.teachesCrop) {
+                if let onOpenCanvasSize {
+                    Button(action: onOpenCanvasSize) {
+                        Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
+                            .tutorialHint(tutorial, steps: [.openCanvasSize])
+                    }
+                } else {
+                    NavigationLink {
+                        WatchCanvasSizeView(controller: controller, viewportSize: viewportSize,
+                                            displayScale: displayScale)
+                            .onAppear { controller.cancelStroke() }
+                    } label: {
+                        Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
+                    }
+                }
+            }
+            if !tutorial.isActive {
+                // Opens the editor itself: Reset and Save live on its canvas preview.
+                Button {
+                    showsEditor = true
                 } label: {
-                    Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
+                    Label {
+                        Text(L10n.text("Canvas editor"))
+                    } icon: {
+                        CanvasLayoutIcon()
+                    }
                 }
             }
-            // Opens the editor itself: Reset and Save live on its canvas preview.
-            Button {
-                showsEditor = true
-            } label: {
-                Label {
-                    Text(L10n.text("Canvas editor"))
-                } icon: {
-                    CanvasLayoutIcon()
+            if !tutorial.isActive || tutorial.teachesPerspective {
+                if let onOpenPerspective {
+                    Button(action: onOpenPerspective) {
+                        Label(L10n.text("Perspective guides"), systemImage: "perspective")
+                            .tutorialHint(tutorial, steps: [.openPerspective])
+                    }
+                } else {
+                    NavigationLink {
+                        PerspectiveGuidesSettingsView(controller: controller, viewportSize: viewportSize,
+                                                      guides: guides)
+                    } label: {
+                        Label(L10n.text("Perspective guides"), systemImage: "perspective")
+                    }
                 }
-            }
-            NavigationLink {
-                PerspectiveGuidesSettingsView(controller: controller, viewportSize: viewportSize)
-            } label: {
-                Label(L10n.text("Perspective guides"), systemImage: "perspective")
             }
         }
         .labelStyle(CenteredMenuLabelStyle())

@@ -38,6 +38,11 @@ struct TutorialChecks {
             precondition(!chapter.lessons.isEmpty)
             precondition(chapter.lessons.allSatisfy { !$0.steps.isEmpty && !$0.steps.contains(where: \.isResult) })
         }
+        // Canvas size arrives in 1.2, so its crop lesson follows the same release gate.
+        let teachesCrop: (AppReleaseFeatures) -> Bool = { features in
+            TutorialChapter.composition.lessons(features: features).contains { $0.steps.contains(.applyCrop) }
+        }
+        precondition(teachesCrop(AppReleaseFeatures(version: "1.2")) && !teachesCrop(AppReleaseFeatures(version: "1.1")))
         var progress = TutorialProgress()
         progress.start()
         precondition(progress.chapter == .firstDrawing && progress.step == .firstStrokes)
@@ -128,6 +133,22 @@ struct TutorialChecks {
         precondition(progress.chapter == .tools && progress.step == .holdCircle && progress.chapterProgress == 0)
         precondition(progress.record(.heldCircle) == .advance)
         progress.advance()
+        // Perspective: the menu leads to the guides, then a stroke starts on one.
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),
+            (.openPerspective, .openedPerspective)
+        ] {
+            precondition(progress.step == step && progress.teachesPerspective && progress.record(event) == .advance)
+            progress.advance()
+        }
+        // The chosen guides stay visible briefly before the tour returns to the canvas.
+        precondition(progress.step == .choosePerspective && progress.record(.choseVanishingPoints) == .showResult)
+        progress.advance()
+        precondition(progress.step == .perspectiveStroke && !progress.teachesCrop)
+        precondition(progress.record(.stroke) == .none, "A stroke off the guides is a miss")
+        precondition(progress.record(.drewAlongGuide) == .advance)
+        progress.advance()
+        precondition(!progress.teachesPerspective)
         // Fill: the settings open on Tool and stay there until Fill is chosen.
         precondition(progress.step == .openTools && progress.initialToolPage == 1 && !progress.limitsToolsToFill)
         precondition(progress.record(.openedTools) == .advance)
@@ -175,32 +196,7 @@ struct TutorialChecks {
             precondition(progress.record(event) == .advance)
             progress.advance()
         }
-        precondition(progress.step == .openTools && progress.record(.openedTools) == .advance)
-        progress.advance()
-        precondition(progress.step == .openTool && progress.allowsToolPage(2) && progress.allowsToolPage(0))
-        progress.advance()
-        precondition(progress.step == .chooseReed)
-        var pen = original
-        pen.instrument = .pen
-        var reed = original
-        reed.instrument = .reed
-        precondition(!progress.changedStyle(from: original, to: pen, page: 2))
-        precondition(progress.changedStyle(from: pen, to: reed, page: 2))
-        progress.advance()
-        precondition(progress.step == .openAngle && progress.completesPageChange(4) && progress.allowsToolPage(4))
-        precondition(!progress.changedStyle(from: reed, to: pen, page: 2))
-        precondition(progress.step == .chooseReed, "Leaving Reed restores its selection exercise")
-        precondition(progress.changedStyle(from: pen, to: reed, page: 2))
-        progress.advance()
-        progress.advance()
-        var angled = reed
-        angled.reedAngle = 35
-        precondition(progress.step == .setAngle && progress.changedStyle(from: reed, to: angled, page: 4))
-        progress.advance()
-        precondition(progress.record(.closedTools) == .advance)
-        progress.advance()
-        precondition(progress.record(.stroke) == .advance)
-        progress.advance()
+        // The palette lesson closes the chapter; it no longer asks for a nib angle.
         precondition(progress.step == .chapterComplete)
 
         precondition(progress.continueToNext())
@@ -243,7 +239,43 @@ struct TutorialChecks {
         precondition(progress.record(.openedLasso) == .advance)
         progress.advance()
         for _ in 0..<3 { precondition(progress.record(.failedLassoSelection) == .none) }
-        precondition(progress.step == .finished, "Repeated misses end the lesson, here the last one")
+        precondition(progress.step == .openMenu, "Repeated misses end the lasso lesson")
+        if AppReleaseFeatures.current.showsCanvasSizeControls {
+            for (step, event): (TutorialStep, TutorialProgress.Event) in [
+                (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),
+                (.openCanvasSize, .openedCanvasSize), (.openCrop, .openedCrop)
+            ] {
+                precondition(progress.step == step && progress.teachesCrop && progress.record(event) == .advance)
+                progress.advance()
+            }
+            precondition(progress.step == .applyCrop && progress.record(.croppedCanvas) == .showResult)
+            progress.advance()
+            // Undo restores the cropped edges, redo trims them again.
+            precondition(progress.step == .history && progress.record(.history) == .none)
+            precondition(progress.record(.history) == .advance)
+            progress.advance()
+        }
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.openMenu, .openedMenu), (.openGallery, .openedGallery), (.startSelection, .startedSelection)
+        ] {
+            precondition(progress.step == step && progress.teachesGallerySelection && progress.record(event) == .advance)
+            progress.advance()
+        }
+        precondition(progress.step == .selectDrawings && progress.record(.cancelledSelection) == .none)
+        precondition(progress.step == .startSelection, "Leaving selection mode restores its exercise")
+        precondition(progress.record(.startedSelection) == .advance)
+        progress.advance()
+        precondition(progress.record(.deselectedDrawings) == .none && progress.record(.selectedDrawings) == .advance)
+        progress.advance()
+        precondition(progress.step == .favoriteSelection && progress.record(.deselectedDrawings) == .none)
+        precondition(progress.step == .selectDrawings, "Fewer than two pictures restores the selection")
+        precondition(progress.record(.selectedDrawings) == .advance)
+        progress.advance()
+        precondition(progress.record(.favoritedSelection) == .advance)
+        progress.advance()
+        precondition(progress.step == .returnToCanvas && progress.record(.returnedToCanvas) == .advance)
+        progress.advance()
+        precondition(progress.step == .finished)
         progress.advance()
         precondition(progress.step == .finished && !progress.continueToNext())
 

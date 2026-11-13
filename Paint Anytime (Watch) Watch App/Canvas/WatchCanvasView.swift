@@ -72,7 +72,7 @@ struct WatchCanvasView: View {
     }
 
     private var showsGuides: Bool {
-        guides.isEnabled && rendersArtwork && !lasso.isActive && !tutorial.isActive
+        guides.isEnabled && rendersArtwork && !lasso.isActive && tutorial.showsPerspectiveGuides
     }
 
     private var needsLayerRendering: Bool {
@@ -427,11 +427,15 @@ struct WatchCanvasView: View {
                             }
                         }
                         let previousCount = controller.document.strokes.count
+                        // Read before the gesture's cleanup clears the ruler.
+                        let followedGuide = guides.activeRuler != nil
                         if controller.isShapeSnapped { RenderDiagnostics.shapeLifted() }
                         controller.endStroke(at: sample(
                             at: ruled(canvasPoint(value.location, size: geometry.size)), time: value.time))
                         if controller.document.strokes.count > previousCount {
                             tutorial.finishedCircleAttempt(kind: recognizedKind)
+                            // Before .stroke, which counts a miss in the guide lesson.
+                            if followedGuide { tutorial.record(.drewAlongGuide) }
                             tutorial.record(.stroke)
                             tutorial.finishedStroke(in: controller.selectedLayer)
                         }

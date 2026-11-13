@@ -22,6 +22,8 @@ struct PerspectiveGuidesSettingsView: View {
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
     @ObservedObject var guides = PerspectiveGuides.shared
+    @ObservedObject var tutorial = TutorialSession.inactive
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @FocusState private var crownFocused: Bool
     @State private var selectedPage = Page.viewAngle
     @State private var preview: CGImage?
@@ -150,6 +152,8 @@ struct PerspectiveGuidesSettingsView: View {
             .padding(.bottom, 8)
         }
         .padding(.horizontal, 8)
+        // The value row and carousel stay above the tutorial's lesson card.
+        .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 0)
         .ignoresSafeArea(.container, edges: .bottom)
         .contentShape(Rectangle())
         .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
@@ -166,13 +170,16 @@ struct PerspectiveGuidesSettingsView: View {
         .onChange(of: page) { _, _ in crownFocused = true }
         .navigationTitle(L10n.text("Perspective"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    PerspectiveGuidesInformationView()
-                } label: {
-                    Image(systemName: "info.circle")
+            // A link from the tutorial's own page would push over the lesson.
+            if !tutorial.isActive {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        PerspectiveGuidesInformationView()
+                    } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .accessibilityLabel(L10n.text("About perspective guides"))
                 }
-                .accessibilityLabel(L10n.text("About perspective guides"))
             }
         }
         .task {
@@ -200,6 +207,7 @@ struct PerspectiveGuidesSettingsView: View {
             if let preset { guides.preset = preset }
             guides.isEnabled = preset != nil
             crownFocused = true
+            if preset != nil { tutorial.record(.choseVanishingPoints) }
         } label: {
             Text(verbatim: "\(preset?.rawValue ?? 0)")
                 .font(.system(size: 15, weight: .bold))
@@ -213,6 +221,7 @@ struct PerspectiveGuidesSettingsView: View {
                     Circle().strokeBorder(isSelected ? Color.accentColor : Color.white.opacity(0.35),
                                           lineWidth: 1.5)
                 }
+                .tutorialHint(tutorial, steps: [.choosePerspective], isSuggested: preset != nil)
                 .frame(width: 44, height: height)
                 .contentShape(Rectangle())
         }

@@ -4,11 +4,15 @@ import CoreGraphics
 
 @MainActor
 final class TutorialPlayerController: ObservableObject {
-    enum Page { case canvas, tools, menu, gallery, layers, layerSettings }
+    /// Canvas setting pages are the tutorial's own, like the layer pages: the menu's
+    /// NavigationStack is nested in the host's, so its links would push over the whole lesson.
+    enum Page { case canvas, tools, menu, gallery, layers, layerSettings, canvasSettings, canvasSize, perspective, crop }
 
     let tutorial = TutorialSession()
     let lasso = WatchLassoController()
     let canvas = CanvasController(persistsPreferences: false)
+    /// Practice guides in a disposable domain, so the lesson never changes the editor's guides.
+    let guides: PerspectiveGuides
     @Published private(set) var page: Page = .canvas
     @Published private(set) var savedDrawing: CanvasExport?
     /// Bumped on every tutorial save so the view can show the saved notice on the canvas.
@@ -22,9 +26,15 @@ final class TutorialPlayerController: ObservableObject {
     private var initialStyle = PencilStyle()
     private var subscriptions: Set<AnyCancellable> = []
 
+    private static let guidesSuite = "PaintAnytimeTutorial.perspectiveGuides"
+
     init(folder: URL, chapters: [TutorialChapter] = TutorialChapter.allCases) {
         self.folder = folder
         self.chapters = chapters
+        // Never nil: the name is neither the app's bundle identifier nor the global domain.
+        let guideDefaults = UserDefaults(suiteName: Self.guidesSuite)!
+        guideDefaults.removePersistentDomain(forName: Self.guidesSuite)
+        guides = PerspectiveGuides(defaults: guideDefaults)
         // The view observes this controller; nested objects still drive all UI updates.
         tutorial.objectWillChange.sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &subscriptions)
@@ -113,6 +123,34 @@ final class TutorialPlayerController: ObservableObject {
         canvas.cancelStroke()
         page = .menu
         tutorial.record(.openedMenu)
+    }
+    func openCanvasSettings() {
+        guard page == .menu, tutorial.permits([.openCanvasSettings]) else { return }
+        page = .canvasSettings
+        tutorial.record(.openedCanvasSettings)
+    }
+    func openPerspective() {
+        guard page == .canvasSettings, tutorial.permits([.openPerspective]) else { return }
+        page = .perspective
+        tutorial.record(.openedPerspective)
+    }
+    func openCanvasSize() {
+        guard page == .canvasSettings, tutorial.permits([.openCanvasSize]) else { return }
+        page = .canvasSize
+        tutorial.record(.openedCanvasSize)
+    }
+    func openCrop() {
+        guard page == .canvasSize, tutorial.permits([.openCrop]) else { return }
+        page = .crop
+        tutorial.record(.openedCrop)
+    }
+
+    /// Canvas setting lessons leave their pages once the setting is applied.
+    func returnToCanvasAfterSetting() {
+        guard [.menu, .canvasSettings, .perspective, .canvasSize, .crop].contains(page),
+              tutorial.teachesPerspective || tutorial.teachesCrop,
+              [.perspectiveStroke, .history].contains(tutorial.step) else { return }
+        page = .canvas
     }
     func openGallery() { page = .gallery; tutorial.galleryIsOpen = true; tutorial.record(.openedGallery) }
     func closeGallery() {

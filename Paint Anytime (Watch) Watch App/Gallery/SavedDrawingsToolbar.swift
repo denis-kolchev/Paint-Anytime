@@ -55,6 +55,8 @@ struct SavedDrawingsToolbar: ToolbarContent {
                 .frame(width: GalleryMorphState.buttonDiameter,
                        height: GalleryMorphState.buttonDiameter)
                 .modifier(CanvasMorphGlass(adaptsToCanvas: true))
+                // The visible circle carries the hint; the button's own label stays transparent.
+                .tutorialHint(tutorial, steps: [.startSelection], isSuggested: !isSelecting)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }

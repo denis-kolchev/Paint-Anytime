@@ -18,6 +18,10 @@ struct WatchCanvasAdjustmentView: View {
     @State private var rotationSteps = 0
     private var turns: Int { ((rotationSteps % 4) + 4) % 4 }
     let mode: Int
+    @ObservedObject var tutorial = TutorialSession.inactive
+    /// The tutorial hosts this page itself, so Apply must not dismiss its presentation.
+    var onApplied: (() -> Void)? = nil
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @FocusState private var focusedAdjustment: String?
     @State private var preview: CGImage?
     @State private var cropPage = 0
@@ -54,13 +58,16 @@ struct WatchCanvasAdjustmentView: View {
                 }
             }
         }
+        // The value row and carousel stay above the tutorial's lesson card.
+        .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 0)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: applyChanges) {
                     Image(systemName: "checkmark").foregroundStyle(.green)
+                        .tutorialHint(tutorial, steps: [.applyCrop])
                 }
                 .watchToolbarButtonStyle()
-                .disabled(mode == 0 && !validSize)
+                .disabled((mode == 0 && !validSize) || !tutorial.permits([.applyCrop]))
                 .accessibilityLabel(L10n.text("Apply"))
                 .accessibilityHint(mode == 0 && !validSize
                     ? L10n.text("Choose dimensions from 1 to 1024 pixels.") : "")
@@ -130,13 +137,15 @@ struct WatchCanvasAdjustmentView: View {
                 controller.adjustCanvas(from: original, to: cropSize,
                                         resample: false, origin: cropOrigin)
             }
+            // Apply completes the lesson even at 100%, so the tour never waits on this page.
+            tutorial.record(.croppedCanvas)
         default:
             if turns != 0 {
                 let size = turns % 2 == 0 ? original : CGSize(width: original.height, height: original.width)
                 controller.adjustCanvas(from: original, to: size, resample: false, quarterTurns: turns)
             }
         }
-        dismiss()
+        if let onApplied { onApplied() } else { dismiss() }
     }
 
     // MARK: Rotate

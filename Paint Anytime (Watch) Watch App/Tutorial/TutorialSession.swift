@@ -37,6 +37,12 @@ final class TutorialSession: ObservableObject {
         case .galleryFullscreen where !galleryIsOpen, .deleteDrawing where !galleryIsOpen: return L10n.text("Tap Gallery to see your pictures.")
         case .deleteDrawing where !galleryIsFullscreen:
             return L10n.text("Turn the Crown or double-tap a picture.")
+        case .openMenu where progress.teachesPerspective || progress.teachesCrop:
+            return L10n.text("Tap ••• to open the menu.")
+        case .openGallery where progress.teachesGallerySelection:
+            return L10n.text("Autosave in this menu can fill the gallery for you. Tap Gallery.")
+        case .history where progress.teachesCrop:
+            return L10n.text("Undo brings the edges back. Use the arrows to undo and redo.")
         default: return TutorialLesson.compactInstruction(for: step)
         }
     }
@@ -50,11 +56,19 @@ final class TutorialSession: ObservableObject {
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
     // Free drawing stays available wherever the canvas is the current page and a stroke
     // cannot disturb the exercise; camera, lasso, and gallery steps keep their own input.
-    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .openMenu, .chapterComplete]) }
+    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .perspectiveStroke, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .openMenu, .chapterComplete]) }
     var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
     var allowsGalleryZoom: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    /// Tiles toggle membership instead of opening while the selection exercise runs.
+    var allowsGallerySelection: Bool { permits([.selectDrawings, .favoriteSelection]) }
+    /// Lesson-wide flags keep menu rows and the select button installed through their pages.
+    var teachesPerspective: Bool { progress.teachesPerspective }
+    var teachesCrop: Bool { progress.teachesCrop }
+    var teachesGallerySelection: Bool { progress.teachesGallerySelection }
+    /// The tutorial's own guides appear only in their lesson; the editor always shows its guides.
+    var showsPerspectiveGuides: Bool { !isActive || progress.teachesPerspective }
     var allowsGalleryPaging: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
     var allowsGalleryDelete: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
     var allowsGalleryBack: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }

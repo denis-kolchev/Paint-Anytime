@@ -212,6 +212,8 @@ struct GalleryMorphActions: View {
 /// Select/Cancel in the top bar owns dismissal, so the panel stays expanded.
 struct GallerySelectionActions: View {
     let drawings: [CanvasExport]
+    /// The tutorial teaches favorites only; sharing and deleting its practice copies stay closed.
+    @ObservedObject var tutorial = TutorialSession.inactive
     var onFavorite: (Bool) -> Void
     var onDelete: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -226,7 +228,9 @@ struct GallerySelectionActions: View {
                 }
             } label: {
                 icon(allFavorite ? "heart.fill" : "heart")
+                    .tutorialHint(tutorial, steps: [.favoriteSelection])
             }
+            .disabled(!tutorial.permits([.favoriteSelection]))
             .accessibilityLabel(L10n.text(allFavorite ? "Remove from favorites" : "Add to favorites"))
 
             ShareLink(items: drawings.map { DrawingShareItem(url: $0.url) }) { item in
@@ -234,11 +238,13 @@ struct GallerySelectionActions: View {
             } label: {
                 icon("square.and.arrow.up")
             }
+            .disabled(tutorial.isActive)
             .accessibilityLabel(L10n.text("Share"))
 
             Button(role: .destructive, action: onDelete) {
                 icon("trash")
             }
+            .disabled(tutorial.isActive)
             .accessibilityLabel(L10n.text("Delete drawing"))
         }
         .disabled(drawings.isEmpty)

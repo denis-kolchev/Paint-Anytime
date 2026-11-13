@@ -64,10 +64,14 @@ struct TutorialPlayerView: View {
                                             rendersArtwork: page == .canvas || page == .menu,
                                             acceptsInput: page == .canvas && tutorial.acceptsActions,
                                             acceptsZoomOnlyInput: false,
-                                            protectedControls: canvasProtectedControls, isMovingCanvas: $isMovingCanvas)
+                                            protectedControls: canvasProtectedControls, isMovingCanvas: $isMovingCanvas,
+                                            guides: player.guides)
                                 // A new chapter also starts from the default camera.
                                 .id(tutorial.chapterRevision)
                                 .opacity(page == .canvas || page == .menu ? 1 : 0)
+                                // Stays full screen while the menu page restores the top safe area,
+                                // so the drawing under the rising menu never shifts.
+                                .ignoresSafeArea()
                                 .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
                                 .accessibilityHidden(page != .canvas)
 
@@ -171,6 +175,40 @@ struct TutorialPlayerView: View {
                                 .transition(.opacity)
                                 .zIndex(1)
                             }
+                            // Canvas setting pages stay inside the lesson, so its card and hints remain.
+                            if page == .canvasSettings {
+                                CanvasSettingsView(controller: controller, viewportSize: screen.size,
+                                                   tutorial: tutorial, guides: player.guides,
+                                                   onOpenCanvasSize: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasSize() } },
+                                                   onOpenPerspective: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openPerspective() } })
+                                .background(Color.black.ignoresSafeArea())
+                                .transition(.opacity)
+                                .zIndex(1)
+                            }
+                            if page == .canvasSize {
+                                WatchCanvasSizeView(controller: controller, viewportSize: screen.size,
+                                                    displayScale: displayScale, tutorial: tutorial,
+                                                    onOpenCrop: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCrop() } })
+                                .background(Color.black.ignoresSafeArea())
+                                .transition(.opacity)
+                                .zIndex(1)
+                            }
+                            if page == .perspective {
+                                PerspectiveGuidesSettingsView(controller: controller, viewportSize: screen.size,
+                                                              guides: player.guides, tutorial: tutorial)
+                                .background(Color.black.ignoresSafeArea())
+                                .transition(.opacity)
+                                .zIndex(1)
+                            }
+                            if page == .crop {
+                                // Apply records the crop; the lesson then returns to the canvas itself.
+                                WatchCanvasAdjustmentView(controller: controller, viewportSize: screen.size,
+                                                          displayScale: displayScale, mode: 1,
+                                                          tutorial: tutorial, onApplied: {})
+                                .background(Color.black.ignoresSafeArea())
+                                .transition(.opacity)
+                                .zIndex(1)
+                            }
                             if page == .gallery {
                                 SavedDrawingsView(tutorial: tutorial, galleryFolder: folder, onClose: {
                                     withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
@@ -193,10 +231,10 @@ struct TutorialPlayerView: View {
                         WatchAppSettingsView(controller: controller, viewportSize: screen.size,
                                              onOpenDrawings: { player.openGallery() },
                                              onStartTutorial: { _ in },
-                                             tutorial: tutorial)
-                            // The screen ignores every safe area, so the menu restores the top inset
-                            // itself instead of relaying out the canvas beneath it.
-                            .safeAreaPadding(.top, screen.safeAreaInsets.top)
+                                             tutorial: tutorial, guides: player.guides,
+                                             onOpenCanvasSettings: {
+                                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasSettings() }
+                                             })
                             .background(Color.black)
                             .offset(y: menuRevealed || reduceMotion
                                     ? 0 : screen.size.height + screen.safeAreaInsets.top + screen.safeAreaInsets.bottom)
@@ -338,7 +376,11 @@ struct TutorialPlayerView: View {
         // Native menu and palette content start below the navigation toolbar.
         // Their full-height layouts extend through the bottom safe area,
         // with the lesson card layered above rather than reserving space.
-        .ignoresSafeArea(.container, edges: [.layers, .layerSettings].contains(page)
+        // The menu keeps the top safe area: its List is nested in the host's navigation bar and
+        // only starts below that bar when the safe area includes it. Restoring the inset with
+        // padding inside the menu left the first row under the bar's blur.
+        .ignoresSafeArea(.container, edges: [.menu, .layers, .layerSettings, .canvasSettings,
+                                             .canvasSize, .perspective, .crop].contains(page)
                          || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
             // The full-screen question must not move the controls reserved for the compact card.
@@ -392,6 +434,9 @@ struct TutorialPlayerView: View {
             }
             applyCircleInk(for: step)
             applyLayerBrush(for: step)
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                player.returnToCanvasAfterSetting()
+            }
         }
         .task(id: tutorial.step) {
             // Ask once: the ring fills (~1.5 s), then the checkmark blinks and bounces for about
