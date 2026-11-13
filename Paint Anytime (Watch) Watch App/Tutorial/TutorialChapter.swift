@@ -49,7 +49,8 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             Lesson(steps: [.openMenu, .openCanvasSettings, .openPerspective, .choosePerspective,
                            .perspectiveStroke]),
             Lesson(steps: [.openTools, .chooseFill, .closeTools, .fillCanvas]),
-            Lesson(steps: [.openTools, .selectColor, .tapAddColor, .openPalettes, .findNewPalette,
+            // The corner button opens the palette in use, as in the editor.
+            Lesson(steps: [.openTools, .openCurrentPalette, .openPalettes, .findNewPalette,
                            .createPalette, .addPaletteColor, .adjustPaletteColor, .savePaletteColor,
                            .closeTools])
         ]
@@ -64,8 +65,10 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             Lesson(steps: [.firstStrokes, .openLayers, .openLayerSettings, .lockTransparency,
                            .closeLayerSettings, .closeLayers]),
             Lesson(steps: [.openTools, .pickColor, .closeTools, .paintOverStroke]),
-            // Moving the new layer under the first one shows which layer covers the other.
-            Lesson(steps: [.openLayers, .addLayer, .moveLayerDown, .closeLayers, .drawBehindStroke]),
+            // Moving the new layer under the first one shows which layer covers the other;
+            // a third color keeps the strokes behind distinct from both earlier ones.
+            Lesson(steps: [.openLayers, .addLayer, .moveLayerDown, .closeLayers,
+                           .openTools, .pickColor, .closeTools, .drawBehindStroke]),
             Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso])
         ]
         // The lasso changes part of the picture; cropping frames all of it, and undo restores the edges.

@@ -4,7 +4,7 @@ import simd
 enum TutorialStep: Int, CaseIterable {
     case inactive = 0
     case firstStrokes, holdCircle, zoomCanvas, panCanvas, finishCamera, openTools
-    case pickColor, selectColor, tapAddColor, openPalettes, findNewPalette, createPalette
+    case pickColor, openCurrentPalette, openPalettes, findNewPalette, createPalette
     case addPaletteColor, adjustPaletteColor, savePaletteColor
     case openWidth, setWidth, openOpacity, setOpacity, openTool
     case selectReed, chooseReed, openAngle, setAngle, closeTools, reedStrokes
@@ -39,7 +39,7 @@ struct TutorialProgress {
         case heldCircle, stroke, filled, openedTools, closedTools, openedInfo, closedInfo, browsedTools
         case panned, finishedCamera, history, saved, openedMenu, openedGallery
         case galleryFullscreen, deleted, returnedToCanvas, cleared
-        case reachedAddColor, returnedToColorSelection, openedColorList, browsedPalettes, foundNewPalette
+        case openedCurrentPalette, browsedPalettes, foundNewPalette
         case returnedToPalettes
         case openedLayers, openedLayerSettings, lockedTransparency, closedLayerSettings, closedLayers
         case paintedOver, addedLayer, movedLayerDown, drewBehind
@@ -148,9 +148,6 @@ struct TutorialProgress {
     mutating func record(_ event: Event) -> Effect {
         switch (step, event) {
         case (.selectReed, .browsedTools): return .advance
-        case (.tapAddColor, .returnedToColorSelection):
-            returnTo(.selectColor)
-            return .none
         case (.createPalette, .returnedToPalettes):
             returnTo(.findNewPalette)
             return .none
@@ -165,7 +162,7 @@ struct TutorialProgress {
         case (_, .openedInfo): return .pauseReminders
         case (_, .closedInfo): return .resumeReminders(advance: false)
         case (.holdCircle, .heldCircle): return .advance
-        case (.selectColor, .reachedAddColor), (.tapAddColor, .openedColorList),
+        case (.openCurrentPalette, .openedCurrentPalette),
              (.openPalettes, .browsedPalettes), (.findNewPalette, .foundNewPalette),
              (.createPalette, .createdPalette), (.addPaletteColor, .openedColorEditor),
              (.adjustPaletteColor, .adjustedColor), (.savePaletteColor, .savedColor): return .advance
@@ -217,9 +214,11 @@ struct TutorialProgress {
     var limitsToolsToFill: Bool {
         (step == .chooseFill || step == .closeTools) && lessonSteps.contains(.chooseFill)
     }
-    /// The repaint lesson needs a visible change, so the strokes' color cannot be chosen again.
+    /// The repaint and layer-order lessons need a visible change, so colors already
+    /// on the canvas cannot be chosen again.
     var locksLessonColor: Bool {
-        (step == .pickColor || step == .closeTools) && lessonSteps.contains(.paintOverStroke)
+        (step == .pickColor || step == .closeTools)
+            && (lessonSteps.contains(.paintOverStroke) || lessonSteps.contains(.drawBehindStroke))
     }
     /// Tool settings open on Color (1), or on Tool (2) when the lesson starts there.
     var initialToolPage: Int { step == .chooseFill ? 2 : 1 }

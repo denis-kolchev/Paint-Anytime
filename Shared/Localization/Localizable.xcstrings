@@ -62749,6 +62749,180 @@
         }
       }
     },
+    "Tap the palette button in the corner." : {
+      "comment" : "Tutorial instruction: tap the corner button on the Color page to open the palette in use. Keep concise for Apple Watch.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط زر لوحة الألوان في الزاوية."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepněte na paletu v rohu."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på paletten i hjørnet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf die Palette in der Ecke."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε την παλέτα στη γωνία."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the palette button in the corner."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca la paleta de la esquina."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Napauta kulmassa olevaa palettia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez la palette dans le coin."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקישו על הפלטה בפינה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppints a sarokban lévő palettára."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk palet di sudut."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca la tavolozza nell’angolo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "隅のパレットボタンをタップします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "모서리의 팔레트 버튼을 탭하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på paletten i hjørnet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op het palet in de hoek."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij paletę w rogu."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque na paleta no canto."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque na paleta no canto."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите палитру в углу."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på paletten i hörnet."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะปุ่มจานสีที่มุม"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Köşedeki palet düğmesine dokunun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Натисніть палітру в куті."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm nút bảng màu ở góc."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点角落的调色板按钮。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下角落的調色盤按鈕。"
+          }
+        }
+      }
+    },
     "Tap the trash to delete a picture." : {
       "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
       "extractionState" : "manual",
@@ -67596,180 +67770,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "轉動 Crown 或點兩下圖片。"
-          }
-        }
-      }
-    },
-    "Turn the Crown to + to add a color." : {
-      "comment" : "Tutorial instruction. Keep concise for Apple Watch. + and ✓ denote buttons.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "أدر Crown إلى + لإضافة لون."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otočte Crown na + a přidejte barvu."
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drej Crown til + for at tilføje en farve."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drehe die Crown bis +, um eine Farbe hinzuzufügen."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Στρέψτε το Crown στο + για προσθήκη χρώματος."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn the Crown to + to add a color."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gira la Crown hasta + para añadir un color."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lisää väri kiertämällä Crown kohtaan +."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tournez la Crown jusqu’à + pour ajouter une couleur."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "סובבו את ה-Crown עד + להוספת צבע."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forgasd a Crownt a + jelig új színhez."
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Putar Crown ke + untuk menambah warna."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ruota la Crown fino a + per aggiungere un colore."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crownを＋まで回して色を追加します。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crown을 +까지 돌려 색상을 추가하세요."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vri Crown til + for å legge til en farge."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Draai de Crown naar + om een kleur toe te voegen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obróć Crown do +, aby dodać kolor."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gire a Crown até + para adicionar uma cor."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rode a Crown até + para adicionar uma cor."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вращайте Crown до +, чтобы добавить цвет."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vrid Crown till + för att lägga till en färg."
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "หมุน Crown ไปที่ + เพื่อเพิ่มสี"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Renk eklemek için Crown’u + işaretine çevirin."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обертайте Crown до +, щоб додати колір."
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xoay Crown đến + để thêm màu."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "将 Crown 转到 + 以添加颜色。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "將 Crown 轉到 + 以新增顏色。"
           }
         }
       }
@@ -74886,176 +74886,176 @@
         }
       }
     },
-    "Tap 1 or 2 to show the guides." : {
-      "comment" : "Tutorial step: choose the number of vanishing points on the Perspective page.",
+    "Tap 1 to show the guides." : {
+      "comment" : "Tutorial step: tap 1 to choose one vanishing point on the Perspective page.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اضغط 1 أو 2 لإظهار الأدلة."
+            "value" : "اضغط 1 لإظهار الأدلة."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Klepnutím na 1 nebo 2 zobrazíte vodítka."
+            "value" : "Klepnutím na 1 zobrazíte vodítka."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tryk på 1 eller 2 for at vise hjælpelinjerne."
+            "value" : "Tryk på 1 for at vise hjælpelinjerne."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tippe auf 1 oder 2, um die Hilfslinien einzublenden."
+            "value" : "Tippe auf 1, um die Hilfslinien einzublenden."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Πατήστε 1 ή 2 για να εμφανιστούν οι οδηγοί."
+            "value" : "Πατήστε 1 για να εμφανιστούν οι οδηγοί."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap 1 or 2 to show the guides."
+            "value" : "Tap 1 to show the guides."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toca 1 o 2 para mostrar las guías."
+            "value" : "Toca 1 para mostrar las guías."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Näytä apuviivat napauttamalla 1 tai 2."
+            "value" : "Näytä apuviivat napauttamalla 1."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Touchez 1 ou 2 pour afficher les repères."
+            "value" : "Touchez 1 pour afficher les repères."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "הקישו על 1 או 2 להצגת קווי העזר."
+            "value" : "הקישו על 1 להצגת קווי העזר."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Koppints az 1-re vagy a 2-re a segédvonalak megjelenítéséhez."
+            "value" : "Koppints az 1-re a segédvonalak megjelenítéséhez."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ketuk 1 atau 2 untuk menampilkan panduan."
+            "value" : "Ketuk 1 untuk menampilkan panduan."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tocca 1 o 2 per mostrare le guide."
+            "value" : "Tocca 1 per mostrare le guide."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1か2をタップしてガイドを表示。"
+            "value" : "1をタップしてガイドを表示。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "1 또는 2를 탭해 안내선을 표시하세요."
+            "value" : "1을 탭해 안내선을 표시하세요."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trykk på 1 eller 2 for å vise hjelpelinjene."
+            "value" : "Trykk på 1 for å vise hjelpelinjene."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tik op 1 of 2 om de hulplijnen te tonen."
+            "value" : "Tik op 1 om de hulplijnen te tonen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stuknij 1 lub 2, aby pokazać linie."
+            "value" : "Stuknij 1, aby pokazać linie."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toque em 1 ou 2 para mostrar as guias."
+            "value" : "Toque em 1 para mostrar as guias."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toque em 1 ou 2 para mostrar as guias."
+            "value" : "Toque em 1 para mostrar as guias."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нажмите 1 или 2, чтобы показать направляющие."
+            "value" : "Нажмите 1, чтобы показать направляющие."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tryck på 1 eller 2 för att visa stödlinjerna."
+            "value" : "Tryck på 1 för att visa stödlinjerna."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "แตะ 1 หรือ 2 เพื่อแสดงเส้นนำทาง"
+            "value" : "แตะ 1 เพื่อแสดงเส้นนำทาง"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kılavuzları göstermek için 1 veya 2’ye dokun."
+            "value" : "Kılavuzları göstermek için 1’e dokun."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Натисніть 1 або 2, щоб показати напрямні."
+            "value" : "Натисніть 1, щоб показати напрямні."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chạm 1 hoặc 2 để hiện đường dẫn."
+            "value" : "Chạm 1 để hiện đường dẫn."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "轻点 1 或 2 显示参考线。"
+            "value" : "轻点 1 显示参考线。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點一下 1 或 2 顯示參考線。"
+            "value" : "點一下 1 顯示參考線。"
           }
         }
       }

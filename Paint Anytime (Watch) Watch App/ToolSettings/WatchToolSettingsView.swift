@@ -27,13 +27,9 @@ struct WatchToolSettingsView: View {
     private var isAddingColor: Bool { selectsAddColor }
 
     private func openPalette() {
-        guard tutorial.permits([.tapAddColor]) else { return }
+        guard !tutorial.isActive else { return }
         crownFocused = false
-        if tutorial.isActive {
-            tutorial.record(.openedColorList)
-        } else {
-            showsColorEditor = true
-        }
+        showsColorEditor = true
     }
 
     private func savePalettes(_ library: InkPaletteLibrary) {
@@ -47,14 +43,19 @@ struct WatchToolSettingsView: View {
     }
 
     private func selectColor(_ index: Int) {
-        if index == colors.count {
+        if index == colors.count && includesAddColor {
             selectsAddColor = true
-            tutorial.record(.reachedAddColor)
         } else if colors.indices.contains(index) {
-            // Turning back onto the original color keeps the newly chosen one.
-            if tutorial.locksLessonColor, colors[index].rgba == lessonColor { return }
+            var index = index
+            // Colors already on the canvas are skipped in the direction of travel,
+            // and turning back onto them keeps the newly chosen one.
+            if tutorial.locksLessonColor {
+                guard index != colorIndex else { return }
+                let step = index < colorIndex ? -1 : 1
+                while colors.indices.contains(index), lessonColors.contains(colors[index].rgba) { index += step }
+                guard colors.indices.contains(index) else { return }
+            }
             selectsAddColor = false
-            tutorial.record(.returnedToColorSelection)
             controller.pencilStyle.color = colors[index].rgba
         }
     }
@@ -89,6 +90,8 @@ struct WatchToolSettingsView: View {
     }
 
     private var colors: [InkPreset] { tutorial.isActive ? tutorialColors : palette.selectedColors }
+    /// The tutorial reaches its palette through the corner button, so + is editor-only.
+    private var includesAddColor: Bool { !tutorial.isActive }
 
     /// Pencil and pastel as they would look after a switch, so their previews are ready.
     private var upcomingTexturedStyles: [PencilStyle] {
@@ -105,8 +108,8 @@ struct WatchToolSettingsView: View {
     }
     /// The brush in use when the fill lesson opened the settings.
     @State private var fillLessonBrush: DrawingInstrument?
-    /// The strokes' color when the repaint lesson opened the settings.
-    @State private var lessonColor: SIMD4<Float>?
+    /// Colors already on the canvas when a repaint or layer-order lesson opened the settings.
+    @State private var lessonColors: [SIMD4<Float>] = []
     private var instrumentIndex: Int { instruments.firstIndex(of: controller.pencilStyle.instrument) ?? 0 }
 
     private var availableSettings: [ToolSetting] {
@@ -171,7 +174,7 @@ struct WatchToolSettingsView: View {
         case .opacity, .sensitivity, .blurStrength: 100
         case .blurRadius: 30
         case .width: Double(controller.maximumWidth)
-        case .color: Double(colors.count)
+        case .color: Double(colors.count - (includesAddColor ? 0 : 1))
         case .instrument: Double(instruments.count - 1)
         case .mode: 1
         case .direction: 90
@@ -263,8 +266,7 @@ struct WatchToolSettingsView: View {
                                     Button {
                                         openPalette()
                                     } label: {
-                                        AddColorsPrompt(title: tutorial.isActive ? "Tap + to add a color." : "Tap to add more colors")
-                                        .tutorialHint(tutorial, steps: [.tapAddColor])
+                                        AddColorsPrompt()
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                         .background {
                                             // Overscan the largest viewport throughout page transitions;
@@ -344,16 +346,12 @@ struct WatchToolSettingsView: View {
                                             isEnabled: tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue),
                                             extendsBeyondViewport: tutorial.isActive,
                                             showsNavigationHints: !tutorial.isActive,
-                                            includesAddButton: true,
+                                            includesAddButton: includesAddColor,
                                             tutorial: tutorial) { index in
                                 guard tutorial.allowsToolAdjustment(page: ToolSetting.color.rawValue) else { return }
                                 tutorial.activity()
-                                if tutorial.isActive && index == colors.count && isAddingColor {
-                                    openPalette()
-                                } else {
-                                    selectColor(index)
-                                    crownFocused = true
-                                }
+                                selectColor(index)
+                                crownFocused = true
                             }
                                 .frame(width: 40)
                                 .offset(y: selectionOffset)
@@ -528,6 +526,19 @@ struct WatchToolSettingsView: View {
                     .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
                 }
+            } else if tutorial.step == .openCurrentPalette {
+                // The palette lesson uses the editor's corner button on the Color page.
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        crownFocused = false
+                        tutorial.record(.openedCurrentPalette)
+                    } label: {
+                        CurrentPaletteIcon()
+                            .tutorialHint(tutorial, steps: [.openCurrentPalette])
+                    }
+                    .watchToolbarButtonStyle()
+                    .accessibilityLabel(L10n.text("Current palette"))
+                }
             } else if !tutorial.isPaletteLesson {
                 ToolbarItem(placement: .topBarLeading) {
                     // Reference: the compact Information button seen after returning
@@ -583,7 +594,10 @@ struct WatchToolSettingsView: View {
             if tutorial.limitsToolsToFill, controller.pencilStyle.instrument != .fill {
                 fillLessonBrush = controller.pencilStyle.instrument
             }
-            if tutorial.locksLessonColor { lessonColor = controller.pencilStyle.color }
+            if tutorial.locksLessonColor {
+                lessonColors = [controller.pencilStyle.color]
+                    + controller.document.layers.flatMap(\.strokes).map(\.style.color)
+            }
             if !didRestorePage {
                 selectedPage = tutorial.isActive ? tutorial.initialToolPage : savedPage
                 didRestorePage = true
@@ -723,7 +737,6 @@ struct TutorialToolSwipeGuide: View {
 
 /// Reflow at each shared scale before choosing the largest prompt that fits.
 private struct AddColorsPrompt: View {
-    var title = "Tap to add more colors"
     var body: some View {
         ViewThatFits(in: .vertical) {
             prompt(scale: 1)
@@ -745,7 +758,7 @@ private struct AddColorsPrompt: View {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 30))
                     .accessibilityHidden(true)
-                Text(L10n.text(title))
+                Text(L10n.text("Tap to add more colors"))
                     .font(.headline)
                     .multilineTextAlignment(.center)
                     .lineLimit(nil)

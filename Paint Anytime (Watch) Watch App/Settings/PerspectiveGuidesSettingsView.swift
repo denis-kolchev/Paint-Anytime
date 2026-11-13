@@ -112,9 +112,14 @@ struct PerspectiveGuidesSettingsView: View {
                         .opacity(guides.isEnabled ? 1 : 0)
 
                     VStack(spacing: 0) {
-                        presetButton(nil, height: slotHeight)
-                        ForEach(PerspectivePreset.allCases) { preset in
-                            presetButton(preset, height: slotHeight)
+                        // The lesson offers only the one-point preset, centred, so there is one thing to tap.
+                        if tutorial.isActive {
+                            presetButton(.one, height: slotHeight)
+                        } else {
+                            presetButton(nil, height: slotHeight)
+                            ForEach(PerspectivePreset.allCases) { preset in
+                                presetButton(preset, height: slotHeight)
+                            }
                         }
                     }
                     .frame(width: 44, height: geometry.size.height)

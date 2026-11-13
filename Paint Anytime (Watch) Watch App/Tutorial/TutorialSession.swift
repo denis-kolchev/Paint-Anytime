@@ -21,7 +21,7 @@ final class TutorialSession: ObservableObject {
     var instruction: String {
         switch step {
         case .holdCircle where releasedCircleEarly: return L10n.text("Hold your finger at the end.")
-        case .selectColor where toolPage != 1, .pickColor where toolPage != 1:
+        case .pickColor where toolPage != 1:
             return L10n.text("Open Color, then turn the Crown.")
         case .chooseReed where toolPage != 2: return L10n.text("Open Tool and choose Reed pen.")
         case .openWidth where toolPage != 1: return L10n.text("Open Width.")
@@ -91,7 +91,7 @@ final class TutorialSession: ObservableObject {
         guard acceptsActions else { return false }
         switch step {
         case .zoomCanvas: return true
-        case .selectColor, .pickColor: return toolPage == 1
+        case .pickColor: return toolPage == 1
         case .setWidth: return toolPage == 0
         case .setOpacity: return toolPage == 5 && !toolIsEraser
         case .selectReed, .chooseReed, .chooseFill: return toolPage == 2

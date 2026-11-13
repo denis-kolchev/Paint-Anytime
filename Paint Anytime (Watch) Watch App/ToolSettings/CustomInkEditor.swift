@@ -22,6 +22,8 @@ struct CustomInkEditor: View {
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     /// Global frames of the tutorial's top corner buttons, which the wheel must clear.
     @State private var topButtonFrames: [Int: CGRect] = [:]
+    /// The wheel's frame from the color steps, kept while the lesson moves on.
+    @State private var heldWheelBand: CGRect?
     @State private var rgb = [128.0, 128.0, 128.0]
     @State private var hsb = [0.0, 0.0, (128.0 / 255 * 100).rounded()]
     /// 0 the color wheel, 1 HSB, 2 RGB. Every editor, the tutorial's too, opens on the wheel.
@@ -144,7 +146,8 @@ struct CustomInkEditor: View {
             // position, so navigation and dismissal animations carry the wheel
             // along instead of holding it at the screen centre.
             GeometryReader { geometry in
-                let band = wheelBand(in: geometry)
+                let liveBand = wheelBand(in: geometry)
+                let band = holdsWheelBand ? (heldWheelBand ?? liveBand) : liveBand
                 ColorWheelEditor(values: hsbBinding, isActive: page == 0 && !showsEyedropper && !showsPaletteList,
                                  size: band.size)
                     .offset(x: -CGFloat(page) * geometry.size.width, y: band.minY)
@@ -152,6 +155,9 @@ struct CustomInkEditor: View {
                     .scaleEffect(showsPaletteList && !reduceMotion ? 0.9 : 1)
                     .allowsHitTesting(page == 0 && !showsPaletteList)
                     .accessibilityHidden(page != 0)
+                    .onChange(of: liveBand, initial: true) { _, rect in
+                        if !holdsWheelBand { heldWheelBand = rect }
+                    }
             }
             .ignoresSafeArea()
         }
@@ -273,6 +279,12 @@ struct CustomInkEditor: View {
     }
 
     private static let tutorialEyedropperSteps: Set<TutorialStep> = [.adjustPaletteColor, .savePaletteColor]
+
+    /// After ✓ the lesson moves on while the editor fades out. The next card's
+    /// height would resize the wheel mid-fade, so it keeps its last lesson frame.
+    private var holdsWheelBand: Bool {
+        tutorial.isActive && !Self.tutorialEyedropperSteps.contains(tutorial.step)
+    }
 
     /// Where the wheel is centred, in the full-screen overlay. Outside the tutorial
     /// it is the whole screen; only its size is used there, so navigation carries the wheel.

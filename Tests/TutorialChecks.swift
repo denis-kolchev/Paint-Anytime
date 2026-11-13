@@ -177,13 +177,8 @@ struct TutorialChecks {
         progress.advance()
         precondition(progress.step == .openTools && progress.record(.openedTools) == .advance)
         progress.advance()
-        precondition(progress.step == .selectColor && progress.record(.reachedAddColor) == .advance)
-        progress.advance()
-        precondition(progress.record(.returnedToColorSelection) == .none && progress.step == .selectColor,
-                     "Leaving + returns to the color exercise")
-        precondition(progress.record(.reachedAddColor) == .advance)
-        progress.advance()
-        precondition(progress.record(.openedColorList) == .advance)
+        precondition(progress.step == .openCurrentPalette && progress.record(.openedCurrentPalette) == .advance,
+                     "The corner button opens the current palette")
         progress.advance()
         precondition(progress.record(.browsedPalettes) == .advance)
         progress.advance()
@@ -227,11 +222,19 @@ struct TutorialChecks {
         progress.advance()
         for (step, event): (TutorialStep, TutorialProgress.Event) in [
             (.openLayers, .openedLayers), (.addLayer, .addedLayer),
-            (.moveLayerDown, .movedLayerDown), (.closeLayers, .closedLayers)
+            (.moveLayerDown, .movedLayerDown), (.closeLayers, .closedLayers), (.openTools, .openedTools)
         ] {
             precondition(progress.step == step && progress.record(event) == .advance)
             progress.advance()
         }
+        precondition(progress.step == .pickColor && progress.locksLessonColor,
+                     "Drawing behind needs a color not yet on the canvas")
+        var thirdColor = recolored
+        thirdColor.color = SIMD4(0.2, 0.7, 0.35, 1)
+        precondition(progress.changedStyle(from: recolored, to: thirdColor, page: 1))
+        progress.advance()
+        precondition(progress.record(.closedTools) == .advance)
+        progress.advance()
         precondition(progress.step == .drawBehindStroke && progress.record(.stroke) == .none,
                      "Only a stroke behind an upper-layer stroke completes the layer-order lesson")
         precondition(progress.record(.drewBehind) == .advance)
