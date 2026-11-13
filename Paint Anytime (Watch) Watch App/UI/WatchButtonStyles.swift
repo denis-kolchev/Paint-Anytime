@@ -185,10 +185,18 @@ struct TutorialAttentionMotion: ViewModifier {
 }
 
 /// A tutorial-owned overlay remains visible independently of the system Crown indicator.
+/// The first Crown hint of the basic course opens with a mini watch at the centre of the screen that then
+/// flies into the pill beside the physical Crown, so the pill reads as "that wheel".
 struct TutorialCrownHint: ViewModifier {
     @ObservedObject var tutorial: TutorialSession
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = false
+    @State private var intro = Intro.hidden
+    /// The mini watch plays once ever: on the first Crown hint of the basic course.
+    @AppStorage("tutorial.crownWatchIntroShown.v1") private var introShown = false
+
+    private enum Intro { case hidden, shown, collapsing }
 
     private var eligible: Bool {
         tutorial.showsCrownHint && !tutorial.remindersPaused
@@ -204,17 +212,31 @@ struct TutorialCrownHint: ViewModifier {
         content
             .overlay {
                 GeometryReader { screen in
+                    let crown = TutorialCrownPlacement.position(
+                        screenBounds: WKInterfaceDevice.current().screenBounds,
+                        overlayFrame: screen.frame(in: .global),
+                        crownOnLeft: WKInterfaceDevice.current().crownOrientation == .left
+                    )
+                    if eligible && intro != .hidden {
+                        let collapsing = intro == .collapsing
+                        TutorialCrownWatchIntro(zooms: tutorial.step == .zoomCanvas)
+                            // Left-Crown orientation turns the physical case by 180 degrees.
+                            .rotationEffect(.degrees(
+                                WKInterfaceDevice.current().crownOrientation == .left ? 180 : 0))
+                            .scaleEffect(collapsing ? 0.2 : 1)
+                            .opacity(collapsing ? 0 : 1)
+                            .position(collapsing ? crown
+                                      : CGPoint(x: screen.size.width / 2, y: screen.size.height * 0.4))
+                            .transition(.scale(scale: 0.6).combined(with: .opacity))
+                    }
                     if eligible && revealed {
                         TutorialCrownMotion(subtle: tutorial.crownHintIsSubtle)
                             .foregroundStyle(.white)
                             .padding(.horizontal, 3)
                             .padding(.vertical, 4)
                             .background(.black.opacity(0.8), in: Capsule())
-                            .position(TutorialCrownPlacement.position(
-                                screenBounds: WKInterfaceDevice.current().screenBounds,
-                                overlayFrame: screen.frame(in: .global),
-                                crownOnLeft: WKInterfaceDevice.current().crownOrientation == .left
-                            ))
+                            .position(crown)
+                            .transition(.opacity)
                     }
                 }
                 .ignoresSafeArea()
@@ -223,12 +245,29 @@ struct TutorialCrownHint: ViewModifier {
             }
             .task(id: Request(eligible: eligible, step: tutorial.step)) {
                 revealed = false
+                intro = .hidden
                 guard eligible else { return }
                 do {
                     try await Task.sleep(for: .milliseconds(550))
                     try Task.checkCancellation()
-                    revealed = true
-                } catch {}
+                    if !introShown && tutorial.chapter == .basic {
+                        introShown = true
+                        withAnimation(reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.3)) {
+                            intro = .shown
+                        }
+                        try await Task.sleep(for: .milliseconds(4500))
+                        try Task.checkCancellation()
+                        withAnimation(.easeIn(duration: reduceMotion ? 0.2 : 0.45)) { intro = .collapsing }
+                        try await Task.sleep(for: .milliseconds(reduceMotion ? 200 : 400))
+                        try Task.checkCancellation()
+                        intro = .hidden
+                        withAnimation(.easeOut(duration: 0.2)) { revealed = true }
+                    } else {
+                        revealed = true
+                    }
+                } catch {
+                    intro = .hidden
+                }
             }
     }
 }
@@ -240,42 +279,15 @@ private struct TutorialCrownMotion: View {
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30, paused: reduceMotion)) { timeline in
-            let cycle = subtle ? 3.5 : 2.8
-            let time = max(0, timeline.date.timeIntervalSince(startedAt))
-                .truncatingRemainder(dividingBy: cycle)
-            let turningUp = !reduceMotion && time < 0.85
-            let turningDown = !reduceMotion && time >= 1 && time < 1.85
-            let travel = reduceMotion ? 0 : time < 0.85 ? time / 0.85
-                : time < 1 ? 1 : time < 1.85 ? 1 - (time - 1) / 0.85 : 0
-
+            let turn = TutorialCrownTurn.phase(at: timeline.date.timeIntervalSince(startedAt),
+                                               cycle: subtle ? 3.5 : 2.8, still: reduceMotion)
             VStack(spacing: 2) {
                 Image(systemName: "chevron.up")
-                    .opacity(reduceMotion || turningUp ? 1 : 0.3)
-                ZStack {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(LinearGradient(colors: [.white.opacity(0.15), .white.opacity(0.45), .white.opacity(0.15)],
-                                             startPoint: .top, endPoint: .bottom))
-                    // Project ribs around a cylinder. They emerge at one edge,
-                    // cross its face, and disappear around the other edge.
-                    Canvas { context, size in
-                        for rib in 0..<10 {
-                            let angle = Double(rib) * .pi / 5 - travel * .pi * 1.2
-                            let depth = cos(angle)
-                            guard depth > 0 else { continue }
-                            let y = size.height / 2 + sin(angle) * (size.height / 2 - 1)
-                            var line = Path()
-                            line.move(to: CGPoint(x: 2, y: y))
-                            line.addLine(to: CGPoint(x: size.width - 2, y: y))
-                            context.stroke(line, with: .color(.white.opacity(0.3 + 0.7 * depth)),
-                                           lineWidth: 0.7 + 0.5 * depth)
-                        }
-                    }
-                    RoundedRectangle(cornerRadius: 3)
-                        .strokeBorder(.white.opacity(0.85), lineWidth: 1)
-                }
-                .frame(width: 13, height: 18)
+                    .opacity(reduceMotion || turn.turningUp ? 1 : 0.3)
+                TutorialCrownCylinder(travel: turn.travel)
+                    .frame(width: 13, height: 18)
                 Image(systemName: "chevron.down")
-                    .opacity(reduceMotion || turningDown ? 1 : 0.3)
+                    .opacity(reduceMotion || turn.turningDown ? 1 : 0.3)
             }
             .font(.system(size: 8, weight: .bold))
         }
