@@ -16,7 +16,7 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .basic: L10n.text("Basic course")
-        case .advanced: L10n.text("Advanced course")
+        case .advanced: L10n.text("Advanced")
         }
     }
 

@@ -249,7 +249,8 @@ struct TutorialContinuationActions {
 /// The lesson card grown to the whole screen after the first chapter of the first-launch
 /// tour: the question fades in, then the choice below it. The compact card's green ring
 /// and checkmark have already shown the success, so nothing travels between the two.
-/// A ScrollView is safe here: the card covers the canvas, so nothing else wants the Crown.
+/// The whole card scales down to fit instead of scrolling, so every control stays reachable
+/// without the Crown, which this full-screen card does not claim.
 private struct TutorialContinuationContent: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     let actions: TutorialContinuationActions
@@ -265,56 +266,74 @@ private struct TutorialContinuationContent: View {
 
     var body: some View {
         GeometryReader { viewport in
-            ScrollView {
-                VStack(spacing: 12) {
-                    if showsLaterNotice {
-                        laterNotice
-                    } else {
-                        Text(L10n.text("Continue the tour?"))
-                            .font(.headline)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .opacity(showsTitle ? 1 : 0)
-                        // Both courses and their length; the finished one is checked off a moment later.
-                        VStack(spacing: 6) {
-                            ForEach(TutorialChapter.allCases) { chapter in
-                                TutorialCourseRow(chapter: chapter,
-                                                  isCompleted: showsCompletion && chapter == actions.completedChapter)
-                            }
-                        }
-                        .opacity(showsTitle ? 1 : 0)
-                        ConfirmationButtonsLayout(layoutDirection: layoutDirection) {
-                            // Measures both labels: the longer one gets the width the other spares.
-                            Button(action: tapLater) {
-                                Text(L10n.text("Later"))
-                                    .frame(maxWidth: .infinity, minHeight: 32)
-                            }
-                            .watchActionButtonStyle()
-                            // Green like the completed ring: the chapter went well, go on.
-                            Button(action: continueTour) {
-                                Text(L10n.text("Continue"))
-                                    .frame(maxWidth: .infinity, minHeight: 32)
-                            }
-                            .watchProminentActionButtonStyle()
-                            .tint(.green)
-                        }
-                        .font(.caption.weight(.semibold))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
-                        .opacity(showsChoices ? 1 : 0)
-                        .offset(y: showsChoices || reduceMotion ? 0 : 6)
-                        .allowsHitTesting(showsChoices)
-                        .accessibilityHidden(!showsChoices)
-                    }
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 16)
-                // Centered on a large display; scrolls from the top when the copy is longer.
-                .frame(minHeight: viewport.size.height)
+            // No ScrollView: every size of card scales down to fit instead, so nothing
+            // is cut off or needs scrolling on the smallest watch.
+            ViewThatFits(in: .vertical) {
+                fittedContent(scale: 1)
+                fittedContent(scale: 0.92)
+                fittedContent(scale: 0.84)
+                fittedContent(scale: 0.76)
+                fittedContent(scale: 0.68)
+                fittedContent(scale: 0.6)
             }
+            .frame(width: viewport.size.width, height: viewport.size.height)
         }
         .task { await reveal() }
+    }
+
+    private func fittedContent(scale: CGFloat) -> some View {
+        TutorialContinuationFitLayout(scale: scale) {
+            cardContent
+                .scaleEffect(scale)
+        }
+    }
+
+    @ViewBuilder
+    private var cardContent: some View {
+        VStack(spacing: 12) {
+            if showsLaterNotice {
+                laterNotice
+            } else {
+                Text(L10n.text("Continue the tour?"))
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(showsTitle ? 1 : 0)
+                // Both courses and their length; the finished one is checked off a moment later.
+                VStack(spacing: 6) {
+                    ForEach(TutorialChapter.allCases) { chapter in
+                        TutorialCourseRow(chapter: chapter,
+                                          isCompleted: showsCompletion && chapter == actions.completedChapter)
+                    }
+                }
+                .opacity(showsTitle ? 1 : 0)
+                ConfirmationButtonsLayout(layoutDirection: layoutDirection) {
+                    // Measures both labels: the longer one gets the width the other spares.
+                    Button(action: tapLater) {
+                        Text(L10n.text("Later"))
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    }
+                    .watchActionButtonStyle()
+                    // Green like the completed ring: the chapter went well, go on.
+                    Button(action: continueTour) {
+                        Text(L10n.text("Continue"))
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    }
+                    .watchProminentActionButtonStyle()
+                    .tint(.green)
+                }
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .opacity(showsChoices ? 1 : 0)
+                .offset(y: showsChoices || reduceMotion ? 0 : 6)
+                .allowsHitTesting(showsChoices)
+                .accessibilityHidden(!showsChoices)
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 16)
     }
 
     /// Replaces the choice with the same notice the initial decline shows, then
@@ -433,6 +452,28 @@ private struct TutorialCourseRow: View {
         .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityValue(isCompleted ? L10n.text("Completed") : "")
+    }
+}
+
+/// Reports the content's size as already shrunk by `scale`, so `ViewThatFits` can pick the
+/// largest scale that still fits, then lays the (separately `.scaleEffect`-ed) content out
+/// within that smaller box instead of its unscaled footprint.
+private struct TutorialContinuationFitLayout: Layout {
+    let scale: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let content = subviews.first else { return .zero }
+        let width = proposal.width.map { max(0, $0) / scale }
+        let size = content.sizeThatFits(ProposedViewSize(width: width, height: nil))
+        return CGSize(width: size.width * scale, height: size.height * scale)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(
+            at: CGPoint(x: bounds.midX, y: bounds.midY),
+            anchor: .center,
+            proposal: ProposedViewSize(width: bounds.width / scale, height: nil)
+        )
     }
 }
 

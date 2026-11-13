@@ -280,7 +280,7 @@ struct WatchWelcomeView: View {
                                      // Kept alive under the confirmation, so ✕ returns to the same offset.
                                      isCovered: welcomePage == .confirmLanguage)
         case .offer:
-            WelcomeQuestion(text: L10n.text("Would you like a guided tour?")) {
+            WelcomeQuestion(text: L10n.text("Would you like a short tour?")) {
                 startTutorial()
             } onNo: {
                 show(.later)

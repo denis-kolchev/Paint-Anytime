@@ -6253,176 +6253,176 @@
         }
       }
     },
-    "Advanced course" : {
-      "comment" : "Tutorial chapter title.",
+    "Advanced" : {
+      "comment" : "Tutorial chapter title, shown with an icon and its length, so it stands alone without the word course.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "الدورة المتقدمة"
+            "value" : "متقدم"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pokročilý kurz"
+            "value" : "Pokročilý"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Avanceret kursus"
+            "value" : "Avanceret"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fortgeschrittenenkurs"
+            "value" : "Fortgeschritten"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Προχωρημένο μάθημα"
+            "value" : "Προχωρημένο"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Advanced course"
+            "value" : "Advanced"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curso avanzado"
+            "value" : "Avanzado"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jatkokurssi"
+            "value" : "Edistynyt"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cours avancé"
+            "value" : "Avancé"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "קורס מתקדם"
+            "value" : "מתקדם"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Haladó kurzus"
+            "value" : "Haladó"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kursus lanjutan"
+            "value" : "Lanjutan"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Corso avanzato"
+            "value" : "Avanzato"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "上級コース"
+            "value" : "上級"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "고급 과정"
+            "value" : "고급"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Videregående kurs"
+            "value" : "Videregående"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gevorderde cursus"
+            "value" : "Gevorderd"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kurs zaawansowany"
+            "value" : "Zaawansowany"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curso avançado"
+            "value" : "Avançado"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Curso avançado"
+            "value" : "Avançado"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Продвинутый курс"
+            "value" : "Продвинутый"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fortsättningskurs"
+            "value" : "Avancerad"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "หลักสูตรขั้นสูง"
+            "value" : "ขั้นสูง"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "İleri kurs"
+            "value" : "İleri"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Поглиблений курс"
+            "value" : "Поглиблений"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Khóa nâng cao"
+            "value" : "Nâng cao"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "进阶课程"
+            "value" : "进阶"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "進階課程"
+            "value" : "進階"
           }
         }
       }
@@ -72460,175 +72460,175 @@
         }
       }
     },
-    "Would you like a guided tour?" : {
+    "Would you like a short tour?" : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "هل ترغب في جولة تدريبية؟"
+            "value" : "هل ترغب في جولة قصيرة؟"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chcete projít výukou?"
+            "value" : "Chcete projít krátkou výukou?"
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vil du gennemgå vejledningen?"
+            "value" : "Vil du gennemgå en kort vejledning?"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Möchtest du eine Einführung?"
+            "value" : "Möchtest du eine kurze Einführung?"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Θέλετε να ξεκινήσετε την εκμάθηση;"
+            "value" : "Θέλετε να ξεκινήσετε μια σύντομη εκμάθηση;"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Would you like a guided tour?"
+            "value" : "Would you like a short tour?"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Quieres hacer el tutorial?"
+            "value" : "¿Quieres hacer un tutorial breve?"
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Haluatko käydä opastuksen läpi?"
+            "value" : "Haluatko käydä lyhyen opastuksen läpi?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Souhaitez-vous suivre le tutoriel ?"
+            "value" : "Souhaitez-vous suivre un bref tutoriel ?"
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "רוצים לעבור הדרכה?"
+            "value" : "רוצים לעבור הדרכה קצרה?"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Szeretnéd végigjárni a bemutatót?"
+            "value" : "Szeretnéd végigjárni a rövid bemutatót?"
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ingin mengikuti tutorial?"
+            "value" : "Ingin mengikuti tutorial singkat?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vuoi seguire il tutorial?"
+            "value" : "Vuoi seguire un breve tutorial?"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "チュートリアルを始めますか？"
+            "value" : "短いチュートリアルを始めますか？"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "튜토리얼을 시작할까요?"
+            "value" : "짧은 튜토리얼을 시작할까요?"
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vil du ta en omvisning?"
+            "value" : "Vil du ta en kort omvisning?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wil je een rondleiding?"
+            "value" : "Wil je een korte rondleiding?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Czy chcesz przejść samouczek?"
+            "value" : "Czy chcesz przejść krótki samouczek?"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quer fazer o tutorial?"
+            "value" : "Quer fazer um tutorial rápido?"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Quer fazer o tutorial?"
+            "value" : "Quer fazer um tutorial rápido?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Хотите пройти обучение?"
+            "value" : "Хотите пройти короткое обучение?"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vill du gå igenom guiden?"
+            "value" : "Vill du gå igenom en kort guide?"
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ต้องการเริ่มบทสอนไหม"
+            "value" : "ต้องการเริ่มบทสอนสั้น ๆ ไหม"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Eğitime başlamak ister misiniz?"
+            "value" : "Kısa bir eğitime başlamak ister misiniz?"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Бажаєте пройти навчання?"
+            "value" : "Бажаєте пройти коротке навчання?"
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bạn muốn xem hướng dẫn không?"
+            "value" : "Bạn muốn xem hướng dẫn ngắn không?"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "要开始教程吗？"
+            "value" : "要开始简短教程吗？"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "要開始教學嗎？"
+            "value" : "要開始簡短教學嗎？"
           }
         }
       }
