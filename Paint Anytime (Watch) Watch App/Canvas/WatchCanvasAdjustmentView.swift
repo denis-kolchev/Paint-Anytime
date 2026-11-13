@@ -11,7 +11,8 @@ struct WatchCanvasAdjustmentView: View {
     @State private var resolution: Double = 72
     @State private var proportional = true
     @State private var resample = true
-    @State private var cropPercent = 90.0
+    @State private var cropWidthPercent = 90.0
+    @State private var cropHeightPercent = 90.0
     @State private var cropX = 50.0
     @State private var cropY = 50.0
     /// The crop window's origin at the start of a drag, so translation stays relative to it.
@@ -42,8 +43,8 @@ struct WatchCanvasAdjustmentView: View {
         width >= 1 && height >= 1 && width <= maximumPixels && height <= maximumPixels
     }
     private var cropSize: CGSize {
-        CGSize(width: original.width * cropPercent / 100,
-               height: original.height * cropPercent / 100)
+        CGSize(width: original.width * cropWidthPercent / 100,
+               height: original.height * cropHeightPercent / 100)
     }
     private var cropOrigin: CGPoint {
         CGPoint(x: (original.width - cropSize.width) * cropX / 100,
@@ -158,7 +159,7 @@ struct WatchCanvasAdjustmentView: View {
                 to: CGSize(width: width / displayScale, height: height / displayScale),
                 resample: resample, resolution: resolution)
         case 1:
-            if cropPercent != 100 {
+            if cropWidthPercent != 100 || cropHeightPercent != 100 {
                 controller.adjustCanvas(from: original, to: cropSize,
                                         resample: false, origin: cropOrigin)
             }
@@ -217,24 +218,31 @@ struct WatchCanvasAdjustmentView: View {
         .accessibilityLabel(Text(verbatim: label))
     }
 
-    private var cropTitle: String { ["Keep", "Horizontal", "Vertical"][cropPage] }
+    private var cropTitle: String { ["Keep", "Canvas width", "Height", "Horizontal", "Vertical"][cropPage] }
     private var cropValue: Double {
         switch cropPage {
-        case 0: cropPercent
-        case 1: cropX
+        // Keep shows the window's width; setting it resets both sides to the same percent.
+        case 0: cropWidthPercent
+        case 1: cropWidthPercent
+        case 2: cropHeightPercent
+        case 3: cropX
         default: cropY
         }
     }
 
     // Size and position both move in 1% increments.
-    private var cropMinimum: Double { cropPage == 0 ? 10 : 0 }
+    private var cropMinimum: Double { cropPage <= 2 ? 10 : 0 }
     private var cropRange: ClosedRange<Double> { cropMinimum...100 }
     private var cropStepValue: Binding<Double> {
         Binding(get: { cropValue }, set: { next in
             let value = min(100, max(cropMinimum, next.rounded()))
             switch cropPage {
-            case 0: cropPercent = value
-            case 1: cropX = value
+            case 0:
+                cropWidthPercent = value
+                cropHeightPercent = value
+            case 1: cropWidthPercent = value
+            case 2: cropHeightPercent = value
+            case 3: cropX = value
             default: cropY = value
             }
         })
@@ -262,7 +270,8 @@ struct WatchCanvasAdjustmentView: View {
             .frame(maxHeight: .infinity)
             valueRow(value: cropStepValue, range: cropRange, valueTitle: L10n.percent(cropValue / 100),
                      title: cropTitle, focus: "Crop")
-            CanvasResizeCarousel(selection: $cropPage, titles: ["Keep", "Horizontal", "Vertical"])
+            CanvasResizeCarousel(selection: $cropPage,
+                                titles: ["Keep", "Canvas width", "Height", "Horizontal", "Vertical"])
                 .frame(height: 28)
         }
         .padding(.horizontal, 10)
@@ -276,7 +285,7 @@ struct WatchCanvasAdjustmentView: View {
             guard abs(value.translation.width) > abs(value.translation.height) else { return }
             let forward = (value.translation.width < 0) == (layoutDirection == .leftToRight)
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                cropPage = min(2, max(0, cropPage + (forward ? 1 : -1)))
+                cropPage = min(4, max(0, cropPage + (forward ? 1 : -1)))
             }
         })
         .focusable()
