@@ -35,6 +35,8 @@ struct SavedDrawingsToolbar: ToolbarContent {
         if allowsBack {
             ToolbarItem(placement: .topBarLeading) {
                 backButton
+                    // The tutorial fades Back in with the gallery and out before it closes.
+                    .tutorialChromeFade(tutorial.isActive)
             }
         }
     }

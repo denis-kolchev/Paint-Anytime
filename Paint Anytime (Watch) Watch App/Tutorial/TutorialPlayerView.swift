@@ -23,6 +23,9 @@ struct TutorialPlayerView: View {
     @State private var canvasSize = CGSize.zero
     @State private var hintHeight: CGFloat = 0
     @State private var savedNoticeID: UUID?
+    /// A full-screen page is fading out over the canvas; the page itself changes once
+    /// the fade ends, so its native toolbar items can fade with it instead of vanishing.
+    @State private var isLeavingPage = false
     /// The menu mounts below the screen, then rises like the editor's sheet.
     @State private var menuRevealed = false
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
@@ -61,7 +64,7 @@ struct TutorialPlayerView: View {
                         ZStack {
                             WatchCanvasView(controller: controller, lasso: player.lasso, tutorial: tutorial,
                                             // The menu slides over the drawing, as the editor's sheet does.
-                                            rendersArtwork: page == .canvas || page == .menu,
+                                            rendersArtwork: page == .canvas || page == .menu || isLeavingPage,
                                             acceptsInput: page == .canvas && tutorial.acceptsActions
                                                 && !player.isDemonstrating,
                                             acceptsZoomOnlyInput: false,
@@ -69,7 +72,7 @@ struct TutorialPlayerView: View {
                                             guides: player.guides)
                                 // A new chapter also starts from the default camera.
                                 .id(tutorial.chapterRevision)
-                                .opacity(page == .canvas || page == .menu ? 1 : 0)
+                                .opacity(page == .canvas || page == .menu || isLeavingPage ? 1 : 0)
                                 // Stays full screen while the menu page restores the top safe area,
                                 // so the drawing under the rising menu never shifts.
                                 .ignoresSafeArea()
@@ -82,6 +85,7 @@ struct TutorialPlayerView: View {
                             if coversCanvasWithBackdrop {
                                 Color.black
                                     .ignoresSafeArea()
+                                    .opacity(isLeavingPage ? 0 : 1)
                                     .transition(.identity)
                                     .allowsHitTesting(false)
                                     .accessibilityHidden(true)
@@ -102,157 +106,17 @@ struct TutorialPlayerView: View {
                                     .accessibilityHidden(true)
                             }
 
-                            if page == .canvas && tutorial.showsPanGuide {
-                                Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
-                                    .font(.title2.bold())
-                                    .foregroundStyle(.white)
-                                    .padding(10)
-                                    .background(.regularMaterial, in: Circle())
-                                    // Appears like the Crown mini watch: grows in with a light bounce.
-                                    .scaleEffect(panGuideVisible || reduceMotion ? 1 : 0.6)
-                                    .offset(panGuideOffset)
-                                    .opacity(panGuideVisible ? 1 : 0)
-                                    .allowsHitTesting(false)
-                                    .accessibilityHidden(true)
-                                    .task {
-                                        let offsets: [CGSize] = [
-                                            CGSize(width: -24, height: 0), .zero,
-                                            CGSize(width: 24, height: 0), .zero,
-                                            CGSize(width: 0, height: -24), .zero,
-                                            CGSize(width: 0, height: 24), .zero
-                                        ]
-                                        panGuideVisible = false
-                                        panGuideOffset = .zero
-                                        do {
-                                            try await Task.sleep(for: .seconds(1))
-                                            try Task.checkCancellation()
-                                            withAnimation(reduceMotion ? .easeOut(duration: 0.2)
-                                                          : .spring(duration: 0.45, bounce: 0.3)) {
-                                                panGuideVisible = true
-                                            }
-                                            guard !reduceMotion else { return }
-                                            // Let the bounce settle before the arrows start moving.
-                                            try await Task.sleep(for: .milliseconds(450))
-                                            while !Task.isCancelled {
-                                                for offset in offsets {
-                                                    withAnimation(.easeInOut(duration: 0.45)) { panGuideOffset = offset }
-                                                    try await Task.sleep(for: .milliseconds(500))
-                                                }
-                                            }
-                                        } catch { panGuideVisible = false; panGuideOffset = .zero }
-                                    }
-                            }
+                            // Its own container, so the fade-out animates only the guide
+                            // and not the lesson card that advances in the same update.
+                            panGuide
+                                .animation(.easeOut(duration: reduceMotion ? 0.2 : 0.4), value: tutorial.showsPanGuide)
 
-                            if page == .tools {
-                                ZStack {
-                                    if !tutorial.isPaletteLesson {
-                                        // Mount with the saved palette already installed, so the
-                                        // returning picker never animates removal of the old colors.
-                                        WatchToolSettingsView(controller: controller, tutorial: tutorial,
-                                                              tutorialColors: tutorialPaletteLibrary.activePalette.selectedColors)
-                                            .background(.black)
-                                            .transition(.opacity)
-                                    } else {
-                                        InkPaletteBrowser(library: tutorialPaletteLibrary, controller: controller,
-                                                          tutorial: tutorial) { library in
-                                            tutorialPaletteLibrary = library
-                                            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                                                tutorial.record(.savedColor)
-                                            }
-                                        }
-                                        // Extend beneath the floating card while preserving
-                                        // the native toolbar inset at the top.
-                                        .ignoresSafeArea(.container, edges: .bottom)
-                                        .background(Color.black.ignoresSafeArea())
-                                        .environment(\.colorScheme, .dark)
-                                        .transition(.opacity)
-                                        .zIndex(1)
-                                    }
-                                }
-                                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
-                                           value: tutorial.isPaletteLesson)
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
-                            if page == .layers {
-                                WatchLayersView(controller: controller,
-                                                canvasSize: controller.document.size(fallback: geometry.size),
-                                                tutorial: tutorial, embedsNavigation: false,
-                                                onEditLayer: { id in
-                                                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                                                        player.openLayerSettings(id)
-                                                    }
-                                                })
-                                .background(Color.black.ignoresSafeArea())
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
-                            if page == .layerSettings {
-                                LayerSettingsView(controller: controller, layerID: player.editedLayerID,
-                                                  canvasSize: controller.document.size(fallback: geometry.size),
-                                                  tutorial: tutorial)
-                                .background(Color.black.ignoresSafeArea())
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
-                            // Canvas setting pages stay inside the lesson, so its card and hints remain.
-                            if page == .canvasSettings {
-                                CanvasSettingsView(controller: controller, viewportSize: screen.size,
-                                                   tutorial: tutorial, guides: player.guides,
-                                                   onOpenCanvasSize: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasSize() } },
-                                                   onOpenPerspective: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openPerspective() } })
-                                .background(Color.black.ignoresSafeArea())
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
-                            if page == .canvasSize {
-                                WatchCanvasSizeView(controller: controller, viewportSize: screen.size,
-                                                    displayScale: displayScale, tutorial: tutorial,
-                                                    onOpenCrop: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCrop() } })
-                                .background(Color.black.ignoresSafeArea())
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
-                            if page == .perspective {
-                                PerspectiveGuidesSettingsView(controller: controller, viewportSize: screen.size,
-                                                              guides: player.guides, tutorial: tutorial)
-                                .background(Color.black.ignoresSafeArea())
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
-                            if page == .drawingSettings {
-                                DrawingSettingsView(controller: controller, viewportSize: screen.size,
-                                                    tutorial: tutorial,
-                                                    onOpenColorBlending: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openColorBlending() } })
-                                .background(Color.black.ignoresSafeArea())
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
-                            if page == .colorBlending {
-                                ColorBlendingSelectionView(controller: controller, tutorial: tutorial)
-                                .background(Color.black.ignoresSafeArea())
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
-                            if page == .crop {
-                                // Apply records the crop; the lesson then returns to the canvas itself.
-                                WatchCanvasAdjustmentView(controller: controller, viewportSize: screen.size,
-                                                          displayScale: displayScale, mode: 1,
-                                                          tutorial: tutorial, onApplied: {})
-                                .background(Color.black.ignoresSafeArea())
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
-                            if page == .gallery {
-                                SavedDrawingsView(tutorial: tutorial, galleryFolder: folder, onClose: {
-                                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                                        player.closeGallery()
-                                    }
-                                }, onEditDrawing: { _ in })
-                                .transition(.opacity)
-                                .zIndex(1)
-                            }
+                            pages(geometry: geometry, screen: screen)
                         }
+                        // As in the editor: only the page content crossfades into the tool editor.
+                        // A withAnimation around openTools also animated the toolbar, so the clock
+                        // slid in from the edge and the editor's text shook while laid out.
+                        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25), value: page == .tools)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .onAppear { canvasSize = geometry.size }
                         .onChange(of: geometry.size) { _, size in canvasSize = size }
@@ -262,45 +126,14 @@ struct TutorialPlayerView: View {
                         // Rise from below the screen like the editor's menu sheet, over the drawing.
                         // An explicit offset animates the native List reliably, where an insertion
                         // transition collapses into a crossfade.
-                        WatchAppSettingsView(controller: controller, viewportSize: screen.size,
-                                             onOpenDrawings: { player.openGallery() },
-                                             onStartTutorial: { _ in },
-                                             tutorial: tutorial, guides: player.guides,
-                                             onOpenCanvasSettings: {
-                                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasSettings() }
-                                             },
-                                             onOpenDrawingSettings: {
-                                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openDrawingSettings() }
-                                             })
-                            .background(Color.black)
-                            .offset(y: menuRevealed || reduceMotion
-                                    ? 0 : screen.size.height + screen.safeAreaInsets.top + screen.safeAreaInsets.bottom)
-                            .onAppear {
-                                withAnimation(.spring(duration: 0.45, bounce: 0)) { menuRevealed = true }
-                            }
-                            .onDisappear { menuRevealed = false }
-                            .zIndex(2)
+                        menuPage(screen: screen)
                     }
 
-                    if let savedNoticeID, page == .canvas {
-                        Text(L10n.text("Artwork saved to gallery"))
-                            .font(.headline)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(3)
-                            .minimumScaleFactor(0.5)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 9)
-                            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-                            .padding(.horizontal, 42)
-                            // Center in the space above the measured lesson card,
-                            // leaving a gap even when localized tips become taller.
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(.bottom, measuredHintHeight + 4)
-                            .id(savedNoticeID)
-                            .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
-                            .allowsHitTesting(false)
-                            .zIndex(4)
-                    }
+                    // Its own container: ••• opens the menu outside an animation, and the notice
+                    // must fade out then instead of vanishing.
+                    savedNotice(bottomInset: measuredHintHeight + 4)
+                        .animation(.easeOut(duration: 0.2), value: page == .canvas)
+                        .zIndex(4)
                 }
                 .overlay(alignment: .bottom) {
                     tutorialBottomControls(hitDiameter: min(44, (screen.size.width - 16) / 4))
@@ -322,15 +155,17 @@ struct TutorialPlayerView: View {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button {
                                 if page == .tools {
-                                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                                        player.closeTools()
-                                    }
+                                    // ✓ turns back into the tool icon and Information fades while
+                                    // the editor fades out, the reverse of opening it.
+                                    guard tutorial.permits([.closeTools]) else { return }
+                                    leavePage { player.closeTools() }
                                 } else if player.lasso.isActive {
                                     player.finishLasso()
                                 } else if isMovingCanvas {
                                     isMovingCanvas = false
                                     tutorial.record(.finishedCamera)
                                 } else {
+                                    // The page crossfade is scoped to the content (see `page == .tools`).
                                     player.openTools()
                                 }
                             } label: {
@@ -343,6 +178,8 @@ struct TutorialPlayerView: View {
                                         .foregroundStyle(.green)
                                         .opacity(primaryControlIsDone ? 1 : 0)
                                 }
+                                // Opening the editor is no longer one animated transaction; cross-fade here.
+                                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25), value: primaryControlIsDone)
                                 .tutorialHint(tutorial, steps: [.openTools, .closeTools, .finishCamera, .finishLasso])
                                 .frame(width: MorphPanelGeometry.buttonDiameter,
                                        height: MorphPanelGeometry.buttonDiameter)
@@ -361,8 +198,14 @@ struct TutorialPlayerView: View {
                         ToolbarItem(placement: .topBarLeading) {
                             let back: Set<TutorialStep> = page == .layers ? [.closeLayers] : [.closeLayerSettings]
                             Button {
-                                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                                    if page == .layers { player.closeLayers() } else { player.closeLayerSettings() }
+                                if page == .layers {
+                                    guard tutorial.permits([.closeLayers]) else { return }
+                                    // Back leaves with the list, so it fades out rather than vanishing.
+                                    leavePage { player.closeLayers() }
+                                } else {
+                                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                        player.closeLayerSettings()
+                                    }
                                 }
                             } label: {
                                 Image(systemName: "chevron.backward")
@@ -371,8 +214,9 @@ struct TutorialPlayerView: View {
                                     .contentShape(Circle())
                             }
                             .watchToolbarButtonStyle()
-                            .disabled(!tutorial.permits(back))
+                            .disabled(!tutorial.permits(back) || isLeavingPage)
                             .accessibilityLabel(L10n.text("Back"))
+                            .tutorialChromeFade()
                         }
                     }
                     if page == .canvas && tutorial.permits([.openMenu]) {
@@ -386,6 +230,7 @@ struct TutorialPlayerView: View {
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
                                 .opacity(tutorial.permits([.openMenu]) ? 1 : 0)
+                                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25), value: tutorial.permits([.openMenu]))
                                 .allowsHitTesting(tutorial.permits([.openMenu]))
                                 .accessibilityHidden(!tutorial.permits([.openMenu]))
                         }
@@ -394,6 +239,7 @@ struct TutorialPlayerView: View {
                 .toolbarBackground(page == .tools ? .hidden : .automatic, for: .navigationBar)
                 .frame(width: screen.size.width, height: screen.size.height)
                 .environment(\.tutorialHintReservedHeight, hintReservedHeight)
+                .environment(\.tutorialChromeHidden, isLeavingPage)
 
                 lessonCard(width: hintWidth, screenHeight: screen.size.height)
                     .frame(width: hintWidth)
@@ -456,7 +302,9 @@ struct TutorialPlayerView: View {
         .compositingGroup()
         .toolbar(coversLesson ? .hidden : .automatic, for: .navigationBar, .bottomBar)
         // The expanded card is the whole screen, so the clock stays hidden over it.
-        .requestsHiddenClock((page == .canvas && !confirmsFinish) || offersContinuation)
+        // Hidden as soon as a page starts leaving for the canvas: once its leading button
+        // is removed the clock would otherwise slide from the centre to the corner.
+        .requestsHiddenClock(((page == .canvas || isLeavingPage) && !confirmsFinish) || offersContinuation)
         .modifier(TutorialCrownHint(tutorial: tutorial))
         .onAppear {
             player.startOrResume()
@@ -576,7 +424,250 @@ struct TutorialPlayerView: View {
             && !player.lasso.hidesControls && player.lasso.bounds == nil && scenePhase == .active
     }
 
-    private var primaryControlIsDone: Bool { page == .tools || isMovingCanvas || player.lasso.isActive }
+    private var primaryControlIsDone: Bool {
+        (page == .tools && !isLeavingPage) || isMovingCanvas || player.lasso.isActive
+    }
+
+    /// Fades the current full-screen page, its top buttons and the clock out over the
+    /// canvas, then changes the page without animation once nothing of it is visible.
+    private func leavePage(_ change: @escaping @MainActor () -> Void) {
+        guard !isLeavingPage else { return }
+        let duration = reduceMotion ? 0.15 : TutorialChromeFade.duration
+        withAnimation(.easeInOut(duration: duration)) { isLeavingPage = true }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(duration))
+            var transaction = Transaction(animation: nil)
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                change()
+                isLeavingPage = false
+            }
+        }
+    }
+
+    /// The tutorial's menu; kept out of `body` for the type checker.
+    private func menuPage(screen: GeometryProxy) -> some View {
+        WatchAppSettingsView(controller: controller, viewportSize: screen.size,
+                             onOpenDrawings: {
+                                 // Crossfade the menu into the gallery like the other menu pages.
+                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.35)) { player.openGallery() }
+                             },
+                             onStartTutorial: { _ in },
+                             tutorial: tutorial, guides: player.guides,
+                             onOpenCanvasSettings: {
+                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasSettings() }
+                             },
+                             onOpenDrawingSettings: {
+                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openDrawingSettings() }
+                             })
+            .background(Color.black)
+            .offset(y: menuRevealed || reduceMotion
+                    ? 0 : screen.size.height + screen.safeAreaInsets.top + screen.safeAreaInsets.bottom)
+            .onAppear {
+                withAnimation(.spring(duration: 0.45, bounce: 0)) { menuRevealed = true }
+            }
+            .onDisappear { menuRevealed = false }
+            .zIndex(2)
+    }
+
+    /// The full-screen pages over the canvas. Siblings in the canvas ZStack, so their
+    /// transitions and zIndex behave as before; kept out of `body` for the type checker.
+    @ViewBuilder
+    private func pages(geometry: GeometryProxy, screen: GeometryProxy) -> some View {
+        if page == .tools {
+            ZStack {
+                if !tutorial.isPaletteLesson {
+                    // Mount with the saved palette already installed, so the
+                    // returning picker never animates removal of the old colors.
+                    WatchToolSettingsView(controller: controller, tutorial: tutorial,
+                                          tutorialColors: tutorialPaletteLibrary.activePalette.selectedColors)
+                        .background(.black)
+                        .transition(.opacity)
+                } else {
+                    InkPaletteBrowser(library: tutorialPaletteLibrary, controller: controller,
+                                      tutorial: tutorial) { library in
+                        tutorialPaletteLibrary = library
+                        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                            tutorial.record(.savedColor)
+                        }
+                    }
+                    // Extend beneath the floating card while preserving
+                    // the native toolbar inset at the top.
+                    .ignoresSafeArea(.container, edges: .bottom)
+                    .background(Color.black.ignoresSafeArea())
+                    .environment(\.colorScheme, .dark)
+                    .transition(.opacity)
+                    .zIndex(1)
+                }
+            }
+            .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3),
+                       value: tutorial.isPaletteLesson)
+            .opacity(isLeavingPage ? 0 : 1)
+            .allowsHitTesting(!isLeavingPage)
+            .transition(.opacity)
+            .zIndex(1)
+        }
+        if page == .layers {
+            WatchLayersView(controller: controller,
+                            canvasSize: controller.document.size(fallback: geometry.size),
+                            tutorial: tutorial, embedsNavigation: false,
+                            onEditLayer: { id in
+                                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                    player.openLayerSettings(id)
+                                }
+                            })
+            .background(Color.black.ignoresSafeArea())
+            .opacity(isLeavingPage ? 0 : 1)
+            .allowsHitTesting(!isLeavingPage)
+            .transition(.opacity)
+            .zIndex(1)
+        }
+        if page == .layerSettings {
+            LayerSettingsView(controller: controller, layerID: player.editedLayerID,
+                              canvasSize: controller.document.size(fallback: geometry.size),
+                              tutorial: tutorial)
+            .background(Color.black.ignoresSafeArea())
+            .transition(.opacity)
+            .zIndex(1)
+        }
+        // Canvas setting pages stay inside the lesson, so its card and hints remain.
+        if page == .canvasSettings {
+            CanvasSettingsView(controller: controller, viewportSize: screen.size,
+                               tutorial: tutorial, guides: player.guides,
+                               onOpenCanvasSize: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasSize() } },
+                               onOpenPerspective: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openPerspective() } })
+            .background(Color.black.ignoresSafeArea())
+            .transition(.opacity)
+            .zIndex(1)
+        }
+        if page == .canvasSize {
+            WatchCanvasSizeView(controller: controller, viewportSize: screen.size,
+                                displayScale: displayScale, tutorial: tutorial,
+                                onOpenCrop: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCrop() } })
+            .background(Color.black.ignoresSafeArea())
+            .transition(.opacity)
+            .zIndex(1)
+        }
+        if page == .perspective {
+            PerspectiveGuidesSettingsView(controller: controller, viewportSize: screen.size,
+                                          guides: player.guides, tutorial: tutorial)
+            .background(Color.black.ignoresSafeArea())
+            .transition(.opacity)
+            .zIndex(1)
+        }
+        if page == .drawingSettings {
+            DrawingSettingsView(controller: controller, viewportSize: screen.size,
+                                tutorial: tutorial,
+                                onOpenColorBlending: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openColorBlending() } })
+            .background(Color.black.ignoresSafeArea())
+            .transition(.opacity)
+            .zIndex(1)
+        }
+        if page == .colorBlending {
+            ColorBlendingSelectionView(controller: controller, tutorial: tutorial)
+            .background(Color.black.ignoresSafeArea())
+            .transition(.opacity)
+            .zIndex(1)
+        }
+        if page == .crop {
+            // Apply records the crop; the lesson then returns to the canvas itself.
+            WatchCanvasAdjustmentView(controller: controller, viewportSize: screen.size,
+                                      displayScale: displayScale, mode: 1,
+                                      tutorial: tutorial, onApplied: {})
+            .background(Color.black.ignoresSafeArea())
+            .transition(.opacity)
+            .zIndex(1)
+        }
+        if page == .gallery {
+            SavedDrawingsView(tutorial: tutorial, galleryFolder: folder, onClose: {
+                // Back fades out with the gallery instead of leaving with the page.
+                leavePage { player.closeGallery() }
+            }, onEditDrawing: { _ in })
+            .opacity(isLeavingPage ? 0 : 1)
+            .allowsHitTesting(!isLeavingPage)
+            // The grid settles in from a slight zoom while the menu fades out.
+            .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.94)))
+            .zIndex(1)
+        }
+    }
+
+    /// Kept out of `body` so the compiler type-checks it on its own.
+    private var panGuide: some View {
+        let transition: AnyTransition = reduceMotion
+            ? .opacity : .scale(scale: 0.6).combined(with: .opacity)
+        return ZStack {
+            if page == .canvas && tutorial.showsPanGuide {
+                Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+                    .font(.title2.bold())
+                    .foregroundStyle(.white)
+                    .padding(10)
+                    .background(.regularMaterial, in: Circle())
+                    // Appears like the Crown mini watch: grows in with a light bounce.
+                    .scaleEffect(panGuideVisible || reduceMotion ? 1 : 0.6)
+                    .offset(panGuideOffset)
+                    .opacity(panGuideVisible ? 1 : 0)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                    .task { await runPanGuide() }
+                    // The first pan fades the guide out where it is, shrinking like the mini watch.
+                    .transition(transition)
+            }
+        }
+    }
+
+    @MainActor private func runPanGuide() async {
+        let offsets: [CGSize] = [
+            CGSize(width: -24, height: 0), .zero,
+            CGSize(width: 24, height: 0), .zero,
+            CGSize(width: 0, height: -24), .zero,
+            CGSize(width: 0, height: 24), .zero
+        ]
+        panGuideVisible = false
+        panGuideOffset = .zero
+        do {
+            try await Task.sleep(for: .seconds(1))
+            try Task.checkCancellation()
+            let appear: Animation = reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.3)
+            withAnimation(appear) { panGuideVisible = true }
+            guard !reduceMotion else { return }
+            // Let the bounce settle before the arrows start moving.
+            try await Task.sleep(for: .milliseconds(450))
+            while !Task.isCancelled {
+                for offset in offsets {
+                    withAnimation(.easeInOut(duration: 0.45)) { panGuideOffset = offset }
+                    try await Task.sleep(for: .milliseconds(500))
+                }
+            }
+        // The next appearance resets both; resetting here would snap
+        // the guide away in the middle of its fade-out.
+        } catch {}
+    }
+
+    /// Kept out of `body` so the compiler type-checks it on its own.
+    private func savedNotice(bottomInset: CGFloat) -> some View {
+        let transition: AnyTransition = reduceMotion
+            ? .opacity : .scale(scale: 0.85).combined(with: .opacity)
+        return ZStack {
+            if let savedNoticeID, page == .canvas {
+                Text(L10n.text("Artwork saved to gallery"))
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.5)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 9)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                    .padding(.horizontal, 42)
+                    // Center in the space above the measured lesson card,
+                    // leaving a gap even when localized tips become taller.
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding(.bottom, bottomInset)
+                    .id(savedNoticeID)
+                    .transition(transition)
+                    .allowsHitTesting(false)
+            }
+        }
+    }
 
     private var showsPrimaryControl: Bool {
         (page == .tools && tutorial.permits([.closeTools])) ||
@@ -1007,5 +1098,49 @@ private extension TutorialPlayerView {
     var remainingChapters: [TutorialChapter] {
         guard let chapter = tutorial.chapter, let index = chapters.firstIndex(of: chapter) else { return [] }
         return Array(chapters[(index + 1)...])
+    }
+}
+
+// MARK: - Tutorial chrome fade
+
+/// Native toolbar items are inserted and removed without animation. In the tutorial a
+/// page's top buttons fade in when the page appears and fade out before it leaves:
+/// the player sets `tutorialChromeHidden`, waits for the fade, then changes the page.
+struct TutorialChromeFade: ViewModifier {
+    @Environment(\.tutorialChromeHidden) private var isHidden
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isRevealed = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(isRevealed && !isHidden ? 1 : 0)
+            .onAppear {
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : TutorialChromeFade.duration)) {
+                    isRevealed = true
+                }
+            }
+            .onDisappear { isRevealed = false }
+    }
+
+    /// Matches the page crossfade, so buttons and page arrive and leave together.
+    static let duration: Double = 0.25
+}
+
+extension View {
+    /// Applies only in the tutorial; the editor's toolbar keeps its own behavior.
+    @ViewBuilder func tutorialChromeFade(_ isActive: Bool = true) -> some View {
+        if isActive { modifier(TutorialChromeFade()) } else { self }
+    }
+}
+
+private struct TutorialChromeHiddenKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// The tutorial page is leaving; its top buttons fade out with it.
+    var tutorialChromeHidden: Bool {
+        get { self[TutorialChromeHiddenKey.self] }
+        set { self[TutorialChromeHiddenKey.self] = newValue }
     }
 }

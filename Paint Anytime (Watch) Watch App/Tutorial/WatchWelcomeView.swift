@@ -223,12 +223,18 @@ struct WatchWelcomeView: View {
     /// SwiftUI springs solve m·x″ = −k·x − b·x′; zero bounce is critical damping,
     /// so the circle settles without overshooting past fully closed or fully open.
     private func closeIris(then whenClosed: @escaping @MainActor () -> Void) {
-        irisFraction = 1
-        irisIsRunning = true
-        hidesClockForIris = true
+        // Callers can run inside an animation (the lesson card's ✓); the black layer must
+        // appear at once with an open hole, not fade in over the whole screen.
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            irisFraction = 1
+            irisIsRunning = true
+            hidesClockForIris = true
+        }
         // Wait for the spring to settle, not its logical end, so the circle shrinks
         // all the way instead of stopping at a visible dot.
-        withAnimation(.spring(duration: 0.6, bounce: 0), completionCriteria: .removed) {
+        withAnimation(Self.irisCloseAnimation, completionCriteria: .removed) {
             irisFraction = 0
         } completion: {
             Task { @MainActor in whenClosed() }
@@ -252,6 +258,8 @@ struct WatchWelcomeView: View {
 
     /// Time the screen stays black between closing and opening.
     private static let irisPauseMilliseconds = 400
+    /// Shared with the editor menu's own circle, which closes in step with this one.
+    static let irisCloseAnimation = Animation.spring(duration: 0.6, bounce: 0)
 
     private static let laterButtonInset: CGFloat = 10
 
@@ -475,16 +483,47 @@ struct TutorialMenuPresentation: View {
     let onFinish: () -> Void
     var opensTutorialChapters = false
     var onCanvasAction: ((CanvasQuickAction) -> Void)? = nil
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The system sheet sits above the app's iris, so it closes its own circle in step
+    /// with it; the host then removes the sheet behind black. 1 leaves the menu open.
+    @State private var irisFraction: CGFloat = 1
+    @State private var closesIris = false
+
     var body: some View {
         WatchAppSettingsView(controller: controller, viewportSize: viewportSize, onOpenDrawings: onOpenDrawings,
                              onStartTutorial: { onboarding.requestTutorial(chapters: $0) },
                              completedTutorialChapters: onboarding.completedChapters,
                              opensTutorialChapters: opensTutorialChapters, onClose: onFinish,
                              onCanvasAction: onCanvasAction)
+        // Above the menu's navigation host, so its title and buttons close with the circle.
+        .overlay {
+            IrisShape(fraction: irisFraction)
+                .fill(.black, style: FillStyle(eoFill: true))
+                .ignoresSafeArea()
+                .opacity(closesIris ? 1 : 0)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        // The clock leaves as the circle starts, as it does on the welcome screen.
+        ._statusBarHidden(closesIris)
         // Block repeated taps without dimming every menu row before dismissal.
-        .allowsHitTesting(!onboarding.preparesTutorial)
+        .allowsHitTesting(!onboarding.preparesTutorial && onboarding.tutorialFolder == nil)
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
+        .onChange(of: onboarding.tutorialFolder) { _, folder in
+            guard folder != nil else {
+                // The run ended while the circle was closing: never leave the menu black.
+                closesIris = false
+                irisFraction = 1
+                return
+            }
+            // The host starts the app's iris on the same change; Reduce Motion crossfades instead.
+            guard !reduceMotion, !closesIris else { return }
+            var transaction = Transaction(animation: nil)
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { closesIris = true }
+            withAnimation(WatchWelcomeView.irisCloseAnimation) { irisFraction = 0 }
+        }
         .task(id: onboarding.preparesTutorial) {
             await onboarding.prepareTutorial()
         }

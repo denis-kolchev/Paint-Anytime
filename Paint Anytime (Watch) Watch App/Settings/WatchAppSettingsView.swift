@@ -40,88 +40,35 @@ struct WatchAppSettingsView: View {
 
     private var menu: some View {
         List {
-            Button(action: onOpenDrawings) {
-                Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
-                    .tutorialHint(tutorial, steps: [.openGallery])
-            }
-            if !tutorial.isActive {
-                if let onCanvasAction {
-                    ForEach(actionsMissingFromCanvas) { action in
-                        MenuCanvasActionButton(action: action, controller: controller, perform: onCanvasAction)
-                    }
-                }
-                NavigationLink {
-                    DrawingSettingsView(controller: controller, viewportSize: viewportSize)
-                } label: {
-                    Label(L10n.text("Drawing"), systemImage: "paintbrush")
-                }
-                canvasLink
-                NavigationLink {
-                    TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
-                } label: {
-                    Label(L10n.text("Tutorial"), systemImage: "graduationcap")
-                }
-                if restartWelcome != nil {
-                    Button { confirmsStartOver = true } label: {
-                        Label(L10n.text("Start over"), systemImage: "arrow.counterclockwise")
-                    }
-                }
-                NavigationLink {
-                    AutosaveSettingsView()
-                } label: {
-                    Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
-                }
-                NavigationLink {
-                    AppLanguageSelectionView()
-                } label: {
-                    Label(L10n.text("Language"), systemImage: "globe")
-                }
-                NavigationLink {
-                    WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
-                } label: {
-                    Label(L10n.text("Privacy Policy"), systemImage: "hand.raised")
-                }
-                Button(action: reportBug) {
-                    Label(L10n.text("Report a bug"), systemImage: "envelope")
-                }
-                if RenderDebug.isEnabled {
-                    // Debug builds only; not localized.
-                    NavigationLink {
-                        RenderDebugSettingsView()
-                    } label: {
-                        Label { Text(verbatim: "Render debug") } icon: { Image(systemName: "speedometer") }
-                    }
+            if tutorial.isActive {
+                // The tutorial's menu rises over the drawing and crossfades into its pages;
+                // a native title stays put in the host's bar and pops in and out in one frame.
+                // As the section header it moves and fades with the list; a row instead
+                // added the list's minimum row height and pushed the menu down.
+                Section {
+                    menuRows
+                } header: {
+                    Text(L10n.text("More"))
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .textCase(nil)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        // Closer to the clock, with room below so the title does not touch Gallery.
+                        .padding(.bottom, 4)
+                        .offset(y: -10)
+                        // Shrinks the header from the top, so the title and Gallery rise
+                        // together and the gap between them stays the same.
+                        .padding(.top, -12)
+                        .accessibilityAddTraits(.isHeader)
                 }
             } else {
-                // A lesson shows only the rows on its path. They stay installed for the whole
-                // lesson, so removing a row never pops the page it pushed.
-                if tutorial.teachesGallerySelection {
-                    // Optional: the real setting, reachable here as the lesson tip suggests.
-                    NavigationLink {
-                        AutosaveSettingsView()
-                    } label: {
-                        Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
-                    }
-                }
-                if tutorial.teachesBlending, let onOpenDrawingSettings {
-                    Button(action: onOpenDrawingSettings) {
-                        Label(L10n.text("Drawing"), systemImage: "paintbrush")
-                            .tutorialHint(tutorial, steps: [.openDrawingSettings])
-                    }
-                }
-                if tutorial.teachesPerspective || tutorial.teachesCrop {
-                    if let onOpenCanvasSettings {
-                        Button(action: onOpenCanvasSettings) {
-                            canvasLabel.tutorialHint(tutorial, steps: [.openCanvasSettings])
-                        }
-                    } else {
-                        canvasLink
-                    }
-                }
+                menuRows
             }
         }
         .labelStyle(CenteredMenuLabelStyle())
-        .navigationTitle(L10n.text("More"))
+        .navigationTitle(tutorial.isActive ? "" : L10n.text("More"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar { closeToolbar }
         .alert(L10n.text("Show the welcome screen again?"), isPresented: $confirmsStartOver) {
@@ -133,6 +80,89 @@ struct WatchAppSettingsView: View {
             Button(L10n.text("Cancel"), role: .cancel) {}
         } message: {
             Text(L10n.text("The language and tutorial questions will appear again. Your drawings and the current canvas stay as they are."))
+        }
+    }
+
+    @ViewBuilder
+    private var menuRows: some View {
+        Button(action: onOpenDrawings) {
+            Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
+                .tutorialHint(tutorial, steps: [.openGallery])
+        }
+        if !tutorial.isActive {
+            if let onCanvasAction {
+                ForEach(actionsMissingFromCanvas) { action in
+                    MenuCanvasActionButton(action: action, controller: controller, perform: onCanvasAction)
+                }
+            }
+            NavigationLink {
+                DrawingSettingsView(controller: controller, viewportSize: viewportSize)
+            } label: {
+                Label(L10n.text("Drawing"), systemImage: "paintbrush")
+            }
+            canvasLink
+            NavigationLink {
+                TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
+            } label: {
+                Label(L10n.text("Tutorial"), systemImage: "graduationcap")
+            }
+            if restartWelcome != nil {
+                Button { confirmsStartOver = true } label: {
+                    Label(L10n.text("Start over"), systemImage: "arrow.counterclockwise")
+                }
+            }
+            NavigationLink {
+                AutosaveSettingsView()
+            } label: {
+                Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+            }
+            NavigationLink {
+                AppLanguageSelectionView()
+            } label: {
+                Label(L10n.text("Language"), systemImage: "globe")
+            }
+            NavigationLink {
+                WatchLegalDocumentView(title: "Privacy Policy", paragraphs: WatchLegalText.privacy)
+            } label: {
+                Label(L10n.text("Privacy Policy"), systemImage: "hand.raised")
+            }
+            Button(action: reportBug) {
+                Label(L10n.text("Report a bug"), systemImage: "envelope")
+            }
+            if RenderDebug.isEnabled {
+                // Debug builds only; not localized.
+                NavigationLink {
+                    RenderDebugSettingsView()
+                } label: {
+                    Label { Text(verbatim: "Render debug") } icon: { Image(systemName: "speedometer") }
+                }
+            }
+        } else {
+            // A lesson shows only the rows on its path. They stay installed for the whole
+            // lesson, so removing a row never pops the page it pushed.
+            if tutorial.teachesGallerySelection {
+                // Optional: the real setting, reachable here as the lesson tip suggests.
+                NavigationLink {
+                    AutosaveSettingsView()
+                } label: {
+                    Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+                }
+            }
+            if tutorial.teachesBlending, let onOpenDrawingSettings {
+                Button(action: onOpenDrawingSettings) {
+                    Label(L10n.text("Drawing"), systemImage: "paintbrush")
+                        .tutorialHint(tutorial, steps: [.openDrawingSettings])
+                }
+            }
+            if tutorial.teachesPerspective || tutorial.teachesCrop {
+                if let onOpenCanvasSettings {
+                    Button(action: onOpenCanvasSettings) {
+                        canvasLabel.tutorialHint(tutorial, steps: [.openCanvasSettings])
+                    }
+                } else {
+                    canvasLink
+                }
+            }
         }
     }
 

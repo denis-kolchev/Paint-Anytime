@@ -239,13 +239,19 @@ struct TutorialCrownHint: ViewModifier {
                             .transition(.opacity)
                     }
                 }
+                // Turning the Crown ends eligibility outside any animation; fade the
+                // pill and the mini watch out instead of cutting them off.
+                .animation(.easeOut(duration: reduceMotion ? 0.2 : 0.4), value: eligible)
                 .ignoresSafeArea()
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
             }
             .task(id: Request(eligible: eligible, step: tutorial.step)) {
-                revealed = false
-                intro = .hidden
+                // A step change that keeps the hint eligible also fades it, rather than blinking.
+                withAnimation(.easeOut(duration: reduceMotion ? 0.2 : 0.4)) {
+                    revealed = false
+                    intro = .hidden
+                }
                 let introLesson = tutorial.chapter == .basic && tutorial.step == .zoomCanvas
                 if !introLesson { introPlayed = false }
                 guard eligible else { return }
@@ -265,7 +271,7 @@ struct TutorialCrownHint: ViewModifier {
                         intro = .hidden
                         withAnimation(.easeOut(duration: 0.2)) { revealed = true }
                     } else {
-                        revealed = true
+                        withAnimation(.easeOut(duration: 0.25)) { revealed = true }
                     }
                 } catch {
                     intro = .hidden

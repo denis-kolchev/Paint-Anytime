@@ -538,6 +538,8 @@ struct WatchToolSettingsView: View {
                     }
                     .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text("Current palette"))
+                    // Fades in with the editor, as the trailing ✓ does, and out before it leaves.
+                    .tutorialChromeFade()
                 }
             } else if !tutorial.isPaletteLesson {
                 ToolbarItem(placement: .topBarLeading) {
@@ -557,6 +559,8 @@ struct WatchToolSettingsView: View {
                     .opacity(tutorial.allowsToolInfo ? 1 : 0)
                     .allowsHitTesting(tutorial.allowsToolInfo)
                     .accessibilityHidden(!tutorial.allowsToolInfo)
+                    // Fades in with the editor, as the trailing ✓ does, and out before it leaves.
+                    .tutorialChromeFade()
                 }
             }
         }

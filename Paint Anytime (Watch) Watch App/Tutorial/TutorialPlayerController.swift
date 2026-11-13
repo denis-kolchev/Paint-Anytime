@@ -102,6 +102,11 @@ final class TutorialPlayerController: ObservableObject {
         canvas.cancelStroke()
         page = .tools
         tutorial.record(.openedTools)
+        // The blur lesson starts with a 20 pt brush, so the softened band is easy to see.
+        // Width synchronization carries it to the blur tool once the user picks it.
+        if tutorial.lessonInstrument == .blur {
+            canvas.pencilStyle.width = min(20, DrawingInstrument.blur.maximumWidth)
+        }
     }
     func openLayers() {
         guard page == .canvas, tutorial.permits([.openLayers]) else { return }

@@ -29,7 +29,11 @@ struct ClockVisibilityHost: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onPreferenceChange(ClockHiddenRequestKey.self) { isRequested = $0 }
+            // Animated, so the clock fades in and out with the pages that request it
+            // instead of appearing or vanishing in one frame.
+            .onPreferenceChange(ClockHiddenRequestKey.self) { requested in
+                withAnimation(.easeInOut(duration: 0.25)) { isRequested = requested }
+            }
             .task {
                 do { try await Task.sleep(for: .milliseconds(500)) } catch { return }
                 isSettled = true

@@ -148,7 +148,8 @@ struct ContentView: View {
         }
         .accessibilityHidden(showsAppSettings)
         .sheet(isPresented: Binding(
-            get: { showsAppSettings && menuOnboarding.tutorialFolder == nil },
+            // The menu stays up while its own circle closes over it, and leaves behind black.
+            get: { showsAppSettings && !showsMenuTutorial },
             set: { presented in
                 // Starting the tutorial dismisses only the menu's system sheet.
                 if !presented && menuOnboarding.tutorialFolder == nil {
@@ -197,10 +198,18 @@ struct ContentView: View {
             // The menu sheet slides away over the canvas while the iris closes;
             // the tutorial is inserted behind black and the circle opens onto it.
             guard folder != nil, showsAppSettings, !showsMenuTutorial else { return }
+            let usesIris = irisTransition != nil && !reduceMotion
             switchMenuTutorialMode {
                 // The run may have ended while the circle was closing.
                 guard showsAppSettings, menuOnboarding.tutorialFolder != nil else { return }
-                showsMenuTutorial = true
+                if !usesIris {
+                    showsMenuTutorial = true
+                    return
+                }
+                // Both circles are closed: dismiss the sheet without its slide, unseen.
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { showsMenuTutorial = true }
             }
         }
         .task(id: session.savedDrawing?.id) {
@@ -321,7 +330,8 @@ struct ContentView: View {
             isBusy: { isBusyForAutosave },
             prepare: {
                 guard controller.canClear else { return false }
-                savedNoticeID = nil
+                // The autosave's own notice replaces this one; fade rather than cut it.
+                withAnimation(.easeOut(duration: 0.2)) { savedNoticeID = nil }
                 return true
             },
             save: {
@@ -396,17 +406,22 @@ struct ContentView: View {
                 .accessibilityHidden(showsToolSettings)
                 .zIndex(0)
 
-            if let layerMoveName, lasso.isActive, !showsGallery, !showsToolSettings {
-                CanvasNoticeLabel(text: layerMoveName)
-                    .id(layerMoveID)
-                    .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
-                    .allowsHitTesting(false)
-                    .zIndex(4)
-                    .task(id: layerMoveID) {
-                        do { try await Task.sleep(for: .seconds(1.2)) } catch { return }
-                        withAnimation(.easeOut(duration: 0.2)) { self.layerMoveName = nil }
-                    }
+            // Its own container: finishing the lasso is not animated, and the notice
+            // must fade out then instead of vanishing.
+            ZStack {
+                if let layerMoveName, lasso.isActive, !showsGallery, !showsToolSettings {
+                    CanvasNoticeLabel(text: layerMoveName)
+                        .id(layerMoveID)
+                        .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
+                        .allowsHitTesting(false)
+                        .task(id: layerMoveID) {
+                            do { try await Task.sleep(for: .seconds(1.2)) } catch { return }
+                            withAnimation(.easeOut(duration: 0.2)) { self.layerMoveName = nil }
+                        }
+                }
             }
+            .animation(.easeOut(duration: 0.2), value: lasso.isActive)
+            .zIndex(4)
 
             CanvasMorphPanels(state: morphState, regions: controlRegions,
                               session: session, lasso: lasso, size: geometry.size,
@@ -419,7 +434,7 @@ struct ContentView: View {
                               showsLayers: $showsLayers,
                               onStartLasso: { startLasso() }, onFinishLasso: finishLasso,
                               onMoveSelectionLayer: moveSelectionLayer,
-                              onClearLayerMoveName: { layerMoveName = nil })
+                              onClearLayerMoveName: { withAnimation(.easeOut(duration: 0.2)) { layerMoveName = nil } })
                 .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || autosave.showsProgress))
                 .zIndex(3)
 
