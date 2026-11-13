@@ -27,6 +27,14 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
         }
     }
 
+    /// A rough time to complete the course, shown before it starts.
+    var estimatedMinutes: Int {
+        switch self {
+        case .basic: 3
+        case .advanced: 10
+        }
+    }
+
     /// Every lesson begins on the canvas and ends there, so the next one can start fresh.
     var lessons: [Lesson] { lessons(features: .current) }
 

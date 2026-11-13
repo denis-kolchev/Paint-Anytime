@@ -253,6 +253,13 @@ final class TutorialSession: ObservableObject {
     var canFinishCamera: Bool { !isActive || (step != .zoomCanvas && step != .panCanvas) }
     var showsPanGuide: Bool { step == .panCanvas && !progress.hasPanned }
 
+    /// The settings opened on this page. Restoring it is not a page change, so it never
+    /// completes a step, but the instructions must not describe the previous lesson's page.
+    func showedToolPage(_ page: Int) {
+        guard isActive else { return }
+        toolPage = page
+    }
+
     func changedPage(_ page: Int) {
         guard isActive, allowsToolPage(page) else { return }
         activity()

@@ -486,6 +486,8 @@ struct TutorialPlayerView: View {
         }
         .onChange(of: tutorial.chapterRevision) { _, _ in
             isMovingCanvas = false
+            // A palette made in the palette lesson must not replace the colors later lessons use.
+            tutorialPaletteLibrary = InkPaletteLibrary.tutorial
             player.beginChapter()
             // The step change may be handled first; the reset must not drop the lesson ink.
             applyCircleInk(for: tutorial.step)
@@ -940,7 +942,7 @@ private extension TutorialPlayerView {
     }
 
     var continuationActions: TutorialContinuationActions {
-        TutorialContinuationActions {
+        TutorialContinuationActions(completedChapter: tutorial.chapter) {
             guard !answeredContinuation else { return }
             guard player.preserveDrawing() else {
                 // The save error alert is shown; return to the result, where Next still works.

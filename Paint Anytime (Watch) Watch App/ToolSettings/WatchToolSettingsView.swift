@@ -605,6 +605,8 @@ struct WatchToolSettingsView: View {
             // Migrate the old eraser page, previously stored in the color slot.
             if isEraser && selectedPage == ToolSetting.color.rawValue { selectedPage = ToolSetting.mode.rawValue }
             else { selectedPage = selection.rawValue }
+            // The initial page may equal the default and so never reach onChange below.
+            tutorial.showedToolPage(selectedPage)
             if !tutorial.isActive { crownFocused = true }
         }
         .task {

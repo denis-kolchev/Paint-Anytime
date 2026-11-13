@@ -240,6 +240,8 @@ private struct TutorialResultBlink: ViewModifier {
 
 /// Later and Continue on the expanded first-chapter result.
 struct TutorialContinuationActions {
+    /// The course just finished; its row gets the checkmark.
+    let completedChapter: TutorialChapter?
     let onLater: () -> Void
     let onContinue: () -> Void
 }
@@ -254,28 +256,37 @@ private struct TutorialContinuationContent: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.layoutDirection) private var layoutDirection
     @State private var showsTitle = false
+    @State private var showsCompletion = false
     @State private var showsChoices = false
     @State private var isLeaving = false
+    /// Later replaces the choice with the same notice the initial decline shows,
+    /// instead of leaving immediately.
+    @State private var showsLaterNotice = false
 
     var body: some View {
         GeometryReader { viewport in
             ScrollView {
                 VStack(spacing: 12) {
-                    Text(L10n.text("Continue the tour?"))
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if showsLaterNotice {
+                        laterNotice
+                    } else {
+                        Text(L10n.text("Continue the tour?"))
+                            .font(.headline)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .opacity(showsTitle ? 1 : 0)
+                        // Both courses and their length; the finished one is checked off a moment later.
+                        VStack(spacing: 6) {
+                            ForEach(TutorialChapter.allCases) { chapter in
+                                TutorialCourseRow(chapter: chapter,
+                                                  isCompleted: showsCompletion && chapter == actions.completedChapter)
+                            }
+                        }
                         .opacity(showsTitle ? 1 : 0)
-                    VStack(spacing: 10) {
-                        // Measures both labels: the longer one gets the width the other spares.
                         ConfirmationButtonsLayout(layoutDirection: layoutDirection) {
-                            Button {
-                                guard !isLeaving else { return }
-                                isLeaving = true
-                                // The iris covers the screen, so nothing needs to fade first.
-                                actions.onLater()
-                            } label: {
+                            // Measures both labels: the longer one gets the width the other spares.
+                            Button(action: tapLater) {
                                 Text(L10n.text("Later"))
                                     .frame(maxWidth: .infinity, minHeight: 32)
                             }
@@ -291,18 +302,11 @@ private struct TutorialContinuationContent: View {
                         .font(.caption.weight(.semibold))
                         .lineLimit(1)
                         .minimumScaleFactor(0.75)
-                        Text(L10n.text("You can start the tutorial anytime: tap the three dots, then Tutorial."))
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .fixedSize(horizontal: false, vertical: true)
-                            // Inside the buttons' outer edges, not flush with or beyond them.
-                            .padding(.horizontal, 6)
+                        .opacity(showsChoices ? 1 : 0)
+                        .offset(y: showsChoices || reduceMotion ? 0 : 6)
+                        .allowsHitTesting(showsChoices)
+                        .accessibilityHidden(!showsChoices)
                     }
-                    .opacity(showsChoices ? 1 : 0)
-                    .offset(y: showsChoices || reduceMotion ? 0 : 6)
-                    .allowsHitTesting(showsChoices)
-                    .accessibilityHidden(!showsChoices)
                 }
                 .padding(.horizontal, 14)
                 .padding(.vertical, 16)
@@ -311,6 +315,43 @@ private struct TutorialContinuationContent: View {
             }
         }
         .task { await reveal() }
+    }
+
+    /// Replaces the choice with the same notice the initial decline shows, then
+    /// finishes the tutorial once the user acknowledges it.
+    private var laterNotice: some View {
+        VStack(spacing: 10) {
+            Text(L10n.text("You can start the tutorial anytime: tap the three dots, then Tutorial."))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
+            Button(L10n.text("OK")) {
+                guard !isLeaving else { return }
+                isLeaving = true
+                // The iris covers the screen, so nothing needs to fade first.
+                actions.onLater()
+            }
+            .watchActionButtonStyle()
+        }
+        .transition(.opacity)
+    }
+
+    /// The question fades out on the full-size card first; only then does the notice
+    /// fade in, so the two never overlap.
+    private func tapLater() {
+        guard !isLeaving, !showsLaterNotice else { return }
+        guard !reduceMotion else {
+            showsLaterNotice = true
+            return
+        }
+        withAnimation(.easeOut(duration: 0.2)) {
+            showsTitle = false
+            showsCompletion = false
+            showsChoices = false
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(220))
+            withAnimation(.easeIn(duration: 0.2)) { showsLaterNotice = true }
+        }
     }
 
     /// The question fades out on the full-size card first; only then does the card shrink
@@ -324,6 +365,7 @@ private struct TutorialContinuationContent: View {
         }
         withAnimation(.easeOut(duration: 0.2)) {
             showsTitle = false
+            showsCompletion = false
             showsChoices = false
         }
         Task { @MainActor in
@@ -332,21 +374,65 @@ private struct TutorialContinuationContent: View {
         }
     }
 
-    /// Lets the card finish growing, shows the question, then the choice.
+    /// Lets the card finish growing, shows the question and the courses, checks off the
+    /// finished course a second later, then shows the choice.
     @MainActor
     private func reveal() async {
         guard !reduceMotion else {
             showsTitle = true
+            showsCompletion = true
             showsChoices = true
             return
         }
         withAnimation(.easeInOut(duration: 0.25).delay(0.2)) { showsTitle = true }
         do {
-            try await Task.sleep(for: .milliseconds(550))
+            try await Task.sleep(for: .milliseconds(1450))
+            withAnimation(.spring(duration: 0.4, bounce: 0.4)) { showsCompletion = true }
+            try await Task.sleep(for: .milliseconds(400))
             withAnimation(.easeOut(duration: 0.3)) { showsChoices = true }
         } catch {
             // Leaving the question cancels the sequence.
         }
+    }
+}
+
+/// A course with its icon and length; a green checkmark appears once it is finished.
+private struct TutorialCourseRow: View {
+    let chapter: TutorialChapter
+    let isCompleted: Bool
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: chapter.systemImage)
+                .font(.system(size: 17))
+                .frame(width: 24)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(chapter.title)
+                    .font(.footnote.weight(.semibold))
+                Text(L10n.format("%d min", chapter.estimatedMinutes))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            Spacer(minLength: 4)
+            ZStack {
+                if isCompleted {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 18))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, .green)
+                        .transition(.scale(scale: 0.3).combined(with: .opacity))
+                }
+            }
+            .frame(width: 22)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityValue(isCompleted ? L10n.text("Completed") : "")
     }
 }
 
