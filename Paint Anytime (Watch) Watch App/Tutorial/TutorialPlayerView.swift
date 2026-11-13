@@ -76,6 +76,18 @@ struct TutorialPlayerView: View {
                                 .allowsHitTesting(page == .canvas && tutorial.acceptsActions)
                                 .accessibilityHidden(page != .canvas)
 
+                            // The canvas fades out in the same animation that crossfades the menu
+                            // into a settings page; without an opaque floor the white drawing shows
+                            // through mid-transition. Inserted and removed without animation.
+                            if coversCanvasWithBackdrop {
+                                Color.black
+                                    .ignoresSafeArea()
+                                    .transition(.identity)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                                    .zIndex(0.5)
+                            }
+
                             if showsCircleGuide {
                                 TutorialCirclePresentation(guideHeight: max(0, geometry.size.height - hintReservedHeight),
                                                            isFadingAttempt: tutorial.isFadingCircleAttempt)
@@ -96,6 +108,8 @@ struct TutorialPlayerView: View {
                                     .foregroundStyle(.white)
                                     .padding(10)
                                     .background(.regularMaterial, in: Circle())
+                                    // Appears like the Crown mini watch: grows in with a light bounce.
+                                    .scaleEffect(panGuideVisible || reduceMotion ? 1 : 0.6)
                                     .offset(panGuideOffset)
                                     .opacity(panGuideVisible ? 1 : 0)
                                     .allowsHitTesting(false)
@@ -112,8 +126,13 @@ struct TutorialPlayerView: View {
                                         do {
                                             try await Task.sleep(for: .seconds(1))
                                             try Task.checkCancellation()
-                                            panGuideVisible = true
+                                            withAnimation(reduceMotion ? .easeOut(duration: 0.2)
+                                                          : .spring(duration: 0.45, bounce: 0.3)) {
+                                                panGuideVisible = true
+                                            }
                                             guard !reduceMotion else { return }
+                                            // Let the bounce settle before the arrows start moving.
+                                            try await Task.sleep(for: .milliseconds(450))
                                             while !Task.isCancelled {
                                                 for offset in offsets {
                                                     withAnimation(.easeInOut(duration: 0.45)) { panGuideOffset = offset }
@@ -591,6 +610,15 @@ struct TutorialPlayerView: View {
     }
 
     // Four targets must also fit the narrower 40 mm watches without overlap.
+    /// Full-screen pages that sit on black; the drawing must never show between them.
+    private var coversCanvasWithBackdrop: Bool {
+        switch page {
+        case .canvas, .menu, .tools: false
+        case .gallery, .layers, .layerSettings, .canvasSettings, .canvasSize, .perspective, .crop,
+             .drawingSettings, .colorBlending: true
+        }
+    }
+
     private var showsTutorialBottomControls: Bool {
         page == .canvas && tutorial.permits([.history, .saveDrawing])
     }
