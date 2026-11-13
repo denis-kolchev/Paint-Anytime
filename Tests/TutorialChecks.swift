@@ -150,10 +150,10 @@ struct TutorialChecks {
         progress.advance()
         precondition(!progress.teachesPerspective)
         // Fill: the settings open on Tool and stay there until Fill is chosen.
-        precondition(progress.step == .openTools && progress.initialToolPage == 1 && !progress.limitsToolsToFill)
+        precondition(progress.step == .openTools && progress.initialToolPage == 1 && progress.lessonInstrument == nil)
         precondition(progress.record(.openedTools) == .advance)
         progress.advance()
-        precondition(progress.step == .chooseFill && progress.initialToolPage == 2 && progress.limitsToolsToFill)
+        precondition(progress.step == .chooseFill && progress.initialToolPage == 2 && progress.lessonInstrument == .fill)
         precondition(progress.allowsToolPage(2) && !progress.allowsToolPage(1) && !progress.allowsToolPage(0))
         var fill = PencilStyle()
         fill.instrument = .fill
@@ -171,10 +171,42 @@ struct TutorialChecks {
         progress.advance()
         precondition(progress.record(.closedTools) == .advance)
         progress.advance()
-        precondition(progress.step == .fillCanvas && !progress.limitsToolsToFill)
+        precondition(progress.step == .fillCanvas && progress.lessonInstrument == nil)
         precondition(progress.record(.stroke) == .none)
         precondition(progress.record(.filled) == .advance)
         progress.advance()
+        // Blur: the same Tool-page choice, then any blur stroke softens the drawing.
+        precondition(progress.step == .openTools && progress.record(.openedTools) == .advance)
+        progress.advance()
+        precondition(progress.step == .chooseBlur && progress.initialToolPage == 2 && progress.lessonInstrument == .blur)
+        precondition(!progress.changedStyle(from: blur, to: fill, page: 2))
+        precondition(progress.changedStyle(from: fill, to: blur, page: 2))
+        progress.advance()
+        precondition(!progress.changedStyle(from: blur, to: fill, page: 2))
+        precondition(progress.step == .chooseBlur, "Leaving Blur before closing restores the choice")
+        precondition(progress.changedStyle(from: fill, to: blur, page: 2))
+        progress.advance()
+        precondition(progress.record(.closedTools) == .advance)
+        progress.advance()
+        precondition(progress.step == .blurCanvas && progress.record(.stroke) == .advance)
+        progress.advance()
+        // Blending: crossing the demonstrated line shows the mix, then Color inversion.
+        precondition(progress.step == .crossMarkerLine && progress.record(.stroke) == .none)
+        precondition(progress.record(.crossedMarkerLine) == .showResult)
+        progress.advance()
+        precondition(progress.step == .openMenu && progress.teachesBlending)
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.openMenu, .openedMenu), (.openDrawingSettings, .openedDrawingSettings),
+            (.openColorBlending, .openedColorBlending)
+        ] {
+            precondition(progress.step == step && progress.record(event) == .advance)
+            progress.advance()
+        }
+        precondition(progress.step == .chooseColorInversion && progress.record(.choseColorInversion) == .showResult)
+        progress.advance()
+        precondition(progress.step == .redrawMarkerLine && progress.record(.crossedMarkerLine) == .showResult)
+        progress.advance()
+        precondition(!progress.teachesBlending)
         precondition(progress.step == .openTools && progress.record(.openedTools) == .advance)
         progress.advance()
         precondition(progress.step == .openCurrentPalette && progress.record(.openedCurrentPalette) == .advance,

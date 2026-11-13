@@ -6,7 +6,10 @@ import CoreGraphics
 final class TutorialPlayerController: ObservableObject {
     /// Canvas setting pages are the tutorial's own, like the layer pages: the menu's
     /// NavigationStack is nested in the host's, so its links would push over the whole lesson.
-    enum Page { case canvas, tools, menu, gallery, layers, layerSettings, canvasSettings, canvasSize, perspective, crop }
+    enum Page {
+        case canvas, tools, menu, gallery, layers, layerSettings, canvasSettings, canvasSize, perspective, crop
+        case drawingSettings, colorBlending
+    }
 
     let tutorial = TutorialSession()
     let lasso = WatchLassoController()
@@ -20,6 +23,13 @@ final class TutorialPlayerController: ObservableObject {
     @Published var confirmsClear = false
     @Published private(set) var saveError: String?
     @Published private(set) var editedLayerID: UUID?
+    /// The lesson draws or erases on the canvas itself; the user's input waits.
+    @Published private(set) var isDemonstrating = false
+    private var demonstration: Task<Void, Never>?
+    /// Identifies the running demonstration, so a cancelled one never unlocks input early.
+    private var demonstrationID = UUID()
+    /// The yellow line the blending lesson draws; the user's strokes cross it.
+    private var demonstratedStrokeID: UUID?
     private var didConfirmClear = false
     private let folder: URL
     private let chapters: [TutorialChapter]
@@ -64,9 +74,12 @@ final class TutorialPlayerController: ObservableObject {
 
     /// Chapters stay independent: each one starts on a clean canvas with the default brush.
     func beginChapter() {
+        stopDemonstration()
         canvas.cancelStroke()
         lasso.deactivate()
         canvas.clear()
+        // A blending lesson must not carry its mode into later chapters.
+        canvas.setBlendingMode(initialStyle.blendingMode)
         canvas.pencilStyle = initialStyle
         page = .canvas
     }
@@ -144,13 +157,101 @@ final class TutorialPlayerController: ObservableObject {
         page = .crop
         tutorial.record(.openedCrop)
     }
+    func openDrawingSettings() {
+        guard page == .menu, tutorial.permits([.openDrawingSettings]) else { return }
+        page = .drawingSettings
+        tutorial.record(.openedDrawingSettings)
+    }
+    func openColorBlending() {
+        guard page == .drawingSettings, tutorial.permits([.openColorBlending]) else { return }
+        page = .colorBlending
+        tutorial.record(.openedColorBlending)
+    }
 
-    /// Canvas setting lessons leave their pages once the setting is applied.
+    /// Setting lessons leave their pages once the setting is applied.
     func returnToCanvasAfterSetting() {
-        guard [.menu, .canvasSettings, .perspective, .canvasSize, .crop].contains(page),
-              tutorial.teachesPerspective || tutorial.teachesCrop,
-              [.perspectiveStroke, .history].contains(tutorial.step) else { return }
+        guard [.menu, .canvasSettings, .perspective, .canvasSize, .crop,
+               .drawingSettings, .colorBlending].contains(page),
+              tutorial.teachesPerspective || tutorial.teachesCrop || tutorial.teachesBlending,
+              [.perspectiveStroke, .history, .redrawMarkerLine].contains(tutorial.step) else { return }
         page = .canvas
+    }
+
+    /// Clears the canvas, draws a yellow marker line as if by hand, then hands the
+    /// user a light blue marker that builds up color over it.
+    func demonstrateMarkerLine(viewportSize: CGSize, reduceMotion: Bool) {
+        stopDemonstration()
+        isDemonstrating = true
+        canvas.cancelStroke()
+        lasso.deactivate()
+        canvas.clear()
+        canvas.setBlendingMode(.hybrid)
+        var yellow = PencilStyle.initial(for: .marker)
+        yellow.width = 20
+        yellow.opacity = 1
+        yellow.blendingMode = .hybrid
+        canvas.pencilStyle = yellow
+        let lineStyle = yellow
+        let id = demonstrationID
+        demonstration = Task { [weak self] in
+            guard let self else { return }
+            defer { if demonstrationID == id { isDemonstrating = false } }
+            do {
+                // Let the cleared paper settle before the line appears.
+                try await Task.sleep(for: .milliseconds(reduceMotion ? 200 : 600))
+                let paper = canvas.document.size(fallback: viewportSize)
+                let steps = 36
+                var time = Date().timeIntervalSinceReferenceDate
+                for index in 0...steps {
+                    try Task.checkCancellation()
+                    let t = Float(index) / Float(steps)
+                    // A gentle wave above the lesson card, wide enough to cross easily.
+                    let position = SIMD2(Float(paper.width) * (0.14 + 0.72 * t),
+                                         Float(paper.height) * (0.36 + 0.04 * sin(t * 2 * .pi)))
+                    let sample = PointerSample(position: position, pressure: 1, timestamp: time)
+                    switch index {
+                    case 0: canvas.beginStroke(at: sample)
+                    case steps: canvas.endStroke(at: sample)
+                    default: canvas.continueStroke(at: sample)
+                    }
+                    time += 1.0 / 30
+                    if !reduceMotion && index < steps { try await Task.sleep(for: .milliseconds(33)) }
+                }
+            } catch {
+                if demonstrationID == id { canvas.cancelStroke() }
+                return
+            }
+            demonstratedStrokeID = canvas.selectedLayer.strokes.last?.id
+            var blue = lineStyle
+            blue.color = InkPreset.all.first { $0.nameKey == "Light blue" }?.rgba ?? SIMD4(0.15, 0.7, 0.9, 1)
+            canvas.pencilStyle = blue
+        }
+    }
+
+    /// Back on the canvas, the user's strokes are removed from the yellow line in view,
+    /// so it can be crossed again with the new blending mode.
+    func removeUserMarkerStrokes(reduceMotion: Bool) {
+        stopDemonstration()
+        isDemonstrating = true
+        let id = demonstrationID
+        demonstration = Task { [weak self] in
+            guard let self else { return }
+            defer { if demonstrationID == id { isDemonstrating = false } }
+            // Wait until the page has returned, so the strokes disappear in view.
+            do { try await Task.sleep(for: .milliseconds(reduceMotion ? 300 : 800)) } catch { return }
+            let layer = canvas.selectedLayer
+            let lineID = demonstratedStrokeID
+            let kept = layer.strokes.filter { $0.id == lineID }
+            guard !kept.isEmpty else { return }
+            canvas.replaceLayerStrokes(kept, in: layer.id)
+        }
+    }
+
+    private func stopDemonstration() {
+        demonstration?.cancel()
+        demonstration = nil
+        demonstrationID = UUID()
+        isDemonstrating = false
     }
     func openGallery() { page = .gallery; tutorial.galleryIsOpen = true; tutorial.record(.openedGallery) }
     func closeGallery() {

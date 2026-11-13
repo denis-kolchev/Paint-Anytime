@@ -14,6 +14,15 @@ struct ToolInstrumentPicker: View {
 
     private var rowHeight: CGFloat { 36 }
 
+    /// The tool a selection lesson asks for.
+    private var suggestedInstrument: DrawingInstrument {
+        switch tutorial.step {
+        case .chooseFill: .fill
+        case .chooseBlur: .blur
+        default: .reed
+        }
+    }
+
     var body: some View {
         VStack(spacing: 2) {
             if showsNavigationHints {
@@ -37,9 +46,8 @@ struct ToolInstrumentPicker: View {
                                     .scaleEffect(reduceMotion ? 1 : !isActive ? 0.35
                                                  : instrumentIndex == index ? 1 : 0.72)
                                     .animation(choiceAnimation, value: instrumentIndex)
-                                    .tutorialHint(tutorial, steps: [.chooseReed, .chooseFill],
-                                                  isSuggested: isActive && (tutorial.step == .chooseFill
-                                                      ? instrument == .fill : instrument == .reed))
+                                    .tutorialHint(tutorial, steps: [.chooseReed, .chooseFill, .chooseBlur],
+                                                  isSuggested: isActive && instrument == suggestedInstrument)
                                     .frame(width: 40, height: rowHeight)
                                     .contentShape(Rectangle())
                             }

@@ -49,6 +49,12 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             Lesson(steps: [.openMenu, .openCanvasSettings, .openPerspective, .choosePerspective,
                            .perspectiveStroke]),
             Lesson(steps: [.openTools, .chooseFill, .closeTools, .fillCanvas]),
+            // Blur softens the filled edges, so it follows the fill.
+            Lesson(steps: [.openTools, .chooseBlur, .closeTools, .blurCanvas]),
+            // The lesson clears the canvas and draws a yellow marker line itself; the user's
+            // light blue marker mixes with it, then Color inversion changes the overlap.
+            Lesson(steps: [.crossMarkerLine, .openMenu, .openDrawingSettings, .openColorBlending,
+                           .chooseColorInversion, .redrawMarkerLine]),
             // The corner button opens the palette in use, as in the editor.
             Lesson(steps: [.openTools, .openCurrentPalette, .openPalettes, .findNewPalette,
                            .createPalette, .addPaletteColor, .adjustPaletteColor, .savePaletteColor,

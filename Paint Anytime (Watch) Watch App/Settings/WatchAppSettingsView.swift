@@ -23,6 +23,8 @@ struct WatchAppSettingsView: View {
     var guides = PerspectiveGuides.shared
     /// The tutorial opens Canvas as its own page instead of pushing it.
     var onOpenCanvasSettings: (() -> Void)? = nil
+    /// The tutorial opens Drawing as its own page, as it does Canvas.
+    var onOpenDrawingSettings: (() -> Void)? = nil
 
     var body: some View {
         NavigationStack {
@@ -99,6 +101,12 @@ struct WatchAppSettingsView: View {
                         AutosaveSettingsView()
                     } label: {
                         Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+                    }
+                }
+                if tutorial.teachesBlending, let onOpenDrawingSettings {
+                    Button(action: onOpenDrawingSettings) {
+                        Label(L10n.text("Drawing"), systemImage: "paintbrush")
+                            .tutorialHint(tutorial, steps: [.openDrawingSettings])
                     }
                 }
                 if tutorial.teachesPerspective || tutorial.teachesCrop {
@@ -203,27 +211,37 @@ struct CenteredMenuLabelStyle: LabelStyle {
     }
 }
 
-private struct DrawingSettingsView: View {
+struct DrawingSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
+    @ObservedObject var tutorial = TutorialSession.inactive
+    /// The tutorial shows Color blending itself and keeps only that row.
+    var onOpenColorBlending: (() -> Void)? = nil
 
     var body: some View {
         List {
-            NavigationLink {
-                PaletteVisibilitySettingsView(controller: controller)
-            } label: {
-                Label(L10n.text("Visible palettes"), systemImage: "paintpalette")
-            }
-            NavigationLink {
-                ColorBlendingSelectionView(controller: controller)
-            } label: {
-                Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
-            }
-            NavigationLink {
-                ToolSynchronizationView(controller: controller)
-            } label: {
-                Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
+            if let onOpenColorBlending, tutorial.isActive {
+                Button(action: onOpenColorBlending) {
+                    Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
+                        .tutorialHint(tutorial, steps: [.openColorBlending])
+                }
+            } else {
+                NavigationLink {
+                    PaletteVisibilitySettingsView(controller: controller)
+                } label: {
+                    Label(L10n.text("Visible palettes"), systemImage: "paintpalette")
+                }
+                NavigationLink {
+                    ColorBlendingSelectionView(controller: controller)
+                } label: {
+                    Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
+                }
+                NavigationLink {
+                    ToolSynchronizationView(controller: controller)
+                } label: {
+                    Label(L10n.text("Tool synchronization"), systemImage: "arrow.triangle.2.circlepath")
+                }
             }
         }
         .labelStyle(CenteredMenuLabelStyle())
@@ -720,13 +738,29 @@ struct WatchLegalDocumentView: View {
 struct ColorBlendingSelectionView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
+    @ObservedObject var tutorial = TutorialSession.inactive
+
+    /// The lesson compares the default with the one mode it teaches.
+    private var modes: [ColorBlendingMode] {
+        tutorial.isActive ? [.hybrid, .difference] : ColorBlendingMode.allCases
+    }
+
+    private func select(_ mode: ColorBlendingMode) {
+        guard tutorial.isActive else {
+            controller.setBlendingMode(mode)
+            return
+        }
+        guard mode == .difference, tutorial.permits([.chooseColorInversion]) else { return }
+        controller.setBlendingMode(mode)
+        tutorial.record(.choseColorInversion)
+    }
 
     var body: some View {
         List {
             Section {
-                ForEach(ColorBlendingMode.allCases, id: \.rawValue) { mode in
+                ForEach(modes, id: \.rawValue) { mode in
                     Button {
-                        controller.setBlendingMode(mode)
+                        select(mode)
                     } label: {
                         HStack {
                             ColorBlendingSwatchIcon(mode: mode)
@@ -743,6 +777,7 @@ struct ColorBlendingSelectionView: View {
                                 Image(systemName: "checkmark").foregroundStyle(.green)
                             }
                         }
+                        .tutorialHint(tutorial, steps: [.chooseColorInversion], isSuggested: mode == .difference)
                     }
                     .accessibilityAddTraits(controller.blendingMode == mode ? .isSelected : [])
                 }
@@ -752,13 +787,16 @@ struct ColorBlendingSelectionView: View {
         }
         .navigationTitle(L10n.text("Color blending"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                NavigationLink {
-                    ColorBlendingInformationView(mode: controller.blendingMode)
-                } label: {
-                    Image(systemName: "info.circle")
+            // A link from the tutorial's own page would push over the lesson.
+            if !tutorial.isActive {
+                ToolbarItem(placement: .topBarTrailing) {
+                    NavigationLink {
+                        ColorBlendingInformationView(mode: controller.blendingMode)
+                    } label: {
+                        Image(systemName: "info.circle")
+                    }
+                    .accessibilityLabel(L10n.text("About color blending"))
                 }
-                .accessibilityLabel(L10n.text("About color blending"))
             }
         }
     }

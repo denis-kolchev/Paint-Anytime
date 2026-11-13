@@ -62,7 +62,8 @@ struct TutorialPlayerView: View {
                             WatchCanvasView(controller: controller, lasso: player.lasso, tutorial: tutorial,
                                             // The menu slides over the drawing, as the editor's sheet does.
                                             rendersArtwork: page == .canvas || page == .menu,
-                                            acceptsInput: page == .canvas && tutorial.acceptsActions,
+                                            acceptsInput: page == .canvas && tutorial.acceptsActions
+                                                && !player.isDemonstrating,
                                             acceptsZoomOnlyInput: false,
                                             protectedControls: canvasProtectedControls, isMovingCanvas: $isMovingCanvas,
                                             guides: player.guides)
@@ -200,6 +201,20 @@ struct TutorialPlayerView: View {
                                 .transition(.opacity)
                                 .zIndex(1)
                             }
+                            if page == .drawingSettings {
+                                DrawingSettingsView(controller: controller, viewportSize: screen.size,
+                                                    tutorial: tutorial,
+                                                    onOpenColorBlending: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openColorBlending() } })
+                                .background(Color.black.ignoresSafeArea())
+                                .transition(.opacity)
+                                .zIndex(1)
+                            }
+                            if page == .colorBlending {
+                                ColorBlendingSelectionView(controller: controller, tutorial: tutorial)
+                                .background(Color.black.ignoresSafeArea())
+                                .transition(.opacity)
+                                .zIndex(1)
+                            }
                             if page == .crop {
                                 // Apply records the crop; the lesson then returns to the canvas itself.
                                 WatchCanvasAdjustmentView(controller: controller, viewportSize: screen.size,
@@ -234,6 +249,9 @@ struct TutorialPlayerView: View {
                                              tutorial: tutorial, guides: player.guides,
                                              onOpenCanvasSettings: {
                                                  withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasSettings() }
+                                             },
+                                             onOpenDrawingSettings: {
+                                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openDrawingSettings() }
                                              })
                             .background(Color.black)
                             .offset(y: menuRevealed || reduceMotion
@@ -380,7 +398,8 @@ struct TutorialPlayerView: View {
         // only starts below that bar when the safe area includes it. Restoring the inset with
         // padding inside the menu left the first row under the bar's blur.
         .ignoresSafeArea(.container, edges: [.menu, .layers, .layerSettings, .canvasSettings,
-                                             .canvasSize, .perspective, .crop].contains(page)
+                                             .canvasSize, .perspective, .crop,
+                                             .drawingSettings, .colorBlending].contains(page)
                          || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
             // The full-screen question must not move the controls reserved for the compact card.
@@ -436,6 +455,13 @@ struct TutorialPlayerView: View {
             applyLayerBrush(for: step)
             withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
                 player.returnToCanvasAfterSetting()
+            }
+            // The blending lesson draws its own yellow line, and later removes the user's
+            // crossing so it can be drawn again with Color inversion.
+            if step == .crossMarkerLine {
+                player.demonstrateMarkerLine(viewportSize: canvasSize, reduceMotion: reduceMotion)
+            } else if step == .redrawMarkerLine {
+                player.removeUserMarkerStrokes(reduceMotion: reduceMotion)
             }
         }
         .task(id: tutorial.step) {

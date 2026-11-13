@@ -9,6 +9,8 @@ enum TutorialStep: Int, CaseIterable {
     case openWidth, setWidth, openOpacity, setOpacity, openTool
     case selectReed, chooseReed, openAngle, setAngle, closeTools, reedStrokes
     case chooseFill, fillCanvas
+    case chooseBlur, blurCanvas
+    case crossMarkerLine, openDrawingSettings, openColorBlending, chooseColorInversion, redrawMarkerLine
     case openLayers, openLayerSettings, lockTransparency, closeLayerSettings, closeLayers
     case paintOverStroke, addLayer, moveLayerDown, drawBehindStroke
     case openLasso, selectLasso, transformLasso, finishLasso
@@ -47,6 +49,7 @@ struct TutorialProgress {
         case openedCanvasSettings, openedPerspective, choseVanishingPoints, drewAlongGuide
         case openedCanvasSize, openedCrop, croppedCanvas
         case startedSelection, cancelledSelection, selectedDrawings, deselectedDrawings, favoritedSelection
+        case crossedMarkerLine, openedDrawingSettings, openedColorBlending, choseColorInversion
     }
     enum Effect: Equatable {
         case none, advance, showResult, pauseReminders
@@ -133,8 +136,8 @@ struct TutorialProgress {
         case .openTool: unlockedToolPages.formUnion([0, 2, 3, 5, 6])
         case .selectReed: unlockedToolPages = visibleToolPages
         case .openAngle: unlockedToolPages.insert(4)
-        // The fill lesson opens on Tool and keeps the carousel there.
-        case .chooseFill: unlockedToolPages = [2]
+        // The fill and blur lessons open on Tool and keep the carousel there.
+        case .chooseFill, .chooseBlur: unlockedToolPages = [2]
         default: break
         }
     }
@@ -184,6 +187,11 @@ struct TutorialProgress {
             return .none
         // The applied setting stays visible briefly; the next step then returns to the canvas.
         case (.choosePerspective, .choseVanishingPoints), (.applyCrop, .croppedCanvas): return .showResult
+        // The mixed and the inverted overlap each stay visible before the lesson moves on.
+        case (.crossMarkerLine, .crossedMarkerLine), (.chooseColorInversion, .choseColorInversion),
+             (.redrawMarkerLine, .crossedMarkerLine): return .showResult
+        case (.openDrawingSettings, .openedDrawingSettings), (.openColorBlending, .openedColorBlending):
+            return .advance
         case (.openCanvasSettings, .openedCanvasSettings), (.openPerspective, .openedPerspective),
              (.perspectiveStroke, .drewAlongGuide), (.openCanvasSize, .openedCanvasSize),
              (.openCrop, .openedCrop),
@@ -196,7 +204,7 @@ struct TutorialProgress {
              (.saveDrawing, .saved), (.openMenu, .openedMenu),
              (.openGallery, .openedGallery), (.galleryFullscreen, .galleryFullscreen),
              (.deleteDrawing, .deleted), (.returnToCanvas, .returnedToCanvas),
-             (.fillCanvas, .filled), (.openLayers, .openedLayers),
+             (.fillCanvas, .filled), (.blurCanvas, .stroke), (.openLayers, .openedLayers),
              (.openLayerSettings, .openedLayerSettings), (.lockTransparency, .lockedTransparency),
              (.closeLayerSettings, .closedLayerSettings), (.closeLayers, .closedLayers),
              (.paintOverStroke, .paintedOver), (.addLayer, .addedLayer),
@@ -210,9 +218,13 @@ struct TutorialProgress {
     var teachesPerspective: Bool { step != .inactive && lessonSteps.contains(.openPerspective) }
     var teachesCrop: Bool { step != .inactive && lessonSteps.contains(.openCrop) }
     var teachesGallerySelection: Bool { step != .inactive && lessonSteps.contains(.startSelection) }
-    /// The fill lesson offers only the lesson's brush and Fill until the settings close.
-    var limitsToolsToFill: Bool {
-        (step == .chooseFill || step == .closeTools) && lessonSteps.contains(.chooseFill)
+    var teachesBlending: Bool { step != .inactive && lessonSteps.contains(.openColorBlending) }
+    /// The fill and blur lessons offer only the lesson's brush and their tool until the settings close.
+    var lessonInstrument: DrawingInstrument? {
+        guard step == .chooseFill || step == .chooseBlur || step == .closeTools else { return nil }
+        if lessonSteps.contains(.chooseFill) { return .fill }
+        if lessonSteps.contains(.chooseBlur) { return .blur }
+        return nil
     }
     /// The repaint and layer-order lessons need a visible change, so colors already
     /// on the canvas cannot be chosen again.
@@ -221,7 +233,7 @@ struct TutorialProgress {
             && (lessonSteps.contains(.paintOverStroke) || lessonSteps.contains(.drawBehindStroke))
     }
     /// Tool settings open on Color (1), or on Tool (2) when the lesson starts there.
-    var initialToolPage: Int { step == .chooseFill ? 2 : 1 }
+    var initialToolPage: Int { step == .chooseFill || step == .chooseBlur ? 2 : 1 }
     func allowsToolAdjustment(page: Int) -> Bool { visibleToolPages.contains(page) }
     func allowsToolPage(_ page: Int) -> Bool {
         step == .inactive ? visibleToolPages.contains(page) : unlockedToolPages.contains(page)
@@ -238,9 +250,12 @@ struct TutorialProgress {
         case .selectReed: return old.instrument != style.instrument
         case .chooseReed: return style.instrument == .reed
         case .chooseFill: return style.instrument == .fill
-        case .closeTools where lessonSteps.contains(.chooseFill):
-            // Scrolling past Fill before closing restores the selection exercise.
-            if style.instrument != .fill { returnTo(.chooseFill) }
+        case .chooseBlur: return style.instrument == .blur
+        case .closeTools where lessonInstrument != nil:
+            // Scrolling past the lesson's tool before closing restores the selection exercise.
+            if let tool = lessonInstrument, style.instrument != tool {
+                returnTo(tool == .fill ? .chooseFill : .chooseBlur)
+            }
             return false
         case .openAngle, .setAngle:
             // Angle exists only for Reed; leaving it restores the selection exercise.

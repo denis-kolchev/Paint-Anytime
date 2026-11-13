@@ -102,12 +102,12 @@ struct WatchToolSettingsView: View {
 
     private var isEraser: Bool { controller.pencilStyle.instrument == .eraser }
     private var instruments: [DrawingInstrument] {
-        guard tutorial.limitsToolsToFill else { return DrawingInstrument.displayOrder }
-        let brush = fillLessonBrush ?? controller.pencilStyle.instrument
-        return DrawingInstrument.displayOrder.filter { $0 == brush || $0 == .fill }
+        guard let tool = tutorial.lessonInstrument else { return DrawingInstrument.displayOrder }
+        let brush = lessonBrush ?? controller.pencilStyle.instrument
+        return DrawingInstrument.displayOrder.filter { $0 == brush || $0 == tool }
     }
-    /// The brush in use when the fill lesson opened the settings.
-    @State private var fillLessonBrush: DrawingInstrument?
+    /// The brush in use when the fill or blur lesson opened the settings.
+    @State private var lessonBrush: DrawingInstrument?
     /// Colors already on the canvas when a repaint or layer-order lesson opened the settings.
     @State private var lessonColors: [SIMD4<Float>] = []
     private var instrumentIndex: Int { instruments.firstIndex(of: controller.pencilStyle.instrument) ?? 0 }
@@ -591,8 +591,8 @@ struct WatchToolSettingsView: View {
         .onChange(of: paletteData) { _, _ in reloadPaletteLibrary() }
         .onAppear {
             reloadPaletteLibrary()
-            if tutorial.limitsToolsToFill, controller.pencilStyle.instrument != .fill {
-                fillLessonBrush = controller.pencilStyle.instrument
+            if let tool = tutorial.lessonInstrument, controller.pencilStyle.instrument != tool {
+                lessonBrush = controller.pencilStyle.instrument
             }
             if tutorial.locksLessonColor {
                 lessonColors = [controller.pencilStyle.color]
