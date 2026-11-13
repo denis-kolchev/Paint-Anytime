@@ -281,10 +281,6 @@ struct TutorialPlayerView: View {
                             .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
                             .allowsHitTesting(false)
                             .zIndex(4)
-                            .task(id: savedNoticeID) {
-                                do { try await Task.sleep(for: .seconds(2)) } catch { return }
-                                withAnimation(.easeOut(duration: 0.2)) { self.savedNoticeID = nil }
-                            }
                     }
                 }
                 .overlay(alignment: .bottom) {
@@ -496,6 +492,14 @@ struct TutorialPlayerView: View {
         .onChange(of: player.saveRevision) { _, _ in
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
                 savedNoticeID = UUID()
+            }
+            // Dismiss on a timer that keeps running even while the notice is hidden
+            // (a different page), so it never reappears stale once canvas returns.
+            let id = savedNoticeID
+            Task { @MainActor in
+                do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                guard savedNoticeID == id else { return }
+                withAnimation(.easeOut(duration: 0.2)) { savedNoticeID = nil }
             }
         }
         .onChange(of: scenePhase) { _, phase in

@@ -17,6 +17,9 @@ final class TutorialSession: ObservableObject {
          .adjustPaletteColor, .savePaletteColor].contains(step)
     }
     @Published var galleryIsOpen = false
+    /// The yellow marker line the blending lesson draws itself; set once it finishes, so a
+    /// crossing stroke is checked only against it, never against the user's own earlier tries.
+    @Published var markerLineStrokeID: UUID?
     @Published var galleryIsFullscreen = false
     var instruction: String {
         switch step {
@@ -133,6 +136,7 @@ final class TutorialSession: ObservableObject {
     func start(chapters: [TutorialChapter] = TutorialChapter.allCases) {
         cancelPendingAdvance()
         progress.start(chapters: chapters)
+        markerLineStrokeID = nil
         releasedCircleEarly = false
         failedCircleAttempts = 0
         crownPracticedSteps = []
@@ -182,8 +186,10 @@ final class TutorialSession: ObservableObject {
             guard TutorialStrokeOverlap.paintsOver(stroke, earlier: Array(layer.strokes.dropLast())) else { return }
             record(.paintedOver)
         case .crossMarkerLine, .redrawMarkerLine:
-            // Only a stroke across the demonstrated yellow line shows the blend.
-            guard TutorialStrokeOverlap.paintsOver(stroke, earlier: Array(layer.strokes.dropLast())) else { return }
+            // Only a stroke across the demonstrated yellow line shows the blend; checking
+            // against every earlier stroke would also accept the user's own earlier, missed try.
+            guard let lineID = markerLineStrokeID, let line = layer.strokes.first(where: { $0.id == lineID }),
+                  TutorialStrokeOverlap.paintsOver(stroke, earlier: [line]) else { return }
             record(.crossedMarkerLine)
         case .drawBehindStroke:
             guard let document = canvasDocument?(),

@@ -14,6 +14,10 @@ struct WatchCanvasAdjustmentView: View {
     @State private var cropPercent = 90.0
     @State private var cropX = 50.0
     @State private var cropY = 50.0
+    /// The crop window's origin at the start of a drag, so translation stays relative to it.
+    @State private var cropDragStartOrigin: CGPoint?
+    /// Set while the crop window itself is being dragged, so the page-switch swipe below yields.
+    @State private var isDraggingCropWindow = false
     /// Unbounded quarter-turn count so the preview always animates the short way.
     @State private var rotationSteps = 0
     private var turns: Int { ((rotationSteps % 4) + 4) % 4 }
@@ -112,9 +116,30 @@ struct WatchCanvasAdjustmentView: View {
                                    alignment: mode == 0 ? .topLeading : .center)
                     }
                     if mode == 1 {
+                        // Room the window's origin can move within, in canvas points.
+                        let maxOriginX = max(0, original.width - cropSize.width)
+                        let maxOriginY = max(0, original.height - cropSize.height)
                         Rectangle().stroke(.green, lineWidth: 1.5)
                             .frame(width: cropSize.width * scale, height: cropSize.height * scale)
+                            .contentShape(Rectangle())
                             .offset(x: cropOrigin.x * scale, y: cropOrigin.y * scale)
+                            .gesture(
+                                DragGesture(minimumDistance: 2)
+                                    .onChanged { value in
+                                        isDraggingCropWindow = true
+                                        let start = cropDragStartOrigin ?? cropOrigin
+                                        if cropDragStartOrigin == nil { cropDragStartOrigin = start }
+                                        let x = min(maxOriginX, max(0, start.x + value.translation.width / scale))
+                                        let y = min(maxOriginY, max(0, start.y + value.translation.height / scale))
+                                        cropX = maxOriginX > 0 ? (x / maxOriginX * 100).rounded() : 50
+                                        cropY = maxOriginY > 0 ? (y / maxOriginY * 100).rounded() : 50
+                                    }
+                                    .onEnded { _ in
+                                        isDraggingCropWindow = false
+                                        cropDragStartOrigin = nil
+                                    }
+                            )
+                            .accessibilityHidden(true)
                     }
                 }
                 .frame(width: target.width * scale, height: target.height * scale)
@@ -246,6 +271,8 @@ struct WatchCanvasAdjustmentView: View {
         .frame(height: availableHeight)
         .contentShape(Rectangle())
         .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
+            // A drag that moved the crop window itself must not also flip the page.
+            guard !isDraggingCropWindow else { return }
             guard abs(value.translation.width) > abs(value.translation.height) else { return }
             let forward = (value.translation.width < 0) == (layoutDirection == .leftToRight)
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {

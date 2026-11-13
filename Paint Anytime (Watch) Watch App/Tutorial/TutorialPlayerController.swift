@@ -28,8 +28,6 @@ final class TutorialPlayerController: ObservableObject {
     private var demonstration: Task<Void, Never>?
     /// Identifies the running demonstration, so a cancelled one never unlocks input early.
     private var demonstrationID = UUID()
-    /// The yellow line the blending lesson draws; the user's strokes cross it.
-    private var demonstratedStrokeID: UUID?
     private var didConfirmClear = false
     private let folder: URL
     private let chapters: [TutorialChapter]
@@ -75,6 +73,7 @@ final class TutorialPlayerController: ObservableObject {
     /// Chapters stay independent: each one starts on a clean canvas with the default brush.
     func beginChapter() {
         stopDemonstration()
+        tutorial.markerLineStrokeID = nil
         canvas.cancelStroke()
         lasso.deactivate()
         canvas.clear()
@@ -221,7 +220,7 @@ final class TutorialPlayerController: ObservableObject {
                 if demonstrationID == id { canvas.cancelStroke() }
                 return
             }
-            demonstratedStrokeID = canvas.selectedLayer.strokes.last?.id
+            tutorial.markerLineStrokeID = canvas.selectedLayer.strokes.last?.id
             var blue = lineStyle
             blue.color = InkPreset.all.first { $0.nameKey == "Light blue" }?.rgba ?? SIMD4(0.15, 0.7, 0.9, 1)
             canvas.pencilStyle = blue
@@ -240,10 +239,10 @@ final class TutorialPlayerController: ObservableObject {
             // Wait until the page has returned, so the strokes disappear in view.
             do { try await Task.sleep(for: .milliseconds(reduceMotion ? 300 : 800)) } catch { return }
             let layer = canvas.selectedLayer
-            let lineID = demonstratedStrokeID
+            let lineID = tutorial.markerLineStrokeID
             let kept = layer.strokes.filter { $0.id == lineID }
             guard !kept.isEmpty else { return }
-            canvas.replaceLayerStrokes(kept, in: layer.id)
+            canvas.replaceLayerStrokes(kept, in: layer.id, animatesClear: true)
         }
     }
 

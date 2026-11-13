@@ -128,10 +128,12 @@ final class CanvasController: ObservableObject {
     }
 
     /// A complete selection drag is one undoable edit, independent of preview frames.
-    func replaceLayerStrokes(_ strokes: [Stroke], in layerID: UUID) {
+    func replaceLayerStrokes(_ strokes: [Stroke], in layerID: UUID, animatesClear: Bool = false) {
         guard let index = document.layers.firstIndex(where: { $0.id == layerID }),
               document.layers[index].strokes != strokes else { return }
         editLayers { $0.layers[index].strokes = strokes }
+        // The raster view cross-fades from its previous frame, as a full clear does.
+        if animatesClear { clearDocumentRevision = documentRevision }
     }
 
     /// Transfers a prepared selection (including area cutouts) as one history edit.
