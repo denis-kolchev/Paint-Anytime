@@ -464,11 +464,13 @@ struct CanvasMorphPanels: View {
                     // A lasso opened into one mode skips the mode picker; Complete strokes
                     // leaves only the send checkmark until its image arrives.
                     if showsSelectionActions || (!lasso.isModeLocked && !(lasso.hidesSelectionActions && lasso.bounds != nil)) {
+                        // Sits slightly above the native bottom slot, clear of the screen's rounded edge.
+                        let panelY = bottom.y - 4
                         lassoMorph(diameter: diameter, panelWidth: panelWidth)
-                            .position(x: size.width / 2, y: bottom.y)
+                            .position(x: size.width / 2, y: panelY)
                             // Same entrance as the gallery's selection actions.
                             .transition(morphTransition(anchor: unitPoint(
-                                CGPoint(x: size.width / 2, y: bottom.y))))
+                                CGPoint(x: size.width / 2, y: panelY))))
                     }
                 }
             }

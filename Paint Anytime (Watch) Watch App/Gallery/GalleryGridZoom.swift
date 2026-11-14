@@ -25,6 +25,8 @@ final class GalleryGridZoom {
     private(set) var elasticAnchor: CGPoint = .zero
     private(set) var singleFrame: CGRect = .zero
     private(set) var isPanning = false
+    /// Column count the running settlement heads to; nil during Crown input or pans.
+    private(set) var settleDestination: Int?
     private var favorites: Set<URL> = []
     private var nativeGridIsOriginal = true
     private var baseLeading = 0
@@ -47,6 +49,12 @@ final class GalleryGridZoom {
     #endif
 
     var target: URL? { snapshot.indices.contains(index) ? snapshot[index] : nil }
+    /// Density the zoom ends on: the running settlement, a settled commit, or the
+    /// nearest density while the Crown is still turning.
+    var heading: Int {
+        settleDestination ?? settledColumns
+            ?? GalleryZoomRules.nearest(position: position, baseColumns: baseColumns, width: viewport.width)
+    }
     var active: Bool { sessionID != nil }
     var presentationOffsetY: CGFloat { offsetY * min(1, max(0, 2 - position)) }
 
@@ -158,6 +166,10 @@ final class GalleryGridZoom {
         let session = sessionID
         let token = UUID()
         animationID = token
+        settleDestination = columns
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.settleBegan(destination: columns, duration: reduceMotion ? 0 : timing.duration)
+        #endif
         let start = GalleryZoomRules.sizeProgress(position)
         let endPosition = GalleryZoomRules.position(columns)
         let end = GalleryZoomRules.sizeProgress(endPosition)
@@ -172,6 +184,9 @@ final class GalleryGridZoom {
                 let progress = GalleryZoomRules.easing(time, gridTransition: timing.gridTransition)
                 self.position = time >= 1 ? endPosition : GalleryZoomRules.positionFromSize(start + (end - start) * CGFloat(progress))
                 if time >= 1 {
+                    #if DEBUG
+                    WatchGalleryDiagnostics.shared.settleEnded()
+                    #endif
                     self.settledColumns = columns
                     self.commitIfReady()
                     return
@@ -185,8 +200,32 @@ final class GalleryGridZoom {
         animation?.cancel()
         animation = nil
         animationID = nil
+        settleDestination = nil
         settledColumns = nil
         pendingCommit = nil
+    }
+
+    /// The photo drawn under a compositor point, using the overlay's transform.
+    func url(at point: CGPoint) -> URL? {
+        guard active else { return nil }
+        let bounded = min(2, max(0, position))
+        let scale = 1 + position - bounded
+        let from = bounded <= 1 ? 5 : 3, to = bounded <= 1 ? 3 : 1
+        let progress = bounded <= 1 ? bounded : bounded - 1
+        let local = CGPoint(x: (point.x - elasticAnchor.x) / scale + elasticAnchor.x,
+                            y: (point.y - topInset - elasticAnchor.y - presentationOffsetY) / scale + elasticAnchor.y)
+        for slot in slots.reversed() {
+            if position < 0, !(0..<5).contains(slot.columns[5] ?? -1) { continue }
+            guard let start = slot.frames[from], let end = slot.frames[to] else { continue }
+            let rect = CGRect(x: start.minX + (end.minX - start.minX) * progress,
+                              y: start.minY + (end.minY - start.minY) * progress,
+                              width: start.width + (end.width - start.width) * progress,
+                              height: start.height + (end.height - start.height) * progress)
+            guard rect.contains(local) else { continue }
+            let shown = progress < 0.5 || slot.preservesSource(from: from, to: to) ? slot.images[from] : slot.images[to]
+            return shown ?? slot.images[from] ?? slot.images[to]
+        }
+        return nil
     }
 
     func pan(to translation: CGFloat) {

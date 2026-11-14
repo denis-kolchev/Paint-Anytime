@@ -76,7 +76,8 @@ struct SavedDrawingsToolbar: ToolbarContent {
                 .opacity(0)
                 .tutorialHint(tutorial, steps: [.returnToCanvas])
         }
-        .disabled(isTransitioning || isCleanViewing || isLoading)
+        // Stays enabled during zoom: goBack retargets or queues the step back.
+        .disabled(isCleanViewing || isLoading)
         .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
         .overlay {
             Image(systemName: "chevron.left")

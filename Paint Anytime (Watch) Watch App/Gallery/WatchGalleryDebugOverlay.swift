@@ -25,4 +25,35 @@ struct WatchGalleryDebugOverlay: View {
             }
     }
 }
+/// Tap/Back responsiveness, drawn at the app root above `MenuGalleryTransitionHUD`
+/// so neither the gallery stack nor the menu timeline covers it.
+struct WatchGalleryTapHUD: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var text: String?
+
+    var body: some View {
+        // A real container, not Group: modifiers on an empty Group are dropped,
+        // so `.task` never started and the panel stayed hidden.
+        ZStack {
+            if let text {
+                Text(verbatim: text)
+                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.yellow)
+                    .padding(4)
+                    .background(.black.opacity(0.85), in: RoundedRectangle(cornerRadius: 4))
+                    .fixedSize()
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .task(id: scenePhase) {
+            guard scenePhase == .active, WatchGalleryDiagnostics.tapPanelEnabled else { return }
+            while !Task.isCancelled {
+                let next = WatchGalleryDiagnostics.shared.tapSnapshot?()
+                if next != text { text = next }
+                do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+            }
+        }
+    }
+}
 #endif

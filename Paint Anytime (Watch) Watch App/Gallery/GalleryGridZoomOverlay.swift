@@ -3,6 +3,8 @@ import SwiftUI
 /// The phone's slot compositor, using CGImage on watch instead of UIKit images.
 struct GalleryGridZoomOverlay: View {
     let zoom: GalleryGridZoom
+    /// Taps during settlement or restore; the native grid ignores input meanwhile.
+    var onTap: (CGPoint) -> Void = { _ in }
     @GestureState private var dragging = false
 
     var body: some View {
@@ -68,6 +70,7 @@ struct GalleryGridZoomOverlay: View {
             .updating($dragging) { _, active, _ in active = true }
             .onChanged { zoom.pan(to: $0.translation.height) }
             .onEnded { _ in if zoom.isPanning { zoom.endPan() } })
+        .simultaneousGesture(SpatialTapGesture().onEnded { onTap($0.location) })
         .onChange(of: dragging) { _, active in
             if !active, zoom.isPanning { zoom.endPan() }
         }

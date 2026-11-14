@@ -44,14 +44,26 @@ struct WatchLassoOverlay: View {
                     .concatenating(canvasToScreen)
                 let point = WatchLassoGeometry.rotationHandle(bounds,
                     offset: WatchLassoGeometry.rotationHandleOffset / max(scale, 0.001)).applying(orientation)
-                Image(systemName: "arrow.clockwise")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 22, height: 22)
-                    .background(Color(red: 0.16, green: 0.67, blue: 0.87), in: Circle())
-                    .overlay { Circle().strokeBorder(.white, lineWidth: 1) }
-                    .rotationEffect(.radians(Double(lasso.rotation)))
-                    .position(point)
+                handleBadge("arrow.clockwise", at: point)
+            }
+        }
+        .overlay {
+            if let bounds = lasso.bounds,
+               !lasso.hidesControls || lasso.isDraggingMoveHandle {
+                GeometryReader { proxy in
+                    let scale = max(hypot(canvasToScreen.a, canvasToScreen.b), 0.001)
+                    let orientation = WatchLassoGeometry.rotation(lasso.rotation, around: bounds)
+                        .concatenating(canvasToScreen)
+                    // Same distance from the frame as the rotation handle; the inset keeps the whole badge on screen.
+                    let visible = CGRect(origin: .zero, size: proxy.size)
+                        .insetBy(dx: Self.badgeSize / 2, dy: Self.badgeSize / 2)
+                        .applying(canvasToScreen.inverted())
+                    let moveHandle = WatchLassoGeometry.moveHandle(bounds, rotation: lasso.rotation,
+                        offset: WatchLassoGeometry.rotationHandleOffset / scale, visible: visible,
+                        pinnedMoveOnRight: lasso.pinnedMoveHandleOnRight)
+                    handleBadge("arrow.up.and.down.and.arrow.left.and.right",
+                                at: moveHandle.point.applying(orientation))
+                }
             }
         }
         .overlay(alignment: .bottom) {
@@ -74,6 +86,20 @@ struct WatchLassoOverlay: View {
         .overlay { if lasso.isPreparing { ProgressView().tint(.cyan) } }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
+    }
+
+    private static let badgeSize: CGFloat = 22
+
+    /// Round blue control drawn beside the selection frame, turned with the selection.
+    private func handleBadge(_ symbol: String, at point: CGPoint) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: Self.badgeSize, height: Self.badgeSize)
+            .background(Color(red: 0.16, green: 0.67, blue: 0.87), in: Circle())
+            .overlay { Circle().strokeBorder(.white, lineWidth: 1) }
+            .rotationEffect(.radians(Double(lasso.rotation)))
+            .position(point)
     }
 
 }

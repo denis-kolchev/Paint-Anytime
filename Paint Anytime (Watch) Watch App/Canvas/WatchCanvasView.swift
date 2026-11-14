@@ -298,7 +298,10 @@ struct WatchCanvasView: View {
                                 if lasso.isActive {
                                     lassoGestureStartBounds = lasso.bounds
                                     lasso.begin(at: canvasPoint(value.startLocation, size: geometry.size),
-                                        tolerance: WatchLassoGeometry.handleHitRadius / (zoom * fit), controller: controller)
+                                        tolerance: WatchLassoGeometry.handleHitRadius / (zoom * fit),
+                                        visibleRect: CGRect(origin: .zero, size: geometry.size)
+                                            .applying(canvasToScreen(geometry.size).inverted()),
+                                        controller: controller)
                                 } else if showsGuides, !isMovingCanvas, !isEyedropperActive {
                                     guideDrag = guideDragStart(at: value.startLocation, size: geometry.size)
                                 }

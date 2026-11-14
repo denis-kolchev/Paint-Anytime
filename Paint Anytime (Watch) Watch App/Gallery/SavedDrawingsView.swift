@@ -63,7 +63,9 @@ struct SavedDrawingsView: View {
     @State private var galleryTopInset: CGFloat = 0
     @State private var leadingSlots = 0
     @State private var imageLayout = GalleryImageLayout()
-    @State private var suppressOpeningUntil = Date.distantPast
+    /// A tile tapped while the zoom compositor owned input; replayed once it hands back.
+    /// `url == nil` is a queued Back (leave the gallery after zooming out to 5 columns).
+    @State private var queuedTap: (url: URL?, session: UUID?)?
     @State private var transitionBitmap: GalleryBitmap?
     @State private var displayedBitmap: GalleryBitmap?
     @FocusState private var crownTarget: GalleryCrownInput.Target?
@@ -168,7 +170,7 @@ struct SavedDrawingsView: View {
                 }
 
                 if gridZoom.active {
-                    GalleryGridZoomOverlay(zoom: gridZoom)
+                    GalleryGridZoomOverlay(zoom: gridZoom, onTap: tapDuringZoom)
                 }
                 GalleryHeaderBackdrop(height: navigationHeight + 24,
                                       zoom: gridZoom, showsFullscreen: showsFullscreen)
@@ -259,7 +261,20 @@ struct SavedDrawingsView: View {
                 galleryTopInset = contentTopInset
                 gridZoom.reset()
             }
+            #if DEBUG
+            .onAppear {
+                // The tap panel lives at the app root (above the menu timeline); it polls this.
+                WatchGalleryDiagnostics.shared.tapSnapshot = {
+                    WatchGalleryDiagnostics.shared.tapText(zoom: gridZoom,
+                        urls: drawings.map(\.url), queued: queuedTap.flatMap { $0.url == nil ? "back" : nil },
+                        queuedURL: queuedTap?.url)
+                }
+            }
+            #endif
             .onDisappear {
+                #if DEBUG
+                WatchGalleryDiagnostics.shared.tapSnapshot = nil
+                #endif
                 gridZoom.reset()
                 gridStorage.clearBitmaps()
             }
@@ -583,8 +598,66 @@ struct SavedDrawingsView: View {
             toggleSelection(drawing)
             return
         }
-        guard Date() >= suppressOpeningUntil, tutorial.allowsGalleryZoom else { return }
+        guard tutorial.allowsGalleryZoom else {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.tap(drawing.url, source: "grid", result: "tutorial")
+            #endif
+            return
+        }
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.tap(drawing.url, source: "grid", result: zoomLevel == 0 ? "zoom 3c" : "open")
+        #endif
         tutorial.activity()
+        focusedDrawing = drawing
+        if zoomLevel == 0 { setZoom(1) }
+        else { open(drawing) }
+    }
+
+    /// The native grid ignores taps while the compositor is mounted, so a second tap
+    /// mid-animation used to be lost. Queue it and replay it as soon as the grid returns.
+    private func tapDuringZoom(at point: CGPoint) {
+        let url = gridZoom.url(at: point)
+        func record(_ result: String) {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.tap(url, source: "zoom \(gridZoom.debugPhase)", result: result)
+            #endif
+        }
+        guard !isSelecting, tutorial.allowsGalleryZoom else { return record("blocked") }
+        // Already heading to the photo screen: nothing further to zoom into.
+        guard gridZoom.heading != 1 else { return record("ignored→1c") }
+        guard let url else { return record("miss") }
+        tutorial.activity()
+        queuedTap = (url, gridZoom.sessionID)
+        record("queued")
+    }
+
+    private func replayQueuedTap(session: UUID?) {
+        guard let tap = queuedTap else { return }
+        queuedTap = nil
+        let url = tap.url
+        // A tap from a zoom that was reset (size change, error) must not fire later.
+        guard tap.session == session, !isTransitioning else {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.replayed(result: "dropped")
+            #endif
+            return
+        }
+        guard let url else {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.replayed(result: "back")
+            #endif
+            goBack()
+            return
+        }
+        guard !showsFullscreen, let drawing = drawings.first(where: { $0.url == url }) else {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.replayed(result: "dropped")
+            #endif
+            return
+        }
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.replayed(result: zoomLevel == 0 ? "zoom 3c" : "open")
+        #endif
         focusedDrawing = drawing
         if zoomLevel == 0 { setZoom(1) }
         else { open(drawing) }
@@ -594,11 +667,42 @@ struct SavedDrawingsView: View {
         guard !isLoading else { return }
         guard tutorial.allowsGalleryBack else { return }
         tutorial.activity()
-        guard !isTransitioning else { return }
+        guard !isTransitioning else { return backDuringZoom() }
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.back(result: isSelecting ? "end select" : showsFullscreen
+            ? "→\(returnGridLevel == 0 ? 5 : 3)c" : zoomLevel > 0 ? "→5c" : "close")
+        #endif
         if isSelecting { setSelecting(false); return }
         if showsFullscreen { setZoom(returnGridLevel) }
         else if zoomLevel > 0 { setZoom(zoomLevel - 1) }
         else { onClose() }
+    }
+
+    /// Back while the compositor owns input. The zoom target does not matter for
+    /// zooming out, so retarget the running settlement at once (as the Crown does)
+    /// instead of waiting for the restore. Only leaving the gallery waits.
+    private func backDuringZoom() {
+        let heading = gridZoom.heading
+        let destination: Int
+        switch heading {
+        case 1:
+            let base = gridZoom.baseColumns
+            destination = base != 1 ? base : (returnGridLevel == 0 ? 5 : 3)
+        case 3: destination = 5
+        default:
+            queuedTap = (nil, gridZoom.sessionID)
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.back(result: "queued close (\(gridZoom.debugPhase))")
+            #endif
+            return
+        }
+        // A newer Back supersedes a tile tap waiting for the old destination.
+        queuedTap = nil
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.back(result: "retarget \(heading)c→\(destination)c (\(gridZoom.debugPhase))")
+        #endif
+        gridZoom.settle(to: destination, reduceMotion: reduceMotion)
+        WKInterfaceDevice.current().play(.click)
     }
 
     @MainActor
@@ -730,9 +834,15 @@ struct SavedDrawingsView: View {
     }
 
     private func completeGridZoom() {
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.zoomCompleted()
+        #endif
+        let session = gridZoom.sessionID
         gridZoom.reset()
         crownPosition = Double(zoomLevel)
-        suppressOpeningUntil = Date().addingTimeInterval(0.3)
+        // Unlike the phone's pinch lift, a watch zoom leaves no stray tap behind,
+        // so the grid accepts the next tap immediately (no 0.3 s suppression).
+        replayQueuedTap(session: session)
     }
 
     private func open(_ drawing: CanvasExport) {
@@ -744,6 +854,7 @@ struct SavedDrawingsView: View {
     }
 
     private func returnToGrid() {
+        queuedTap = nil
         gridZoom.reset()
         isCleanViewing = false
         showsFullscreen = false

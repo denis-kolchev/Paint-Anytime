@@ -20,6 +20,7 @@ struct WatchLassoToolbarTouchRegion: View {
                         gestureMapping = mapping
                         lasso.begin(at: mapping.point(value.startLocation),
                                     tolerance: WatchLassoGeometry.handleHitRadius / mapping.zoomScale,
+                                    visibleRect: mapping.visibleRect,
                                     controller: controller)
                     }
                     guard let mapping = gestureMapping else { return }

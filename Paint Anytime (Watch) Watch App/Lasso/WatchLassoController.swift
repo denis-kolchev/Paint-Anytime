@@ -131,13 +131,19 @@ final class WatchLassoController: ObservableObject {
     private var preparation: Task<Void, Never>?
     private let builder = WatchLassoBuilder()
     private var generation = UUID()
-    private enum Drag { case outline, move, resize(Int), rotate }
+    private enum Drag { case outline, move, moveHandle, resize(Int), rotate }
     @Published private var drag: Drag?
     var isRotating: Bool {
         guard let drag, case .rotate = drag else { return false }
         return true
     }
     var rotationHandleBounds: CGRect? { bounds }
+    var isDraggingMoveHandle: Bool {
+        guard let drag, case .moveHandle = drag else { return false }
+        return true
+    }
+    /// The side the move handle had when the finger grabbed it; it stays there for the drag.
+    @Published private(set) var pinnedMoveHandleOnRight: Bool?
     var hidesControls: Bool { isActive && (drag != nil || isPreparing) }
     var activeResizeHandle: Int? {
         guard let drag, case let .resize(handle) = drag else { return nil }
@@ -172,6 +178,7 @@ final class WatchLassoController: ObservableObject {
         rotation = 0
         previewState = nil
         drag = nil
+        pinnedMoveHandleOnRight = nil
         sketchAssistStage = .idle
         sketchAssistRender = nil
     }
@@ -184,11 +191,13 @@ final class WatchLassoController: ObservableObject {
         }
     }
 
-    func begin(at point: CGPoint, tolerance: CGFloat, controller: CanvasController) {
+    /// `visibleRect`: the on-screen canvas in document coordinates; side handles avoid its edges.
+    func begin(at point: CGPoint, tolerance: CGFloat, visibleRect: CGRect?, controller: CanvasController) {
         guard isActive, !isPreparing, controller.selectedLayer.isVisible,
               controller.selectedLayer.opacity > 0 else { return }
         documentChanged(controller)
         dragStart = point
+        pinnedMoveHandleOnRight = nil
         if let bounds {
             generation = UUID()
             dragBounds = bounds
@@ -202,6 +211,18 @@ final class WatchLassoController: ObservableObject {
                handles.allSatisfy({ WatchLassoGeometry.distance($0, point) > rotationDistance }) {
                 drag = .rotate
                 // Confirm the initial grab once, without repeating during rotation.
+                WKInterfaceDevice.current().play(.click)
+                return
+            }
+            // As far out as the rotation handle; the inset keeps it fully on screen.
+            let moveHandle = WatchLassoGeometry.moveHandle(bounds, rotation: selection?.rotation ?? 0,
+                offset: tolerance * WatchLassoGeometry.rotationHandleOffset / WatchLassoGeometry.handleHitRadius,
+                visible: visibleRect?.insetBy(dx: tolerance / 2, dy: tolerance / 2))
+            let moveDistance = WatchLassoGeometry.distance(moveHandle.point, point)
+            if moveDistance <= tolerance,
+               handles.allSatisfy({ WatchLassoGeometry.distance($0, point) > moveDistance }) {
+                pinnedMoveHandleOnRight = moveHandle.onRight
+                drag = .moveHandle
                 WKInterfaceDevice.current().play(.click)
                 return
             }
@@ -232,7 +253,7 @@ final class WatchLassoController: ObservableObject {
         case .outline:
             if let last = outline.last, WatchLassoGeometry.distance(last, point) < pointSpacing { return }
             outline.append(point)
-        case .move:
+        case .move, .moveHandle:
             preview(in: dragBounds.offsetBy(dx: point.x - dragStart.x, dy: point.y - dragStart.y))
         case .rotate:
             guard let selection else { return }
@@ -304,6 +325,7 @@ final class WatchLassoController: ObservableObject {
         guard let drag else { return }
         update(at: point, pointSpacing: 0)
         self.drag = nil
+        pinnedMoveHandleOnRight = nil
         switch drag {
         case .outline:
             guard outline.count >= 3 else {
@@ -341,7 +363,7 @@ final class WatchLassoController: ObservableObject {
                     onSelectionFinished(false)
                 }
             }
-        case .move, .resize, .rotate:
+        case .move, .moveHandle, .resize, .rotate:
             guard var selection, let previewState,
                   !previewState.transform.isIdentity,
                   selection.document == controller.document,
@@ -509,6 +531,7 @@ final class WatchLassoController: ObservableObject {
     func cancelGesture() {
         guard drag != nil || previewState != nil else { return }
         drag = nil
+        pinnedMoveHandleOnRight = nil
         outline = []
         previewState = nil
         bounds = selection?.bounds

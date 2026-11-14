@@ -534,8 +534,16 @@ struct ContentView: View {
         .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsGallery)
         .frame(width: geometry.size.width, height: geometry.size.height)
         .clipped()
-        // Debug builds: the transition timeline, above the canvas and the gallery.
-        .overlay(alignment: .bottom) { MenuGalleryTransitionHUD() }
+        // Debug builds: the transition timeline, above the canvas and the gallery,
+        // with the gallery tap/Back panel stacked on top of it.
+        .overlay(alignment: .bottom) {
+            VStack(spacing: 2) {
+                #if DEBUG
+                WatchGalleryTapHUD()
+                #endif
+                MenuGalleryTransitionHUD()
+            }
+        }
         .onAppear {
             canvasSize = geometry.size
             controlRegions.screenBounds = geometry.frame(in: .global)

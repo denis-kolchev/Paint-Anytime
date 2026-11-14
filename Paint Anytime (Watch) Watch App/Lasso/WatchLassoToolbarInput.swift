@@ -15,6 +15,13 @@ final class WatchLassoToolbarInput {
             CGPoint(x: (global.x - frame.midX - offset.width) / zoomScale + paperSize.width / 2,
                     y: (global.y - frame.midY - offset.height) / zoomScale + paperSize.height / 2)
         }
+
+        /// The on-screen canvas in document coordinates.
+        var visibleRect: CGRect {
+            let origin = point(frame.origin)
+            return CGRect(x: origin.x, y: origin.y,
+                          width: frame.width / zoomScale, height: frame.height / zoomScale)
+        }
     }
     var mapping: Mapping?
 }

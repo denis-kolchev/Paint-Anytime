@@ -27,6 +27,98 @@ final class WatchGalleryDiagnostics {
     var restoreReady = false
     var restoreAt: Double?
 
+    // MARK: Tap responsiveness (own HUD above the menu→gallery timeline)
+    /// Separate from `GalleryDebug`, which also installs fixture images and touch circles.
+    nonisolated static let tapPanelEnabled = true
+    /// Installed by the open gallery; the HUD hides while it is nil.
+    var tapSnapshot: (() -> String)?
+    private var taps = 0
+    private var backs = 0
+    private var backAt: Double?
+    private var backResult = "—"
+    private var tapsLost = 0
+    private var tapAt: Double?
+    private var tapURL: URL?
+    private var tapSource = "—"
+    private var tapResult = "—"
+    private var queuedAt: Double?
+    private var replayResult = "—"
+    private var replayWaitMS: Double?
+    private var settleTo: Int?
+    private var settlePlanMS = 0.0
+    private var settleBeganAt: Double?
+    private var settleEndedAt: Double?
+    private var settleRealMS: Double?
+    private var handoffMS: Double?
+
+    private var now: Double { ProcessInfo.processInfo.systemUptime }
+
+    func tap(_ url: URL?, source: String, result: String) {
+        guard Self.tapPanelEnabled else { return }
+        taps += 1
+        tapAt = now
+        tapURL = url
+        tapSource = source
+        tapResult = result
+        if result == "queued" { queuedAt = now; replayResult = "waiting"; replayWaitMS = nil }
+        else if !source.hasPrefix("grid") { tapsLost += 1 }
+    }
+
+    func back(result: String) {
+        guard Self.tapPanelEnabled else { return }
+        backs += 1
+        backAt = now
+        backResult = result
+        if result.hasPrefix("queued") { queuedAt = now; replayResult = "waiting"; replayWaitMS = nil }
+    }
+
+    func replayed(result: String) {
+        guard Self.tapPanelEnabled else { return }
+        replayResult = result
+        replayWaitMS = queuedAt.map { (now - $0) * 1000 }
+        queuedAt = nil
+    }
+
+    func settleBegan(destination: Int, duration: Double) {
+        guard Self.tapPanelEnabled else { return }
+        settleTo = destination
+        settlePlanMS = duration * 1000
+        settleBeganAt = now
+        settleEndedAt = nil
+        settleRealMS = nil
+        handoffMS = nil
+    }
+
+    func settleEnded() {
+        guard Self.tapPanelEnabled else { return }
+        settleEndedAt = now
+        settleRealMS = settleBeganAt.map { (now - $0) * 1000 }
+    }
+
+    /// The compositor handed input back to the native grid.
+    func zoomCompleted() {
+        guard Self.tapPanelEnabled else { return }
+        handoffMS = settleEndedAt.map { (now - $0) * 1000 }
+    }
+
+    func tapText(zoom: GalleryGridZoom, urls: [URL], queued: String?, queuedURL: URL?) -> String {
+        func label(_ url: URL?) -> String {
+            guard let url else { return "—" }
+            return urls.firstIndex(of: url).map { "#\($0)" } ?? "missing"
+        }
+        func ms(_ value: Double?) -> String { value.map { String(format: "%.0f", $0) } ?? "—" }
+        let age = tapAt.map { (now - $0) * 1000 }
+        let live = settleBeganAt.flatMap { began in settleEndedAt == nil && zoom.active ? (now - began) * 1000 : nil }
+        // Input is closed for taps from settle start until the grid handoff.
+        let owner = zoom.active ? "ZOOM(\(zoom.debugPhase)→\(zoom.heading)c)" : "grid"
+        return "TAP #\(taps) lost \(tapsLost) owner \(owner)\n" +
+            "\(tapSource) \(label(tapURL)) → \(tapResult) \(ms(age))ms ago\n" +
+            "BACK #\(backs) \(backResult) \(ms(backAt.map { (now - $0) * 1000 }))ms ago\n" +
+            "queue \(queued ?? label(queuedURL)) replay \(replayResult) wait \(ms(replayWaitMS))ms\n" +
+            // plan/real animation, then the restore wait until the grid accepts taps again.
+            "settle→\(settleTo.map { "\($0)c" } ?? "—") \(ms(settlePlanMS))/\(ms(settleRealMS ?? live))ms grid+\(ms(handoffMS))"
+    }
+
     func crown(_ value: Double, result: String) {
         guard GalleryDebug.isEnabled else { return }
         crownEvents += 1
