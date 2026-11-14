@@ -28,8 +28,17 @@ struct TutorialPlayerView: View {
     @State private var isLeavingPage = false
     /// The menu mounts below the screen, then rises like the editor's sheet.
     @State private var menuRevealed = false
+    /// Back from a settings page returns to the open menu: the black floor stays under it,
+    /// or the drawing showed through while the page and the menu crossfaded.
+    @State private var menuReturnsOverBackdrop = false
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
+    /// The practice group from the canvas editor lesson is open on the canvas.
+    @State private var practiceGroupExpanded = false
+    /// The tour's simulated autosave, shown with the editor's own progress overlay.
+    @State private var showsPracticeAutosave = false
+    @State private var practiceAutosaveCompleted = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.layoutDirection) private var layoutDirection
     @State private var panGuideOffset = CGSize.zero
     @State private var panGuideVisible = false
     @State private var historyEmphasizesRedo = false
@@ -122,6 +131,9 @@ struct TutorialPlayerView: View {
                         // A withAnimation around openTools also animated the toolbar, so the clock
                         // slid in from the edge and the editor's text shook while laid out.
                         .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25), value: page == .tools)
+                        // The same for Layers: its Back and + then appear where the placeholders
+                        // stood instead of flying in, and the clock stays centred.
+                        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: page == .layers)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .onAppear { canvasSize = geometry.size }
                         .onChange(of: geometry.size) { _, size in canvasSize = size }
@@ -139,6 +151,11 @@ struct TutorialPlayerView: View {
                     savedNotice(bottomInset: measuredHintHeight + 4)
                         .animation(.easeOut(duration: 0.2), value: page == .canvas)
                         .zIndex(4)
+                }
+                // The group the lesson's canvas editor made, in the top circle it chose.
+                .overlay {
+                    practiceGroupControl
+                        .animation(.easeInOut(duration: 0.35), value: player.practiceGroupSlot)
                 }
                 .overlay(alignment: .bottom) {
                     tutorialBottomControls(hitDiameter: min(44, (screen.size.width - 16) / 4))
@@ -230,6 +247,7 @@ struct TutorialPlayerView: View {
                                 guard tutorial.permits([.leavePerspective]) else { return }
                                 // The menu returns in place instead of rising again from below.
                                 menuRevealed = true
+                                menuReturnsOverBackdrop = true
                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
                                     player.leavePerspective()
                                 }
@@ -244,6 +262,65 @@ struct TutorialPlayerView: View {
                             .accessibilityLabel(L10n.text("Back"))
                             .tutorialChromeFade()
                         }
+                    }
+                    if page == .autosave {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button {
+                                guard tutorial.permits([.leaveAutosave]) else { return }
+                                // The menu returns in place instead of rising again from below.
+                                menuRevealed = true
+                                menuReturnsOverBackdrop = true
+                                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                    player.leaveAutosave()
+                                }
+                            } label: {
+                                Image(systemName: "chevron.backward")
+                                    .tutorialHint(tutorial, steps: [.leaveAutosave])
+                                    .frame(width: 32, height: 32)
+                                    .contentShape(Circle())
+                            }
+                            .watchToolbarButtonStyle()
+                            .disabled(!tutorial.permits([.leaveAutosave]) || isLeavingPage)
+                            .accessibilityLabel(L10n.text("Back"))
+                            .tutorialChromeFade()
+                        }
+                    }
+                    if page == .drawingSettings || page == .colorBlending {
+                        ToolbarItem(placement: .topBarLeading) {
+                            let back: Set<TutorialStep> = page == .colorBlending
+                                ? [.leaveColorBlending] : [.leaveDrawingSettings]
+                            Button {
+                                guard tutorial.permits(back) else { return }
+                                if page == .drawingSettings {
+                                    // The menu returns in place instead of rising again from below.
+                                    menuRevealed = true
+                                    menuReturnsOverBackdrop = true
+                                }
+                                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                    if page == .colorBlending { player.leaveColorBlending() }
+                                    else { player.leaveDrawingSettings() }
+                                }
+                            } label: {
+                                Image(systemName: "chevron.backward")
+                                    .tutorialHint(tutorial, steps: back)
+                                    .frame(width: 32, height: 32)
+                                    .contentShape(Circle())
+                            }
+                            .watchToolbarButtonStyle()
+                            .disabled(!tutorial.permits(back) || isLeavingPage)
+                            .accessibilityLabel(L10n.text("Back"))
+                            .tutorialChromeFade()
+                        }
+                    }
+                    // The page these steps open has a button in each top corner. Holding both
+                    // corners already keeps the clock where it will be: inserted with the page,
+                    // it slid in from the edge and the new buttons flew into place.
+                    if page == .canvas && tutorial.step == .openLayers && !installsPrimaryControl {
+                        ToolbarItem(placement: .topBarTrailing) { toolbarPlaceholder }
+                    }
+                    if page == .canvas && [.openTools, .openLayers].contains(tutorial.step)
+                        && !tutorial.permits([.openMenu]) {
+                        ToolbarItem(placement: .topBarLeading) { toolbarPlaceholder }
                     }
                     if page == .canvas && tutorial.permits([.openMenu]) {
                         ToolbarItem(placement: .topBarLeading) {
@@ -266,6 +343,28 @@ struct TutorialPlayerView: View {
                 .frame(width: screen.size.width, height: screen.size.height)
                 .environment(\.tutorialHintReservedHeight, hintReservedHeight)
                 .environment(\.tutorialChromeHidden, isLeavingPage)
+
+                // The editor's overlay covers the whole canvas; the lesson card stays above it,
+                // so its explanation of autosave remains readable. The widget preview after the
+                // favorites lesson sits at the same level.
+                ZStack {
+                    if showsPracticeAutosave {
+                        AutosaveProgressView(completed: practiceAutosaveCompleted)
+                            .ignoresSafeArea()
+                            .transition(.opacity)
+                    }
+                    if showsFavoritesWidget {
+                        TutorialFavoritesWidgetPreview(drawings: tutorial.favoritedDrawings,
+                                                       hintReservedHeight: hintReservedHeight,
+                                                       closeButtonFrame: controls[.more]) {
+                            tutorial.record(.sawFavoritesWidget)
+                        }
+                        .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.94)))
+                    }
+                }
+                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.35), value: showsFavoritesWidget)
+                .frame(width: screen.size.width, height: screen.size.height)
+                .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.22), value: showsPracticeAutosave)
 
                 lessonCard(width: hintWidth, screenHeight: screen.size.height)
                     .frame(width: hintWidth)
@@ -293,13 +392,17 @@ struct TutorialPlayerView: View {
         // padding inside the menu left the first row under the bar's blur.
         .ignoresSafeArea(.container, edges: [.menu, .layers, .layerSettings, .canvasSettings,
                                              .canvasSize, .perspective, .crop,
-                                             .drawingSettings, .colorBlending, .canvasEditor].contains(page)
+                                             .drawingSettings, .colorBlending, .canvasEditor, .autosave].contains(page)
                          || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
             // The full-screen question must not move the controls reserved for the compact card.
             if height > 0, !offersContinuation { hintHeight = height }
         }
         .background(Color.black.ignoresSafeArea())
+        .task(id: tutorial.step == .autosaveDrawing && page == .canvas) {
+            guard tutorial.step == .autosaveDrawing, page == .canvas else { return }
+            await runPracticeAutosave()
+        }
         .overlay {
             if confirmsFinish {
                 // Keep confirmation in the outgoing tutorial hierarchy so the exit
@@ -335,7 +438,8 @@ struct TutorialPlayerView: View {
         // The expanded card is the whole screen, so the clock stays hidden over it.
         // Hidden as soon as a page starts leaving for the canvas: once its leading button
         // is removed the clock would otherwise slide from the centre to the corner.
-        .requestsHiddenClock(((page == .canvas || isLeavingPage) && !confirmsFinish) || offersContinuation)
+        .requestsHiddenClock(((page == .canvas || isLeavingPage) && !confirmsFinish) || offersContinuation
+                             || showsFavoritesWidget)
         .modifier(TutorialCrownHint(tutorial: tutorial))
         .onAppear {
             // Inserted behind the closed iris: hold it until the canvas has drawn.
@@ -354,12 +458,10 @@ struct TutorialPlayerView: View {
             withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
                 player.returnToCanvasAfterSetting()
             }
-            // The blending lesson draws its own yellow line, and later removes the user's
+            // The blending lesson draws its own yellow line; the user later undoes the
             // crossing so it can be drawn again with Color inversion.
             if step == .crossMarkerLine {
                 player.demonstrateMarkerLine(viewportSize: canvasSize, reduceMotion: reduceMotion)
-            } else if step == .redrawMarkerLine {
-                player.removeUserMarkerStrokes(reduceMotion: reduceMotion)
             }
         }
         .task(id: tutorial.step) {
@@ -493,15 +595,22 @@ struct TutorialPlayerView: View {
                              onOpenDrawingSettings: {
                                  withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openDrawingSettings() }
                              },
+                             onOpenAutosave: {
+                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openAutosave() }
+                             },
                              // Installed for the whole lesson, so the bar never changes while the menu is open.
-                             onTutorialBack: tutorial.teachesPerspective ? { closeMenu() } : nil)
+                             onTutorialBack: tutorial.teachesPerspective || tutorial.teachesBlending
+                                ? { closeMenu() } : nil)
             .background(Color.black)
             .offset(y: menuRevealed || reduceMotion
                     ? 0 : screen.size.height + screen.safeAreaInsets.top + screen.safeAreaInsets.bottom)
             .onAppear {
                 withAnimation(.spring(duration: 0.45, bounce: 0)) { menuRevealed = true }
             }
-            .onDisappear { menuRevealed = false }
+            .onDisappear {
+                menuRevealed = false
+                menuReturnsOverBackdrop = false
+            }
             .zIndex(2)
     }
 
@@ -509,6 +618,8 @@ struct TutorialPlayerView: View {
     /// and the canvas takes input once it has gone.
     private func closeMenu() {
         guard page == .menu, tutorial.permits([.leaveMenu]), menuRevealed else { return }
+        // The menu slides down over the drawing, so the floor goes first.
+        menuReturnsOverBackdrop = false
         guard !reduceMotion else { player.leaveMenu(); return }
         withAnimation(.spring(duration: 0.45, bounce: 0)) { menuRevealed = false }
         Task { @MainActor in
@@ -577,6 +688,13 @@ struct TutorialPlayerView: View {
             .transition(.opacity)
             .zIndex(1)
         }
+        if page == .autosave {
+            AutosaveSettingsView(tutorial: tutorial, tutorialIsEnabled: player.practiceAutosaveEnabled,
+                                 onTutorialEnable: { player.enableAutosave() })
+            .background(Color.black.ignoresSafeArea())
+            .transition(.opacity)
+            .zIndex(1)
+        }
         // Canvas setting pages stay inside the lesson, so its card and hints remain.
         if page == .canvasSettings {
             CanvasSettingsView(controller: controller, viewportSize: screen.size,
@@ -606,7 +724,8 @@ struct TutorialPlayerView: View {
             .zIndex(1)
         }
         if page == .perspective {
-            PerspectiveGuidesSettingsView(controller: controller, viewportSize: screen.size,
+            // The whole screen, as on the canvas, so the preview keeps the canvas's shape.
+            PerspectiveGuidesSettingsView(controller: controller, viewportSize: paperSize(screen),
                                           guides: player.guides, tutorial: tutorial)
             .background(Color.black.ignoresSafeArea())
             .transition(.opacity)
@@ -753,15 +872,16 @@ struct TutorialPlayerView: View {
         guard page == .canvas else { return [:] }
         // Retain measurements for stable toolbar items across lessons. A frame
         // may not be reported again when only the button's label changes.
-        let eraserControl = player.practiceEraserSlot.map { CustomCanvasControls.anchors[$0] }
+        let groupControl = player.practiceGroupSlot.map { CanvasToolbarControl.custom($0) }
         return controls.filter { control, _ in
-            if control == eraserControl { return true }
+            if control == groupControl { return true }
             switch control {
             case .morph, .contentMorph, .custom: return false
             case .canvasToolsMorph: return tutorial.permits([.openLasso, .openLayers])
             case .tools: return showsPrimaryControl
             case .more: return tutorial.permits([.openMenu])
-            case .undo, .redo: return tutorial.permits([.history])
+            case .undo: return tutorial.permits([.history, .undoMarkerLine])
+            case .redo: return tutorial.permits([.history])
             case .save: return tutorial.permits([.saveDrawing])
             case .clear: return tutorial.permits([.clearCanvas])
             }
@@ -772,15 +892,135 @@ struct TutorialPlayerView: View {
     /// Full-screen pages that sit on black; the drawing must never show between them.
     private var coversCanvasWithBackdrop: Bool {
         switch page {
-        case .canvas, .menu, .tools: false
+        case .canvas, .tools: false
+        case .menu: menuReturnsOverBackdrop
         case .gallery, .layers, .layerSettings, .canvasSettings, .canvasSize, .perspective, .crop,
-             .drawingSettings, .colorBlending, .canvasEditor: true
+             .drawingSettings, .colorBlending, .canvasEditor, .autosave: true
         }
     }
 
-    private var showsTutorialBottomControls: Bool {
-        page == .canvas && tutorial.permits([.history, .saveDrawing])
+    /// The editor's autosave cycle: the overlay, the save, the checkmark, then the next step.
+    /// Slower than the editor's, so the lesson's first autosave can be read.
+    @MainActor private func runPracticeAutosave() async {
+        practiceAutosaveCompleted = false
+        // The canvas shows first, so the drawing that is saved has been seen.
+        do { try await Task.sleep(for: .seconds(1)) } catch { return }
+        showsPracticeAutosave = true
+        defer { showsPracticeAutosave = false }
+        do {
+            try await Task.sleep(for: .milliseconds(900))
+            player.autosave(size: canvasSize, scale: displayScale)
+            practiceAutosaveCompleted = true
+            try await Task.sleep(for: .milliseconds(900))
+            // An expanded card or a paused tour holds the step; finish once it accepts actions.
+            while !tutorial.acceptsActions || tutorial.remindersPaused {
+                try await Task.sleep(for: .milliseconds(300))
+            }
+        } catch { return }
+        player.finishAutosave()
     }
+
+    /// Drawn like the canvas's custom controls: a glass circle at the top that grows into
+    /// a column of its actions. Only the eraser toggle acts; the eyedropper answers with
+    /// the unavailable haptic, so the lesson stays on its one exercise.
+    private var practiceGroupControl: some View {
+        GeometryReader { proxy in
+            if let slot = player.practiceGroupSlot, let assignment = player.practiceLayout?.slots[slot] {
+                let geometry = MorphPanelGeometry(size: proxy.size, layoutDirection: layoutDirection)
+                let diameter = geometry.diameter
+                let expanded = practiceGroupExpanded
+                let height = expanded ? diameter * CGFloat(assignment.actions.count) : diameter
+                let anchor = practiceGroupAnchor(slot, geometry: geometry, proxy: proxy)
+                CanvasMorphContent(isExpanded: expanded) {
+                    VStack(spacing: 0) {
+                        ForEach(assignment.actions) { action in
+                            practiceGroupAction(action, height: diameter)
+                        }
+                    }
+                } collapsed: {
+                    Button {
+                        guard player.openPracticeGroup() else { return }
+                        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                            practiceGroupExpanded = true
+                        }
+                    } label: {
+                        CanvasQuickActionIcon(action: assignment.actions[0],
+                                              instrument: controller.pencilStyle.instrument,
+                                              isMorph: true, morphIcon: assignment.icon)
+                            .tutorialHint(tutorial, steps: [.openPracticeGroup])
+                            .frame(width: diameter, height: diameter)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(CanvasMorphButtonStyle())
+                    .accessibilityLabel(L10n.format("Morph: %@", assignment.actions
+                        .map { L10n.text($0.title) }.joined(separator: ", ")))
+                }
+                .frame(width: diameter)
+                .modifier(CanvasMorphGlass(adaptsToCanvas: true, isInteractive: false))
+                .trackCanvasControl(.custom(slot), frames: $controls)
+                .position(x: anchor.x, y: anchor.y + (height - diameter) / 2)
+                .transition(.opacity)
+            }
+        }
+        .ignoresSafeArea()
+        .onChange(of: player.practiceGroupSlot) { _, slot in
+            if slot == nil { practiceGroupExpanded = false }
+        }
+    }
+
+    /// Where the canvas puts this corner's button: the tutorial measured its native brush
+    /// and ••• buttons in earlier lessons, so the group takes their place; otherwise the
+    /// fallback the editor's own custom layout uses.
+    private func practiceGroupAnchor(_ slot: Int, geometry: MorphPanelGeometry,
+                                     proxy: GeometryProxy) -> CGPoint {
+        let isLeading = slot == CanvasControlLayout.topLeadingSlot
+        let origin = proxy.frame(in: .global).origin
+        if let frame = controls[isLeading ? .more : .tools], !frame.isEmpty {
+            let point = CGPoint(x: frame.midX - origin.x, y: frame.midY - origin.y)
+            if CGRect(origin: .zero, size: proxy.size).insetBy(dx: 4, dy: 4).contains(point) { return point }
+        }
+        return CGPoint(x: isLeading ? geometry.leadingX : geometry.trailingX, y: geometry.top + 18)
+    }
+
+    /// Holds a top corner of the bar without showing anything, like the editor's empty slots.
+    private var toolbarPlaceholder: some View {
+        Button {} label: {
+            Image(systemName: "ellipsis").frame(width: 18, height: 18).opacity(0)
+        }
+        .disabled(true)
+        .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter,
+                                 usesCanvasMaterial: true, hidesNativeChrome: true)
+        .accessibilityHidden(true)
+    }
+
+    private func practiceGroupAction(_ action: CanvasQuickAction, height: CGFloat) -> some View {
+        let acts = action == .eraserToggle
+        return Button {
+            guard acts, tutorial.permits([.toggleEraser, .eraseStroke]) else {
+                return UnavailableActionFeedback.play()
+            }
+            // Like the canvas: an action other than Undo or Redo collapses the group.
+            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                practiceGroupExpanded = false
+            }
+            player.toggleEraser()
+        } label: {
+            CanvasQuickActionIcon(action: action, instrument: controller.pencilStyle.instrument)
+                .tutorialHint(tutorial, steps: [.toggleEraser], isSuggested: acts)
+                .frame(width: MorphPanelGeometry.buttonDiameter, height: height)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(CanvasMorphButtonStyle())
+        .environment(\.isCanvasActionUnavailable, !acts)
+        .accessibilityLabel(L10n.text(action.title))
+    }
+
+    private var showsTutorialBottomControls: Bool {
+        page == .canvas && tutorial.permits([.history, .saveDrawing, .undoMarkerLine])
+    }
+
+    /// Undo stands alone in the blending lesson, where it removes the crossing line.
+    private var showsUndo: Bool { [.history, .undoMarkerLine].contains(tutorial.step) }
 
     @ViewBuilder private func tutorialBottomControls(hitDiameter: CGFloat) -> some View {
         if showsTutorialBottomControls {
@@ -795,12 +1035,17 @@ struct TutorialPlayerView: View {
                 Spacer(minLength: 0)
                 Button {
                     player.undo()
-                } label: { Image(systemName: "arrow.uturn.backward").tutorialHint(tutorial, steps: [.history], isSuggested: !historyEmphasizesRedo || !controller.canRedo) }
-                .disabled(!controller.canUndo || tutorial.step != .history)
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                        .tutorialHint(tutorial, steps: [.history, .undoMarkerLine],
+                                      isSuggested: tutorial.step == .undoMarkerLine
+                                          || !historyEmphasizesRedo || !controller.canRedo)
+                }
+                .disabled(!controller.canUndo || !showsUndo)
                 .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
-                .opacity(tutorial.step == .history ? 1 : 0)
-                .allowsHitTesting(tutorial.step == .history)
-                .accessibilityHidden(tutorial.step != .history)
+                .opacity(showsUndo ? 1 : 0)
+                .allowsHitTesting(showsUndo)
+                .accessibilityHidden(!showsUndo)
                 .accessibilityLabel(L10n.text("Undo"))
                 .trackCanvasControl(.undo, frames: $controls)
                 Spacer(minLength: 0)
@@ -828,32 +1073,6 @@ struct TutorialPlayerView: View {
             }
             .transition(.opacity)
         }
-        if let slot = player.practiceEraserSlot {
-            // The circle the lesson's canvas editor filled, in the same bottom slot.
-            HStack {
-                ForEach(1...4, id: \.self) { index in
-                    if index > 1 { Spacer(minLength: 0) }
-                    if index == slot {
-                        Button { player.toggleEraser() } label: {
-                            CanvasQuickActionIcon(action: .eraserToggle, instrument: controller.pencilStyle.instrument)
-                                .tutorialHint(tutorial, steps: [.toggleEraser])
-                        }
-                        .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
-                        .disabled(!tutorial.permits([.toggleEraser, .eraseStroke]))
-                        .accessibilityLabel(L10n.text("Eraser ↔ tool"))
-                        .trackCanvasControl(CustomCanvasControls.anchors[index], frames: $controls)
-                    } else {
-                        // Keeps the four slots of the canvas toolbar.
-                        Button {} label: { BroomIcon() }
-                            .buttonStyle(TutorialOverlayButtonStyle(hitDiameter: hitDiameter))
-                            .hidden()
-                            .disabled(true)
-                            .accessibilityHidden(true)
-                    }
-                }
-            }
-            .transition(.opacity)
-        }
         if page == .canvas && tutorial.step == .openLasso {
             HStack {
                 Button {
@@ -873,9 +1092,8 @@ struct TutorialPlayerView: View {
             HStack {
                 Button {
                     isMovingCanvas = false
-                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                        player.openLayers()
-                    }
+                    // Animated by the page content only (see `page == .layers`).
+                    player.openLayers()
                 } label: {
                     Image(systemName: "square.3.layers.3d").tutorialHint(tutorial, steps: [.openLayers])
                 }
@@ -1123,7 +1341,10 @@ private struct TutorialLassoGuide: View {
 
 private extension TutorialPlayerView {
     /// A full-screen question or confirmation hides the lesson and its toolbars.
-    var coversLesson: Bool { confirmsFinish || offersContinuation }
+    var coversLesson: Bool { confirmsFinish || offersContinuation || showsFavoritesWidget }
+
+    /// The watch face with the favorites widget, over the gallery, until it is tapped.
+    var showsFavoritesWidget: Bool { page == .gallery && tutorial.step == .showFavoritesWidget }
 
     /// Split out of `body`: inline, the optional closures and the height ternary
     /// exceed the type checker's time limit.

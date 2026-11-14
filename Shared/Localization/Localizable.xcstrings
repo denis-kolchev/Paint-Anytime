@@ -59618,6 +59618,180 @@
         }
       }
     },
+    "Tap Icon and pick one for the group." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط «الأيقونة» واختر واحدة للمجموعة."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepněte na „Ikona“ a vyberte ji pro skupinu."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på „Ikon“, og vælg et til gruppen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf „Symbol“ und wähle eines für die Gruppe."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε «Εικονίδιο» και επιλέξτε ένα για την ομάδα."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap Icon and pick one for the group."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca «Icono» y elige uno para el grupo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Napauta ”Kuvake” ja valitse ryhmälle kuvake."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez « Icône » et choisissez-en une pour le groupe."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקישו על ”סמל” ובחרו סמל לקבוצה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppints az „Ikon” elemre, és válassz egyet a csoportnak."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk “Ikon” dan pilih satu untuk grup."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca “Icona” e scegline una per il gruppo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「アイコン」をタップしてグループのアイコンを選びます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘아이콘’을 탭해 그룹 아이콘을 고르세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på «Ikon», og velg et for gruppen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op ‘Symbool’ en kies er een voor de groep."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij „Ikona” i wybierz ją dla grupy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em “Ícone” e escolha um para o grupo."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em “Ícone” e escolha um para o grupo."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите «Иконка» и выберите её для группы."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på ”Symbol” och välj en för gruppen."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะ “ไอคอน” แล้วเลือกไอคอนให้กลุ่ม"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Simge”ye dokun ve grup için bir simge seç."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Натисніть «Іконка» і виберіть її для групи."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm “Biểu tượng” và chọn một biểu tượng cho nhóm."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点“图标”，为分组选一个。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下「圖示」，為分組選一個。"
+          }
+        }
+      }
+    },
     "Tap ••• to visit the gallery." : {
       "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
       "extractionState" : "manual",
@@ -60136,6 +60310,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "點一下 + 新增圖層。"
+          }
+        }
+      }
+    },
+    "Tap ↺ to clear both circles." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط ↺ لإفراغ الدائرتين."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepnutím na ↺ vyprázdněte oba kruhy."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på ↺ for at tømme begge cirkler."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf ↺, um beide Kreise zu leeren."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε ↺ για να αδειάσετε και τους δύο κύκλους."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap ↺ to clear both circles."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca ↺ para vaciar los dos círculos."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tyhjennä molemmat ympyrät napauttamalla ↺."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez ↺ pour vider les deux cercles."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקישו על ↺ כדי לרוקן את שני העיגולים."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppints a ↺ jelre mindkét kör kiürítéséhez."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk ↺ untuk mengosongkan kedua lingkaran."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca ↺ per svuotare entrambi i cerchi."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↺をタップして両方の円を空にします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "↺를 탭해 두 원을 모두 비우세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på ↺ for å tømme begge sirklene."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op ↺ om beide cirkels leeg te maken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij ↺, aby opróżnić oba kręgi."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em ↺ para esvaziar os dois círculos."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em ↺ para esvaziar os dois círculos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите ↺, чтобы очистить оба круга."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på ↺ för att tömma båda cirklarna."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะ ↺ เพื่อล้างวงกลมทั้งสอง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İki daireyi de boşaltmak için ↺ işaretine dokun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Натисніть ↺, щоб очистити обидва кола."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm ↺ để làm trống cả hai vòng tròn."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点 ↺ 清空两个圆圈。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下 ↺ 清空兩個圓圈。"
           }
         }
       }
@@ -68292,6 +68640,180 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "試試新畫筆。"
+          }
+        }
+      }
+    },
+    "Turn on Group actions." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "شغّل «تجميع الإجراءات»."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapněte „Seskupit akce“."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå „Gruppér handlinger“ til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schalte „Aktionen gruppieren“ ein."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ενεργοποιήστε την «Ομαδοποίηση ενεργειών»."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on Group actions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activa «Agrupar acciones»."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ota käyttöön ”Ryhmitä toiminnot”."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activez « Grouper les actions »."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הפעילו את ”קיבוץ פעולות”."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kapcsold be a „Műveletek csoportosítása” lehetőséget."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktifkan “Kelompokkan tindakan”."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attiva “Raggruppa azioni”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「アクションをグループ化」をオンにします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘동작 그룹화’를 켜세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå på «Grupper handlinger»."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet ‘Acties groeperen’ aan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włącz „Grupuj akcje”."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ative “Agrupar ações”."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ative “Agrupar ações”."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включите «Группировать действия»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå på ”Gruppera åtgärder”."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เปิด “จัดกลุ่มการทำงาน”"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Eylemleri grupla”yı aç."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Увімкніть «Групувати дії»."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bật “Nhóm thao tác”."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开“分组操作”。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「分組操作」。"
           }
         }
       }
@@ -76800,354 +77322,6 @@
         }
       }
     },
-    "Undo brings the edges back. Use the arrows to undo and redo." : {
-      "comment" : "Tutorial step after cropping: undo restores the trimmed edges.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "التراجع يعيد الحواف. استخدم السهمين للتراجع والإعادة."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vrácení změny okraje obnoví. Šipkami vracejte a opakujte změny."
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fortryd henter kanterne tilbage. Brug pilene til at fortryde og gentage."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rückgängig holt die Ränder zurück. Mit den Pfeilen machst du Schritte rückgängig oder stellst sie wieder her."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Η αναίρεση επαναφέρει τις άκρες. Χρησιμοποιήστε τα βέλη για αναίρεση και επανάληψη."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Undo brings the edges back. Use the arrows to undo and redo."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Deshacer recupera los bordes. Usa las flechas para deshacer y rehacer."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kumoaminen palauttaa reunat. Kumoa ja tee uudelleen nuolilla."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Annuler rétablit les bords. Utilisez les flèches pour annuler et rétablir."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ביטול מחזיר את השוליים. השתמשו בחצים לביטול ולביצוע חוזר."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A visszavonás visszahozza a széleket. A nyilakkal visszavonhatod és megismételheted a lépéseket."
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Batalkan mengembalikan tepinya. Gunakan panah untuk membatalkan dan mengulang."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Annulla riporta i bordi. Usa le frecce per annullare e ripristinare."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "取り消すと端が戻ります。矢印で取り消し・やり直しできます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "실행 취소하면 가장자리가 돌아옵니다. 화살표로 실행 취소와 다시 실행을 해 보세요."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Angre henter kantene tilbake. Bruk pilene for å angre og gjøre om."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ongedaan maken brengt de randen terug. Gebruik de pijlen om stappen ongedaan te maken en opnieuw uit te voeren."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cofnięcie przywraca krawędzie. Użyj strzałek, aby cofać i ponawiać zmiany."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desfazer traz as bordas de volta. Use as setas para desfazer e refazer."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anular repõe as margens. Use as setas para anular e refazer."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отмена возвращает края. Стрелки отменяют и повторяют действия."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ångra tar tillbaka kanterna. Använd pilarna för att ångra och göra om."
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "การเลิกทำจะคืนขอบกลับมา ใช้ลูกศรเพื่อเลิกทำและทำซ้ำ"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geri almak kenarları geri getirir. Geri almak ve yinelemek için okları kullan."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скасування повертає краї. Стрілки скасовують і повторюють дії."
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hoàn tác sẽ đưa mép trở lại. Dùng các mũi tên để hoàn tác và làm lại."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "撤销会恢复边缘。用箭头撤销和重做。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "復原會恢復邊緣。用箭頭復原和重做。"
-          }
-        }
-      }
-    },
-    "Autosave in this menu can fill the gallery for you. Tap Gallery." : {
-      "comment" : "Tutorial gallery lesson tip. Autosave and Gallery are menu rows; use the same words.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "يمكن للحفظ التلقائي في هذه القائمة ملء المعرض لك. اضغط المعرض."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatické ukládání v této nabídce může galerii plnit za vás. Klepněte na Galerie."
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatisk lagring i denne menu kan fylde galleriet for dig. Tryk på Galleri."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatisch sichern in diesem Menü kann die Galerie für dich füllen. Tippe auf Galerie."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Η Αυτόματη αποθήκευση σε αυτό το μενού μπορεί να γεμίζει τη συλλογή για εσάς. Πατήστε Συλλογή."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Autosave in this menu can fill the gallery for you. Tap Gallery."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El Guardado automático de este menú puede llenar la galería por ti. Toca Galería."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tämän valikon Automaattinen tallennus voi täyttää gallerian puolestasi. Napauta Galleria."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L’Enregistrement automatique de ce menu peut remplir la galerie pour vous. Touchez Galerie."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "שמירה אוטומטית בתפריט הזה יכולה למלא את הגלריה בשבילכם. הקישו על גלריה."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A menü Automatikus mentés funkciója feltöltheti helyetted a galériát. Koppints a Galéria elemre."
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Simpan otomatis di menu ini dapat mengisi galeri untuk Anda. Ketuk Galeri."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il Salvataggio automatico in questo menu può riempire la galleria per te. Tocca Galleria."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "このメニューの自動保存でギャラリーに自動で保存できます。ギャラリーをタップ。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이 메뉴의 자동 저장으로 갤러리를 자동으로 채울 수 있습니다. 갤러리를 탭하세요."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Autolagring i denne menyen kan fylle galleriet for deg. Trykk på Galleri."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Automatisch bewaren in dit menu kan de galerij voor je vullen. Tik op Galerij."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Autozapis w tym menu może zapełniać galerię za Ciebie. Stuknij Galeria."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O Salvamento automático deste menu pode preencher a galeria para você. Toque em Galeria."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A Gravação automática deste menu pode preencher a galeria por si. Toque em Galeria."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Автосохранение в этом меню может пополнять галерею за вас. Нажмите «Галерея»."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Spara automatiskt i den här menyn kan fylla galleriet åt dig. Tryck på Galleri."
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "บันทึกอัตโนมัติในเมนูนี้ช่วยเพิ่มภาพลงแกลเลอรีให้คุณได้ แตะแกลเลอรี"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu menüdeki Otomatik kaydet galeriyi senin için doldurabilir. Galeri’ye dokun."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Автозбереження в цьому меню може поповнювати галерею за вас. Натисніть «Галерея»."
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tự động lưu trong menu này có thể lưu ảnh vào thư viện giúp bạn. Chạm Thư viện."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此菜单中的“自动存储”可以帮你存入画廊。轻点“画廊”。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "此選單中的「自動儲存」可以幫你存入圖庫。點一下「圖庫」。"
-          }
-        }
-      }
-    },
     "Tap ✓ at the top to select pictures." : {
       "comment" : "Tutorial gallery step: the select button at the top shows a checkmark circle.",
       "extractionState" : "manual",
@@ -77844,524 +78018,524 @@
         }
       }
     },
-    "Tap an empty circle at the bottom." : {
-      "comment" : "Tutorial step in the canvas editor: tap one of the empty dashed circles in the bottom row.",
+    "Tap an empty circle." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اضغط دائرة فارغة في الأسفل."
+            "value" : "اضغط دائرة فارغة."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Klepněte na prázdný kruh dole."
+            "value" : "Klepněte na prázdný kruh."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tryk på en tom cirkel nederst."
+            "value" : "Tryk på en tom cirkel."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tippe unten auf einen leeren Kreis."
+            "value" : "Tippe auf einen leeren Kreis."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Πατήστε έναν κενό κύκλο κάτω."
+            "value" : "Πατήστε έναν κενό κύκλο."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap an empty circle at the bottom."
+            "value" : "Tap an empty circle."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toca un círculo vacío de abajo."
+            "value" : "Toca un círculo vacío."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Napauta tyhjää ympyrää alhaalla."
+            "value" : "Napauta tyhjää ympyrää."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Touchez un cercle vide en bas."
+            "value" : "Touchez un cercle vide."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "הקישו על עיגול ריק למטה."
+            "value" : "הקישו על עיגול ריק."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Koppints egy üres körre alul."
+            "value" : "Koppints egy üres körre."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ketuk lingkaran kosong di bawah."
+            "value" : "Ketuk lingkaran kosong."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tocca un cerchio vuoto in basso."
+            "value" : "Tocca un cerchio vuoto."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "下の空の円をタップ。"
+            "value" : "空の円をタップ。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "아래쪽의 빈 원을 탭하세요."
+            "value" : "빈 원을 탭하세요."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trykk på en tom sirkel nederst."
+            "value" : "Trykk på en tom sirkel."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tik op een lege cirkel onderaan."
+            "value" : "Tik op een lege cirkel."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stuknij pusty krąg na dole."
+            "value" : "Stuknij pusty krąg."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toque em um círculo vazio embaixo."
+            "value" : "Toque em um círculo vazio."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toque num círculo vazio em baixo."
+            "value" : "Toque num círculo vazio."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нажмите пустой круг внизу."
+            "value" : "Нажмите пустой круг."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tryck på en tom cirkel längst ned."
+            "value" : "Tryck på en tom cirkel."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "แตะวงกลมว่างด้านล่าง"
+            "value" : "แตะวงกลมว่าง"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alttaki boş bir daireye dokun."
+            "value" : "Boş bir daireye dokun."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Натисніть порожнє коло внизу."
+            "value" : "Натисніть порожнє коло."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chạm vào một vòng tròn trống ở dưới."
+            "value" : "Chạm vào một vòng tròn trống."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "轻点底部的空圆圈。"
+            "value" : "轻点一个空圆圈。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點一下底部的空圓圈。"
+            "value" : "點一下空的圓圈。"
           }
         }
       }
     },
-    "Choose Eraser ↔ tool." : {
-      "comment" : "Tutorial step in the canvas editor's action list. Use the same words as the Eraser ↔ tool action.",
+    "Choose Eyedropper and Eraser ↔ tool." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اختر ممحاة ↔ أداة."
+            "value" : "اختر «قطّارة» و«ممحاة ↔ أداة»."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vyberte Guma ↔ nástroj."
+            "value" : "Vyberte „Kapátko“ a „Guma ↔ nástroj“."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vælg Viskelæder ↔ værktøj."
+            "value" : "Vælg „Pipette“ og „Viskelæder ↔ værktøj“."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wähle Radierer ↔ Werkzeug."
+            "value" : "Wähle „Pipette“ und „Radierer ↔ Werkzeug“."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Επιλέξτε Γόμα ↔ εργαλείο."
+            "value" : "Επιλέξτε «Σταγονόμετρο» και «Γόμα ↔ εργαλείο»."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose Eraser ↔ tool."
+            "value" : "Choose Eyedropper and Eraser ↔ tool."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Elige Goma ↔ herramienta."
+            "value" : "Elige «Cuentagotas» y «Goma ↔ herramienta»."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Valitse Pyyhekumi ↔ työkalu."
+            "value" : "Valitse ”Pipetti” ja ”Pyyhekumi ↔ työkalu”."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choisissez Gomme ↔ outil."
+            "value" : "Choisissez « Pipette » et « Gomme ↔ outil »."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "בחרו מחק ↔ כלי."
+            "value" : "בחרו ”טפטפת” ו”מחק ↔ כלי”."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Válaszd a Radír ↔ eszköz lehetőséget."
+            "value" : "Válaszd a „Pipetta” és a „Radír ↔ eszköz” lehetőséget."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pilih Penghapus ↔ alat."
+            "value" : "Pilih “Pipet” dan “Penghapus ↔ alat”."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Scegli Gomma ↔ strumento."
+            "value" : "Scegli “Contagocce” e “Gomma ↔ strumento”."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "消しゴム ↔ ツールを選択。"
+            "value" : "「スポイト」と「消しゴム ↔ ツール」を選びます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "지우개 ↔ 도구를 선택하세요."
+            "value" : "‘스포이트’와 ‘지우개 ↔ 도구’를 선택하세요."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Velg Viskelær ↔ verktøy."
+            "value" : "Velg «Pipette» og «Viskelær ↔ verktøy»."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kies Gum ↔ gereedschap."
+            "value" : "Kies ‘Pipet’ en ‘Gum ↔ gereedschap’."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wybierz Gumka ↔ narzędzie."
+            "value" : "Wybierz „Pipeta” i „Gumka ↔ narzędzie”."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Escolha Borracha ↔ ferramenta."
+            "value" : "Escolha “Conta-gotas” e “Borracha ↔ ferramenta”."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Escolha Borracha ↔ ferramenta."
+            "value" : "Escolha “Conta-gotas” e “Borracha ↔ ferramenta”."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выберите «Ластик ↔ инструмент»."
+            "value" : "Выберите «Пипетка» и «Ластик ↔ инструмент»."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Välj Suddgummi ↔ verktyg."
+            "value" : "Välj ”Pipett” och ”Suddgummi ↔ verktyg”."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "เลือก ยางลบ ↔ เครื่องมือ"
+            "value" : "เลือก “หลอดดูดสี” และ “ยางลบ ↔ เครื่องมือ”"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Silgi ↔ araç’ı seç."
+            "value" : "“Damlalık” ve “Silgi ↔ araç”ı seç."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Виберіть «Гумка ↔ інструмент»."
+            "value" : "Виберіть «Піпетка» і «Гумка ↔ інструмент»."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chọn Tẩy ↔ công cụ."
+            "value" : "Chọn “Ống hút màu” và “Tẩy ↔ công cụ”."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "选择“橡皮擦 ↔ 工具”。"
+            "value" : "选择“吸管”和“橡皮擦 ↔ 工具”。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "選擇「橡皮擦 ↔ 工具」。"
+            "value" : "選擇「滴管」和「橡皮擦 ↔ 工具」。"
           }
         }
       }
     },
-    "Tap the new button to switch to the eraser." : {
-      "comment" : "Tutorial step on the canvas after saving the canvas editor: tap the newly added Eraser ↔ tool button.",
+    "Tap Eraser ↔ tool to switch to the eraser." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اضغط الزر الجديد للتبديل إلى الممحاة."
+            "value" : "اضغط «ممحاة ↔ أداة» للتبديل إلى الممحاة."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Klepnutím na nové tlačítko přepněte na gumu."
+            "value" : "Klepnutím na „Guma ↔ nástroj“ přepněte na gumu."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tryk på den nye knap for at skifte til viskelæderet."
+            "value" : "Tryk på „Viskelæder ↔ værktøj“ for at skifte til viskelæderet."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tippe auf die neue Taste, um zum Radierer zu wechseln."
+            "value" : "Tippe auf „Radierer ↔ Werkzeug“, um zum Radierer zu wechseln."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Πατήστε το νέο κουμπί για να αλλάξετε σε γόμα."
+            "value" : "Πατήστε «Γόμα ↔ εργαλείο» για να αλλάξετε σε γόμα."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap the new button to switch to the eraser."
+            "value" : "Tap Eraser ↔ tool to switch to the eraser."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toca el nuevo botón para cambiar a la goma."
+            "value" : "Toca «Goma ↔ herramienta» para cambiar a la goma."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vaihda pyyhekumiin napauttamalla uutta painiketta."
+            "value" : "Vaihda pyyhekumiin napauttamalla ”Pyyhekumi ↔ työkalu”."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Touchez le nouveau bouton pour passer à la gomme."
+            "value" : "Touchez « Gomme ↔ outil » pour passer à la gomme."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "הקישו על הכפתור החדש כדי לעבור למחק."
+            "value" : "הקישו על ”מחק ↔ כלי” כדי לעבור למחק."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Koppints az új gombra a radírra váltáshoz."
+            "value" : "Koppints a „Radír ↔ eszköz” gombra a radírra váltáshoz."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ketuk tombol baru untuk beralih ke penghapus."
+            "value" : "Ketuk “Penghapus ↔ alat” untuk beralih ke penghapus."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tocca il nuovo pulsante per passare alla gomma."
+            "value" : "Tocca “Gomma ↔ strumento” per passare alla gomma."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "新しいボタンをタップして消しゴムに切り替えます。"
+            "value" : "「消しゴム ↔ ツール」をタップして消しゴムに切り替えます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "새 버튼을 탭해 지우개로 전환하세요."
+            "value" : "‘지우개 ↔ 도구’를 탭해 지우개로 전환하세요."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Trykk på den nye knappen for å bytte til viskelæret."
+            "value" : "Trykk på «Viskelær ↔ verktøy» for å bytte til viskelæret."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tik op de nieuwe knop om naar de gum te wisselen."
+            "value" : "Tik op ‘Gum ↔ gereedschap’ om naar de gum te wisselen."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stuknij nowy przycisk, aby przełączyć na gumkę."
+            "value" : "Stuknij „Gumka ↔ narzędzie”, aby przełączyć na gumkę."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toque no novo botão para trocar para a borracha."
+            "value" : "Toque em “Borracha ↔ ferramenta” para trocar para a borracha."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toque no novo botão para mudar para a borracha."
+            "value" : "Toque em “Borracha ↔ ferramenta” para mudar para a borracha."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нажмите новую кнопку, чтобы переключиться на ластик."
+            "value" : "Нажмите «Ластик ↔ инструмент», чтобы переключиться на ластик."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tryck på den nya knappen för att byta till suddgummit."
+            "value" : "Tryck på ”Suddgummi ↔ verktyg” för att byta till suddgummit."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "แตะปุ่มใหม่เพื่อสลับไปใช้ยางลบ"
+            "value" : "แตะ “ยางลบ ↔ เครื่องมือ” เพื่อสลับไปใช้ยางลบ"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Silgiye geçmek için yeni düğmeye dokun."
+            "value" : "Silgiye geçmek için “Silgi ↔ araç”a dokun."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Натисніть нову кнопку, щоб перейти на гумку."
+            "value" : "Натисніть «Гумка ↔ інструмент», щоб перейти на гумку."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chạm vào nút mới để chuyển sang tẩy."
+            "value" : "Chạm “Tẩy ↔ công cụ” để chuyển sang tẩy."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "轻点新按钮切换到橡皮擦。"
+            "value" : "轻点“橡皮擦 ↔ 工具”切换到橡皮擦。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點一下新按鈕切換到橡皮擦。"
+            "value" : "點一下「橡皮擦 ↔ 工具」切換到橡皮擦。"
           }
         }
       }
@@ -78536,6 +78710,1746 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在畫上塗抹即可擦除。"
+          }
+        }
+      }
+    },
+    "Tap Autosave." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط الحفظ التلقائي."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepněte na Automatické ukládání."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på Automatisk lagring."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf Automatisch sichern."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε Αυτόματη αποθήκευση."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap Autosave."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca Guardado automático."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Napauta Automaattinen tallennus."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez Enregistrement automatique."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקישו על שמירה אוטומטית."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppints az Automatikus mentés elemre."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk Simpan otomatis."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca Salvataggio automatico."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動保存をタップ。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자동 저장을 탭하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på Autolagring."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op Automatisch bewaren."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij Autozapis."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em Salvamento automático."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em Gravação automática."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите «Автосохранение»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på Spara automatiskt."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะบันทึกอัตโนมัติ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otomatik kaydet’e dokun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Натисніть «Автозбереження»."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm Tự động lưu."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点“自动存储”。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下「自動儲存」。"
+          }
+        }
+      }
+    },
+    "Turn on Autosave." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "شغّل «الحفظ التلقائي»."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapněte „Automatické ukládání“."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå „Automatisk lagring“ til."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schalte „Automatisch sichern“ ein."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ενεργοποιήστε την «Αυτόματη αποθήκευση»."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn on Autosave."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activa «Guardado automático»."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ota käyttöön ”Automaattinen tallennus”."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activez « Enregistrement automatique »."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הפעילו את ”שמירה אוטומטית”."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kapcsold be az „Automatikus mentés” lehetőséget."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktifkan “Simpan otomatis”."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attiva “Salvataggio automatico”."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "「自動保存」をオンにします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "‘자동 저장’을 켜세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå på «Autolagring»."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zet ‘Automatisch bewaren’ aan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Włącz „Autozapis”."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ative “Salvamento automático”."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ative “Gravação automática”."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Включите «Автосохранение»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Slå på ”Spara automatiskt”."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เปิด “บันทึกอัตโนมัติ”"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“Otomatik kaydet”i aç."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Увімкніть «Автозбереження»."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bật “Tự động lưu”."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开“自动存储”。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開啟「自動儲存」。"
+          }
+        }
+      }
+    },
+    "Autosave keeps your drawing in the gallery." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يحفظ الحفظ التلقائي رسمك في المعرض."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatické ukládání uchová kresbu v galerii."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisk lagring gemmer din tegning i galleriet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisch sichern bewahrt deine Zeichnung in der Galerie."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Η αυτόματη αποθήκευση κρατά το σχέδιό σας στη συλλογή."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autosave keeps your drawing in the gallery."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El guardado automático conserva tu dibujo en la galería."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automaattinen tallennus säilyttää piirroksesi galleriassa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’enregistrement automatique garde votre dessin dans la galerie."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "השמירה האוטומטית שומרת את הציור שלכם בגלריה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Az automatikus mentés megőrzi a rajzot a galériában."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Simpan otomatis menyimpan gambarmu di galeri."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il salvataggio automatico conserva il disegno nella galleria."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動保存で絵がギャラリーに残ります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "자동 저장으로 그림이 갤러리에 남습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autolagring tar vare på tegningen din i galleriet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisch bewaren houdt je tekening in de galerie."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autozapis zachowuje rysunek w galerii."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O salvamento automático guarda seu desenho na galeria."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A gravação automática guarda o seu desenho na galeria."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автосохранение сохраняет рисунок в галерее."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spara automatiskt behåller teckningen i galleriet."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "บันทึกอัตโนมัติเก็บภาพวาดของคุณไว้ในแกลเลอรี"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otomatik kaydet çizimini galeride tutar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Автозбереження зберігає малюнок у галереї."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tự động lưu giữ bản vẽ của bạn trong thư viện."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自动存储会把你的画留在图库中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "自動儲存會把你的畫留在圖庫中。"
+          }
+        }
+      }
+    },
+    "Drag the frame to move it." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اسحب الإطار لتحريكه."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rámeček posuňte tažením."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Træk i rammen for at flytte den."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ziehe den Rahmen, um ihn zu bewegen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Σύρετε το πλαίσιο για να το μετακινήσετε."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag the frame to move it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arrastra el marco para moverlo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siirrä kehystä vetämällä."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites glisser le cadre pour le déplacer."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "גררו את המסגרת כדי להזיז אותה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Húzd a keretet az áthelyezéséhez."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seret bingkai untuk memindahkannya."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trascina la cornice per spostarla."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "枠をドラッグして動かします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "프레임을 드래그해 옮기세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dra i rammen for å flytte den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sleep het kader om het te verplaatsen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeciągnij ramkę, aby ją przesunąć."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arraste o quadro para movê-lo."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arraste a moldura para a mover."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перетащите рамку, чтобы сдвинуть её."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dra i ramen för att flytta den."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ลากกรอบเพื่อย้าย"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taşımak için çerçeveyi sürükle."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перетягніть рамку, щоб зсунути її."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kéo khung để di chuyển."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖移边框来移动它。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "拖移邊框來移動它。"
+          }
+        }
+      }
+    },
+    "Turn the Crown to change the number of rays." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أدر Crown لتغيير عدد الأشعة."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otáčením Crown změňte počet paprsků."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drej på Crown for at ændre antallet af stråler."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drehe die Crown, um die Anzahl der Strahlen zu ändern."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Στρέψτε το Crown για να αλλάξετε τον αριθμό των ακτίνων."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn the Crown to change the number of rays."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gira la Crown para cambiar el número de rayos."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muuta säteiden määrää kääntämällä Crownia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tournez la Crown pour changer le nombre de rayons."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "סובבו את ה-Crown כדי לשנות את מספר הקרניים."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forgasd a Crownt a sugarak számának módosításához."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Putar Crown untuk mengubah jumlah sinar."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ruota la Crown per cambiare il numero di raggi."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crownを回して線の本数を変えます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crown을 돌려 선 개수를 바꾸세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vri på Crown for å endre antall stråler."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draai aan de Crown om het aantal stralen te wijzigen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obróć Crown, aby zmienić liczbę promieni."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gire a Crown para mudar o número de raios."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rode a Crown para mudar o número de raios."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вращайте Crown, чтобы изменить число лучей."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vrid på Crown för att ändra antalet strålar."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "หมุน Crown เพื่อเปลี่ยนจำนวนเส้นรัศมี"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Işın sayısını değiştirmek için Crown’u çevir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обертайте Crown, щоб змінити кількість променів."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xoay Crown để đổi số tia."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "转动 Crown 更改射线数量。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轉動 Crown 更改射線數量。"
+          }
+        }
+      }
+    },
+    "Tap Undo to remove your line." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط تراجع لإزالة خطك."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepnutím na Zpět odstraňte svou čáru."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på Fortryd for at fjerne din streg."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf „Rückgängig“, um deine Linie zu entfernen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε Αναίρεση για να αφαιρέσετε τη γραμμή σας."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap Undo to remove your line."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca Deshacer para quitar tu línea."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Poista viivasi napauttamalla Kumoa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez Annuler pour retirer votre ligne."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקישו על ”ביטול פעולה” כדי להסיר את הקו שלכם."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppints a Visszavonásra a vonalad törléséhez."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk Urungkan untuk menghapus garismu."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca Annulla per togliere la tua linea."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り消すをタップして線を消します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "실행 취소를 탭해 선을 지우세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på Angre for å fjerne streken din."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op Ongedaan maken om je lijn te verwijderen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij Cofnij, aby usunąć swoją linię."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em Desfazer para remover sua linha."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em Desfazer para remover a sua linha."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите «Отменить», чтобы убрать вашу линию."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på Ångra för att ta bort din linje."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะเลิกทำเพื่อลบเส้นของคุณ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Çizgini kaldırmak için Geri al’a dokun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Натисніть «Скасувати», щоб прибрати вашу лінію."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm Hoàn tác để xóa nét của bạn."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点“撤销”移除你的线条。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下「還原」移除你的線條。"
+          }
+        }
+      }
+    },
+    "Tap ✕ to close the actions." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط ✕ لإغلاق الإجراءات."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepnutím na ✕ zavřete akce."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på ✕ for at lukke handlingerne."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf ✕, um die Aktionen zu schließen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε ✕ για να κλείσετε τις ενέργειες."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap ✕ to close the actions."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca ✕ para cerrar las acciones."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sulje toiminnot napauttamalla ✕."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez ✕ pour fermer les actions."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקישו על ✕ כדי לסגור את הפעולות."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppints a ✕-re a műveletek bezárásához."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk ✕ untuk menutup tindakan."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca ✕ per chiudere le azioni."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✕をタップしてアクションを閉じます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✕를 탭해 동작을 닫으세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på ✕ for å lukke handlingene."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op ✕ om de acties te sluiten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij ✕, aby zamknąć akcje."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em ✕ para fechar as ações."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em ✕ para fechar as ações."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите ✕, чтобы закрыть действия."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på ✕ för att stänga åtgärderna."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะ ✕ เพื่อปิดการทำงาน"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eylemleri kapatmak için ✕’e dokun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Натисніть ✕, щоб закрити дії."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm ✕ để đóng thao tác."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点 ✕ 关闭操作。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下 ✕ 關閉動作。"
+          }
+        }
+      }
+    },
+    "Draw a line." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ارسم خطًا."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nakreslete čáru."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tegn en streg."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeichne eine Linie."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Σχεδιάστε μια γραμμή."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draw a line."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dibuja una línea."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Piirrä viiva."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tracez une ligne."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ציירו קו."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rajzolj egy vonalat."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gambar sebuah garis."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disegna una linea."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "線を描きます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "선을 그리세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tegn en strek."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teken een lijn."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Narysuj linię."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenhe uma linha."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desenhe uma linha."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проведите линию."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rita en linje."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "วาดเส้น"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir çizgi çiz."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проведіть лінію."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vẽ một nét."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画一条线。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "畫一條線。"
+          }
+        }
+      }
+    },
+    "Your group can switch to the eraser. Tap it." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يمكن لمجموعتك التبديل إلى الممحاة. اضغطها."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vaše skupina umí přepnout na gumu. Klepněte na ni."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din gruppe kan skifte til viskelæderet. Tryk på den."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Gruppe kann zum Radierer wechseln. Tippe darauf."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Η ομάδα σας μπορεί να αλλάξει σε γόμα. Πατήστε την."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your group can switch to the eraser. Tap it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu grupo puede cambiar a la goma. Tócalo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ryhmäsi voi vaihtaa pyyhekumiin. Napauta sitä."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre groupe peut passer à la gomme. Touchez-le."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקבוצה שלכם יכולה לעבור למחק. הקישו עליה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A csoportod radírra válthat. Koppints rá."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grupmu bisa beralih ke penghapus. Ketuk grupnya."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo gruppo può passare alla gomma. Toccalo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "グループで消しゴムに切り替えられます。タップします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "그룹으로 지우개로 바꿀 수 있습니다. 탭하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gruppen din kan bytte til viskelæret. Trykk på den."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je groep kan naar de gum wisselen. Tik erop."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja grupa może przełączyć na gumkę. Stuknij ją."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seu grupo pode mudar para a borracha. Toque nele."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O seu grupo pode mudar para a borracha. Toque nele."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша группа переключает на ластик. Нажмите её."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Din grupp kan byta till suddgummit. Tryck på den."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กลุ่มของคุณสลับไปใช้ยางลบได้ แตะที่กลุ่ม"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grubun silgiye geçebilir. Gruba dokun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша група перемикає на гумку. Натисніть її."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nhóm của bạn có thể chuyển sang tẩy. Chạm vào nhóm."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的组可以切换到橡皮擦。轻点它。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的群組可以切換到橡皮擦。點一下它。"
+          }
+        }
+      }
+    },
+    "Favorites can appear in a widget on your watch face." : {
+      "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يمكن أن تظهر المفضلة في أداة على واجهة ساعتك."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oblíbené se mohou zobrazit ve widgetu na ciferníku."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoritter kan vises i en widget på din urskive."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoriten können in einem Widget auf deinem Zifferblatt erscheinen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Τα αγαπημένα μπορούν να εμφανιστούν σε widget στην πρόσοψη του ρολογιού."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites can appear in a widget on your watch face."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus favoritos pueden aparecer en un widget de la esfera."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suosikit voivat näkyä kellotaulun widgetissä."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vos favoris peuvent apparaître dans un widget du cadran."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "המועדפים יכולים להופיע בווידג׳ט בפני השעון."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A kedvencek megjelenhetnek egy widgetben az óralapon."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorit dapat muncul di widget pada tampilan jam."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I preferiti possono apparire in un widget sul quadrante."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お気に入りは文字盤のウィジェットに表示できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "즐겨찾기는 시계 페이스의 위젯에 표시될 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoritter kan vises i en widget på urskiven."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorieten kunnen in een widget op je wijzerplaat verschijnen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ulubione mogą pojawiać się w widżecie na tarczy."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os favoritos podem aparecer em um widget no mostrador."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os favoritos podem aparecer num widget no mostrador."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Избранное может показываться в виджете на циферблате."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoriter kan visas i en widget på urtavlan."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "รายการโปรดแสดงในวิดเจ็ตบนหน้าปัดได้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoriler saat kadranındaki bir widget’ta görünebilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вибране може показуватися у віджеті на циферблаті."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mục ưa thích có thể hiện trong tiện ích trên mặt đồng hồ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "个人收藏可显示在表盘的小组件中。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "喜好項目可顯示在錶面的小工具中。"
           }
         }
       }

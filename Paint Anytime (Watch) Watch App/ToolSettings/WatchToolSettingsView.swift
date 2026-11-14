@@ -89,7 +89,21 @@ struct WatchToolSettingsView: View {
         nonmutating set { selectedPage = newValue.rawValue }
     }
 
-    private var colors: [InkPreset] { tutorial.isActive ? tutorialColors : palette.selectedColors }
+    private var colors: [InkPreset] {
+        guard tutorial.isActive else { return palette.selectedColors }
+        guard tutorial.locksLessonColor else { return tutorialColors }
+        // Read live until the snapshot below is taken on appear, so the first frame matches.
+        let used = lessonColors.isEmpty
+            ? [controller.pencilStyle.color] + controller.document.layers.flatMap(\.strokes).map(\.style.color)
+            : lessonColors
+        // The repaint and layer-order lessons need a color that stands out from the drawing:
+        // the colors on the canvas, and presets close to them (a color made on the wheel
+        // near light blue hides Light blue), leave the list.
+        let remaining = tutorialColors.filter { preset in
+            !used.contains { TutorialColorSimilarity.isClose(preset.rgba, $0) }
+        }
+        return remaining.isEmpty ? tutorialColors : remaining
+    }
     /// The tutorial reaches its palette through the corner button, so + is editor-only.
     private var includesAddColor: Bool { !tutorial.isActive }
 

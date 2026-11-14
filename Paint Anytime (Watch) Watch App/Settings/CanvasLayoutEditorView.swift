@@ -115,58 +115,77 @@ struct CanvasLayoutEditorView: View {
         }
     }
 
-    /// The lesson's editor: the same draft and action list, laid out like the tutorial
-    /// canvas, with the bottom row above the lesson card. Only the empty bottom circles
-    /// and the eraser toggle can be chosen; the action list replaces the page instead of
-    /// a sheet, so the lesson card stays over it.
+    /// The top row's circles centre `top + 18` from the screen's top and 30 pt from its sides,
+    /// as on the canvas and in the editor.
+    static let tutorialRowTop = MorphPanelGeometry(size: .zero, layoutDirection: .leftToRight).top
+        + 18 - MorphPanelGeometry.buttonDiameter / 2
+    static let tutorialRowInset: CGFloat = 30 - MorphPanelGeometry.buttonDiameter / 2
+
+    /// Reset in the lesson empties both top circles, so the lesson starts the group from nothing.
+    private static let tutorialEmptyLayout = CanvasControlLayout(
+        slots: Array(repeating: .single(.nothing), count: CanvasControlLayout.original.slots.count))
+
+    /// The lesson's editor: the original top menus with Reset and the checkmark between them,
+    /// as in the editor, and no bottom row. Reset empties both circles, and an empty one then
+    /// becomes a group; the action list replaces the page instead of a sheet, so the lesson
+    /// card stays over it.
     private func tutorialEditor(onSave: @escaping (CanvasControlLayout) -> Void) -> some View {
         ZStack {
             Color.white.ignoresSafeArea()
-            VStack(spacing: 0) {
+            VStack(spacing: MorphPreviewLayout.gap) {
                 HStack {
                     tutorialSlot(CanvasControlLayout.topLeadingSlot)
+                    Spacer(minLength: 0)
+                    tutorialResetButton
                     Spacer(minLength: 0)
                     Button {
                         guard tutorial.permits([.saveCanvasLayout]) else { return }
                         onSave(draft)
                     } label: {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 17, weight: .semibold))
-                            .tutorialHint(tutorial, steps: [.saveCanvasLayout])
+                        CanvasLayoutCircle {
+                            Image(systemName: "checkmark").foregroundStyle(.green)
+                                .tutorialHint(tutorial, steps: [.saveCanvasLayout])
+                        }
                     }
-                    .buttonStyle(TutorialOverlayButtonStyle())
+                    .buttonStyle(.plain)
                     .allowsHitTesting(tutorial.permits([.saveCanvasLayout]))
-                    .accessibilityLabel(L10n.text("Done"))
+                    .accessibilityLabel(L10n.text("Save and apply"))
                     Spacer(minLength: 0)
                     tutorialSlot(0)
                 }
-                Spacer(minLength: 0)
-                HStack {
-                    tutorialSlot(1)
+                // Each group's actions in a column below its circle, as in the editor.
+                HStack(alignment: .top) {
+                    tutorialMorphPreview(CanvasControlLayout.topLeadingSlot)
                     Spacer(minLength: 0)
-                    tutorialSlot(2)
-                    Spacer(minLength: 0)
-                    tutorialSlot(3)
-                    Spacer(minLength: 0)
-                    tutorialSlot(4)
+                    tutorialMorphPreview(0)
                 }
-                .padding(.bottom, tutorialHintReservedHeight)
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 8)
-            .padding(.top, 4)
-            .environment(\.colorScheme, .light)
+            // Where the canvas draws its top circles (`MorphPanelGeometry`): the clock band is
+            // hidden, so the row ignores the safe area like the editor's toolbar buttons do.
+            .padding(.horizontal, Self.tutorialRowInset)
+            .padding(.top, Self.tutorialRowTop)
+            .ignoresSafeArea()
+            // No colour scheme of its own: like the editor's, the glass follows the app's.
 
             if let slot = editingSlot {
                 CanvasSlotEditorView(assignment: $draft.slots[slot], instrument: instrument,
                                      keptActions: [], usedMorphIcons: morphIcons(excluding: slot),
-                                     otherSlotNumbers: slotNumbers(excluding: slot), tutorial: tutorial)
-                    .padding(.bottom, tutorialHintReservedHeight)
+                                     otherSlotNumbers: slotNumbers(excluding: slot), tutorial: tutorial,
+                                     onTutorialClose: {
+                                         withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                             editingSlot = nil
+                                         }
+                                     })
+                    // The list runs under the floating lesson card, like the tour's other lists.
                     .background(Color.black.ignoresSafeArea())
                     .environment(\.colorScheme, .dark)
                     .transition(.opacity)
                     .zIndex(1)
             }
         }
+        // The editor's canvas hides the clock; the action list shows it between ✕ and the
+        // icon button, as the editor's sheet does.
         .requestsHiddenClock(editingSlot == nil)
         .onAppear {
             guard !loaded else { return }
@@ -182,8 +201,7 @@ struct CanvasLayoutEditorView: View {
 
     private func tutorialSlot(_ index: Int) -> some View {
         let assignment = draft.slots[index]
-        let choosable = !CustomCanvasControls.isTop(index) && assignment.isEmpty
-            && tutorial.permits([.chooseEditorSlot])
+        let choosable = assignment.isEmpty && tutorial.permits([.chooseEditorSlot])
         return Button {
             guard choosable else { return }
             withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { editingSlot = index }
@@ -191,13 +209,47 @@ struct CanvasLayoutEditorView: View {
         } label: {
             CanvasQuickActionIcon(action: assignment.actions[0], instrument: instrument,
                                   isMorph: assignment.isMorph, morphIcon: assignment.icon)
-                .tutorialHint(tutorial, steps: [.chooseEditorSlot],
-                              isSuggested: !CustomCanvasControls.isTop(index) && assignment.isEmpty)
+                .tutorialHint(tutorial, steps: [.chooseEditorSlot], isSuggested: assignment.isEmpty)
         }
-        .buttonStyle(TutorialOverlayButtonStyle())
+        // The editor's slot style, so each watchOS draws the circles as the editor does there.
+        .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter, usesCanvasMaterial: true)
         // Not disabled: a dimmed circle would look unlike the editor's.
         .allowsHitTesting(choosable)
         .accessibilityLabel(slotLabel(index))
+    }
+
+    /// Dimmed like the editor's Reset with nothing to reset, until the lesson asks for it.
+    private var tutorialResetButton: some View {
+        let permitted = tutorial.permits([.resetEditorLayout])
+        return Button {
+            guard permitted else { return }
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { draft = Self.tutorialEmptyLayout }
+            tutorial.record(.resetEditorLayout)
+        } label: {
+            CanvasLayoutCircle {
+                Image(systemName: "arrow.counterclockwise")
+                    .opacity(permitted ? 1 : 0.4)
+                    .tutorialHint(tutorial, steps: [.resetEditorLayout])
+            }
+        }
+        .buttonStyle(.plain)
+        .allowsHitTesting(permitted)
+        .accessibilityLabel(L10n.text("Reset interface"))
+    }
+
+    /// A slot's group column, or an empty column of the circle's width.
+    @ViewBuilder private func tutorialMorphPreview(_ index: Int) -> some View {
+        let assignment = draft.slots[index]
+        Group {
+            if assignment.isMorph {
+                morphPreview(assignment, layout: MorphPreviewLayout(row: MorphPreviewLayout.maximumRow, columns: 1))
+                    .transition(.opacity)
+            } else {
+                Color.clear.frame(height: 0)
+            }
+        }
+        .frame(width: MorphPanelGeometry.buttonDiameter)
+        .accessibilityHidden(true)
     }
 
     /// watchOS has no centre toolbar placement, so Reset and the checkmark sit
@@ -500,8 +552,15 @@ private struct CanvasSlotEditorView: View {
     let usedMorphIcons: Set<String>
     /// Numbers of the other slots that already hold each action.
     let otherSlotNumbers: [CanvasQuickAction: [Int]]
-    /// The lesson offers only the eraser toggle, as a single circle.
+    /// The lesson groups the eyedropper and the eraser toggle and lists only those two.
     @ObservedObject var tutorial = TutorialSession.inactive
+    /// The lesson's ✕: the list is a page of the lesson, not a sheet with its own close button.
+    var onTutorialClose: (() -> Void)? = nil
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
+    /// The lesson's actions, in the order the lesson names them.
+    private static let tutorialActions: [CanvasQuickAction] = [.eyedropper, .eraserToggle]
+    /// The lesson shows the icon list in place, as it shows this list: it has no navigation bar.
+    @State private var showsTutorialIconPicker = false
     @State private var isGrouped = false
     /// The group's actions in tap order; the first is the one kept when ungrouping.
     @State private var selection: [CanvasQuickAction] = []
@@ -514,8 +573,10 @@ private struct CanvasSlotEditorView: View {
             Section {
                 Toggle(isOn: Binding(get: { isGrouped }, set: setGrouped)) {
                     Text(L10n.text("Group actions"))
+                        .tutorialHint(tutorial, steps: [.groupEditorActions])
                 }
-                .disabled((isGrouped && keptActions.count > 1) || tutorial.isActive)
+                .disabled((isGrouped && keptActions.count > 1)
+                          || (tutorial.isActive && !tutorial.permits([.groupEditorActions])))
             } footer: {
                 if isGrouped && keptActions.count > 1 {
                     Text(L10n.text("Some of these actions are nowhere else on the canvas, so the group stays."))
@@ -523,7 +584,7 @@ private struct CanvasSlotEditorView: View {
             }
             Section {
                 // Stays open to show the choice; the sheet's close button dismisses it.
-                ForEach(CanvasQuickAction.menuOrder(inMorph: isGrouped)) { action in
+                ForEach(tutorial.isActive ? Self.tutorialActions : CanvasQuickAction.menuOrder(inMorph: isGrouped)) { action in
                     Button { select(action) } label: {
                         HStack {
                             CanvasQuickActionLabel(action: action, instrument: instrument,
@@ -531,13 +592,16 @@ private struct CanvasSlotEditorView: View {
                             Spacer()
                             marker(for: action)
                         }
-                        .tutorialHint(tutorial, steps: [.chooseEraserAction], isSuggested: action == .eraserToggle)
+                        .tutorialHint(tutorial, steps: [.chooseEditorActions], isSuggested: !selection.contains(action))
                     }
                     .disabled(isDisabled(action))
                     .accessibilityAddTraits(selection.contains(action) ? .isSelected : [])
                 }
             } header: {
-                if isGrouped { Text("\(selection.count)/\(CanvasControlAssignment.maxMorphActions)") }
+                // The lesson's group holds only its two actions.
+                if isGrouped {
+                    Text("\(selection.count)/\(tutorial.isActive ? Self.tutorialActions.count : CanvasControlAssignment.maxMorphActions)")
+                }
             } footer: {
                 if isGrouped {
                     Text(L10n.text("Choose up to five actions. Their order follows your selection."))
@@ -547,9 +611,24 @@ private struct CanvasSlotEditorView: View {
                 }
             }
         }
-        // In the tutorial the list is a page of the lesson, not a pushed screen with a bar.
-        .navigationTitle(tutorial.isActive ? "" : L10n.text("Action"))
+        // The lesson's card floats over the list; the last rows still scroll above it.
+        .contentMargins(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 0, for: .scrollContent)
+        .overlay {
+            // The lesson shows the icon list in place of a pushed page, with the same title
+            // and Back. Choosing an icon keeps it open, as the editor's pushed list does.
+            if showsTutorialIconPicker {
+                CanvasMorphIconPicker(icon: $icon) {
+                    commit()
+                    tutorial.record(.choseGroupIcon)
+                }
+                .contentMargins(.bottom, tutorialHintReservedHeight, for: .scrollContent)
+                .background(Color.black.ignoresSafeArea())
+                .transition(.opacity)
+            }
+        }
+        .navigationTitle(L10n.text(showsTutorialIconPicker ? "Icon" : "Action"))
         .toolbar {
+            if tutorial.isActive { tutorialToolbar }
             // Shows the group's icon and opens the full icon list. Always installed,
             // so the title keeps its place; ungrouped, it fades and shrinks away.
             if !tutorial.isActive {
@@ -583,6 +662,53 @@ private struct CanvasSlotEditorView: View {
         }
     }
 
+    /// The editor's sheet bar in the lesson: ✕ (Back in the icon list) and the group's icon.
+    /// Both stay installed, so the clock and the title keep their places.
+    @ToolbarContentBuilder private var tutorialToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            let back: Set<TutorialStep> = showsTutorialIconPicker ? [.leaveIconPicker] : [.closeActionList]
+            let permitted = tutorial.permits(back)
+            Button {
+                guard permitted else { return }
+                if showsTutorialIconPicker {
+                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { showsTutorialIconPicker = false }
+                    tutorial.record(.leftIconPicker)
+                } else {
+                    tutorial.record(.closedActionList)
+                    onTutorialClose?()
+                }
+            } label: {
+                Image(systemName: showsTutorialIconPicker ? "chevron.backward" : "xmark")
+                    .tutorialHint(tutorial, steps: back)
+                    .frame(width: 32, height: 32, alignment: .center)
+                    .contentShape(Circle())
+            }
+            .watchToolbarButtonStyle()
+            .disabled(!permitted)
+            .accessibilityLabel(L10n.text(showsTutorialIconPicker ? "Back" : "Close"))
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            let shown = isGrouped && !showsTutorialIconPicker
+            let permitted = tutorial.permits([.chooseGroupIcon])
+            Button {
+                guard permitted else { return }
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { showsTutorialIconPicker = true }
+            } label: {
+                CanvasLayoutCircle {
+                    Image(systemName: icon)
+                        .tutorialHint(tutorial, steps: [.chooseGroupIcon])
+                }
+            }
+            // The editor's icon button style.
+            .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter, hidesNativeChrome: true)
+            .accessibilityLabel(L10n.text("Icon"))
+            .scaleEffect(shown || reduceMotion ? 1 : 0.5)
+            .opacity(shown ? 1 : 0)
+            .allowsHitTesting(shown && permitted)
+            .accessibilityHidden(!shown)
+        }
+    }
+
     /// A group shows its order as numbers; a single action shows one checkmark.
     @ViewBuilder private func marker(for action: CanvasQuickAction) -> some View {
         if isGrouped {
@@ -605,7 +731,7 @@ private struct CanvasSlotEditorView: View {
     }
 
     private func isDisabled(_ action: CanvasQuickAction) -> Bool {
-        if tutorial.isActive { return action != .eraserToggle || !tutorial.permits([.chooseEraserAction]) }
+        if tutorial.isActive { return !tutorial.permits([.chooseEditorActions]) }
         if isGrouped {
             return (selection.count == CanvasControlAssignment.maxMorphActions && !selection.contains(action))
                 || keptActions.contains(action)
@@ -615,11 +741,16 @@ private struct CanvasSlotEditorView: View {
 
     /// Grouping keeps the current action as number one; ungrouping keeps only the first.
     private func setGrouped(_ grouped: Bool) {
+        // The lesson only turns grouping on, once.
+        if tutorial.isActive {
+            guard grouped, tutorial.permits([.groupEditorActions]) else { return }
+        }
         // One spring for the counter, the markers, the rows and the icon button,
         // in both directions.
         withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.8)) {
             applyGrouped(grouped)
         }
+        if tutorial.isActive { tutorial.record(.groupedEditorActions) }
     }
 
     private func applyGrouped(_ grouped: Bool) {
@@ -639,10 +770,10 @@ private struct CanvasSlotEditorView: View {
 
     private func select(_ action: CanvasQuickAction) {
         if tutorial.isActive {
-            guard action == .eraserToggle, tutorial.permits([.chooseEraserAction]) else { return }
-            selection = [action]
-            assignment = .single(action)
-            tutorial.record(.choseEraserAction)
+            guard isGrouped, tutorial.permits([.chooseEditorActions]) else { return }
+            if selection.contains(action) { selection.removeAll { $0 == action } } else { selection.append(action) }
+            commit()
+            if Set(selection) == Set(Self.tutorialActions) { tutorial.record(.choseEditorActions) }
             return
         }
         if isGrouped {

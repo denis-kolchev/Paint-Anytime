@@ -25,6 +25,8 @@ struct WatchAppSettingsView: View {
     var onOpenCanvasSettings: (() -> Void)? = nil
     /// The tutorial opens Drawing as its own page, as it does Canvas.
     var onOpenDrawingSettings: (() -> Void)? = nil
+    /// The tutorial opens Autosave as its own page, with only the switch.
+    var onOpenAutosave: (() -> Void)? = nil
     /// The tutorial's Back to the canvas; shown only while the lesson asks for it.
     var onTutorialBack: (() -> Void)? = nil
 
@@ -89,9 +91,9 @@ struct WatchAppSettingsView: View {
     @ViewBuilder
     private var menuRows: some View {
         // Each later lesson adds its row at the top, so the list seems to grow upward:
-        // perspective shows Canvas, Gallery; blending Drawing, Canvas, Gallery;
-        // the canvas editor and crop Canvas, Drawing, Gallery; gallery selection
-        // Gallery, Canvas, Drawing.
+        // autosave shows Autosave, Gallery, then after its Back Canvas, Autosave, Gallery;
+        // blending Drawing, Canvas, Autosave, Gallery; the canvas editor and crop Canvas,
+        // Drawing, Autosave, Gallery; gallery selection Gallery, Canvas, Drawing, Autosave.
         if tutorialCanvasLeads {
             tutorialCanvasRow
         }
@@ -100,6 +102,9 @@ struct WatchAppSettingsView: View {
         }
         if tutorialShowsCanvasRow && !tutorialCanvasLeads {
             tutorialCanvasRow
+        }
+        if tutorialShowsAutosaveRow && !tutorial.teachesGallerySelection {
+            tutorialAutosaveRow
         }
         Button(action: onOpenDrawings) {
             Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
@@ -153,14 +158,11 @@ struct WatchAppSettingsView: View {
                     Label { Text(verbatim: "Render debug") } icon: { Image(systemName: "speedometer") }
                 }
             }
-        } else {
-            // A lesson shows only the rows on its path. They stay installed for the whole
-            // lesson, so removing a row never pops the page it pushed.
-            if tutorial.teachesGallerySelection {
-                // Gallery leads here; the earlier rows follow it and do nothing in this lesson.
-                tutorialCanvasRow
-                tutorialDrawingRow
-            }
+        } else if tutorial.teachesGallerySelection {
+            // Gallery leads here; the other rows follow it and do nothing in this lesson.
+            tutorialCanvasRow
+            tutorialDrawingRow
+            if tutorialShowsAutosaveRow { tutorialAutosaveRow }
         }
     }
 
@@ -175,9 +177,25 @@ struct WatchAppSettingsView: View {
         tutorial.isActive && (tutorial.teachesBlending || tutorial.teachesCanvasEditor || tutorial.teachesCrop)
     }
 
+    /// From the autosave lesson on; the earlier chapter never shows it.
+    private var tutorialShowsAutosaveRow: Bool {
+        tutorial.isActive && (tutorial.teachesAutosave || tutorial.showsAutosaveInMenu)
+    }
+
+    /// The perspective lesson adds Canvas only after Back from Autosave.
     private var tutorialShowsCanvasRow: Bool {
-        tutorial.isActive && (tutorial.teachesPerspective || tutorial.teachesCrop
+        tutorial.isActive && ((tutorial.teachesPerspective && !tutorial.teachesAutosave) || tutorial.teachesCrop
                               || tutorial.teachesCanvasEditor || tutorial.teachesBlending)
+    }
+
+    @ViewBuilder
+    private var tutorialAutosaveRow: some View {
+        if let onOpenAutosave {
+            Button(action: onOpenAutosave) {
+                Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+                    .tutorialHint(tutorial, steps: [.openAutosave])
+            }
+        }
     }
 
     @ViewBuilder

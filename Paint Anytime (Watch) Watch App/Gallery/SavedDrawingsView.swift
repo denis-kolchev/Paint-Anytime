@@ -198,6 +198,8 @@ struct SavedDrawingsView: View {
                                 controller.setFavorite(favorite, for: drawing, in: galleryFolder)
                             }
                             guard tutorial.isActive else { return }
+                            // The widget preview after this lesson shows exactly these pictures.
+                            if favorite { tutorial.favoritedDrawings = selectedDrawings.map(\.url) }
                             tutorial.record(.favoritedSelection)
                             // Leave selection so the hearts show on the tiles and Back leaves the gallery.
                             setSelecting(false)

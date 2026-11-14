@@ -39,6 +39,8 @@ struct WatchLayersView: View {
     private let scrollClock = Timer.publish(every: 1.0 / 30, on: .main, in: .common).autoconnect()
     @State private var scrollViewport: CGRect = .zero
     @State private var rowFrames: [UUID: CGRect] = [:]
+    /// The layer-order lesson shows which card to hold: it presses in, waits, and lets go.
+    @State private var grabHintScale: CGFloat = 1
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var previewAspectRatio: CGFloat {
@@ -66,7 +68,8 @@ struct WatchLayersView: View {
                                     layer.id == draggedLayer || reduceMotion ? nil : .easeInOut(duration: 0.18),
                                     value: reorderTarget
                                 )
-                                .scaleEffect(draggedLayer == layer.id && !reduceMotion ? 1.04 : 1)
+                                .scaleEffect(draggedLayer == layer.id && !reduceMotion ? 1.04
+                                             : grabHintLayer == layer.id ? grabHintScale : 1)
                         }
                             // Scroll targets and measurements must use the stationary slot.
                             .id(layer.id)
@@ -190,6 +193,7 @@ struct WatchLayersView: View {
             }
         }
         .onDisappear { resetDrag() }
+        .task(id: grabHintLayer) { await runGrabHint() }
         .navigationTitle(L10n.text("Layers"))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -223,6 +227,27 @@ struct WatchLayersView: View {
         .navigationDestination(isPresented: $showsPaperEditor) {
             LayerSettingsView(controller: controller, layerID: nil, canvasSize: canvasSize)
         }
+    }
+
+    /// The new layer while the lesson asks to hold it and nothing touches the list.
+    private var grabHintLayer: UUID? {
+        tutorial.isActive && tutorial.step == .moveLayerDown && tutorial.acceptsActions
+            && draggedLayer == nil && !isTouchingLayers ? controller.selectedLayer.id : nil
+    }
+
+    /// Pressed as if grabbed, held for a moment, then released, until the user holds it.
+    @MainActor private func runGrabHint() async {
+        withAnimation(.easeOut(duration: 0.15)) { grabHintScale = 1 }
+        guard grabHintLayer != nil, !reduceMotion else { return }
+        do {
+            try await Task.sleep(for: .milliseconds(700))
+            while !Task.isCancelled {
+                withAnimation(.easeInOut(duration: 0.22)) { grabHintScale = 0.93 }
+                try await Task.sleep(for: .milliseconds(650))
+                withAnimation(.spring(duration: 0.4, bounce: 0.35)) { grabHintScale = 1 }
+                try await Task.sleep(for: .milliseconds(1400))
+            }
+        } catch {}
     }
 
     private func layerRow(_ layer: CanvasLayer) -> some View {

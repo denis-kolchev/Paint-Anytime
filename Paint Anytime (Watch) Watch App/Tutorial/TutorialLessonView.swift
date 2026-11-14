@@ -638,3 +638,51 @@ extension EnvironmentValues {
         set { self[TutorialHintReservedHeightKey.self] = newValue }
     }
 }
+
+/// The four-way arrows of the basic course's pan lesson, sized for a small area: they grow
+/// in, then travel a short way left, right, up and down from the centre of where they sit.
+struct TutorialMoveGuide: View {
+    /// How far the arrows travel from the centre, in points.
+    var distance: CGFloat = 10
+    var font: Font = .footnote.bold()
+    var padding: CGFloat = 6
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var offset = CGSize.zero
+    @State private var isVisible = false
+
+    var body: some View {
+        Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+            .font(font)
+            .foregroundStyle(.white)
+            .padding(padding)
+            .background(.regularMaterial, in: Circle())
+            .scaleEffect(isVisible || reduceMotion ? 1 : 0.6)
+            .offset(offset)
+            .opacity(isVisible ? 1 : 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task { await run() }
+    }
+
+    @MainActor private func run() async {
+        let offsets: [CGSize] = [
+            CGSize(width: -distance, height: 0), .zero,
+            CGSize(width: distance, height: 0), .zero,
+            CGSize(width: 0, height: -distance), .zero,
+            CGSize(width: 0, height: distance), .zero
+        ]
+        do {
+            try await Task.sleep(for: .milliseconds(600))
+            let appear: Animation = reduceMotion ? .easeOut(duration: 0.2) : .spring(duration: 0.45, bounce: 0.3)
+            withAnimation(appear) { isVisible = true }
+            guard !reduceMotion else { return }
+            try await Task.sleep(for: .milliseconds(450))
+            while !Task.isCancelled {
+                for next in offsets {
+                    withAnimation(.easeInOut(duration: 0.45)) { offset = next }
+                    try await Task.sleep(for: .milliseconds(500))
+                }
+            }
+        } catch {}
+    }
+}

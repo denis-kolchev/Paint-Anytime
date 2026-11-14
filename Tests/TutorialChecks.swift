@@ -133,16 +133,33 @@ struct TutorialChecks {
         precondition(progress.chapter == .advanced && progress.step == .holdCircle && progress.chapterProgress == 0)
         precondition(progress.record(.heldCircle) == .advance)
         progress.advance()
-        // Perspective: the menu leads to the guides, then a stroke starts on one.
+        // Autosave: the menu offers only it and Gallery; Back from it adds Canvas.
+        precondition(!progress.showsAutosaveInMenu && progress.teachesAutosave)
         for (step, event): (TutorialStep, TutorialProgress.Event) in [
-            (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),
-            (.openPerspective, .openedPerspective)
+            (.openMenu, .openedMenu), (.openAutosave, .openedAutosave)
+        ] {
+            precondition(progress.step == step && progress.teachesAutosave && progress.record(event) == .advance)
+            progress.advance()
+        }
+        precondition(progress.step == .enableAutosave && progress.record(.enabledAutosave) == .advance,
+                     "Turning autosave on asks for Back at once")
+        progress.advance()
+        precondition(progress.step == .leaveAutosave && progress.record(.leftMenu) == .none)
+        precondition(progress.record(.leftAutosave) == .advance)
+        progress.advance()
+        precondition(!progress.teachesAutosave && progress.showsAutosaveInMenu)
+        // Perspective: the menu, still open, leads to the guides, then a stroke starts on one.
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.openCanvasSettings, .openedCanvasSettings), (.openPerspective, .openedPerspective)
         ] {
             precondition(progress.step == step && progress.teachesPerspective && progress.record(event) == .advance)
             progress.advance()
         }
-        // The chosen guides stay visible briefly; Back then leads to the menu and the canvas.
-        precondition(progress.step == .choosePerspective && progress.record(.choseVanishingPoints) == .showResult)
+        // The chosen guides lead straight to the ray count; Back follows once it settles and
+        // leads to the menu and the canvas.
+        precondition(progress.step == .choosePerspective && progress.record(.choseVanishingPoints) == .advance)
+        progress.advance()
+        precondition(progress.step == .setRayCount && progress.record(.changedRayCount) == .advanceWhenSettled)
         progress.advance()
         precondition(progress.step == .leavePerspective && progress.record(.leftMenu) == .none)
         precondition(progress.record(.leftPerspective) == .advance)
@@ -172,24 +189,37 @@ struct TutorialChecks {
             precondition(progress.record(event) == .advance)
             progress.advance()
         }
+        // The tour autosaves the circle and the guide line, then the canvas is cleared.
+        precondition(progress.step == .autosaveDrawing && progress.record(.autosaved) == .advance)
+        progress.advance()
+        precondition(progress.step == .clearCanvas && progress.record(.cleared) == .showResult)
+        progress.advance()
         // The composition lessons follow in the same chapter, on a fresh canvas.
         precondition(progress.chapter == .advanced && progress.step == .firstStrokes)
         precondition(progress.freshLessonRevision != freshLessons, "Layer lessons start on a cleared canvas")
         precondition(progress.lessonKeepsBrush, "The first strokes use the color made in the palette")
-        _ = progress.record(.stroke)
-        precondition(progress.record(.stroke) == .advance)
+        precondition(progress.record(.stroke) == .advance, "One stroke is enough before the layers")
         progress.advance()
         // Layers: lock transparency, paint inside the strokes, then draw on a new layer.
         for (step, event): (TutorialStep, TutorialProgress.Event) in [
             (.openLayers, .openedLayers), (.openLayerSettings, .openedLayerSettings),
             (.lockTransparency, .lockedTransparency), (.closeLayerSettings, .closedLayerSettings),
-            (.closeLayers, .closedLayers), (.openTools, .openedTools)
+            (.closeLayers, .closedLayers)
         ] {
             precondition(progress.step == step && progress.record(event) == .advance)
             progress.advance()
         }
+        precondition(progress.step == .openTools && progress.keepsCanvasForComparison,
+                     "The canvas on the way to the brush settings takes no strokes")
+        precondition(progress.record(.openedTools) == .advance)
+        progress.advance()
         precondition(progress.step == .pickColor && progress.allowsToolPage(1) && !progress.allowsToolPage(0))
         precondition(progress.locksLessonColor, "Repainting must not return to the strokes' color")
+        precondition(TutorialColorSimilarity.isClose(SIMD4(0.35, 0.75, 0.95, 1), SIMD4(0.4, 0.8, 1, 1))
+                     && !TutorialColorSimilarity.isClose(SIMD4(0.4, 0.8, 1, 1), SIMD4(1, 0.2, 0.2, 1))
+                     && TutorialColorSimilarity.isClose(SIMD4(0.5, 0.5, 0.52, 1), SIMD4(0.55, 0.55, 0.55, 1))
+                     && !TutorialColorSimilarity.isClose(SIMD4(0, 0, 0, 1), SIMD4(0.55, 0.55, 0.55, 1)),
+                     "The lesson hides presets close to the colors on the canvas")
         var recolored = PencilStyle()
         recolored.color = SIMD4(0.1, 0.4, 0.9, 1)
         precondition(progress.changedStyle(from: PencilStyle(), to: recolored, page: 1))
@@ -223,8 +253,14 @@ struct TutorialChecks {
         progress.advance()
         for _ in 0..<3 { precondition(progress.record(.failedLassoSelection) == .none) }
         precondition(!progress.lessonKeepsBrush)
-        // Blending, after the lasso: crossing the demonstrated line shows the mix, then Color inversion.
-        precondition(progress.step == .crossMarkerLine, "Repeated misses end the lasso lesson")
+        // Blending, after the lasso: the tour autosaves first, even when misses ended the lasso
+        // lesson; crossing the demonstrated line then shows the mix, then Color inversion.
+        precondition(progress.step == .autosaveDrawing, "Repeated misses end the lasso lesson")
+        precondition(progress.showsAutosaveInMenu && progress.record(.autosaved) == .advance)
+        progress.advance()
+        precondition(progress.step == .clearCanvas && progress.record(.cleared) == .showResult)
+        progress.advance()
+        precondition(progress.step == .crossMarkerLine)
         precondition(progress.record(.stroke) == .none)
         precondition(progress.record(.crossedMarkerLine) == .showResult)
         progress.advance()
@@ -236,22 +272,48 @@ struct TutorialChecks {
             precondition(progress.step == step && progress.record(event) == .advance)
             progress.advance()
         }
-        precondition(progress.step == .chooseColorInversion && progress.record(.choseColorInversion) == .showResult)
-        progress.advance()
+        // Inversion leads out through Back, then the user undoes the crossing line.
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.chooseColorInversion, .choseColorInversion), (.leaveColorBlending, .leftColorBlending),
+            (.leaveDrawingSettings, .leftDrawingSettings), (.leaveMenu, .leftMenu),
+            (.undoMarkerLine, .undidMarkerLine)
+        ] {
+            precondition(progress.step == step && progress.teachesBlending && progress.record(event) == .advance)
+            progress.advance()
+        }
         precondition(progress.step == .redrawMarkerLine && progress.record(.crossedMarkerLine) == .showResult)
         progress.advance()
         precondition(!progress.teachesBlending && progress.step == .openMenu)
-        // Canvas editor: the eraser toggle in an empty bottom circle, then used on the canvas.
+        // Canvas editor: Reset empties the top circles, one becomes a group of the eyedropper
+        // and the eraser toggle with its own icon, then the group is used on the canvas.
         for (step, event): (TutorialStep, TutorialProgress.Event) in [
             (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),
-            (.openCanvasEditor, .openedCanvasEditor), (.chooseEditorSlot, .choseEditorSlot)
+            (.openCanvasEditor, .openedCanvasEditor)
         ] {
             precondition(progress.step == step && progress.teachesCanvasEditor && progress.record(event) == .advance)
             progress.advance()
         }
-        precondition(progress.step == .chooseEraserAction && progress.record(.choseEraserAction) == .showResult)
+        precondition(progress.step == .resetEditorLayout && progress.record(.choseEditorSlot) == .none)
+        precondition(progress.record(.resetEditorLayout) == .showResult)
         progress.advance()
-        precondition(progress.step == .saveCanvasLayout && progress.record(.savedCanvasLayout) == .advance)
+        precondition(progress.step == .chooseEditorSlot && progress.record(.choseEditorSlot) == .advance)
+        progress.advance()
+        precondition(progress.step == .groupEditorActions && progress.record(.groupedEditorActions) == .advance)
+        progress.advance()
+        // The second action leads straight to the icon; Back leaves the icon list, ✕ the actions.
+        for (step, event): (TutorialStep, TutorialProgress.Event) in [
+            (.chooseEditorActions, .choseEditorActions), (.chooseGroupIcon, .choseGroupIcon),
+            (.leaveIconPicker, .leftIconPicker), (.closeActionList, .closedActionList),
+            (.saveCanvasLayout, .savedCanvasLayout)
+        ] {
+            precondition(progress.step == step && progress.record(event) == .advance)
+            progress.advance()
+        }
+        // A line comes first; the group then switches to the eraser that removes it.
+        precondition(progress.step == .drawPracticeLine && progress.record(.stroke) == .advance)
+        progress.advance()
+        precondition(progress.step == .openPracticeGroup && progress.record(.toggledEraser) == .none)
+        precondition(progress.record(.openedPracticeGroup) == .advance)
         progress.advance()
         precondition(progress.step == .toggleEraser && progress.record(.toggledEraser) == .advance)
         progress.advance()
@@ -259,7 +321,8 @@ struct TutorialChecks {
                      "Only an eraser stroke completes the lesson")
         precondition(progress.record(.erased) == .advance)
         progress.advance()
-        precondition(!progress.teachesCanvasEditor && progress.step == .openMenu)
+        precondition(!progress.teachesCanvasEditor
+                     && progress.step == (AppReleaseFeatures.current.showsCanvasSizeControls ? .openMenu : .autosaveDrawing))
         if AppReleaseFeatures.current.showsCanvasSizeControls {
             for (step, event): (TutorialStep, TutorialProgress.Event) in [
                 (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),
@@ -268,17 +331,19 @@ struct TutorialChecks {
                 precondition(progress.step == step && progress.teachesCrop && progress.record(event) == .advance)
                 progress.advance()
             }
-            // ✓ is offered only after the Crown has trimmed the edges.
+            // The first turn of the Crown trims, a drag moves the window, ✓ returns at once.
             precondition(progress.step == .trimCrop && progress.record(.croppedCanvas) == .none)
-            precondition(progress.record(.trimmedCrop) == .advanceWhenSettled)
+            precondition(progress.record(.trimmedCrop) == .advance)
             progress.advance()
-            precondition(progress.step == .applyCrop && progress.record(.croppedCanvas) == .showResult)
+            precondition(progress.step == .moveCrop && progress.record(.croppedCanvas) == .none)
+            precondition(progress.record(.movedCrop) == .advance)
             progress.advance()
-            // Undo restores the cropped edges, redo trims them again.
-            precondition(progress.step == .history && progress.record(.history) == .none)
-            precondition(progress.record(.history) == .advance)
+            precondition(progress.step == .applyCrop && progress.record(.croppedCanvas) == .advance)
             progress.advance()
         }
+        // A last autosave, then the gallery shows the saved pictures for selection.
+        precondition(progress.step == .autosaveDrawing && progress.record(.autosaved) == .advance)
+        progress.advance()
         for (step, event): (TutorialStep, TutorialProgress.Event) in [
             (.openMenu, .openedMenu), (.openGallery, .openedGallery), (.startSelection, .startedSelection)
         ] {
@@ -296,6 +361,10 @@ struct TutorialChecks {
         precondition(progress.record(.selectedDrawings) == .advance)
         progress.advance()
         precondition(progress.record(.favoritedSelection) == .advance)
+        progress.advance()
+        // The liked pictures then appear in a watch-face widget until it is tapped.
+        precondition(progress.step == .showFavoritesWidget && progress.record(.returnedToCanvas) == .none)
+        precondition(progress.record(.sawFavoritesWidget) == .advance)
         progress.advance()
         precondition(progress.step == .returnToCanvas && progress.record(.returnedToCanvas) == .advance)
         progress.advance()

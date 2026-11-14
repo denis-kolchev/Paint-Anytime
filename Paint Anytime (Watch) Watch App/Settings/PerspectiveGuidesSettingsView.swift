@@ -37,8 +37,14 @@ struct PerspectiveGuidesSettingsView: View {
         return size.width > 0 && size.height > 0 ? size : CGSize(width: 200, height: 240)
     }
 
-    /// One vanishing point has no side points for the view angle to place.
-    private var pages: [Page] { guides.preset == .one ? [.tilt, .rays] : Page.allCases }
+    /// One vanishing point has no side points for the view angle to place. The tour teaches
+    /// only the ray count, without the carousel, so the preview gets its room.
+    private var pages: [Page] {
+        if tutorial.isActive { return [.rays] }
+        return guides.preset == .one ? [.tilt, .rays] : Page.allCases
+    }
+    /// The tour's value row and Crown change the rays only in their own lesson step.
+    private var adjustsValue: Bool { tutorial.permits([.setRayCount]) }
     private var page: Page { pages.contains(selectedPage) ? selectedPage : pages[0] }
     private var pageIndex: Binding<Int> {
         Binding(get: { pages.firstIndex(of: page) ?? 0 },
@@ -64,7 +70,9 @@ struct PerspectiveGuidesSettingsView: View {
     private var valueText: String { "\(Int(value))\(page.unit)" }
 
     private func setValue(_ next: Double) {
+        guard adjustsValue else { return }
         let value = min(range.upperBound, max(range.lowerBound, next))
+        if value != self.value { tutorial.record(.changedRayCount) }
         switch page {
         case .viewAngle:
             guides.viewAngle = value
@@ -135,6 +143,7 @@ struct PerspectiveGuidesSettingsView: View {
                     Text(verbatim: valueText)
                         .font(.system(size: 14, weight: .semibold))
                         .monospacedDigit()
+                        .tutorialHint(tutorial, steps: [.setRayCount])
                         .frame(maxWidth: .infinity)
                         .accessibilityLabel(L10n.text(page.title))
                         .accessibilityValue(valueText)
@@ -151,18 +160,24 @@ struct PerspectiveGuidesSettingsView: View {
                 .frame(height: 28)
                 .padding(.top, 4)
 
-                CanvasResizeCarousel(selection: pageIndex, titles: pages.map(\.title))
-                    .frame(height: 28)
+                if !tutorial.isActive {
+                    CanvasResizeCarousel(selection: pageIndex, titles: pages.map(\.title))
+                        .frame(height: 28)
+                }
             }
             .padding(.bottom, 8)
         }
         .padding(.horizontal, 8)
         // The value row and carousel stay above the tutorial's lesson card.
         .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 0)
+        // A new lesson card changes its height; the page follows it, as the brush settings do,
+        // instead of resizing between frames.
+        .animation(tutorial.isActive && !reduceMotion ? .easeInOut(duration: 0.3) : nil,
+                   value: tutorialHintReservedHeight)
         .ignoresSafeArea(.container, edges: .bottom)
         .contentShape(Rectangle())
         .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
-            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+            guard !tutorial.isActive, abs(value.translation.width) > abs(value.translation.height) else { return }
             let forward = (value.translation.width < 0) == (layoutDirection == .leftToRight)
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
                 pageIndex.wrappedValue += forward ? 1 : -1
@@ -171,7 +186,11 @@ struct PerspectiveGuidesSettingsView: View {
         .focusable()
         .focused($crownFocused)
         .modifier(SteppedCrownModifier(value: stepValue, range: stepRange,
-                                      sensitivity: .low, crownUnitsPerStep: 1, context: page.rawValue))
+                                      sensitivity: .low, crownUnitsPerStep: 1, context: page.rawValue,
+                                      onChange: { [step = tutorial.step] event in
+                                          // Hides the Crown hint once the user turns it.
+                                          tutorial.usedCrown(in: step, velocity: event.velocity)
+                                      }))
         .onChange(of: page) { _, _ in crownFocused = true }
         .navigationTitle(L10n.text("Perspective"))
         .toolbar {
@@ -246,7 +265,7 @@ struct PerspectiveGuidesSettingsView: View {
         }
         .buttonStyle(.plain)
         .buttonRepeatBehavior(.enabled)
-        .disabled(!range.contains(value + delta))
+        .disabled(!range.contains(value + delta) || !adjustsValue)
         .accessibilityLabel(L10n.text(page.title) + (delta > 0 ? " +" : " −") + "\(Int(abs(delta)))\(page.unit)")
     }
 }

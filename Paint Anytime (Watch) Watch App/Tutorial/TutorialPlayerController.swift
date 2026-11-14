@@ -8,7 +8,7 @@ final class TutorialPlayerController: ObservableObject {
     /// NavigationStack is nested in the host's, so its links would push over the whole lesson.
     enum Page {
         case canvas, tools, menu, gallery, layers, layerSettings, canvasSettings, canvasSize, perspective, crop
-        case drawingSettings, colorBlending, canvasEditor
+        case drawingSettings, colorBlending, canvasEditor, autosave
     }
 
     let tutorial = TutorialSession()
@@ -25,6 +25,8 @@ final class TutorialPlayerController: ObservableObject {
     @Published private(set) var editedLayerID: UUID?
     /// The layout saved in the tutorial's canvas editor; the user's own layout never changes.
     @Published private(set) var practiceLayout: CanvasControlLayout?
+    /// The tour's own autosave switch; the user's setting never changes.
+    @Published private(set) var practiceAutosaveEnabled = false
     /// The lesson draws or erases on the canvas itself; the user's input waits.
     @Published private(set) var isDemonstrating = false
     private var demonstration: Task<Void, Never>?
@@ -179,15 +181,25 @@ final class TutorialPlayerController: ObservableObject {
         page = .canvas
         tutorial.record(.savedCanvasLayout)
     }
-    /// The bottom slot the practice layout gave the eraser toggle, while the lesson uses it.
-    var practiceEraserSlot: Int? {
-        guard page == .canvas, [.toggleEraser, .eraseStroke].contains(tutorial.step) else { return nil }
+    /// The top slot the practice layout gave the group with the eraser toggle, while the
+    /// lesson uses it.
+    var practiceGroupSlot: Int? {
+        guard page == .canvas,
+              [.drawPracticeLine, .openPracticeGroup, .toggleEraser, .eraseStroke].contains(tutorial.step) else { return nil }
         return practiceLayout?.slots.indices.first { index in
-            !CustomCanvasControls.isTop(index) && practiceLayout?.slots[index] == .single(.eraserToggle)
+            guard let slot = practiceLayout?.slots[index] else { return false }
+            return CustomCanvasControls.isTop(index) && slot.isMorph && slot.actions.contains(.eraserToggle)
         }
     }
+    /// The group's circle opens it; it stays usable while the lesson's eraser steps run.
+    func openPracticeGroup() -> Bool {
+        guard practiceGroupSlot != nil,
+              tutorial.permits([.openPracticeGroup, .toggleEraser, .eraseStroke]) else { return false }
+        tutorial.record(.openedPracticeGroup)
+        return true
+    }
     func toggleEraser() {
-        guard practiceEraserSlot != nil, tutorial.permits([.toggleEraser, .eraseStroke]) else { return }
+        guard practiceGroupSlot != nil, tutorial.permits([.toggleEraser, .eraseStroke]) else { return }
         canvas.cancelStroke()
         canvas.toggleEraser()
         tutorial.record(.toggledEraser)
@@ -202,6 +214,33 @@ final class TutorialPlayerController: ObservableObject {
         page = .crop
         tutorial.record(.openedCrop)
     }
+    func openAutosave() {
+        guard page == .menu, tutorial.permits([.openAutosave]) else { return }
+        page = .autosave
+        tutorial.record(.openedAutosave)
+    }
+    func enableAutosave() {
+        guard page == .autosave, tutorial.permits([.enableAutosave]) else { return }
+        practiceAutosaveEnabled = true
+        tutorial.record(.enabledAutosave)
+    }
+    /// Back from the switch returns to the menu, where the perspective part goes on.
+    func leaveAutosave() {
+        guard page == .autosave, tutorial.permits([.leaveAutosave]) else { return }
+        page = .menu
+        tutorial.record(.leftAutosave)
+    }
+    /// The tour's autosave: a copy of the drawing in the tutorial gallery only, so the
+    /// selection lesson shows it. Unlike Save, it never reaches the user's gallery.
+    func autosave(size: CGSize, scale: CGFloat) {
+        guard page == .canvas, tutorial.step == .autosaveDrawing, canvas.canClear else { return }
+        _ = try? CanvasExporter.save(strokes: canvas.document.strokes, size: size, scale: scale, in: folder)
+    }
+    func finishAutosave() {
+        guard tutorial.step == .autosaveDrawing else { return }
+        tutorial.record(.autosaved)
+    }
+
     func openDrawingSettings() {
         guard page == .menu, tutorial.permits([.openDrawingSettings]) else { return }
         page = .drawingSettings
@@ -213,13 +252,24 @@ final class TutorialPlayerController: ObservableObject {
         tutorial.record(.openedColorBlending)
     }
 
-    /// Crop and blending lessons leave their pages once the setting is applied;
-    /// the perspective lesson returns through Back instead.
+    /// Back from Color blending shows the list of drawing settings again.
+    func leaveColorBlending() {
+        guard page == .colorBlending, tutorial.permits([.leaveColorBlending]) else { return }
+        page = .drawingSettings
+        tutorial.record(.leftColorBlending)
+    }
+    /// Back from the drawing settings returns to the open menu.
+    func leaveDrawingSettings() {
+        guard page == .drawingSettings, tutorial.permits([.leaveDrawingSettings]) else { return }
+        page = .menu
+        tutorial.record(.leftDrawingSettings)
+    }
+
+    /// The crop lesson leaves its page once ✓ applies the crop: the next lesson's autosave
+    /// begins on the cropped canvas. The other lessons return through Back instead.
     func returnToCanvasAfterSetting() {
-        guard [.menu, .canvasSettings, .canvasSize, .crop,
-               .drawingSettings, .colorBlending].contains(page),
-              tutorial.teachesCrop || tutorial.teachesBlending,
-              [.history, .redrawMarkerLine].contains(tutorial.step) else { return }
+        guard [.menu, .canvasSettings, .canvasSize, .crop].contains(page),
+              tutorial.step == .autosaveDrawing else { return }
         page = .canvas
     }
 
@@ -274,25 +324,6 @@ final class TutorialPlayerController: ObservableObject {
         }
     }
 
-    /// Back on the canvas, the user's strokes are removed from the yellow line in view,
-    /// so it can be crossed again with the new blending mode.
-    func removeUserMarkerStrokes(reduceMotion: Bool) {
-        stopDemonstration()
-        isDemonstrating = true
-        let id = demonstrationID
-        demonstration = Task { [weak self] in
-            guard let self else { return }
-            defer { if demonstrationID == id { isDemonstrating = false } }
-            // Wait until the page has returned, so the strokes disappear in view.
-            do { try await Task.sleep(for: .milliseconds(reduceMotion ? 300 : 800)) } catch { return }
-            let layer = canvas.selectedLayer
-            let lineID = tutorial.markerLineStrokeID
-            let kept = layer.strokes.filter { $0.id == lineID }
-            guard !kept.isEmpty else { return }
-            canvas.replaceLayerStrokes(kept, in: layer.id, animatesClear: true)
-        }
-    }
-
     private func stopDemonstration() {
         demonstration?.cancel()
         demonstration = nil
@@ -311,10 +342,17 @@ final class TutorialPlayerController: ObservableObject {
         }
     }
     func undo() {
-        guard page == .canvas, tutorial.permits([.history]), canvas.canUndo else { return }
+        guard page == .canvas, tutorial.permits([.history, .undoMarkerLine]), canvas.canUndo else { return }
         canvas.undo()
-        tutorial.record(.history)
+        guard tutorial.step == .undoMarkerLine else { return tutorial.record(.history) }
+        // Each tap removes one of the user's strokes; the lesson goes on once only the
+        // demonstrated yellow line is left, so Undo never reaches the line itself.
+        let lineID = tutorial.markerLineStrokeID
+        if canvas.selectedLayer.strokes.allSatisfy({ $0.id == lineID }) {
+            tutorial.record(.undidMarkerLine)
+        }
     }
+
     func redo() {
         guard page == .canvas, tutorial.permits([.history]), canvas.canRedo else { return }
         canvas.redo()

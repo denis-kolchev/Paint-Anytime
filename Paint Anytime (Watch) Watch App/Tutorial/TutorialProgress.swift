@@ -18,8 +18,18 @@ enum TutorialStep: Int, CaseIterable {
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
     case openCanvasSettings, openPerspective, choosePerspective, leavePerspective, leaveMenu, perspectiveStroke
     case openCanvasSize, openCrop, trimCrop, applyCrop
+    // Later additions: the ray count, moving the crop window, the way back out of the
+    // blending pages, the user's own undo of the crossing line, the icon picker's Back,
+    // the action list's close button and a line before the eraser toggle.
+    case setRayCount, moveCrop, leaveColorBlending, leaveDrawingSettings, undoMarkerLine
+    case leaveIconPicker, closeActionList, drawPracticeLine
+    /// After the group like: a watch face whose widget shows the pictures just liked.
+    case showFavoritesWidget
     case startSelection, selectDrawings, favoriteSelection
-    case openCanvasEditor, chooseEditorSlot, chooseEraserAction, saveCanvasLayout, toggleEraser, eraseStroke
+    // The tour's autosave: a lesson turns it on, then the tour saves on its own at set points.
+    case openAutosave, enableAutosave, leaveAutosave, autosaveDrawing
+    case openCanvasEditor, resetEditorLayout, chooseEditorSlot, groupEditorActions, chooseEditorActions
+    case chooseGroupIcon, saveCanvasLayout, openPracticeGroup, toggleEraser, eraseStroke
     // Results, not lessons: they wait for Next (or Done after the last chapter).
     case chapterComplete, finished
 
@@ -57,9 +67,13 @@ struct TutorialProgress {
         case createdPalette, openedColorEditor, adjustedColor, savedColor
         case openedCanvasSettings, openedPerspective, choseVanishingPoints, drewAlongGuide
         case leftPerspective, leftMenu
-        case openedCanvasEditor, choseEditorSlot, choseEraserAction, savedCanvasLayout, toggledEraser, erased
+        case openedCanvasEditor, resetEditorLayout, choseEditorSlot, groupedEditorActions, choseEditorActions
+        case choseGroupIcon, savedCanvasLayout, openedPracticeGroup, toggledEraser, erased
         case openedCanvasSize, openedCrop, trimmedCrop, croppedCanvas
+        case changedRayCount, movedCrop, leftColorBlending, leftDrawingSettings, undidMarkerLine
+        case leftIconPicker, closedActionList, sawFavoritesWidget
         case startedSelection, cancelledSelection, selectedDrawings, deselectedDrawings, favoritedSelection
+        case openedAutosave, enabledAutosave, leftAutosave, autosaved
         case crossedMarkerLine, openedDrawingSettings, openedColorBlending, choseColorInversion
     }
     enum Effect: Equatable {
@@ -167,6 +181,8 @@ struct TutorialProgress {
         case (.createPalette, .returnedToPalettes):
             returnTo(.findNewPalette)
             return .none
+        // The layer lesson needs only something to paint over, so one stroke is enough there.
+        case (.firstStrokes, .stroke) where lessonSteps.contains(.openLayers): return .advance
         case (.firstStrokes, .stroke), (.history, .history):
             count += 1
             return count >= 2 ? .advance : .none
@@ -198,28 +214,41 @@ struct TutorialProgress {
         case (.favoriteSelection, .deselectedDrawings):
             returnTo(.selectDrawings)
             return .none
-        // The chosen guides stay visible briefly; Back then leads to the menu and the canvas.
-        case (.choosePerspective, .choseVanishingPoints): return .showResult
+        // The switch turns on and Back is asked for at once; the switch stays on.
+        case (.openAutosave, .openedAutosave), (.enableAutosave, .enabledAutosave),
+             (.leaveAutosave, .leftAutosave), (.autosaveDrawing, .autosaved): return .advance
+        // The chosen guides lead straight to the ray count, which the Crown changes; Back is
+        // asked for once the count settles, and leads to the menu and then the canvas.
+        case (.choosePerspective, .choseVanishingPoints): return .advance
+        case (.setRayCount, .changedRayCount): return .advanceWhenSettled
         case (.leavePerspective, .leftPerspective), (.leaveMenu, .leftMenu): return .advance
-        // The chosen action stays visible briefly; the next step then closes the action list.
-        case (.chooseEraserAction, .choseEraserAction): return .showResult
+        // The emptied top circles stay visible briefly. The second action leads straight to
+        // the icon; the picker stays open on the chosen icon until Back.
+        case (.resetEditorLayout, .resetEditorLayout): return .showResult
+        case (.chooseEditorActions, .choseEditorActions), (.chooseGroupIcon, .choseGroupIcon),
+             (.leaveIconPicker, .leftIconPicker), (.closeActionList, .closedActionList): return .advance
         case (.openCanvasEditor, .openedCanvasEditor), (.chooseEditorSlot, .choseEditorSlot),
-             (.saveCanvasLayout, .savedCanvasLayout), (.toggleEraser, .toggledEraser),
+             (.groupEditorActions, .groupedEditorActions), (.saveCanvasLayout, .savedCanvasLayout),
+             (.drawPracticeLine, .stroke),
+             (.openPracticeGroup, .openedPracticeGroup), (.toggleEraser, .toggledEraser),
              (.eraseStroke, .erased): return .advance
-        // Turning the Crown trims the edges; ✓ is offered once the chosen value settles.
-        case (.trimCrop, .trimmedCrop): return .advanceWhenSettled
-        // The applied crop stays visible briefly; the next step then returns to the canvas.
-        case (.applyCrop, .croppedCanvas): return .showResult
+        // The first turn of the Crown trims the edges and moves on to the crop window, which
+        // a drag moves; ✓ then returns to the cropped canvas at once.
+        case (.trimCrop, .trimmedCrop), (.moveCrop, .movedCrop), (.applyCrop, .croppedCanvas):
+            return .advance
         // The mixed and the inverted overlap each stay visible before the lesson moves on.
-        case (.crossMarkerLine, .crossedMarkerLine), (.chooseColorInversion, .choseColorInversion),
-             (.redrawMarkerLine, .crossedMarkerLine): return .showResult
-        case (.openDrawingSettings, .openedDrawingSettings), (.openColorBlending, .openedColorBlending):
+        case (.crossMarkerLine, .crossedMarkerLine), (.redrawMarkerLine, .crossedMarkerLine): return .showResult
+        // Inversion leads straight to Back: out of Color blending, out of Drawing, out of the
+        // menu. The user then undoes the crossing line before drawing it again.
+        case (.chooseColorInversion, .choseColorInversion), (.leaveColorBlending, .leftColorBlending),
+             (.leaveDrawingSettings, .leftDrawingSettings), (.undoMarkerLine, .undidMarkerLine),
+             (.openDrawingSettings, .openedDrawingSettings), (.openColorBlending, .openedColorBlending):
             return .advance
         case (.openCanvasSettings, .openedCanvasSettings), (.openPerspective, .openedPerspective),
              (.perspectiveStroke, .drewAlongGuide), (.openCanvasSize, .openedCanvasSize),
              (.openCrop, .openedCrop),
              (.startSelection, .startedSelection), (.selectDrawings, .selectedDrawings),
-             (.favoriteSelection, .favoritedSelection): return .advance
+             (.favoriteSelection, .favoritedSelection), (.showFavoritesWidget, .sawFavoritesWidget): return .advance
         case (.openLasso, .openedLasso), (.selectLasso, .selectedLasso),
              (.transformLasso, .transformedLasso), (.finishLasso, .finishedLasso): return .advance
         case (.clearCanvas, .cleared): return .showResult
@@ -240,9 +269,28 @@ struct TutorialProgress {
     /// Lesson-wide, so menu rows stay installed while their pages are pushed.
     var teachesPerspective: Bool { step != .inactive && lessonSteps.contains(.openPerspective) }
     var teachesCrop: Bool { step != .inactive && lessonSteps.contains(.openCrop) }
-    var teachesGallerySelection: Bool { step != .inactive && lessonSteps.contains(.startSelection) }
     var teachesBlending: Bool { step != .inactive && lessonSteps.contains(.openColorBlending) }
     var teachesCanvasEditor: Bool { step != .inactive && lessonSteps.contains(.openCanvasEditor) }
+    var teachesGallerySelection: Bool { step != .inactive && lessonSteps.contains(.startSelection) }
+    /// The repaint and layer-order lessons visit the canvas only on their way to the brush
+    /// settings; a stroke there would spoil the comparison that follows.
+    var keepsCanvasForComparison: Bool {
+        step == .openTools && (lessonSteps.contains(.paintOverStroke) || lessonSteps.contains(.drawBehindStroke))
+    }
+    /// The autosave part of its lesson, up to and including Back from the autosave page.
+    var teachesAutosave: Bool {
+        guard step != .inactive, let leave = lessonSteps.firstIndex(of: .leaveAutosave) else { return false }
+        return stepIndex <= leave
+    }
+    /// Autosave stays in the menu from Back on its page through the rest of the chapter.
+    var showsAutosaveInMenu: Bool {
+        guard step != .inactive, chapters.indices.contains(chapterIndex) else { return false }
+        if chapters[chapterIndex].lessons.prefix(lessonIndex).contains(where: { $0.steps.contains(.openAutosave) }) {
+            return true
+        }
+        guard let leave = lessonSteps.firstIndex(of: .leaveAutosave) else { return false }
+        return stepIndex > leave
+    }
     /// The fill and blur lessons offer only the lesson's brush and their tool until the settings close.
     var lessonInstrument: DrawingInstrument? {
         guard step == .chooseFill || step == .chooseBlur || step == .closeTools else { return nil }
@@ -353,5 +401,34 @@ enum TutorialStrokeOverlap {
         let d3 = cross(a.end - a.start, b.start - a.start), d4 = cross(a.end - a.start, b.end - a.start)
         // Collinear and touching cases are covered by the endpoint distances.
         return (d1 > 0) != (d2 > 0) && (d3 > 0) != (d4 > 0) && d1 != 0 && d2 != 0 && d3 != 0 && d4 != 0
+    }
+}
+
+/// Whether two colors would read as the same in a lesson that compares them on the canvas.
+enum TutorialColorSimilarity {
+    static func isClose(_ a: SIMD4<Float>, _ b: SIMD4<Float>) -> Bool {
+        let first = hsb(a), second = hsb(b)
+        // Grays, black and white compare by brightness alone.
+        let neutral: Float = 0.18
+        if first.saturation < neutral || second.saturation < neutral {
+            return first.saturation < neutral && second.saturation < neutral
+                && abs(first.brightness - second.brightness) < 0.2
+        }
+        let hue = abs(first.hue - second.hue)
+        // Hue wraps around: red sits at both ends.
+        return min(hue, 1 - hue) < 0.06 && abs(first.brightness - second.brightness) < 0.4
+    }
+
+    private static func hsb(_ color: SIMD4<Float>) -> (hue: Float, saturation: Float, brightness: Float) {
+        let r = color.x, g = color.y, b = color.z
+        let maximum = max(r, g, b), minimum = min(r, g, b), delta = maximum - minimum
+        guard maximum > 0, delta > 0 else { return (0, 0, maximum) }
+        var hue: Float
+        if maximum == r { hue = (g - b) / delta }
+        else if maximum == g { hue = 2 + (b - r) / delta }
+        else { hue = 4 + (r - g) / delta }
+        hue /= 6
+        if hue < 0 { hue += 1 }
+        return (hue, delta / maximum, maximum)
     }
 }

@@ -2,7 +2,8 @@ import Foundation
 
 /// Owns disposable copies only; bundle originals and the user's gallery stay outside this root.
 /// Plain file work: `prepare()` runs off the main actor while the iris is on screen.
-struct TutorialWorkspace: Sendable {
+/// `nonisolated` opts out of the target's default MainActor isolation so the detached task can call it.
+nonisolated struct TutorialWorkspace: Sendable {
     let root: URL
     private let source: URL?
 

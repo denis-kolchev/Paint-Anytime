@@ -173,13 +173,19 @@ struct WatchCanvasView: View {
                 }
             .clipped()
             .overlay {
-                if showsGuides {
-                    PerspectiveGuidesOverlay(layout: guides.layout(paperSize: paperSize),
-                        canvasToScreen: canvasToScreen(geometry.size), activeRuler: guides.activeRuler,
-                        showsHandles: acceptsInput && !isMovingCanvas && !isEyedropperActive
-                            && controller.activeStroke == nil && !isRulerPending)
-                        .clipped()
+                ZStack {
+                    if showsGuides {
+                        PerspectiveGuidesOverlay(layout: guides.layout(paperSize: paperSize),
+                            canvasToScreen: canvasToScreen(geometry.size), activeRuler: guides.activeRuler,
+                            showsHandles: acceptsInput && !isMovingCanvas && !isEyedropperActive
+                                && controller.activeStroke == nil && !isRulerPending)
+                            .clipped()
+                            .transition(.opacity)
+                    }
                 }
+                // The tour's guides fade out once their lesson ends, after the stroke along them.
+                // Only that change animates; the editor shows and hides them as before.
+                .animation(.easeInOut(duration: 0.6), value: tutorial.showsPerspectiveGuides)
             }
             .overlay {
                 if lasso.isActive {

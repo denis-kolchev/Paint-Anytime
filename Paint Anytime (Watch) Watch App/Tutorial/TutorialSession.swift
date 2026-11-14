@@ -21,6 +21,8 @@ final class TutorialSession: ObservableObject {
     /// crossing stroke is checked only against it, never against the user's own earlier tries.
     @Published var markerLineStrokeID: UUID?
     @Published var galleryIsFullscreen = false
+    /// The pictures the selection lesson liked, for the widget preview that follows it.
+    @Published var favoritedDrawings: [URL] = []
     var instruction: String {
         switch step {
         case .holdCircle where releasedCircleEarly: return L10n.text("Hold your finger at the end.")
@@ -43,8 +45,6 @@ final class TutorialSession: ObservableObject {
         case .openMenu where progress.teachesPerspective || progress.teachesCrop || progress.teachesBlending
                 || progress.teachesCanvasEditor:
             return L10n.text("Tap ••• to open the menu.")
-        case .history where progress.teachesCrop:
-            return L10n.text("Undo brings the edges back. Use the arrows to undo and redo.")
         default: return TutorialLesson.compactInstruction(for: step)
         }
     }
@@ -58,7 +58,10 @@ final class TutorialSession: ObservableObject {
     var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
     // Free drawing stays available wherever the canvas is the current page and a stroke
     // cannot disturb the exercise; camera, lasso, and gallery steps keep their own input.
-    var allowsDrawing: Bool { permits([.firstStrokes, .holdCircle, .perspectiveStroke, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .blurCanvas, .crossMarkerLine, .redrawMarkerLine, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .openMenu, .toggleEraser, .eraseStroke, .chapterComplete]) }
+    var allowsDrawing: Bool {
+        !progress.keepsCanvasForComparison
+            && permits([.firstStrokes, .holdCircle, .perspectiveStroke, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .blurCanvas, .crossMarkerLine, .redrawMarkerLine, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .openMenu, .drawPracticeLine, .openPracticeGroup, .toggleEraser, .eraseStroke, .chapterComplete])
+    }
     var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
     var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
     var allowsCanvasPan: Bool { allowsCanvasZoom }
@@ -68,9 +71,11 @@ final class TutorialSession: ObservableObject {
     /// Lesson-wide flags keep menu rows and the select button installed through their pages.
     var teachesPerspective: Bool { progress.teachesPerspective }
     var teachesCrop: Bool { progress.teachesCrop }
-    var teachesGallerySelection: Bool { progress.teachesGallerySelection }
     var teachesBlending: Bool { progress.teachesBlending }
     var teachesCanvasEditor: Bool { progress.teachesCanvasEditor }
+    var teachesGallerySelection: Bool { progress.teachesGallerySelection }
+    var teachesAutosave: Bool { progress.teachesAutosave }
+    var showsAutosaveInMenu: Bool { progress.showsAutosaveInMenu }
     /// The tutorial's own guides appear only in their lesson; the editor always shows its guides.
     var showsPerspectiveGuides: Bool { !isActive || progress.teachesPerspective }
     var allowsGalleryPaging: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
@@ -82,7 +87,7 @@ final class TutorialSession: ObservableObject {
     var crownHintIsSubtle: Bool { !crownPracticedSteps.isEmpty }
     var showsCrownHint: Bool {
         suggestsCrownRotation && !crownPracticedSteps.contains(step)
-            && ([.selectReed, .chooseReed, .chooseFill, .chooseBlur, .trimCrop].contains(step)
+            && ([.selectReed, .chooseReed, .chooseFill, .chooseBlur, .trimCrop, .setRayCount].contains(step)
                 || crownPracticedSteps.count < 3)
     }
 
@@ -95,7 +100,7 @@ final class TutorialSession: ObservableObject {
     var suggestsCrownRotation: Bool {
         guard acceptsActions else { return false }
         switch step {
-        case .zoomCanvas, .trimCrop: return true
+        case .zoomCanvas, .trimCrop, .setRayCount: return true
         case .pickColor: return toolPage == 1
         case .setWidth: return toolPage == 0
         case .setOpacity: return toolPage == 5 && !toolIsEraser
@@ -251,8 +256,9 @@ final class TutorialSession: ObservableObject {
         case .none: break
         case .advance: advance()
         case .showResult: advanceAfterResult(lockInput: true)
-        // Input stays open, so further turns restart the wait instead of being cut off.
-        case .advanceWhenSettled: advanceAfterResult(lockInput: false)
+        // Input stays open, so further turns restart the wait instead of being cut off;
+        // the wait is short, as the change is already on screen.
+        case .advanceWhenSettled: advanceAfterResult(lockInput: false, delay: .milliseconds(600))
         case .pauseReminders: pauseReminders()
         case .resumeReminders(let shouldAdvance):
             resumeReminders()
@@ -291,7 +297,7 @@ final class TutorialSession: ObservableObject {
     }
 
     /// Leave the result visible long enough for animations and visual feedback.
-    private func advanceAfterResult(lockInput: Bool) {
+    private func advanceAfterResult(lockInput: Bool, delay: Duration = .milliseconds(1200)) {
         advanceTask?.cancel()
         pendingAdvanceStep = step
         showsResult = lockInput
@@ -299,7 +305,7 @@ final class TutorialSession: ObservableObject {
         guard !remindersPaused else { return }
         let completedStep = step
         advanceTask = Task { @MainActor [weak self] in
-            do { try await Task.sleep(for: .milliseconds(1200)) } catch { return }
+            do { try await Task.sleep(for: delay) } catch { return }
             guard let self, !Task.isCancelled, self.step == completedStep,
                   self.pendingAdvanceStep == completedStep,
                   !self.showsInstruction, !self.remindersPaused else { return }

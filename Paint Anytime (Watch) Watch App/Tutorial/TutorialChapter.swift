@@ -59,14 +59,16 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
     private var toolLessons: [Lesson] {
         [
             Lesson(steps: [.holdCircle]),
-            // Guides straighten a stroke, like the held shape before them. Back leads
-            // from the guides to the menu, and from the menu to the canvas.
-            Lesson(steps: [.openMenu, .openCanvasSettings, .openPerspective, .choosePerspective,
-                           .leavePerspective, .leaveMenu, .perspectiveStroke]),
+            // Autosave comes first in the menu; Back from it leaves the menu open, now with
+            // Canvas. Guides then straighten a stroke, like the held shape before them. Back
+            // leads from the guides to the menu, and from the menu to the canvas.
+            Lesson(steps: [.openMenu, .openAutosave, .enableAutosave, .leaveAutosave,
+                           .openCanvasSettings, .openPerspective, .choosePerspective,
+                           .setRayCount, .leavePerspective, .leaveMenu, .perspectiveStroke]),
             // The corner button opens the palette in use, as in the editor.
             Lesson(steps: [.openTools, .openCurrentPalette, .openPalettes, .findNewPalette,
                            .createPalette, .addPaletteColor, .adjustPaletteColor, .savePaletteColor,
-                           .closeTools])
+                           .closeTools, .autosaveDrawing, .clearCanvas])
         ]
     }
 
@@ -82,23 +84,35 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             Lesson(steps: [.openLayers, .addLayer, .moveLayerDown, .closeLayers,
                            .openTools, .pickColor, .closeTools, .drawBehindStroke]),
             Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso]),
+            // The tour's autosave keeps the lasso result first; it opens this lesson rather
+            // than ending the lasso one, which repeated misses end early. The user then clears
+            // the canvas before the demonstrated line.
             // The lesson clears the canvas and draws a yellow marker line itself; the user's
-            // light blue marker mixes with it, then Color inversion changes the overlap.
-            Lesson(steps: [.crossMarkerLine, .openMenu, .openDrawingSettings, .openColorBlending,
-                           .chooseColorInversion, .redrawMarkerLine]),
+            // light blue marker mixes with it, then Color inversion changes the overlap. Back
+            // leads out of the pages; the user undoes the crossing line and draws it again.
+            Lesson(steps: [.autosaveDrawing, .clearCanvas, .crossMarkerLine, .openMenu, .openDrawingSettings, .openColorBlending,
+                           .chooseColorInversion, .leaveColorBlending, .leaveDrawingSettings, .leaveMenu,
+                           .undoMarkerLine, .redrawMarkerLine]),
             // The tutorial's editor starts from the original menus and never changes the
-            // user's layout; the new eraser button then appears on the tutorial canvas.
-            Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasEditor, .chooseEditorSlot,
-                           .chooseEraserAction, .saveCanvasLayout, .toggleEraser, .eraseStroke])
+            // user's layout. Reset empties both top circles; one becomes a group of the
+            // eyedropper and the eraser toggle. Back leaves the icon picker, ✕ the action
+            // list. On the tutorial canvas a line comes first, then the group erases it.
+            Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasEditor, .resetEditorLayout,
+                           .chooseEditorSlot, .groupEditorActions, .chooseEditorActions,
+                           .chooseGroupIcon, .leaveIconPicker, .closeActionList, .saveCanvasLayout,
+                           .drawPracticeLine, .openPracticeGroup, .toggleEraser, .eraseStroke])
         ]
-        // Cropping frames the whole picture, and undo restores the edges.
+        // Cropping frames the whole picture: the Crown sets how much stays, a drag places it.
         if includesCrop {
             lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize, .openCrop,
-                                          .trimCrop, .applyCrop, .history]))
+                                          .trimCrop, .moveCrop, .applyCrop]))
         }
-        // The tutorial gallery starts with practice pictures, so selection needs no saved drawing.
-        lessons.append(Lesson(steps: [.openMenu, .openGallery, .startSelection, .selectDrawings,
-                                      .favoriteSelection, .returnToCanvas]))
+        // A last autosave, then the gallery shows the saved pictures; the tutorial gallery
+        // also starts with practice pictures, so selection never lacks two. The liked ones
+        // then appear in a watch-face widget, as the favorites widget would show them.
+        lessons.append(Lesson(steps: [.autosaveDrawing, .openMenu, .openGallery, .startSelection,
+                                      .selectDrawings, .favoriteSelection, .showFavoritesWidget,
+                                      .returnToCanvas]))
         return lessons
     }
 
