@@ -163,6 +163,7 @@ struct TutorialPlayerView: View {
                         .padding(.bottom, hintReservedHeight)
                         // The step changes outside withAnimation; drive the transition here.
                         .animation(.easeInOut(duration: 0.35), value: showsTutorialBottomControls)
+                        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25), value: showsClearCanvasButton)
                 }
                 .toolbar {
                     // Keep one native toolbar item and Button alive when Done
@@ -1015,6 +1016,10 @@ struct TutorialPlayerView: View {
         .accessibilityLabel(L10n.text(action.title))
     }
 
+    private var showsClearCanvasButton: Bool {
+        page == .canvas && tutorial.step == .clearCanvas
+    }
+
     private var showsTutorialBottomControls: Bool {
         page == .canvas && tutorial.permits([.history, .saveDrawing, .undoMarkerLine])
     }
@@ -1104,7 +1109,7 @@ struct TutorialPlayerView: View {
                 Spacer()
             }
         }
-        if page == .canvas && tutorial.step == .clearCanvas {
+        if showsClearCanvasButton {
             Group {
                 HStack {
                     Button {
@@ -1118,6 +1123,7 @@ struct TutorialPlayerView: View {
                     Spacer()
                 }
             }
+            .transition(.opacity)
         }
     }
 }

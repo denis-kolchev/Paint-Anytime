@@ -391,6 +391,29 @@ final class WatchLassoController: ObservableObject {
         record(before, controller: controller)
     }
 
+    /// Mirrors the selection left to right across its own vertical axis. A rotated
+    /// selection flips in its local frame, so the frame, handles and rotation stay put.
+    func mirror(_ controller: CanvasController) {
+        documentChanged(controller)
+        guard var selection, selection.document == controller.document,
+              let index = selection.document.layers.firstIndex(where: { $0.id == selection.layerID }) else { return }
+        let before = state(controller)
+        let bounds = selection.bounds
+        let orientation = WatchLassoGeometry.rotation(selection.rotation, around: bounds)
+        let reflection = CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: 2 * bounds.midX, ty: 0)
+        let mirroring = orientation.inverted().concatenating(reflection).concatenating(orientation)
+        selection.strokes = selection.strokes.map { source in
+            guard selection.selectedIDs.contains(source.id) else { return source }
+            var stroke = source
+            stroke.transform = StrokeTransform(source.transform.affine.concatenating(mirroring))
+            return stroke
+        }
+        selection.document.layers[index].strokes = selection.strokes
+        self.selection = selection
+        controller.replaceLayerStrokes(selection.strokes, in: selection.layerID)
+        record(before, controller: controller)
+    }
+
     func delete(_ controller: CanvasController) {
         documentChanged(controller)
         guard let selection else { return }

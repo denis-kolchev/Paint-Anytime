@@ -460,7 +460,7 @@ struct CanvasMorphPanels: View {
                     let diameter = panelGeometry.diameter
                     let left = bottom.x - diameter / 2
                     let availableWidth = max(0, size.width - left * 2)
-                    let panelWidth = min(diameter * (showsSelectionActions ? 4 : CGFloat(lassoModes.count)), availableWidth)
+                    let panelWidth = min(diameter * (showsSelectionActions ? 5 : CGFloat(lassoModes.count)), availableWidth)
                     // A lasso opened into one mode skips the mode picker; Complete strokes
                     // leaves only the send checkmark until its image arrives.
                     if showsSelectionActions || (!lasso.isModeLocked && !(lasso.hidesSelectionActions && lasso.bounds != nil)) {
@@ -695,6 +695,10 @@ struct CanvasMorphPanels: View {
                 .opacity(lasso.canMoveLayer(-1, controller: controller) ? 1 : 0.35)
                 morphButton("Duplicate", height: diameter) { lasso.duplicate(controller) } label: {
                     Image(systemName: "plus.square.on.square")
+                }
+                .disabled(lasso.bounds == nil)
+                morphButton("Mirror", height: diameter) { lasso.mirror(controller) } label: {
+                    Image(systemName: "arrow.left.and.right.righttriangle.left.righttriangle.right")
                 }
                 .disabled(lasso.bounds == nil)
                 morphButton("Delete", height: diameter) { lasso.delete(controller) } label: {
