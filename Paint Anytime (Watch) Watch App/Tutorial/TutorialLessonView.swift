@@ -50,8 +50,10 @@ struct TutorialLessonView: View {
         .task(id: tutorial.step) {
             await animateCompletion()
         }
-        .onChange(of: action) { _, action in
-            if action != .exit {
+        .onChange(of: action) { previous, action in
+            // Only when the result first appears. Opening the continuation question turns the
+            // checkmark into Next, which must stay silent.
+            if previous == .exit, action != .exit {
                 WKInterfaceDevice.current().play(.success)
             }
         }

@@ -32,8 +32,8 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
     /// A rough time to complete the course, shown before it starts.
     var estimatedMinutes: Int {
         switch self {
-        case .basic: 3
-        case .advanced: 10
+        case .basic: 2
+        case .advanced: 5
         }
     }
 
