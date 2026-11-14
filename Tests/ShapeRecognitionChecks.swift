@@ -105,6 +105,24 @@ struct ShapeRecognitionChecks {
         }
         let wobbly = loop(hexagon).enumerated().map { i, p in p + SIMD2(sin(Float(i) * 0.9), cos(Float(i) * 1.3)) * 0.6 }
         expect(wobbly, .hexagon)
+        // Symmetric kinds snap only to symmetric outlines: turning the result by
+        // 2π/n about its anchor must map it onto itself.
+        func expectRotationSymmetric(_ points: [SIMD2<Float>], _ kind: ShapeRecognizer.Kind, order n: Int) {
+            guard let result = ShapeRecognizer.recognize(samples(points)) else { return }
+            precondition(result.kind == kind, "Expected \(kind), got \(result.kind)")
+            let outline = result.points, c = cos(2 * Float.pi / Float(n)), s = sin(2 * Float.pi / Float(n))
+            let size = outline.map { simd_distance($0, result.anchor) }.max() ?? 1
+            for p in outline {
+                let d = p - result.anchor, turned = result.anchor + SIMD2(d.x * c - d.y * s, d.x * s + d.y * c)
+                let gap = zip(outline, outline.dropFirst()).map { a, b -> Float in
+                    let e = b - a, t = min(1, max(0, simd_dot(turned - a, e) / max(0.000001, simd_length_squared(e))))
+                    return simd_distance(turned, a + e * t)
+                }.min() ?? .infinity
+                precondition(gap < size * 0.02, "\(kind) is not symmetric")
+            }
+        }
+        expectRotationSymmetric(wobbly, .hexagon, order: 6)
+        expectRotationSymmetric(loop(star).map { SIMD2(60 + ($0.x - 60) * 1.3, $0.y) }, .star, order: 5)
         expect(heart.map { SIMD2(60 + ($0.x - 60) * 1.4, $0.y) }, .heart)
         // A hand-drawn cloud: uneven, deep semicircular bumps between cusps on an oval.
         let cusps = [0, 0.9, 2.0, 3.1, 4.1, 5.2].map { (t: Float) in SIMD2<Float>(60 + 40 * cos(t), 60 + 25 * sin(t)) }

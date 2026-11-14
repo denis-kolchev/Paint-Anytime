@@ -200,6 +200,22 @@ nonisolated enum ShapeRecognizer {
         let center = corners.reduce(SIMD2<Float>.zero, +) / Float(corners.count)
         var kind: Kind = corners.count == 3 ? .triangle : corners.count == 5 ? .pentagon
             : corners.count == 6 ? .hexagon : .regularPolygon
+        // Five or more sides snap only to a regular polygon: equal sides and angles,
+        // rotated and scaled to the drawn corners in their drawing order.
+        if corners.count >= 5 {
+            let n = corners.count, step = 2 * Float.pi / Float(n) * (crossSign >= 0 ? 1 : -1)
+            var z = SIMD2<Float>.zero
+            for (k, corner) in corners.enumerated() {
+                let d = corner - center, q = SIMD2(cos(Float(k) * step), sin(Float(k) * step))
+                z += SIMD2(d.x * q.x + d.y * q.y, d.y * q.x - d.x * q.y)
+            }
+            z /= Float(n)
+            guard simd_length(z) > diagonal * 0.1 else { return nil }
+            corners = (0..<n).map { k in
+                let q = SIMD2(cos(Float(k) * step), sin(Float(k) * step))
+                return center + SIMD2(z.x * q.x - z.y * q.y, z.x * q.y + z.y * q.x)
+            }
+        }
         if corners.count == 4 {
             let rectangular = corners.indices.allSatisfy { i in
                 let a = simd_normalize(corners[(i + 1) % 4] - corners[i])
@@ -376,9 +392,56 @@ nonisolated enum ShapeRecognizer {
                          points: Array(ideal), anchor: p[0])
     }
 
+    /// How a template may be deformed to follow the drawing.
+    private enum TemplateFit {
+        /// Wider, narrower or slanted, but not flattened.
+        case affine
+        /// Stretched along and across its mirror axis, never slanted.
+        case mirrored
+        /// Rotated and uniformly scaled only, keeping every symmetry.
+        case similar
+    }
+
+    private static func templateFit(_ kind: Kind) -> TemplateFit {
+        switch kind {
+        case .pentagon, .hexagon, .regularPolygon, .star: .similar
+        case .heart, .blockArrow: .mirrored
+        default: .affine
+        }
+    }
+
+    /// Least-squares transform of the centered `base` onto the input, given the
+    /// cross moments `cx = Σ c·b.x`, `cy = Σ c·b.y` and the template moments.
+    /// A rotation R with columns u, v = ⊥u and scales s satisfies RᵀR = I, so the
+    /// template's bxy term cancels and the optimum has a closed form.
+    private static func fitTransform(_ fit: TemplateFit, cx: SIMD2<Float>, cy: SIMD2<Float>,
+                                     bxx: Float, bxy: Float, byy: Float,
+                                     affineInverse: simd_float2x2) -> simd_float2x2? {
+        // v·cy = u·w for v = (-u.y, u.x).
+        let w = SIMD2(cy.y, -cy.x)
+        switch fit {
+        case .affine:
+            return simd_float2x2(cx, cy) * affineInverse
+        case .similar:
+            let energy = bxx + byy, sum = cx + w
+            guard energy > 0, simd_length(sum) > 0 else { return nil }
+            let u = simd_normalize(sum), scale = simd_length(sum) / energy
+            return simd_float2x2(u * scale, SIMD2(-u.y, u.x) * scale)
+        case .mirrored:
+            guard bxx > 0, byy > 0 else { return nil }
+            // Maximize (u·cx)²/bxx + (u·w)²/byy: the leading eigenvector of M.
+            let a = cx.x * cx.x / bxx + w.x * w.x / byy
+            let b = cx.x * cx.y / bxx + w.x * w.y / byy
+            let c = cx.y * cx.y / bxx + w.y * w.y / byy
+            let angle = 0.5 * atan2(2 * b, a - c)
+            let u = SIMD2(cos(angle), sin(angle)), v = SIMD2(-u.y, u.x)
+            return simd_float2x2(u * (simd_dot(u, cx) / bxx), v * (simd_dot(v, cy) / byy))
+        }
+    }
+
     /// Closed outlines are matched in stroke order, in both directions and at
-    /// every seam. An affine fit allows a hand-drawn shape to be wider, narrower
-    /// or slanted than its template, but not flattened.
+    /// every seam. Each template deforms only as its `TemplateFit` allows, so
+    /// symmetric shapes stay symmetric.
     private static func templateCandidates(_ ring: [SIMD2<Float>], diagonal: Float) -> [Candidate] {
         let count = 64
         let input = Array(resample(ring, count: count + 1).dropLast())
@@ -414,6 +477,7 @@ nonisolated enum ShapeRecognizer {
             let determinant = bxx * byy - bxy * bxy
             guard determinant > 0 else { continue }
             let inverse = simd_float2x2(SIMD2(byy, -bxy) / determinant, SIMD2(-bxy, bxx) / determinant)
+            let fitKind = templateFit(kind)
             var bestResidual = Float.infinity
             var bestFit: (ordered: [SIMD2<Float>], transform: simd_float2x2)?
             for direction in [-1, 1] {
@@ -421,8 +485,12 @@ nonisolated enum ShapeRecognizer {
                     let ordered = (0..<count).map { base[(offset + direction * $0 + count) % count] }
                     var cx = SIMD2<Float>.zero, cy = SIMD2<Float>.zero
                     for (b, c) in zip(ordered, centered) { cx += c * b.x; cy += c * b.y }
-                    let transform = simd_float2x2(cx, cy) * inverse
-                    let residual = inputEnergy - simd_dot(transform.columns.0, cx) - simd_dot(transform.columns.1, cy)
+                    guard let transform = fitTransform(fitKind, cx: cx, cy: cy, bxx: bxx, bxy: bxy, byy: byy,
+                                                       affineInverse: inverse) else { continue }
+                    // Σ|c − T·b|² for any T: the bxy term vanishes only for the constrained fits.
+                    let p = transform.columns.0, q = transform.columns.1
+                    let residual = inputEnergy - 2 * (simd_dot(p, cx) + simd_dot(q, cy))
+                        + simd_dot(p, p) * bxx + 2 * simd_dot(p, q) * bxy + simd_dot(q, q) * byy
                     guard residual < bestResidual, isMildStretch(transform) else { continue }
                     bestResidual = residual
                     bestFit = (ordered, transform)
