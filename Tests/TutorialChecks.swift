@@ -268,6 +268,10 @@ struct TutorialChecks {
                 precondition(progress.step == step && progress.teachesCrop && progress.record(event) == .advance)
                 progress.advance()
             }
+            // ✓ is offered only after the Crown has trimmed the edges.
+            precondition(progress.step == .trimCrop && progress.record(.croppedCanvas) == .none)
+            precondition(progress.record(.trimmedCrop) == .advanceWhenSettled)
+            progress.advance()
             precondition(progress.step == .applyCrop && progress.record(.croppedCanvas) == .showResult)
             progress.advance()
             // Undo restores the cropped edges, redo trims them again.

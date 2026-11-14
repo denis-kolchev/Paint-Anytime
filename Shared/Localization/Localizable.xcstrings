@@ -60140,6 +60140,180 @@
         }
       }
     },
+    "Tap ✓ to crop the canvas." : {
+      "comment" : "Tutorial crop step, after trimming: apply the crop.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط ✓ لقص اللوحة."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepnutím na ✓ plátno ořízněte."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på ✓ for at beskære lærredet."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf ✓, um die Leinwand zuzuschneiden."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε ✓ για να περικόψετε τον καμβά."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap ✓ to crop the canvas."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca ✓ para recortar el lienzo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rajaa kangas napauttamalla ✓."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez ✓ pour rogner la toile."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקישו על ✓ כדי לחתוך את הקנבס."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppints a ✓ jelre a vászon levágásához."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk ✓ untuk memangkas kanvas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca ✓ per ritagliare la tela."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✓をタップしてキャンバスを切り取ります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✓를 탭하여 캔버스를 자르세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på ✓ for å beskjære lerretet."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op ✓ om het canvas bij te snijden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij ✓, aby przyciąć płótno."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em ✓ para cortar a tela."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em ✓ para recortar a tela."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите ✓, чтобы обрезать холст."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på ✓ för att beskära duken."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะ ✓ เพื่อครอบตัดผืนผ้าใบ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuvali kırpmak için ✓ işaretine dokun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Натисніть ✓, щоб обрізати полотно."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm ✓ để cắt khung vẽ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点 ✓ 裁剪画布。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下 ✓ 裁切畫布。"
+          }
+        }
+      }
+    },
     "Tap ✓ to start drawing." : {
       "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
       "extractionState" : "manual",
@@ -76452,176 +76626,176 @@
         }
       }
     },
-    "Turn the Crown to trim the edges, then tap ✓." : {
+    "Turn the Crown to trim the edges." : {
       "comment" : "Tutorial crop step. Crown is the Digital Crown.",
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "أدر Crown لقص الحواف، ثم اضغط ✓."
+            "value" : "أدر Crown لقص الحواف."
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Otáčením Crown ořízněte okraje a pak klepněte na ✓."
+            "value" : "Otáčením Crown ořízněte okraje."
           }
         },
         "da" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Drej på Crown for at beskære kanterne, og tryk derefter på ✓."
+            "value" : "Drej på Crown for at beskære kanterne."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Drehe die Crown, um die Ränder zu beschneiden, und tippe dann auf ✓."
+            "value" : "Drehe die Crown, um die Ränder zu beschneiden."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Στρέψτε το Crown για να κόψετε τις άκρες και μετά πατήστε ✓."
+            "value" : "Στρέψτε το Crown για να κόψετε τις άκρες."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Turn the Crown to trim the edges, then tap ✓."
+            "value" : "Turn the Crown to trim the edges."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gira la Crown para recortar los bordes y luego toca ✓."
+            "value" : "Gira la Crown para recortar los bordes."
           }
         },
         "fi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rajaa reunoja kääntämällä Crownia ja napauta sitten ✓."
+            "value" : "Rajaa reunoja kääntämällä Crownia."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tournez la Crown pour rogner les bords, puis touchez ✓."
+            "value" : "Tournez la Crown pour rogner les bords."
           }
         },
         "he" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "סובבו את ה-Crown כדי לחתוך את השוליים, ואז הקישו על ✓."
+            "value" : "סובבו את ה-Crown כדי לחתוך את השוליים."
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Forgasd a Crownt a szélek levágásához, majd koppints a ✓ jelre."
+            "value" : "Forgasd a Crownt a szélek levágásához."
           }
         },
         "id" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Putar Crown untuk memangkas tepi, lalu ketuk ✓."
+            "value" : "Putar Crown untuk memangkas tepi."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ruota la Crown per rifilare i bordi, poi tocca ✓."
+            "value" : "Ruota la Crown per rifilare i bordi."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Crownを回して端を切り詰め、✓をタップ。"
+            "value" : "Crownを回して端を切り詰めます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Crown을 돌려 가장자리를 자른 다음 ✓를 탭하세요."
+            "value" : "Crown을 돌려 가장자리를 자르세요."
           }
         },
         "nb" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vri på Crown for å beskjære kantene, og trykk deretter på ✓."
+            "value" : "Vri på Crown for å beskjære kantene."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Draai aan de Crown om de randen bij te snijden en tik dan op ✓."
+            "value" : "Draai aan de Crown om de randen bij te snijden."
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Obróć Crown, aby przyciąć krawędzie, a potem stuknij ✓."
+            "value" : "Obróć Crown, aby przyciąć krawędzie."
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gire a Crown para aparar as bordas e toque em ✓."
+            "value" : "Gire a Crown para aparar as bordas."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rode a Crown para aparar as margens e toque em ✓."
+            "value" : "Rode a Crown para aparar as margens."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Вращайте Crown, чтобы обрезать края, затем нажмите ✓."
+            "value" : "Вращайте Crown, чтобы обрезать края."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vrid på Crown för att beskära kanterna och tryck sedan på ✓."
+            "value" : "Vrid på Crown för att beskära kanterna."
           }
         },
         "th" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "หมุน Crown เพื่อตัดขอบ แล้วแตะ ✓"
+            "value" : "หมุน Crown เพื่อตัดขอบ"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kenarları kırpmak için Crown’u çevir, ardından ✓ işaretine dokun."
+            "value" : "Kenarları kırpmak için Crown’u çevir."
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Обертайте Crown, щоб обрізати краї, потім натисніть ✓."
+            "value" : "Обертайте Crown, щоб обрізати краї."
           }
         },
         "vi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Xoay Crown để cắt bớt mép, rồi chạm ✓."
+            "value" : "Xoay Crown để cắt bớt mép."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "转动 Crown 裁掉边缘，然后轻点 ✓。"
+            "value" : "转动 Crown 裁掉边缘。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "轉動 Crown 裁掉邊緣，然後點一下 ✓。"
+            "value" : "轉動 Crown 裁掉邊緣。"
           }
         }
       }

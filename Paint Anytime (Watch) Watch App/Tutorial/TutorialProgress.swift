@@ -17,7 +17,7 @@ enum TutorialStep: Int, CaseIterable {
     case history, saveDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
     case openCanvasSettings, openPerspective, choosePerspective, leavePerspective, leaveMenu, perspectiveStroke
-    case openCanvasSize, openCrop, applyCrop
+    case openCanvasSize, openCrop, trimCrop, applyCrop
     case startSelection, selectDrawings, favoriteSelection
     case openCanvasEditor, chooseEditorSlot, chooseEraserAction, saveCanvasLayout, toggleEraser, eraseStroke
     // Results, not lessons: they wait for Next (or Done after the last chapter).
@@ -58,12 +58,13 @@ struct TutorialProgress {
         case openedCanvasSettings, openedPerspective, choseVanishingPoints, drewAlongGuide
         case leftPerspective, leftMenu
         case openedCanvasEditor, choseEditorSlot, choseEraserAction, savedCanvasLayout, toggledEraser, erased
-        case openedCanvasSize, openedCrop, croppedCanvas
+        case openedCanvasSize, openedCrop, trimmedCrop, croppedCanvas
         case startedSelection, cancelledSelection, selectedDrawings, deselectedDrawings, favoritedSelection
         case crossedMarkerLine, openedDrawingSettings, openedColorBlending, choseColorInversion
     }
     enum Effect: Equatable {
-        case none, advance, showResult, pauseReminders
+        /// Advances once the input stops for a moment; each new event restarts the wait.
+        case none, advance, showResult, advanceWhenSettled, pauseReminders
         case resumeReminders(advance: Bool)
     }
 
@@ -205,6 +206,8 @@ struct TutorialProgress {
         case (.openCanvasEditor, .openedCanvasEditor), (.chooseEditorSlot, .choseEditorSlot),
              (.saveCanvasLayout, .savedCanvasLayout), (.toggleEraser, .toggledEraser),
              (.eraseStroke, .erased): return .advance
+        // Turning the Crown trims the edges; ✓ is offered once the chosen value settles.
+        case (.trimCrop, .trimmedCrop): return .advanceWhenSettled
         // The applied crop stays visible briefly; the next step then returns to the canvas.
         case (.applyCrop, .croppedCanvas): return .showResult
         // The mixed and the inverted overlap each stay visible before the lesson moves on.

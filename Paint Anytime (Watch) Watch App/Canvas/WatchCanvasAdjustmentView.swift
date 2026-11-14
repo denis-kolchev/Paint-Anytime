@@ -236,6 +236,9 @@ struct WatchCanvasAdjustmentView: View {
     private var cropStepValue: Binding<Double> {
         Binding(get: { cropValue }, set: { next in
             let value = min(100, max(cropMinimum, next.rounded()))
+            // Each change restarts the lesson's wait, so ✓ is offered once the value settles.
+            // A page swipe changes the shown value without trimming, so it never counts.
+            if value != cropValue { tutorial.record(.trimmedCrop) }
             switch cropPage {
             case 0:
                 cropWidthPercent = value
@@ -291,7 +294,11 @@ struct WatchCanvasAdjustmentView: View {
         .focusable()
         .focused($focusedAdjustment, equals: "Crop")
         .modifier(SteppedCrownModifier(value: cropStepValue, range: cropRange,
-                                      sensitivity: .low, crownUnitsPerStep: 1, context: cropPage))
+                                      sensitivity: .low, crownUnitsPerStep: 1, context: cropPage,
+                                      onChange: { [step = tutorial.step] event in
+                                          // Hides the Crown hint once the user turns it.
+                                          tutorial.usedCrown(in: step, velocity: event.velocity)
+                                      }))
         .onChange(of: cropPage) { _, _ in focusedAdjustment = "Crop" }
     }
 

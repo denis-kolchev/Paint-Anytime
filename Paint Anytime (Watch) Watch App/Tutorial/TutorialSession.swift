@@ -43,8 +43,6 @@ final class TutorialSession: ObservableObject {
         case .openMenu where progress.teachesPerspective || progress.teachesCrop || progress.teachesBlending
                 || progress.teachesCanvasEditor:
             return L10n.text("Tap ••• to open the menu.")
-        case .openGallery where progress.teachesGallerySelection:
-            return L10n.text("Autosave in this menu can fill the gallery for you. Tap Gallery.")
         case .history where progress.teachesCrop:
             return L10n.text("Undo brings the edges back. Use the arrows to undo and redo.")
         default: return TutorialLesson.compactInstruction(for: step)
@@ -84,7 +82,8 @@ final class TutorialSession: ObservableObject {
     var crownHintIsSubtle: Bool { !crownPracticedSteps.isEmpty }
     var showsCrownHint: Bool {
         suggestsCrownRotation && !crownPracticedSteps.contains(step)
-            && ([.selectReed, .chooseReed, .chooseFill, .chooseBlur].contains(step) || crownPracticedSteps.count < 3)
+            && ([.selectReed, .chooseReed, .chooseFill, .chooseBlur, .trimCrop].contains(step)
+                || crownPracticedSteps.count < 3)
     }
 
     func usedCrown(in expectedStep: TutorialStep, velocity: Double) {
@@ -96,7 +95,7 @@ final class TutorialSession: ObservableObject {
     var suggestsCrownRotation: Bool {
         guard acceptsActions else { return false }
         switch step {
-        case .zoomCanvas: return true
+        case .zoomCanvas, .trimCrop: return true
         case .pickColor: return toolPage == 1
         case .setWidth: return toolPage == 0
         case .setOpacity: return toolPage == 5 && !toolIsEraser
@@ -252,6 +251,8 @@ final class TutorialSession: ObservableObject {
         case .none: break
         case .advance: advance()
         case .showResult: advanceAfterResult(lockInput: true)
+        // Input stays open, so further turns restart the wait instead of being cut off.
+        case .advanceWhenSettled: advanceAfterResult(lockInput: false)
         case .pauseReminders: pauseReminders()
         case .resumeReminders(let shouldAdvance):
             resumeReminders()

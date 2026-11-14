@@ -57,7 +57,7 @@ struct WatchAppSettingsView: View {
                         .lineLimit(1)
                         .minimumScaleFactor(0.6)
                         .frame(maxWidth: .infinity, alignment: .trailing)
-                        // Closer to the clock, with room below so the title does not touch Gallery.
+                        // Closer to the clock, with room below so the title does not touch the first row.
                         .padding(.bottom, 4)
                         .offset(y: -10)
                         .accessibilityAddTraits(.isHeader)
@@ -66,7 +66,7 @@ struct WatchAppSettingsView: View {
                 menuRows
             }
         }
-        // Raise the title and Gallery together, keeping the gap between them. An offset
+        // Raise the title and the first row together, keeping the gap between them. An offset
         // only moves the drawing: a header that overflowed upward through negative padding
         // was handed to the host's bar and no longer rose with the menu.
         .offset(y: tutorial.isActive ? -12 : 0)
@@ -88,6 +88,19 @@ struct WatchAppSettingsView: View {
 
     @ViewBuilder
     private var menuRows: some View {
+        // Each later lesson adds its row at the top, so the list seems to grow upward:
+        // perspective shows Canvas, Gallery; blending Drawing, Canvas, Gallery;
+        // the canvas editor and crop Canvas, Drawing, Gallery; gallery selection
+        // Gallery, Canvas, Drawing.
+        if tutorialCanvasLeads {
+            tutorialCanvasRow
+        }
+        if tutorialShowsDrawingRow {
+            tutorialDrawingRow
+        }
+        if tutorialShowsCanvasRow && !tutorialCanvasLeads {
+            tutorialCanvasRow
+        }
         Button(action: onOpenDrawings) {
             Label(L10n.text("Gallery"), systemImage: "photo.on.rectangle")
                 .tutorialHint(tutorial, steps: [.openGallery])
@@ -144,28 +157,47 @@ struct WatchAppSettingsView: View {
             // A lesson shows only the rows on its path. They stay installed for the whole
             // lesson, so removing a row never pops the page it pushed.
             if tutorial.teachesGallerySelection {
-                // Optional: the real setting, reachable here as the lesson tip suggests.
-                NavigationLink {
-                    AutosaveSettingsView()
-                } label: {
-                    Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
-                }
+                // Gallery leads here; the earlier rows follow it and do nothing in this lesson.
+                tutorialCanvasRow
+                tutorialDrawingRow
             }
-            if tutorial.teachesBlending, let onOpenDrawingSettings {
-                Button(action: onOpenDrawingSettings) {
-                    Label(L10n.text("Drawing"), systemImage: "paintbrush")
-                        .tutorialHint(tutorial, steps: [.openDrawingSettings])
-                }
+        }
+    }
+
+    /// Lessons after blending put Canvas above Drawing.
+    private var tutorialCanvasLeads: Bool {
+        tutorial.isActive && (tutorial.teachesCanvasEditor || tutorial.teachesCrop)
+    }
+
+    /// Rows a lesson does not teach only keep the list growing; their actions are
+    /// guarded by the lesson, so tapping them there does nothing.
+    private var tutorialShowsDrawingRow: Bool {
+        tutorial.isActive && (tutorial.teachesBlending || tutorial.teachesCanvasEditor || tutorial.teachesCrop)
+    }
+
+    private var tutorialShowsCanvasRow: Bool {
+        tutorial.isActive && (tutorial.teachesPerspective || tutorial.teachesCrop
+                              || tutorial.teachesCanvasEditor || tutorial.teachesBlending)
+    }
+
+    @ViewBuilder
+    private var tutorialDrawingRow: some View {
+        if let onOpenDrawingSettings {
+            Button(action: onOpenDrawingSettings) {
+                Label(L10n.text("Drawing"), systemImage: "paintbrush")
+                    .tutorialHint(tutorial, steps: [.openDrawingSettings])
             }
-            if tutorial.teachesPerspective || tutorial.teachesCrop || tutorial.teachesCanvasEditor {
-                if let onOpenCanvasSettings {
-                    Button(action: onOpenCanvasSettings) {
-                        canvasLabel.tutorialHint(tutorial, steps: [.openCanvasSettings])
-                    }
-                } else {
-                    canvasLink
-                }
+        }
+    }
+
+    @ViewBuilder
+    private var tutorialCanvasRow: some View {
+        if let onOpenCanvasSettings {
+            Button(action: onOpenCanvasSettings) {
+                canvasLabel.tutorialHint(tutorial, steps: [.openCanvasSettings])
             }
+        } else {
+            canvasLink
         }
     }
 
@@ -316,7 +348,6 @@ struct CanvasSettingsView: View {
 
     var body: some View {
         List {
-            // A tutorial lesson keeps only the row it teaches.
             if AppReleaseFeatures.current.showsCanvasSizeControls && (!tutorial.isActive || tutorial.teachesCrop) {
                 if let onOpenCanvasSize {
                     Button(action: onOpenCanvasSize) {
@@ -333,7 +364,9 @@ struct CanvasSettingsView: View {
                     }
                 }
             }
-            if tutorial.teachesCanvasEditor, let onOpenCanvasEditor {
+            // Later lessons keep the earlier rows below the one they teach, so the list
+            // grows; the lesson guards those rows' actions, so they do nothing there.
+            if tutorial.isActive, tutorial.teachesCanvasEditor || tutorial.teachesCrop, let onOpenCanvasEditor {
                 Button(action: onOpenCanvasEditor) {
                     Label {
                         Text(L10n.text("Canvas editor"))
@@ -354,7 +387,8 @@ struct CanvasSettingsView: View {
                     }
                 }
             }
-            if !tutorial.isActive || tutorial.teachesPerspective {
+            if !tutorial.isActive || tutorial.teachesPerspective || tutorial.teachesCanvasEditor
+                || tutorial.teachesCrop {
                 if let onOpenPerspective {
                     Button(action: onOpenPerspective) {
                         Label(L10n.text("Perspective guides"), systemImage: "perspective")

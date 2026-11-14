@@ -94,7 +94,7 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
         // Cropping frames the whole picture, and undo restores the edges.
         if includesCrop {
             lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize, .openCrop,
-                                          .applyCrop, .history]))
+                                          .trimCrop, .applyCrop, .history]))
         }
         // The tutorial gallery starts with practice pictures, so selection needs no saved drawing.
         lessons.append(Lesson(steps: [.openMenu, .openGallery, .startSelection, .selectDrawings,
