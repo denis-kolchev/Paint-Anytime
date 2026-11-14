@@ -26,6 +26,7 @@ final class GalleryGridStorage {
             if visibility.isNearViewport != nearby {
                 visibility.isNearViewport = nearby
             }
+            if !visibility.isMeasured, frames[url] != nil { visibility.isMeasured = true }
             if !nearby {
                 bitmaps.removeValue(forKey: url)
                 visibility.fallback = nil

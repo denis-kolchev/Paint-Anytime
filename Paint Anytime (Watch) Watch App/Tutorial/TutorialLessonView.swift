@@ -646,19 +646,24 @@ struct TutorialMoveGuide: View {
     var distance: CGFloat = 10
     var font: Font = .footnote.bold()
     var padding: CGFloat = 6
+    /// While the user touches what the arrows point at, they shrink and fade out where they
+    /// are, like the pan lesson's guide on the first pan.
+    var isHidden = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var offset = CGSize.zero
     @State private var isVisible = false
 
     var body: some View {
+        let shows = isVisible && !isHidden
         Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
             .font(font)
             .foregroundStyle(.white)
             .padding(padding)
             .background(.regularMaterial, in: Circle())
-            .scaleEffect(isVisible || reduceMotion ? 1 : 0.6)
+            .scaleEffect(shows || reduceMotion ? 1 : 0.6)
             .offset(offset)
-            .opacity(isVisible ? 1 : 0)
+            .opacity(shows ? 1 : 0)
+            .animation(.easeOut(duration: reduceMotion ? 0.15 : 0.25), value: isHidden)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
             .task { await run() }

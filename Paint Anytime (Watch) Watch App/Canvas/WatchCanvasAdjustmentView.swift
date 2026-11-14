@@ -162,7 +162,8 @@ struct WatchCanvasAdjustmentView: View {
                             .accessibilityHidden(true)
                         if tutorial.isActive && tutorial.step == .moveCrop {
                             // From the window's centre, a short way inside the preview.
-                            TutorialMoveGuide(distance: min(10, max(4, min(maxOriginX, maxOriginY) * scale / 2)))
+                            TutorialMoveGuide(distance: min(10, max(4, min(maxOriginX, maxOriginY) * scale / 2)),
+                                              isHidden: isDraggingCropWindow)
                                 .position(x: (cropOrigin.x + cropSize.width / 2) * scale,
                                           y: (cropOrigin.y + cropSize.height / 2) * scale)
                                 .transition(.opacity)

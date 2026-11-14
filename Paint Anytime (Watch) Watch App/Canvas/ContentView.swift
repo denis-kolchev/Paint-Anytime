@@ -62,6 +62,15 @@ struct ContentView: View {
     @State private var showsMenuTutorial = false
     @Environment(\.irisTransition) private var irisTransition
     @State private var showsGallery = false
+    /// Animated values of the menu → gallery transition. Read only by small modifiers
+    /// and the menu, so animating them does not re-run this body or the gallery's.
+    @State private var galleryTransition = MenuGalleryTransitionState()
+    /// Keeps the canvas opaque beneath a gallery that is still fading in, so the
+    /// dissolve goes from canvas to photos without passing through black.
+    @State private var keepsCanvasUnderGallery = false
+    /// The gallery is mounted invisibly under the open menu, so opening it starts at once.
+    /// Separate from `showsGallery`: nothing on the canvas may change under the menu's blur.
+    @State private var prewarmsGallery = false
     @State private var galleryArtworkFilename: String?
     @State private var galleryInitialBitmap: GalleryBitmap?
     @State private var savedNoticeID: UUID?
@@ -141,12 +150,24 @@ struct ContentView: View {
             WatchLayersView(controller: controller, canvasSize: controller.document.size(fallback: canvasSize))
         }
         .onChange(of: showsAppSettings) { _, shows in
+            // Closed without choosing Gallery: drop the prewarmed one.
+            if !shows && !showsGallery { unmountPrewarmedGallery() }
             if !shows { foldMorphsWithoutAnimation() }
             if !shows { opensTutorialChapters = false }
             if !shows { showsMenuTutorial = false }
             if !shows, menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
         }
         .accessibilityHidden(showsAppSettings)
+        .task(id: showsAppSettings) {
+            guard showsAppSettings, !showsGallery, !prewarmsGallery else { return }
+            // After the menu's own presentation. Building the grid briefly occupies the
+            // main thread, so it is not done while the menu is still sliding in.
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled, showsAppSettings, !showsGallery, !prewarmsGallery,
+                  !showsMenuTutorial, menuOnboarding.tutorialFolder == nil else { return }
+            mountGalleryInvisibly(active: false)
+            withoutAnimations { prewarmsGallery = true }
+        }
         .sheet(isPresented: Binding(
             // The menu stays up while its own circle closes over it, and leaves behind black.
             get: { showsAppSettings && !showsMenuTutorial },
@@ -157,21 +178,19 @@ struct ContentView: View {
                 }
             }
         ), onDismiss: {
+            MenuGalleryTransitionDiagnostics.shared.mark("dismissed")
+            galleryTransition.hidesMenuContent = false
             // Another sheet cannot present while the menu is still dismissing.
             guard let action = pendingMenuAction else { return }
             pendingMenuAction = nil
             performQuickAction(action)
         }) {
             TutorialMenuPresentation(controller: controller, viewportSize: canvasSize, onboarding: menuOnboarding, onOpenDrawings: {
-                showsAppSettings = false
-                savedNoticeID = nil
-                galleryArtworkFilename = nil
-                galleryInitialBitmap = nil
-                galleryLaunchID = UUID()
-                showsGallery = true
+                // The menu stays up here: openGalleryFromMenu closes it over the gallery.
+                openGalleryFromMenu()
             }, onFinish: {
                 showsAppSettings = false
-            }, opensTutorialChapters: opensTutorialChapters, onCanvasAction: { action in
+            }, opensTutorialChapters: opensTutorialChapters, transition: galleryTransition, onCanvasAction: { action in
                 pendingMenuAction = action
                 showsAppSettings = false
             })
@@ -197,6 +216,7 @@ struct ContentView: View {
         .onChange(of: menuOnboarding.tutorialFolder) { _, folder in
             // The menu sheet slides away over the canvas while the iris closes;
             // the tutorial is inserted behind black and the circle opens onto it.
+            if folder != nil, !showsGallery { unmountPrewarmedGallery() }
             guard folder != nil, showsAppSettings, !showsMenuTutorial else { return }
             let usesIris = irisTransition != nil && !reduceMotion
             switchMenuTutorialMode {
@@ -401,7 +421,7 @@ struct ContentView: View {
             drawingPage
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .background(.white)
-                .opacity(showsToolSettings || showsGallery ? 0 : 1)
+                .opacity(showsToolSettings || (showsGallery && !keepsCanvasUnderGallery) ? 0 : 1)
                 .allowsHitTesting(!showsToolSettings && !showsGallery)
                 .accessibilityHidden(showsToolSettings)
                 .zIndex(0)
@@ -449,11 +469,13 @@ struct ContentView: View {
                     .zIndex(3)
             }
 
-            if showsGallery {
+            if showsGallery || prewarmsGallery {
                 SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap,
                     needsDiscardConfirmation: controller.needsDiscardConfirmation,
                     isPreparingCanvas: session.isPreparingCanvas,
-                    preparationError: session.canvasPreparationError, onClose: {
+                    preparationError: session.canvasPreparationError,
+                    defersThumbnails: keepsCanvasUnderGallery,
+                    transitionState: galleryTransition, onClose: {
                     showsGallery = false
                     galleryArtworkFilename = nil
                     galleryInitialBitmap = nil
@@ -462,11 +484,15 @@ struct ContentView: View {
                     // Gallery confirms discard before it reads the saved project.
                     session.performCanvasAction(.open(document))
                 }
+                .equatable()
                 .id(galleryLaunchID)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 // Fade the gallery as one surface. Fading its overlapping
                 // layers separately reveals the thumbnail grid underneath.
                 .compositingGroup()
+                .modifier(GalleryRevealOpacity(state: galleryTransition))
+                .allowsHitTesting(showsGallery)
+                .accessibilityHidden(!showsGallery)
                 .transition(.opacity)
                 .zIndex(2)
             }
@@ -508,6 +534,8 @@ struct ContentView: View {
         .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsGallery)
         .frame(width: geometry.size.width, height: geometry.size.height)
         .clipped()
+        // Debug builds: the transition timeline, above the canvas and the gallery.
+        .overlay(alignment: .bottom) { MenuGalleryTransitionHUD() }
         .onAppear {
             canvasSize = geometry.size
             controlRegions.screenBounds = geometry.frame(in: .global)
@@ -580,6 +608,76 @@ struct ContentView: View {
         } else if let action = assignment.actions.first {
             performQuickAction(action)
         }
+    }
+
+    /// Menu → gallery: the menu's buttons fade out while the canvas beneath dissolves
+    /// straight into the photos; the menu's background is removed once its buttons are gone. The canvas stays opaque under the
+    /// fading gallery, so no black frame appears; the menu keeps its system look.
+    private func openGalleryFromMenu() {
+        savedNoticeID = nil
+        guard showsAppSettings else {
+            galleryArtworkFilename = nil
+            galleryInitialBitmap = nil
+            galleryLaunchID = UUID()
+            showsGallery = true
+            return
+        }
+        let diagnostics = MenuGalleryTransitionDiagnostics.shared
+        diagnostics.begin()
+        diagnostics.note("prewarmed", value: prewarmsGallery ? 1 : 0)
+        if !prewarmsGallery { mountGalleryInvisibly(active: true) }
+        withoutAnimations {
+            // Same view identity: a prewarmed gallery is promoted, not rebuilt.
+            showsGallery = true
+            prewarmsGallery = false
+            galleryTransition.galleryActive = true
+        }
+        diagnostics.mark("insert", awaitsFrame: true)
+        // Starts once the grid has built its tiles, so no frame of the fade stalls on them.
+        galleryTransition.whenGalleryReady(timeout: 1.5) {
+            diagnostics.mark("anim start", awaitsFrame: true)
+            // Both start together: the buttons fade while the canvas dissolves into the
+            // gallery. The sheet's background can only go once its buttons are gone.
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                galleryTransition.galleryOpacity = 1
+            } completion: {
+                diagnostics.mark("gallery in")
+                keepsCanvasUnderGallery = false
+            }
+            withAnimation(.easeOut(duration: reduceMotion ? 0.1 : 0.2)) {
+                galleryTransition.hidesMenuContent = true
+            } completion: {
+                diagnostics.mark("btns out")
+                withoutAnimations { showsAppSettings = false }
+                diagnostics.mark("sheet off", awaitsFrame: true)
+            }
+        }
+    }
+
+    /// Mounts a fresh gallery at zero opacity over the still-visible canvas.
+    private func mountGalleryInvisibly(active: Bool) {
+        withoutAnimations {
+            galleryArtworkFilename = nil
+            galleryInitialBitmap = nil
+            galleryLaunchID = UUID()
+            galleryTransition.prepareForMount(active: active)
+            keepsCanvasUnderGallery = true
+        }
+    }
+
+    private func unmountPrewarmedGallery() {
+        guard prewarmsGallery else { return }
+        withoutAnimations {
+            prewarmsGallery = false
+            keepsCanvasUnderGallery = false
+            galleryTransition.reset()
+        }
+    }
+
+    private func withoutAnimations(_ change: () -> Void) {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction, change)
     }
 
     /// Enters or leaves the menu's tutorial behind the welcome host's iris, as the

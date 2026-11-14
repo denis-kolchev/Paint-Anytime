@@ -119,7 +119,7 @@ actor GalleryImageCache {
                 [kCGImageSourceShouldCache: true, kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
         }
         guard let image, !Task.isCancelled else { return nil }
-        let size = originalSize(properties: properties, pixelWidth: width.doubleValue,
+        let size = GalleryImageMetadata.originalSize(properties: properties, pixelWidth: width.doubleValue,
                                 pixelHeight: height.doubleValue, scale: request.displayScale)
         let bitmap = GalleryBitmap(request: request, image: image, originalSize: size)
         if request.shortSidePixels != nil {
@@ -140,8 +140,10 @@ actor GalleryImageCache {
         thumbnails.removeObject(forKey: url as NSURL)
         originals.removeObject(forKey: url as NSURL)
     }
+}
 
-    private func originalSize(properties: [CFString: Any], pixelWidth: Double,
+nonisolated enum GalleryImageMetadata {
+    static func originalSize(properties: [CFString: Any], pixelWidth: Double,
                               pixelHeight: Double, scale: CGFloat) -> CGSize {
         if let png = properties[kCGImagePropertyPNGDictionary] as? [CFString: Any],
            let description = png[kCGImagePropertyPNGDescription] as? String,
@@ -232,6 +234,7 @@ struct GalleryThumbnailView: View {
     var loadsImage: Bool
     let visibility: GalleryThumbnailVisibility
     var isFavorite = false
+    var showsPreviewBeforeMeasurement = false
     var onDisplayedBitmap: (GalleryBitmap) -> Void = { _ in }
     @State private var bitmap: GalleryBitmap?
     @State private var isMounted = false
@@ -248,9 +251,27 @@ struct GalleryThumbnailView: View {
             ? LoadRequest(image: request, isFavorite: isFavorite,
                           contentRevision: visibility.contentRevision) : nil
         let displayed = bitmap ?? visibility.fallback
+        // The grid keeps every tile mounted. Drawing previews for far-off tiles
+        // would make opening the gallery pay for hundreds of images at once.
+        let showsPreview = isNearViewport || (!visibility.isMeasured && showsPreviewBeforeMeasurement)
+        let preview = showsPreview ? GalleryPreviewStore.shared.slot(for: request.url).preview : nil
+        let _ = isNearViewport || showsPreviewBeforeMeasurement
+            ? MenuGalleryTransitionDiagnostics.shared.tile(request.url,
+                displayed != nil ? "sharp" : preview != nil ? "low" : "gray") : ()
         Group {
             if let displayed {
                 Image(decorative: displayed.image, scale: 1).resizable().scaledToFill()
+            } else if let preview {
+                // A low-resolution snapshot stands in until the sharp thumbnail decodes.
+                Image(decorative: preview.image, scale: 1)
+                    .resizable()
+                    .interpolation(.medium)
+                    .scaledToFill()
+                    .overlay {
+                        if isFavorite, let pixels = request.shortSidePixels {
+                            GalleryFavoriteBadge(side: CGFloat(pixels) / max(1, request.displayScale))
+                        }
+                    }
             } else {
                 Rectangle().fill(.white.opacity(0.12))
             }
@@ -278,6 +299,8 @@ struct GalleryThumbnailView: View {
             }
             let loaded = await GalleryImageCache.shared.load(imageRequest)
             guard !Task.isCancelled else { return }
+            MenuGalleryTransitionDiagnostics.shared.loadFinished()
+            if let loaded { GalleryPreviewStore.shared.record(loaded) }
             if loadRequest.isFavorite, let loaded {
                 bitmap = GalleryFavoriteThumbnailRenderer.render(loaded) ?? loaded
             } else {
@@ -294,6 +317,33 @@ struct GalleryThumbnailView: View {
             isMounted = false
             bitmap = nil
         }
+    }
+}
+
+/// The favorite decoration drawn live over a low-resolution preview tile.
+/// Matches the geometry `GalleryFavoriteThumbnailRenderer` rasterizes.
+struct GalleryFavoriteBadge: View {
+    let side: CGFloat
+
+    var body: some View {
+        Color.black.opacity(0.28)
+            .mask {
+                RadialGradient(stops: [
+                    .init(color: .black, location: 0),
+                    .init(color: .black.opacity(0.65), location: 0.3),
+                    .init(color: .black.opacity(0.2), location: 0.65),
+                    .init(color: .clear, location: 1)
+                ], center: .bottomLeading, startRadius: 0, endRadius: side * 0.9)
+            }
+            .overlay(alignment: .bottomLeading) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: side * 0.18, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.2), radius: 1, y: 1)
+                    .padding(side * 0.075)
+            }
+            .frame(width: side, height: side)
+            .allowsHitTesting(false)
     }
 }
 
@@ -314,7 +364,9 @@ struct GalleryFullscreenPage: View {
     @State private var original: GalleryBitmap?
 
     var body: some View {
+        // The persistent low-resolution preview keeps a page from ever showing black.
         let displayedBitmap = original ?? preview ?? fallback
+            ?? GalleryPreviewStore.shared.slot(for: url).bitmap(for: url)
         let previewRequest = isNearby
             ? GalleryImageRequest(url: url, shortSidePixels: thumbnailPixels, displayScale: displayScale) : nil
         let originalRequest = loadsOriginal

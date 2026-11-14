@@ -190,6 +190,7 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
                     let url = folder.appendingPathComponent(name)
                     try CanvasExportStore.delete(CanvasExport(url: url), in: folder)
                     await GalleryImageCache.shared.remove(url)
+                    GalleryPreviewStore.shared.remove(url)
                 }
                 if !deleted.isEmpty {
                     try CanvasExportStore.refreshWidgets()

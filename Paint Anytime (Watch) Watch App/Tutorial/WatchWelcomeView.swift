@@ -558,6 +558,9 @@ struct TutorialMenuPresentation: View {
     let onOpenDrawings: () -> Void
     let onFinish: () -> Void
     var opensTutorialChapters = false
+    /// Menu → gallery: fades the close button, title and rows out before the host removes
+    /// the sheet. The system background stays, so the blurred canvas behind it does not change.
+    var transition: MenuGalleryTransitionState? = nil
     var onCanvasAction: ((CanvasQuickAction) -> Void)? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The system sheet sits above the app's iris, so it closes its own circle in step
@@ -571,6 +574,9 @@ struct TutorialMenuPresentation: View {
                              completedTutorialChapters: onboarding.completedChapters,
                              opensTutorialChapters: opensTutorialChapters, onClose: onFinish,
                              onCanvasAction: onCanvasAction)
+        .opacity(transition?.hidesMenuContent == true ? 0 : 1)
+        // Debug builds: the sheet covers the app, so the timeline is drawn here too.
+        .overlay(alignment: .bottom) { MenuGalleryTransitionHUD() }
         // Above the menu's navigation host, so its title and buttons close with the circle.
         .overlay {
             IrisShape(fraction: irisFraction)

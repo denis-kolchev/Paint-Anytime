@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import WatchKit
 
 @main
 struct PaintAnytimeWatchApp: App {
@@ -25,6 +26,9 @@ struct PaintAnytimeWatchApp: App {
         }
         CanvasControlLayout.migrateEverythingAtHand()
         try? CanvasExportStore.refreshWidgets()
+        // Load and complete gallery previews before the gallery opens.
+        GalleryPreviewStore.shared.warmUp(urls: ((try? CanvasExportStore.all()) ?? []).map(\.url),
+                                          displayScale: WKInterfaceDevice.current().screenScale)
     }
 
     var body: some Scene {

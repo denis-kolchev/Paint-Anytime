@@ -4,6 +4,7 @@ import SwiftUI
 /// offscreen zoom destinations, through `GalleryThumbnailFramesKey`.
 struct SavedDrawingsGrid: View {
     let drawings: [CanvasExport]
+    var isLoaded = true
     let errorMessage: String?
     let columns: Int
     let spacing: CGFloat
@@ -23,35 +24,45 @@ struct SavedDrawingsGrid: View {
     var body: some View {
         if let errorMessage {
             Text(errorMessage).foregroundStyle(.red).padding()
+        } else if !isLoaded {
+            // The list is still being read off the main thread.
+            Color.clear
         } else if drawings.isEmpty {
             ContentUnavailableView(L10n.text("No drawings"), systemImage: "photo.on.rectangle")
         } else {
             GalleryThumbnailGrid(columns: columns, spacing: spacing, side: side, leading: leadingSlots) {
-                ForEach(drawings) { drawing in
-                    Button {
-                        onTap(drawing)
-                    } label: {
-                        GalleryThumbnailView(request: GalleryImageRequest(
-                            url: drawing.url, shortSidePixels: thumbnailPixels, displayScale: displayScale),
-                            loadsImage: loadsImages,
-                            visibility: gridStorage.visibility(for: drawing.id),
-                            isFavorite: drawing.isFavorite,
-                            onDisplayedBitmap: { bitmap in
-                                gridStorage.bitmaps[drawing.id] = bitmap
-                            })
-                            .frame(width: side, height: side)
-                            .clipped()
-                            .overlay(alignment: .bottomTrailing) {
-                                if isSelecting {
-                                    GallerySelectionMark(isSelected: selectedURLs.contains(drawing.url), side: side)
+                ForEach(Array(drawings.enumerated()), id: \.element.id) { index, drawing in
+                    // Only tiles near the viewport build a button and thumbnail; the rest
+                    // are empty slots of the same size. Building all 90 took ~320 ms.
+                    GalleryTileSlot(visibility: gridStorage.visibility(for: drawing.id),
+                                    buildsBeforeMeasurement: index + leadingSlots < columns * 8) {
+                        Button {
+                            onTap(drawing)
+                        } label: {
+                            GalleryThumbnailView(request: GalleryImageRequest(
+                                url: drawing.url, shortSidePixels: thumbnailPixels, displayScale: displayScale),
+                                loadsImage: loadsImages,
+                                visibility: gridStorage.visibility(for: drawing.id),
+                                isFavorite: drawing.isFavorite,
+                                // Before the first frame report, assume the opening screens are visible.
+                                showsPreviewBeforeMeasurement: index + leadingSlots < columns * 8,
+                                onDisplayedBitmap: { bitmap in
+                                    gridStorage.bitmaps[drawing.id] = bitmap
+                                })
+                                .frame(width: side, height: side)
+                                .clipped()
+                                .overlay(alignment: .bottomTrailing) {
+                                    if isSelecting {
+                                        GallerySelectionMark(isSelected: selectedURLs.contains(drawing.url), side: side)
+                                    }
                                 }
-                            }
-                            .contentShape(Rectangle())
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .disabled(!allowsOpening)
+                        .accessibilityLabel(L10n.text("Open drawing"))
+                        .accessibilityAddTraits(isSelecting && selectedURLs.contains(drawing.url) ? .isSelected : [])
                     }
-                    .buttonStyle(.plain)
-                    .disabled(!allowsOpening)
-                    .accessibilityLabel(L10n.text("Open drawing"))
-                    .accessibilityAddTraits(isSelecting && selectedURLs.contains(drawing.url) ? .isSelected : [])
                     .id(drawing.id)
                 }
             }
@@ -71,6 +82,22 @@ struct SavedDrawingsGrid: View {
                 }
             }
             .padding(.bottom, 12)
+        }
+    }
+}
+
+/// Observes one tile's proximity, so scrolling rebuilds only the tiles that cross the
+/// prefetch margin, never the grid. Far slots stay laid out for scrolling and zoom.
+struct GalleryTileSlot<Content: View>: View {
+    let visibility: GalleryThumbnailVisibility
+    let buildsBeforeMeasurement: Bool
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        if visibility.isNearViewport || (!visibility.isMeasured && buildsBeforeMeasurement) {
+            content()
+        } else {
+            Color.clear
         }
     }
 }

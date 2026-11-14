@@ -57,8 +57,10 @@ enum CanvasExporter {
         guard CGImageDestinationFinalize(destination) else { throw ExportError.encoding }
         var savedDocument = document
         savedDocument.canvasSize = size
-        return try CanvasExportStore.save(document: savedDocument,
-                                          imageData: data as Data, name: name, in: folder)
+        let export = try CanvasExportStore.save(document: savedDocument,
+                                                imageData: data as Data, name: name, in: folder)
+        GalleryPreviewStore.shared.store(image: image, originalSize: size, for: export.url)
+        return export
     }
 
     /// A PNG of the current canvas for sharing, kept out of the gallery.

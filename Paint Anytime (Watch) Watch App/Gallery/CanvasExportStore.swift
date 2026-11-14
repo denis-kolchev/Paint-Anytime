@@ -3,7 +3,7 @@ import Foundation
 enum CanvasExportStore {
     /// Remove gallery copies installed by the temporary App Store screenshot setup.
     /// The bundled tutorial pictures and user artwork remain in their own locations.
-    private static func removeLegacyTutorialPreviews(in folder: URL) throws {
+    private nonisolated static func removeLegacyTutorialPreviews(in folder: URL) throws {
         let files = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
             .filter { $0.lastPathComponent.hasPrefix("TutorialPreview_") && $0.pathExtension.lowercased() == "png" }
         for file in files {
@@ -18,7 +18,7 @@ enum CanvasExportStore {
         }
     }
 
-    static func directory() throws -> URL {
+    nonisolated static func directory() throws -> URL {
         let folder = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask,
                                                  appropriateFor: nil, create: true)
             .appendingPathComponent("Drawings", isDirectory: true)
@@ -26,7 +26,7 @@ enum CanvasExportStore {
         return folder
     }
 
-    static func all(in folder: URL? = nil) throws -> [CanvasExport] {
+    nonisolated static func all(in folder: URL? = nil) throws -> [CanvasExport] {
         let targetFolder = try (folder ?? directory())
         if folder == nil { try removeLegacyTutorialPreviews(in: targetFolder) }
         let deleted = try GalleryDeletionStore.names(in: targetFolder)
@@ -39,7 +39,7 @@ enum CanvasExportStore {
 
     /// Attach Watch metadata to an authoritative image list, including the
     /// shared debug fixtures used by the iPhone gallery.
-    static func exports(for images: [URL], in folder: URL) throws -> [CanvasExport] {
+    nonisolated static func exports(for images: [URL], in folder: URL) throws -> [CanvasExport] {
         let favorites = try favoriteNames(in: folder)
         return images.map { CanvasExport(url: $0, isFavorite: favorites.contains($0.lastPathComponent)) }
     }
@@ -58,13 +58,13 @@ enum CanvasExportStore {
         if destination == nil { try? refreshWidgets() }
     }
 
-    private static func favoriteNames(in folder: URL) throws -> Set<String> {
+    private nonisolated static func favoriteNames(in folder: URL) throws -> Set<String> {
         let url = folder.appendingPathComponent("favorites.json")
         guard FileManager.default.fileExists(atPath: url.path) else { return [] }
         return Set(try JSONDecoder().decode([String].self, from: Data(contentsOf: url)))
     }
 
-    private static func writeFavorites(_ names: Set<String>, in folder: URL) throws {
+    private nonisolated static func writeFavorites(_ names: Set<String>, in folder: URL) throws {
         try JSONEncoder().encode(names.sorted()).write(to: folder.appendingPathComponent("favorites.json"), options: .atomic)
     }
 
@@ -73,7 +73,7 @@ enum CanvasExportStore {
         try GalleryWidgetStore.publish(drawings.map { ($0.url, $0.isFavorite) })
     }
 
-    private static func drawingSortKey(_ url: URL) -> String {
+    private nonisolated static func drawingSortKey(_ url: URL) -> String {
         // Both naming formats have the same date suffix after the first underscore.
         // Keep old and new drawings together in chronological order.
         let name = url.lastPathComponent

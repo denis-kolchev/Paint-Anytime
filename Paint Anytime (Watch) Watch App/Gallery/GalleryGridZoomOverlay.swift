@@ -33,7 +33,7 @@ struct GalleryGridZoomOverlay: View {
                     for direction in [-1, 1] {
                         guard let url = GalleryZoomRules.backdropURL(images: zoom.snapshot,
                             leading: leading, row: row, column: column, direction: direction),
-                              let image = zoom.images[url] else { continue }
+                              let image = image(for: url) else { continue }
                         let copy = rect.offsetBy(dx: CGFloat(direction) * (zoom.viewport.width + GalleryZoomRules.spacing), dy: 0)
                         if copy.intersects(visible) { draw(image, in: copy, context: context) }
                     }
@@ -48,7 +48,7 @@ struct GalleryGridZoomOverlay: View {
                                   height: start.height + (end.height - start.height) * progress)
                 guard rect.intersects(visible) else { continue }
                 context.fill(Path(rect), with: .color(.black))
-                if let url = slot.images[from], let image = zoom.images[url] {
+                if let url = slot.images[from], let image = image(for: url) {
                     draw(image, in: rect, context: context)
                 }
                 if !slot.preservesSource(from: from, to: to), slot.images[to] != slot.images[from] {
@@ -56,7 +56,7 @@ struct GalleryGridZoomOverlay: View {
                     destination.opacity = blend
                     destination.drawLayer { layer in
                         layer.fill(Path(rect), with: .color(.black))
-                        if let url = slot.images[to], let image = zoom.images[url] { draw(image, in: rect, context: layer) }
+                        if let url = slot.images[to], let image = image(for: url) { draw(image, in: rect, context: layer) }
                     }
                 }
             }
@@ -72,6 +72,11 @@ struct GalleryGridZoomOverlay: View {
             if !active, zoom.isPanning { zoom.endPan() }
         }
         .accessibilityHidden(true)
+    }
+
+    /// Tiles still decoding draw their low-resolution preview instead of a black cell.
+    private func image(for url: URL) -> CGImage? {
+        zoom.images[url] ?? GalleryPreviewStore.shared.slot(for: url).preview?.image
     }
 
     private func draw(_ bitmap: CGImage, in rect: CGRect, context: GraphicsContext) {

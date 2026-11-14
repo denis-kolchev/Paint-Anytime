@@ -11,6 +11,12 @@ struct SavedDrawingsView: View {
     var needsDiscardConfirmation = false
     var isPreparingCanvas = false
     var preparationError: String? = nil
+    /// While the gallery fades in, tiles keep their low-resolution previews; decoding
+    /// sharp thumbnails then would stall the transition's frames.
+    var defersThumbnails = false
+    /// Menu → gallery coordination: readiness for the transition, and whether the gallery
+    /// is active or only prewarmed under the menu. Observed only by a small child view.
+    var transitionState: MenuGalleryTransitionState? = nil
     @State private var drawingToEdit: CanvasExport?
     @State private var pendingEdit: CanvasExport?
     @State private var confirmedEdit: CanvasExport?
@@ -64,7 +70,9 @@ struct SavedDrawingsView: View {
     private var crownFocused: Bool {
         get { crownTarget != nil }
         nonmutating set {
-            crownTarget = newValue ? (isTransitioning || showsFullscreen ? .presentation : .grid) : nil
+            // A gallery prewarmed under the menu must not take the Crown from it.
+            let isActive = transitionState?.galleryActive ?? true
+            crownTarget = newValue && isActive ? (isTransitioning || showsFullscreen ? .presentation : .grid) : nil
         }
     }
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -98,11 +106,12 @@ struct SavedDrawingsView: View {
                 ScrollViewReader { scrollProxy in
                     ScrollView {
                         SavedDrawingsGrid(
-                            drawings: drawings, errorMessage: controller.errorMessage,
+                            drawings: drawings, isLoaded: controller.hasLoaded,
+                            errorMessage: controller.errorMessage,
                             columns: columnCount, spacing: spacing, side: width,
                             leadingSlots: leadingSlots, thumbnailPixels: thumbnailPixels,
                             displayScale: displayScale,
-                            loadsImages: !gridZoom.active || gridZoom.pendingCommit != nil,
+                            loadsImages: !defersThumbnails && (!gridZoom.active || gridZoom.pendingCommit != nil),
                             isSelecting: isSelecting, selectedURLs: selectedURLs,
                             allowsOpening: allowsTileInput,
                             gridStorage: gridStorage, onTap: tapThumbnail)
@@ -273,6 +282,10 @@ struct SavedDrawingsView: View {
                 }
                 #endif
                 gridStorage.update(frames: frames, viewport: geometry.size)
+                if !frames.isEmpty {
+                    MenuGalleryTransitionDiagnostics.shared.markOnce("grid frames")
+                    transitionState?.markGalleryReady()
+                }
                 if !showsFullscreen && !isTransitioning,
                    let nearest = frames.filter({ $0.value.maxY > navigationHeight && $0.value.minY < geometry.size.height })
                     .min(by: {
@@ -441,11 +454,24 @@ struct SavedDrawingsView: View {
             controller.reload(in: galleryFolder)
         }
          .onAppear {
+            let diagnostics = MenuGalleryTransitionDiagnostics.shared
+            diagnostics.mark("gal appear", awaitsFrame: true)
+            let reloadStarted = ProcessInfo.processInfo.systemUptime
+            defer {
+                diagnostics.note("reload ms", value: (ProcessInfo.processInfo.systemUptime - reloadStarted) * 1000)
+                diagnostics.note("drawings", value: Double(drawings.count))
+            }
             // The view can survive a presentation while its files change in place.
             // Refresh mounted cells even when their URLs and grid sizes are unchanged.
             gridStorage.clearBitmaps()
             crownFocused = tutorial.allowsGalleryZoom
-            controller.reload(in: galleryFolder)
+            if galleryFolder == nil && initialArtworkFilename == nil {
+                // The grid builds once the list arrives; the transition waits for that.
+                controller.reloadInBackground()
+            } else {
+                // A direct launch must find its drawing now.
+                controller.reload(in: galleryFolder)
+            }
             if let filename = initialArtworkFilename,
                let drawing = drawings.first(where: { $0.url.lastPathComponent == filename }) {
                 // Direct launches open at 1:1 without a transition from a grid tile.
@@ -458,11 +484,25 @@ struct SavedDrawingsView: View {
                 galleryScrollTarget = drawing.id
             }
         }
+        .onChange(of: controller.hasLoaded) { _, loaded in
+            // No tiles will report frames: the transition may start now.
+            if loaded && (drawings.isEmpty || controller.errorMessage != nil) {
+                transitionState?.markGalleryReady()
+            }
+        }
+        .background {
+            if let transitionState {
+                GalleryActivationObserver(state: transitionState) {
+                    crownFocused = tutorial.allowsGalleryZoom
+                }
+            }
+        }
         .onChange(of: drawings.map(\.url), initial: true) { _, urls in
             imageLayout = GalleryImageLayout(images: urls)
             if gridZoom.active, urls != gridZoom.snapshot { gridZoom.reset() }
             leadingSlots = 0
             gridStorage.retain(urls: Set(urls))
+            GalleryPreviewStore.shared.prepare(urls: urls, displayScale: displayScale)
             selectedURLs.formIntersection(urls)
         }
         .onChange(of: tutorial.showsInstruction) { _, showing in
@@ -779,4 +819,23 @@ struct SavedDrawingsView: View {
         }
     }
 
+}
+
+/// The parent re-renders during the menu → gallery transition. Its closures are never
+/// equal, so without this SwiftUI re-ran the 90-tile body (~300 ms) on every such update.
+/// The closures only write the parent's state, so stale copies behave the same.
+extension SavedDrawingsView: Equatable {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        MainActor.assumeIsolated {
+            lhs.tutorial === rhs.tutorial
+                && lhs.galleryFolder == rhs.galleryFolder
+                && lhs.initialArtworkFilename == rhs.initialArtworkFilename
+                && lhs.initialBitmap === rhs.initialBitmap
+                && lhs.needsDiscardConfirmation == rhs.needsDiscardConfirmation
+                && lhs.isPreparingCanvas == rhs.isPreparingCanvas
+                && lhs.preparationError == rhs.preparationError
+                && lhs.defersThumbnails == rhs.defersThumbnails
+                && lhs.transitionState === rhs.transitionState
+        }
+    }
 }

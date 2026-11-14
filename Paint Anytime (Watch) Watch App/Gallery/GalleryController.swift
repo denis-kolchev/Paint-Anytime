@@ -6,10 +6,40 @@ final class GalleryController: ObservableObject {
     @Published private(set) var drawings: [CanvasExport] = []
     @Published var errorMessage: String?
 
+    /// False until the first listing arrives, so an empty grid is not shown as "No drawings".
+    @Published private(set) var hasLoaded = false
+    private var loadTask: Task<Void, Never>?
+
     func reload(in folder: URL? = nil) {
+        loadTask?.cancel()
+        do { apply(try CanvasExportStore.all(in: folder), folder: folder) }
+        catch {
+            errorMessage = error.localizedDescription
+            hasLoaded = true
+        }
+    }
+
+    /// Lists the folder off the main thread (~80 ms with 90 drawings on watch).
+    /// Debug fixtures, when enabled, are still added on the main actor.
+    func reloadInBackground(in folder: URL? = nil) {
+        loadTask?.cancel()
+        loadTask = Task { [weak self] in
+            let result = await Task.detached(priority: .userInitiated) {
+                Result { try CanvasExportStore.all(in: folder) }
+            }.value
+            guard let self, !Task.isCancelled else { return }
+            switch result {
+            case .success(let exports): self.apply(exports, folder: folder)
+            case .failure(let error):
+                self.errorMessage = error.localizedDescription
+                self.hasLoaded = true
+            }
+        }
+    }
+
+    private func apply(_ exports: [CanvasExport], folder: URL?) {
         do {
-            var loaded = try CanvasExportStore.all(in: folder)
-            drawings = loaded
+            var loaded = exports
             if folder == nil {
                 // The same switch, bundled fixtures, installation rules and image
                 // list as WatchPhotoInbox on iPhone. Only Watch metadata is added.
@@ -18,10 +48,13 @@ final class GalleryController: ObservableObject {
                     loaded += try CanvasExportStore.exports(for: samples, in: DebugGallerySamples.directory())
                 }
             }
+            // No widget refresh here: saves, deletions, favorites, imports, launch and
+            // activation already publish. Doing it on every open cost ~230 ms on the main thread.
             drawings = loaded.sorted { DebugGallerySamples.orderedBefore($0.url, $1.url) }
-            if folder == nil { try? CanvasExportStore.refreshWidgets() }
             errorMessage = nil
         } catch { errorMessage = error.localizedDescription }
+        hasLoaded = true
+        MenuGalleryTransitionDiagnostics.shared.mark("list ready", awaitsFrame: true)
     }
 
     func delete(_ drawing: CanvasExport, in folder: URL? = nil) -> Bool {
@@ -29,6 +62,7 @@ final class GalleryController: ObservableObject {
         do {
             try CanvasExportStore.delete(drawing, in: DebugGallerySamples.contains(drawing.url) ? DebugGallerySamples.directory() : folder)
             Task { await GalleryImageCache.shared.remove(drawing.url) }
+            GalleryPreviewStore.shared.remove(drawing.url)
             drawings.removeAll { $0.id == drawing.id }
             return true
         } catch {

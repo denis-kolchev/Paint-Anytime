@@ -43,8 +43,13 @@ nonisolated enum GalleryWidgetStore {
         for drawing in drawings {
             let name = drawing.url.lastPathComponent
             let preview = folder.appendingPathComponent(name)
-            let existingSource = CGImageSourceCreateWithURL(preview as CFURL, nil)
-            let hasReadablePreview = existingSource.flatMap { CGImageSourceCreateImageAtIndex($0, 0, nil) } != nil
+            // Header check only: fully decoding every preview here cost ~200 ms on each
+            // gallery open with 90 drawings. A complete source with one image is readable.
+            let existingSource = CGImageSourceCreateWithURL(preview as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary)
+            let hasReadablePreview = existingSource.map {
+                CGImageSourceGetStatus($0) == .statusComplete && CGImageSourceGetCount($0) > 0
+                    && CGImageSourceCopyPropertiesAtIndex($0, 0, nil) != nil
+            } ?? false
             if !hasReadablePreview {
                 guard let source = CGImageSourceCreateWithURL(drawing.url as CFURL, nil),
                       let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
