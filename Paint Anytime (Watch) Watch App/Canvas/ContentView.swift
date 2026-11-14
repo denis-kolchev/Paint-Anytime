@@ -650,6 +650,13 @@ struct ContentView: View {
                 diagnostics.mark("btns out")
                 withoutAnimations { showsAppSettings = false }
                 diagnostics.mark("sheet off", awaitsFrame: true)
+                // The gallery already looks like the menu's blur; clear it gradually.
+                withAnimation(.easeOut(duration: reduceMotion ? 0.15 : 0.35)) {
+                    galleryTransition.galleryBlur = 0
+                    galleryTransition.galleryDim = 0
+                } completion: {
+                    diagnostics.mark("unblurred")
+                }
             }
         }
     }

@@ -6,6 +6,10 @@ import SwiftUI
 @Observable
 final class MenuGalleryTransitionState {
     var galleryOpacity: Double = 1
+    /// The menu's system blur vanishes in one frame when its sheet is removed. The gallery
+    /// carries its own blur and dim under the menu instead, then clears them gradually.
+    var galleryBlur: CGFloat = 0
+    var galleryDim: Double = 0
     var hidesMenuContent = false
     /// False while the gallery is only prewarmed under the menu: no Crown, no input.
     var galleryActive = true
@@ -18,14 +22,22 @@ final class MenuGalleryTransitionState {
         galleryReady = false
         pendingStart = nil
         galleryOpacity = 0
+        galleryBlur = Self.menuBlurRadius
+        galleryDim = Self.menuDim
         hidesMenuContent = false
         galleryActive = active
     }
+
+    /// Roughly the menu sheet's material over the gallery (tuned by eye on watch).
+    static let menuBlurRadius: CGFloat = 20
+    static let menuDim = 0.3
 
     func reset() {
         galleryReady = false
         pendingStart = nil
         galleryOpacity = 1
+        galleryBlur = 0
+        galleryDim = 0
         hidesMenuContent = false
         galleryActive = true
     }
@@ -71,7 +83,17 @@ struct GalleryActivationObserver: View {
 
 struct GalleryRevealOpacity: ViewModifier {
     let state: MenuGalleryTransitionState
-    func body(content: Content) -> some View { content.opacity(state.galleryOpacity) }
+    func body(content: Content) -> some View {
+        content
+            // Skipped entirely at zero, so the open gallery pays nothing for it.
+            .blur(radius: state.galleryBlur, opaque: true)
+            .overlay {
+                if state.galleryDim > 0 {
+                    Color.black.opacity(state.galleryDim).allowsHitTesting(false)
+                }
+            }
+            .opacity(state.galleryOpacity)
+    }
 }
 
 /// Timeline of the menu → gallery transition, in milliseconds from the tap,
