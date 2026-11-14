@@ -35,6 +35,9 @@ struct TutorialPlayerView: View {
     @State private var historyEmphasizesRedo = false
     @Environment(\.displayScale) private var displayScale
     @Environment(\.scenePhase) private var scenePhase
+    /// Set by the welcome host while its iris covers the swap and opens onto this screen.
+    @Environment(\.irisReadiness) private var irisReadiness
+    @Environment(\.irisHoldsRevealedContent) private var irisHoldsRevealedContent
 
     init(folder: URL, chapters: [TutorialChapter] = TutorialChapter.allCases,
          offersRemainingChapters: Bool = false,
@@ -63,6 +66,8 @@ struct TutorialPlayerView: View {
                     GeometryReader { geometry in
                         ZStack {
                             WatchCanvasView(controller: controller, lasso: player.lasso, tutorial: tutorial,
+                                            // The host's iris opens once the first frame is drawn.
+                                            onArtworkPrepared: { _ in irisReadiness?.frameReady() },
                                             // The menu slides over the drawing, as the editor's sheet does.
                                             rendersArtwork: page == .canvas || page == .menu || isLeavingPage,
                                             acceptsInput: page == .canvas && tutorial.acceptsActions
@@ -273,6 +278,11 @@ struct TutorialPlayerView: View {
                         }
                     }
                     .frame(width: screen.size.width)
+                    // The card's material waits until the entry circle has opened, so it
+                    // neither renders under the spring nor takes the first touches.
+                    .opacity(irisHoldsRevealedContent ? 0 : 1)
+                    .allowsHitTesting(!irisHoldsRevealedContent)
+                    .animation(.easeOut(duration: reduceMotion ? 0.15 : 0.25), value: irisHoldsRevealedContent)
             }
         }
         // Native menu and palette content start below the navigation toolbar.
@@ -328,6 +338,8 @@ struct TutorialPlayerView: View {
         .requestsHiddenClock(((page == .canvas || isLeavingPage) && !confirmsFinish) || offersContinuation)
         .modifier(TutorialCrownHint(tutorial: tutorial))
         .onAppear {
+            // Inserted behind the closed iris: hold it until the canvas has drawn.
+            if irisHoldsRevealedContent { irisReadiness?.awaitFirstFrame() }
             player.startOrResume()
         }
         .onChange(of: tutorial.step) { _, step in

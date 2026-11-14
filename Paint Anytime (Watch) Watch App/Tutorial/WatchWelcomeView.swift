@@ -17,6 +17,12 @@ struct WatchWelcomeView: View {
     /// slots leave. Removing the slots first let the visible clock slide to the trailing
     /// corner on its way out, since the canvas and the tutorial both hide it.
     @State private var hidesClockForIris = false
+    /// The screen swapped in behind black reports its first drawn frame here, so the
+    /// circle opens onto a finished screen with an idle main thread.
+    @State private var irisReadiness = IrisReadiness()
+    /// From the swap until the circle has opened: secondary chrome (the lesson card)
+    /// waits, so its material does not render while the circle animates.
+    @State private var irisHoldsRevealedContent = false
 
     /// The list opens first, the detected language on top. A different choice is not
     /// applied yet: the question asks in that language, and only ✓ switches the app.
@@ -107,6 +113,8 @@ struct WatchWelcomeView: View {
         .environment(\.restartWelcome, restartWelcome)
         // The editor menu's tutorial opens and closes through the same circle.
         .environment(\.irisTransition, IrisTransitionAction { runThroughIris($0) })
+        .environment(\.irisReadiness, irisReadiness)
+        .environment(\.irisHoldsRevealedContent, irisHoldsRevealedContent)
         .preferredColorScheme(.dark)
         .environment(\.colorScheme, .dark)
         .task(id: onboarding.preparesTutorial) {
@@ -133,6 +141,8 @@ struct WatchWelcomeView: View {
             irisIsRunning = false
             irisAwaitsTutorial = false
             hidesClockForIris = false
+            irisHoldsRevealedContent = false
+            irisReadiness.reset()
             irisFraction = 1
             withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
                 onboarding.restartWelcome()
@@ -232,20 +242,38 @@ struct WatchWelcomeView: View {
             irisIsRunning = true
             hidesClockForIris = true
         }
+        // A screen that appeared without an iris must not make this one wait.
+        irisReadiness.reset()
         // Wait for the spring to settle, not its logical end, so the circle shrinks
         // all the way instead of stopping at a visible dot.
         withAnimation(Self.irisCloseAnimation, completionCriteria: .removed) {
             irisFraction = 0
         } completion: {
-            Task { @MainActor in whenClosed() }
+            Task { @MainActor in
+                // Set before the swap, so the new screen is inserted with its card held back.
+                irisHoldsRevealedContent = true
+                whenClosed()
+            }
         }
     }
 
     /// Pauses on black so the next screen draws unseen, then opens with a separate
-    /// animation that starts from rest.
+    /// animation that starts from rest. Every opening (editor, tutorial, the question)
+    /// waits, up to a limit, until the main thread is free, so the spring never competes
+    /// with building the new screen. A screen that announced a first frame (the
+    /// tutorial's canvas) is waited for first.
     private func openIrisAfterPause() async {
         await Task.yield()
+        let clock = ContinuousClock()
+        let deadline = clock.now + .milliseconds(Self.irisContentTimeoutMilliseconds)
         try? await Task.sleep(for: .milliseconds(Self.irisPauseMilliseconds))
+        while irisReadiness.awaitsFrame, clock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(16))
+        }
+        // The prepared frame reaches the display in the next pass; a screen without one
+        // may still be laying out or tearing down the previous one.
+        await waitForIdleMainThread(clock: clock,
+                                    until: min(deadline, clock.now + .milliseconds(Self.irisIdleWaitMilliseconds)))
         guard irisIsRunning else { return }
         // Only a failed tutorial start reopens onto the question; its clock returns centered.
         hidesClockForIris = false
@@ -253,11 +281,29 @@ struct WatchWelcomeView: View {
             irisFraction = 1
         } completion: {
             irisIsRunning = false
+            irisHoldsRevealedContent = false
         }
     }
 
     /// Time the screen stays black between closing and opening.
     private static let irisPauseMilliseconds = 400
+    /// Longest wait on black for the new screen's first frame, counted from the swap.
+    private static let irisContentTimeoutMilliseconds = 1500
+    /// Longest extra wait for a free main thread once the pause and any frame are done.
+    private static let irisIdleWaitMilliseconds = 300
+    /// A 16 ms tick that returns within this time found the main thread free.
+    private static let irisIdleTickToleranceMilliseconds = 26
+
+    /// Returns after two consecutive one-frame ticks arrive on time, or at `deadline`.
+    private func waitForIdleMainThread(clock: ContinuousClock, until deadline: ContinuousClock.Instant) async {
+        var onTimeTicks = 0
+        while onTimeTicks < 2, clock.now < deadline {
+            let tickStart = clock.now
+            try? await Task.sleep(for: .milliseconds(16), tolerance: .milliseconds(2))
+            onTimeTicks = clock.now - tickStart <= .milliseconds(Self.irisIdleTickToleranceMilliseconds)
+                ? onTimeTicks + 1 : 0
+        }
+    }
     /// Shared with the editor menu's own circle, which closes in step with this one.
     static let irisCloseAnimation = Animation.spring(duration: 0.6, bounce: 0)
 
@@ -329,8 +375,29 @@ struct IrisTransitionAction {
     @MainActor func callAsFunction(_ swap: @escaping @MainActor () -> Void) { perform(swap) }
 }
 
+/// Lets a screen inserted behind the closed iris hold the circle until its first frame
+/// is drawn. Not observable: only the host's opening task reads it, so reporting a
+/// frame invalidates no view.
+@MainActor final class IrisReadiness {
+    private(set) var awaitsFrame = false
+
+    /// Called as the screen appears behind black.
+    func awaitFirstFrame() { awaitsFrame = true }
+    /// Called once the screen has drawn; later frames change nothing.
+    func frameReady() { awaitsFrame = false }
+    func reset() { awaitsFrame = false }
+}
+
 private struct IrisTransitionKey: EnvironmentKey {
     static let defaultValue: IrisTransitionAction? = nil
+}
+
+private struct IrisReadinessKey: EnvironmentKey {
+    static let defaultValue: IrisReadiness? = nil
+}
+
+private struct IrisHoldsRevealedContentKey: EnvironmentKey {
+    static let defaultValue = false
 }
 
 private struct RestartWelcomeKey: EnvironmentKey {
@@ -345,6 +412,15 @@ extension EnvironmentValues {
     var irisTransition: IrisTransitionAction? {
         get { self[IrisTransitionKey.self] }
         set { self[IrisTransitionKey.self] = newValue }
+    }
+    var irisReadiness: IrisReadiness? {
+        get { self[IrisReadinessKey.self] }
+        set { self[IrisReadinessKey.self] = newValue }
+    }
+    /// True from the swap behind the closed iris until it has opened again.
+    var irisHoldsRevealedContent: Bool {
+        get { self[IrisHoldsRevealedContentKey.self] }
+        set { self[IrisHoldsRevealedContentKey.self] = newValue }
     }
 }
 

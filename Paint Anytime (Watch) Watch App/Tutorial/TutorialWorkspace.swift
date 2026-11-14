@@ -1,7 +1,8 @@
 import Foundation
 
 /// Owns disposable copies only; bundle originals and the user's gallery stay outside this root.
-struct TutorialWorkspace {
+/// Plain file work: `prepare()` runs off the main actor while the iris is on screen.
+struct TutorialWorkspace: Sendable {
     let root: URL
     private let source: URL?
 

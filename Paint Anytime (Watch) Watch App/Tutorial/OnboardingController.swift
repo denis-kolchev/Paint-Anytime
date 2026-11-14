@@ -35,8 +35,17 @@ final class OnboardingController: ObservableObject {
         defer { preparesTutorial = false }
         await Task.yield()
         guard !Task.isCancelled else { return }
-        do { tutorialFolder = try workspace.prepare() }
-        catch { tutorialError = true }
+        // Copying the preset photos is file I/O; off the main actor it cannot hitch
+        // the menu's tap or the black pause before the iris opens.
+        let workspace = workspace
+        do {
+            let folder = try await Task.detached(priority: .userInitiated) { try workspace.prepare() }.value
+            guard !Task.isCancelled else {
+                try? workspace.remove(folder)
+                return
+            }
+            tutorialFolder = folder
+        } catch { tutorialError = true }
     }
 
     func completeWelcome() {
