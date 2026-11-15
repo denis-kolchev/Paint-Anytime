@@ -153,9 +153,17 @@ struct ContentView: View {
             WatchLayersView(controller: controller, canvasSize: controller.document.size(fallback: canvasSize))
         }
         .onChange(of: showsAppSettings) { _, shows in
-            // Closed without choosing Gallery: drop the prewarmed one.
-            if !shows && !showsGallery { unmountPrewarmedGallery() }
-            if !shows { foldMorphsWithoutAnimation() }
+            // The prewarmed gallery is dropped in the sheet's onDismiss: tearing it down
+            // here, in a no-animation transaction, cut the menu's slide-away to one frame.
+            // The fold is deferred for the same reason: written in this update, its
+            // disablesAnimations reached the sheet's dismissal too. It still happens
+            // under the sliding menu, a frame later.
+            if !shows {
+                Task { @MainActor in
+                    guard !showsAppSettings else { return }
+                    foldMorphsWithoutAnimation()
+                }
+            }
             if !shows { opensTutorialChapters = false }
             if !shows { showsMenuTutorial = false }
             if !shows, menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
@@ -183,6 +191,8 @@ struct ContentView: View {
         ), onDismiss: {
             MenuGalleryTransitionDiagnostics.shared.mark("dismissed")
             galleryTransition.hidesMenuContent = false
+            // Closed without choosing Gallery: drop the prewarmed one once the menu is gone.
+            if !showsAppSettings && !showsGallery { unmountPrewarmedGallery() }
             // Another sheet cannot present while the menu is still dismissing.
             guard let action = pendingMenuAction else { return }
             pendingMenuAction = nil
