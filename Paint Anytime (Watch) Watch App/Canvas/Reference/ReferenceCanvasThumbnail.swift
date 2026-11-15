@@ -27,22 +27,31 @@ struct ReferenceCanvasThumbnail: View {
 
     var body: some View {
         ZStack {
-            if isVisible, store.isEnabled, let image = store.image {
-                let frame = Self.frame(for: CGSize(width: image.width, height: image.height),
+            if isVisible, store.isEnabled {
+                let image = store.image
+                // Without an image the reference stays in place as an empty square window.
+                let imageSize = image.map { CGSize(width: $0.width, height: $0.height) } ?? CGSize(width: 1, height: 1)
+                let frame = Self.frame(for: imageSize,
                                        layout: layout, regions: regions, size: size,
                                        canvasOrigin: canvasOrigin, layoutDirection: layoutDirection)
                 Button(action: onOpen) {
-                    Image(decorative: image, scale: 1)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: frame.width, height: frame.height)
-                        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .strokeBorder(.white.opacity(0.7), lineWidth: 1)
+                    Group {
+                        if let image {
+                            Image(decorative: image, scale: 1)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            Color.black.opacity(0.35)
                         }
-                        .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
-                        .contentShape(Rectangle())
+                    }
+                    .frame(width: frame.width, height: frame.height)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(.white.opacity(0.7), lineWidth: 1)
+                    }
+                    .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(CanvasMorphButtonStyle())
                 .accessibilityLabel(L10n.text("Reference image"))
