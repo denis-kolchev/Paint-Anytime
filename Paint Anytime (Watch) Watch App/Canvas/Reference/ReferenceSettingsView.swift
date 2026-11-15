@@ -1,34 +1,40 @@
 import SwiftUI
 
-/// Canvas → Reference: turns the reference on or off and picks its image.
+/// Canvas → Reference: turns the reference on or off and picks its image. With an image
+/// chosen, its row shows the image and opens the reference full screen, as the canvas
+/// thumbnail does; Back there returns here.
 struct ReferenceSettingsView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var store = ReferenceImageStore.shared
+    // Not observed: the full-screen view reads the drawing only when asked to show it.
+    let controller: CanvasController
+    let viewportSize: CGSize
+    @State private var showsFullscreen = false
 
     var body: some View {
         List {
             Toggle(L10n.text("Show reference"), isOn: $store.isEnabled)
             if store.isEnabled {
                 if let image = store.image {
-                    Image(decorative: image, scale: 1)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxWidth: .infinity, maxHeight: 96)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                        .listRowBackground(Color.clear)
-                        .accessibilityLabel(L10n.text("Reference image"))
-                }
-                NavigationLink {
-                    ReferencePickerView()
-                } label: {
-                    Label(L10n.text(store.image == nil ? "Choose image" : "Replace image"),
-                          systemImage: "photo.on.rectangle")
-                }
-                if store.image != nil {
-                    Button(role: .destructive) {
-                        store.remove()
+                    Button {
+                        showsFullscreen = true
                     } label: {
-                        Label(L10n.text("Remove image"), systemImage: "trash")
+                        HStack(spacing: 10) {
+                            Image(decorative: image, scale: 1)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: 32, height: 32)
+                                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                            // TODO: final title for this row is not decided yet.
+                            Text(L10n.text("Reference image"))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                } else {
+                    NavigationLink {
+                        ReferencePickerView()
+                    } label: {
+                        Label(L10n.text("Choose image"), systemImage: "photo.on.rectangle")
                     }
                 }
             }
@@ -36,6 +42,9 @@ struct ReferenceSettingsView: View {
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Reference"))
         .toolbarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $showsFullscreen) {
+            ReferenceFullscreenView(controller: controller, viewportSize: viewportSize)
+        }
     }
 }
 

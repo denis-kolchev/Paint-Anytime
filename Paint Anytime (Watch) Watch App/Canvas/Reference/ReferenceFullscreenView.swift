@@ -36,7 +36,9 @@ struct ReferenceFullscreenView: View {
     @ObservedObject var store = ReferenceImageStore.shared
     let controller: CanvasController
     let viewportSize: CGSize
-    let onConfirmColor: (SIMD4<Float>) -> Void
+    /// Where the eyedropper's ✓ hands its color; nil hides the eyedropper (opened from
+    /// settings, where no palette waits for it).
+    var onConfirmColor: ((SIMD4<Float>) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.displayScale) private var displayScale
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -97,7 +99,8 @@ struct ReferenceFullscreenView: View {
                     ReferenceMorphActions(state: morphState,
                                           canvasOrigin: geometry.frame(in: .global).origin,
                                           size: geometry.size, showsCanvas: showsCanvas,
-                                          onEyedropper: { startSampling(size: geometry.size) },
+                                          onEyedropper: onConfirmColor == nil ? nil
+                                            : { startSampling(size: geometry.size) },
                                           onToggleCanvas: toggleCanvas,
                                           onReplace: { choosesReplacement = true },
                                           onRemove: { store.remove() })
@@ -217,7 +220,7 @@ struct ReferenceFullscreenView: View {
     /// The canvas eyedropper's green ✓: takes the sampled color to the palette.
     private var confirmButton: some View {
         Button {
-            if let color = sample?.color { onConfirmColor(color) }
+            if let color = sample?.color { onConfirmColor?(color) }
         } label: {
             Image(systemName: "checkmark").opacity(0)
         }
@@ -331,7 +334,8 @@ private struct ReferenceMorphActions: View {
     let canvasOrigin: CGPoint
     let size: CGSize
     let showsCanvas: Bool
-    let onEyedropper: () -> Void
+    /// Nil when the eyedropper is not offered.
+    let onEyedropper: (() -> Void)?
     let onToggleCanvas: () -> Void
     let onReplace: () -> Void
     let onRemove: () -> Void
@@ -347,7 +351,7 @@ private struct ReferenceMorphActions: View {
         let diameter = GalleryMorphState.buttonDiameter
         let centerX = state.backButtonFrame.map { $0.midX - canvasOrigin.x } ?? anchor.x
         let left = centerX - diameter / 2
-        let expandedWidth = min(36 * 5, max(0, size.width - left * 2))
+        let expandedWidth = min(36 * CGFloat(onEyedropper == nil ? 4 : 5), max(0, size.width - left * 2))
         let panelWidth = state.isExpanded ? expandedWidth : diameter
         panel(expandedWidth: expandedWidth)
             .position(x: left + panelWidth / 2, y: anchor.y)
@@ -372,8 +376,10 @@ private struct ReferenceMorphActions: View {
                 // interactive capsule belongs to the nearest action.
                 Button(action: toggle) { icon("xmark", width: nil) }
                     .accessibilityLabel(L10n.text("Close"))
-                Button(action: onEyedropper) { icon("eyedropper", width: nil) }
-                    .accessibilityLabel(L10n.text("Eyedropper"))
+                if let onEyedropper {
+                    Button(action: onEyedropper) { icon("eyedropper", width: nil) }
+                        .accessibilityLabel(L10n.text("Eyedropper"))
+                }
                 Button(action: onToggleCanvas) {
                     icon(showsCanvas ? "photo" : "square.on.square", width: nil)
                 }

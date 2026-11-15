@@ -424,7 +424,7 @@ struct CanvasSettingsView: View {
             // The tour has no lesson for it, so its canvas never shows a reference.
             if !tutorial.isActive {
                 NavigationLink {
-                    ReferenceSettingsView()
+                    ReferenceSettingsView(controller: controller, viewportSize: viewportSize)
                 } label: {
                     Label(L10n.text("Reference"), systemImage: "photo")
                 }
