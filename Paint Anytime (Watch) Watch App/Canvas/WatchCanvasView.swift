@@ -360,8 +360,9 @@ struct WatchCanvasView: View {
                         if controller.activeStroke == nil {
                             let scale = zoom * fit
                             let tolerance = Self.rulerTolerance / scale
-                            if !isRulerPending, guides.activeRuler == nil, showsGuides,
-                               guides.layout(paperSize: paperSize).isNearGuide(start, tolerance: tolerance) {
+                            // With guides on every stroke follows one: a start between guides
+                            // snaps to the nearest, so nothing can be drawn off them.
+                            if !isRulerPending, guides.activeRuler == nil, showsGuides {
                                 isRulerPending = true
                             }
                             if isRulerPending {
@@ -415,16 +416,17 @@ struct WatchCanvasView: View {
                             return
                         }
                         if isRulerPending && controller.activeStroke == nil {
-                            // A tap on a guide still leaves a dot.
+                            // A tap leaves a dot on the nearest guide.
+                            let tap = canvasPoint(value.startLocation, size: geometry.size)
                             controller.beginStroke(at: sample(
-                                at: canvasPoint(value.startLocation, size: geometry.size), time: value.time))
+                                at: guides.layout(paperSize: paperSize).snappedPoint(tap), time: value.time))
                         }
                         guard controller.activeStroke != nil else { return }
                         let recognizedKind = controller.recognizedShapeKind
                         if tutorial.isActive, tutorial.step == .holdCircle, tutorial.acceptsActions,
                            recognizedKind != .circle, recognizedKind != .ellipse {
                             controller.continueStroke(at: sample(
-                                at: canvasPoint(value.location, size: geometry.size), time: value.time))
+                                at: ruled(canvasPoint(value.location, size: geometry.size)), time: value.time))
                             if let stroke = controller.activeStroke,
                                let image = WatchBitmapRenderer.layerThumbnail(strokes: [stroke], size: paperSize,
                                    scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: zoom)) {

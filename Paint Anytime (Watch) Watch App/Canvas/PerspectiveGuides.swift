@@ -29,9 +29,14 @@ struct PerspectiveGuideLine: Equatable {
         return CGPoint(x: point.x + direction.x * t, y: point.y + direction.y * t)
     }
 
-    func distance(to location: CGPoint) -> CGFloat {
+    /// The closest point of the drawn guide; a ray ends at its vanishing point.
+    func nearestPoint(to location: CGPoint) -> CGPoint {
         let t = (location.x - point.x) * direction.x + (location.y - point.y) * direction.y
-        let foot = isRay && t < 0 ? point : project(location)
+        return isRay && t < 0 ? point : project(location)
+    }
+
+    func distance(to location: CGPoint) -> CGFloat {
+        let foot = nearestPoint(to: location)
         return hypot(location.x - foot.x, location.y - foot.y)
     }
 }
@@ -102,21 +107,29 @@ struct PerspectiveGuideLayout: Equatable {
         return result
     }
 
-    func isNearGuide(_ location: CGPoint, tolerance: CGFloat) -> Bool {
-        vanishingPoints.contains { hypot($0.x - location.x, $0.y - location.y) <= tolerance }
-            || lines.contains { $0.distance(to: location) <= tolerance }
+    /// Where a tap lands while guides are on: the closest point of the nearest drawn guide.
+    func snappedPoint(_ location: CGPoint) -> CGPoint {
+        lines.min { $0.distance(to: location) < $1.distance(to: location) }?.nearestPoint(to: location) ?? location
     }
 
-    /// The ruler for a stroke that starts at `start` on a guide: the displayed guide near the start
-    /// that best matches the stroke's initial direction. Only drawn lines are offered as rulers.
+    /// The ruler for a stroke that starts at `start`: among the displayed guides nearest to the start
+    /// (within `tolerance` of the closest one), the one that best matches the stroke's initial direction.
+    /// A start between guides still gets the nearest one, so strokes never leave the guides.
     func ruler(from start: CGPoint, toward location: CGPoint, tolerance: CGFloat) -> PerspectiveGuideLine? {
         let movement = CGPoint(x: location.x - start.x, y: location.y - start.y)
         let length = hypot(movement.x, movement.y)
-        guard length > 0.001 else { return nil }
-        let heading = CGPoint(x: movement.x / length, y: movement.y / length)
+        let distances = lines.map { $0.distance(to: start) }
+        guard let nearest = distances.min() else { return nil }
         // Every displayed line through a vanishing point is within tolerance when the stroke starts there.
-        let candidates = lines.filter { $0.distance(to: start) <= tolerance }
+        let candidates = zip(lines, distances).filter { $0.1 <= nearest + tolerance }.map(\.0)
         guard !candidates.isEmpty else { return nil }
+        guard length > 0.001 else {
+            var line = lines[distances.firstIndex(of: nearest) ?? 0]
+            line.kind = .ruler
+            line.isRay = false
+            return line
+        }
+        let heading = CGPoint(x: movement.x / length, y: movement.y / length)
         var best = candidates[0]
         var bestAlignment = -CGFloat.infinity
         for candidate in candidates {
