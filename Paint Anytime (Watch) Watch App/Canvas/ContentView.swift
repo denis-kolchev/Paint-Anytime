@@ -35,6 +35,7 @@ struct ContentView: View {
         nonmutating set { morphState.showsContentActions = newValue }
     }
     @State private var showsLayers = false
+    @State private var showsReferenceFullscreen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsToolSettings = false
     @State private var isMovingCanvas = false
@@ -137,6 +138,8 @@ struct ContentView: View {
         }
         .modifier(QuickSettingsPresentation(action: $quickSettings, controller: controller,
                                             viewportSize: canvasSize))
+        .modifier(ReferencePresentation(isPresented: $showsReferenceFullscreen, controller: controller,
+                                        viewportSize: canvasSize, onSampleColor: openSampledPalette))
         .modifier(SketchAssistRequirementsAlert(isPresented: $showsSketchAssistRequirements))
         .onChange(of: customLayoutEnabled) { _, _ in
             morphState.customExpandedSlot = nil
@@ -365,7 +368,7 @@ struct ContentView: View {
     private var isBusyForAutosave: Bool {
         controller.activeStroke != nil || lasso.isActive || lasso.isPreparing
             || showsGallery || showsAppSettings || showsLayers || showsToolSettings
-            || showsSampledPalette || quickSettings != nil || isMovingCanvas
+            || showsSampledPalette || quickSettings != nil || isMovingCanvas || showsReferenceFullscreen
             || session.isPreparingCanvas || session.isSavingDrawing || session.pendingCanvasAction != nil
             || session.savedDrawing != nil || session.exportError != nil
     }
@@ -379,6 +382,7 @@ struct ContentView: View {
         showsSampledPalette = false
         showsLayers = false
         showsAppSettings = false
+        showsReferenceFullscreen = false
         session.savedDrawing = nil
         session.pendingCanvasAction = nil
         session.exportError = nil
@@ -468,6 +472,16 @@ struct ContentView: View {
                     .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil || autosave.showsProgress))
                     .zIndex(3)
             }
+
+            // Below the controls, so an expanded morph covers it rather than the reverse.
+            ReferenceCanvasThumbnail(layout: customLayout, regions: controlRegions, size: geometry.size,
+                                     canvasOrigin: geometry.frame(in: .global).origin,
+                                     isVisible: isActive && menuOnboarding.tutorialFolder == nil
+                                        && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive,
+                                     onOpen: openReference)
+                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil
+                                                      || autosave.showsProgress))
+                .zIndex(2.5)
 
             if showsGallery || prewarmsGallery {
                 SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap,
@@ -600,6 +614,7 @@ struct ContentView: View {
     /// bars hidden such taps sometimes reach the canvas under the control instead of it
     /// (device log: the top-trailing control). Do what that collapsed control does.
     private func forwardCanvasTap(_ control: CanvasToolbarControl) {
+        if control == .reference { return openReference() }
         guard hidesCanvasBars, let customLayout else { return }
         let index: Int
         if case .custom(let slot) = control { index = slot }
@@ -801,6 +816,22 @@ struct ContentView: View {
         }
     }
 
+    /// The reference eyedropper's ✓ ends like the canvas one: in the palette.
+    private func openSampledPalette(_ color: SIMD4<Float>) {
+        cameraSampledColor = color
+        showsSampledPalette = true
+    }
+
+    /// Opens the reference full screen, as tapping a photo does.
+    private func openReference() {
+        guard isActive, controller.activeStroke == nil, !showsAppSettings, quickSettings == nil,
+              !showsGallery, !showsToolSettings, !isMovingCanvas, !lasso.isActive,
+              !showsReferenceFullscreen else { return }
+        controller.cancelStroke()
+        foldMorphsWithoutAnimation()
+        showsReferenceFullscreen = true
+    }
+
     private func finishCameraTool() {
         let shouldEditColor = hasEyedropperSession && cameraSampledColor != nil
         controller.cancelStroke()
@@ -853,7 +884,7 @@ struct ContentView: View {
             } else {
                 session.canvasPreparationError = L10n.text("Could not open the image.")
             }
-        }, acceptsInput: isActive && quickSettings == nil && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && session.savedDrawing == nil && session.pendingCanvasAction == nil && !session.isSavingDrawing, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
+        }, acceptsInput: isActive && quickSettings == nil && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && !showsReferenceFullscreen && session.savedDrawing == nil && session.pendingCanvasAction == nil && !session.isSavingDrawing, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
             cameraSampledColor = color
         }, onCanvasInteraction: {
             if morphState.customExpandedSlot != nil {
@@ -876,6 +907,8 @@ struct ContentView: View {
     private var protectedCanvasControls: [CanvasToolbarControl: CGRect] {
         guard isActive && !showsGallery && !showsToolSettings && controller.activeStroke == nil && !lasso.hidesControls else { return [:] }
         return canvasControlFrames.filter { control, _ in
+            // The thumbnail removes its frame when hidden; it is hidden in lasso and camera.
+            if control == .reference { return !lasso.isActive && !isMovingCanvas }
             if lasso.isActive { return (!showsSelectionActions && control == .tools) || control == .canvasToolsMorph || (showsSelectionActions && control == .morph) || (lasso.awaitsSketchAssistConfirmation && control == .more) }
             if isMovingCanvas { return control == .tools || control == .more }
             if let customLayout {

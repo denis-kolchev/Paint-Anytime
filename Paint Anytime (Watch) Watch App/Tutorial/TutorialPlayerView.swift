@@ -877,7 +877,7 @@ struct TutorialPlayerView: View {
         return controls.filter { control, _ in
             if control == groupControl { return true }
             switch control {
-            case .morph, .contentMorph, .custom: return false
+            case .morph, .contentMorph, .custom, .reference: return false
             case .canvasToolsMorph: return tutorial.permits([.openLasso, .openLayers])
             case .tools: return showsPrimaryControl
             case .more: return tutorial.permits([.openMenu])

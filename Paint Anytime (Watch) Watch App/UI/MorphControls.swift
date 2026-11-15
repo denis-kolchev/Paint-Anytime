@@ -267,7 +267,7 @@ struct GallerySelectionActions: View {
 
 /// Let glass resolve the foreground contrast over the current gallery artwork.
 /// A fixed white foreground prevents the light glass appearance from using dark symbols.
-private struct GalleryMorphGlass: ViewModifier {
+struct GalleryMorphGlass: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if #available(watchOS 26, *) {

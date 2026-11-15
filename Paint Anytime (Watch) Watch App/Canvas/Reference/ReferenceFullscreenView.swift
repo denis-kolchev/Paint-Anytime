@@ -1,0 +1,377 @@
+import SwiftUI
+
+/// Presents the reference full screen. Kept out of `ContentView.body`, which is
+/// already at the type checker's limit.
+struct ReferencePresentation: ViewModifier {
+    @Binding var isPresented: Bool
+    // Not observed: the full-screen view reads the drawing only when asked to show it.
+    let controller: CanvasController
+    let viewportSize: CGSize
+    /// A color the eyedropper confirmed, handed over once the cover has closed,
+    /// as the canvas eyedropper's ✓ opens the palette.
+    let onSampleColor: (SIMD4<Float>) -> Void
+    @State private var sampledColor: SIMD4<Float>?
+
+    func body(content: Content) -> some View {
+        content
+            .fullScreenCover(isPresented: $isPresented, onDismiss: {
+                guard let color = sampledColor else { return }
+                sampledColor = nil
+                onSampleColor(color)
+            }) {
+                ReferenceFullscreenView(controller: controller, viewportSize: viewportSize) { color in
+                    sampledColor = color
+                    isPresented = false
+                }
+            }
+    }
+}
+
+/// The reference as a photo opened full screen: Back returns to the thumbnail, the
+/// bottom-leading circle opens its actions — the eyedropper, the canvas instead of the
+/// reference and back, another gallery image, or removing the reference.
+struct ReferenceFullscreenView: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @ObservedObject var store = ReferenceImageStore.shared
+    let controller: CanvasController
+    let viewportSize: CGSize
+    let onConfirmColor: (SIMD4<Float>) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.displayScale) private var displayScale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showsCanvas = false
+    /// Rendered once, on the first switch to the canvas: the drawing cannot change here.
+    @State private var canvasImage: CGImage?
+    @State private var choosesReplacement = false
+    /// The gallery's 1:1 photo morph: the same native bottom slot, Back anchor and panel.
+    @State private var morphState = GalleryMorphState()
+    /// The eyedropper is sampling the picture on screen; nil when it is off.
+    @State private var sample: ReferenceColorSample?
+    @State private var isSampling = false
+
+    /// The picture on screen, which the eyedropper samples.
+    private var shownImage: CGImage? { showsCanvas ? canvasImage ?? store.image : store.image }
+
+    var body: some View {
+        NavigationStack {
+            GeometryReader { geometry in
+                ZStack {
+                    Color.black
+                    picture
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            guard morphState.isExpanded, !isSampling else { return }
+                            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                                morphState.isExpanded = false
+                            }
+                        }
+                        .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                            updateSample(at: value.location, size: geometry.size)
+                        }, including: isSampling ? .all : .subviews)
+                    if isSampling, let sample {
+                        ReferenceLoupe(sample: sample)
+                    }
+                }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .overlay(alignment: .bottomLeading) {
+                    ReferenceMorphActions(state: morphState,
+                                          canvasOrigin: geometry.frame(in: .global).origin,
+                                          size: geometry.size, showsCanvas: showsCanvas,
+                                          onEyedropper: { startSampling(size: geometry.size) },
+                                          onToggleCanvas: toggleCanvas,
+                                          onReplace: { choosesReplacement = true },
+                                          onRemove: { store.remove() })
+                        .opacity(isSampling ? 0 : 1)
+                        .allowsHitTesting(!isSampling)
+                        .accessibilityHidden(isSampling)
+                }
+            }
+            .ignoresSafeArea()
+            .toolbar {
+                // The cover's own dismiss slot: a leading item of its own would sit beside
+                // the system close button instead of replacing it.
+                ToolbarItem(placement: .cancellationAction) { backButton }
+                if isSampling {
+                    ToolbarItem(placement: .topBarTrailing) { confirmButton }
+                }
+                if !isSampling {
+                    ToolbarItemGroup(placement: .bottomBar) {
+                        GalleryMorphToolbarButton(state: morphState)
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $choosesReplacement) {
+                ReferencePickerView {
+                    canvasImage = nil
+                    showsCanvas = false
+                }
+            }
+        }
+        .onChange(of: store.image == nil) { _, removed in
+            if removed { dismiss() }
+        }
+    }
+
+    @ViewBuilder private var picture: some View {
+        ZStack {
+            if let image = store.image {
+                Image(decorative: image, scale: 1)
+                    .resizable()
+                    .scaledToFit()
+                    .opacity(showsCanvas && canvasImage != nil ? 0 : 1)
+                    .accessibilityLabel(L10n.text("Reference image"))
+            }
+            if let canvasImage {
+                Image(decorative: canvasImage, scale: 1)
+                    .resizable()
+                    .scaledToFit()
+                    .opacity(showsCanvas ? 1 : 0)
+                    .accessibilityHidden(!showsCanvas)
+            }
+        }
+        .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.25), value: showsCanvas)
+    }
+
+    /// Back, or the eyedropper's ✕ while it samples: the same slot, as on the canvas.
+    private var backButton: some View {
+        // Same hidden-chrome slot and glass circle as the gallery's photo Back.
+        Button {
+            if isSampling { stopSampling() } else { dismiss() }
+        } label: {
+            Image(systemName: "chevron.left").opacity(0)
+        }
+        .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
+        .overlay {
+            Image(systemName: isSampling ? "xmark" : "chevron.left")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.primary)
+                .contentTransition(.opacity)
+                .frame(width: GalleryMorphState.buttonDiameter, height: GalleryMorphState.buttonDiameter)
+                .modifier(CanvasMorphGlass(adaptsToCanvas: true))
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .accessibilityLabel(L10n.text(isSampling ? "Cancel" : "Back"))
+        // The actions panel lines up under Back, as in the gallery.
+        .onGeometryChange(for: CGRect.self) { geometry in
+            geometry.frame(in: .global)
+        } action: { frame in
+            if morphState.backButtonFrame != frame { morphState.backButtonFrame = frame }
+        }
+    }
+
+    /// The canvas eyedropper's green ✓: takes the sampled color to the palette.
+    private var confirmButton: some View {
+        Button {
+            if let color = sample?.color { onConfirmColor(color) }
+        } label: {
+            Image(systemName: "checkmark").opacity(0)
+        }
+        .disabled(sample == nil)
+        .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
+        .overlay {
+            Image(systemName: "checkmark")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(.green)
+                .frame(width: GalleryMorphState.buttonDiameter, height: GalleryMorphState.buttonDiameter)
+                .modifier(CanvasMorphGlass(adaptsToCanvas: true))
+                .opacity(sample == nil ? 0.45 : 1)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+        .accessibilityLabel(L10n.text("Done"))
+    }
+
+    private func startSampling(size: CGSize) {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            morphState.isExpanded = false
+        }
+        isSampling = true
+        // Starts at the center, like the canvas eyedropper.
+        updateSample(at: CGPoint(x: size.width / 2, y: size.height / 2), size: size)
+    }
+
+    private func stopSampling() {
+        isSampling = false
+        sample = nil
+    }
+
+    private func updateSample(at location: CGPoint, size: CGSize) {
+        guard isSampling, let image = shownImage else { return }
+        sample = ReferenceColorSample(image: image, location: location, frame: size) ?? sample
+    }
+
+    private func toggleCanvas() {
+        if !showsCanvas && canvasImage == nil {
+            let document = controller.document
+            let size = document.size(fallback: viewportSize)
+            // Screen resolution is enough to look at: a large canvas is not rendered at full size.
+            let screenSide = max(viewportSize.width, viewportSize.height) * displayScale
+            let scale = min(displayScale, screenSide / max(1, max(size.width, size.height)))
+            guard size.width > 0, size.height > 0, scale > 0,
+                  let rendered = WatchBitmapRenderer.render(document: document, size: size, scale: scale)
+            else { return UnavailableActionFeedback.play() }
+            canvasImage = rendered
+        }
+        showsCanvas.toggle()
+    }
+}
+
+/// The reference's actions as the gallery's 1:1 photo panel (`GalleryMorphActions`):
+/// the ellipsis sits on the native bottom slot under Back and expands to the trailing side
+/// into Close, eyedropper, show canvas / reference, replace and remove.
+private struct ReferenceMorphActions: View {
+    let state: GalleryMorphState
+    let canvasOrigin: CGPoint
+    let size: CGSize
+    let showsCanvas: Bool
+    let onEyedropper: () -> Void
+    let onToggleCanvas: () -> Void
+    let onReplace: () -> Void
+    let onRemove: () -> Void
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        // Same geometry as the gallery: the native slot's height, Back's horizontal center,
+        // and a panel as wide as the gallery's with equal screen-edge insets.
+        let anchor = state.toolbarFrame.flatMap { frame -> CGPoint? in
+            guard !frame.isEmpty else { return nil }
+            return CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
+        } ?? CGPoint(x: 30, y: size.height - 26)
+        let diameter = GalleryMorphState.buttonDiameter
+        let centerX = state.backButtonFrame.map { $0.midX - canvasOrigin.x } ?? anchor.x
+        let left = centerX - diameter / 2
+        let expandedWidth = min(36 * 5, max(0, size.width - left * 2))
+        let panelWidth = state.isExpanded ? expandedWidth : diameter
+        panel(expandedWidth: expandedWidth)
+            .position(x: left + panelWidth / 2, y: anchor.y)
+    }
+
+    private func toggle() {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            state.isExpanded.toggle()
+        }
+    }
+
+    private func collapse() {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            state.isExpanded = false
+        }
+    }
+
+    private func panel(expandedWidth: CGFloat) -> some View {
+        CanvasMorphContent(isExpanded: state.isExpanded) {
+            HStack(spacing: 0) {
+                // Equal cells without spacers, as in the gallery: every point of the
+                // interactive capsule belongs to the nearest action.
+                Button(action: toggle) { icon("xmark", width: nil) }
+                    .accessibilityLabel(L10n.text("Close"))
+                Button(action: onEyedropper) { icon("eyedropper", width: nil) }
+                    .accessibilityLabel(L10n.text("Eyedropper"))
+                Button(action: onToggleCanvas) {
+                    icon(showsCanvas ? "photo" : "square.on.square", width: nil)
+                }
+                .accessibilityLabel(L10n.text(showsCanvas ? "Show reference" : "Show canvas"))
+                Button {
+                    collapse()
+                    onReplace()
+                } label: {
+                    icon("arrow.triangle.2.circlepath", width: nil)
+                }
+                .accessibilityLabel(L10n.text("Replace image"))
+                Button(role: .destructive, action: onRemove) { icon("trash", width: nil) }
+                    .accessibilityLabel(L10n.text("Remove image"))
+            }
+            .frame(width: expandedWidth, height: GalleryMorphState.buttonDiameter)
+        } collapsed: {
+            Button(action: toggle) { icon("ellipsis", width: GalleryMorphState.buttonDiameter) }
+                // The native bottom slot above it carries the label and the taps.
+                .accessibilityHidden(true)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.primary)
+        .fixedSize()
+        .modifier(GalleryMorphGlass())
+    }
+
+    /// `width: nil` fills an equal share of the expanded panel.
+    private func icon(_ symbol: String, width: CGFloat?) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 17, weight: .medium))
+            .frame(width: width, height: GalleryMorphState.buttonDiameter)
+            .frame(maxWidth: width == nil ? .infinity : nil)
+            .contentShape(Rectangle())
+    }
+}
+
+/// One eyedropper reading of a picture shown scaled to fit: the pixel under the finger,
+/// its color, and the canvas eyedropper's 11 × 11 lens crop centered on it.
+struct ReferenceColorSample {
+    let color: SIMD4<Float>
+    let lens: CGImage
+    /// Center of the sampled pixel on screen, where the lens is drawn.
+    let point: CGPoint
+
+    init?(image: CGImage, location: CGPoint, frame: CGSize) {
+        let width = CGFloat(image.width), height = CGFloat(image.height)
+        guard width > 0, height > 0, frame.width > 0, frame.height > 0 else { return nil }
+        // Points per pixel and the picture's rectangle inside the frame (scaledToFit).
+        let fit = min(frame.width / width, frame.height / height)
+        let origin = CGPoint(x: (frame.width - width * fit) / 2, y: (frame.height - height * fit) / 2)
+        // Dragging beyond the picture keeps sampling its nearest edge pixel.
+        let x = min(image.width - 1, max(0, Int(floor((location.x - origin.x) / fit))))
+        let y = min(image.height - 1, max(0, Int(floor((location.y - origin.y) / fit))))
+        point = CGPoint(x: origin.x + (CGFloat(x) + 0.5) * fit, y: origin.y + (CGFloat(y) + 0.5) * fit)
+
+        guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+              let pixel = image.cropping(to: CGRect(x: x, y: y, width: 1, height: 1)) else { return nil }
+        var rgba = [UInt8](repeating: 0, count: 4)
+        let sampled = rgba.withUnsafeMutableBytes { bytes -> Bool in
+            guard let context = CGContext(data: bytes.baseAddress, width: 1, height: 1,
+                bitsPerComponent: 8, bytesPerRow: 4, space: space,
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue | CGBitmapInfo.byteOrder32Big.rawValue)
+            else { return false }
+            // Transparent pixels read as black over the cover's black backdrop.
+            context.setFillColor(CGColor(gray: 0, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: 1, height: 1))
+            context.draw(pixel, in: CGRect(x: 0, y: 0, width: 1, height: 1))
+            return true
+        }
+        guard sampled else { return nil }
+        color = SIMD4(Float(rgba[0]) / 255, Float(rgba[1]) / 255, Float(rgba[2]) / 255, 1)
+
+        guard let context = CGContext(data: nil, width: 11, height: 11, bitsPerComponent: 8,
+            bytesPerRow: 44, space: space, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        context.setFillColor(CGColor(gray: 0.16, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: 11, height: 11))
+        context.interpolationQuality = .none
+        context.draw(image, in: CGRect(x: CGFloat(5 - x), y: CGFloat(5 - (image.height - 1 - y)),
+                                       width: width, height: height))
+        guard let lens = context.makeImage() else { return nil }
+        self.lens = lens
+    }
+}
+
+/// The canvas eyedropper's lens: 88 pt, white ring and the center pixel's frame.
+private struct ReferenceLoupe: View {
+    let sample: ReferenceColorSample
+
+    var body: some View {
+        Image(decorative: sample.lens, scale: 1)
+            .resizable().interpolation(.none)
+            .frame(width: 88, height: 88)
+            .clipShape(Circle())
+            .overlay { Circle().strokeBorder(.white, lineWidth: 3) }
+            .compositingGroup()
+            .shadow(color: .black.opacity(0.4), radius: 3, x: 0, y: 0)
+            .overlay {
+                Rectangle().stroke(.black, lineWidth: 3).frame(width: 8, height: 8)
+                    .overlay { Rectangle().stroke(.white, lineWidth: 1).frame(width: 8, height: 8) }
+            }
+            .position(sample.point)
+            .allowsHitTesting(false)
+    }
+}

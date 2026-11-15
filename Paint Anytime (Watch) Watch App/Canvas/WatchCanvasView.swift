@@ -11,6 +11,8 @@ import WatchKit
 enum CanvasToolbarControl: Hashable {
     case custom(Int)
     case more, tools, clear, undo, redo, save, morph, contentMorph, canvasToolsMorph
+    /// The reference thumbnail in the bottom-trailing corner.
+    case reference
 }
 
 struct WatchCanvasView: View {
@@ -671,6 +673,8 @@ struct WatchCanvasView: View {
                 if abs(frame.width - frame.height) < 1 {
                     if hypot(screenPoint.x - frame.midX, screenPoint.y - frame.midY) <= frame.width / 2 { return control }
                 } else if frame.contains(screenPoint) { return control }
+            case .reference:
+                if frame.contains(screenPoint) { return control }
             case .more, .tools, .clear, .save, .undo, .redo:
                 // The toolbar reports only the icon bounds; test the round 44 pt button.
                 let radius = max(44, max(frame.width, frame.height)) / 2

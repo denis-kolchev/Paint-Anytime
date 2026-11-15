@@ -101,19 +101,35 @@ struct CustomCanvasControls: View {
     }
 
     private func position(_ index: Int, geometry: MorphPanelGeometry) -> CGPoint {
+        Self.slotCenter(index, geometry: geometry, regions: regions, canvasOrigin: canvasOrigin)
+    }
+
+    /// Center of a collapsed slot's circle in canvas coordinates. The reference
+    /// thumbnail uses it to sit above the bottom-trailing control.
+    static func slotCenter(_ index: Int, geometry: MorphPanelGeometry, regions: CanvasControlRegions,
+                           canvasOrigin: CGPoint) -> CGPoint {
+        let size = geometry.size
         if let frame = regions.toolbarAnchors[Self.anchors[index]], !frame.isEmpty {
             let point = CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
             // The canvas hides the native bars for this layout; a hidden bar reports its slots
             // off screen (the bottom row vanished below the edge). Use only on-screen anchors.
-            if CGRect(origin: .zero, size: size).insetBy(dx: 4, dy: 4).contains(point) { return point }
+            // A hidden bar can also report a slot on screen but in the wrong place (the top-trailing
+            // circle was drawn in the top-leading corner once a bottom-trailing slot was assigned).
+            // Accept an anchor only in its own half of the screen.
+            let isTrailing = abs(point.x - geometry.trailingX) < abs(point.x - geometry.leadingX)
+            let isInOwnHalf = isTop(index)
+                ? point.y < size.height / 2 && isTrailing == (index == 0)
+                : point.y > size.height / 2
+            if CGRect(origin: .zero, size: size).insetBy(dx: 4, dy: 4).contains(point), isInOwnHalf { return point }
         }
         if index == 0 { return CGPoint(x: geometry.trailingX, y: geometry.top + 18) }
         if index == CanvasControlLayout.topLeadingSlot { return CGPoint(x: geometry.leadingX, y: geometry.top + 18) }
         // Bottom row as the native bottom bar lays it out (Canvas Editor): the outer circles
         // straight below the top ones, equal spacing between, center about 38 pt above the
         // bottom edge on Apple Watch Ultra (from device screenshots).
-        let leading = position(CanvasControlLayout.topLeadingSlot, geometry: geometry).x
-        let trailing = position(0, geometry: geometry).x
+        let leading = slotCenter(CanvasControlLayout.topLeadingSlot, geometry: geometry, regions: regions,
+                                 canvasOrigin: canvasOrigin).x
+        let trailing = slotCenter(0, geometry: geometry, regions: regions, canvasOrigin: canvasOrigin).x
         return CGPoint(x: leading + (trailing - leading) * CGFloat(index - 1) / 3,
                        y: size.height - Self.bottomRowCenterInset)
     }
