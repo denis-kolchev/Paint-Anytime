@@ -37,6 +37,10 @@ nonisolated enum GalleryWidgetStore {
         }
     }
 
+    private static func modificationDate(of url: URL) -> Date? {
+        (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
+    }
+
     static func publish(_ drawings: [(url: URL, isFavorite: Bool)]) throws {
         let folder = try directory()
         var items: [GalleryWidgetArtwork] = []
@@ -50,7 +54,14 @@ nonisolated enum GalleryWidgetStore {
                 CGImageSourceGetStatus($0) == .statusComplete && CGImageSourceGetCount($0) > 0
                     && CGImageSourceCopyPropertiesAtIndex($0, 0, nil) != nil
             } ?? false
-            if !hasReadablePreview {
+            // A re-saved drawing keeps its filename, so a readable preview can still
+            // show an earlier stage. Compare modification dates (a stat, no decode).
+            let isPreviewCurrent = hasReadablePreview && {
+                guard let previewDate = modificationDate(of: preview),
+                      let drawingDate = modificationDate(of: drawing.url) else { return false }
+                return previewDate >= drawingDate
+            }()
+            if !isPreviewCurrent {
                 guard let source = CGImageSourceCreateWithURL(drawing.url as CFURL, nil),
                       let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                         kCGImageSourceCreateThumbnailFromImageAlways: true,
