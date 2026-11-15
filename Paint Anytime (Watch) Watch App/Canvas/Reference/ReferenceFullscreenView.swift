@@ -48,6 +48,8 @@ struct ReferenceFullscreenView: View {
     /// The eyedropper is sampling the picture on screen; nil when it is off.
     @State private var sample: ReferenceColorSample?
     @State private var isSampling = false
+    /// A tap on the picture hides Back, the actions and the system clock, as in the gallery.
+    @State private var isCleanViewing = false
 
     /// The picture on screen, which the eyedropper samples.
     private var shownImage: CGImage? { showsCanvas ? canvasImage ?? store.image : store.image }
@@ -60,12 +62,7 @@ struct ReferenceFullscreenView: View {
                     picture
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .contentShape(Rectangle())
-                        .onTapGesture {
-                            guard morphState.isExpanded, !isSampling else { return }
-                            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
-                                morphState.isExpanded = false
-                            }
-                        }
+                        .onTapGesture(perform: toggleCleanViewing)
                         .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                             updateSample(at: value.location, size: geometry.size)
                         }, including: isSampling ? .all : .subviews)
@@ -82,9 +79,10 @@ struct ReferenceFullscreenView: View {
                                           onToggleCanvas: toggleCanvas,
                                           onReplace: { choosesReplacement = true },
                                           onRemove: { store.remove() })
-                        .opacity(isSampling ? 0 : 1)
-                        .allowsHitTesting(!isSampling)
-                        .accessibilityHidden(isSampling)
+                        .opacity(isSampling || isCleanViewing ? 0 : 1)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
+                        .allowsHitTesting(!isSampling && !isCleanViewing)
+                        .accessibilityHidden(isSampling || isCleanViewing)
                 }
             }
             .ignoresSafeArea()
@@ -92,12 +90,14 @@ struct ReferenceFullscreenView: View {
                 // The cover's own dismiss slot: a leading item of its own would sit beside
                 // the system close button instead of replacing it.
                 ToolbarItem(placement: .cancellationAction) { backButton }
-                if isSampling {
-                    ToolbarItem(placement: .topBarTrailing) { confirmButton }
-                }
+                // Always installed: balancing Back centers the system clock, as in the gallery
+                // and on the canvas. Outside the eyedropper the slot is empty and inert.
+                ToolbarItem(placement: .topBarTrailing) { confirmButton }
                 if !isSampling {
                     ToolbarItemGroup(placement: .bottomBar) {
                         GalleryMorphToolbarButton(state: morphState)
+                            .disabled(isCleanViewing)
+                            .accessibilityHidden(isCleanViewing)
                         Spacer(minLength: 0)
                     }
                 }
@@ -112,6 +112,19 @@ struct ReferenceFullscreenView: View {
         .onChange(of: store.image == nil) { _, removed in
             if removed { dismiss() }
         }
+        // A full-screen cover is outside the app root's clock host, so it brings its own,
+        // like the canvas editor.
+        .requestsHiddenClock(isCleanViewing)
+        .modifier(ClockVisibilityHost())
+    }
+
+    /// The gallery's clean viewing: a tap folds the actions and hides or shows the chrome.
+    private func toggleCleanViewing() {
+        guard !isSampling else { return }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            morphState.isExpanded = false
+        }
+        isCleanViewing.toggle()
     }
 
     @ViewBuilder private var picture: some View {
@@ -153,6 +166,11 @@ struct ReferenceFullscreenView: View {
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
+        .disabled(isCleanViewing)
+        .opacity(isCleanViewing ? 0 : 1)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
+        .allowsHitTesting(!isCleanViewing)
+        .accessibilityHidden(isCleanViewing)
         .accessibilityLabel(L10n.text(isSampling ? "Cancel" : "Back"))
         // The actions panel lines up under Back, as in the gallery.
         .onGeometryChange(for: CGRect.self) { geometry in
@@ -169,7 +187,7 @@ struct ReferenceFullscreenView: View {
         } label: {
             Image(systemName: "checkmark").opacity(0)
         }
-        .disabled(sample == nil)
+        .disabled(!isSampling || sample == nil)
         .watchToolbarButtonStyle(diameter: GalleryMorphState.toolbarDiameter, hidesNativeChrome: true)
         .overlay {
             Image(systemName: "checkmark")
@@ -181,6 +199,10 @@ struct ReferenceFullscreenView: View {
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
         }
+        .opacity(isSampling ? 1 : 0)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: isSampling)
+        .allowsHitTesting(isSampling)
+        .accessibilityHidden(!isSampling)
         .accessibilityLabel(L10n.text("Done"))
     }
 
@@ -188,6 +210,7 @@ struct ReferenceFullscreenView: View {
         withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
             morphState.isExpanded = false
         }
+        isCleanViewing = false
         isSampling = true
         // Starts at the center, like the canvas eyedropper.
         updateSample(at: CGPoint(x: size.width / 2, y: size.height / 2), size: size)
