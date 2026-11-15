@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 /// Presents the reference full screen. Kept out of `ContentView.body`, which is
 /// already at the type checker's limit.
@@ -50,6 +51,14 @@ struct ReferenceFullscreenView: View {
     @State private var isSampling = false
     /// A tap on the picture hides Back, the actions and the system clock, as in the gallery.
     @State private var isCleanViewing = false
+    /// The canvas's Crown zoom, in only: the same detents, maximum and 100% snap.
+    @State private var crownZoom = 1.0
+    @State private var offset = CGSize.zero
+    @State private var panOrigin: CGSize?
+    /// Where the eyedropper's finger is on screen, to resample it when the zoom changes.
+    @State private var sampleLocation: CGPoint?
+    @FocusState private var crownFocused: Bool
+    private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
 
     /// The picture on screen, which the eyedropper samples.
     private var shownImage: CGImage? { showsCanvas ? canvasImage ?? store.image : store.image }
@@ -60,17 +69,30 @@ struct ReferenceFullscreenView: View {
                 ZStack {
                     Color.black
                     picture
+                        .scaleEffect(zoom)
+                        .offset(offset)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .contentShape(Rectangle())
                         .onTapGesture(perform: toggleCleanViewing)
                         .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                             updateSample(at: value.location, size: geometry.size)
                         }, including: isSampling ? .all : .subviews)
+                        // A zoomed picture moves under the finger, as the canvas in its move mode.
+                        .gesture(panGesture, including: !isSampling && zoom != 1 ? .all : .subviews)
                     if isSampling, let sample {
-                        ReferenceLoupe(sample: sample)
+                        ReferenceLoupe(sample: sample, point: screenPoint(sample.point, size: geometry.size))
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
+                .focusable(!choosesReplacement)
+                .focused($crownFocused)
+                .digitalCrownRotation(detent: Binding(
+                    get: { crownZoom },
+                    set: { value in setCrownZoom(value, size: geometry.size) }
+                // Zoom in only: the picture already fits the screen at 100%.
+                ), from: 1, through: 8, by: 0.05, sensitivity: .low,
+                   isContinuous: false, isHapticFeedbackEnabled: false)
+                .accessibilityValue(L10n.format("Zoom %d percent", Int(zoom * 100)))
                 .overlay(alignment: .bottomLeading) {
                     ReferenceMorphActions(state: morphState,
                                           canvasOrigin: geometry.frame(in: .global).origin,
@@ -106,8 +128,20 @@ struct ReferenceFullscreenView: View {
                 ReferencePickerView {
                     canvasImage = nil
                     showsCanvas = false
+                    crownZoom = 1
+                    offset = .zero
                 }
             }
+        }
+        // The canvas under the cover gives up the Crown; take it here, and again on
+        // coming back from the replacement picker. watchOS 10 can drop focus requested in
+        // the same update that installs the target, so wait for it as the canvas does.
+        .task(id: choosesReplacement) {
+            crownFocused = false
+            guard !choosesReplacement else { return }
+            try? await Task.sleep(for: .milliseconds(100))
+            guard !Task.isCancelled else { return }
+            crownFocused = true
         }
         .onChange(of: store.image == nil) { _, removed in
             if removed { dismiss() }
@@ -206,6 +240,51 @@ struct ReferenceFullscreenView: View {
         .accessibilityLabel(L10n.text("Done"))
     }
 
+    /// The canvas's Crown zoom about the screen center: the 100% snap clicks, and the
+    /// picture settles back to fit there.
+    private func setCrownZoom(_ value: Double, size: CGSize) {
+        guard panOrigin == nil, value != crownZoom else { return }
+        let previousZoom = zoom
+        let wasSnapped = previousZoom == 1
+        crownZoom = value
+        if zoom == 1 {
+            offset = .zero
+            if !wasSnapped { WKInterfaceDevice.current().play(.click) }
+        } else {
+            // Keep the picture point at the screen center fixed.
+            let ratio = zoom / previousZoom
+            offset = CGSize(width: offset.width * ratio, height: offset.height * ratio)
+        }
+        if isSampling, let sampleLocation { updateSample(at: sampleLocation, size: size) }
+    }
+
+    private var panGesture: some Gesture {
+        DragGesture(minimumDistance: 6)
+            .onChanged { value in
+                if panOrigin == nil { panOrigin = offset }
+                let origin = panOrigin ?? offset
+                let proposed = CGSize(width: origin.width + value.translation.width,
+                                      height: origin.height + value.translation.height)
+                // The canvas's centering magnet, in screen points.
+                let wasCentered = offset == .zero
+                let isCentered = hypot(proposed.width, proposed.height) <= (wasCentered ? 12 : 8)
+                offset = isCentered ? .zero : proposed
+                if isCentered && !wasCentered { WKInterfaceDevice.current().play(.click) }
+            }
+            .onEnded { _ in panOrigin = nil }
+    }
+
+    /// A screen point in the unzoomed, scaled-to-fit frame the eyedropper samples.
+    private func fittedPoint(_ point: CGPoint, size: CGSize) -> CGPoint {
+        CGPoint(x: (point.x - size.width / 2 - offset.width) / zoom + size.width / 2,
+                y: (point.y - size.height / 2 - offset.height) / zoom + size.height / 2)
+    }
+
+    private func screenPoint(_ point: CGPoint, size: CGSize) -> CGPoint {
+        CGPoint(x: (point.x - size.width / 2) * zoom + size.width / 2 + offset.width,
+                y: (point.y - size.height / 2) * zoom + size.height / 2 + offset.height)
+    }
+
     private func startSampling(size: CGSize) {
         withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
             morphState.isExpanded = false
@@ -219,11 +298,13 @@ struct ReferenceFullscreenView: View {
     private func stopSampling() {
         isSampling = false
         sample = nil
+        sampleLocation = nil
     }
 
     private func updateSample(at location: CGPoint, size: CGSize) {
         guard isSampling, let image = shownImage else { return }
-        sample = ReferenceColorSample(image: image, location: location, frame: size) ?? sample
+        sampleLocation = location
+        sample = ReferenceColorSample(image: image, location: fittedPoint(location, size: size), frame: size) ?? sample
     }
 
     private func toggleCanvas() {
@@ -330,11 +411,12 @@ private struct ReferenceMorphActions: View {
 }
 
 /// One eyedropper reading of a picture shown scaled to fit: the pixel under the finger,
-/// its color, and the canvas eyedropper's 11 × 11 lens crop centered on it.
+/// its color, and the canvas eyedropper's 11 × 11 lens crop centered on it. Locations are
+/// in the unzoomed frame; the view maps the Crown zoom in and out.
 struct ReferenceColorSample {
     let color: SIMD4<Float>
     let lens: CGImage
-    /// Center of the sampled pixel on screen, where the lens is drawn.
+    /// Center of the sampled pixel in the unzoomed frame.
     let point: CGPoint
 
     init?(image: CGImage, location: CGPoint, frame: CGSize) {
@@ -381,6 +463,8 @@ struct ReferenceColorSample {
 /// The canvas eyedropper's lens: 88 pt, white ring and the center pixel's frame.
 private struct ReferenceLoupe: View {
     let sample: ReferenceColorSample
+    /// The sampled pixel's center on screen, under the zoom.
+    let point: CGPoint
 
     var body: some View {
         Image(decorative: sample.lens, scale: 1)
@@ -394,7 +478,7 @@ private struct ReferenceLoupe: View {
                 Rectangle().stroke(.black, lineWidth: 3).frame(width: 8, height: 8)
                     .overlay { Rectangle().stroke(.white, lineWidth: 1).frame(width: 8, height: 8) }
             }
-            .position(sample.point)
+            .position(point)
             .allowsHitTesting(false)
     }
 }
