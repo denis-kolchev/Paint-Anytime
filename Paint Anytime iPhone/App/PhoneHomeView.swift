@@ -28,6 +28,9 @@ struct PhoneHomeView: View {
     @State private var showingInboxError = false
     @State private var projectMessage: String?
     @State private var watchDestination: PaintDeepLink?
+    /// True when iPhone Duo puts its vertical bar on the leading edge, as when
+    /// folded in landscape. The More button then stays beside the title.
+    @State private var verticalBarIsLeading = false
     private var columnOptions: [Int] { PhoneGalleryZoomController.columnOptions }
     private var columnCount: Int { columnOptions.contains(storedColumnCount) ? storedColumnCount : 5 }
 
@@ -72,15 +75,26 @@ struct PhoneHomeView: View {
             }
             .onDisappear { resetGalleryZoom() }
             .navigationTitle("Watch Gallery")
-            .toolbar(.hidden, for: .navigationBar)
+            // The More menu is a system bar item so iPhone Duo can move it into
+            // the vertical bar below the status icons, like the drawing actions.
+            // The header below draws the title, so the bar shows only the button.
+            // A leading vertical bar would put it before the title instead.
+            .toolbar {
+                if !verticalBarIsLeading {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        galleryMoreMenu
+                    }
+                }
+            }
+            // Without its item the bar would only cover the header button.
+            .toolbar(verticalBarIsLeading ? .hidden : .visible, for: .navigationBar)
+            .phoneGalleryBarTitleHidden()
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             // Keep artwork beneath the status area and header. An inset
             // reserves a separate top region and shifts the gallery viewport.
             .overlay(alignment: .top) {
-                PhoneGalleryHeader(
-                    importPhoto: { importingPhoto = true },
-                    importProject: { importingProject = true },
-                    synchronize: { photoInbox.synchronize() },
-                    isPreparingPhoto: preparingPhoto)
+                PhoneGalleryHeader(menu: verticalBarIsLeading ? galleryMoreMenu : nil)
                     .padding(.top, container.safeAreaInsets.top)
                     .background {
                         // The header's bottom edge in window space, which includes
@@ -145,6 +159,11 @@ struct PhoneHomeView: View {
             }
             .frame(width: container.size.width, height: container.size.height, alignment: .leading)
             .clipped()
+            .background {
+                if #available(iOS 27.1, *) {
+                    PhoneVerticalBarEdgeReader(isLeading: $verticalBarIsLeading)
+                }
+            }
             .onChange(of: showsBook) { _, expanded in
                 moveSelection(toBook: expanded)
             }
@@ -306,6 +325,14 @@ struct PhoneHomeView: View {
         guard horizontalSizeClass == .regular, verticalSizeClass == .regular,
               geometry.size.width > geometry.size.height else { return nil }
         return geometry.size.width / 2
+    }
+
+    private var galleryMoreMenu: PhoneGalleryMoreMenu {
+        PhoneGalleryMoreMenu(
+            importPhoto: { importingPhoto = true },
+            importProject: { importingProject = true },
+            synchronize: { photoInbox.synchronize() },
+            isPreparingPhoto: preparingPhoto)
     }
 
     private var drawingPresentationAnimation: Animation {

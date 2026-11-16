@@ -2,25 +2,20 @@ import SwiftUI
 
 /// Stays outside the scroll content so the title never collapses into a toolbar.
 struct PhoneGalleryHeader: View {
-    let importPhoto: () -> Void
-    let importProject: () -> Void
-    let synchronize: () -> Void
-    /// True while a picked photo is decoded and sent to the watch.
-    var isPreparingPhoto = false
+    /// The More menu when it sits beside the title rather than in a system bar.
+    var menu: PhoneGalleryMoreMenu?
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
-                title
-                Spacer(minLength: 0)
-                actions
+        HStack(spacing: 12) {
+            title
+            Spacer(minLength: 0)
+            if let menu {
+                PhoneGalleryHeaderButton(menu: menu)
             }
-            VStack(alignment: .leading, spacing: 8) {
-                title
-                actions
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        // Otherwise the menu is a navigation bar item placed over this header,
+        // so iPhone Duo can move it into the vertical bar. Leave its width free.
+        .padding(.trailing, menu == nil ? PhoneGalleryMoreMenu.reservedWidth : 0)
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 12)
@@ -59,19 +54,21 @@ struct PhoneGalleryHeader: View {
             .accessibilityAddTraits(.isHeader)
             .layoutPriority(1)
     }
+}
 
-    /// Matches the height of system navigation bar buttons such as Cancel and
-    /// Send in sheets, so the header button reads as part of the same family.
-    private static let buttonDiameter: CGFloat = 44
+/// The More menu drawn like a navigation bar button, for the header.
+private struct PhoneGalleryHeaderButton: View {
+    let menu: PhoneGalleryMoreMenu
 
-    private var actions: some View {
+    /// Matches the height of system navigation bar buttons.
+    private static let diameter: CGFloat = 44
+
+    var body: some View {
         Group {
             if #available(iOS 26.0, *) {
-                actionButtons
-                    .glassEffect(.regular.interactive(), in: .circle)
+                label.glassEffect(.regular.interactive(), in: .circle)
             } else {
-                actionButtons
-                    .background(.fill.tertiary, in: .circle)
+                label.background(.fill.tertiary, in: .circle)
             }
         }
         .font(.body.weight(.medium))
@@ -79,9 +76,28 @@ struct PhoneGalleryHeader: View {
         .fixedSize()
     }
 
-    /// One button keeps the actions beside the title; three icon buttons no longer
-    /// fitted, so `ViewThatFits` moved them below it. Menu items also show titles.
-    private var actionButtons: some View {
+    private var label: some View {
+        menu
+            .labelStyle(.iconOnly)
+            .frame(width: Self.diameter, height: Self.diameter)
+            .contentShape(.circle)
+            .buttonStyle(.plain)
+    }
+}
+
+/// The gallery's More menu, shown as a navigation bar item.
+struct PhoneGalleryMoreMenu: View {
+    let importPhoto: () -> Void
+    let importProject: () -> Void
+    let synchronize: () -> Void
+    /// True while a picked photo is decoded and sent to the watch.
+    var isPreparingPhoto = false
+
+    /// Room the header keeps free beside the title for the bar button.
+    static let reservedWidth: CGFloat = 56
+
+    /// One button keeps the actions beside the title; menu items show titles.
+    var body: some View {
         Menu {
             Button(action: importPhoto) {
                 Label("Import Photo", systemImage: "photo.badge.plus")
@@ -95,23 +111,29 @@ struct PhoneGalleryHeader: View {
                 Label("Sync", systemImage: "arrow.triangle.2.circlepath")
             }
         } label: {
-            // Only the header button is icon-only; menu items keep their titles.
-            // A fixed frame gives the exact system bar height; button styles add
-            // their own padding around the icon and come out smaller.
-            Group {
-                // Large camera photos take a moment to prepare; the spinner replaces
-                // the icon so the button keeps its size.
-                if isPreparingPhoto {
-                    ProgressView()
-                        .accessibilityLabel(Text("Preparing Photo…"))
-                } else {
-                    Label("More", systemImage: "ellipsis")
-                        .labelStyle(.iconOnly)
-                }
+            // Large camera photos take a moment to prepare; the spinner replaces
+            // the icon so the button keeps its size.
+            if isPreparingPhoto {
+                ProgressView()
+                    .accessibilityLabel(Text("Preparing Photo…"))
+            } else {
+                Label("More", systemImage: "ellipsis")
             }
-            .frame(width: Self.buttonDiameter, height: Self.buttonDiameter)
-            .contentShape(.circle)
         }
-        .buttonStyle(.plain)
+    }
+}
+
+extension View {
+    /// Hides the navigation bar's own title; the gallery header draws it.
+    /// The title stays set so pushed screens keep "Watch Gallery" as Back.
+    @ViewBuilder
+    func phoneGalleryBarTitleHidden() -> some View {
+        if #available(iOS 18.0, *) {
+            toolbar(removing: .title)
+        } else {
+            toolbar {
+                ToolbarItem(placement: .principal) { Color.clear.frame(width: 1, height: 1) }
+            }
+        }
     }
 }
