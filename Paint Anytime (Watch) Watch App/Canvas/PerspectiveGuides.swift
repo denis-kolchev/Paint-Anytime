@@ -161,7 +161,7 @@ struct PerspectiveGuideLayout: Equatable {
 final class PerspectiveGuides: ObservableObject {
     static let shared = PerspectiveGuides()
     static let viewAngleRange: ClosedRange<Double> = 20...150
-    static let rayCountRange: ClosedRange<Int> = 4...24
+    static let rayCountRange: ClosedRange<Int> = 2...24
     static let defaultRayCount = 12
 
     private enum Key {
