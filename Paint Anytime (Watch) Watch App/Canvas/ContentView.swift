@@ -797,7 +797,7 @@ struct ContentView: View {
             galleryLaunchID = UUID()
             showsGallery = true
         case .language, .canvasSize, .toolSynchronization, .visiblePalettes, .blending,
-             .perspectiveGuides, .canvasEditor, .autosave, .share:
+             .perspectiveGuides, .canvasEditor, .autosave, .share, .reference:
             quickSettings = action
         case .eraserToggle: controller.toggleEraser()
         // Close only collapses the morph (above).

@@ -327,15 +327,16 @@ struct DrawingSettingsView: View {
                         .tutorialHint(tutorial, steps: [.openColorBlending])
                 }
             } else {
-                NavigationLink {
-                    PaletteVisibilitySettingsView(controller: controller)
-                } label: {
-                    Label(L10n.text("Visible palettes"), systemImage: "paintpalette")
-                }
+                // Most often changed first: blending alters every stroke, synchronization is set once.
                 NavigationLink {
                     ColorBlendingSelectionView(controller: controller)
                 } label: {
                     Label(L10n.text("Color blending"), systemImage: "circle.lefthalf.filled")
+                }
+                NavigationLink {
+                    PaletteVisibilitySettingsView(controller: controller)
+                } label: {
+                    Label(L10n.text("Visible palettes"), systemImage: "paintpalette")
                 }
                 NavigationLink {
                     ToolSynchronizationView(controller: controller)
@@ -366,68 +367,24 @@ struct CanvasSettingsView: View {
 
     var body: some View {
         List {
-            if AppReleaseFeatures.current.showsCanvasSizeControls && (!tutorial.isActive || tutorial.teachesCrop) {
-                if let onOpenCanvasSize {
-                    Button(action: onOpenCanvasSize) {
-                        Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
-                            .tutorialHint(tutorial, steps: [.openCanvasSize])
-                    }
-                } else {
-                    NavigationLink {
-                        WatchCanvasSizeView(controller: controller, viewportSize: viewportSize,
-                                            displayScale: displayScale)
-                            .onAppear { controller.cancelStroke() }
-                    } label: {
-                        Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
-                    }
-                }
-            }
-            // Later lessons keep the earlier rows below the one they teach, so the list
-            // grows; the lesson guards those rows' actions, so they do nothing there.
-            if tutorial.isActive, tutorial.teachesCanvasEditor || tutorial.teachesCrop, let onOpenCanvasEditor {
-                Button(action: onOpenCanvasEditor) {
-                    Label {
-                        Text(L10n.text("Canvas editor"))
-                    } icon: {
-                        CanvasLayoutIcon()
-                    }
-                    .tutorialHint(tutorial, steps: [.openCanvasEditor])
-                }
-            } else if !tutorial.isActive {
-                // Opens the editor itself: Reset and Save live on its canvas preview.
-                Button {
-                    showsEditor = true
-                } label: {
-                    Label {
-                        Text(L10n.text("Canvas editor"))
-                    } icon: {
-                        CanvasLayoutIcon()
-                    }
-                }
-            }
-            if !tutorial.isActive || tutorial.teachesPerspective || tutorial.teachesCanvasEditor
-                || tutorial.teachesCrop {
-                if let onOpenPerspective {
-                    Button(action: onOpenPerspective) {
-                        Label(L10n.text("Perspective guides"), systemImage: "perspective")
-                            .tutorialHint(tutorial, steps: [.openPerspective])
-                    }
-                } else {
-                    NavigationLink {
-                        PerspectiveGuidesSettingsView(controller: controller, viewportSize: viewportSize,
-                                                      guides: guides)
-                    } label: {
-                        Label(L10n.text("Perspective guides"), systemImage: "perspective")
-                    }
-                }
-            }
-            // The tour has no lesson for it, so its canvas never shows a reference.
-            if !tutorial.isActive {
+            if tutorial.isActive {
+                // Each lesson puts the row it teaches on top and keeps the earlier rows
+                // below it, so the list grows; the lesson guards those rows' actions.
+                canvasSizeRow
+                canvasEditorRow
+                perspectiveRow
+            } else {
+                // Aids for the current drawing first, then its paper, then the app's layout,
+                // which is set up once. Deliberately differs from the tutorial's order.
+                perspectiveRow
+                // The tour has no lesson for it, so its canvas never shows a reference.
                 NavigationLink {
                     ReferenceSettingsView(controller: controller, viewportSize: viewportSize)
                 } label: {
                     Label(L10n.text("Reference"), systemImage: "photo")
                 }
+                canvasSizeRow
+                canvasEditorRow
             }
         }
         .labelStyle(CenteredMenuLabelStyle())
@@ -437,6 +394,68 @@ struct CanvasSettingsView: View {
         // the taps of the editor's top buttons drawn in the clock's place.
         .fullScreenCover(isPresented: $showsEditor) {
             CanvasLayoutEditorView(instrument: controller.pencilStyle.instrument)
+        }
+    }
+
+    @ViewBuilder private var canvasSizeRow: some View {
+        if AppReleaseFeatures.current.showsCanvasSizeControls && (!tutorial.isActive || tutorial.teachesCrop) {
+            if let onOpenCanvasSize {
+                Button(action: onOpenCanvasSize) {
+                    Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
+                        .tutorialHint(tutorial, steps: [.openCanvasSize])
+                }
+            } else {
+                NavigationLink {
+                    WatchCanvasSizeView(controller: controller, viewportSize: viewportSize,
+                                        displayScale: displayScale)
+                        .onAppear { controller.cancelStroke() }
+                } label: {
+                    Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var canvasEditorRow: some View {
+        if tutorial.isActive, tutorial.teachesCanvasEditor || tutorial.teachesCrop, let onOpenCanvasEditor {
+            Button(action: onOpenCanvasEditor) {
+                Label {
+                    Text(L10n.text("Canvas editor"))
+                } icon: {
+                    CanvasLayoutIcon()
+                }
+                .tutorialHint(tutorial, steps: [.openCanvasEditor])
+            }
+        } else if !tutorial.isActive {
+            // Opens the editor itself: Reset and Save live on its canvas preview.
+            Button {
+                showsEditor = true
+            } label: {
+                Label {
+                    Text(L10n.text("Canvas editor"))
+                } icon: {
+                    CanvasLayoutIcon()
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var perspectiveRow: some View {
+        if !tutorial.isActive || tutorial.teachesPerspective || tutorial.teachesCanvasEditor
+            || tutorial.teachesCrop {
+            if let onOpenPerspective {
+                Button(action: onOpenPerspective) {
+                    Label(L10n.text("Perspective guides"), systemImage: "perspective")
+                        .tutorialHint(tutorial, steps: [.openPerspective])
+                }
+            } else {
+                NavigationLink {
+                    PerspectiveGuidesSettingsView(controller: controller, viewportSize: viewportSize,
+                                                  guides: guides)
+                } label: {
+                    Label(L10n.text("Perspective guides"), systemImage: "perspective")
+                }
+            }
         }
     }
 }

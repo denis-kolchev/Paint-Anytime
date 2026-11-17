@@ -30,6 +30,8 @@ struct CanvasQuickSettingsView: View {
             PerspectiveGuidesSettingsView(controller: controller, viewportSize: viewportSize)
         case .autosave: AutosaveSettingsView()
         case .share: CanvasShareView(controller: controller, viewportSize: viewportSize)
+        // The More menu's Canvas → Reference page: show or hide it and pick its image.
+        case .reference: ReferenceSettingsView(controller: controller, viewportSize: viewportSize)
         default: EmptyView()
         }
     }

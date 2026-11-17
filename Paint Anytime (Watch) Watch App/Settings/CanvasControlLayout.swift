@@ -143,7 +143,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
     case brush, clear, save, lasso, undo, redo, layers, gallery, language, tutorial
     case canvasSize, toolSynchronization, visiblePalettes, blending, reportBug
     case eyedropper, camera, palettes, perspectiveGuides, canvasEditor, autosave, sketchAssist
-    case eraserToggle, share, closeMorph, more, nothing
+    case eraserToggle, share, reference, closeMorph, more, nothing
 
     var id: String { rawValue }
     var title: String {
@@ -173,6 +173,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .sketchAssist: "Complete strokes"
         case .eraserToggle: "Eraser ↔ tool"
         case .share: "Share"
+        case .reference: "Reference"
         case .closeMorph: "Close"
         case .more: "More"
         case .nothing: "Nothing"
@@ -206,6 +207,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .sketchAssist: "sparkles"
         case .eraserToggle: "eraser"
         case .share: "square.and.arrow.up"
+        case .reference: "photo"
         case .closeMorph: "xmark"
         case .more: "ellipsis"
         case .nothing: "circle.dashed"
@@ -217,7 +219,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
     /// measured usage: the app collects no analytics.
     private static let usageOrder: [CanvasQuickAction] = [
         .brush, .undo, .redo, .eraserToggle, .eyedropper, .palettes, .layers, .lasso,
-        .save, .clear, .gallery, .share, .sketchAssist, .more, .closeMorph,
+        .save, .clear, .gallery, .reference, .share, .sketchAssist, .more, .closeMorph,
         .perspectiveGuides, .canvasSize, .visiblePalettes, .blending, .toolSynchronization,
         .canvasEditor, .autosave, .language, .tutorial, .reportBug
     ]
