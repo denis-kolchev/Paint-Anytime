@@ -88,8 +88,8 @@ struct ReferenceFullscreenView: View {
                         .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                             updateSample(at: value.location, size: geometry.size)
                         }, including: isSampling ? .all : .subviews)
-                        // A zoomed picture moves under the finger, as the canvas in its move mode.
-                        .gesture(panGesture, including: !isSampling && zoom != 1 ? .all : .subviews)
+                        // The picture moves under the finger at any zoom, as the canvas in its move mode.
+                        .gesture(panGesture, including: !isSampling ? .all : .subviews)
                     if isSampling, let sample {
                         ReferenceLoupe(sample: sample, point: screenPoint(sample.point, size: geometry.size))
                     }
@@ -261,21 +261,18 @@ struct ReferenceFullscreenView: View {
     }
 
     /// The canvas's Crown zoom about the screen center: the 100% snap clicks, and the
-    /// picture settles back to fit there.
+    /// picture keeps its offset there.
     private func setCrownZoom(_ value: Double, size: CGSize) {
         guard panOrigin == nil, value != crownZoom else { return }
         var next = viewport
         let previousZoom = next.zoom
         let wasSnapped = previousZoom == 1
         next.crownZoom = value
-        if next.zoom == 1 {
-            next.offset = .zero
-            if !wasSnapped { WKInterfaceDevice.current().play(.click) }
-        } else {
-            // Keep the picture point at the screen center fixed.
-            let ratio = next.zoom / previousZoom
-            next.offset = CGSize(width: next.offset.width * ratio, height: next.offset.height * ratio)
-        }
+        if next.zoom == 1 && !wasSnapped { WKInterfaceDevice.current().play(.click) }
+        // Keep the picture point at the screen center fixed, at 100% too: the Crown limits
+        // only the zoom, so the picture stays where it was moved.
+        let ratio = next.zoom / previousZoom
+        next.offset = CGSize(width: next.offset.width * ratio, height: next.offset.height * ratio)
         viewport = next
         if isSampling, let sampleLocation { updateSample(at: sampleLocation, size: size) }
     }
