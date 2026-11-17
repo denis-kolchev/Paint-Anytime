@@ -1,11 +1,24 @@
 import SwiftUI
+import os
 
 nonisolated extension WatchBitmapRenderer {
     /// Highest resolution of the sharp viewport overlay; the full-canvas layer caches
     /// stay at `maximumRasterScale` or lower (see `LayerCache.inkByteLimit`).
     static let maximumDetailScale: CGFloat = 8
-    /// Padded fragment size in pixels; one float context of it is ~24 MB.
-    static let detailPixelLimit: CGFloat = 1_500_000
+    /// Padded fragment size in pixels; one float context of it is ~24 MB. Rendering
+    /// holds about three (layer ink, eraser mask, brush coverage), so it also stays
+    /// within a quarter of the memory this device has left right now.
+    static var detailPixelLimit: CGFloat {
+        let ceiling: CGFloat = 1_500_000
+        #if targetEnvironment(simulator)
+        // The Simulator enforces no per-app limit and reports 0.
+        return ceiling
+        #else
+        // On a watch 0 means the limit is already reached: keep the minimum.
+        let available = CGFloat(os_proc_available_memory())
+        return min(ceiling, max(250_000, available / 4 / (3 * 16)))
+        #endif
+    }
 
     struct ViewportDetail {
         let image: CGImage

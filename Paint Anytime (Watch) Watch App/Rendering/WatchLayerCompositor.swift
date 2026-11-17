@@ -1,6 +1,7 @@
 import SwiftUI
 import simd
 import ImageIO
+import os
 
 nonisolated extension WatchBitmapRenderer {
     /// Layers are isolated so erasers never punch through neighbouring artwork.
@@ -21,7 +22,22 @@ nonisolated extension WatchBitmapRenderer {
         /// first and replay when next needed. Float RGBA is 16 B/px: at ×4 one watch-sized
         /// layer is ~13 MB, and 17 of them took the app past its ~300 MB limit.
         /// `rasterScale(displayScale:zoom:canvasSize:layerCount:)` keeps zoom within it.
-        static let inkByteLimit = 96 * 1024 * 1024
+        ///
+        /// The app's memory limit differs by watch model and watchOS version, so the
+        /// budget is a share of what this device leaves the app, at most 96 MB. It is
+        /// fixed at the first render: a budget following live usage would change the
+        /// raster scale, and every scale change replays all layers.
+        static let inkByteLimit: Int = {
+            let ceiling = 96 * 1024 * 1024, minimum = 24 * 1024 * 1024
+            #if targetEnvironment(simulator)
+            // The Simulator enforces no per-app limit and reports 0.
+            return ceiling
+            #else
+            // On a watch 0 means the limit is already reached: keep the minimum.
+            let available = os_proc_available_memory()
+            return min(ceiling, max(minimum, Int(Double(available) * 0.35)))
+            #endif
+        }()
         private var inkAccess: [UUID: UInt64] = [:]
         private var inkClock: UInt64 = 0
 
