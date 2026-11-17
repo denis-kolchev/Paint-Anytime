@@ -332,8 +332,14 @@ final class CanvasController: ObservableObject {
     }
 
     func markSaved() {
+        markSaved(document)
+    }
+
+    /// Marks a snapshot taken before a background save; edits made while it was
+    /// writing stay unsaved.
+    func markSaved(_ snapshot: CanvasDocument) {
         objectWillChange.send()
-        savedDocument = document
+        savedDocument = snapshot
     }
 
     func clear() {

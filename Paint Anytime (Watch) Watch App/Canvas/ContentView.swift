@@ -96,7 +96,7 @@ struct ContentView: View {
         .overlay {
             // The canvas hides the system clock, so the countdown takes its place:
             // centered at the clock's height.
-            if autosaveEnabled, showsAutosaveTimer, isActive, scenePhase == .active, !autosave.showsProgress,
+            if autosaveEnabled, showsAutosaveTimer, isActive, scenePhase == .active,
                menuOnboarding.tutorialFolder == nil,
                !showsGallery, !showsAppSettings, !showsToolSettings, !showsLayers,
                !showsSampledPalette, quickSettings == nil,
@@ -323,7 +323,7 @@ struct ContentView: View {
             guard isActive, let request = launchRequest else { return }
             await openDeepLink(request)
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { oldPhase, phase in
             if phase != .active {
                 showsContentActions = false
                 if !showsAppSettings && session.savedDrawing == nil && session.pendingCanvasAction == nil {
@@ -331,20 +331,12 @@ struct ContentView: View {
                 }
                 controller.cancelStroke()
                 controller.flushStylePreferences()
+                if oldPhase == .active { autosaveOnWristDown() }
             }
         }
         .task(id: autosaveTaskID) {
             await runAutosave()
         }
-        .disabled(autosave.showsProgress)
-        .overlay {
-            if autosave.showsProgress {
-                AutosaveProgressView(completed: autosave.completed)
-                    .ignoresSafeArea()
-                    .transition(.opacity)
-            }
-        }
-        .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.22), value: autosave.showsProgress)
     }
 
     private var autosaveConfigurationID: String {
@@ -368,17 +360,35 @@ struct ContentView: View {
                 return true
             },
             save: {
-                let previousNotice = session.autosaveNoticeID
-                session.saveDrawing(size: canvasSize, scale: displayScale, automatically: true)
-                return session.autosaveNoticeID != previousNotice
+                await session.autosaveQuietly(size: canvasSize, scale: displayScale)
             })
+    }
+
+    /// Wrist-down or leaving the app: write unsaved changes right away instead of
+    /// waiting for the countdown, in case watchOS ends the app in the background.
+    /// Open menus do not matter here; only states that alter the document do.
+    private func autosaveOnWristDown() {
+        guard autosaveEnabled, isActive, menuOnboarding.tutorialFolder == nil,
+              !blocksAutosaveSnapshot, session.canAutosave, controller.hasUnsavedChanges else { return }
+        let size = canvasSize
+        let scale = displayScale
+        Task {
+            if await session.autosaveQuietly(size: size, scale: scale, onlyIfChanged: true) {
+                autosave.restartCountdown()
+            }
+        }
     }
 
     /// Interaction and presentations an autosave waits for.
     private var isBusyForAutosave: Bool {
-        controller.activeStroke != nil || lasso.isActive || lasso.isPreparing
-            || showsGallery || showsAppSettings || showsLayers || showsToolSettings
-            || showsSampledPalette || quickSettings != nil || isMovingCanvas || showsReferenceFullscreen
+        blocksAutosaveSnapshot || showsGallery || showsAppSettings || showsLayers || showsToolSettings
+            || showsSampledPalette || quickSettings != nil || showsReferenceFullscreen
+    }
+
+    /// States in which the document is mid-change (a stroke, a lasso selection or a move)
+    /// or a canvas transition is pending, so a snapshot would not be the user's picture.
+    private var blocksAutosaveSnapshot: Bool {
+        controller.activeStroke != nil || lasso.isActive || lasso.isPreparing || isMovingCanvas
             || session.isPreparingCanvas || session.isSavingDrawing || session.pendingCanvasAction != nil
             || session.savedDrawing != nil || session.exportError != nil
     }
@@ -469,7 +479,7 @@ struct ContentView: View {
                               onStartLasso: { startLasso() }, onFinishLasso: finishLasso,
                               onMoveSelectionLayer: moveSelectionLayer,
                               onClearLayerMoveName: { withAnimation(.easeOut(duration: 0.2)) { layerMoveName = nil } })
-                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || autosave.showsProgress))
+                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))
                 .zIndex(3)
 
             if let customLayout, isActive, !showsGallery, !showsToolSettings,
@@ -479,7 +489,7 @@ struct ContentView: View {
                                      size: geometry.size,
                                      canvasOrigin: geometry.frame(in: .global).origin,
                                      onAction: performQuickAction)
-                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil || autosave.showsProgress))
+                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
                     .zIndex(3)
             }
 
@@ -489,8 +499,7 @@ struct ContentView: View {
                                      isVisible: isActive && menuOnboarding.tutorialFolder == nil
                                         && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive,
                                      onOpen: openReference)
-                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil
-                                                      || autosave.showsProgress))
+                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
                 .zIndex(2.5)
 
             if showsGallery || prewarmsGallery {
@@ -606,8 +615,8 @@ struct ContentView: View {
             showsMorphToolbar: showsMorphToolbar,
             showsContentActions: showsContentActions,
             showsSelectionActions: showsSelectionActions,
-            hidesMenuControls: showsAppSettings || autosave.showsProgress,
-            hidesCustomAnchors: showsAppSettings || quickSettings != nil || autosave.showsProgress,
+            hidesMenuControls: showsAppSettings,
+            hidesCustomAnchors: showsAppSettings || quickSettings != nil,
             reduceMotion: reduceMotion,
             showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
             isEyedropperActive: $isEyedropperActive, hasEyedropperSession: $hasEyedropperSession,

@@ -121,6 +121,14 @@ enum CanvasExportStore {
     static func save(document: CanvasDocument, imageData: Data, name: String,
                      in folder: URL? = nil) throws -> CanvasExport {
         let url = try (folder ?? directory()).appendingPathComponent(name).appendingPathExtension("png")
+        try write(document: document, imageData: imageData, to: url)
+        if folder == nil { try? refreshWidgets() }
+        return CanvasExport(url: url)
+    }
+
+    /// Writes the document and its PNG; safe off the main thread. Callers on the
+    /// default folder refresh widgets afterwards on the main actor.
+    nonisolated static func write(document: CanvasDocument, imageData: Data, to url: URL) throws {
         let documentData = try JSONEncoder().encode(document)
         let documentURL = url.deletingPathExtension().appendingPathExtension("json")
         let previousDocument = FileManager.default.fileExists(atPath: documentURL.path)
@@ -135,8 +143,6 @@ enum CanvasExportStore {
             }
             throw error
         }
-        if folder == nil { try? refreshWidgets() }
-        return CanvasExport(url: url)
     }
 }
 

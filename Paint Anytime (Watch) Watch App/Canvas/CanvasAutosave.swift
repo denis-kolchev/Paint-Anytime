@@ -1,15 +1,14 @@
 import Foundation
 import Observation
 
-/// The autosave countdown and its save-with-progress cycle. The canvas screen
-/// supplies its state through closures, read again after every suspension.
+/// The autosave countdown and its quiet save cycle. The canvas screen supplies its
+/// state through closures, read again after every suspension. Saving does not block
+/// the canvas: the session renders and writes in the background.
 @MainActor
 @Observable
 final class CanvasAutosave {
     /// The countdown shown in place of the hidden clock; nil while not counting.
     var timerRange: ClosedRange<Date>?
-    var showsProgress = false
-    var completed = false
     @ObservationIgnored private var scheduleID: String?
 
     /// - Parameters:
@@ -20,7 +19,7 @@ final class CanvasAutosave {
     ///   - save: Saves the drawing; returns true once a save completed.
     func run(configurationID: String, seconds: Int,
              canRun: () -> Bool, isBusy: () -> Bool,
-             prepare: () -> Bool, save: () -> Bool) async {
+             prepare: () -> Bool, save: () async -> Bool) async {
         guard !Task.isCancelled else { return }
         if scheduleID != configurationID {
             scheduleID = configurationID
@@ -48,7 +47,12 @@ final class CanvasAutosave {
                 }
                 try Task.checkCancellation()
                 guard canRun() else { return }
-                try await saveWithProgress(canRun: canRun, prepare: prepare, save: save)
+                guard prepare() else {
+                    timerRange = nil
+                    continue
+                }
+                // The write is not tied to this task, so wrist-down does not interrupt it.
+                _ = await save()
                 timerRange = nil
             }
         } catch {
@@ -56,23 +60,8 @@ final class CanvasAutosave {
         }
     }
 
-    private func saveWithProgress(canRun: () -> Bool, prepare: () -> Bool,
-                                  save: () -> Bool) async throws {
-        guard prepare() else { return }
-        completed = false
-        showsProgress = true
-        defer {
-            // Retain the checkmark while the overlay fades out.
-            showsProgress = false
-        }
-        // Present the overlay before the existing synchronous exporter starts.
-        try await Task.sleep(for: .milliseconds(250))
-        try Task.checkCancellation()
-        guard canRun() else { return }
-        guard save() else { return }
-        // The save is complete even if sleep cancels the checkmark animation.
+    /// A save outside the countdown (on wrist-down) restarts it on activation.
+    func restartCountdown() {
         timerRange = nil
-        completed = true
-        try await Task.sleep(for: .milliseconds(300))
     }
 }

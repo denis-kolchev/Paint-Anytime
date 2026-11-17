@@ -12,32 +12,76 @@ enum CanvasExporter {
     @MainActor
     static func save(document: CanvasDocument, size: CGSize, scale: CGFloat, in folder: URL? = nil,
                      replacing previous: CanvasExport? = nil) throws -> CanvasExport {
+        let now = Date()
+        let name = previous.map(fileStem(of:)) ?? newFileStem(at: now)
+        let encoded = try encode(document: document, size: size, scale: scale, name: name,
+                                 info: .current(for: document), at: now)
+        let export = try CanvasExportStore.save(document: encoded.document,
+                                                imageData: encoded.png, name: name, in: folder)
+        GalleryPreviewStore.shared.store(image: encoded.image, originalSize: encoded.document.canvasSize ?? size,
+                                         for: export.url)
+        return export
+    }
+
+    nonisolated static func fileStem(of export: CanvasExport) -> String {
+        export.url.deletingPathExtension().lastPathComponent
+    }
+
+    nonisolated static func newFileStem(at date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss_SSS"
+        return "Paint-Anytime_\(formatter.string(from: date))_\(UUID().uuidString.prefix(8))"
+    }
+
+    /// App and device details for the PNG description, read on the main actor.
+    nonisolated struct ExportInfo: Sendable {
+        let version: String
+        let build: String
+        let deviceModel: String
+        let systemVersion: String
+        /// Localized instrument titles, which need the main actor.
+        let instruments: [String]
+
+        @MainActor static func current(for document: CanvasDocument) -> Self {
+            let device = WKInterfaceDevice.current()
+            return Self(
+                version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
+                build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
+                deviceModel: device.model, systemVersion: device.systemVersion,
+                instruments: Array(Set(document.strokes.map { $0.style.instrument.title })).sorted())
+        }
+    }
+
+    nonisolated struct EncodedDrawing: @unchecked Sendable {
+        /// The document as stored, with its canvas size.
+        let document: CanvasDocument
+        let png: Data
+        let image: CGImage
+    }
+
+    /// Renders and encodes the drawing; safe off the main thread.
+    nonisolated static func encode(document: CanvasDocument, size: CGSize, scale: CGFloat, name: String,
+                                   info: ExportInfo, at now: Date) throws -> EncodedDrawing {
         let size = document.size(fallback: size)
         let strokes = document.strokes
         guard size.width > 0, size.height > 0 else { throw ExportError.render }
         // Export exactly the same compositing as the live canvas, including long marker paths.
         guard let image = WatchBitmapRenderer.render(document: document, size: size, scale: scale)
         else { throw ExportError.render }
-        let now = Date()
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "yyyy-MM-dd_HH-mm-ss_SSS"
-        let name = previous?.url.deletingPathExtension().lastPathComponent
-            ?? "Paint-Anytime_\(formatter.string(from: now))_\(UUID().uuidString.prefix(8))"
-        let device = WKInterfaceDevice.current()
         let details: [String: Any] = [
             "application": "Paint Anytime",
-            "version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
-            "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "",
+            "version": info.version,
+            "build": info.build,
             "createdAt": ISO8601DateFormatter().string(from: now),
             "timeZone": TimeZone.current.identifier,
             "utcOffsetSeconds": TimeZone.current.secondsFromGMT(for: now),
-            "deviceModel": device.model,
-            "systemVersion": device.systemVersion,
+            "deviceModel": info.deviceModel,
+            "systemVersion": info.systemVersion,
             "pixelWidth": image.width, "pixelHeight": image.height,
             "canvasWidthPoints": size.width, "canvasHeightPoints": size.height,
             "scale": scale, "strokeCount": strokes.count,
-            "instruments": Array(Set(strokes.map { $0.style.instrument.title })).sorted()
+            "instruments": info.instruments
         ]
         let metadata = try JSONSerialization.data(withJSONObject: details, options: [.sortedKeys])
         let properties: [CFString: Any] = [
@@ -57,10 +101,7 @@ enum CanvasExporter {
         guard CGImageDestinationFinalize(destination) else { throw ExportError.encoding }
         var savedDocument = document
         savedDocument.canvasSize = size
-        let export = try CanvasExportStore.save(document: savedDocument,
-                                                imageData: data as Data, name: name, in: folder)
-        GalleryPreviewStore.shared.store(image: image, originalSize: size, for: export.url)
-        return export
+        return EncodedDrawing(document: savedDocument, png: data as Data, image: image)
     }
 
     /// A PNG of the current canvas for sharing, kept out of the gallery.
