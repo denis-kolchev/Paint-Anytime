@@ -9,6 +9,8 @@ import Observation
 final class CanvasAutosave {
     /// The countdown shown in place of the hidden clock; nil while not counting.
     var timerRange: ClosedRange<Date>?
+    /// A countdown save is writing; the countdown shows a loading wheel.
+    private(set) var isSaving = false
     @ObservationIgnored private var scheduleID: String?
 
     /// - Parameters:
@@ -52,7 +54,12 @@ final class CanvasAutosave {
                     continue
                 }
                 // The write is not tied to this task, so wrist-down does not interrupt it.
+                // Keep the wheel long enough to read as a save rather than a flicker.
+                let shownUntil = ContinuousClock.now.advanced(by: .milliseconds(700))
+                isSaving = true
                 _ = await save()
+                try? await Task.sleep(until: shownUntil, clock: .continuous)
+                isSaving = false
                 timerRange = nil
             }
         } catch {

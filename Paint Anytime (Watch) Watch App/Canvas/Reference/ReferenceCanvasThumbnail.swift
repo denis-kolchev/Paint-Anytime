@@ -13,7 +13,6 @@ struct ReferenceCanvasThumbnail: View {
     let isVisible: Bool
     let onOpen: () -> Void
     @Environment(\.layoutDirection) private var layoutDirection
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let longSide: CGFloat = 46
     static let shortSideMinimum: CGFloat = 24
@@ -57,14 +56,15 @@ struct ReferenceCanvasThumbnail: View {
                 .accessibilityLabel(L10n.text("Reference image"))
                 .trackCanvasControl(.reference, frames: frames)
                 .position(x: frame.midX, y: frame.midY)
-                .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
+                // Appears and disappears instantly, without a transition.
+                .transition(.identity)
                 // A hidden thumbnail must not keep its no-draw zone on the canvas.
                 .onDisappear { regions.frames[.reference] = nil }
             }
         }
         .frame(width: size.width, height: size.height)
-        .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.2), value: isVisible)
-        .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.2), value: store.isEnabled)
+        // Ignore animations inherited from the screen's state changes (gallery, menus).
+        .transaction { $0.animation = nil }
     }
 
     /// The thumbnail's rectangle in canvas coordinates: the image's aspect within

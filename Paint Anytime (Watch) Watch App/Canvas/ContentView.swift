@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct ContentView: View {
-    /// Center of the system clock text, in points from the top of the screen.
-    private static let clockCenterY: CGFloat = 27
     @Binding var launchRequest: WatchLaunchRequest?
     var isActive = true
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
@@ -94,22 +92,15 @@ struct ContentView: View {
         // Establish full-screen bounds before applying any presentation effects.
         .ignoresSafeArea()
         .overlay {
-            // The canvas hides the system clock, so the countdown takes its place:
-            // centered at the clock's height.
+            // The canvas hides the system clock, so the countdown takes its place,
+            // level with the top buttons. A separate view reads the countdown and the
+            // anchors, so neither invalidates this screen. Behind the menu and quick
+            // settings it stays mounted and fades with the canvas controls.
             if autosaveEnabled, showsAutosaveTimer, isActive, scenePhase == .active,
                menuOnboarding.tutorialFolder == nil,
-               !showsGallery, !showsAppSettings, !showsToolSettings, !showsLayers,
-               !showsSampledPalette, quickSettings == nil,
-               let autosaveTimerRange = autosave.timerRange {
-                GeometryReader { overlay in
-                    let frame = overlay.frame(in: .global)
-                    // Fixed screen height of the hidden clock's center (measured on Apple Watch
-                    // Ultra). Toolbar frames are not used: they differ in the free camera.
-                    AutosaveCountdownView(timerRange: autosaveTimerRange)
-                        .position(x: overlay.size.width / 2, y: Self.clockCenterY - frame.minY)
-                }
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+               !showsGallery, !showsToolSettings, !showsLayers, !showsSampledPalette {
+                AutosaveCountdownOverlay(autosave: autosave, regions: controlRegions)
+                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
             }
         }
         // Reinstall toolbar items when returning from onboarding so watchOS
@@ -354,7 +345,8 @@ struct ContentView: View {
             canRun: { autosaveEnabled && isActive && scenePhase == .active },
             isBusy: { isBusyForAutosave },
             prepare: {
-                guard controller.canClear else { return false }
+                // Nothing to save, or a save the session would refuse: no loading wheel.
+                guard controller.canClear, session.canAutosave else { return false }
                 // The autosave's own notice replaces this one; fade rather than cut it.
                 withAnimation(.easeOut(duration: 0.2)) { savedNoticeID = nil }
                 return true
