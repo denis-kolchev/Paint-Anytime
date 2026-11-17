@@ -102,9 +102,9 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
                            .chooseGroupIcon, .leaveIconPicker, .closeActionList, .saveCanvasLayout,
                            .drawPracticeLine, .openPracticeGroup, .toggleEraser, .eraseStroke])
         ]
-        // Adjust size frames the whole picture: the Crown shrinks the canvas, a drag places it.
+        // Canvas size frames the whole picture: the Crown shrinks the canvas, a drag places it.
         if includesAdjustSize {
-            lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize, .openAdjustSize,
+            lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize,
                                           .setCanvasSize, .moveCanvasFrame, .applyCanvasSize]))
         }
         // A last autosave, then the gallery shows the saved pictures; the tutorial gallery

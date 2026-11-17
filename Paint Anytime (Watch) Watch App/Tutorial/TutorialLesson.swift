@@ -3,7 +3,8 @@ import Foundation
 enum TutorialLesson {
     static func compactInstruction(for step: TutorialStep) -> String {
         switch step {
-        case .inactive: return ""
+        // openAdjustSize is no longer taught; Canvas size opens the editor directly.
+        case .inactive, .openAdjustSize: return ""
         case .firstStrokes: return L10n.text("Touch to draw.")
         case .holdCircle: return L10n.text("Draw a circle and hold at the end.")
         case .zoomCanvas: return L10n.text("Turn the Digital Crown to zoom.")
@@ -65,7 +66,6 @@ enum TutorialLesson {
         case .choosePerspective: return L10n.text("Tap 1 to show the guides.")
         case .perspectiveStroke: return L10n.text("Start a stroke on a guide. It follows the line.")
         case .openCanvasSize: return L10n.text("Tap Canvas size.")
-        case .openAdjustSize: return L10n.text("Tap Adjust size.")
         case .setCanvasSize: return L10n.text("Turn the Crown to make the canvas smaller.")
         case .moveCanvasFrame: return L10n.text("Drag the frame to move it.")
         case .setRayCount: return L10n.text("Turn the Crown to change the number of rays.")

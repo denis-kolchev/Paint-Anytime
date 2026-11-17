@@ -22,7 +22,7 @@ struct CanvasQuickSettingsView: View {
         switch action {
         case .language: AppLanguageSelectionView()
         case .canvasSize:
-            WatchCanvasSizeView(controller: controller, viewportSize: viewportSize, displayScale: displayScale)
+            WatchCanvasAdjustmentView(controller: controller, viewportSize: viewportSize, displayScale: displayScale)
         case .toolSynchronization: ToolSynchronizationView(controller: controller)
         case .visiblePalettes: PaletteVisibilitySettingsView(controller: controller)
         case .blending: ColorBlendingSelectionView(controller: controller)

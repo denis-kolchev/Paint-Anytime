@@ -7,7 +7,7 @@ final class TutorialPlayerController: ObservableObject {
     /// Canvas setting pages are the tutorial's own, like the layer pages: the menu's
     /// NavigationStack is nested in the host's, so its links would push over the whole lesson.
     enum Page {
-        case canvas, tools, menu, gallery, layers, layerSettings, canvasSettings, canvasSize, perspective, adjustSize
+        case canvas, tools, menu, gallery, layers, layerSettings, canvasSettings, canvasSize, perspective
         case drawingSettings, colorBlending, canvasEditor, autosave
     }
 
@@ -209,11 +209,6 @@ final class TutorialPlayerController: ObservableObject {
         page = .canvasSize
         tutorial.record(.openedCanvasSize)
     }
-    func openAdjustSize() {
-        guard page == .canvasSize, tutorial.permits([.openAdjustSize]) else { return }
-        page = .adjustSize
-        tutorial.record(.openedAdjustSize)
-    }
     func openAutosave() {
         guard page == .menu, tutorial.permits([.openAutosave]) else { return }
         page = .autosave
@@ -268,7 +263,7 @@ final class TutorialPlayerController: ObservableObject {
     /// The canvas size lesson leaves its page once ✓ applies the size: the next lesson's autosave
     /// begins on the resized canvas. The other lessons return through Back instead.
     func returnToCanvasAfterSetting() {
-        guard [.menu, .canvasSettings, .canvasSize, .adjustSize].contains(page),
+        guard [.menu, .canvasSettings, .canvasSize].contains(page),
               tutorial.step == .autosaveDrawing else { return }
         page = .canvas
     }

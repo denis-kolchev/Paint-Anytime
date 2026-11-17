@@ -406,8 +406,8 @@ struct CanvasSettingsView: View {
                 }
             } else {
                 NavigationLink {
-                    WatchCanvasSizeView(controller: controller, viewportSize: viewportSize,
-                                        displayScale: displayScale)
+                    WatchCanvasAdjustmentView(controller: controller, viewportSize: viewportSize,
+                                              displayScale: displayScale)
                         .onAppear { controller.cancelStroke() }
                 } label: {
                     Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")

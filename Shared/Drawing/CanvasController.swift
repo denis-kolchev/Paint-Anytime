@@ -161,6 +161,8 @@ final class CanvasController: ObservableObject {
     }
 
     /// Geometry stays editable; the complete document participates in history.
+    /// The canvas turns clockwise by `quarterTurns` first; `origin` and resampling then
+    /// apply to the turned canvas, so one change can rotate, resize and place the drawing.
     func adjustCanvas(from oldSize: CGSize, to newSize: CGSize, resample: Bool,
                       origin: CGPoint = .zero, quarterTurns: Int = 0, resolution: Double? = nil) {
         guard oldSize.width > 0, oldSize.height > 0,
@@ -168,16 +170,18 @@ final class CanvasController: ObservableObject {
               newSize.width > 0, newSize.height > 0, newSize.width <= 2048, newSize.height <= 2048,
               resolution == nil || (resolution!.isFinite && resolution! > 0) else { return }
         let turns = ((quarterTurns % 4) + 4) % 4
-        let sx = Float(resample ? newSize.width / oldSize.width : 1)
-        let sy = Float(resample ? newSize.height / oldSize.height : 1)
+        let turnedSize = turns % 2 == 0 ? oldSize : CGSize(width: oldSize.height, height: oldSize.width)
+        let sx = Float(resample ? newSize.width / turnedSize.width : 1)
+        let sy = Float(resample ? newSize.height / turnedSize.height : 1)
         func transform(_ point: SIMD2<Float>) -> SIMD2<Float> {
-            let p = point - SIMD2(Float(origin.x), Float(origin.y))
+            let turned: SIMD2<Float>
             switch turns {
-            case 1: return SIMD2(Float(oldSize.height) - p.y, p.x)
-            case 2: return SIMD2(Float(oldSize.width) - p.x, Float(oldSize.height) - p.y)
-            case 3: return SIMD2(p.y, Float(oldSize.width) - p.x)
-            default: return p * SIMD2(sx, sy)
+            case 1: turned = SIMD2(Float(oldSize.height) - point.y, point.x)
+            case 2: turned = SIMD2(Float(oldSize.width) - point.x, Float(oldSize.height) - point.y)
+            case 3: turned = SIMD2(point.y, Float(oldSize.width) - point.x)
+            default: turned = point
             }
+            return (turned - SIMD2(Float(origin.x), Float(origin.y))) * SIMD2(sx, sy)
         }
         editLayers { document in
             document.canvasSize = newSize

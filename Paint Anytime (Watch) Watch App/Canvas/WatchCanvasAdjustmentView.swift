@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Draft values stay local until Apply, so dismissing the sheet leaves the drawing intact.
+/// Canvas size: one page that turns, resizes and places the drawing.
+/// Draft values stay local until Apply, so leaving the page keeps the drawing intact.
 struct WatchCanvasAdjustmentView: View {
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
@@ -19,10 +20,9 @@ struct WatchCanvasAdjustmentView: View {
     @State private var dragStartPosition: CGPoint?
     /// Set while the preview itself is being dragged, so the page-switch swipe below yields.
     @State private var isDraggingFrame = false
-    /// Unbounded quarter-turn count so the preview always animates the short way.
+    /// Unbounded quarter-turn count, clockwise, so the preview always animates the short way.
     @State private var rotationSteps = 0
     private var turns: Int { ((rotationSteps % 4) + 4) % 4 }
-    let mode: Int
     @ObservedObject var tutorial = TutorialSession.inactive
     /// The tutorial hosts this page itself, so Apply must not dismiss its presentation.
     var onApplied: (() -> Void)? = nil
@@ -39,28 +39,26 @@ struct WatchCanvasAdjustmentView: View {
     /// was adjusted from, or the whole page re-laid out around the new, smaller canvas.
     @State private var appliedOriginal: CGSize?
     private var original: CGSize { appliedOriginal ?? controller.document.size(fallback: viewportSize) }
-    private var ratio: Double { original.width / original.height }
+    /// The canvas after the chosen turns; size and position apply to it.
+    private var turned: CGSize {
+        turns % 2 == 0 ? original : CGSize(width: original.height, height: original.width)
+    }
+    private var ratio: Double { turned.width / turned.height }
     private var maximumPixels: Double { 1024 }
     private var validSize: Bool {
         width >= 1 && height >= 1 && width <= maximumPixels && height <= maximumPixels
     }
     private var targetSize: CGSize { CGSize(width: width / displayScale, height: height / displayScale) }
-    /// The new canvas's top-left corner in the old canvas's points; negative where it grows.
+    /// The new canvas's top-left corner in the turned canvas's points; negative where it grows.
     private var targetOrigin: CGPoint {
         guard !resample else { return .zero }
-        return CGPoint(x: (original.width - targetSize.width) * positionX / 100,
-                       y: (original.height - targetSize.height) * positionY / 100)
+        return CGPoint(x: (turned.width - targetSize.width) * positionX / 100,
+                       y: (turned.height - targetSize.height) * positionY / 100)
     }
 
     var body: some View {
         GeometryReader { geometry in
-            Group {
-                if mode == 0 {
-                    resizeEditor(height: geometry.size.height)
-                } else {
-                    rotateEditor(height: geometry.size.height)
-                }
-            }
+            editor(height: geometry.size.height)
         }
         // The value row and carousel stay above the tutorial's lesson card.
         .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 0)
@@ -84,12 +82,10 @@ struct WatchCanvasAdjustmentView: View {
                         .tutorialHint(tutorial, steps: [.applyCanvasSize])
                 }
                 .watchToolbarButtonStyle()
-                .disabled((mode == 0 && !validSize) || !tutorial.permits([.applyCanvasSize]))
+                .disabled(!validSize || !tutorial.permits([.applyCanvasSize]))
                 .accessibilityLabel(L10n.text("Apply"))
-                .accessibilityHint(mode == 0 && !validSize
-                    ? L10n.text("Choose dimensions from 1 to 1024 pixels.") : "")
+                .accessibilityHint(!validSize ? L10n.text("Choose dimensions from 1 to 1024 pixels.") : "")
             }
-
         }
         .ignoresSafeArea()
         .task {
@@ -100,7 +96,7 @@ struct WatchCanvasAdjustmentView: View {
             width = (original.width * displayScale).rounded()
             height = (original.height * displayScale).rounded()
             resolution = controller.document.resolution
-            if mode == 0 && tutorial.isActive {
+            if tutorial.isActive {
                 // The tour keeps the drawing's size and starts slightly smaller, so the
                 // frame can always move and the Crown only shrinks it further.
                 resample = false
@@ -108,43 +104,57 @@ struct WatchCanvasAdjustmentView: View {
                 width = max(1, (original.width * displayScale * 0.9).rounded())
                 height = max(1, (original.height * displayScale * 0.9).rounded())
             }
-            focusedAdjustment = mode == 0 ? "Resize" : nil
+            focusedAdjustment = "Resize"
         }
     }
 
-    private func canvasPreview(mode: Int) -> some View {
+    /// The drawing at the chosen turn, laid out in `size`, the turned frame it fills.
+    private func turnedImage(_ preview: CGImage, size: CGSize, scale: CGFloat) -> some View {
+        let unturned = turns % 2 == 0 ? size : CGSize(width: size.height, height: size.width)
+        return Image(decorative: preview, scale: 1).resizable()
+            .frame(width: unturned.width * scale, height: unturned.height * scale)
+            .rotationEffect(.degrees(Double(rotationSteps * 90)))
+            .frame(width: size.width * scale, height: size.height * scale)
+    }
+
+    private var canvasPreview: some View {
         GeometryReader { geometry in
-            let target = mode == 0
-                ? targetSize
-                : turns % 2 != 0 ? CGSize(width: original.height, height: original.width) : original
-            let previewBounds = mode == 0
-                ? CGSize(width: max(original.width, target.width), height: max(original.height, target.height))
-                : target
-            let scale = min(geometry.size.width / max(1, previewBounds.width),
-                            geometry.size.height / max(1, previewBounds.height))
+            let target = targetSize
+            let bounds = CGSize(width: max(turned.width, target.width), height: max(turned.height, target.height))
+            let scale = min(geometry.size.width / max(1, bounds.width),
+                            geometry.size.height / max(1, bounds.height))
             ZStack {
-                if mode == 0 && !resample {
-                    positionedPreview(target: target, bounds: previewBounds, scale: scale)
-                } else {
-                    // Rotate draws the bare image: the frame swaps its aspect while the
-                    // image turns, so a background, clip or border would show mid-animation.
-                    ZStack(alignment: .topLeading) {
-                        Rectangle().fill(.gray.opacity(mode == 2 ? 0 : 0.3))
-                        if let preview {
-                            Image(decorative: preview, scale: 1).resizable()
-                                .frame(width: (mode == 0 ? target.width : original.width) * scale,
-                                       height: (mode == 0 ? target.height : original.height) * scale)
-                                .rotationEffect(.degrees(mode == 2 ? Double(rotationSteps * 90) : 0))
-                                .frame(width: target.width * scale, height: target.height * scale)
-                        }
+                if resample {
+                    ZStack {
+                        Rectangle().fill(.gray.opacity(0.3))
+                        if let preview { turnedImage(preview, size: target, scale: scale) }
                     }
                     .frame(width: target.width * scale, height: target.height * scale)
-                    .modifier(PreviewClip(isEnabled: mode != 2))
-                    .overlay(Rectangle().stroke(.white.opacity(mode == 2 ? 0 : 0.5), lineWidth: 0.5))
+                    .overlay(Rectangle().stroke(.white.opacity(0.5), lineWidth: 0.5))
+                    .overlay { sizeLabel }
+                } else {
+                    positionedPreview(target: target, bounds: bounds, scale: scale)
                 }
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.text("Canvas size"))
+        .accessibilityValue(Text(verbatim: "\(Int(width)) × \(Int(height)) px, \(Int(resolution)) DPI"))
+    }
+
+    /// The new size, centred on the canvas it describes.
+    private var sizeLabel: some View {
+        VStack(spacing: 0) {
+            Text(verbatim: "\(Int(width)) × \(Int(height)) px")
+            Text(verbatim: "\(Int(resolution)) DPI")
+        }
+        .font(.system(size: 11, weight: .semibold)).monospacedDigit()
+        .foregroundStyle(validSize ? Color.white : .orange)
+        .lineLimit(1)
+        .fixedSize()
+        .padding(.horizontal, 5).padding(.vertical, 2)
+        .background(.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 5))
+        .allowsHitTesting(false)
     }
 
     /// Without resampling the whole drawing stays visible, dimmed where the new canvas
@@ -155,26 +165,27 @@ struct WatchCanvasAdjustmentView: View {
         let image = CGPoint(x: -min(0, origin.x), y: -min(0, origin.y))
         let canvas = CGPoint(x: origin.x + image.x, y: origin.y + image.y)
         // Room the drawing and the canvas can move against each other, in canvas points.
-        let roomX = abs(original.width - target.width)
-        let roomY = abs(original.height - target.height)
+        let roomX = abs(turned.width - target.width)
+        let roomY = abs(turned.height - target.height)
         return ZStack(alignment: .topLeading) {
             if let preview {
-                Image(decorative: preview, scale: 1).resizable()
-                    .frame(width: original.width * scale, height: original.height * scale)
+                turnedImage(preview, size: turned, scale: scale)
                     .opacity(0.35)
                     .offset(x: image.x * scale, y: image.y * scale)
             }
             ZStack(alignment: .topLeading) {
                 Rectangle().fill(.gray.opacity(0.3))
                 if let preview {
-                    Image(decorative: preview, scale: 1).resizable()
-                        .frame(width: original.width * scale, height: original.height * scale)
+                    turnedImage(preview, size: turned, scale: scale)
                         .offset(x: (image.x - canvas.x) * scale, y: (image.y - canvas.y) * scale)
                 }
             }
             .frame(width: target.width * scale, height: target.height * scale, alignment: .topLeading)
             .clipped()
             .overlay(Rectangle().stroke(.green, lineWidth: 1.5))
+            .overlay {
+                if !(tutorial.isActive && tutorial.step == .moveCanvasFrame) { sizeLabel }
+            }
             .offset(x: canvas.x * scale, y: canvas.y * scale)
             if tutorial.isActive && tutorial.step == .moveCanvasFrame {
                 // From the frame's centre, a short way inside the preview.
@@ -209,71 +220,28 @@ struct WatchCanvasAdjustmentView: View {
                     }
                 }
         )
-        .accessibilityHidden(true)
+    }
+
+    /// Turns the canvas a quarter to the left; width and height trade places, and so do
+    /// the position values, which follow the drawing's own edges.
+    private func rotateLeft() {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) {
+            rotationSteps -= 1
+            (width, height) = (height, width)
+            (positionX, positionY) = (positionY, 100 - positionX)
+        }
+        focusedAdjustment = "Resize"
     }
 
     private func applyChanges() {
-        switch mode {
-        case 0:
-            guard validSize else { return }
-            if tutorial.isActive { appliedOriginal = original }
-            controller.adjustCanvas(from: original, to: targetSize, resample: resample,
-                                    origin: targetOrigin, resolution: resolution)
-            // Apply completes the lesson even unchanged, so the tour never waits on this page.
-            tutorial.record(.resizedCanvas)
-        default:
-            if turns != 0 {
-                let size = turns % 2 == 0 ? original : CGSize(width: original.height, height: original.width)
-                controller.adjustCanvas(from: original, to: size, resample: false, quarterTurns: turns)
-            }
-        }
+        guard validSize else { return }
+        if tutorial.isActive { appliedOriginal = original }
+        controller.adjustCanvas(from: original, to: targetSize, resample: resample,
+                                origin: targetOrigin, quarterTurns: turns, resolution: resolution)
+        // Apply completes the lesson even unchanged, so the tour never waits on this page.
+        tutorial.record(.resizedCanvas)
         if let onApplied { onApplied() } else { dismiss() }
     }
-
-    // MARK: Rotate
-
-    private var rotatedPixelSize: String {
-        let size = turns % 2 == 0 ? original : CGSize(width: original.height, height: original.width)
-        return "\(Int(size.width * displayScale)) × \(Int(size.height * displayScale)) px · \(Int(resolution)) DPI"
-    }
-
-    /// Large centered preview with its caption, then two round glass buttons.
-    /// The preview gets every point the buttons do not need, so both portrait and
-    /// landscape canvases grow compared to the old list layout.
-    private func rotateEditor(height availableHeight: CGFloat) -> some View {
-        VStack(spacing: 6) {
-            canvasPreview(mode: 2)
-                .padding(.horizontal, 6)
-                .frame(maxHeight: .infinity)
-                .animation(reduceMotion ? nil : .snappy(duration: 0.25), value: rotationSteps)
-            Text(rotatedPixelSize)
-                .font(.system(size: 12, weight: .medium)).monospacedDigit()
-                .foregroundStyle(.white)
-                .lineLimit(1).minimumScaleFactor(0.7)
-            HStack(spacing: 24) {
-                rotateButton(step: -1, symbol: "arrow.counterclockwise", label: "90° ↺")
-                rotateButton(step: 1, symbol: "arrow.clockwise", label: "90° ↻")
-            }
-        }
-        .padding(.horizontal, 10)
-        .padding(.top, 40)
-        .padding(.bottom, 12)
-        .frame(height: availableHeight)
-    }
-
-    private func rotateButton(step: Int, symbol: String, label: String) -> some View {
-        Button { rotationSteps += step } label: {
-            Image(systemName: symbol)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 42, height: 42)
-                .modifier(RotateGlassCircle())
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: label))
-    }
-
 
     /// Horizontal and Vertical place the drawing only when it keeps its size.
     private var resizeTitles: [String] {
@@ -288,7 +256,7 @@ struct WatchCanvasAdjustmentView: View {
         case 0:
             // The tour starts at 90% and only shrinks further, so the frame can always move.
             if tutorial.isActive { return 10...90 }
-            let largest = max(original.width, original.height) * displayScale
+            let largest = max(turned.width, turned.height) * displayScale
             return 1...max(1, floor(maximumPixels / max(1, largest) * 100))
         case 3: return 18...300
         case 4, 5: return 0...100
@@ -313,21 +281,21 @@ struct WatchCanvasAdjustmentView: View {
                 // The first change completes the lesson's step; a page swipe never counts.
                 if value != resizePercent { tutorial.record(.changedCanvasSize) }
                 resizePercent = value
-                width = max(1, (original.width * displayScale * value / 100).rounded())
-                height = max(1, (original.height * displayScale * value / 100).rounded())
+                width = max(1, (turned.width * displayScale * value / 100).rounded())
+                height = max(1, (turned.height * displayScale * value / 100).rounded())
             case 1:
                 width = value
                 if proportional { height = max(1, (value / ratio).rounded()) }
-                resizePercent = width / max(1, original.width * displayScale) * 100
+                resizePercent = width / max(1, turned.width * displayScale) * 100
             case 2:
                 height = value
                 if proportional { width = max(1, (value * ratio).rounded()) }
-                resizePercent = height / max(1, original.height * displayScale) * 100
+                resizePercent = height / max(1, turned.height * displayScale) * 100
             case 3:
                 if resample {
                     width = max(1, (width * value / resolution).rounded())
                     height = max(1, (height * value / resolution).rounded())
-                    resizePercent = width / max(1, original.width * displayScale) * 100
+                    resizePercent = width / max(1, turned.width * displayScale) * 100
                 }
                 resolution = value
             case 4: positionX = value
@@ -345,31 +313,23 @@ struct WatchCanvasAdjustmentView: View {
         }
     }
 
-    private func resizeEditor(height availableHeight: CGFloat) -> some View {
+    private func editor(height availableHeight: CGFloat) -> some View {
         VStack(spacing: 4) {
             // Options stand beside the preview, as the presets do in perspective guides.
             HStack(spacing: 8) {
-                canvasPreview(mode: 0)
+                canvasPreview
+                // The tour teaches only the size and the frame; the options stay as set.
                 VStack(spacing: 0) {
-                    // Width, height and resolution, one per line above the options.
-                    VStack(spacing: 1) {
-                        Text(verbatim: "\(Int(width)) px")
-                        Text(verbatim: "\(Int(height)) px")
-                        Text(verbatim: "\(Int(resolution)) DPI")
-                    }
-                    .font(.caption2).monospacedDigit()
-                    .foregroundStyle(validSize ? Color.secondary : .orange)
-                    .lineLimit(1).minimumScaleFactor(0.6)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel(Text(verbatim: "\(Int(width)) × \(Int(height)) px, \(Int(resolution)) DPI"))
-                    // The tour teaches only the size and the frame; the options stay as set.
-                    resizeOption("Scale proportionally", symbol: "link", isSlashed: !proportional, value: $proportional)
-                        .disabled(tutorial.isActive)
+                    roundButton("Scale proportionally", symbol: "link", isOn: proportional,
+                                isSlashed: !proportional) { proportional.toggle() }
                         .frame(maxHeight: .infinity)
-                    resizeOption("Resample image", symbol: "arrow.up.left.and.arrow.down.right", value: $resample)
-                        .disabled(tutorial.isActive)
+                    roundButton("Resample image", symbol: "arrow.up.left.and.arrow.down.right",
+                                isOn: resample) { resample.toggle() }
+                        .frame(maxHeight: .infinity)
+                    roundButton("Rotate", symbol: "rotate.left", isOn: false, action: rotateLeft)
                         .frame(maxHeight: .infinity)
                 }
+                .disabled(tutorial.isActive)
                 // Clear the toolbar's checkmark, which overlaps the top of this column.
                 .padding(.top, 26)
                 .frame(width: 48)
@@ -454,11 +414,11 @@ struct WatchCanvasAdjustmentView: View {
         .accessibilityLabel(L10n.text(title) + (delta > 0 ? " +1" : " −1"))
     }
 
-    private func resizeOption(_ title: String, symbol: String, isSlashed: Bool = false,
-                              value: Binding<Bool>) -> some View {
-        // The same round toggle as the perspective guide presets.
-        let isOn = value.wrappedValue
-        return Button { value.wrappedValue.toggle() } label: {
+
+    /// The same round button as the perspective guide presets; filled while its option is on.
+    private func roundButton(_ title: String, symbol: String, isOn: Bool, isSlashed: Bool = false,
+                             action: @escaping () -> Void) -> some View {
+        Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .bold))
                 // SF Symbols has no "link.slash"; cut a gap and draw the slash like system slash symbols.
@@ -490,30 +450,6 @@ struct WatchCanvasAdjustmentView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(L10n.text(title))
-        .accessibilityAddTraits(value.wrappedValue ? .isSelected : [])
-    }
-
-}
-
-/// Liquid Glass circle on watchOS 26+; a material circle on earlier systems.
-private struct RotateGlassCircle: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(watchOS 26, *) {
-            content
-                .glassEffect(.regular.interactive(), in: Circle())
-                .environment(\.colorScheme, .dark)
-        } else {
-            content.background(.ultraThinMaterial, in: Circle())
-        }
-    }
-}
-
-/// Clips the preview to its canvas bounds except while rotating, where the
-/// turning image must not be cut by the interpolating frame.
-private struct PreviewClip: ViewModifier {
-    let isEnabled: Bool
-
-    func body(content: Content) -> some View {
-        if isEnabled { content.clipped() } else { content }
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }

@@ -326,12 +326,12 @@ struct TutorialChecks {
         if AppReleaseFeatures.current.showsCanvasSizeControls {
             for (step, event): (TutorialStep, TutorialProgress.Event) in [
                 (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),
-                (.openCanvasSize, .openedCanvasSize), (.openAdjustSize, .openedAdjustSize)
+                (.openCanvasSize, .openedCanvasSize)
             ] {
                 precondition(progress.step == step && progress.teachesAdjustSize && progress.record(event) == .advance)
                 progress.advance()
             }
-            // The first turn of the Crown trims, a drag moves the window, ✓ returns at once.
+            // The first turn of the Crown shrinks, a drag moves the frame, ✓ returns at once.
             precondition(progress.step == .setCanvasSize && progress.record(.resizedCanvas) == .none)
             precondition(progress.record(.changedCanvasSize) == .advance)
             progress.advance()

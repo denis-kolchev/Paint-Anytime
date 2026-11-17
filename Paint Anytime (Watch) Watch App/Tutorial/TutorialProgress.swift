@@ -17,6 +17,7 @@ enum TutorialStep: Int, CaseIterable {
     case history, saveDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
     case openCanvasSettings, openPerspective, choosePerspective, leavePerspective, leaveMenu, perspectiveStroke
+    // openAdjustSize is no longer taught: Canvas size opens its editor directly.
     case openCanvasSize, openAdjustSize, setCanvasSize, applyCanvasSize
     // Later additions: the ray count, moving the canvas frame, the way back out of the
     // blending pages, the user's own undo of the crossing line, the icon picker's Back,
@@ -69,7 +70,7 @@ struct TutorialProgress {
         case leftPerspective, leftMenu
         case openedCanvasEditor, resetEditorLayout, choseEditorSlot, groupedEditorActions, choseEditorActions
         case choseGroupIcon, savedCanvasLayout, openedPracticeGroup, toggledEraser, erased
-        case openedCanvasSize, openedAdjustSize, changedCanvasSize, resizedCanvas
+        case openedCanvasSize, changedCanvasSize, resizedCanvas
         case changedRayCount, movedCanvasFrame, leftColorBlending, leftDrawingSettings, undidMarkerLine
         case leftIconPicker, closedActionList, sawFavoritesWidget
         case startedSelection, cancelledSelection, selectedDrawings, deselectedDrawings, favoritedSelection
@@ -246,7 +247,6 @@ struct TutorialProgress {
             return .advance
         case (.openCanvasSettings, .openedCanvasSettings), (.openPerspective, .openedPerspective),
              (.perspectiveStroke, .drewAlongGuide), (.openCanvasSize, .openedCanvasSize),
-             (.openAdjustSize, .openedAdjustSize),
              (.startSelection, .startedSelection), (.selectDrawings, .selectedDrawings),
              (.favoriteSelection, .favoritedSelection), (.showFavoritesWidget, .sawFavoritesWidget): return .advance
         case (.openLasso, .openedLasso), (.selectLasso, .selectedLasso),
@@ -268,7 +268,7 @@ struct TutorialProgress {
     var visibleToolPages: Set<Int> { [0, 1, 2, 3, 4, 5, 6] }
     /// Lesson-wide, so menu rows stay installed while their pages are pushed.
     var teachesPerspective: Bool { step != .inactive && lessonSteps.contains(.openPerspective) }
-    var teachesAdjustSize: Bool { step != .inactive && lessonSteps.contains(.openAdjustSize) }
+    var teachesAdjustSize: Bool { step != .inactive && lessonSteps.contains(.applyCanvasSize) }
     var teachesBlending: Bool { step != .inactive && lessonSteps.contains(.openColorBlending) }
     var teachesCanvasEditor: Bool { step != .inactive && lessonSteps.contains(.openCanvasEditor) }
     var teachesGallerySelection: Bool { step != .inactive && lessonSteps.contains(.startSelection) }

@@ -392,7 +392,7 @@ struct TutorialPlayerView: View {
         // only starts below that bar when the safe area includes it. Restoring the inset with
         // padding inside the menu left the first row under the bar's blur.
         .ignoresSafeArea(.container, edges: [.menu, .layers, .layerSettings, .canvasSettings,
-                                             .canvasSize, .perspective, .adjustSize,
+                                             .canvasSize, .perspective,
                                              .drawingSettings, .colorBlending, .canvasEditor, .autosave].contains(page)
                          || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
@@ -717,9 +717,9 @@ struct TutorialPlayerView: View {
             .zIndex(1)
         }
         if page == .canvasSize {
-            WatchCanvasSizeView(controller: controller, viewportSize: paperSize(screen),
-                                displayScale: displayScale, tutorial: tutorial,
-                                onOpenAdjustSize: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openAdjustSize() } })
+            // Apply records the new size; the lesson then returns to the canvas itself.
+            WatchCanvasAdjustmentView(controller: controller, viewportSize: paperSize(screen),
+                                      displayScale: displayScale, tutorial: tutorial, onApplied: {})
             .background(Color.black.ignoresSafeArea())
             .transition(.opacity)
             .zIndex(1)
@@ -742,15 +742,6 @@ struct TutorialPlayerView: View {
         }
         if page == .colorBlending {
             ColorBlendingSelectionView(controller: controller, tutorial: tutorial)
-            .background(Color.black.ignoresSafeArea())
-            .transition(.opacity)
-            .zIndex(1)
-        }
-        if page == .adjustSize {
-            // Apply records the new size; the lesson then returns to the canvas itself.
-            WatchCanvasAdjustmentView(controller: controller, viewportSize: paperSize(screen),
-                                      displayScale: displayScale, mode: 0,
-                                      tutorial: tutorial, onApplied: {})
             .background(Color.black.ignoresSafeArea())
             .transition(.opacity)
             .zIndex(1)
@@ -895,7 +886,7 @@ struct TutorialPlayerView: View {
         switch page {
         case .canvas, .tools: false
         case .menu: menuReturnsOverBackdrop
-        case .gallery, .layers, .layerSettings, .canvasSettings, .canvasSize, .perspective, .adjustSize,
+        case .gallery, .layers, .layerSettings, .canvasSettings, .canvasSize, .perspective,
              .drawingSettings, .colorBlending, .canvasEditor, .autosave: true
         }
     }
