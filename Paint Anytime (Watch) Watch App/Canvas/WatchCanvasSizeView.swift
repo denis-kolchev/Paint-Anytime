@@ -5,28 +5,22 @@ struct WatchCanvasSizeView: View {
     let viewportSize: CGSize
     let displayScale: CGFloat
     @ObservedObject var tutorial = TutorialSession.inactive
-    /// The tutorial shows Crop as its own page; without it the row pushes the editor.
-    var onOpenCrop: (() -> Void)? = nil
+    /// The tutorial shows Adjust size as its own page; without it the row pushes the editor.
+    var onOpenAdjustSize: (() -> Void)? = nil
 
     var body: some View {
         List {
-            // The tutorial teaches Crop; the other adjustments stay visible but closed.
-            NavigationLink {
-                adjustment(mode: 0)
-            } label: {
-                Label(L10n.text("Adjust size"), systemImage: "arrow.up.left.and.arrow.down.right")
-            }
-            .disabled(tutorial.isActive)
-            if let onOpenCrop {
-                Button(action: onOpenCrop) {
-                    Label(L10n.text("Crop"), systemImage: "crop")
-                        .tutorialHint(tutorial, steps: [.openCrop])
+            // The tutorial teaches Adjust size; Rotate stays visible but closed.
+            if let onOpenAdjustSize {
+                Button(action: onOpenAdjustSize) {
+                    Label(L10n.text("Adjust size"), systemImage: "arrow.up.left.and.arrow.down.right")
+                        .tutorialHint(tutorial, steps: [.openAdjustSize])
                 }
             } else {
                 NavigationLink {
-                    adjustment(mode: 1)
+                    adjustment(mode: 0)
                 } label: {
-                    Label(L10n.text("Crop"), systemImage: "crop")
+                    Label(L10n.text("Adjust size"), systemImage: "arrow.up.left.and.arrow.down.right")
                 }
             }
             NavigationLink {
@@ -46,9 +40,7 @@ struct WatchCanvasSizeView: View {
                     titleKey: "Canvas size",
                     items: [
                         SettingsInformationItem(titleKey: "Adjust size",
-                            messageKey: "Change the canvas width and height, up to 1024 pixels. The drawing can scale with the canvas or keep its size."),
-                        SettingsInformationItem(titleKey: "Crop",
-                            messageKey: "Trim canvas edges. Hidden strokes remain editable."),
+                            messageKey: "Change the canvas width and height, up to 1024 pixels. The drawing can scale with the canvas or keep its size; without scaling, Horizontal and Vertical place it, and hidden strokes remain editable."),
                         SettingsInformationItem(titleKey: "Rotate",
                             messageKey: "Turn the whole canvas by 90° or 180°.")
                     ]

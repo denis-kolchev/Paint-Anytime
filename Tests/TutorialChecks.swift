@@ -38,11 +38,11 @@ struct TutorialChecks {
             precondition(!chapter.lessons.isEmpty)
             precondition(chapter.lessons.allSatisfy { !$0.steps.isEmpty && !$0.steps.contains(where: \.isResult) })
         }
-        // Canvas size arrives in 1.2, so its crop lesson follows the same release gate.
-        let teachesCrop: (AppReleaseFeatures) -> Bool = { features in
-            TutorialChapter.advanced.lessons(features: features).contains { $0.steps.contains(.applyCrop) }
+        // Canvas size arrives in 1.2, so its adjust size lesson follows the same release gate.
+        let teachesAdjustSize: (AppReleaseFeatures) -> Bool = { features in
+            TutorialChapter.advanced.lessons(features: features).contains { $0.steps.contains(.applyCanvasSize) }
         }
-        precondition(teachesCrop(AppReleaseFeatures(version: "1.2")) && !teachesCrop(AppReleaseFeatures(version: "1.1")))
+        precondition(teachesAdjustSize(AppReleaseFeatures(version: "1.2")) && !teachesAdjustSize(AppReleaseFeatures(version: "1.1")))
         var progress = TutorialProgress()
         progress.start()
         precondition(progress.chapter == .basic && progress.step == .firstStrokes)
@@ -166,7 +166,7 @@ struct TutorialChecks {
         progress.advance()
         precondition(progress.step == .leaveMenu && progress.record(.leftMenu) == .advance)
         progress.advance()
-        precondition(progress.step == .perspectiveStroke && !progress.teachesCrop)
+        precondition(progress.step == .perspectiveStroke && !progress.teachesAdjustSize)
         precondition(progress.record(.stroke) == .none, "A stroke off the guides is a miss")
         precondition(progress.record(.drewAlongGuide) == .advance)
         progress.advance()
@@ -326,19 +326,19 @@ struct TutorialChecks {
         if AppReleaseFeatures.current.showsCanvasSizeControls {
             for (step, event): (TutorialStep, TutorialProgress.Event) in [
                 (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),
-                (.openCanvasSize, .openedCanvasSize), (.openCrop, .openedCrop)
+                (.openCanvasSize, .openedCanvasSize), (.openAdjustSize, .openedAdjustSize)
             ] {
-                precondition(progress.step == step && progress.teachesCrop && progress.record(event) == .advance)
+                precondition(progress.step == step && progress.teachesAdjustSize && progress.record(event) == .advance)
                 progress.advance()
             }
             // The first turn of the Crown trims, a drag moves the window, ✓ returns at once.
-            precondition(progress.step == .trimCrop && progress.record(.croppedCanvas) == .none)
-            precondition(progress.record(.trimmedCrop) == .advance)
+            precondition(progress.step == .setCanvasSize && progress.record(.resizedCanvas) == .none)
+            precondition(progress.record(.changedCanvasSize) == .advance)
             progress.advance()
-            precondition(progress.step == .moveCrop && progress.record(.croppedCanvas) == .none)
-            precondition(progress.record(.movedCrop) == .advance)
+            precondition(progress.step == .moveCanvasFrame && progress.record(.resizedCanvas) == .none)
+            precondition(progress.record(.movedCanvasFrame) == .advance)
             progress.advance()
-            precondition(progress.step == .applyCrop && progress.record(.croppedCanvas) == .advance)
+            precondition(progress.step == .applyCanvasSize && progress.record(.resizedCanvas) == .advance)
             progress.advance()
         }
         // A last autosave, then the gallery shows the saved pictures for selection.

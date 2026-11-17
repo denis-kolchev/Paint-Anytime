@@ -11,14 +11,14 @@ struct WatchCanvasAdjustmentView: View {
     @State private var resolution: Double = 72
     @State private var proportional = true
     @State private var resample = true
-    @State private var cropWidthPercent = 90.0
-    @State private var cropHeightPercent = 90.0
-    @State private var cropX = 50.0
-    @State private var cropY = 50.0
-    /// The crop window's origin at the start of a drag, so translation stays relative to it.
-    @State private var cropDragStartOrigin: CGPoint?
-    /// Set while the crop window itself is being dragged, so the page-switch swipe below yields.
-    @State private var isDraggingCropWindow = false
+    /// Where the drawing sits when the canvas changes size without resampling, in percent:
+    /// 0 keeps the leading or top edge, 100 the trailing or bottom one.
+    @State private var positionX = 50.0
+    @State private var positionY = 50.0
+    /// The position at the start of a drag, so translation stays relative to it.
+    @State private var dragStartPosition: CGPoint?
+    /// Set while the preview itself is being dragged, so the page-switch swipe below yields.
+    @State private var isDraggingFrame = false
     /// Unbounded quarter-turn count so the preview always animates the short way.
     @State private var rotationSteps = 0
     private var turns: Int { ((rotationSteps % 4) + 4) % 4 }
@@ -29,7 +29,6 @@ struct WatchCanvasAdjustmentView: View {
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @FocusState private var focusedAdjustment: String?
     @State private var preview: CGImage?
-    @State private var cropPage = 0
     @State private var resizePage = 0
     @State private var resizePercent = 100.0
     @State private var initialized = false
@@ -37,7 +36,7 @@ struct WatchCanvasAdjustmentView: View {
     @Environment(\.layoutDirection) private var layoutDirection
 
     /// The tutorial's page stays on screen while ✓ returns to the canvas; it keeps the size it
-    /// was cropped from, or the whole page re-laid out around the new, smaller canvas.
+    /// was adjusted from, or the whole page re-laid out around the new, smaller canvas.
     @State private var appliedOriginal: CGSize?
     private var original: CGSize { appliedOriginal ?? controller.document.size(fallback: viewportSize) }
     private var ratio: Double { original.width / original.height }
@@ -45,13 +44,12 @@ struct WatchCanvasAdjustmentView: View {
     private var validSize: Bool {
         width >= 1 && height >= 1 && width <= maximumPixels && height <= maximumPixels
     }
-    private var cropSize: CGSize {
-        CGSize(width: original.width * cropWidthPercent / 100,
-               height: original.height * cropHeightPercent / 100)
-    }
-    private var cropOrigin: CGPoint {
-        CGPoint(x: (original.width - cropSize.width) * cropX / 100,
-                y: (original.height - cropSize.height) * cropY / 100)
+    private var targetSize: CGSize { CGSize(width: width / displayScale, height: height / displayScale) }
+    /// The new canvas's top-left corner in the old canvas's points; negative where it grows.
+    private var targetOrigin: CGPoint {
+        guard !resample else { return .zero }
+        return CGPoint(x: (original.width - targetSize.width) * positionX / 100,
+                       y: (original.height - targetSize.height) * positionY / 100)
     }
 
     var body: some View {
@@ -59,8 +57,6 @@ struct WatchCanvasAdjustmentView: View {
             Group {
                 if mode == 0 {
                     resizeEditor(height: geometry.size.height)
-                } else if mode == 1 {
-                    cropEditor(height: geometry.size.height)
                 } else {
                     rotateEditor(height: geometry.size.height)
                 }
@@ -85,10 +81,10 @@ struct WatchCanvasAdjustmentView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(action: applyChanges) {
                     Image(systemName: "checkmark").foregroundStyle(.green)
-                        .tutorialHint(tutorial, steps: [.applyCrop])
+                        .tutorialHint(tutorial, steps: [.applyCanvasSize])
                 }
                 .watchToolbarButtonStyle()
-                .disabled((mode == 0 && !validSize) || !tutorial.permits([.applyCrop]))
+                .disabled((mode == 0 && !validSize) || !tutorial.permits([.applyCanvasSize]))
                 .accessibilityLabel(L10n.text("Apply"))
                 .accessibilityHint(mode == 0 && !validSize
                     ? L10n.text("Choose dimensions from 1 to 1024 pixels.") : "")
@@ -104,95 +100,127 @@ struct WatchCanvasAdjustmentView: View {
             width = (original.width * displayScale).rounded()
             height = (original.height * displayScale).rounded()
             resolution = controller.document.resolution
-            focusedAdjustment = mode == 0 ? "Resize" : mode == 1 ? "Crop" : nil
+            if mode == 0 && tutorial.isActive {
+                // The tour keeps the drawing's size and starts slightly smaller, so the
+                // frame can always move and the Crown only shrinks it further.
+                resample = false
+                resizePercent = 90
+                width = max(1, (original.width * displayScale * 0.9).rounded())
+                height = max(1, (original.height * displayScale * 0.9).rounded())
+            }
+            focusedAdjustment = mode == 0 ? "Resize" : nil
         }
     }
 
     private func canvasPreview(mode: Int) -> some View {
         GeometryReader { geometry in
             let target = mode == 0
-                ? CGSize(width: width / displayScale, height: height / displayScale)
-                : mode == 2 && turns % 2 != 0
-                    ? CGSize(width: original.height, height: original.width) : original
+                ? targetSize
+                : turns % 2 != 0 ? CGSize(width: original.height, height: original.width) : original
             let previewBounds = mode == 0
                 ? CGSize(width: max(original.width, target.width), height: max(original.height, target.height))
                 : target
             let scale = min(geometry.size.width / max(1, previewBounds.width),
                             geometry.size.height / max(1, previewBounds.height))
             ZStack {
-                // Rotate draws the bare image: the frame swaps its aspect while the
-                // image turns, so a background, clip or border would show mid-animation.
-                ZStack(alignment: .topLeading) {
-                    Rectangle().fill(.gray.opacity(mode == 2 ? 0 : 0.3))
-                    if let preview {
-                        Image(decorative: preview, scale: 1).resizable()
-                            .frame(width: (mode == 0 && resample ? target.width : original.width) * scale,
-                                   height: (mode == 0 && resample ? target.height : original.height) * scale)
-                            .rotationEffect(.degrees(mode == 2 ? Double(rotationSteps * 90) : 0))
-                            .frame(width: target.width * scale, height: target.height * scale,
-                                   alignment: mode == 0 ? .topLeading : .center)
-                    }
-                    if mode == 1 {
-                        // Room the window's origin can move within, in canvas points.
-                        let maxOriginX = max(0, original.width - cropSize.width)
-                        let maxOriginY = max(0, original.height - cropSize.height)
-                        Rectangle().stroke(.green, lineWidth: 1.5)
-                            .frame(width: cropSize.width * scale, height: cropSize.height * scale)
-                            .contentShape(Rectangle())
-                            .offset(x: cropOrigin.x * scale, y: cropOrigin.y * scale)
-                            .gesture(
-                                DragGesture(minimumDistance: 2)
-                                    .onChanged { value in
-                                        isDraggingCropWindow = true
-                                        let start = cropDragStartOrigin ?? cropOrigin
-                                        if cropDragStartOrigin == nil { cropDragStartOrigin = start }
-                                        let x = min(maxOriginX, max(0, start.x + value.translation.width / scale))
-                                        let y = min(maxOriginY, max(0, start.y + value.translation.height / scale))
-                                        cropX = maxOriginX > 0 ? (x / maxOriginX * 100).rounded() : 50
-                                        cropY = maxOriginY > 0 ? (y / maxOriginY * 100).rounded() : 50
-                                    }
-                                    .onEnded { value in
-                                        isDraggingCropWindow = false
-                                        cropDragStartOrigin = nil
-                                        if hypot(value.translation.width, value.translation.height) > 4 {
-                                            tutorial.record(.movedCrop)
-                                        }
-                                    }
-                            )
-                            .accessibilityHidden(true)
-                        if tutorial.isActive && tutorial.step == .moveCrop {
-                            // From the window's centre, a short way inside the preview.
-                            TutorialMoveGuide(distance: min(10, max(4, min(maxOriginX, maxOriginY) * scale / 2)),
-                                              isHidden: isDraggingCropWindow)
-                                .position(x: (cropOrigin.x + cropSize.width / 2) * scale,
-                                          y: (cropOrigin.y + cropSize.height / 2) * scale)
-                                .transition(.opacity)
+                if mode == 0 && !resample {
+                    positionedPreview(target: target, bounds: previewBounds, scale: scale)
+                } else {
+                    // Rotate draws the bare image: the frame swaps its aspect while the
+                    // image turns, so a background, clip or border would show mid-animation.
+                    ZStack(alignment: .topLeading) {
+                        Rectangle().fill(.gray.opacity(mode == 2 ? 0 : 0.3))
+                        if let preview {
+                            Image(decorative: preview, scale: 1).resizable()
+                                .frame(width: (mode == 0 ? target.width : original.width) * scale,
+                                       height: (mode == 0 ? target.height : original.height) * scale)
+                                .rotationEffect(.degrees(mode == 2 ? Double(rotationSteps * 90) : 0))
+                                .frame(width: target.width * scale, height: target.height * scale)
                         }
                     }
+                    .frame(width: target.width * scale, height: target.height * scale)
+                    .modifier(PreviewClip(isEnabled: mode != 2))
+                    .overlay(Rectangle().stroke(.white.opacity(mode == 2 ? 0 : 0.5), lineWidth: 0.5))
                 }
-                .frame(width: target.width * scale, height: target.height * scale)
-                .modifier(PreviewClip(isEnabled: mode != 2))
-                .overlay(Rectangle().stroke(.white.opacity(mode == 2 ? 0 : 0.5), lineWidth: 0.5))
             }.frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .accessibilityLabel(L10n.text(mode == 1 ? "Crop area" : "Canvas size"))
+        .accessibilityLabel(L10n.text("Canvas size"))
+    }
+
+    /// Without resampling the whole drawing stays visible, dimmed where the new canvas
+    /// leaves it out. A drag moves whichever is smaller on each axis: the canvas frame
+    /// over the drawing, or the drawing inside the larger canvas.
+    private func positionedPreview(target: CGSize, bounds: CGSize, scale: CGFloat) -> some View {
+        let origin = targetOrigin
+        let image = CGPoint(x: -min(0, origin.x), y: -min(0, origin.y))
+        let canvas = CGPoint(x: origin.x + image.x, y: origin.y + image.y)
+        // Room the drawing and the canvas can move against each other, in canvas points.
+        let roomX = abs(original.width - target.width)
+        let roomY = abs(original.height - target.height)
+        return ZStack(alignment: .topLeading) {
+            if let preview {
+                Image(decorative: preview, scale: 1).resizable()
+                    .frame(width: original.width * scale, height: original.height * scale)
+                    .opacity(0.35)
+                    .offset(x: image.x * scale, y: image.y * scale)
+            }
+            ZStack(alignment: .topLeading) {
+                Rectangle().fill(.gray.opacity(0.3))
+                if let preview {
+                    Image(decorative: preview, scale: 1).resizable()
+                        .frame(width: original.width * scale, height: original.height * scale)
+                        .offset(x: (image.x - canvas.x) * scale, y: (image.y - canvas.y) * scale)
+                }
+            }
+            .frame(width: target.width * scale, height: target.height * scale, alignment: .topLeading)
+            .clipped()
+            .overlay(Rectangle().stroke(.green, lineWidth: 1.5))
+            .offset(x: canvas.x * scale, y: canvas.y * scale)
+            if tutorial.isActive && tutorial.step == .moveCanvasFrame {
+                // From the frame's centre, a short way inside the preview.
+                TutorialMoveGuide(distance: min(10, max(4, min(roomX, roomY) * scale / 2)),
+                                  isHidden: isDraggingFrame)
+                    .position(x: (canvas.x + target.width / 2) * scale,
+                              y: (canvas.y + target.height / 2) * scale)
+                    .transition(.opacity)
+            }
+        }
+        .frame(width: bounds.width * scale, height: bounds.height * scale, alignment: .topLeading)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 2)
+                .onChanged { value in
+                    isDraggingFrame = true
+                    let start = dragStartPosition ?? CGPoint(x: positionX, y: positionY)
+                    if dragStartPosition == nil { dragStartPosition = start }
+                    // The frame or the drawing follows the finger on either axis.
+                    if roomX > 0 {
+                        positionX = min(100, max(0, start.x + value.translation.width / scale / roomX * 100)).rounded()
+                    }
+                    if roomY > 0 {
+                        positionY = min(100, max(0, start.y + value.translation.height / scale / roomY * 100)).rounded()
+                    }
+                }
+                .onEnded { value in
+                    isDraggingFrame = false
+                    dragStartPosition = nil
+                    if hypot(value.translation.width, value.translation.height) > 4 {
+                        tutorial.record(.movedCanvasFrame)
+                    }
+                }
+        )
+        .accessibilityHidden(true)
     }
 
     private func applyChanges() {
         switch mode {
         case 0:
             guard validSize else { return }
-            controller.adjustCanvas(from: original,
-                to: CGSize(width: width / displayScale, height: height / displayScale),
-                resample: resample, resolution: resolution)
-        case 1:
             if tutorial.isActive { appliedOriginal = original }
-            if cropWidthPercent != 100 || cropHeightPercent != 100 {
-                controller.adjustCanvas(from: original, to: cropSize,
-                                        resample: false, origin: cropOrigin)
-            }
-            // Apply completes the lesson even at 100%, so the tour never waits on this page.
-            tutorial.record(.croppedCanvas)
+            controller.adjustCanvas(from: original, to: targetSize, resample: resample,
+                                    origin: targetOrigin, resolution: resolution)
+            // Apply completes the lesson even unchanged, so the tour never waits on this page.
+            tutorial.record(.resizedCanvas)
         default:
             if turns != 0 {
                 let size = turns % 2 == 0 ? original : CGSize(width: original.height, height: original.width)
@@ -246,105 +274,24 @@ struct WatchCanvasAdjustmentView: View {
         .accessibilityLabel(Text(verbatim: label))
     }
 
-    private var cropTitle: String { ["Keep", "Canvas width", "Height", "Horizontal", "Vertical"][cropPage] }
-    private var cropValue: Double {
-        switch cropPage {
-        // Keep shows the window's width; setting it resets both sides to the same percent.
-        case 0: cropWidthPercent
-        case 1: cropWidthPercent
-        case 2: cropHeightPercent
-        case 3: cropX
-        default: cropY
-        }
+
+    /// Horizontal and Vertical place the drawing only when it keeps its size.
+    private var resizeTitles: [String] {
+        let titles = ["Percentage", "Canvas width", "Height", "Resolution"]
+        return resample ? titles : titles + ["Horizontal", "Vertical"]
     }
 
-    // Size and position both move in 1% increments.
-    private var cropMinimum: Double { cropPage <= 2 ? 10 : 0 }
-    /// The tour starts at 90% and only trims further, so the window can always move.
-    private var cropRange: ClosedRange<Double> { cropMinimum...(tutorial.isActive ? 90 : 100) }
-    private var cropStepValue: Binding<Double> {
-        Binding(get: { cropValue }, set: { next in
-            let value = min(cropRange.upperBound, max(cropMinimum, next.rounded()))
-            // The first change completes the trim; a page swipe changes the shown value
-            // without trimming, so it never counts.
-            if value != cropValue { tutorial.record(.trimmedCrop) }
-            switch cropPage {
-            case 0:
-                cropWidthPercent = value
-                cropHeightPercent = value
-            case 1: cropWidthPercent = value
-            case 2: cropHeightPercent = value
-            case 3: cropX = value
-            default: cropY = value
-            }
-        })
-    }
-
-    private func cropEditor(height availableHeight: CGFloat) -> some View {
-        VStack(spacing: 4) {
-            // The cropped size stands beside the preview, as on the Resize page.
-            HStack(spacing: 8) {
-                canvasPreview(mode: 1)
-                VStack(spacing: 1) {
-                    Text(verbatim: "\(Int(cropSize.width * displayScale)) px")
-                    Text(verbatim: "\(Int(cropSize.height * displayScale)) px")
-                }
-                .font(.caption2).monospacedDigit().foregroundStyle(.secondary)
-                .lineLimit(1).minimumScaleFactor(0.6)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(Text(verbatim:
-                    "\(Int(cropSize.width * displayScale)) × \(Int(cropSize.height * displayScale)) px"))
-                // Clear the toolbar's checkmark, which overlaps the top of this column.
-                .padding(.top, 26)
-                .frame(width: 48)
-                .frame(maxHeight: .infinity, alignment: .top)
-            }
-            .frame(maxHeight: .infinity)
-            valueRow(value: cropStepValue, range: cropRange, valueTitle: L10n.percent(cropValue / 100),
-                     title: cropTitle, focus: "Crop")
-            // The tour teaches only how much to keep; the window itself is dragged.
-            if !tutorial.isActive {
-                CanvasResizeCarousel(selection: $cropPage,
-                                    titles: ["Keep", "Canvas width", "Height", "Horizontal", "Vertical"])
-                    .frame(height: 28)
-            }
-        }
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: tutorial.step == .moveCrop)
-        .padding(.horizontal, 10)
-        .padding(.top, 42)
-        .padding(.bottom, 8)
-        .frame(height: availableHeight)
-        .contentShape(Rectangle())
-        .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
-            // A drag that moved the crop window itself must not also flip the page.
-            guard !isDraggingCropWindow, !tutorial.isActive else { return }
-            guard abs(value.translation.width) > abs(value.translation.height) else { return }
-            let forward = (value.translation.width < 0) == (layoutDirection == .leftToRight)
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                cropPage = min(4, max(0, cropPage + (forward ? 1 : -1)))
-            }
-        })
-        .focusable()
-        .focused($focusedAdjustment, equals: "Crop")
-        .modifier(SteppedCrownModifier(value: cropStepValue, range: cropRange,
-                                      sensitivity: .low, crownUnitsPerStep: 1, context: cropPage,
-                                      onChange: { [step = tutorial.step] event in
-                                          // Hides the Crown hint once the user turns it.
-                                          tutorial.usedCrown(in: step, velocity: event.velocity)
-                                      }))
-        .onChange(of: cropPage) { _, _ in focusedAdjustment = "Crop" }
-    }
-
-    private var resizeTitle: String {
-        ["Percentage", "Canvas width", "Height", "Resolution"][resizePage]
-    }
+    private var resizeTitle: String { resizeTitles[min(resizePage, resizeTitles.count - 1)] }
 
     private var resizeRange: ClosedRange<Double> {
         switch resizePage {
         case 0:
+            // The tour starts at 90% and only shrinks further, so the frame can always move.
+            if tutorial.isActive { return 10...90 }
             let largest = max(original.width, original.height) * displayScale
             return 1...max(1, floor(maximumPixels / max(1, largest) * 100))
         case 3: return 18...300
+        case 4, 5: return 0...100
         default: return 1...maximumPixels
         }
     }
@@ -355,12 +302,16 @@ struct WatchCanvasAdjustmentView: View {
             case 0: resizePercent
             case 1: width
             case 2: height
-            default: resolution
+            case 3: resolution
+            case 4: positionX
+            default: positionY
             }
         }, set: { next in
             let value = min(resizeRange.upperBound, max(resizeRange.lowerBound, next.rounded()))
             switch resizePage {
             case 0:
+                // The first change completes the lesson's step; a page swipe never counts.
+                if value != resizePercent { tutorial.record(.changedCanvasSize) }
                 resizePercent = value
                 width = max(1, (original.width * displayScale * value / 100).rounded())
                 height = max(1, (original.height * displayScale * value / 100).rounded())
@@ -372,20 +323,26 @@ struct WatchCanvasAdjustmentView: View {
                 height = value
                 if proportional { width = max(1, (value * ratio).rounded()) }
                 resizePercent = height / max(1, original.height * displayScale) * 100
-            default:
+            case 3:
                 if resample {
                     width = max(1, (width * value / resolution).rounded())
                     height = max(1, (height * value / resolution).rounded())
                     resizePercent = width / max(1, original.width * displayScale) * 100
                 }
                 resolution = value
+            case 4: positionX = value
+            default: positionY = value
             }
         })
     }
 
     private var resizeValueTitle: String {
-        if resizePage == 0 { return L10n.percent(resizePercent / 100) }
-        return "\(Int(resizeValue.wrappedValue)) " + (resizePage == 3 ? "DPI" : "px")
+        switch resizePage {
+        case 0: return L10n.percent(resizePercent / 100)
+        case 4: return L10n.percent(positionX / 100)
+        case 5: return L10n.percent(positionY / 100)
+        default: return "\(Int(resizeValue.wrappedValue)) " + (resizePage == 3 ? "DPI" : "px")
+        }
     }
 
     private func resizeEditor(height availableHeight: CGFloat) -> some View {
@@ -405,9 +362,12 @@ struct WatchCanvasAdjustmentView: View {
                     .lineLimit(1).minimumScaleFactor(0.6)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(Text(verbatim: "\(Int(width)) × \(Int(height)) px, \(Int(resolution)) DPI"))
+                    // The tour teaches only the size and the frame; the options stay as set.
                     resizeOption("Scale proportionally", symbol: "link", isSlashed: !proportional, value: $proportional)
+                        .disabled(tutorial.isActive)
                         .frame(maxHeight: .infinity)
                     resizeOption("Resample image", symbol: "arrow.up.left.and.arrow.down.right", value: $resample)
+                        .disabled(tutorial.isActive)
                         .frame(maxHeight: .infinity)
                 }
                 // Clear the toolbar's checkmark, which overlaps the top of this column.
@@ -417,26 +377,39 @@ struct WatchCanvasAdjustmentView: View {
             .frame(maxHeight: .infinity)
             valueRow(value: resizeValue, range: resizeRange, valueTitle: resizeValueTitle,
                      title: resizeTitle, focus: "Resize")
-            CanvasResizeCarousel(selection: $resizePage)
-                .frame(height: 28)
+            if !tutorial.isActive {
+                CanvasResizeCarousel(selection: $resizePage, titles: resizeTitles)
+                    .frame(height: 28)
+            }
         }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: tutorial.step == .moveCanvasFrame)
         .padding(.horizontal, 10)
         .padding(.top, 42)
         .padding(.bottom, 8)
         .frame(height: availableHeight)
         .contentShape(Rectangle())
         .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { value in
+            // A drag that moved the frame itself must not also flip the page.
+            guard !isDraggingFrame, !tutorial.isActive else { return }
             guard abs(value.translation.width) > abs(value.translation.height) else { return }
             let forward = (value.translation.width < 0) == (layoutDirection == .leftToRight)
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.25)) {
-                resizePage = min(3, max(0, resizePage + (forward ? 1 : -1)))
+                resizePage = min(resizeTitles.count - 1, max(0, resizePage + (forward ? 1 : -1)))
             }
         })
         .focusable()
         .focused($focusedAdjustment, equals: "Resize")
         .modifier(SteppedCrownModifier(value: resizeValue, range: resizeRange,
-                                      sensitivity: .low, crownUnitsPerStep: 1, context: resizePage))
+                                      sensitivity: .low, crownUnitsPerStep: 1, context: resizePage,
+                                      onChange: { [step = tutorial.step] event in
+                                          // Hides the Crown hint once the user turns it.
+                                          tutorial.usedCrown(in: step, velocity: event.velocity)
+                                      }))
         .onChange(of: resizePage) { _, _ in focusedAdjustment = "Resize" }
+        // Resampling drops the position pages; the carousel falls back to the last one left.
+        .onChange(of: resample) { _, _ in
+            resizePage = min(resizePage, resizeTitles.count - 1)
+        }
     }
 
     /// A horizontal − value + row above the carousel, as in perspective guides.

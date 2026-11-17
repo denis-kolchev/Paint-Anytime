@@ -42,7 +42,7 @@ final class TutorialSession: ObservableObject {
         case .galleryFullscreen where !galleryIsOpen, .deleteDrawing where !galleryIsOpen: return L10n.text("Tap Gallery to see your pictures.")
         case .deleteDrawing where !galleryIsFullscreen:
             return L10n.text("Turn the Crown or double-tap a picture.")
-        case .openMenu where progress.teachesPerspective || progress.teachesCrop || progress.teachesBlending
+        case .openMenu where progress.teachesPerspective || progress.teachesAdjustSize || progress.teachesBlending
                 || progress.teachesCanvasEditor:
             return L10n.text("Tap ••• to open the menu.")
         default: return TutorialLesson.compactInstruction(for: step)
@@ -70,7 +70,7 @@ final class TutorialSession: ObservableObject {
     var allowsGallerySelection: Bool { permits([.selectDrawings, .favoriteSelection]) }
     /// Lesson-wide flags keep menu rows and the select button installed through their pages.
     var teachesPerspective: Bool { progress.teachesPerspective }
-    var teachesCrop: Bool { progress.teachesCrop }
+    var teachesAdjustSize: Bool { progress.teachesAdjustSize }
     var teachesBlending: Bool { progress.teachesBlending }
     var teachesCanvasEditor: Bool { progress.teachesCanvasEditor }
     var teachesGallerySelection: Bool { progress.teachesGallerySelection }
@@ -87,7 +87,7 @@ final class TutorialSession: ObservableObject {
     var crownHintIsSubtle: Bool { !crownPracticedSteps.isEmpty }
     var showsCrownHint: Bool {
         suggestsCrownRotation && !crownPracticedSteps.contains(step)
-            && ([.selectReed, .chooseReed, .chooseFill, .chooseBlur, .trimCrop, .setRayCount].contains(step)
+            && ([.selectReed, .chooseReed, .chooseFill, .chooseBlur, .setCanvasSize, .setRayCount].contains(step)
                 || crownPracticedSteps.count < 3)
     }
 
@@ -100,7 +100,7 @@ final class TutorialSession: ObservableObject {
     var suggestsCrownRotation: Bool {
         guard acceptsActions else { return false }
         switch step {
-        case .zoomCanvas, .trimCrop, .setRayCount: return true
+        case .zoomCanvas, .setCanvasSize, .setRayCount: return true
         case .pickColor: return toolPage == 1
         case .setWidth: return toolPage == 0
         case .setOpacity: return toolPage == 5 && !toolIsEraser

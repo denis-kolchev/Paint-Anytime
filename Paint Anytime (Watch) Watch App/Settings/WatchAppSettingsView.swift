@@ -92,7 +92,7 @@ struct WatchAppSettingsView: View {
     private var menuRows: some View {
         // Each later lesson adds its row at the top, so the list seems to grow upward:
         // autosave shows Autosave, Gallery, then after its Back Canvas, Autosave, Gallery;
-        // blending Drawing, Canvas, Autosave, Gallery; the canvas editor and crop Canvas,
+        // blending Drawing, Canvas, Autosave, Gallery; the canvas editor and adjust size Canvas,
         // Drawing, Autosave, Gallery; gallery selection Gallery, Canvas, Drawing, Autosave.
         if tutorialCanvasLeads {
             tutorialCanvasRow
@@ -168,13 +168,13 @@ struct WatchAppSettingsView: View {
 
     /// Lessons after blending put Canvas above Drawing.
     private var tutorialCanvasLeads: Bool {
-        tutorial.isActive && (tutorial.teachesCanvasEditor || tutorial.teachesCrop)
+        tutorial.isActive && (tutorial.teachesCanvasEditor || tutorial.teachesAdjustSize)
     }
 
     /// Rows a lesson does not teach only keep the list growing; their actions are
     /// guarded by the lesson, so tapping them there does nothing.
     private var tutorialShowsDrawingRow: Bool {
-        tutorial.isActive && (tutorial.teachesBlending || tutorial.teachesCanvasEditor || tutorial.teachesCrop)
+        tutorial.isActive && (tutorial.teachesBlending || tutorial.teachesCanvasEditor || tutorial.teachesAdjustSize)
     }
 
     /// From the autosave lesson on; the earlier chapter never shows it.
@@ -184,7 +184,7 @@ struct WatchAppSettingsView: View {
 
     /// The perspective lesson adds Canvas only after Back from Autosave.
     private var tutorialShowsCanvasRow: Bool {
-        tutorial.isActive && ((tutorial.teachesPerspective && !tutorial.teachesAutosave) || tutorial.teachesCrop
+        tutorial.isActive && ((tutorial.teachesPerspective && !tutorial.teachesAutosave) || tutorial.teachesAdjustSize
                               || tutorial.teachesCanvasEditor || tutorial.teachesBlending)
     }
 
@@ -398,7 +398,7 @@ struct CanvasSettingsView: View {
     }
 
     @ViewBuilder private var canvasSizeRow: some View {
-        if AppReleaseFeatures.current.showsCanvasSizeControls && (!tutorial.isActive || tutorial.teachesCrop) {
+        if AppReleaseFeatures.current.showsCanvasSizeControls && (!tutorial.isActive || tutorial.teachesAdjustSize) {
             if let onOpenCanvasSize {
                 Button(action: onOpenCanvasSize) {
                     Label(L10n.text("Canvas size"), systemImage: "arrow.up.left.and.arrow.down.right")
@@ -417,7 +417,7 @@ struct CanvasSettingsView: View {
     }
 
     @ViewBuilder private var canvasEditorRow: some View {
-        if tutorial.isActive, tutorial.teachesCanvasEditor || tutorial.teachesCrop, let onOpenCanvasEditor {
+        if tutorial.isActive, tutorial.teachesCanvasEditor || tutorial.teachesAdjustSize, let onOpenCanvasEditor {
             Button(action: onOpenCanvasEditor) {
                 Label {
                     Text(L10n.text("Canvas editor"))
@@ -442,7 +442,7 @@ struct CanvasSettingsView: View {
 
     @ViewBuilder private var perspectiveRow: some View {
         if !tutorial.isActive || tutorial.teachesPerspective || tutorial.teachesCanvasEditor
-            || tutorial.teachesCrop {
+            || tutorial.teachesAdjustSize {
             if let onOpenPerspective {
                 Button(action: onOpenPerspective) {
                     Label(L10n.text("Perspective guides"), systemImage: "perspective")

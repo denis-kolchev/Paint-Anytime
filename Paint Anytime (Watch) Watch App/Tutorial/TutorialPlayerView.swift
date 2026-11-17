@@ -392,7 +392,7 @@ struct TutorialPlayerView: View {
         // only starts below that bar when the safe area includes it. Restoring the inset with
         // padding inside the menu left the first row under the bar's blur.
         .ignoresSafeArea(.container, edges: [.menu, .layers, .layerSettings, .canvasSettings,
-                                             .canvasSize, .perspective, .crop,
+                                             .canvasSize, .perspective, .adjustSize,
                                              .drawingSettings, .colorBlending, .canvasEditor, .autosave].contains(page)
                          || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
@@ -719,7 +719,7 @@ struct TutorialPlayerView: View {
         if page == .canvasSize {
             WatchCanvasSizeView(controller: controller, viewportSize: paperSize(screen),
                                 displayScale: displayScale, tutorial: tutorial,
-                                onOpenCrop: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCrop() } })
+                                onOpenAdjustSize: { withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openAdjustSize() } })
             .background(Color.black.ignoresSafeArea())
             .transition(.opacity)
             .zIndex(1)
@@ -746,10 +746,10 @@ struct TutorialPlayerView: View {
             .transition(.opacity)
             .zIndex(1)
         }
-        if page == .crop {
-            // Apply records the crop; the lesson then returns to the canvas itself.
+        if page == .adjustSize {
+            // Apply records the new size; the lesson then returns to the canvas itself.
             WatchCanvasAdjustmentView(controller: controller, viewportSize: paperSize(screen),
-                                      displayScale: displayScale, mode: 1,
+                                      displayScale: displayScale, mode: 0,
                                       tutorial: tutorial, onApplied: {})
             .background(Color.black.ignoresSafeArea())
             .transition(.opacity)
@@ -770,7 +770,7 @@ struct TutorialPlayerView: View {
 
     /// The whole watch screen, as the full-screen canvas sees it. Setting pages keep the
     /// top safe area, so their `screen.size` lacks the clock band and an unsized canvas
-    /// looked almost square in the crop preview.
+    /// looked almost square in the canvas size preview.
     private func paperSize(_ screen: GeometryProxy) -> CGSize {
         let insets = screen.safeAreaInsets
         return CGSize(width: screen.size.width + insets.leading + insets.trailing,
@@ -895,7 +895,7 @@ struct TutorialPlayerView: View {
         switch page {
         case .canvas, .tools: false
         case .menu: menuReturnsOverBackdrop
-        case .gallery, .layers, .layerSettings, .canvasSettings, .canvasSize, .perspective, .crop,
+        case .gallery, .layers, .layerSettings, .canvasSettings, .canvasSize, .perspective, .adjustSize,
              .drawingSettings, .colorBlending, .canvasEditor, .autosave: true
         }
     }

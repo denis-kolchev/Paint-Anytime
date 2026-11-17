@@ -13004,180 +13004,6 @@
         }
       }
     },
-    "Change the canvas width and height, up to 1024 pixels. The drawing can scale with the canvas or keep its size." : {
-      "comment" : "Canvas size information screen on Apple Watch. Keep concise.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "غيّر عرض اللوحة وارتفاعها حتى 1024 بكسل. يمكن للرسم أن يتغير مع اللوحة أو يحتفظ بحجمه."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Změňte šířku a výšku plátna až na 1024 pixelů. Kresba se může měnit s plátnem, nebo si zachovat velikost."
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skift lærredets bredde og højde, op til 1024 pixels. Tegningen kan skaleres med lærredet eller beholde sin størrelse."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Breite und Höhe der Leinwand ändern, bis 1024 Pixel. Die Zeichnung kann mitskaliert werden oder ihre Größe behalten."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Αλλάξτε το πλάτος και το ύψος του καμβά, έως 1024 pixel. Το σχέδιο μπορεί να κλιμακωθεί μαζί του ή να κρατήσει το μέγεθός του."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change the canvas width and height, up to 1024 pixels. The drawing can scale with the canvas or keep its size."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cambia el ancho y el alto del lienzo, hasta 1024 píxeles. El dibujo puede escalarse con el lienzo o conservar su tamaño."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Muuta kankaan leveyttä ja korkeutta, enintään 1024 pikseliä. Piirros voi skaalautua kankaan mukana tai säilyttää kokonsa."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modifiez la largeur et la hauteur du canevas, jusqu’à 1024 pixels. Le dessin peut suivre le canevas ou garder sa taille."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "שנו את רוחב וגובה הקנבס, עד 1024 פיקסלים. הציור יכול להשתנות יחד עם הקנבס או לשמור על גודלו."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Módosítsa a vászon szélességét és magasságát, legfeljebb 1024 képpontig. A rajz méreteződhet a vászonnal, vagy megtarthatja a méretét."
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ubah lebar dan tinggi kanvas, hingga 1024 piksel. Gambar dapat ikut berskala atau mempertahankan ukurannya."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Modifica larghezza e altezza della tela, fino a 1024 pixel. Il disegno può ridimensionarsi con la tela o mantenere le sue dimensioni."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "キャンバスの幅と高さを最大1024ピクセルまで変更します。絵はキャンバスに合わせて拡大縮小することも、サイズを保つこともできます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "캔버스의 너비와 높이를 최대 1024픽셀까지 변경합니다. 그림은 캔버스에 맞춰 크기가 바뀌거나 원래 크기를 유지할 수 있습니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Endre lerretets bredde og høyde, opptil 1024 piksler. Tegningen kan skaleres med lerretet eller beholde størrelsen."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wijzig de breedte en hoogte van het canvas, tot 1024 pixels. De tekening kan meeschalen of haar grootte behouden."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zmień szerokość i wysokość płótna, do 1024 pikseli. Rysunek może skalować się razem z płótnem lub zachować rozmiar."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Altere a largura e a altura da tela, até 1024 pixels. O desenho pode acompanhar a tela ou manter o tamanho."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Altere a largura e a altura da tela, até 1024 píxeis. O desenho pode acompanhar a tela ou manter o tamanho."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Меняет ширину и высоту холста, до 1024 пикселей. Рисунок может масштабироваться вместе с холстом или сохранить размер."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ändra dukens bredd och höjd, upp till 1024 pixlar. Teckningen kan skalas med duken eller behålla sin storlek."
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "เปลี่ยนความกว้างและความสูงของผืนผ้าใบได้สูงสุด 1024 พิกเซล ภาพวาดจะปรับขนาดตามผืนผ้าใบหรือคงขนาดเดิมก็ได้"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tuvalin genişliğini ve yüksekliğini 1024 piksele kadar değiştirin. Çizim tuvalle birlikte ölçeklenebilir veya boyutunu koruyabilir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Змінює ширину й висоту полотна, до 1024 пікселів. Малюнок може масштабуватися разом із полотном або зберегти розмір."
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Thay đổi chiều rộng và chiều cao canvas, tối đa 1024 pixel. Bản vẽ có thể co giãn theo canvas hoặc giữ nguyên kích thước."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更改画布的宽度和高度，最大 1024 像素。绘画可以随画布缩放，也可以保持原尺寸。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "更改畫布的寬度和高度，最大 1024 像素。繪畫可以隨畫布縮放，也可以保持原尺寸。"
-          }
-        }
-      }
-    },
     "Changes and contact" : {
       "comment" : "Privacy policy, paragraph 20 of 22. Keep meaning aligned with docs/PRIVACY.md; preserve URLs and contact details.",
       "extractionState" : "manual",
@@ -20627,352 +20453,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "繪製半透明筆畫。筆畫重疊時顏色會變深。"
-          }
-        }
-      }
-    },
-    "Crop" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "اقتصاص"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Oříznout"
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beskær"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zuschneiden"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Περικοπή"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crop"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recortar"
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rajaa"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recadrer"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "חיתוך"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Körbevágás"
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pangkas"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ritaglia"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切り抜き"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "자르기"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beskjær"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bijsnijden"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Przytnij"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recortar"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recortar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обрезка"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beskär"
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ครอบตัด"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kırp"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обрізати"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cắt"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "裁剪"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "裁切"
-          }
-        }
-      }
-    },
-    "Crop area" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "منطقة الاقتصاص"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Oblast ořezu"
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beskæringsområde"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zuschnittbereich"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Περιοχή περικοπής"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crop area"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Área de recorte"
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rajausalue"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zone de recadrage"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "אזור חיתוך"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vágási terület"
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Area pangkas"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Area di ritaglio"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切り抜き範囲"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "자르기 영역"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beskjæringsområde"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bijsnijgebied"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obszar przycinania"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Área de recorte"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Área de recorte"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Область обрезки"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beskärningsområde"
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "พื้นที่ครอบตัด"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kırpma alanı"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Область обрізання"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vùng cắt"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "裁剪区域"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "裁切區域"
           }
         }
       }
@@ -33454,179 +32934,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的語言是%@嗎？"
-          }
-        }
-      }
-    },
-    "Keep" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "إبقاء"
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ponechat"
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Behold"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beibehalten"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Διατήρηση"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keep"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conservar"
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Säilytä"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conserver"
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "שמירה"
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Megtartás"
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pertahankan"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantieni"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "残す範囲"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "유지"
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Behold"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Behouden"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zachowaj"
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manter"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manter"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Оставить"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Behåll"
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "เก็บไว้"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Koru"
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Залишити"
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Giữ lại"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保留"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保留"
           }
         }
       }
@@ -60661,180 +59968,6 @@
         }
       }
     },
-    "Tap ✓ to crop the canvas." : {
-      "comment" : "Tutorial crop step, after trimming: apply the crop.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "اضغط ✓ لقص اللوحة."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klepnutím na ✓ plátno ořízněte."
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tryk på ✓ for at beskære lærredet."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tippe auf ✓, um die Leinwand zuzuschneiden."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Πατήστε ✓ για να περικόψετε τον καμβά."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap ✓ to crop the canvas."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toca ✓ para recortar el lienzo."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rajaa kangas napauttamalla ✓."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touchez ✓ pour rogner la toile."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "הקישו על ✓ כדי לחתוך את הקנבס."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Koppints a ✓ jelre a vászon levágásához."
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ketuk ✓ untuk memangkas kanvas."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tocca ✓ per ritagliare la tela."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓をタップしてキャンバスを切り取ります。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "✓를 탭하여 캔버스를 자르세요."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trykk på ✓ for å beskjære lerretet."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tik op ✓ om het canvas bij te snijden."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stuknij ✓, aby przyciąć płótno."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toque em ✓ para cortar a tela."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toque em ✓ para recortar a tela."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нажмите ✓, чтобы обрезать холст."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tryck på ✓ för att beskära duken."
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "แตะ ✓ เพื่อครอบตัดผืนผ้าใบ"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tuvali kırpmak için ✓ işaretine dokun."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Натисніть ✓, щоб обрізати полотно."
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chạm ✓ để cắt khung vẽ."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轻点 ✓ 裁剪画布。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點一下 ✓ 裁切畫布。"
-          }
-        }
-      }
-    },
     "Tap ✓ to start drawing." : {
       "comment" : "Tutorial instruction or accessibility text. Keep concise for Apple Watch. Directional gestures mirror in right-to-left languages.",
       "extractionState" : "manual",
@@ -68466,179 +67599,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "觸碰即可繪畫。"
-          }
-        }
-      }
-    },
-    "Trim canvas edges. Hidden strokes remain editable." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "اقتصّ حواف اللوحة. تظل الخطوط المخفية قابلة للتعديل."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ořízněte okraje plátna. Skryté tahy lze dál upravovat."
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beskær lærredets kanter. Skjulte strøg kan stadig redigeres."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leinwandränder beschneiden. Verborgene Striche bleiben bearbeitbar."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Περικόψτε τις άκρες του καμβά. Οι κρυφές πινελιές παραμένουν επεξεργάσιμες."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trim canvas edges. Hidden strokes remain editable."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recorta los bordes del lienzo. Los trazos ocultos siguen siendo editables."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rajaa piirtoalueen reunat. Piiloon jääviä vetoja voi yhä muokata."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rognez les bords de la toile. Les traits masqués restent modifiables."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "חיתוך שולי הקנבס. משיכות מוסתרות נשארות ניתנות לעריכה."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vágja le a vászon széleit. A rejtett vonások szerkeszthetők maradnak."
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pangkas tepi kanvas. Sapuan tersembunyi tetap dapat diedit."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ritaglia i bordi della tela. I tratti nascosti restano modificabili."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "キャンバスの端を切り抜きます。隠れた線も引き続き編集できます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "캔버스 가장자리를 자릅니다. 숨겨진 획도 계속 편집할 수 있습니다."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beskjær lerretets kanter. Skjulte strøk kan fortsatt redigeres."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Snijd canvasranden bij. Verborgen streken blijven bewerkbaar."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Przytnij krawędzie płótna. Ukryte pociągnięcia nadal można edytować."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recorte as bordas da tela. Os traços ocultos continuam editáveis."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recorte as margens da tela. Os traços ocultos continuam editáveis."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обрезка краёв холста. Скрытые штрихи остаются доступными для редактирования."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beskär dukens kanter. Dolda drag går fortfarande att redigera."
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ตัดขอบผืนผ้าใบ เส้นที่ซ่อนอยู่ยังแก้ไขได้"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tuval kenarlarını kırpın. Gizlenen çizgiler düzenlenebilir kalır."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обріжте краї полотна. Приховані штрихи залишаться доступними для редагування."
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cắt mép khung vẽ. Các nét bị ẩn vẫn chỉnh sửa được."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "裁剪画布边缘。隐藏的笔画仍可编辑。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "裁切畫布邊緣。隱藏的筆畫仍可編輯。"
           }
         }
       }
@@ -77147,354 +76107,6 @@
         }
       }
     },
-    "Tap Crop." : {
-      "comment" : "Tutorial step: open the Crop row. Use the same word as that row.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "اضغط اقتصاص."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klepněte na Oříznout."
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tryk på Beskær."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tippe auf Zuschneiden."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Πατήστε Περικοπή."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap Crop."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toca Recortar."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Napauta Rajaa."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touchez Recadrer."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "הקישו על חיתוך."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Koppints a Körbevágás elemre."
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ketuk Pangkas."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tocca Ritaglia."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "切り抜きをタップ。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "자르기를 탭하세요."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trykk på Beskjær."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tik op Bijsnijden."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stuknij Przytnij."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toque em Recortar."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toque em Recortar."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Нажмите «Обрезка»."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tryck på Beskär."
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "แตะครอบตัด"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kırp’a dokun."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Натисніть «Обрізати»."
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chạm Cắt."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轻点“裁剪”。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "點一下「裁切」。"
-          }
-        }
-      }
-    },
-    "Turn the Crown to trim the edges." : {
-      "comment" : "Tutorial crop step. Crown is the Digital Crown.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "أدر Crown لقص الحواف."
-          }
-        },
-        "cs" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otáčením Crown ořízněte okraje."
-          }
-        },
-        "da" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drej på Crown for at beskære kanterne."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Drehe die Crown, um die Ränder zu beschneiden."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Στρέψτε το Crown για να κόψετε τις άκρες."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Turn the Crown to trim the edges."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gira la Crown para recortar los bordes."
-          }
-        },
-        "fi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rajaa reunoja kääntämällä Crownia."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tournez la Crown pour rogner les bords."
-          }
-        },
-        "he" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "סובבו את ה-Crown כדי לחתוך את השוליים."
-          }
-        },
-        "hu" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forgasd a Crownt a szélek levágásához."
-          }
-        },
-        "id" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Putar Crown untuk memangkas tepi."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ruota la Crown per rifilare i bordi."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crownを回して端を切り詰めます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crown을 돌려 가장자리를 자르세요."
-          }
-        },
-        "nb" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vri på Crown for å beskjære kantene."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Draai aan de Crown om de randen bij te snijden."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obróć Crown, aby przyciąć krawędzie."
-          }
-        },
-        "pt-BR" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gire a Crown para aparar as bordas."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rode a Crown para aparar as margens."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Вращайте Crown, чтобы обрезать края."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vrid på Crown för att beskära kanterna."
-          }
-        },
-        "th" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "หมุน Crown เพื่อตัดขอบ"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kenarları kırpmak için Crown’u çevir."
-          }
-        },
-        "uk" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Обертайте Crown, щоб обрізати краї."
-          }
-        },
-        "vi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Xoay Crown để cắt bớt mép."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "转动 Crown 裁掉边缘。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "轉動 Crown 裁掉邊緣。"
-          }
-        }
-      }
-    },
     "Tap ✓ at the top to select pictures." : {
       "comment" : "Tutorial gallery step: the select button at the top shows a checkmark circle.",
       "extractionState" : "manual",
@@ -82007,6 +80619,702 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "圖庫中沒有影像"
+          }
+        }
+      }
+    },
+    "Tap Adjust size." : {
+      "comment" : "Tutorial step: open the Adjust size row. Use the same words as that row.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط ضبط الحجم."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepněte na Upravit velikost."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på Juster størrelse."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf Größe anpassen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε Προσαρμογή μεγέθους."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap Adjust size."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca Ajustar tamaño."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Napauta Säädä kokoa."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez Ajuster la taille."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקישו על התאמת גודל."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppints a Méret módosítása elemre."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk Sesuaikan ukuran."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca Regola dimensioni."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サイズを調整をタップ。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "크기 조정을 탭하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på Juster størrelse."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op Grootte aanpassen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij Dostosuj rozmiar."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em Ajustar tamanho."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em Ajustar tamanho."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите «Изменить размер»."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på Justera storlek."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะปรับขนาด"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Boyutu ayarla’ya dokun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Натисніть «Змінити розмір»."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm Điều chỉnh kích thước."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点“调整大小”。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下「調整大小」。"
+          }
+        }
+      }
+    },
+    "Turn the Crown to make the canvas smaller." : {
+      "comment" : "Tutorial canvas size step. Crown is the Digital Crown.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أدر Crown لتصغير اللوحة."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otáčením Crown plátno zmenšete."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drej på Crown for at gøre lærredet mindre."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drehe die Crown, um die Leinwand zu verkleinern."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Στρέψτε το Crown για να μικρύνετε τον καμβά."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turn the Crown to make the canvas smaller."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gira la Crown para reducir el lienzo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pienennä kangasta kääntämällä Crownia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tournez la Crown pour réduire la toile."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "סובבו את ה-Crown כדי להקטין את הקנבס."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Forgasd a Crownt a vászon kicsinyítéséhez."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Putar Crown untuk memperkecil kanvas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ruota la Crown per rimpicciolire la tela."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crownを回してキャンバスを小さくします。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crown을 돌려 캔버스를 줄이세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vri på Crown for å gjøre lerretet mindre."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Draai aan de Crown om het canvas kleiner te maken."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obróć Crown, aby zmniejszyć płótno."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gire a Crown para diminuir a tela."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rode a Crown para diminuir a tela."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вращайте Crown, чтобы уменьшить холст."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vrid på Crown för att göra duken mindre."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "หมุน Crown เพื่อย่อผืนผ้าใบ"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuvali küçültmek için Crown’u çevir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обертайте Crown, щоб зменшити полотно."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Xoay Crown để thu nhỏ khung vẽ."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "转动 Crown 缩小画布。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轉動 Crown 縮小畫布。"
+          }
+        }
+      }
+    },
+    "Tap ✓ to apply the new size." : {
+      "comment" : "Tutorial canvas size step, after shrinking: apply the new size.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط ✓ لتطبيق الحجم الجديد."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klepnutím na ✓ použijte novou velikost."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryk på ✓ for at anvende den nye størrelse."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf ✓, um die neue Größe zu übernehmen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε ✓ για να εφαρμόσετε το νέο μέγεθος."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap ✓ to apply the new size."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca ✓ para aplicar el nuevo tamaño."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ota uusi koko käyttöön napauttamalla ✓."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez ✓ pour appliquer la nouvelle taille."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "הקישו על ✓ כדי להחיל את הגודל החדש."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Koppints a ✓ jelre az új méret alkalmazásához."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ketuk ✓ untuk menerapkan ukuran baru."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca ✓ per applicare le nuove dimensioni."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✓をタップして新しいサイズを適用します。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "✓를 탭하여 새 크기를 적용하세요."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trykk på ✓ for å bruke den nye størrelsen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op ✓ om de nieuwe grootte toe te passen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stuknij ✓, aby zastosować nowy rozmiar."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em ✓ para aplicar o novo tamanho."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque em ✓ para aplicar o novo tamanho."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите ✓, чтобы применить новый размер."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på ✓ för att använda den nya storleken."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "แตะ ✓ เพื่อใช้ขนาดใหม่"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni boyutu uygulamak için ✓ işaretine dokun."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Натисніть ✓, щоб застосувати новий розмір."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chạm ✓ để áp dụng kích thước mới."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "轻点 ✓ 应用新尺寸。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下 ✓ 套用新尺寸。"
+          }
+        }
+      }
+    },
+    "Change the canvas width and height, up to 1024 pixels. The drawing can scale with the canvas or keep its size. Without resampling, Horizontal and Vertical place it. Hidden strokes remain editable." : {
+      "comment" : "Canvas size information screen on Apple Watch. Keep concise.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "غيّر عرض اللوحة وارتفاعها حتى 1024 بكسل. يمكن للرسم أن يتغير مع اللوحة أو يحتفظ بحجمه. دون إعادة أخذ العينات، يحدد أفقي وعمودي موضعه. تظل الخطوط المخفية قابلة للتعديل."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Změňte šířku a výšku plátna až na 1024 pixelů. Kresba se může měnit s plátnem, nebo si zachovat velikost. Bez převzorkování ji umístíte volbami Vodorovně a Svisle. Skryté tahy lze dál upravovat."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skift lærredets bredde og højde, op til 1024 pixels. Tegningen kan skaleres med lærredet eller beholde sin størrelse. Uden gensampling placerer Vandret og Lodret den. Skjulte strøg kan stadig redigeres."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Breite und Höhe der Leinwand ändern, bis 1024 Pixel. Die Zeichnung kann mitskaliert werden oder ihre Größe behalten. Ohne Neuberechnung legen Horizontal und Vertikal ihre Position fest. Verborgene Striche bleiben bearbeitbar."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αλλάξτε το πλάτος και το ύψος του καμβά, έως 1024 pixel. Το σχέδιο μπορεί να κλιμακωθεί μαζί του ή να κρατήσει το μέγεθός του. Χωρίς επαναδειγματοληψία, τα Οριζόντια και Κατακόρυφα ορίζουν τη θέση του. Οι κρυφές πινελιές παραμένουν επεξεργάσιμες."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change the canvas width and height, up to 1024 pixels. The drawing can scale with the canvas or keep its size. Without resampling, Horizontal and Vertical place it. Hidden strokes remain editable."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cambia el ancho y el alto del lienzo, hasta 1024 píxeles. El dibujo puede escalarse con el lienzo o conservar su tamaño. Sin remuestrear, Horizontal y Vertical lo colocan. Los trazos ocultos siguen siendo editables."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muuta kankaan leveyttä ja korkeutta, enintään 1024 pikseliä. Piirros voi skaalautua kankaan mukana tai säilyttää kokonsa. Ilman uudelleennäytteistystä Vaakasuunta ja Pystysuunta sijoittavat sen. Piiloon jääviä vetoja voi yhä muokata."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifiez la largeur et la hauteur du canevas, jusqu’à 1024 pixels. Le dessin peut suivre le canevas ou garder sa taille. Sans rééchantillonnage, Horizontal et Vertical le positionnent. Les traits masqués restent modifiables."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "שנו את רוחב וגובה הקנבס, עד 1024 פיקסלים. הציור יכול להשתנות יחד עם הקנבס או לשמור על גודלו. ללא דגימה מחדש, אופקי ואנכי קובעים את מיקומו. משיכות מוסתרות נשארות ניתנות לעריכה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Módosítsa a vászon szélességét és magasságát, legfeljebb 1024 képpontig. A rajz méreteződhet a vászonnal, vagy megtarthatja a méretét. Újramintavételezés nélkül a Vízszintes és a Függőleges helyezi el. A rejtett vonások szerkeszthetők maradnak."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ubah lebar dan tinggi kanvas, hingga 1024 piksel. Gambar dapat ikut berskala atau mempertahankan ukurannya. Tanpa sampel ulang, Horizontal dan Vertikal menempatkannya. Sapuan tersembunyi tetap dapat diedit."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modifica larghezza e altezza della tela, fino a 1024 pixel. Il disegno può ridimensionarsi con la tela o mantenere le sue dimensioni. Senza ricampionare, Orizzontale e Verticale lo posizionano. I tratti nascosti restano modificabili."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "キャンバスの幅と高さを最大1024ピクセルまで変更します。絵はキャンバスに合わせて拡大縮小することも、サイズを保つこともできます。再サンプルしない場合は、水平方向と垂直方向で位置を決めます。隠れた線も引き続き編集できます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "캔버스의 너비와 높이를 최대 1024픽셀까지 변경합니다. 그림은 캔버스에 맞춰 크기가 바뀌거나 원래 크기를 유지할 수 있습니다. 리샘플링하지 않으면 가로와 세로로 위치를 정합니다. 숨겨진 획도 계속 편집할 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endre lerretets bredde og høyde, opptil 1024 piksler. Tegningen kan skaleres med lerretet eller beholde størrelsen. Uten resampling plasserer Vannrett og Loddrett den. Skjulte strøk kan fortsatt redigeres."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wijzig de breedte en hoogte van het canvas, tot 1024 pixels. De tekening kan meeschalen of haar grootte behouden. Zonder herbemonsteren bepalen Horizontaal en Verticaal haar plaats. Verborgen streken blijven bewerkbaar."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zmień szerokość i wysokość płótna, do 1024 pikseli. Rysunek może skalować się razem z płótnem lub zachować rozmiar. Bez przepróbkowania położenie ustalają Poziomo i Pionowo. Ukryte pociągnięcia nadal można edytować."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altere a largura e a altura da tela, até 1024 pixels. O desenho pode acompanhar a tela ou manter o tamanho. Sem reamostrar, Horizontal e Vertical o posicionam. Os traços ocultos continuam editáveis."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altere a largura e a altura da tela, até 1024 píxeis. O desenho pode acompanhar a tela ou manter o tamanho. Sem reamostrar, Horizontal e Vertical posicionam-no. Os traços ocultos continuam editáveis."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Меняет ширину и высоту холста, до 1024 пикселей. Рисунок может масштабироваться вместе с холстом или сохранить размер. Без масштабирования его положение задают «По горизонтали» и «По вертикали». Скрытые штрихи остаются доступными для редактирования."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ändra dukens bredd och höjd, upp till 1024 pixlar. Teckningen kan skalas med duken eller behålla sin storlek. Utan omsampling placerar Vågrätt och Lodrätt den. Dolda drag går fortfarande att redigera."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "เปลี่ยนความกว้างและความสูงของผืนผ้าใบได้สูงสุด 1024 พิกเซล ภาพวาดจะปรับขนาดตามผืนผ้าใบหรือคงขนาดเดิมก็ได้ เมื่อไม่สุ่มตัวอย่างใหม่ แนวนอนและแนวตั้งจะกำหนดตำแหน่งภาพ เส้นที่ซ่อนอยู่ยังแก้ไขได้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuvalin genişliğini ve yüksekliğini 1024 piksele kadar değiştirin. Çizim tuvalle birlikte ölçeklenebilir veya boyutunu koruyabilir. Yeniden örnekleme olmadan Yatay ve Dikey konumunu belirler. Gizlenen çizgiler düzenlenebilir kalır."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Змінює ширину й висоту полотна, до 1024 пікселів. Малюнок може масштабуватися разом із полотном або зберегти розмір. Без зміни кількості пікселів його положення задають «Горизонтально» й «Вертикально». Приховані штрихи залишаться доступними для редагування."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thay đổi chiều rộng và chiều cao canvas, tối đa 1024 pixel. Bản vẽ có thể co giãn theo canvas hoặc giữ nguyên kích thước. Khi không lấy mẫu lại, Ngang và Dọc đặt vị trí bản vẽ. Các nét bị ẩn vẫn chỉnh sửa được."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改画布的宽度和高度，最大 1024 像素。绘画可以随画布缩放，也可以保持原尺寸。不重新采样时，用水平方向和垂直方向放置绘画。隐藏的笔画仍可编辑。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "更改畫布的寬度和高度，最大 1024 像素。繪畫可以隨畫布縮放，也可以保持原尺寸。不重新取樣時，用水平方向和垂直方向放置繪畫。隱藏的筆畫仍可編輯。"
           }
         }
       }

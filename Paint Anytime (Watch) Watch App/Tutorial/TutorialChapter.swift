@@ -52,7 +52,7 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
                            .deleteDrawing, .returnToCanvas, .clearCanvas])
         ]
         case .advanced:
-            toolLessons + compositionLessons(includesCrop: features.showsCanvasSizeControls)
+            toolLessons + compositionLessons(includesAdjustSize: features.showsCanvasSizeControls)
         }
     }
 
@@ -72,7 +72,7 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
         ]
     }
 
-    private func compositionLessons(includesCrop: Bool) -> [Lesson] {
+    private func compositionLessons(includesAdjustSize: Bool) -> [Lesson] {
         var lessons = [
             // Draw first on a fresh canvas, so the layer lessons never rely on the earlier
             // artwork. The brush stays: the first strokes use the color made in the palette.
@@ -102,10 +102,10 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
                            .chooseGroupIcon, .leaveIconPicker, .closeActionList, .saveCanvasLayout,
                            .drawPracticeLine, .openPracticeGroup, .toggleEraser, .eraseStroke])
         ]
-        // Cropping frames the whole picture: the Crown sets how much stays, a drag places it.
-        if includesCrop {
-            lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize, .openCrop,
-                                          .trimCrop, .moveCrop, .applyCrop]))
+        // Adjust size frames the whole picture: the Crown shrinks the canvas, a drag places it.
+        if includesAdjustSize {
+            lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize, .openAdjustSize,
+                                          .setCanvasSize, .moveCanvasFrame, .applyCanvasSize]))
         }
         // A last autosave, then the gallery shows the saved pictures; the tutorial gallery
         // also starts with practice pictures, so selection never lacks two. The liked ones

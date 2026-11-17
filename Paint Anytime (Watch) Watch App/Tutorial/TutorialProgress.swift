@@ -17,11 +17,11 @@ enum TutorialStep: Int, CaseIterable {
     case history, saveDrawing, openMenu, openGallery
     case galleryFullscreen, deleteDrawing, returnToCanvas, clearCanvas
     case openCanvasSettings, openPerspective, choosePerspective, leavePerspective, leaveMenu, perspectiveStroke
-    case openCanvasSize, openCrop, trimCrop, applyCrop
-    // Later additions: the ray count, moving the crop window, the way back out of the
+    case openCanvasSize, openAdjustSize, setCanvasSize, applyCanvasSize
+    // Later additions: the ray count, moving the canvas frame, the way back out of the
     // blending pages, the user's own undo of the crossing line, the icon picker's Back,
     // the action list's close button and a line before the eraser toggle.
-    case setRayCount, moveCrop, leaveColorBlending, leaveDrawingSettings, undoMarkerLine
+    case setRayCount, moveCanvasFrame, leaveColorBlending, leaveDrawingSettings, undoMarkerLine
     case leaveIconPicker, closeActionList, drawPracticeLine
     /// After the group like: a watch face whose widget shows the pictures just liked.
     case showFavoritesWidget
@@ -69,8 +69,8 @@ struct TutorialProgress {
         case leftPerspective, leftMenu
         case openedCanvasEditor, resetEditorLayout, choseEditorSlot, groupedEditorActions, choseEditorActions
         case choseGroupIcon, savedCanvasLayout, openedPracticeGroup, toggledEraser, erased
-        case openedCanvasSize, openedCrop, trimmedCrop, croppedCanvas
-        case changedRayCount, movedCrop, leftColorBlending, leftDrawingSettings, undidMarkerLine
+        case openedCanvasSize, openedAdjustSize, changedCanvasSize, resizedCanvas
+        case changedRayCount, movedCanvasFrame, leftColorBlending, leftDrawingSettings, undidMarkerLine
         case leftIconPicker, closedActionList, sawFavoritesWidget
         case startedSelection, cancelledSelection, selectedDrawings, deselectedDrawings, favoritedSelection
         case openedAutosave, enabledAutosave, leftAutosave, autosaved
@@ -232,9 +232,9 @@ struct TutorialProgress {
              (.drawPracticeLine, .stroke),
              (.openPracticeGroup, .openedPracticeGroup), (.toggleEraser, .toggledEraser),
              (.eraseStroke, .erased): return .advance
-        // The first turn of the Crown trims the edges and moves on to the crop window, which
-        // a drag moves; ✓ then returns to the cropped canvas at once.
-        case (.trimCrop, .trimmedCrop), (.moveCrop, .movedCrop), (.applyCrop, .croppedCanvas):
+        // The first turn of the Crown shrinks the canvas and moves on to its frame, which
+        // a drag moves; ✓ then returns to the resized canvas at once.
+        case (.setCanvasSize, .changedCanvasSize), (.moveCanvasFrame, .movedCanvasFrame), (.applyCanvasSize, .resizedCanvas):
             return .advance
         // The mixed and the inverted overlap each stay visible before the lesson moves on.
         case (.crossMarkerLine, .crossedMarkerLine), (.redrawMarkerLine, .crossedMarkerLine): return .showResult
@@ -246,7 +246,7 @@ struct TutorialProgress {
             return .advance
         case (.openCanvasSettings, .openedCanvasSettings), (.openPerspective, .openedPerspective),
              (.perspectiveStroke, .drewAlongGuide), (.openCanvasSize, .openedCanvasSize),
-             (.openCrop, .openedCrop),
+             (.openAdjustSize, .openedAdjustSize),
              (.startSelection, .startedSelection), (.selectDrawings, .selectedDrawings),
              (.favoriteSelection, .favoritedSelection), (.showFavoritesWidget, .sawFavoritesWidget): return .advance
         case (.openLasso, .openedLasso), (.selectLasso, .selectedLasso),
@@ -268,7 +268,7 @@ struct TutorialProgress {
     var visibleToolPages: Set<Int> { [0, 1, 2, 3, 4, 5, 6] }
     /// Lesson-wide, so menu rows stay installed while their pages are pushed.
     var teachesPerspective: Bool { step != .inactive && lessonSteps.contains(.openPerspective) }
-    var teachesCrop: Bool { step != .inactive && lessonSteps.contains(.openCrop) }
+    var teachesAdjustSize: Bool { step != .inactive && lessonSteps.contains(.openAdjustSize) }
     var teachesBlending: Bool { step != .inactive && lessonSteps.contains(.openColorBlending) }
     var teachesCanvasEditor: Bool { step != .inactive && lessonSteps.contains(.openCanvasEditor) }
     var teachesGallerySelection: Bool { step != .inactive && lessonSteps.contains(.startSelection) }
