@@ -587,7 +587,14 @@ struct TutorialMenuPresentation: View {
                 .accessibilityHidden(true)
         }
         // The clock leaves as the circle starts, as it does on the welcome screen.
-        ._statusBarHidden(closesIris)
+        // Installed only while the circle closes: a permanent `_statusBarHidden(false)` on the
+        // sheet pinned its clock in the corner, so pages with a trailing ⓘ never centered it.
+        // In a background, so adding it does not rebuild the menu's navigation stack.
+        .background {
+            if closesIris {
+                Color.clear._statusBarHidden(true)
+            }
+        }
         // Block repeated taps without dimming every menu row before dismissal.
         .allowsHitTesting(!onboarding.preparesTutorial && onboarding.tutorialFolder == nil)
         .preferredColorScheme(.dark)
