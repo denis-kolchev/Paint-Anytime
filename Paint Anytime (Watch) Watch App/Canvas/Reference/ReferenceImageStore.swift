@@ -22,6 +22,9 @@ final class ReferenceImageStore: ObservableObject {
     @Published private(set) var image: CGImage?
     @Published private(set) var isImporting = false
     @Published var errorMessage: String?
+    /// Where the full-screen view was zoomed and moved, kept between openings. Not
+    /// published: only the full-screen view reads it, when it opens.
+    var viewerState = ReferenceViewerState()
     /// Bumped by every change, so a slower load never overwrites a newer choice.
     private var generation = 0
 
@@ -57,6 +60,7 @@ final class ReferenceImageStore: ObservableObject {
             return false
         }
         image = imported
+        viewerState.reference = ReferenceViewport()
         isEnabled = true
         return true
     }
@@ -65,6 +69,7 @@ final class ReferenceImageStore: ObservableObject {
         generation += 1
         isImporting = false
         image = nil
+        viewerState.reference = ReferenceViewport()
         if let url = Self.fileURL { try? FileManager.default.removeItem(at: url) }
     }
 
@@ -104,4 +109,21 @@ final class ReferenceImageStore: ObservableObject {
         CGImageDestinationAddImage(destination, image, nil)
         return CGImageDestinationFinalize(destination)
     }
+}
+
+/// One picture's Crown zoom and screen offset in the full-screen view.
+struct ReferenceViewport: Equatable {
+    var crownZoom = 1.0
+    var offset = CGSize.zero
+    /// The Crown value with the 100% snap applied.
+    var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
+}
+
+/// The full-screen view's zoom and position for the reference and for the canvas
+/// shown in its place: each picture keeps its own, and both outlive the cover.
+struct ReferenceViewerState {
+    var reference = ReferenceViewport()
+    var canvas = ReferenceViewport()
+    /// The drawing size the canvas viewport belongs to; another size starts it over.
+    var canvasSize: CGSize?
 }

@@ -53,14 +53,25 @@ struct ReferenceFullscreenView: View {
     @State private var isSampling = false
     /// A tap on the picture hides Back, the actions and the system clock, as in the gallery.
     @State private var isCleanViewing = false
-    /// The canvas's Crown zoom, in only: the same detents, maximum and 100% snap.
-    @State private var crownZoom = 1.0
-    @State private var offset = CGSize.zero
+    /// The canvas's Crown zoom, in only: the same detents, maximum and 100% snap. The
+    /// reference and the canvas shown in its place each keep their own zoom and position,
+    /// restored from the store when the cover opens again.
+    @State private var referenceViewport = ReferenceImageStore.shared.viewerState.reference
+    @State private var canvasViewport = ReferenceImageStore.shared.viewerState.canvas
     @State private var panOrigin: CGSize?
     /// Where the eyedropper's finger is on screen, to resample it when the zoom changes.
     @State private var sampleLocation: CGPoint?
     @FocusState private var crownFocused: Bool
-    private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
+    /// The viewport of the picture on screen.
+    private var viewport: ReferenceViewport {
+        get { showsCanvas ? canvasViewport : referenceViewport }
+        nonmutating set {
+            if showsCanvas { canvasViewport = newValue } else { referenceViewport = newValue }
+        }
+    }
+    private var crownZoom: Double { viewport.crownZoom }
+    private var zoom: Double { viewport.zoom }
+    private var offset: CGSize { viewport.offset }
 
     /// The picture on screen, which the eyedropper samples.
     private var shownImage: CGImage? { showsCanvas ? canvasImage ?? store.image : store.image }
@@ -71,8 +82,6 @@ struct ReferenceFullscreenView: View {
                 ZStack {
                     Color.black
                     picture
-                        .scaleEffect(zoom)
-                        .offset(offset)
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .contentShape(Rectangle())
                         .onTapGesture(perform: toggleCleanViewing)
@@ -131,8 +140,7 @@ struct ReferenceFullscreenView: View {
                 ReferencePickerView {
                     canvasImage = nil
                     showsCanvas = false
-                    crownZoom = 1
-                    offset = .zero
+                    referenceViewport = ReferenceViewport()
                 }
             }
         }
@@ -149,6 +157,10 @@ struct ReferenceFullscreenView: View {
         .onChange(of: store.image == nil) { _, removed in
             if removed { dismiss() }
         }
+        .onAppear(perform: restoreCanvasViewport)
+        // Kept for the next opening; the store resets the reference's on a new image.
+        .onChange(of: referenceViewport) { _, viewport in store.viewerState.reference = viewport }
+        .onChange(of: canvasViewport) { _, viewport in store.viewerState.canvas = viewport }
         // A full-screen cover is outside the app root's clock host, so it brings its own,
         // like the canvas editor.
         .requestsHiddenClock(isCleanViewing)
@@ -170,6 +182,8 @@ struct ReferenceFullscreenView: View {
                 Image(decorative: image, scale: 1)
                     .resizable()
                     .scaledToFit()
+                    .scaleEffect(referenceViewport.zoom)
+                    .offset(referenceViewport.offset)
                     .opacity(showsCanvas && canvasImage != nil ? 0 : 1)
                     .accessibilityLabel(L10n.text("Reference image"))
             }
@@ -177,6 +191,8 @@ struct ReferenceFullscreenView: View {
                 Image(decorative: canvasImage, scale: 1)
                     .resizable()
                     .scaledToFit()
+                    .scaleEffect(canvasViewport.zoom)
+                    .offset(canvasViewport.offset)
                     .opacity(showsCanvas ? 1 : 0)
                     .accessibilityHidden(!showsCanvas)
             }
@@ -247,17 +263,19 @@ struct ReferenceFullscreenView: View {
     /// picture settles back to fit there.
     private func setCrownZoom(_ value: Double, size: CGSize) {
         guard panOrigin == nil, value != crownZoom else { return }
-        let previousZoom = zoom
+        var next = viewport
+        let previousZoom = next.zoom
         let wasSnapped = previousZoom == 1
-        crownZoom = value
-        if zoom == 1 {
-            offset = .zero
+        next.crownZoom = value
+        if next.zoom == 1 {
+            next.offset = .zero
             if !wasSnapped { WKInterfaceDevice.current().play(.click) }
         } else {
             // Keep the picture point at the screen center fixed.
-            let ratio = zoom / previousZoom
-            offset = CGSize(width: offset.width * ratio, height: offset.height * ratio)
+            let ratio = next.zoom / previousZoom
+            next.offset = CGSize(width: next.offset.width * ratio, height: next.offset.height * ratio)
         }
+        viewport = next
         if isSampling, let sampleLocation { updateSample(at: sampleLocation, size: size) }
     }
 
@@ -271,7 +289,7 @@ struct ReferenceFullscreenView: View {
                 // The canvas's centering magnet, in screen points.
                 let wasCentered = offset == .zero
                 let isCentered = hypot(proposed.width, proposed.height) <= (wasCentered ? 12 : 8)
-                offset = isCentered ? .zero : proposed
+                viewport.offset = isCentered ? .zero : proposed
                 if isCentered && !wasCentered { WKInterfaceDevice.current().play(.click) }
             }
             .onEnded { _ in panOrigin = nil }
@@ -308,6 +326,14 @@ struct ReferenceFullscreenView: View {
         guard isSampling, let image = shownImage else { return }
         sampleLocation = location
         sample = ReferenceColorSample(image: image, location: fittedPoint(location, size: size), frame: size) ?? sample
+    }
+
+    /// Another drawing size makes the saved canvas zoom meaningless: start it over.
+    private func restoreCanvasViewport() {
+        let size = controller.document.size(fallback: viewportSize)
+        guard store.viewerState.canvasSize != size else { return }
+        store.viewerState.canvasSize = size
+        canvasViewport = ReferenceViewport()
     }
 
     private func toggleCanvas() {
