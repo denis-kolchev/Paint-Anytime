@@ -54,37 +54,23 @@ private struct AutosaveSpinner: View {
     }
 }
 
-/// Places the countdown centered horizontally, level with the top buttons: the same
-/// native toolbar anchors the top custom controls use, so it lines up with both.
+/// Places the countdown centered horizontally at the hidden system clock's height.
 struct AutosaveCountdownOverlay: View {
+    /// Center of the system clock text, in points from the top of the screen.
+    private static let clockCenterY: CGFloat = 27
     let autosave: CanvasAutosave
-    let regions: CanvasControlRegions
 
     var body: some View {
         if let timerRange = autosave.timerRange {
             GeometryReader { overlay in
                 let frame = overlay.frame(in: .global)
+                // Fixed screen height of the hidden clock's center (measured on Apple Watch
+                // Ultra). Toolbar frames are not used: they differ in the free camera.
                 AutosaveCountdownView(timerRange: timerRange, isSaving: autosave.isSaving)
-                    .position(x: overlay.size.width / 2, y: centerY(in: frame))
+                    .position(x: overlay.size.width / 2, y: Self.clockCenterY - frame.minY)
             }
             .ignoresSafeArea()
             .allowsHitTesting(false)
         }
-    }
-
-    /// Vertical center of the top buttons in the overlay's coordinates.
-    private func centerY(in frame: CGRect) -> CGFloat {
-        for control in [CanvasToolbarControl.tools, .more] {
-            // Anchors persist after their item leaves, so accept only an on-screen one
-            // in the top half, as the custom controls do.
-            if let anchor = regions.toolbarAnchors[control], !anchor.isEmpty,
-               anchor.midY > frame.minY, anchor.midY < frame.midY {
-                return anchor.midY - frame.minY
-            }
-        }
-        // The custom controls' fallback before the native toolbar is measured.
-        let geometry = MorphPanelGeometry(size: frame.size, layoutDirection: .leftToRight)
-        let canvasTop = regions.screenBounds.isNull ? frame.minY : regions.screenBounds.minY
-        return canvasTop + geometry.top + 18 - frame.minY
     }
 }

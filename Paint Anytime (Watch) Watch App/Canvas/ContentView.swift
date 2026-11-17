@@ -92,14 +92,14 @@ struct ContentView: View {
         // Establish full-screen bounds before applying any presentation effects.
         .ignoresSafeArea()
         .overlay {
-            // The canvas hides the system clock, so the countdown takes its place,
-            // level with the top buttons. A separate view reads the countdown and the
-            // anchors, so neither invalidates this screen. Behind the menu and quick
+            // The canvas hides the system clock, so the countdown takes its place:
+            // centered at the clock's height. A separate view reads the countdown, so it
+            // does not invalidate this screen. Behind the menu and quick
             // settings it stays mounted and fades with the canvas controls.
             if autosaveEnabled, showsAutosaveTimer, isActive, scenePhase == .active,
                menuOnboarding.tutorialFolder == nil,
                !showsGallery, !showsToolSettings, !showsLayers, !showsSampledPalette {
-                AutosaveCountdownOverlay(autosave: autosave, regions: controlRegions)
+                AutosaveCountdownOverlay(autosave: autosave)
                     .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
             }
         }
