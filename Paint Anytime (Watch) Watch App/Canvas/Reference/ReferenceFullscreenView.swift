@@ -112,7 +112,8 @@ struct ReferenceFullscreenView: View {
                                             : { startSampling(size: geometry.size) },
                                           onToggleCanvas: toggleCanvas,
                                           onReplace: { choosesReplacement = true },
-                                          onRemove: { store.remove() })
+                                          // Nothing left to remove once the image is gone.
+                                          onRemove: store.image == nil ? nil : { store.remove() })
                         .opacity(isSampling || isCleanViewing ? 0 : 1)
                         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
                         .allowsHitTesting(!isSampling && !isCleanViewing)
@@ -364,7 +365,8 @@ private struct ReferenceMorphActions: View {
     let onEyedropper: (() -> Void)?
     let onToggleCanvas: () -> Void
     let onReplace: () -> Void
-    let onRemove: () -> Void
+    /// Nil when there is no reference image left to remove.
+    let onRemove: (() -> Void)?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -377,7 +379,9 @@ private struct ReferenceMorphActions: View {
         let diameter = GalleryMorphState.buttonDiameter
         let centerX = state.backButtonFrame.map { $0.midX - canvasOrigin.x } ?? anchor.x
         let left = centerX - diameter / 2
-        let expandedWidth = min(36 * CGFloat(onEyedropper == nil ? 4 : 5), max(0, size.width - left * 2))
+        // Close, show canvas and replace, plus the optional eyedropper and remove.
+        let cellCount = 3 + (onEyedropper == nil ? 0 : 1) + (onRemove == nil ? 0 : 1)
+        let expandedWidth = min(36 * CGFloat(cellCount), max(0, size.width - left * 2))
         let panelWidth = state.isExpanded ? expandedWidth : diameter
         panel(expandedWidth: expandedWidth)
             .position(x: left + panelWidth / 2, y: anchor.y)
@@ -417,8 +421,10 @@ private struct ReferenceMorphActions: View {
                     icon("arrow.triangle.2.circlepath", width: nil)
                 }
                 .accessibilityLabel(L10n.text("Replace image"))
-                Button(role: .destructive, action: onRemove) { icon("trash", width: nil) }
-                    .accessibilityLabel(L10n.text("Remove image"))
+                if let onRemove {
+                    Button(role: .destructive, action: onRemove) { icon("trash", width: nil) }
+                        .accessibilityLabel(L10n.text("Remove image"))
+                }
             }
             .frame(width: expandedWidth, height: GalleryMorphState.buttonDiameter)
         } collapsed: {
