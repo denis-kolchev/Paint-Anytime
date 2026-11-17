@@ -33,8 +33,13 @@ nonisolated struct PaintProject: Codable {
         guard data.count <= maximumBytes else { throw ProjectError.tooLarge }
         let project = try JSONDecoder().decode(Self.self, from: data)
         guard project.format == "Paint Anytime Project", Self.supportedVersions.contains(project.version) else { throw ProjectError.unsupported }
-        guard let object = try JSONSerialization.jsonObject(with: project.document) as? [String: Any],
-              object["layers"] is [[String: Any]],
+        // The pool frees the parsed tree here: a large drawing's tree is tens of MB, and
+        // several parses held at once crashed the watch on memory.
+        let hasLayers = try autoreleasepool {
+            let object = try JSONSerialization.jsonObject(with: project.document) as? [String: Any]
+            return object?["layers"] is [[String: Any]]
+        }
+        guard hasLayers,
               project.preview.starts(with: [137, 80, 78, 71, 13, 10, 26, 10]) else { throw ProjectError.invalid }
         return Self(document: project.document, preview: project.preview)
     }
@@ -48,6 +53,11 @@ nonisolated struct PaintProject: Codable {
     /// Legacy exports omitted the logical canvas size. Recover it from the
     /// original PNG metadata, never from the receiving device's screen or DPI.
     static func restoringCanvasSize(in document: Data, preview: Data) -> Data {
+        // Frees the parsed tree on return rather than with the caller's pool; see `decode`.
+        autoreleasepool { restoringCanvasSizeInPool(in: document, preview: preview) }
+    }
+
+    private static func restoringCanvasSizeInPool(in document: Data, preview: Data) -> Data {
         guard var object = try? JSONSerialization.jsonObject(with: document) as? [String: Any],
               object["canvasSize"] == nil || object["canvasSize"] is NSNull,
               let source = CGImageSourceCreateWithData(preview as CFData, nil),

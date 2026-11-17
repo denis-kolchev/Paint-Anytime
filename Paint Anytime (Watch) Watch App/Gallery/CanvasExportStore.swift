@@ -69,10 +69,11 @@ enum CanvasExportStore {
         try JSONEncoder().encode(names.sorted()).write(to: folder.appendingPathComponent("favorites.json"), options: .atomic)
     }
 
-    /// Widget previews are rebuilt on this one serial queue, so two refreshes never
-    /// write the widget folder at once.
-    private nonisolated static let widgetQueue = DispatchQueue(label: "PaintAnytime.widgetRefresh", qos: .utility)
-    /// A refresh waits to start on `widgetQueue`; requests made meanwhile join it.
+    /// The gallery's background file work: widget refreshes and iPhone transfers run here
+    /// one at a time, so two refreshes never write the widget folder at once and their
+    /// memory peaks never add up.
+    nonisolated static let backgroundQueue = DispatchQueue(label: "PaintAnytime.galleryBackground", qos: .utility)
+    /// A refresh waits to start on `backgroundQueue`; requests made meanwhile join it.
     private nonisolated static let widgetRefreshQueued = OSAllocatedUnfairLock(initialState: false)
 
     /// Rebuilds the widget previews in the background. It lists every drawing and
@@ -85,17 +86,19 @@ enum CanvasExportStore {
             return true
         }
         guard schedules else { return }
-        widgetQueue.async {
+        backgroundQueue.async {
             widgetRefreshQueued.withLock { $0 = false }
-            do {
-                try GalleryWidgetStore.publish(widgetDrawings().map { ($0.url, $0.isFavorite) })
-            } catch {
-                NSLog("Widget refresh failed: %@", error.localizedDescription)
+            autoreleasepool {
+                do {
+                    try GalleryWidgetStore.publish(widgetDrawings().map { ($0.url, $0.isFavorite) })
+                } catch {
+                    NSLog("Widget refresh failed: %@", error.localizedDescription)
+                }
             }
         }
     }
 
-    /// The gallery's drawings without `all()`'s cleanup: the widget queue only reads
+    /// The gallery's drawings without `all()`'s cleanup: the background queue only reads
     /// the drawings folder, so it never races the main thread's deletions there.
     private nonisolated static func widgetDrawings() throws -> [CanvasExport] {
         let folder = try directory()
@@ -128,8 +131,13 @@ enum CanvasExportStore {
             try data.write(to: url, options: .atomic)
         }
         // Migrate legacy files once so even drawings without layer IDs retain their identity.
-        if let object = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-           object["id"] == nil {
+        // The pool frees the parsed tree at once; see PaintProject.decode.
+        let lacksID = try autoreleasepool {
+            let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+            // Only a JSON object without an id migrates, as before.
+            return object.map { $0["id"] == nil } ?? false
+        }
+        if lacksID {
             try JSONEncoder().encode(document).write(to: url, options: .atomic)
         }
         return document

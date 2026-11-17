@@ -13,10 +13,6 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         session.activate()
     }
 
-    /// Transfers are prepared here one at a time, in the order they were queued, so a
-    /// newer save still cancels the outstanding transfers of an older one.
-    private nonisolated static let preparationQueue = DispatchQueue(label: "PaintAnytime.phoneTransfer", qos: .utility)
-
     /// Sends a gallery drawing and its project to the iPhone. Only the session checks
     /// run here: loading, re-encoding and writing the project held the main thread on
     /// every autosave, so the canvas stopped taking strokes mid-save.
@@ -25,8 +21,12 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         guard WCSession.isSupported() else { return false }
         let session = WCSession.default
         guard session.activationState == .activated, session.isCompanionAppInstalled else { return false }
-        Self.preparationQueue.async {
-            Self.prepareTransfer(imageURL, replacingPending: replacingPending, session: session)
+        // One at a time and in order, so a newer save still cancels an older one's
+        // transfers; shared with widget refreshes so their memory peaks never add up.
+        CanvasExportStore.backgroundQueue.async {
+            autoreleasepool {
+                Self.prepareTransfer(imageURL, replacingPending: replacingPending, session: session)
+            }
         }
         return true
     }
@@ -58,9 +58,14 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         if imageURL.pathExtension == "png" {
             let projectURL = imageURL.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
             do {
-                let document = try CanvasExportStore.loadDocument(at: imageURL)
+                // Each step in its own pool, so a large drawing's parsed JSON is freed before
+                // the next one parses it again.
+                let document = try autoreleasepool { try CanvasExportStore.loadDocument(at: imageURL) }
                 photoDocument = document
-                try PaintProject(document: JSONEncoder().encode(document), preview: Data(contentsOf: imageURL)).write(to: projectURL)
+                try autoreleasepool {
+                    try PaintProject(document: JSONEncoder().encode(document), preview: Data(contentsOf: imageURL))
+                        .write(to: projectURL)
+                }
                 if replacingPending || !session.outstandingFileTransfers.contains(where: { $0.file.fileURL == projectURL }) {
                     session.transferFile(projectURL, metadata: ["drawingName": projectURL.lastPathComponent])
                 }

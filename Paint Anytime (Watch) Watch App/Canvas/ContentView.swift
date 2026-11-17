@@ -345,7 +345,8 @@ struct ContentView: View {
             canRun: { autosaveEnabled && isActive && scenePhase == .active },
             isBusy: { isBusyForAutosave },
             prepare: {
-                // Nothing to save, or a save the session would refuse: no loading wheel.
+                // Nothing to save, or a save the session would refuse: the countdown
+                // restarts after its short wheel.
                 guard controller.canClear, session.canAutosave else { return false }
                 // The autosave's own notice replaces this one; fade rather than cut it.
                 withAnimation(.easeOut(duration: 0.2)) { savedNoticeID = nil }

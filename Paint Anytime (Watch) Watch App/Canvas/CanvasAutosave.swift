@@ -28,6 +28,8 @@ final class CanvasAutosave {
             timerRange = nil
         }
         guard canRun() else { return }
+        // Every exit (cancellation, a disabled autosave) brings the clock icon back.
+        defer { isSaving = false }
         do {
             while !Task.isCancelled {
                 // Preserve the deadline across wrist-down and background transitions.
@@ -39,35 +41,33 @@ final class CanvasAutosave {
                 if let deadline = timerRange?.upperBound {
                     let remaining = deadline.timeIntervalSinceNow
                     if remaining > 0 {
-                        try await Task.sleep(for: .seconds(remaining))
+                        // A tight tolerance: with the default one a sleep of minutes could end
+                        // seconds late, leaving the countdown at 0:00 with its clock icon.
+                        try await Task.sleep(until: .now + .seconds(remaining),
+                                             tolerance: .milliseconds(20), clock: .continuous)
                     }
-                }
-                // Wait for interaction and presentations to finish without cancelling a stroke
-                // or saving a temporary selection state. Retry promptly once the canvas is idle.
-                while isBusy() {
-                    try await Task.sleep(for: .seconds(1))
                 }
                 try Task.checkCancellation()
                 guard canRun() else { return }
-                guard prepare() else {
-                    timerRange = nil
-                    continue
-                }
-                // Keep the wheel long enough to read as a save rather than a flicker.
+                // 0:00: the wheel replaces the clock icon at once, also while the save waits
+                // for the canvas below. Kept long enough to read as a save, not a flicker.
                 let shownUntil = ContinuousClock.now.advanced(by: .milliseconds(700))
                 isSaving = true
-                // Let the wheel replace the clock icon (a 0.25 s transition) before the save
-                // starts: its main-actor part holds frames, so the wheel appeared only after it.
-                try? await Task.sleep(for: .milliseconds(300))
-                // The canvas may have changed meanwhile: re-check as before a save.
-                guard !Task.isCancelled, canRun(), !isBusy() else {
-                    isSaving = false
-                    try Task.checkCancellation()
-                    guard canRun() else { return }
-                    continue
+                // Let the icon's 0.25 s transition play before the save: its main-actor
+                // part holds frames.
+                try await Task.sleep(for: .milliseconds(300))
+                // Wait for interaction and presentations to finish without cancelling a stroke
+                // or saving a temporary selection state. Retry promptly once the canvas is idle.
+                while isBusy() {
+                    try await Task.sleep(for: .milliseconds(250))
                 }
-                // The write is not tied to this task, so wrist-down does not interrupt it.
-                _ = await save()
+                try Task.checkCancellation()
+                guard canRun() else { return }
+                if prepare() {
+                    // The write is not tied to this task, so wrist-down does not interrupt it.
+                    _ = await save()
+                }
+                // Nothing to save: the countdown restarts after the same short wheel.
                 try? await Task.sleep(until: shownUntil, clock: .continuous)
                 isSaving = false
                 timerRange = nil
