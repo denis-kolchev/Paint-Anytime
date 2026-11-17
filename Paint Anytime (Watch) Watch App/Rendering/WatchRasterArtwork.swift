@@ -35,7 +35,8 @@ struct WatchRasterArtwork: View {
                         key: WatchBitmapRenderer.CacheKey(documentID: documentID,
                             documentRevision: documentRevision, size: geometry.size,
                             // Keep the previous resolution until Crown input settles.
-                            scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom)),
+                            scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom,
+                                canvasSize: geometry.size, layerCount: document?.layers.count ?? 1)),
                         liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip && selectionPreview == nil)
         }
         .task(id: zoom) {

@@ -17,7 +17,39 @@ nonisolated extension WatchBitmapRenderer {
         static let previousInkByteLimit = 12 * 1024 * 1024
         private(set) var previousInkHits = 0
 
+        /// Current inks of all layers stay within this many bytes; least recently used go
+        /// first and replay when next needed. Float RGBA is 16 B/px: at ×4 one watch-sized
+        /// layer is ~13 MB, and 17 of them took the app past its ~300 MB limit.
+        /// `rasterScale(displayScale:zoom:canvasSize:layerCount:)` keeps zoom within it.
+        static let inkByteLimit = 96 * 1024 * 1024
+        private var inkAccess: [UUID: UInt64] = [:]
+        private var inkClock: UInt64 = 0
+
         private static func bytes(_ ink: InkSnapshot) -> Int { ink.image.bytesPerRow * ink.image.height }
+
+        /// The layer's current ink if it matches these strokes; marks it recently used.
+        fileprivate func currentInk(for layerID: UUID, revisions: [UUID]) -> InkSnapshot? {
+            guard let entry = inks[layerID], entry.revisions == revisions else { return nil }
+            touchInk(layerID)
+            return entry.ink
+        }
+
+        private func touchInk(_ layerID: UUID) {
+            inkClock &+= 1
+            inkAccess[layerID] = inkClock
+        }
+
+        /// Never evicts `layerID`, the ink just stored, so the cache never empties here.
+        private func evictInks(keeping layerID: UUID) {
+            var total = inks.values.reduce(0) { $0 + Self.bytes($1.ink) }
+            while total > Self.inkByteLimit,
+                  let oldest = inks.keys.filter({ $0 != layerID })
+                      .min(by: { inkAccess[$0, default: 0] < inkAccess[$1, default: 0] }),
+                  let removed = inks.removeValue(forKey: oldest) {
+                total -= Self.bytes(removed.ink)
+                inkAccess.removeValue(forKey: oldest)
+            }
+        }
 
         /// Commit a snapshot as the layer's current ink, keeping the replaced one for Undo.
         fileprivate func store(_ ink: InkSnapshot, revisions: [UUID], for layerID: UUID) {
@@ -26,6 +58,8 @@ nonisolated extension WatchBitmapRenderer {
                 previousInks.insert((layerID, previous.revisions, previous.ink), at: 0)
             }
             inks[layerID] = (revisions, ink)
+            touchInk(layerID)
+            evictInks(keeping: layerID)
             previousInks.removeAll { $0.layerID == layerID && $0.revisions == revisions }
             var kept: [UUID: Int] = [:]
             var total = 0
@@ -58,6 +92,7 @@ nonisolated extension WatchBitmapRenderer {
 
         fileprivate func retainLayers(_ ids: Set<UUID>) {
             inks = inks.filter { ids.contains($0.key) }
+            inkAccess = inkAccess.filter { inks[$0.key] != nil }
             previousInks.removeAll { !ids.contains($0.layerID) }
         }
         fileprivate struct CompositeKey: Equatable {
@@ -427,8 +462,8 @@ nonisolated extension WatchBitmapRenderer {
             // Replay the selected layer in its original order. Other layers stay cached.
             return renderInk(strokes: layer.strokes, size: size, scale: scale, selection: selection)
         }
-        if let entry = cache?.inks[layer.id], entry.revisions == revisions {
-            return entry.ink
+        if let ink = cache?.currentInk(for: layer.id, revisions: revisions) {
+            return ink
         }
         if let cache, let earlier = cache.previousInk(for: layer.id, revisions: revisions) {
             cache.store(earlier, revisions: revisions, for: layer.id)

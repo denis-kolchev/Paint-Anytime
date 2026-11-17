@@ -96,6 +96,18 @@ nonisolated enum WatchBitmapRenderer {
         min(maximumRasterScale, displayScale * CGFloat(max(1, zoom)))
     }
 
+    /// Zoom adds resolution only while every layer's float ink fits
+    /// `LayerCache.inkByteLimit`. Never below the display scale, so an unzoomed
+    /// canvas looks as before; quarter steps keep the cache key stable.
+    static func rasterScale(displayScale: CGFloat, zoom: Double,
+                            canvasSize: CGSize, layerCount: Int) -> CGFloat {
+        let requested = rasterScale(displayScale: displayScale, zoom: zoom)
+        let pixels = canvasSize.width * canvasSize.height * CGFloat(max(1, layerCount))
+        guard pixels.isFinite, pixels > 0 else { return requested }
+        let fitting = (CGFloat(LayerCache.inkByteLimit) / (16 * pixels)).squareRoot()
+        return min(requested, max(displayScale, (fitting * 4).rounded(.down) / 4))
+    }
+
     struct StrokeGeometry {
         let revision: UUID
         let commands: [WatchDrawingCommand]
