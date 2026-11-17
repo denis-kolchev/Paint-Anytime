@@ -18,6 +18,8 @@ struct WatchRasterArtwork: View {
     let activeStrokeID: UInt64
     var onFramePrepared: (Bool) -> Void = { _ in }
     let zoom: Double
+    /// The paper's on-screen scale at 100% zoom; see `WatchBitmapRenderer.rasterScale`.
+    var fit: CGFloat = 1
     /// Lets the touch handler queue live frames directly (Direct submit).
     var liveSubmitter: LiveFrameSubmitter? = nil
     /// The live ink tip is drawn above every layer, so the caller allows it only when
@@ -36,7 +38,7 @@ struct WatchRasterArtwork: View {
                             documentRevision: documentRevision, size: geometry.size,
                             // Keep the previous resolution until Crown input settles.
                             scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom,
-                                canvasSize: geometry.size, layerCount: document?.layers.count ?? 1)),
+                                fit: fit, canvasSize: geometry.size, layerCount: document?.layers.count ?? 1)),
                         liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip && selectionPreview == nil)
         }
         .task(id: zoom) {

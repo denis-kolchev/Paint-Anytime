@@ -96,16 +96,23 @@ nonisolated enum WatchBitmapRenderer {
         min(maximumRasterScale, displayScale * CGFloat(max(1, zoom)))
     }
 
-    /// Zoom adds resolution only while every layer's float ink fits
-    /// `LayerCache.inkByteLimit`. Never below the display scale, so an unzoomed
-    /// canvas looks as before; quarter steps keep the cache key stable.
-    static func rasterScale(displayScale: CGFloat, zoom: Double,
+    /// Screen raster resolution, in pixels per canvas point.
+    ///
+    /// `fit` is the paper's on-screen scale at 100% zoom: a 1024 pt canvas on a
+    /// ~200 pt screen shows ~0.4 px per point, so rendering it at the display scale
+    /// spent ~25 times the pixels (48–64 MiB per layer) on detail the screen cannot
+    /// show. Zoom adds resolution only while every layer's float ink fits
+    /// `LayerCache.inkByteLimit`; `WatchViewportDetailView` sharpens the visible area
+    /// beyond that. Never below what the unzoomed screen shows; quarter steps keep
+    /// the cache key stable.
+    static func rasterScale(displayScale: CGFloat, zoom: Double, fit: CGFloat,
                             canvasSize: CGSize, layerCount: Int) -> CGFloat {
-        let requested = rasterScale(displayScale: displayScale, zoom: zoom)
+        let screen = max(0.25, (displayScale * (fit.isFinite && fit > 0 ? fit : 1) * 4).rounded(.up) / 4)
+        let requested = min(maximumRasterScale, screen * CGFloat(max(1, zoom)))
         let pixels = canvasSize.width * canvasSize.height * CGFloat(max(1, layerCount))
         guard pixels.isFinite, pixels > 0 else { return requested }
         let fitting = (CGFloat(LayerCache.inkByteLimit) / (16 * pixels)).squareRoot()
-        return min(requested, max(displayScale, (fitting * 4).rounded(.down) / 4))
+        return min(requested, max(screen, (fitting * 4).rounded(.down) / 4))
     }
 
     struct StrokeGeometry {

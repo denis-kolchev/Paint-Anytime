@@ -21,7 +21,7 @@ nonisolated extension WatchBitmapRenderer {
         /// Current inks of all layers stay within this many bytes; least recently used go
         /// first and replay when next needed. Float RGBA is 16 B/px: at ×4 one watch-sized
         /// layer is ~13 MB, and 17 of them took the app past its ~300 MB limit.
-        /// `rasterScale(displayScale:zoom:canvasSize:layerCount:)` keeps zoom within it.
+        /// `rasterScale(displayScale:zoom:fit:canvasSize:layerCount:)` keeps zoom within it.
         ///
         /// The app's memory limit differs by watch model and watchOS version, so the
         /// budget is a share of what this device leaves the app, at most 96 MB. It is

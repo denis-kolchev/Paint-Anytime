@@ -132,16 +132,18 @@ struct WatchCanvasView: View {
                             clearDocumentRevision: controller.clearDocumentRevision,
                             activeStrokeRevision: controller.activeStrokeRevision,
                             activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: zoom,
-                            liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip)
+                            fit: fit, liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip)
                         // Evaluated per live sample too, so it hides as soon as a stroke starts.
                         .overlay(alignment: .topLeading) {
                             WatchViewportDetailView(document: displayedDocument,
                                 documentID: ObjectIdentifier(controller),
                                 documentRevision: controller.documentRevision,
                                 visible: visibleCanvasRect(geometry.size), paperSize: paperSize,
-                                scale: displayScale * zoom,
+                                // Pixels per canvas point the screen shows at this zoom.
+                                scale: displayScale * fit * zoom,
                                 baseScale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: zoom,
-                                    canvasSize: paperSize, layerCount: useLayers ? displayedDocument.layers.count : 1),
+                                    fit: fit, canvasSize: paperSize,
+                                    layerCount: useLayers ? displayedDocument.layers.count : 1),
                                 isEnabled: controller.activeStroke == nil && !lasso.isActive
                                     && lasso.previewState == nil)
                         }
