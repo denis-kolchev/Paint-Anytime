@@ -133,6 +133,18 @@ struct WatchCanvasView: View {
                             activeStrokeRevision: controller.activeStrokeRevision,
                             activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: zoom,
                             liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip)
+                        // Evaluated per live sample too, so it hides as soon as a stroke starts.
+                        .overlay(alignment: .topLeading) {
+                            WatchViewportDetailView(document: displayedDocument,
+                                documentID: ObjectIdentifier(controller),
+                                documentRevision: controller.documentRevision,
+                                visible: visibleCanvasRect(geometry.size), paperSize: paperSize,
+                                scale: displayScale * zoom,
+                                baseScale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: zoom,
+                                    canvasSize: paperSize, layerCount: useLayers ? displayedDocument.layers.count : 1),
+                                isEnabled: controller.activeStroke == nil && !lasso.isActive
+                                    && lasso.previewState == nil)
+                        }
                     }
                         .frame(width: paperSize.width, height: paperSize.height)
                         .overlay {
@@ -812,6 +824,13 @@ struct WatchCanvasView: View {
         return CGAffineTransform(a: scale, b: 0, c: 0, d: scale,
                                  tx: size.width / 2 + offset.width - paper.width * scale / 2,
                                  ty: size.height / 2 + offset.height - paper.height * scale / 2)
+    }
+
+    /// Canvas points shown in a viewport of `size`, possibly beyond the paper.
+    private func visibleCanvasRect(_ size: CGSize) -> CGRect {
+        let a = canvasPoint(.zero, size: size)
+        let b = canvasPoint(CGPoint(x: size.width, y: size.height), size: size)
+        return CGRect(x: min(a.x, b.x), y: min(a.y, b.y), width: abs(b.x - a.x), height: abs(b.y - a.y))
     }
 
     private func canvasFit(_ size: CGSize) -> CGFloat {
