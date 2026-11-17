@@ -11,6 +11,9 @@ struct ReferenceCanvasThumbnail: View {
     let size: CGSize
     let canvasOrigin: CGPoint
     let isVisible: Bool
+    /// The brush editor covers the canvas: the thumbnail stays mounted and fades with the
+    /// other canvas controls instead of vanishing ahead of them.
+    var isCoveredByEditor = false
     let onOpen: () -> Void
     @Environment(\.layoutDirection) private var layoutDirection
 
@@ -65,6 +68,12 @@ struct ReferenceCanvasThumbnail: View {
         .frame(width: size.width, height: size.height)
         // Ignore animations inherited from the screen's state changes (gallery, menus).
         .transaction { $0.animation = nil }
+        // Outside the transaction above: the same fade the canvas stack gives the morph
+        // panels and custom controls when the brush editor opens or closes.
+        .opacity(isCoveredByEditor ? 0 : 1)
+        .animation(.easeInOut(duration: 0.25), value: isCoveredByEditor)
+        .allowsHitTesting(!isCoveredByEditor)
+        .accessibilityHidden(isCoveredByEditor)
     }
 
     /// The thumbnail's rectangle in canvas coordinates: the image's aspect within

@@ -490,10 +490,11 @@ struct ContentView: View {
             ReferenceCanvasThumbnail(layout: customLayout, regions: controlRegions, size: geometry.size,
                                      canvasOrigin: geometry.frame(in: .global).origin,
                                      isVisible: isActive && menuOnboarding.tutorialFolder == nil
-                                        && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive
+                                        && !showsGallery && !isMovingCanvas && !lasso.isActive
                                         // Hidden while drawing, like the custom controls; it
                                         // appears and disappears without a transition.
                                         && controller.activeStroke == nil,
+                                     isCoveredByEditor: showsToolSettings,
                                      onOpen: openReference)
                 .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
                 .zIndex(2.5)
