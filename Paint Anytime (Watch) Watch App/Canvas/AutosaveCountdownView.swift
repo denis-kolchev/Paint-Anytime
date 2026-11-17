@@ -61,12 +61,16 @@ struct AutosaveCountdownOverlay: View {
     let autosave: CanvasAutosave
 
     var body: some View {
+        // Read here, not in the GeometryReader's closure: that closure runs during
+        // layout, where an observable read may not be tracked, so the wheel never
+        // replaced the clock icon when a save started.
+        let isSaving = autosave.isSaving
         if let timerRange = autosave.timerRange {
             GeometryReader { overlay in
                 let frame = overlay.frame(in: .global)
                 // Fixed screen height of the hidden clock's center (measured on Apple Watch
                 // Ultra). Toolbar frames are not used: they differ in the free camera.
-                AutosaveCountdownView(timerRange: timerRange, isSaving: autosave.isSaving)
+                AutosaveCountdownView(timerRange: timerRange, isSaving: isSaving)
                     .position(x: overlay.size.width / 2, y: Self.clockCenterY - frame.minY)
             }
             .ignoresSafeArea()

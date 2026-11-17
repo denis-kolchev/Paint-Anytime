@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 enum CanvasExportStore {
     /// Remove gallery copies installed by the temporary App Store screenshot setup.
@@ -55,7 +56,7 @@ enum CanvasExportStore {
         if isFavorite { favorites.insert(file.lastPathComponent) }
         else { favorites.remove(file.lastPathComponent) }
         try writeFavorites(favorites, in: folder)
-        if destination == nil { try? refreshWidgets() }
+        if destination == nil { refreshWidgets() }
     }
 
     private nonisolated static func favoriteNames(in folder: URL) throws -> Set<String> {
@@ -68,9 +69,41 @@ enum CanvasExportStore {
         try JSONEncoder().encode(names.sorted()).write(to: folder.appendingPathComponent("favorites.json"), options: .atomic)
     }
 
-    static func refreshWidgets() throws {
-        let drawings = try all()
-        try GalleryWidgetStore.publish(drawings.map { ($0.url, $0.isFavorite) })
+    /// Widget previews are rebuilt on this one serial queue, so two refreshes never
+    /// write the widget folder at once.
+    private nonisolated static let widgetQueue = DispatchQueue(label: "PaintAnytime.widgetRefresh", qos: .utility)
+    /// A refresh waits to start on `widgetQueue`; requests made meanwhile join it.
+    private nonisolated static let widgetRefreshQueued = OSAllocatedUnfairLock(initialState: false)
+
+    /// Rebuilds the widget previews in the background. It lists every drawing and
+    /// re-encodes changed previews, which on the main thread held the canvas after
+    /// each save. A request made while a refresh runs starts another one after it.
+    nonisolated static func refreshWidgets() {
+        let schedules = widgetRefreshQueued.withLock { queued -> Bool in
+            guard !queued else { return false }
+            queued = true
+            return true
+        }
+        guard schedules else { return }
+        widgetQueue.async {
+            widgetRefreshQueued.withLock { $0 = false }
+            do {
+                try GalleryWidgetStore.publish(widgetDrawings().map { ($0.url, $0.isFavorite) })
+            } catch {
+                NSLog("Widget refresh failed: %@", error.localizedDescription)
+            }
+        }
+    }
+
+    /// The gallery's drawings without `all()`'s cleanup: the widget queue only reads
+    /// the drawings folder, so it never races the main thread's deletions there.
+    private nonisolated static func widgetDrawings() throws -> [CanvasExport] {
+        let folder = try directory()
+        let deleted = try GalleryDeletionStore.names(in: folder)
+        let images = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension.lowercased() == "png" && !deleted.contains($0.lastPathComponent) }
+            .sorted { drawingSortKey($0) > drawingSortKey($1) }
+        return try exports(for: images, in: folder)
     }
 
     private nonisolated static func drawingSortKey(_ url: URL) -> String {
@@ -114,7 +147,7 @@ enum CanvasExportStore {
         var favorites = try favoriteNames(in: folder)
         favorites.remove(file.lastPathComponent)
         try writeFavorites(favorites, in: folder)
-        if destination == nil { try? refreshWidgets() }
+        if destination == nil { refreshWidgets() }
 
     }
 
@@ -122,7 +155,7 @@ enum CanvasExportStore {
                      in folder: URL? = nil) throws -> CanvasExport {
         let url = try (folder ?? directory()).appendingPathComponent(name).appendingPathExtension("png")
         try write(document: document, imageData: imageData, to: url)
-        if folder == nil { try? refreshWidgets() }
+        if folder == nil { refreshWidgets() }
         return CanvasExport(url: url)
     }
 

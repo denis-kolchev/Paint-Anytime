@@ -53,10 +53,20 @@ final class CanvasAutosave {
                     timerRange = nil
                     continue
                 }
-                // The write is not tied to this task, so wrist-down does not interrupt it.
                 // Keep the wheel long enough to read as a save rather than a flicker.
                 let shownUntil = ContinuousClock.now.advanced(by: .milliseconds(700))
                 isSaving = true
+                // Let the wheel replace the clock icon (a 0.25 s transition) before the save
+                // starts: its main-actor part holds frames, so the wheel appeared only after it.
+                try? await Task.sleep(for: .milliseconds(300))
+                // The canvas may have changed meanwhile: re-check as before a save.
+                guard !Task.isCancelled, canRun(), !isBusy() else {
+                    isSaving = false
+                    try Task.checkCancellation()
+                    guard canRun() else { return }
+                    continue
+                }
+                // The write is not tied to this task, so wrist-down does not interrupt it.
                 _ = await save()
                 try? await Task.sleep(until: shownUntil, clock: .continuous)
                 isSaving = false

@@ -124,7 +124,7 @@ final class DrawingSessionController: ObservableObject {
                 return false
             case .success(let encoded):
                 let drawing = CanvasExport(url: url)
-                try? CanvasExportStore.refreshWidgets()
+                CanvasExportStore.refreshWidgets()
                 GalleryPreviewStore.shared.store(image: encoded.image,
                                                  originalSize: encoded.document.canvasSize ?? size, for: url)
                 self.didWrite(drawing, replacingPending: previous != nil)

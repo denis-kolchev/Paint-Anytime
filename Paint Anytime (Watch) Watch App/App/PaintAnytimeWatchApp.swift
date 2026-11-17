@@ -25,7 +25,7 @@ struct PaintAnytimeWatchApp: App {
             }
         }
         CanvasControlLayout.migrateEverythingAtHand()
-        try? CanvasExportStore.refreshWidgets()
+        CanvasExportStore.refreshWidgets()
         // Load and complete gallery previews before the gallery opens.
         GalleryPreviewStore.shared.warmUp(urls: ((try? CanvasExportStore.all()) ?? []).map(\.url),
                                           displayScale: WKInterfaceDevice.current().screenScale)
@@ -40,7 +40,7 @@ struct PaintAnytimeWatchApp: App {
                 .typesettingLanguage(.explicit(Locale.Language(identifier: code)))
                 .environment(\.layoutDirection, .leftToRight)
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { try? CanvasExportStore.refreshWidgets() }
+                    if phase == .active { CanvasExportStore.refreshWidgets() }
                 }
         }
     }

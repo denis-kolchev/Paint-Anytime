@@ -13,15 +13,32 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         session.activate()
     }
 
+    /// Transfers are prepared here one at a time, in the order they were queued, so a
+    /// newer save still cancels the outstanding transfers of an older one.
+    private nonisolated static let preparationQueue = DispatchQueue(label: "PaintAnytime.phoneTransfer", qos: .utility)
+
+    /// Sends a gallery drawing and its project to the iPhone. Only the session checks
+    /// run here: loading, re-encoding and writing the project held the main thread on
+    /// every autosave, so the canvas stopped taking strokes mid-save.
     @MainActor
     func queue(_ imageURL: URL, replacingPending: Bool = false) -> Bool {
         guard WCSession.isSupported() else { return false }
-        do {
-            let deleted = try GalleryDeletionStore.names(in: CanvasExportStore.directory())
-            guard !deleted.contains(imageURL.deletingPathExtension().appendingPathExtension("png").lastPathComponent) else { return false }
-        } catch { return false }
         let session = WCSession.default
         guard session.activationState == .activated, session.isCompanionAppInstalled else { return false }
+        Self.preparationQueue.async {
+            Self.prepareTransfer(imageURL, replacingPending: replacingPending, session: session)
+        }
+        return true
+    }
+
+    private nonisolated static func prepareTransfer(_ imageURL: URL, replacingPending: Bool, session: WCSession) {
+        // Checked here, just before writing: the drawing may have been deleted meanwhile.
+        // A project written right after a deletion is removed by the next gallery cleanup.
+        do {
+            let deleted = try GalleryDeletionStore.names(in: CanvasExportStore.directory())
+            guard !deleted.contains(imageURL.deletingPathExtension().appendingPathExtension("png").lastPathComponent),
+                  FileManager.default.fileExists(atPath: imageURL.path) else { return }
+        } catch { return }
         if replacingPending {
             let stem = imageURL.deletingPathExtension().lastPathComponent
             for transfer in session.outstandingFileTransfers {
@@ -36,7 +53,7 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
                 transfer.cancel()
             }
         }
-        guard replacingPending || !session.outstandingFileTransfers.contains(where: { $0.file.metadata?["drawingName"] as? String == imageURL.lastPathComponent }) else { return true }
+        guard replacingPending || !session.outstandingFileTransfers.contains(where: { $0.file.metadata?["drawingName"] as? String == imageURL.lastPathComponent }) else { return }
         var photoDocument: CanvasDocument?
         if imageURL.pathExtension == "png" {
             let projectURL = imageURL.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
@@ -51,9 +68,11 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         }
         session.transferFile(imageURL, metadata: ["drawingName": imageURL.lastPathComponent])
         if let photoDocument {
-            WatchPhotoOverlay.send(document: photoDocument, imageURL: imageURL, session: session)
+            // Renders its overlay in the background itself; it reads the device scale.
+            Task { @MainActor in
+                WatchPhotoOverlay.send(document: photoDocument, imageURL: imageURL, session: session)
+            }
         }
-        return true
     }
 
     func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
@@ -193,7 +212,7 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
                     GalleryPreviewStore.shared.remove(url)
                 }
                 if !deleted.isEmpty {
-                    try CanvasExportStore.refreshWidgets()
+                    CanvasExportStore.refreshWidgets()
                     NotificationCenter.default.post(name: .galleryDrawingsDeleted, object: nil)
                 }
                 publishDeletions()
