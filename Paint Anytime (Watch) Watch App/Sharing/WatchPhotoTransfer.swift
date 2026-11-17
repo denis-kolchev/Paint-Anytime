@@ -23,15 +23,17 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         guard session.activationState == .activated, session.isCompanionAppInstalled else { return false }
         // One at a time and in order, so a newer save still cancels an older one's
         // transfers; shared with widget refreshes so their memory peaks never add up.
+        // WCSession is not Sendable: the queue reads the shared default session itself.
         CanvasExportStore.backgroundQueue.async {
             autoreleasepool {
-                Self.prepareTransfer(imageURL, replacingPending: replacingPending, session: session)
+                Self.prepareTransfer(imageURL, replacingPending: replacingPending)
             }
         }
         return true
     }
 
-    private nonisolated static func prepareTransfer(_ imageURL: URL, replacingPending: Bool, session: WCSession) {
+    private nonisolated static func prepareTransfer(_ imageURL: URL, replacingPending: Bool) {
+        let session = WCSession.default
         // Checked here, just before writing: the drawing may have been deleted meanwhile.
         // A project written right after a deletion is removed by the next gallery cleanup.
         do {
@@ -75,7 +77,7 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         if let photoDocument {
             // Renders its overlay in the background itself; it reads the device scale.
             Task { @MainActor in
-                WatchPhotoOverlay.send(document: photoDocument, imageURL: imageURL, session: session)
+                WatchPhotoOverlay.send(document: photoDocument, imageURL: imageURL, session: .default)
             }
         }
     }
