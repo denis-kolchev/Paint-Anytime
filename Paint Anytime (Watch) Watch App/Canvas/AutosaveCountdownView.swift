@@ -13,7 +13,7 @@ struct AutosaveCountdownView: View {
                     AutosaveSpinner()
                         .transition(iconTransition)
                 } else {
-                    Image(systemName: "clock.arrow.circlepath")
+                    Image(systemName: AutosaveSettings.symbolName)
                         .transition(iconTransition)
                 }
             }

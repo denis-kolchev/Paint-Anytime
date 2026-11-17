@@ -202,7 +202,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .camera: "hand.draw"
         case .perspectiveGuides: "perspective"
         case .canvasEditor: "pencil.and.ellipsis.rectangle"
-        case .autosave: "clock.arrow.circlepath"
+        case .autosave: AutosaveSettings.symbolName
         case .sketchAssist: "sparkles"
         case .eraserToggle: "eraser"
         case .share: "square.and.arrow.up"

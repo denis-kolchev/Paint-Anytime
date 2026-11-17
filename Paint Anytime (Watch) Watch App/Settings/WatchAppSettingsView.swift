@@ -135,7 +135,7 @@ struct WatchAppSettingsView: View {
             NavigationLink {
                 AutosaveSettingsView()
             } label: {
-                Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+                Label(L10n.text("Autosave"), systemImage: AutosaveSettings.symbolName)
             }
             NavigationLink {
                 AppLanguageSelectionView()
@@ -192,7 +192,7 @@ struct WatchAppSettingsView: View {
     private var tutorialAutosaveRow: some View {
         if let onOpenAutosave {
             Button(action: onOpenAutosave) {
-                Label(L10n.text("Autosave"), systemImage: "clock.arrow.circlepath")
+                Label(L10n.text("Autosave"), systemImage: AutosaveSettings.symbolName)
                     .tutorialHint(tutorial, steps: [.openAutosave])
             }
         }
