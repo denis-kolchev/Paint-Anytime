@@ -36,6 +36,11 @@ struct WatchCanvasView: View {
     @State private var fillTask: Task<Void, Never>?
     @State private var fillRequestID: UUID?
     @State private var samplingImage: CGImage?
+    /// Pixels per canvas point of `samplingImage`.
+    @State private var samplingScale: CGFloat = 1
+    @State private var samplerTask: Task<Void, Never>?
+    /// The last requested sample point, applied once the sampler image is ready.
+    @State private var sampleLocation: CGPoint?
     @State private var loupePoint: CGPoint?
     @State private var loupeImage: CGImage?
     var onCanvasInteraction: () -> Void = {}
@@ -270,7 +275,13 @@ struct WatchCanvasView: View {
             }
             .onChange(of: isEyedropperActive) { _, active in
                 if active { prepareSampler(size: geometry.size) }
-                else { samplingImage = nil; loupeImage = nil }
+                else {
+                    samplerTask?.cancel()
+                    samplerTask = nil
+                    samplingImage = nil
+                    loupeImage = nil
+                    sampleLocation = nil
+                }
             }
             .onAppear { if isEyedropperActive { prepareSampler(size: geometry.size) } }
             .onChange(of: geometry.size) { _, size in
@@ -603,22 +614,45 @@ struct WatchCanvasView: View {
         }
     }
 
+    /// Renders the flattened document for the eyedropper in the background, so opening
+    /// it never freezes the canvas. A full replay of a large drawing takes the same
+    /// work as a save. The resolution is what the screen shows at the current zoom,
+    /// capped at the display scale as before: a 1024 pt canvas fitted to the screen
+    /// needs ~0.5 px per point, not 2 (16 MiB of output and 48–64 MiB float layers).
     private func prepareSampler(size: CGSize) {
         controller.cancelStroke()
-        samplingImage = WatchBitmapRenderer.render(document: controller.document, size: controller.document.size(fallback: size), scale: displayScale)
-        updateSample(at: CGPoint(x: size.width / 2, y: size.height / 2), size: size)
+        samplerTask?.cancel()
+        let document = controller.document
+        let paper = document.size(fallback: size)
+        let shown = displayScale * canvasFit(size) * CGFloat(max(1, zoom))
+        let scale = min(displayScale, max(0.25, (shown * 4).rounded(.up) / 4))
+        let revision = controller.documentRevision
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        samplerTask = Task { @MainActor in
+            let work = Task.detached(priority: .userInitiated) {
+                WatchBitmapRenderer.render(document: document, size: paper, scale: scale)
+            }
+            let image = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard !Task.isCancelled, controller.documentRevision == revision, let image else { return }
+            samplingImage = image
+            samplingScale = scale
+            samplerTask = nil
+            updateSample(at: sampleLocation ?? center, size: size)
+        }
     }
 
     private func updateSample(at location: CGPoint, size: CGSize) {
+        sampleLocation = location
         guard let image = samplingImage else { return }
+        let scale = samplingScale
         let point = canvasPoint(location, size: size)
-        let x = min(image.width - 1, max(0, Int(floor(point.x * displayScale))))
-        let y = min(image.height - 1, max(0, Int(floor(point.y * displayScale))))
+        let x = min(image.width - 1, max(0, Int(floor(point.x * scale))))
+        let y = min(image.height - 1, max(0, Int(floor(point.y * scale))))
         // Place the lens over the actual pixel, including when dragging beyond the paper.
         let paper = controller.document.size(fallback: size)
         let fit = canvasFit(size)
-        loupePoint = CGPoint(x: ((CGFloat(x) + 0.5) / displayScale - paper.width / 2) * zoom * fit + size.width / 2 + offset.width,
-                             y: ((CGFloat(y) + 0.5) / displayScale - paper.height / 2) * zoom * fit + size.height / 2 + offset.height)
+        loupePoint = CGPoint(x: ((CGFloat(x) + 0.5) / scale - paper.width / 2) * zoom * fit + size.width / 2 + offset.width,
+                             y: ((CGFloat(y) + 0.5) / scale - paper.height / 2) * zoom * fit + size.height / 2 + offset.height)
         guard let pixel = image.cropping(to: CGRect(x: CGFloat(x), y: CGFloat(y), width: 1, height: 1)) else { return }
         var rgba = [UInt8](repeating: 0, count: 4)
         let sampled = rgba.withUnsafeMutableBytes { bytes -> Bool in
