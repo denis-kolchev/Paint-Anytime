@@ -319,6 +319,7 @@ struct ContentView: View {
         }
         .onChange(of: scenePhase) { oldPhase, phase in
             if phase != .active {
+                MemoryHeadroom.log(phase == .background ? "scene-background" : "scene-inactive")
                 showsContentActions = false
                 if !showsAppSettings && session.savedDrawing == nil && session.pendingCanvasAction == nil {
                     showsMorphToolbar = false

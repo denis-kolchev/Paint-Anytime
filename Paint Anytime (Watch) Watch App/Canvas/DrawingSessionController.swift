@@ -64,7 +64,10 @@ final class DrawingSessionController: ObservableObject {
                 document: canvas.document, size: size, scale: scale,
                 replacing: autosavedDrawing)
             canvas.markSaved()
-            didWrite(drawing, replacingPending: autosavedDrawing != nil)
+            // As `CanvasExporter.encode` saved it: with the canvas size.
+            var saved = canvas.document
+            saved.canvasSize = saved.size(fallback: size)
+            didWrite(drawing, replacingPending: autosavedDrawing != nil, savedDocument: saved)
             // Explicit Save finalizes this copy. Future autosaves get a new filename.
             autosaveGeneration += 1
             autosavedDrawing = nil
@@ -107,9 +110,12 @@ final class DrawingSessionController: ObservableObject {
         let work = Task.detached(priority: .utility) { () -> Result<CanvasExporter.EncodedDrawing, Error> in
             let activity = ExpiringActivity(reason: "Autosave drawing")
             defer { activity.end() }
+            MemoryHeadroom.log("autosave-start")
+            defer { MemoryHeadroom.log("autosave-end") }
             return Result {
                 let encoded = try CanvasExporter.encode(document: snapshot, size: size, scale: scale,
                                                         name: name, info: info, at: now)
+                MemoryHeadroom.log("autosave-encoded")
                 try CanvasExportStore.write(document: encoded.document, imageData: encoded.png, to: url)
                 return encoded
             }
@@ -127,7 +133,7 @@ final class DrawingSessionController: ObservableObject {
                 CanvasExportStore.refreshWidgets()
                 GalleryPreviewStore.shared.store(image: encoded.image,
                                                  originalSize: encoded.document.canvasSize ?? size, for: url)
-                self.didWrite(drawing, replacingPending: previous != nil)
+                self.didWrite(drawing, replacingPending: previous != nil, savedDocument: encoded.document)
                 // The canvas was cleared, replaced or saved meanwhile: the file keeps the
                 // earlier picture, but it is no longer this canvas's working copy.
                 guard generation == self.autosaveGeneration else { return true }
@@ -149,11 +155,12 @@ final class DrawingSessionController: ObservableObject {
         }
     }
 
-    private func didWrite(_ drawing: CanvasExport, replacingPending: Bool) {
+    private func didWrite(_ drawing: CanvasExport, replacingPending: Bool, savedDocument: CanvasDocument) {
         GalleryFavoriteThumbnailRenderer.remove(drawing.url)
         Task { await GalleryImageCache.shared.remove(drawing.url) }
         NotificationCenter.default.post(name: .galleryDrawingSaved, object: drawing.url)
-        _ = WatchPhotoTransfer.shared.queue(drawing.url, replacingPending: replacingPending)
+        _ = WatchPhotoTransfer.shared.queue(drawing.url, replacingPending: replacingPending,
+                                            savedDocument: savedDocument)
     }
 
     func requestCanvasAction(_ action: PendingCanvasAction) {

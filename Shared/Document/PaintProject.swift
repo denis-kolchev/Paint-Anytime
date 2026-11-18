@@ -16,10 +16,12 @@ nonisolated struct PaintProject: Codable {
     static let currentVersion = 2
     static let supportedVersions = 1...currentVersion
 
-    init(document: Data, preview: Data) {
+    /// - Parameter restoresCanvasSize: false for a document known to store its canvas size
+    ///   (just encoded by this app): checking parses the whole JSON, tens of MB for a large drawing.
+    init(document: Data, preview: Data, restoresCanvasSize: Bool = true) {
         format = "Paint Anytime Project"
         version = Self.currentVersion
-        self.document = Self.restoringCanvasSize(in: document, preview: preview)
+        self.document = restoresCanvasSize ? Self.restoringCanvasSize(in: document, preview: preview) : document
         self.preview = preview
     }
 
@@ -44,9 +46,12 @@ nonisolated struct PaintProject: Codable {
         return Self(document: project.document, preview: project.preview)
     }
 
-    func write(to url: URL) throws {
-        let data = try JSONEncoder().encode(Self(document: document, preview: preview))
-        _ = try Self.decode(data)
+    /// - Parameter validating: false for a project built from a document this app just
+    ///   encoded; reading it back parses the whole document twice more.
+    func write(to url: URL, validating: Bool = true) throws {
+        // `init` already restored the canvas size and set the current format and version.
+        let data = try JSONEncoder().encode(self)
+        if validating { _ = try Self.decode(data) }
         try data.write(to: url, options: .atomic)
     }
 

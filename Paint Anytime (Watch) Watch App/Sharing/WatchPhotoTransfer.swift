@@ -16,8 +16,13 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
     /// Sends a gallery drawing and its project to the iPhone. Only the session checks
     /// run here: loading, re-encoding and writing the project held the main thread on
     /// every autosave, so the canvas stopped taking strokes mid-save.
+    ///
+    /// - Parameter savedDocument: The document just written for `imageURL`, with its canvas
+    ///   size. The project then reuses the JSON on disk as it is, instead of loading,
+    ///   migrating and re-encoding it: on a large drawing those were several full parses
+    ///   of a multi-megabyte JSON, during an autosave that may run in the background.
     @MainActor
-    func queue(_ imageURL: URL, replacingPending: Bool = false) -> Bool {
+    func queue(_ imageURL: URL, replacingPending: Bool = false, savedDocument: CanvasDocument? = nil) -> Bool {
         guard WCSession.isSupported() else { return false }
         let session = WCSession.default
         guard session.activationState == .activated, session.isCompanionAppInstalled else { return false }
@@ -26,13 +31,14 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         // WCSession is not Sendable: the queue reads the shared default session itself.
         CanvasExportStore.backgroundQueue.async {
             autoreleasepool {
-                Self.prepareTransfer(imageURL, replacingPending: replacingPending)
+                Self.prepareTransfer(imageURL, replacingPending: replacingPending, savedDocument: savedDocument)
             }
         }
         return true
     }
 
-    private nonisolated static func prepareTransfer(_ imageURL: URL, replacingPending: Bool) {
+    private nonisolated static func prepareTransfer(_ imageURL: URL, replacingPending: Bool,
+                                                    savedDocument: CanvasDocument?) {
         let session = WCSession.default
         // Checked here, just before writing: the drawing may have been deleted meanwhile.
         // A project written right after a deletion is removed by the next gallery cleanup.
@@ -60,13 +66,27 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         if imageURL.pathExtension == "png" {
             let projectURL = imageURL.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension)
             do {
-                // Each step in its own pool, so a large drawing's parsed JSON is freed before
-                // the next one parses it again.
-                let document = try autoreleasepool { try CanvasExportStore.loadDocument(at: imageURL) }
-                photoDocument = document
-                try autoreleasepool {
-                    try PaintProject(document: JSONEncoder().encode(document), preview: Data(contentsOf: imageURL))
-                        .write(to: projectURL)
+                MemoryHeadroom.log("transfer-start")
+                defer { MemoryHeadroom.log("transfer-end") }
+                if let savedDocument {
+                    // Written by `CanvasExportStore.write` in the current format, canvas size
+                    // included: the project takes these bytes as they are, unparsed.
+                    photoDocument = savedDocument
+                    let jsonURL = imageURL.deletingPathExtension().appendingPathExtension("json")
+                    try autoreleasepool {
+                        try PaintProject(document: Data(contentsOf: jsonURL), preview: Data(contentsOf: imageURL),
+                                         restoresCanvasSize: false)
+                            .write(to: projectURL, validating: false)
+                    }
+                } else {
+                    // An older gallery drawing may need migrating. Each step in its own pool,
+                    // so a large drawing's parsed JSON is freed before the next one parses it.
+                    let document = try autoreleasepool { try CanvasExportStore.loadDocument(at: imageURL) }
+                    photoDocument = document
+                    try autoreleasepool {
+                        try PaintProject(document: JSONEncoder().encode(document), preview: Data(contentsOf: imageURL))
+                            .write(to: projectURL)
+                    }
                 }
                 if replacingPending || !session.outstandingFileTransfers.contains(where: { $0.file.fileURL == projectURL }) {
                     session.transferFile(projectURL, metadata: ["drawingName": projectURL.lastPathComponent])
