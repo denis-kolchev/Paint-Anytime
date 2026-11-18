@@ -371,7 +371,7 @@ nonisolated extension WatchStrokeDrawing {
         /// the box around the changes in each tile, from the committed ink and all grains of
         /// `field`. Call after `field.update`. Returns the tiles written, or nil if cancelled.
         func fillChanged(_ pixels: [CGRect], field: DryGrainField, stroke: Stroke, geometry: DryGeometry,
-                         frame: CGContext, scale: CGFloat)
+                         frame: CGContext, scale: CGFloat, origin: CGPoint = .zero)
             -> (tiles: [SIMD2<Int>], grains: Int, rasterNS: UInt64, compositeNS: UInt64)? {
             let tileSize = 32
             // Bounding box (min x, min y, max x, max y; exclusive) of the changes in each tile.
@@ -402,7 +402,7 @@ nonisolated extension WatchStrokeDrawing {
                 guard !Task.isCancelled else { return nil }
                 let started = RenderDiagnostics.begin()
                 reset(x: box.x, y: box.y, width: box.z - box.x, height: box.w - box.y)
-                grains += field.rasterize(into: self, scale: Double(scale))
+                grains += field.rasterize(into: self, scale: Double(scale), origin: origin)
                 let rasterized = RenderDiagnostics.begin()
                 composite(into: frame, ink: ink, alphas: alphas, opacity: opacity)
                 rasterNS &+= rasterized &- started

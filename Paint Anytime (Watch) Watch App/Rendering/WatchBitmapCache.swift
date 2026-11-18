@@ -642,7 +642,8 @@ nonisolated extension WatchBitmapRenderer {
             }
             let instrument = activeStroke.style.instrument
             if instrument == .pen, LivePenInk.supports(activeStroke),
-               let image = renderLive(activeStroke, over: committedInk, key: nextKey, create: LivePenInk.init) {
+               let image = renderLive(activeStroke, over: committedInk, key: nextKey,
+                                     create: { LivePenInk(stroke: $0, base: $1, scale: $2) }) {
                 activeInk = nil
                 activeDry = nil
                 return image
@@ -831,6 +832,8 @@ nonisolated extension WatchBitmapRenderer {
         let frame: CGContext
         let base: CGImage
         let scale: CGFloat
+        /// Canvas point at the top-left pixel; non-zero for a viewport region.
+        let origin: CGPoint
         private(set) var stroke: Stroke
         private var settled = false
         private let backdrop: CGContext
@@ -843,7 +846,7 @@ nonisolated extension WatchBitmapRenderer {
                 && stroke.excludedAreas.isEmpty && stroke.erasures.isEmpty && stroke.raster == nil
         }
 
-        init?(stroke: Stroke, base: CGImage, scale: CGFloat) {
+        init?(stroke: Stroke, base: CGImage, scale: CGFloat, origin: CGPoint = .zero) {
             let width = base.width, height = base.height
             guard Self.supports(stroke), width > 0, height > 0,
                   let frame = WatchBitmapRenderer.makeFloatContext(width: width, height: height),
@@ -861,6 +864,7 @@ nonisolated extension WatchBitmapRenderer {
             self.coverage = coverage
             self.base = base
             self.scale = scale
+            self.origin = origin
             self.stroke = stroke
             scratch = .allocate(capacity: width * 2)
             scratch.initialize(repeating: 0, count: width * 2)
@@ -887,7 +891,9 @@ nonisolated extension WatchBitmapRenderer {
                                                radii: Array(radii[(drawn - 1)...]), skipsFirstDisc: true)
             fillCoverage(path)
             // Paper space to pixels: y already runs down in both.
-            let dirty = path.boundingBoxOfPath.applying(CGAffineTransform(scaleX: scale, y: scale))
+            let dirty = path.boundingBoxOfPath
+                .applying(CGAffineTransform(a: scale, b: 0, c: 0, d: scale,
+                                            tx: -origin.x * scale, ty: -origin.y * scale))
                 .insetBy(dx: -2, dy: -2).integral.intersection(canvas)
             composite(dirty)
             return dirty
@@ -907,6 +913,7 @@ nonisolated extension WatchBitmapRenderer {
             coverage.saveGState()
             coverage.translateBy(x: 0, y: CGFloat(coverage.height))
             coverage.scaleBy(x: scale, y: -scale)
+            coverage.translateBy(x: -origin.x, y: -origin.y)
             coverage.setFillColor(gray: 1, alpha: 1)
             coverage.addPath(path)
             coverage.fillPath()

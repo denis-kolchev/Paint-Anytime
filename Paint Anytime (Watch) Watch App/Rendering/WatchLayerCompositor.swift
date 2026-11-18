@@ -191,11 +191,12 @@ nonisolated extension WatchBitmapRenderer {
                 return nil
             }
             if let live = livePen, live.layerID == layerID, live.revisions == revisions,
-               live.ink.scale == scale, live.ink.frame.width == base.image.width,
+               live.ink.scale == scale, live.ink.origin == origin, live.ink.frame.width == base.image.width,
                live.ink.frame.height == base.image.height, live.ink.update(stroke) != nil {
                 // Same gesture: extended.
             } else {
-                guard let ink = WatchBitmapRenderer.LivePenInk(stroke: stroke, base: base.image, scale: scale) else {
+                guard let ink = WatchBitmapRenderer.LivePenInk(stroke: stroke, base: base.image, scale: scale,
+                                                               origin: origin) else {
                     livePen = nil
                     return nil
                 }
@@ -237,7 +238,9 @@ nonisolated extension WatchBitmapRenderer {
         fileprivate func renderLiveDry(_ stroke: Stroke, layerID: UUID, revisions: [UUID],
                                        base: InkSnapshot, scale: CGFloat, exact: Bool = false) -> InkSnapshot? {
             liveInk = nil
-            if !exact, let live = liveDry, live.layerID == layerID, live.revisions == revisions,
+            // The snapped-shape preview maps canvas points without a region offset; a
+            // region redraws the adjusted shape incrementally from a fresh buffer instead.
+            if !exact, !isRegion, let live = liveDry, live.layerID == layerID, live.revisions == revisions,
                live.stroke.id == stroke.id, !stroke.extends(live.stroke),
                let ink = shapePreviewInk(stroke, live: live, base: base, scale: scale) {
                 return ink
@@ -280,11 +283,14 @@ nonisolated extension WatchBitmapRenderer {
             let updated = RenderDiagnostics.begin()
             let canvas = CGRect(x: 0, y: 0, width: live.frame.width, height: live.frame.height)
             let pixels = live.field.dirtyRects(all: contactChanges).compactMap { paper -> CGRect? in
-                let rect = paper.applying(CGAffineTransform(scaleX: scale, y: scale)).integral.intersection(canvas)
+                let rect = paper.applying(CGAffineTransform(a: scale, b: 0, c: 0, d: scale,
+                                                            tx: -origin.x * scale, ty: -origin.y * scale))
+                    .integral.intersection(canvas)
                 return rect.isNull || rect.isEmpty ? nil : rect
             }
             guard let result = live.fill.fillChanged(pixels, field: live.field, stroke: stroke,
-                                                     geometry: live.geometry, frame: live.frame, scale: scale)
+                                                     geometry: live.geometry, frame: live.frame, scale: scale,
+                                                     origin: origin)
             else {
                 liveDry = nil
                 return nil
@@ -315,10 +321,9 @@ nonisolated extension WatchBitmapRenderer {
 
         fileprivate func renderLive(_ stroke: Stroke, layerID: UUID, revisions: [UUID],
                                     base: InkSnapshot, scale: CGFloat, exact: Bool = false) -> InkSnapshot? {
-            // The incremental buffers map canvas points to pixels without a region offset
-            // and size themselves from the base ink. A viewport region replays the live
-            // stroke over the layer ink instead.
-            guard !isRegion else {
+            // The incremental buffers size themselves from the base ink. In a region, a
+            // layer without ink there holds a 1×1 ink: start from a blank raster instead.
+            guard let base = rasterSized(base) else {
                 clearLive()
                 return nil
             }
@@ -350,7 +355,8 @@ nonisolated extension WatchBitmapRenderer {
                 frame.draw(base.image, in: bounds)
                 liveInk = LiveInk(layerID: layerID, revisions: revisions, stroke: stroke,
                     base: backdrop, frame: frame,
-                    coverage: WatchStrokeCoverage(style: stroke.style, width: width, height: height, scale: scale))
+                    coverage: WatchStrokeCoverage(style: stroke.style, width: width, height: height, scale: scale,
+                                                  origin: origin))
             }
             guard var live = liveInk else { return nil }
             do {
@@ -373,6 +379,17 @@ nonisolated extension WatchBitmapRenderer {
                 liveInk = nil
                 return nil
             }
+        }
+
+        /// `base` at this cache's raster size; a blank one for the 1×1 ink of a region
+        /// layer that has no ink inside the region.
+        private func rasterSized(_ base: InkSnapshot) -> InkSnapshot? {
+            let width = Int(ceil(size.width * scale)), height = Int(ceil(size.height * scale))
+            if base.image.width == width && base.image.height == height { return base }
+            guard isRegion, width > 0, height > 0,
+                  let blank = WatchBitmapRenderer.makeFloatContext(width: width, height: height)?.makeImage()
+            else { return nil }
+            return InkSnapshot(image: blank)
         }
 
         /// Discard committed images while preserving live-stroke ownership and counters.

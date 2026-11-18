@@ -29,12 +29,19 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         // One at a time and in order, so a newer save still cancels an older one's
         // transfers; shared with widget refreshes so their memory peaks never add up.
         // WCSession is not Sendable: the queue reads the shared default session itself.
+        let saved = SavedDocument(value: savedDocument)
         CanvasExportStore.backgroundQueue.async {
             autoreleasepool {
-                Self.prepareTransfer(imageURL, replacingPending: replacingPending, savedDocument: savedDocument)
+                Self.prepareTransfer(imageURL, replacingPending: replacingPending, savedDocument: saved.value)
             }
         }
         return true
+    }
+
+    /// A copy of the value-type document handed to the background queue; nothing else
+    /// holds or mutates it. `CanvasDocument` is not `Sendable`.
+    private nonisolated struct SavedDocument: @unchecked Sendable {
+        let value: CanvasDocument?
     }
 
     private nonisolated static func prepareTransfer(_ imageURL: URL, replacingPending: Bool,

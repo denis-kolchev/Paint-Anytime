@@ -289,17 +289,19 @@ nonisolated extension WatchStrokeDrawing {
 
         /// Add every grain reaching `fill`'s work box to its band masks. Call after `update`.
         /// Returns the number of grains added.
+        /// `origin`: canvas point at the frame's top-left pixel (a viewport region).
         @discardableResult
-        func rasterize(into fill: DryPixelFill, scale: Double) -> Int {
-            let minPaperX = Double(fill.boxX) / scale - Self.vertexReach
-            let maxPaperX = Double(fill.boxX + fill.boxWidth) / scale + Self.vertexReach
-            let minPaperY = Double(fill.boxY) / scale - Self.vertexReach
-            let maxPaperY = Double(fill.boxY + fill.boxHeight) / scale + Self.vertexReach
+        func rasterize(into fill: DryPixelFill, scale: Double, origin: CGPoint = .zero) -> Int {
+            let minPaperX = Double(fill.boxX) / scale + Double(origin.x) - Self.vertexReach
+            let maxPaperX = Double(fill.boxX + fill.boxWidth) / scale + Double(origin.x) + Self.vertexReach
+            let minPaperY = Double(fill.boxY) / scale + Double(origin.y) - Self.vertexReach
+            let maxPaperY = Double(fill.boxY + fill.boxHeight) / scale + Double(origin.y) + Self.vertexReach
             // A grain's centre lies in its own cell.
             let minX = Int(floor(minPaperX / Self.cellSize)), maxX = Int(floor(maxPaperX / Self.cellSize))
             let minY = Int(floor(minPaperY / Self.cellSize)), maxY = Int(floor(maxPaperY / Self.cellSize))
             let shift = Self.chunkShift, mask = Self.chunkSide - 1
             let s = Float(scale)
+            let o = SIMD2<Float>(Float(origin.x), Float(origin.y))
             var count = 0
             for chunkY in (minY >> shift)...(maxY >> shift) {
                 for chunkX in (minX >> shift)...(maxX >> shift) {
@@ -312,7 +314,8 @@ nonisolated extension WatchStrokeDrawing {
                             for x in x0...x1 {
                                 let cell = cells[row | (x & mask)]
                                 guard cell.band != Cell.noGrain else { continue }
-                                fill.addQuad(cell.a * s, cell.b * s, cell.c * s, cell.d * s, band: Int(cell.band))
+                                fill.addQuad((cell.a - o) * s, (cell.b - o) * s, (cell.c - o) * s,
+                                             (cell.d - o) * s, band: Int(cell.band))
                                 count += 1
                             }
                         }

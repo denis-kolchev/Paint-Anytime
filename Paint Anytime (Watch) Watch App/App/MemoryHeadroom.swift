@@ -4,8 +4,8 @@ import os
 /// Logs this process's memory footprint and the room left before its limit. The sum
 /// estimates the current limit, which watchOS does not publish and which differs in
 /// the background (wrist down, autosave). Read with Console or the Xcode console,
-/// category "memory".
-enum MemoryHeadroom {
+/// category "memory". Nonisolated: called from autosave and transfer work off the main actor.
+nonisolated enum MemoryHeadroom {
     private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PaintAnytime",
                                        category: "memory")
 
