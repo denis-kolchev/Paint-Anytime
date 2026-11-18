@@ -30,6 +30,7 @@ actor WatchArtworkRenderer {
         let documentID: ObjectIdentifier
         let size: CGSize
         let scale: CGFloat
+        let origin: CGPoint
         let background: SIMD4<Float>
         let layers: [LayerKey]
     }
@@ -52,7 +53,7 @@ actor WatchArtworkRenderer {
         } else {
             layers = [.init(id: nil, opacity: 1, strokes: strokes.map(HistoryKey.StrokeKey.init))]
         }
-        return HistoryKey(documentID: key.documentID, size: key.size, scale: key.scale,
+        return HistoryKey(documentID: key.documentID, size: key.size, scale: key.scale, origin: key.origin,
             background: document?.effectiveBackgroundColor ?? SIMD4(1, 1, 1, 1), layers: layers)
     }
 
@@ -66,6 +67,7 @@ actor WatchArtworkRenderer {
         // Never retain images for another document or raster resolution.
         historyFrames.removeAll {
             $0.key.documentID != key.documentID || $0.key.size != key.size || $0.key.scale != key.scale
+                || $0.key.origin != key.origin
         }
         guard let index = historyFrames.firstIndex(where: { $0.key == key }) else { return nil }
         let entry = historyFrames.remove(at: index)
@@ -106,7 +108,7 @@ actor WatchArtworkRenderer {
         let state = activeStroke == nil ? historyKey(document: document, strokes: [], key: key) : nil
         if let frame = recall(state) { return frame }
         guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: key.scale,
-            activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers), !Task.isCancelled else { return nil }
+            origin: key.origin, activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers), !Task.isCancelled else { return nil }
         let frame = WatchBitmapRenderer.ScreenFrame(background: image, tiles: [])
         if let state { rememberFrame(frame, key: state) }
         return frame

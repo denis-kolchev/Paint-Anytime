@@ -55,6 +55,8 @@ nonisolated final class WatchStrokeCoverage {
     let width: Int
     let height: Int
     private let scale: CGFloat
+    /// Canvas point at the top-left pixel; non-zero for a viewport region.
+    private let origin: CGPoint
     private let masks: [UnsafeMutablePointer<Float>]
     private let scratch: UnsafeMutablePointer<Float>
     private var distanceToNext: Float
@@ -80,11 +82,12 @@ nonisolated final class WatchStrokeCoverage {
         var stride: Int { context.bytesPerRow / MemoryLayout<Float>.stride }
     }
 
-    init(style: PencilStyle, width: Int, height: Int, scale: CGFloat) {
+    init(style: PencilStyle, width: Int, height: Int, scale: CGFloat, origin: CGPoint = .zero) {
         self.style = style
         self.width = width
         self.height = height
         self.scale = scale
+        self.origin = origin
         distanceToNext = max(0.5, style.width * 0.12)
         masks = (0..<(style.instrument == .watercolor ? 6 : 1)).map { _ in
             let pixels = UnsafeMutablePointer<Float>.allocate(capacity: width * height)
@@ -195,7 +198,8 @@ nonisolated final class WatchStrokeCoverage {
             recordedGeometry?.endCap = path
             return nil
         }
-        let transform = CGAffineTransform(a: scale, b: 0, c: 0, d: -scale, tx: 0, ty: CGFloat(height))
+        let transform = CGAffineTransform(a: scale, b: 0, c: 0, d: -scale,
+                                          tx: -origin.x * scale, ty: CGFloat(height) + origin.y * scale)
         let bounds = path.boundingRect.applying(transform).insetBy(dx: -1, dy: -1).integral
             .intersection(CGRect(x: 0, y: 0, width: width, height: height))
         guard !bounds.isNull, !bounds.isEmpty else { return nil }

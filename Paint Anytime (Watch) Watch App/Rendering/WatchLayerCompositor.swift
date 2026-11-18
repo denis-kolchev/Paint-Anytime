@@ -8,6 +8,8 @@ nonisolated extension WatchBitmapRenderer {
     final class LayerCache {
         var size: CGSize = .zero
         var scale: CGFloat = 0
+        /// Canvas point at the top-left pixel; non-zero when this cache serves a viewport region.
+        var origin: CGPoint = .zero
         fileprivate var inks: [UUID: (revisions: [UUID], ink: InkSnapshot)] = [:] {
             didSet { if inks.isEmpty { previousInks.removeAll() } }
         }
@@ -310,6 +312,12 @@ nonisolated extension WatchBitmapRenderer {
 
         fileprivate func renderLive(_ stroke: Stroke, layerID: UUID, revisions: [UUID],
                                     base: InkSnapshot, scale: CGFloat, exact: Bool = false) -> InkSnapshot? {
+            // The incremental buffers map canvas points to pixels without a region offset.
+            // A viewport region replays the live stroke over the layer ink instead.
+            guard origin == .zero else {
+                clearLive()
+                return nil
+            }
             if stroke.style.instrument == .pencil || stroke.style.instrument == .crayon {
                 return renderLiveDry(stroke, layerID: layerID, revisions: revisions, base: base,
                                      scale: scale, exact: exact)
@@ -378,7 +386,7 @@ nonisolated extension WatchBitmapRenderer {
 
     /// Layered frame: paper, the cached composite of lower layers, then each layer's
     /// committed ink (with the live stroke on the selected layer) in sequential blend order.
-    static func render(document: CanvasDocument, size: CGSize, scale: CGFloat,
+    static func render(document: CanvasDocument, size: CGSize, scale: CGFloat, origin: CGPoint = .zero,
                        activeStroke: Stroke? = nil, selectedLayerID: UUID? = nil,
                        cache: LayerCache? = nil, selection: WatchSelectionPreview? = nil) -> CGImage? {
         guard size.width > 0, size.height > 0, scale > 0,
@@ -388,7 +396,7 @@ nonisolated extension WatchBitmapRenderer {
         let bounds = CGRect(x: 0, y: 0, width: output.width, height: output.height)
         let background = document.effectiveBackgroundColor
         fillPaper(output, color: background, bounds: bounds)
-        if let cache { prepare(cache, for: document, size: size, scale: scale) }
+        if let cache { prepare(cache, for: document, size: size, scale: scale, origin: origin) }
         let visible = document.layers.filter { $0.isVisible && $0.opacity > 0 }
         // Preserve the exact sequential blend order and 8-bit rounding. Cache the
         // paper and layers below the live layer, or the entire frame when idle.
@@ -407,13 +415,13 @@ nonisolated extension WatchBitmapRenderer {
             if reusedComposite && index < prefixCount { continue }
             let revisions = layer.strokes.map(\.geometryRevision)
             guard let committed = RenderDiagnostics.measure(.committed, {
-                committedInk(for: layer, revisions: revisions, size: size, scale: scale,
+                committedInk(for: layer, revisions: revisions, size: size, scale: scale, origin: origin,
                              cache: cache, selection: selection)
             }) else { return nil }
             var ink = committed
             if layer.id == selectedLayerID, let activeStroke {
                 guard let live = RenderDiagnostics.measure(.live, {
-                    liveInk(activeStroke, over: committed, layerID: layer.id, revisions: revisions,
+                    liveInk(activeStroke, over: committed, layerID: layer.id, revisions: revisions, origin: origin,
                             size: size, scale: scale, cache: cache)
                 }) else { return nil }
                 ink = live
@@ -443,14 +451,16 @@ nonisolated extension WatchBitmapRenderer {
     }
 
     /// Drop images for another raster size and for layers that no longer exist.
-    private static func prepare(_ cache: LayerCache, for document: CanvasDocument, size: CGSize, scale: CGFloat) {
-        if cache.size != size || cache.scale != scale {
+    private static func prepare(_ cache: LayerCache, for document: CanvasDocument, size: CGSize, scale: CGFloat,
+                                origin: CGPoint) {
+        if cache.size != size || cache.scale != scale || cache.origin != origin {
             cache.inks.removeAll()
             cache.composite = nil
             cache.clearLive()
         }
         cache.size = size
         cache.scale = scale
+        cache.origin = origin
         cache.retainLayers(Set(document.layers.map(\.id)))
     }
 
@@ -473,10 +483,11 @@ nonisolated extension WatchBitmapRenderer {
     /// The layer's committed ink: a lasso replay, a cache hit, an Undo snapshot,
     /// the promoted live stroke, or a replay of the strokes past the cached prefix.
     private static func committedInk(for layer: CanvasLayer, revisions: [UUID], size: CGSize, scale: CGFloat,
+                                     origin: CGPoint,
                                      cache: LayerCache?, selection: WatchSelectionPreview?) -> InkSnapshot? {
         if selection?.layerID == layer.id {
             // Replay the selected layer in its original order. Other layers stay cached.
-            return renderInk(strokes: layer.strokes, size: size, scale: scale, selection: selection)
+            return renderInk(strokes: layer.strokes, size: size, scale: scale, selection: selection, origin: origin)
         }
         if let ink = cache?.currentInk(for: layer.id, revisions: revisions) {
             return ink
@@ -498,7 +509,7 @@ nonisolated extension WatchBitmapRenderer {
             defer { RenderDiagnostics.shapeCommitted("layer REPLAY", replaying) }
             let pending = previous.map { Array(layer.strokes.dropFirst($0.revisions.count)) } ?? layer.strokes
             guard let ink = renderInk(strokes: pending, size: size, scale: scale,
-                                      base: previous?.ink, masks: cache?.masks) else { return nil }
+                                      base: previous?.ink, masks: cache?.masks, origin: origin) else { return nil }
             cache?.didReplay(pending.count)
             committed = ink
         }
@@ -521,13 +532,13 @@ nonisolated extension WatchBitmapRenderer {
 
     /// The live stroke over the layer's committed ink, incrementally when possible.
     private static func liveInk(_ activeStroke: Stroke, over committed: InkSnapshot, layerID: UUID,
-                                revisions: [UUID], size: CGSize, scale: CGFloat,
+                                revisions: [UUID], origin: CGPoint, size: CGSize, scale: CGFloat,
                                 cache: LayerCache?) -> InkSnapshot? {
         if let live = cache?.renderLive(activeStroke, layerID: layerID, revisions: revisions,
                                         base: committed, scale: scale) {
             return live
         }
-        return renderInk(strokes: [activeStroke], size: size, scale: scale, base: committed)
+        return renderInk(strokes: [activeStroke], size: size, scale: scale, base: committed, origin: origin)
     }
 
     private static func drawLayer(_ ink: InkSnapshot, opacity: Float, in output: CGContext, bounds: CGRect) {

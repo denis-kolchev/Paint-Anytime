@@ -405,19 +405,23 @@ nonisolated enum WatchBlurFilter {
 nonisolated extension WatchBitmapRenderer {
     /// Committed blur stroke over the ink already in `context`.
     static func applyBlur(_ stroke: Stroke, in context: CGContext, scale: CGFloat,
-                          erasure: CGContext?) -> Bool {
+                          erasure: CGContext?, origin: CGPoint = .zero) -> Bool {
         typealias Filter = WatchBlurFilter
         let parameters = Filter.Parameters(stroke: stroke, scale: scale)
         guard parameters.strength > 0, !stroke.points.isEmpty else { return true }
         guard let geometry = try? StrokeGeometry(stroke), let data = context.data else { return false }
         let canvas = Filter.PixelRect(x: 0, y: 0, width: context.width, height: context.height)
-        let drawn = Filter.PixelRect(geometry.bounds.applying(CGAffineTransform(scaleX: scale, y: scale)))
+        // Top-left pixels of the raster; a viewport region starts at canvas point `origin`.
+        let toPixels = CGAffineTransform(a: scale, b: 0, c: 0, d: scale,
+                                         tx: -origin.x * scale, ty: -origin.y * scale)
+        let drawn = Filter.PixelRect(geometry.bounds.applying(toPixels))
             .outset(by: 1).intersection(canvas)
         guard !drawn.isEmpty else { return true }
         guard let mask = Filter.makeCoverageContext(width: drawn.width, height: drawn.height),
               let maskData = mask.data else { return false }
         mask.translateBy(x: -CGFloat(drawn.x), y: CGFloat(drawn.height + drawn.y))
         mask.scaleBy(x: scale, y: -scale)
+        mask.translateBy(x: -origin.x, y: -origin.y)
         for command in geometry.commands { Filter.fillCoverage(command, in: mask) }
         let area = drawn.outset(by: parameters.feather).intersection(canvas)
         let pixels = data.assumingMemoryBound(to: Float.self)

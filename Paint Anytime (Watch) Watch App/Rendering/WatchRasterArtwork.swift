@@ -25,7 +25,35 @@ struct WatchRasterArtwork: View {
     /// The live ink tip is drawn above every layer, so the caller allows it only when
     /// nothing covers or clips the live layer: topmost, fully opaque, not alpha-locked.
     var allowsInkTip = false
+    /// A viewport region rendered instead of the whole canvas; see `Region`.
+    var region: Region? = nil
+    /// Whether a region may keep showing a frame of its previous place or resolution
+    /// until the new one is ready. Only while that frame's document is current and no
+    /// stroke is being drawn below it: otherwise it would hide newer ink.
+    var showsStaleRegionFrame = true
     @State private var rasterZoom: Double = 1
+
+    /// Part of the canvas rendered at a resolution the full canvas could not afford.
+    /// The view still spans the paper; the region's frame sits at its own place in it,
+    /// and nothing is drawn where it has no frame yet.
+    struct Region: Equatable {
+        /// Canvas points on whole pixels of `scale`.
+        let origin: CGPoint
+        let size: CGSize
+        let scale: CGFloat
+    }
+
+    private func key(paperSize: CGSize) -> WatchBitmapRenderer.CacheKey {
+        if let region {
+            return WatchBitmapRenderer.CacheKey(documentID: documentID, documentRevision: documentRevision,
+                                                size: region.size, scale: region.scale, origin: region.origin)
+        }
+        return WatchBitmapRenderer.CacheKey(documentID: documentID,
+            documentRevision: documentRevision, size: paperSize,
+            // Keep the previous resolution until Crown input settles.
+            scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom,
+                fit: fit, canvasSize: paperSize, layerCount: document?.layers.count ?? 1))
+    }
     @Environment(\.displayScale) private var displayScale
 
     var body: some View {
@@ -34,11 +62,8 @@ struct WatchRasterArtwork: View {
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
             RasterFrame(clearDocumentRevision: clearDocumentRevision, onFramePrepared: onFramePrepared, document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
-                        key: WatchBitmapRenderer.CacheKey(documentID: documentID,
-                            documentRevision: documentRevision, size: geometry.size,
-                            // Keep the previous resolution until Crown input settles.
-                            scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom,
-                                fit: fit, canvasSize: geometry.size, layerCount: document?.layers.count ?? 1)),
+                        key: key(paperSize: geometry.size), paperSize: geometry.size, isRegion: region != nil,
+                        showsStaleFrame: showsStaleRegionFrame,
                         liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip && selectionPreview == nil)
         }
         .task(id: zoom) {
@@ -66,6 +91,10 @@ struct WatchRasterArtwork: View {
         let activeStrokeRevision: UInt64
         let activeStrokeID: UInt64
         let key: WatchBitmapRenderer.CacheKey
+        let paperSize: CGSize
+        /// A region shows nothing until its first frame, letting the canvas below show.
+        let isRegion: Bool
+        let showsStaleFrame: Bool
         var liveSubmitter: LiveFrameSubmitter?
         var allowsInkTip: Bool
 
@@ -108,11 +137,23 @@ struct WatchRasterArtwork: View {
             let transform: CGAffineTransform?
         }
 
+        /// A region frame rendered for the current place and resolution always shows; it
+        /// catches up with commits incrementally. An older one only on the conditions of
+        /// `showsStaleRegionFrame`, and for the document revision on screen.
+        private var showsRegionFrame: Bool {
+            guard isRegion, let shown = frames.frameKey else { return true }
+            if shown.origin == key.origin && shown.size == key.size && shown.scale == key.scale { return true }
+            return showsStaleFrame && shown.documentRevision == key.documentRevision
+        }
+
         private func artwork(_ frame: WatchBitmapRenderer.ScreenFrame) -> some View {
-            ZStack(alignment: .topLeading) {
-                Image(decorative: frame.background, scale: key.scale)
+            // A region frame keeps the place and size it was rendered for until its
+            // successor arrives; panning must not move stale pixels to a new place.
+            let shown = isRegion ? (frames.frameKey ?? key) : key
+            return ZStack(alignment: .topLeading) {
+                Image(decorative: frame.background, scale: shown.scale)
                     .resizable()
-                    .frame(width: key.size.width, height: key.size.height)
+                    .frame(width: shown.size.width, height: shown.size.height)
                 if let texture = frame.selection {
                     ZStack(alignment: .topLeading) {
                         if let image = texture.layerBelow {
@@ -137,14 +178,16 @@ struct WatchRasterArtwork: View {
                     }
                 }
                 ForEach(frame.tiles) { tile in
-                    Image(decorative: tile.image, scale: key.scale)
+                    Image(decorative: tile.image, scale: shown.scale)
                         .resizable()
                         .frame(width: tile.rect.width, height: tile.rect.height)
                         .offset(x: tile.rect.minX, y: tile.rect.minY)
                 }
             }
-            .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+            .frame(width: shown.size.width, height: shown.size.height, alignment: .topLeading)
             .clipped()
+            .offset(x: shown.origin.x, y: shown.origin.y)
+            .frame(width: paperSize.width, height: paperSize.height, alignment: .topLeading)
         }
 
         var body: some View {
@@ -152,8 +195,10 @@ struct WatchRasterArtwork: View {
             let _ = RenderDiagnostics.bodyEvaluated()
             let _ = registerLiveSubmitter()
             Group {
-                if let frame = displayFrame {
+                if let frame = displayFrame, showsRegionFrame {
                     artwork(frame)
+                } else if isRegion {
+                    Color.clear
                 } else {
                     Color.white
                 }
@@ -161,8 +206,9 @@ struct WatchRasterArtwork: View {
             .overlay(alignment: .topLeading) {
                 if allowsInkTip, RenderStageSwitches.isOn(.inkTip),
                    let stroke = frames.tipStroke(for: activeStroke) {
+                    // Canvas points: the overlay spans the paper, also above a region.
                     InkTipOverlay(stroke: stroke, renderedPoints: frames.renderedPoints(of: stroke))
-                        .frame(width: key.size.width, height: key.size.height)
+                        .frame(width: paperSize.width, height: paperSize.height)
                 }
             }
             .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: hasSelectionTexture ? nil : selectionPreview?.transform)) { @MainActor in
@@ -347,6 +393,8 @@ private final class CanvasFrameQueue: ObservableObject {
     }
     @Published private(set) var preparedResult: PreparedResult?
     @Published private(set) var frame: WatchBitmapRenderer.ScreenFrame?
+    /// The key `frame` was rendered for.
+    private(set) var frameKey: WatchBitmapRenderer.CacheKey?
     @Published private(set) var preparedFrame: WatchBitmapRenderer.ScreenFrame?
     private let renderer = WatchArtworkRenderer()
     private var preparationID = UUID()
@@ -463,6 +511,8 @@ private final class CanvasFrameQueue: ObservableObject {
             displayedStrokeID = job.activeStroke?.id
             displayedPointCount = job.activeStroke?.points.count ?? 0
             if job.activeStroke == nil { heldTipStroke = nil }
+            // Plain property, set before the published frame that re-evaluates the body.
+            frameKey = job.key
             self.frame = next
             // Assign only on change: every @Published write re-evaluates the raster body.
             let result = PreparedResult(key: job.key, succeeded: true)

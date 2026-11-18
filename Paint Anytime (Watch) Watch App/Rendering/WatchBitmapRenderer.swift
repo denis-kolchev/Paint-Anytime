@@ -36,6 +36,9 @@ nonisolated enum WatchBitmapRenderer {
         let documentRevision: UInt64
         let size: CGSize
         let scale: CGFloat
+        /// Canvas point at the raster's top-left corner. Non-zero for a viewport region:
+        /// `size` is then the region's size, not the canvas size.
+        var origin: CGPoint = .zero
     }
 
     /// Prepared eraser regions per stroke, so replaying a layer (after Undo, a resize of
@@ -50,6 +53,8 @@ nonisolated enum WatchBitmapRenderer {
             let width: CGFloat
             let height: CGFloat
             let scale: CGFloat
+            let originX: CGFloat
+            let originY: CGFloat
         }
         fileprivate struct Entry {
             let region: CGRect
@@ -96,15 +101,19 @@ nonisolated enum WatchBitmapRenderer {
         min(maximumRasterScale, displayScale * CGFloat(max(1, zoom)))
     }
 
+    /// Highest resolution of a viewport region: 800% zoom on a 2× display. A region
+    /// covers about one screen of pixels whatever its scale.
+    static let maximumRegionScale: CGFloat = 16
+
     /// Screen raster resolution, in pixels per canvas point.
     ///
     /// `fit` is the paper's on-screen scale at 100% zoom: a 1024 pt canvas on a
     /// ~200 pt screen shows ~0.4 px per point, so rendering it at the display scale
     /// spent ~25 times the pixels (48–64 MiB per layer) on detail the screen cannot
     /// show. Zoom adds resolution only while every layer's float ink fits
-    /// `LayerCache.inkByteLimit`; `WatchViewportDetailView` sharpens the visible area
-    /// beyond that. Never below what the unzoomed screen shows; quarter steps keep
-    /// the cache key stable.
+    /// `LayerCache.inkByteLimit`. Never below what the unzoomed screen shows; quarter
+    /// steps keep the cache key stable. The canvas view passes zoom 1: a viewport
+    /// region (`WatchRasterArtwork.Region`) renders the zoomed view instead.
     static func rasterScale(displayScale: CGFloat, zoom: Double, fit: CGFloat,
                             canvasSize: CGSize, layerCount: Int) -> CGFloat {
         let screen = max(0.25, (displayScale * (fit.isFinite && fit > 0 ? fit : 1) * 4).rounded(.up) / 4)
@@ -163,9 +172,14 @@ nonisolated enum WatchBitmapRenderer {
     static func renderInk(strokes: [Stroke], size: CGSize, scale: CGFloat,
                                   base: InkSnapshot? = nil, geometry: [UUID: StrokeGeometry] = [:],
                                   selection: WatchSelectionPreview? = nil,
-                                  masks: ErasureMaskCache? = nil) -> InkSnapshot? {
+                                  masks: ErasureMaskCache? = nil,
+                                  origin: CGPoint = .zero) -> InkSnapshot? {
+        // `origin` renders a viewport region: `size` is the region's size and canvas
+        // point `origin` lands on the top-left pixel. It must be a whole number of
+        // pixels, so the region matches the full-canvas raster pixel for pixel.
         guard size.width.isFinite, size.height.isFinite, scale.isFinite,
-              size.width > 0, size.height > 0, scale > 0 else { return nil }
+              size.width > 0, size.height > 0, scale > 0,
+              origin.x.isFinite, origin.y.isFinite else { return nil }
         let width = ceil(size.width * scale)
         let height = ceil(size.height * scale)
         guard width <= 8192, height <= 8192,
@@ -177,6 +191,7 @@ nonisolated enum WatchBitmapRenderer {
         }
         context.translateBy(x: 0, y: height)
         context.scaleBy(x: scale, y: -scale)
+        context.translateBy(x: -origin.x, y: -origin.y)
         for source in strokes {
             guard !Task.isCancelled else { return nil }
             var stroke = source
@@ -189,17 +204,18 @@ nonisolated enum WatchBitmapRenderer {
             if !stroke.erasures.isEmpty {
                 // A selection preview gives moved strokes a new revision every frame; do not cache those.
                 guard let maskContext = erasureMask(for: stroke, size: size, scale: scale,
-                                                    masks: selection == nil ? masks : nil),
+                                                    masks: selection == nil ? masks : nil, origin: origin),
                       let mask = maskContext.makeImage() else { return nil }
                 erasure = maskContext
                 // CGImage rows run down from the top, while CGContext image
                 // drawing uses a bottom-left origin. Flip only to install the clip.
+                // The mask covers the raster, so undo the region offset around it.
                 let imageHeight = height / scale
-                context.translateBy(x: 0, y: imageHeight)
+                context.translateBy(x: origin.x, y: origin.y + imageHeight)
                 context.scaleBy(x: 1, y: -1)
                 context.clip(to: CGRect(x: 0, y: 0, width: width / scale, height: imageHeight), mask: mask)
                 context.scaleBy(x: 1, y: -1)
-                context.translateBy(x: 0, y: -imageHeight)
+                context.translateBy(x: -origin.x, y: -origin.y - imageHeight)
             }
             if let raster = stroke.raster {
                 guard let source = CGImageSourceCreateWithData(raster.png as CFData, nil),
@@ -215,7 +231,7 @@ nonisolated enum WatchBitmapRenderer {
                 continue
             }
             if stroke.style.instrument == .blur {
-                guard applyBlur(stroke, in: context, scale: scale, erasure: erasure) else { return nil }
+                guard applyBlur(stroke, in: context, scale: scale, erasure: erasure, origin: origin) else { return nil }
                 continue
             }
             // Paint on opaque straight RGB, then restore the original alpha mask.
@@ -259,7 +275,7 @@ nonisolated enum WatchBitmapRenderer {
             }
             if stroke.style.instrument == .marker || stroke.style.instrument == .watercolor {
                 let coverage = WatchStrokeCoverage(style: stroke.style, width: Int(width),
-                                                   height: Int(height), scale: scale)
+                                                   height: Int(height), scale: scale, origin: origin)
                 let dirty: CGRect
                 do {
                     if let shapes = cached?.coverage {
@@ -323,7 +339,8 @@ nonisolated enum WatchBitmapRenderer {
     /// `allowsRegion: false` forces the original full-canvas replay; checks compare both paths.
     /// `masks` reuses a prepared eraser region for an unchanged stroke at this resolution.
     static func erasureMask(for stroke: Stroke, size: CGSize, scale: CGFloat,
-                            allowsRegion: Bool = true, masks: ErasureMaskCache? = nil) -> CGContext? {
+                            allowsRegion: Bool = true, masks: ErasureMaskCache? = nil,
+                            origin: CGPoint = .zero) -> CGContext? {
         guard let background = makeFloatContext(width: Int(ceil(size.width * scale)),
                                                 height: Int(ceil(size.height * scale))) else { return nil }
         background.setFillColor(CGColor(gray: 1, alpha: 1))
@@ -335,7 +352,8 @@ nonisolated enum WatchBitmapRenderer {
                                               width: region.width, height: region.height))
         }
         let key = ErasureMaskCache.Key(stroke: stroke.id, revision: stroke.geometryRevision,
-                                       width: size.width, height: size.height, scale: scale)
+                                       width: size.width, height: size.height, scale: scale,
+                                       originX: origin.x, originY: origin.y)
         if allowsRegion, let cached = masks?.entry(key) {
             install(cached.region, cached.image)
             return background
@@ -346,7 +364,8 @@ nonisolated enum WatchBitmapRenderer {
             return eraser
         }
         if allowsRegion {
-            switch regionalErasure(erasers, width: background.width, height: background.height, scale: scale) {
+            switch regionalErasure(erasers, width: background.width, height: background.height,
+                                   scale: scale, origin: origin) {
             case .failed:
                 return nil
             case let .region(region, image):
@@ -358,7 +377,8 @@ nonisolated enum WatchBitmapRenderer {
             }
         }
         guard let image = background.makeImage() else { return nil }
-        guard let mask = renderInk(strokes: erasers, size: size, scale: scale, base: InkSnapshot(image: image))?.image
+        guard let mask = renderInk(strokes: erasers, size: size, scale: scale, base: InkSnapshot(image: image),
+                                   origin: origin)?.image
         else { return nil }
         background.setBlendMode(.copy)
         background.draw(mask, in: CGRect(x: 0, y: 0, width: background.width, height: background.height))
@@ -378,7 +398,7 @@ nonisolated enum WatchBitmapRenderer {
     /// mask, instead of allocating and copying a second full-canvas float context per stroke.
     /// The offset is a whole number of pixels, so rasterization matches the full replay.
     private static func regionalErasure(_ erasers: [Stroke], width: Int, height: Int,
-                                        scale: CGFloat) -> RegionalErasure {
+                                        scale: CGFloat, origin: CGPoint = .zero) -> RegionalErasure {
         var commands: [WatchDrawingCommand] = []
         var bounds = CGRect.null
         for eraser in erasers {
@@ -405,8 +425,9 @@ nonisolated enum WatchBitmapRenderer {
         guard !bounds.isNull else { return .region(.null, nil) }
         guard bounds.minX.isFinite, bounds.minY.isFinite,
               bounds.maxX.isFinite, bounds.maxY.isFinite else { return .unsupported }
-        // Top-left pixel rectangle, padded for antialiased edges.
-        let region = CGRect(x: bounds.minX * scale, y: bounds.minY * scale,
+        // Top-left pixel rectangle of the raster (a region starts at `origin`), padded
+        // for antialiased edges.
+        let region = CGRect(x: (bounds.minX - origin.x) * scale, y: (bounds.minY - origin.y) * scale,
                             width: bounds.width * scale, height: bounds.height * scale)
             .insetBy(dx: -2, dy: -2).integral.intersection(CGRect(x: 0, y: 0, width: width, height: height))
         guard !region.isNull, !region.isEmpty else { return .region(.null, nil) }
@@ -419,6 +440,7 @@ nonisolated enum WatchBitmapRenderer {
         context.translateBy(x: -region.minX, y: -originY)
         context.translateBy(x: 0, y: CGFloat(height))
         context.scaleBy(x: scale, y: -scale)
+        context.translateBy(x: -origin.x, y: -origin.y)
         for command in commands {
             guard !Task.isCancelled else { return .failed }
             draw(command, in: context, space: space)

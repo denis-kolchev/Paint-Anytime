@@ -35,6 +35,15 @@ struct WatchCanvasView: View {
     @State private var fillWorker = WatchFillWorker()
     @State private var fillTask: Task<Void, Never>?
     @State private var fillRequestID: UUID?
+    /// Visible part of the zoomed canvas rendered at screen resolution; see
+    /// `WatchRasterArtwork.Region` and `desiredRegion`.
+    @State private var rasterRegion: WatchRasterArtwork.Region?
+    /// The region whose first frame is on screen; live strokes render there from then on.
+    @State private var readyRegion: WatchRasterArtwork.Region?
+    private struct RegionRequest: Equatable {
+        let region: WatchRasterArtwork.Region?
+        let isIdle: Bool
+    }
     @State private var samplingImage: CGImage?
     /// Pixels per canvas point of `samplingImage`.
     @State private var samplingScale: CGFloat = 1
@@ -129,28 +138,38 @@ struct WatchCanvasView: View {
                     // Live samples re-evaluate only this observer, not the canvas or its menus.
                     LiveStrokeObserver(changes: controller.liveStroke) {
                         let displayedDocument = controller.document
-                        WatchRasterArtwork(document: useLayers ? displayedDocument : nil,
-                            selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, selectionSeed: lasso.selectionSeed,
-                            strokes: useLayers ? [] : (displayedDocument.layers.first?.strokes ?? []),
-                            activeStroke: controller.activeStroke, documentID: ObjectIdentifier(controller),
-                            documentRevision: controller.documentRevision,
-                            clearDocumentRevision: controller.clearDocumentRevision,
-                            activeStrokeRevision: controller.activeStrokeRevision,
-                            activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: zoom,
-                            fit: fit, liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip)
-                        // Evaluated per live sample too, so it hides as soon as a stroke starts.
-                        .overlay(alignment: .topLeading) {
-                            WatchViewportDetailView(document: displayedDocument,
-                                documentID: ObjectIdentifier(controller),
+                        // Evaluated per live sample too. Once a region's first frame is up and it
+                        // covers the view at the current zoom, live strokes render only there; the
+                        // canvas below waits for the commit. Until then the canvas below draws them
+                        // everywhere, and the region hides frames of an earlier place over them.
+                        let regionIsLive = rasterRegion != nil && readyRegion == rasterRegion && !lasso.isActive
+                            && desiredRegion(size: geometry.size, paper: paperSize, fit: fit) == rasterRegion
+                        ZStack(alignment: .topLeading) {
+                            // Screen resolution of the whole paper, never raised by zoom: the
+                            // region above sharpens the zoomed view within the memory budget.
+                            WatchRasterArtwork(document: useLayers ? displayedDocument : nil,
+                                selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, selectionSeed: lasso.selectionSeed,
+                                strokes: useLayers ? [] : (displayedDocument.layers.first?.strokes ?? []),
+                                activeStroke: regionIsLive ? nil : controller.activeStroke, documentID: ObjectIdentifier(controller),
                                 documentRevision: controller.documentRevision,
-                                visible: visibleCanvasRect(geometry.size), paperSize: paperSize,
-                                // Pixels per canvas point the screen shows at this zoom.
-                                scale: displayScale * fit * zoom,
-                                baseScale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: zoom,
-                                    fit: fit, canvasSize: paperSize,
-                                    layerCount: useLayers ? displayedDocument.layers.count : 1),
-                                isEnabled: controller.activeStroke == nil && !lasso.isActive
-                                    && lasso.previewState == nil)
+                                clearDocumentRevision: controller.clearDocumentRevision,
+                                activeStrokeRevision: regionIsLive ? 0 : controller.activeStrokeRevision,
+                                activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: 1,
+                                fit: fit, liveSubmitter: regionIsLive ? nil : liveSubmitter,
+                                allowsInkTip: !regionIsLive && allowsInkTip)
+                            if let region = rasterRegion, !lasso.isActive {
+                                WatchRasterArtwork(document: displayedDocument,
+                                    selectedLayerID: controller.selectedLayer.id,
+                                    strokes: [], activeStroke: regionIsLive ? controller.activeStroke : nil,
+                                    documentID: ObjectIdentifier(controller),
+                                    documentRevision: controller.documentRevision,
+                                    activeStrokeRevision: regionIsLive ? controller.activeStrokeRevision : 0,
+                                    activeStrokeID: controller.activeStrokeID,
+                                    onFramePrepared: { succeeded in if succeeded { readyRegion = region } },
+                                    zoom: zoom, fit: fit, liveSubmitter: regionIsLive ? liveSubmitter : nil,
+                                    allowsInkTip: regionIsLive && allowsInkTip, region: region,
+                                    showsStaleRegionFrame: regionIsLive || controller.activeStroke == nil)
+                            }
                         }
                     }
                         .frame(width: paperSize.width, height: paperSize.height)
@@ -284,6 +303,20 @@ struct WatchCanvasView: View {
                 }
             }
             .onAppear { if isEyedropperActive { prepareSampler(size: geometry.size) } }
+            .task(id: RegionRequest(region: desiredRegion(size: geometry.size, paper: paperSize, fit: fit),
+                                    isIdle: controller.activeStroke == nil)) {
+                let desired = desiredRegion(size: geometry.size, paper: paperSize, fit: fit)
+                guard let desired else {
+                    rasterRegion = nil
+                    readyRegion = nil
+                    return
+                }
+                guard desired != rasterRegion else { return }
+                // Render a new region only once zoom and pan have settled, never mid-stroke.
+                do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+                guard controller.activeStroke == nil else { return }
+                rasterRegion = desired
+            }
             .onChange(of: geometry.size) { _, size in
                 if isEyedropperActive { prepareSampler(size: size) }
             }
@@ -860,6 +893,47 @@ struct WatchCanvasView: View {
         return CGAffineTransform(a: scale, b: 0, c: 0, d: scale,
                                  tx: size.width / 2 + offset.width - paper.width * scale / 2,
                                  ty: size.height / 2 + offset.height - paper.height * scale / 2)
+    }
+
+    /// Screen points of canvas rendered around the view, so short pans and the ink of
+    /// strokes near the edge stay sharp without a new region.
+    private static let regionMargin: CGFloat = 32
+
+    /// The viewport region to render at screen resolution, or nil when the paper raster
+    /// already has every pixel the screen shows. The paper raster keeps all layers at
+    /// screen resolution for the whole canvas; zooming in multiplies the pixels needed,
+    /// which only fit in memory for the visible part. Keeps the current region while it
+    /// still covers the view at the same resolution.
+    private func desiredRegion(size: CGSize, paper: CGSize, fit: CGFloat) -> WatchRasterArtwork.Region? {
+        guard !lasso.isActive, zoom > 1, fit.isFinite, fit > 0 else { return nil }
+        let layers = controller.document.layers.count
+        let base = WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: 1, fit: fit,
+                                                   canvasSize: paper, layerCount: layers)
+        let needed = min(WatchBitmapRenderer.maximumRegionScale,
+                         (displayScale * fit * CGFloat(zoom) * 4).rounded(.up) / 4)
+        guard needed > base + 0.01 else { return nil }
+        let bounds = CGRect(origin: .zero, size: paper)
+        let visible = visibleCanvasRect(size).intersection(bounds)
+        guard !visible.isNull, !visible.isEmpty else { return nil }
+        let margin = Self.regionMargin / (CGFloat(zoom) * fit)
+        let rect = visible.insetBy(dx: -margin, dy: -margin).intersection(bounds)
+        // Every layer keeps a float ink of the region: stay within the layer cache budget.
+        let fitting = (CGFloat(WatchBitmapRenderer.LayerCache.inkByteLimit)
+            / (16 * CGFloat(max(1, layers)) * rect.width * rect.height)).squareRoot()
+        let scale = min(needed, (fitting * 4).rounded(.down) / 4)
+        guard scale > base + 0.01 else { return nil }
+        if let current = rasterRegion, current.scale == scale,
+           CGRect(origin: current.origin, size: current.size).insetBy(dx: -0.01, dy: -0.01).contains(visible) {
+            return current
+        }
+        // Whole pixels on the paper raster's grid, so the region matches it exactly.
+        let minX = floor(rect.minX * scale), minY = floor(rect.minY * scale)
+        let maxX = ceil(rect.maxX * scale), maxY = ceil(rect.maxY * scale)
+        guard maxX > minX, maxY > minY else { return nil }
+        // Slightly under the pixel count, so `ceil(size * scale)` cannot add a column.
+        return WatchRasterArtwork.Region(origin: CGPoint(x: minX / scale, y: minY / scale),
+            size: CGSize(width: (maxX - minX - 0.001) / scale, height: (maxY - minY - 0.001) / scale),
+            scale: scale)
     }
 
     /// Canvas points shown in a viewport of `size`, possibly beyond the paper.
