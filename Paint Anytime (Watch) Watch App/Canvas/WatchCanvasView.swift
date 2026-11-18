@@ -47,6 +47,12 @@ struct WatchCanvasView: View {
     /// never shows a frame without the stroke over ink drawn in another raster.
     @State private var lateTiles: Set<RegionTile.ID> = []
     @State private var tileScale: CGFloat?
+    /// The scale whose tiles over the view were all ready at once. Tiles of a new scale
+    /// stay hidden until then and replace the previous resolution in one frame: shown one
+    /// by one, each swap from a stretched old tile (or the paper) to a sharp one looked
+    /// like the picture shifting under the zoom. Cells added by a pan at this scale show
+    /// as soon as each is ready.
+    @State private var completeScale: CGFloat?
     @State private var fallbackScale: CGFloat?
     /// Cells of `tileScale` over the view when the plan was applied.
     @State private var viewTileIDs: [RegionTile.ID] = []
@@ -176,6 +182,7 @@ struct WatchCanvasView: View {
                         } ?? .null
                         let shownTiles = lasso.isActive ? [] : tiles.filter {
                             readyTiles.contains($0.id) && !lateTiles.contains($0.id)
+                                && ($0.id.scale != tileScale || completeScale == tileScale)
                         }
                         let shownIDs = Set(shownTiles.map(\.id))
                         let liveIDs = Set(shownTiles.filter {
@@ -370,6 +377,7 @@ struct WatchCanvasView: View {
                     tiles = []
                     readyTiles = []
                     tileScale = nil
+                    completeScale = nil
                     fallbackScale = nil
                     viewTileIDs = []
                     return
@@ -1027,10 +1035,9 @@ struct WatchCanvasView: View {
         let wanted = plan.view + plan.margin
         let wantedSet = Set(wanted)
         if plan.scale != tileScale {
-            // Only one fallback resolution: the scale on screen until now.
-            fallbackScale = tileScale.flatMap { old in
-                tiles.contains { $0.id.scale == old && readyTiles.contains($0.id) } ? old : nil
-            } ?? fallbackScale
+            // Only one fallback resolution: the scale on screen until now. A scale that never
+            // completed was never shown; the fallback below it stays.
+            if let old = tileScale, completeScale == old { fallbackScale = old }
             tileScale = plan.scale
         }
         let fallback = tiles.filter {
@@ -1053,6 +1060,9 @@ struct WatchCanvasView: View {
     private func tileBecameReady(_ id: RegionTile.ID) {
         guard readyTiles.insert(id).inserted else { return }
         if controller.activeStroke != nil { lateTiles.insert(id) }
+        if completeScale != tileScale, !viewTileIDs.isEmpty, viewTileIDs.allSatisfy(readyTiles.contains) {
+            completeScale = tileScale
+        }
         if let start = tilesRequestedAt, !viewTileIDs.isEmpty, viewTileIDs.allSatisfy(readyTiles.contains) {
             let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start) / 1e6
             Self.regionLogger.notice("""
@@ -1069,7 +1079,7 @@ struct WatchCanvasView: View {
     /// The previous resolution leaves once every tile over the view is ready, and never
     /// under a stroke: it may be drawing the stroke where the new tiles still hide.
     private func dropCoveredFallback() {
-        guard controller.activeStroke == nil, fallbackScale != nil,
+        guard controller.activeStroke == nil, fallbackScale != nil, completeScale == tileScale,
               viewTileIDs.allSatisfy(readyTiles.contains) else { return }
         tiles.removeAll { $0.id.scale != tileScale }
         readyTiles = readyTiles.filter { $0.scale == tileScale }
