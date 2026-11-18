@@ -9,6 +9,7 @@ struct ContentView: View {
     @AppStorage(AutosaveSettings.intervalKey) private var autosaveMinutes = AutosaveSettings.defaultMinutes
     @AppStorage(AutosaveSettings.showsTimerKey) private var showsAutosaveTimer = AutosaveSettings.defaultShowsTimer
     @State private var autosave = CanvasAutosave()
+    @State private var zoomReadout = CanvasZoomReadout()
     @StateObject private var menuOnboarding = OnboardingController()
     private var controller: CanvasController { session.canvas }
     @AppStorage(CanvasControlLayout.storageKey) private var controlLayoutData = Data()
@@ -93,13 +94,15 @@ struct ContentView: View {
         .ignoresSafeArea()
         .overlay {
             // The canvas hides the system clock, so the countdown takes its place:
-            // centered at the clock's height. A separate view reads the countdown, so it
-            // does not invalidate this screen. Behind the menu and quick
+            // centered at the clock's height, with the zoom below it while the Crown
+            // zooms (or in its place without a countdown). A separate view reads both,
+            // so they do not invalidate this screen. Behind the menu and quick
             // settings it stays mounted and fades with the canvas controls.
-            if autosaveEnabled, showsAutosaveTimer, isActive, scenePhase == .active,
+            if isActive, scenePhase == .active,
                menuOnboarding.tutorialFolder == nil,
                !showsGallery, !showsToolSettings, !showsLayers, !showsSampledPalette {
-                AutosaveCountdownOverlay(autosave: autosave)
+                CanvasStatusOverlay(autosave: autosave, showsCountdown: autosaveEnabled && showsAutosaveTimer,
+                                    zoom: zoomReadout)
                     .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
             }
         }
@@ -916,7 +919,7 @@ struct ContentView: View {
                     showsMorphToolbar = false
                 }
             }
-        }, onProtectedTap: forwardCanvasTap)
+        }, onProtectedTap: forwardCanvasTap, zoomReadout: zoomReadout)
             .id(session.canvasSessionID)
     }
 
