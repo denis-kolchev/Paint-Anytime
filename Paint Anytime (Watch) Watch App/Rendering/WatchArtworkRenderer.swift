@@ -105,7 +105,9 @@ actor WatchArtworkRenderer {
         defer { RenderDiagnostics.workEnded(started) }
         guard !Task.isCancelled else { return nil }
         selection.clear()
-        let state = activeStroke == nil ? historyKey(document: document, strokes: [], key: key) : nil
+        // Region tiles skip history frames: each tile has its own renderer, and six frames
+        // per tile would multiply. Undo there replays from the layer cache's previous inks.
+        let state = activeStroke == nil && !key.isRegion ? historyKey(document: document, strokes: [], key: key) : nil
         if let frame = recall(state) { return frame }
         guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: key.scale,
             origin: key.origin, isRegion: key.isRegion, activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers), !Task.isCancelled else { return nil }

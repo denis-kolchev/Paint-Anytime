@@ -7,6 +7,7 @@
 
 import SwiftUI
 import WatchKit
+import os
 
 enum CanvasToolbarControl: Hashable {
     case custom(Int)
@@ -35,23 +36,35 @@ struct WatchCanvasView: View {
     @State private var fillWorker = WatchFillWorker()
     @State private var fillTask: Task<Void, Never>?
     @State private var fillRequestID: UUID?
-    /// Visible part of the zoomed canvas rendered at screen resolution and on screen;
-    /// see `WatchRasterArtwork.Region` and `desiredRegion`. Live strokes render in it
-    /// while it covers the view, whatever the zoom asks for meanwhile.
-    @State private var shownRegion: RegionSlot?
-    /// The next region, rendered unseen until its first frame is ready; only then it
-    /// replaces `shownRegion`, so a rendered region is never discarded for a blank one.
-    @State private var nextRegion: RegionSlot?
-    /// Per-layer reach of the strokes, for the region memory budget.
+    /// Tiles of the zoomed canvas at a resolution the whole paper could not afford; see
+    /// `RegionTiling` and `tilePlan`. Tiles of `tileScale` and, until they are all ready
+    /// over the view, those of `fallbackScale` (the previous resolution, shown below them).
+    /// Ordered fallback first: later tiles draw above.
+    @State private var tiles: [RegionTile] = []
+    /// Tiles whose first frame is on screen.
+    @State private var readyTiles: Set<RegionTile.ID> = []
+    /// Tiles that became ready during the current stroke: hidden until lift, so a tile
+    /// never shows a frame without the stroke over ink drawn in another raster.
+    @State private var lateTiles: Set<RegionTile.ID> = []
+    @State private var tileScale: CGFloat?
+    @State private var fallbackScale: CGFloat?
+    /// Cells of `tileScale` over the view when the plan was applied.
+    @State private var viewTileIDs: [RegionTile.ID] = []
+    /// When the view's tiles were requested, for the time-to-ready log.
+    @State private var tilesRequestedAt: UInt64?
+    /// Per-layer reach of the strokes, for the tile memory budget.
     @State private var layerReach = LayerReachMemo()
-    /// A region with its own identity: promoting `nextRegion` keeps its view, queue and
-    /// layer cache, instead of handing the region to another view to render again.
-    private struct RegionSlot: Equatable, Identifiable {
-        let id = UUID()
-        let region: WatchRasterArtwork.Region
+    private static let regionLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PaintAnytime",
+                                             category: "region")
+    private struct TilePlan: Equatable {
+        let scale: CGFloat
+        /// Cells over the view, nearest to its centre first.
+        let view: [RegionTile.ID]
+        /// Cells of the margin around the view, rendered at background priority.
+        let margin: [RegionTile.ID]
     }
-    private struct RegionRequest: Equatable {
-        let region: WatchRasterArtwork.Region?
+    private struct TileRequest: Equatable {
+        let plan: TilePlan?
         let isIdle: Bool
     }
     @State private var samplingImage: CGImage?
@@ -150,13 +163,36 @@ struct WatchCanvasView: View {
                     // Live samples re-evaluate only this observer, not the canvas or its menus.
                     LiveStrokeObserver(changes: controller.liveStroke) {
                         let displayedDocument = controller.document
-                        // Evaluated per live sample too. While the shown region covers the view,
-                        // live strokes render only there, at its resolution even if the zoom now
-                        // asks for more; the canvas below waits for the commit. Otherwise the
-                        // canvas below draws them, and the region is hidden over them.
-                        let regionIsLive = !lasso.isActive && shownRegion.map {
-                            regionCovers($0.region, size: geometry.size, paper: paperSize)
+                        // Evaluated per live sample too. Shown tiles stay on screen and draw the
+                        // live stroke where it reaches them, at their resolution. The paper
+                        // below draws it too unless shown tiles of the current scale cover the
+                        // view (cheap: the paper is at screen resolution).
+                        let visibleRect = visibleCanvasRect(geometry.size)
+                        // Padded by a few screen points, so a tile starts drawing the stroke
+                        // before it arrives there.
+                        let strokePad = 16 / max(0.01, CGFloat(zoom) * fit)
+                        let strokeReach = controller.activeStroke.map {
+                            WatchBitmapRenderer.reach(of: $0).insetBy(dx: -strokePad, dy: -strokePad)
+                        } ?? .null
+                        let shownTiles = lasso.isActive ? [] : tiles.filter {
+                            readyTiles.contains($0.id) && !lateTiles.contains($0.id)
+                        }
+                        let shownIDs = Set(shownTiles.map(\.id))
+                        let liveIDs = Set(shownTiles.filter {
+                            $0.rect.intersects(strokeReach) && $0.rect.intersects(visibleRect)
+                        }.map(\.id))
+                        let tilesCoverView = tileScale.map { scale in
+                            RegionTiling.cells(covering: visibleRect, scale: scale, paper: paperSize, nearest: .zero)
+                                .allSatisfy { shownIDs.contains($0) }
                         } == true
+                        let paperIsLive = !tilesCoverView
+                        // The ink tip draws above its own raster only: the paper's while it is live,
+                        // else the tile under the newest sample.
+                        let tipTile: RegionTile.ID? = paperIsLive ? nil : controller.activeStroke?.points.last.flatMap { last in
+                            let p = CGPoint(x: CGFloat(last.position.x), y: CGFloat(last.position.y))
+                                .applying(controller.activeStroke?.transform.affine ?? .identity)
+                            return shownTiles.last { liveIDs.contains($0.id) && $0.rect.contains(p) }?.id
+                        }
                         ZStack(alignment: .topLeading) {
                             // Screen resolution of the whole paper: the region above sharpens the
                             // zoomed view within the memory budget. Lasso hides regions (selection
@@ -165,17 +201,16 @@ struct WatchCanvasView: View {
                             WatchRasterArtwork(document: useLayers ? displayedDocument : nil,
                                 selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, selectionSeed: lasso.selectionSeed,
                                 strokes: useLayers ? [] : (displayedDocument.layers.first?.strokes ?? []),
-                                activeStroke: regionIsLive ? nil : controller.activeStroke, documentID: ObjectIdentifier(controller),
+                                activeStroke: paperIsLive ? controller.activeStroke : nil, documentID: ObjectIdentifier(controller),
                                 documentRevision: controller.documentRevision,
                                 clearDocumentRevision: controller.clearDocumentRevision,
-                                activeStrokeRevision: regionIsLive ? 0 : controller.activeStrokeRevision,
+                                activeStrokeRevision: paperIsLive ? controller.activeStrokeRevision : 0,
                                 activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: lasso.isActive ? zoom : 1,
-                                fit: fit, liveSubmitter: regionIsLive ? nil : liveSubmitter,
-                                allowsInkTip: !regionIsLive && allowsInkTip)
+                                fit: fit, liveSubmitter: paperIsLive ? liveSubmitter : nil,
+                                allowsInkTip: paperIsLive && allowsInkTip)
                             if !lasso.isActive {
-                                ForEach([shownRegion, nextRegion].compactMap { $0 }) { slot in
-                                    let isShown = slot.id == shownRegion?.id
-                                    let live = isShown && regionIsLive
+                                ForEach(tiles) { tile in
+                                    let live = liveIDs.contains(tile.id)
                                     WatchRasterArtwork(document: displayedDocument,
                                         selectedLayerID: controller.selectedLayer.id,
                                         strokes: [], activeStroke: live ? controller.activeStroke : nil,
@@ -184,13 +219,13 @@ struct WatchCanvasView: View {
                                         activeStrokeRevision: live ? controller.activeStrokeRevision : 0,
                                         activeStrokeID: controller.activeStrokeID,
                                         onFramePrepared: { succeeded in
-                                            guard succeeded, nextRegion?.id == slot.id else { return }
-                                            shownRegion = slot
-                                            nextRegion = nil
+                                            guard succeeded, tiles.contains(where: { $0.id == tile.id }) else { return }
+                                            tileBecameReady(tile.id)
                                         },
                                         zoom: zoom, fit: fit, liveSubmitter: live ? liveSubmitter : nil,
-                                        allowsInkTip: live && allowsInkTip, region: slot.region)
-                                        .opacity(isShown && (live || controller.activeStroke == nil) ? 1 : 0)
+                                        allowsInkTip: live && tile.id == tipTile && allowsInkTip, region: tile.region,
+                                        rendersInBackground: !tile.rect.intersects(visibleRect))
+                                        .opacity(shownIDs.contains(tile.id) ? 1 : 0)
                                 }
                             }
                         }
@@ -326,28 +361,33 @@ struct WatchCanvasView: View {
                 }
             }
             .onAppear { if isEyedropperActive { prepareSampler(size: geometry.size) } }
-            .task(id: RegionRequest(region: desiredRegion(size: geometry.size, paper: paperSize, fit: fit),
-                                    isIdle: controller.activeStroke == nil)) {
-                // A stroke keeps the shown region; a region rendering in the background
-                // would only compete with it. It is requested again once the stroke ends.
-                guard controller.activeStroke == nil else {
-                    nextRegion = nil
-                    return
-                }
-                guard let desired = desiredRegion(size: geometry.size, paper: paperSize, fit: fit) else {
-                    shownRegion = nil
-                    nextRegion = nil
-                    return
-                }
-                if desired == shownRegion?.region {
-                    nextRegion = nil
-                    return
-                }
-                guard desired != nextRegion?.region else { return }
-                // Render a new region only once zoom and pan have settled.
-                do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+            .task(id: TileRequest(plan: tilePlan(size: geometry.size, paper: paperSize, fit: fit),
+                                  isIdle: controller.activeStroke == nil)) {
+                // A stroke keeps the tiles it draws in; tiles still rendering go on, new
+                // ones are requested after lift.
                 guard controller.activeStroke == nil else { return }
-                nextRegion = RegionSlot(region: desired)
+                guard let plan = tilePlan(size: geometry.size, paper: paperSize, fit: fit) else {
+                    tiles = []
+                    readyTiles = []
+                    tileScale = nil
+                    fallbackScale = nil
+                    viewTileIDs = []
+                    return
+                }
+                let existing = Set(tiles.map(\.id))
+                guard plan.scale != tileScale || (plan.view + plan.margin).contains(where: { !existing.contains($0) })
+                else { return }
+                // Render new tiles only once zoom and pan have settled. 150 ms: an abandoned
+                // tile stops at its next stroke (`renderInk` checks cancellation).
+                do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+                guard controller.activeStroke == nil else { return }
+                applyTilePlan(plan, paper: paperSize, visible: visibleCanvasRect(geometry.size))
+            }
+            .onChange(of: controller.activeStroke == nil) { _, idle in
+                if idle {
+                    lateTiles = []
+                    dropCoveredFallback()
+                }
             }
             .onChange(of: geometry.size) { _, size in
                 if isEyedropperActive { prepareSampler(size: size) }
@@ -929,22 +969,20 @@ struct WatchCanvasView: View {
     }
 
     /// Screen points of canvas rendered around the view, so short pans and the ink of
-    /// strokes near the edge stay sharp without a new region.
+    /// strokes near the edge stay sharp without new tiles.
     private static let regionMargin: CGFloat = 32
 
-    /// The viewport region to render at screen resolution, or nil when the paper raster
-    /// already has every pixel the screen shows. The paper raster keeps all layers at
-    /// screen resolution for the whole canvas; zooming in multiplies the pixels needed,
-    /// which only fit in memory for the visible part. Keeps the current region while it
-    /// still covers the view at the same resolution.
-    private func desiredRegion(size: CGSize, paper: CGSize, fit: CGFloat) -> WatchRasterArtwork.Region? {
+    /// The tiles to render above the paper raster, or nil when the paper raster already
+    /// has every pixel the screen shows. The paper keeps all layers at screen resolution
+    /// for the whole canvas; zooming in multiplies the pixels needed, which only fit in
+    /// memory for the visible part.
+    private func tilePlan(size: CGSize, paper: CGSize, fit: CGFloat) -> TilePlan? {
         guard !lasso.isActive, zoom > 1, fit.isFinite, fit > 0 else { return nil }
         let layers = controller.document.layers.count
         let base = WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: 1, fit: fit,
                                                    canvasSize: paper, layerCount: layers)
-        // Steps of √2: zooming within a step keeps the region (see below), and the step
-        // at or above the screen's need keeps it sharp. Finer steps re-rendered the whole
-        // region for each small Crown adjustment; ×2 steps would cost up to 4× the pixels.
+        // Steps of √2: zooming within a step keeps the tiles, and the step at or above the
+        // screen's need keeps them sharp; ×2 steps would cost up to 4× the pixels.
         let shown = displayScale * fit * CGFloat(zoom)
         let needed = min(WatchBitmapRenderer.maximumRegionScale,
                          pow(2, (log2(shown) * 2 - 0.001).rounded(.up) / 2))
@@ -954,34 +992,88 @@ struct WatchCanvasView: View {
         guard !visible.isNull, !visible.isEmpty else { return nil }
         let margin = Self.regionMargin / (CGFloat(zoom) * fit)
         let rect = visible.insetBy(dx: -margin, dy: -margin).intersection(bounds)
-        // Each layer with ink in the region keeps a float ink of it (the others a 1×1 one).
-        // A shown and a next region may coexist: each gets half the layer cache budget.
+        // Each layer with ink in a tile keeps a float ink of it (the others a 1×1 one).
+        // The current and the fallback scale may coexist: each gets half the budget.
         let touched = layerReach.bounds(for: controller.document, revision: controller.documentRevision)
             .filter { $0.intersects(rect) }.count
-        let fitting = (CGFloat(WatchBitmapRenderer.LayerCache.inkByteLimit) / 2
-            / (16 * CGFloat(max(1, touched)) * rect.width * rect.height)).squareRoot()
-        let scale = min(needed, (fitting * 4).rounded(.down) / 4)
-        guard scale > base + 0.01 else { return nil }
-        // Keep a region that covers the view at this resolution or a higher one, so a
-        // small zoom or pan inside it, or zooming out, does not render it again.
-        if let current = shownRegion?.region, current.scale >= scale - 0.01,
-           regionCovers(current, size: size, paper: paper) {
-            return current
+        let budget = CGFloat(WatchBitmapRenderer.LayerCache.inkByteLimit) / 2 / (16 * CGFloat(max(1, touched)))
+        func fits(_ scale: CGFloat) -> Bool {
+            RegionTiling.pixels(covering: rect, scale: scale, paper: paper) <= budget
         }
-        // Whole pixels on the paper raster's grid, so the region matches it exactly.
-        let minX = floor(rect.minX * scale), minY = floor(rect.minY * scale)
-        let maxX = ceil(rect.maxX * scale), maxY = ceil(rect.maxY * scale)
-        guard maxX > minX, maxY > minY else { return nil }
-        // Slightly under the pixel count, so `ceil(size * scale)` cannot add a column.
-        return WatchRasterArtwork.Region(origin: CGPoint(x: minX / scale, y: minY / scale),
-            size: CGSize(width: (maxX - minX - 0.001) / scale, height: (maxY - minY - 0.001) / scale),
-            scale: scale)
+        var scale = RegionTiling.ladderScale(needed)
+        // Keep the current scale up to one step above the need: zooming out by a step
+        // or panning reuses its tiles and only renders the new cells.
+        if let current = tileScale, current >= scale - 0.01,
+           current <= scale * 2.squareRoot() + 0.01, fits(current) {
+            scale = current
+        } else {
+            while !fits(scale) {
+                scale = RegionTiling.ladderScale(scale / 2.squareRoot())
+                guard scale > base + 0.01 else { return nil }
+            }
+        }
+        guard scale > base + 0.01 else { return nil }
+        let center = CGPoint(x: visible.midX, y: visible.midY)
+        let view = RegionTiling.cells(covering: visible, scale: scale, paper: paper, nearest: center)
+        let viewSet = Set(view)
+        let around = RegionTiling.cells(covering: rect, scale: scale, paper: paper, nearest: center)
+            .filter { !viewSet.contains($0) }
+        return TilePlan(scale: scale, view: view, margin: around)
     }
 
-    private func regionCovers(_ region: WatchRasterArtwork.Region, size: CGSize, paper: CGSize) -> Bool {
-        let visible = visibleCanvasRect(size).intersection(CGRect(origin: .zero, size: paper))
-        guard !visible.isNull, !visible.isEmpty else { return true }
-        return CGRect(origin: region.origin, size: region.size).insetBy(dx: -0.01, dy: -0.01).contains(visible)
+    /// Adds the plan's missing tiles nearest the view's centre first, keeps tiles of the
+    /// previous scale over the view as a fallback, and drops everything else.
+    private func applyTilePlan(_ plan: TilePlan, paper: CGSize, visible: CGRect) {
+        let wanted = plan.view + plan.margin
+        let wantedSet = Set(wanted)
+        if plan.scale != tileScale {
+            // Only one fallback resolution: the scale on screen until now.
+            fallbackScale = tileScale.flatMap { old in
+                tiles.contains { $0.id.scale == old && readyTiles.contains($0.id) } ? old : nil
+            } ?? fallbackScale
+            tileScale = plan.scale
+        }
+        let fallback = tiles.filter {
+            $0.id.scale == fallbackScale && $0.id.scale != plan.scale
+                && readyTiles.contains($0.id) && $0.rect.intersects(visible)
+        }
+        let kept = Dictionary(uniqueKeysWithValues: tiles.filter { wantedSet.contains($0.id) }.map { ($0.id, $0) })
+        let current = wanted.compactMap { kept[$0] ?? RegionTiling.tile($0, paper: paper) }
+        if current.contains(where: { kept[$0.id] == nil }) {
+            tilesRequestedAt = DispatchTime.now().uptimeNanoseconds
+        }
+        tiles = fallback + current
+        let alive = Set(tiles.map(\.id))
+        readyTiles = readyTiles.intersection(alive)
+        viewTileIDs = plan.view
+        if fallback.isEmpty { fallbackScale = nil }
+        dropCoveredFallback()
+    }
+
+    private func tileBecameReady(_ id: RegionTile.ID) {
+        guard readyTiles.insert(id).inserted else { return }
+        if controller.activeStroke != nil { lateTiles.insert(id) }
+        if let start = tilesRequestedAt, !viewTileIDs.isEmpty, viewTileIDs.allSatisfy(readyTiles.contains) {
+            let elapsed = Double(DispatchTime.now().uptimeNanoseconds - start) / 1e6
+            Self.regionLogger.notice("""
+                view tiles ready \(elapsed, format: .fixed(precision: 0), privacy: .public) ms \
+                tiles=\(viewTileIDs.count, privacy: .public) \
+                scale=\(Double(tileScale ?? 0), format: .fixed(precision: 2), privacy: .public) \
+                zoom=\(Double(zoom), format: .fixed(precision: 2), privacy: .public)
+                """)
+            tilesRequestedAt = nil
+        }
+        dropCoveredFallback()
+    }
+
+    /// The previous resolution leaves once every tile over the view is ready, and never
+    /// under a stroke: it may be drawing the stroke where the new tiles still hide.
+    private func dropCoveredFallback() {
+        guard controller.activeStroke == nil, fallbackScale != nil,
+              viewTileIDs.allSatisfy(readyTiles.contains) else { return }
+        tiles.removeAll { $0.id.scale != tileScale }
+        readyTiles = readyTiles.filter { $0.scale == tileScale }
+        fallbackScale = nil
     }
 
     /// Canvas points shown in a viewport of `size`, possibly beyond the paper.

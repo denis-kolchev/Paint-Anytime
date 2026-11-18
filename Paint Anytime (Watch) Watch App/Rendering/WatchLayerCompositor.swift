@@ -1,6 +1,7 @@
 import SwiftUI
 import simd
 import ImageIO
+import Compression
 import os
 
 nonisolated extension WatchBitmapRenderer {
@@ -14,8 +15,32 @@ nonisolated extension WatchBitmapRenderer {
         /// a 1×1 ink, so the incremental live buffers (sized from the base ink) stay off.
         var isRegion = false
         fileprivate var inks: [UUID: (revisions: [UUID], ink: InkSnapshot)] = [:] {
-            didSet { if inks.isEmpty { previousInks.removeAll() } }
+            didSet {
+                if inks.isEmpty {
+                    previousInks.removeAll()
+                    compressedInks.removeAll()
+                }
+            }
         }
+        /// Inks evicted from `inks`, LZ4-compressed: restoring one decompresses it instead of
+        /// replaying every stroke of the layer (Krita compresses swapped tiles the same way).
+        /// Transparent areas of a float ink are zeros and shrink to almost nothing.
+        private var compressedInks: [UUID: CompressedInk] = [:]
+        private struct CompressedInk {
+            let revisions: [UUID]
+            let data: Data
+            let width: Int
+            let height: Int
+            let bytesPerRow: Int
+            let bitsPerComponent: Int
+            let bitsPerPixel: Int
+            let bitmapInfo: CGBitmapInfo
+            let space: CGColorSpace
+            var access: UInt64
+        }
+        /// Compressed inks stay within a quarter of the live ink budget.
+        static var compressedByteLimit: Int { inkByteLimit / 4 }
+        private(set) var compressedInkHits = 0
         /// Snapshots replaced by later commits, newest first. Undo and Redo return to one
         /// of these exactly, so the first frame after them needs no replay of the layer.
         private var previousInks: [(layerID: UUID, revisions: [UUID], ink: InkSnapshot)] = []
@@ -51,6 +76,7 @@ nonisolated extension WatchBitmapRenderer {
 
         /// The layer's current ink if it matches these strokes; marks it recently used.
         fileprivate func currentInk(for layerID: UUID, revisions: [UUID]) -> InkSnapshot? {
+            restoreCompressed(layerID)
             guard let entry = inks[layerID], entry.revisions == revisions else { return nil }
             touchInk(layerID)
             return entry.ink
@@ -69,8 +95,63 @@ nonisolated extension WatchBitmapRenderer {
                       .min(by: { inkAccess[$0, default: 0] < inkAccess[$1, default: 0] }),
                   let removed = inks.removeValue(forKey: oldest) {
                 total -= Self.bytes(removed.ink)
+                compress(removed.ink, revisions: removed.revisions, for: oldest,
+                         access: inkAccess[oldest, default: 0])
                 inkAccess.removeValue(forKey: oldest)
             }
+        }
+
+        /// Keeps an evicted ink compressed when that saves at least half of it.
+        private func compress(_ ink: InkSnapshot, revisions: [UUID], for layerID: UUID, access: UInt64) {
+            let image = ink.image
+            guard let space = image.colorSpace, let source = image.dataProvider?.data as Data? else { return }
+            let count = image.bytesPerRow * image.height
+            guard source.count >= count, count > 0 else { return }
+            var output = Data(count: count / 2)
+            let written = output.withUnsafeMutableBytes { target in
+                source.withUnsafeBytes { input in
+                    compression_encode_buffer(target.bindMemory(to: UInt8.self).baseAddress!, count / 2,
+                                              input.bindMemory(to: UInt8.self).baseAddress!, count,
+                                              nil, COMPRESSION_LZ4)
+                }
+            }
+            // 0: did not fit in half the size; not worth keeping.
+            guard written > 0 else { return }
+            output.count = written
+            compressedInks[layerID] = CompressedInk(revisions: revisions, data: output, width: image.width,
+                height: image.height, bytesPerRow: image.bytesPerRow,
+                bitsPerComponent: image.bitsPerComponent, bitsPerPixel: image.bitsPerPixel, bitmapInfo: image.bitmapInfo,
+                space: space, access: access)
+            var total = compressedInks.values.reduce(0) { $0 + $1.data.count }
+            while total > Self.compressedByteLimit,
+                  let oldest = compressedInks.min(by: { $0.value.access < $1.value.access })?.key,
+                  let removed = compressedInks.removeValue(forKey: oldest) {
+                total -= removed.data.count
+            }
+        }
+
+        /// Moves a compressed ink back into `inks` when the layer has no current one.
+        private func restoreCompressed(_ layerID: UUID) {
+            guard inks[layerID] == nil, let entry = compressedInks.removeValue(forKey: layerID) else { return }
+            let count = entry.bytesPerRow * entry.height
+            var pixels = Data(count: count)
+            let read = pixels.withUnsafeMutableBytes { target in
+                entry.data.withUnsafeBytes { input in
+                    compression_decode_buffer(target.bindMemory(to: UInt8.self).baseAddress!, count,
+                                              input.bindMemory(to: UInt8.self).baseAddress!, entry.data.count,
+                                              nil, COMPRESSION_LZ4)
+                }
+            }
+            guard read == count, let provider = CGDataProvider(data: pixels as CFData),
+                  let image = CGImage(width: entry.width, height: entry.height, bitsPerComponent: entry.bitsPerComponent,
+                                      bitsPerPixel: entry.bitsPerPixel, bytesPerRow: entry.bytesPerRow, space: entry.space,
+                                      bitmapInfo: entry.bitmapInfo, provider: provider, decode: nil,
+                                      shouldInterpolate: false, intent: .defaultIntent)
+            else { return }
+            compressedInkHits += 1
+            inks[layerID] = (entry.revisions, InkSnapshot(image: image))
+            touchInk(layerID)
+            evictInks(keeping: layerID)
         }
 
         /// Commit a snapshot as the layer's current ink, keeping the replaced one for Undo.
@@ -105,6 +186,7 @@ nonisolated extension WatchBitmapRenderer {
 
         /// The longest retained state whose strokes start the new ones, to append the rest.
         fileprivate func appendBase(for layerID: UUID, revisions: [UUID]) -> (revisions: [UUID], ink: InkSnapshot)? {
+            restoreCompressed(layerID)
             if let current = inks[layerID], revisions.starts(with: current.revisions) { return current }
             return previousInks
                 .filter { $0.layerID == layerID && revisions.count > $0.revisions.count && revisions.starts(with: $0.revisions) }
@@ -115,6 +197,7 @@ nonisolated extension WatchBitmapRenderer {
         fileprivate func retainLayers(_ ids: Set<UUID>) {
             inks = inks.filter { ids.contains($0.key) }
             inkAccess = inkAccess.filter { inks[$0.key] != nil }
+            compressedInks = compressedInks.filter { ids.contains($0.key) }
             previousInks.removeAll { !ids.contains($0.layerID) }
         }
         fileprivate struct CompositeKey: Equatable {

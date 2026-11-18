@@ -31,6 +31,9 @@ struct WatchRasterArtwork: View {
     /// until the new one is ready. Only while that frame's document is current and no
     /// stroke is being drawn below it: otherwise it would hide newer ink.
     var showsStaleRegionFrame = true
+    /// Renders at utility priority: tiles around the view, prepared for a pan, must not
+    /// take the cores from the tiles on screen or from the live stroke.
+    var rendersInBackground = false
     @State private var rasterZoom: Double = 1
 
     /// Part of the canvas rendered at a resolution the full canvas could not afford.
@@ -64,7 +67,7 @@ struct WatchRasterArtwork: View {
             RasterFrame(clearDocumentRevision: clearDocumentRevision, onFramePrepared: onFramePrepared, document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: key(paperSize: geometry.size), paperSize: geometry.size, isRegion: region != nil,
-                        showsStaleFrame: showsStaleRegionFrame,
+                        showsStaleFrame: showsStaleRegionFrame, rendersInBackground: rendersInBackground,
                         liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip && selectionPreview == nil)
         }
         .task(id: zoom) {
@@ -96,6 +99,7 @@ struct WatchRasterArtwork: View {
         /// A region shows nothing until its first frame, letting the canvas below show.
         let isRegion: Bool
         let showsStaleFrame: Bool
+        let rendersInBackground: Bool
         var liveSubmitter: LiveFrameSubmitter?
         var allowsInkTip: Bool
 
@@ -230,7 +234,8 @@ struct WatchRasterArtwork: View {
                 if hasSelectionTexture { return }
                 frames.submit(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke,
                               activeStrokeRevision: activeStrokeRevision, key: key, activeStrokeID: activeStrokeID,
-                              animatesClear: activeStroke == nil && key.documentRevision == clearDocumentRevision)
+                              animatesClear: activeStroke == nil && key.documentRevision == clearDocumentRevision,
+                              priority: rendersInBackground ? .utility : nil)
             }
             .task(id: Request(key: key, activeStrokeRevision: 0, sessionID: selectionSeed?.sessionID, transform: nil)) {
                 await frames.prepareSelection(selectionSeed, key: key)
@@ -276,14 +281,20 @@ struct WatchRasterArtwork: View {
         /// live frame can be queued without waiting for the `.task(id:)` hop. Assigning a
         /// plain property during body publishes nothing and invalidates no view.
         private func registerLiveSubmitter() {
+            let target = ObjectIdentifier(frames)
+            // A raster that stops drawing the live stroke must stop taking direct submits.
+            if let registered = frames.liveRegistration, registered !== liveSubmitter {
+                registered.targets[target] = nil
+            }
+            frames.liveRegistration = liveSubmitter
             guard let liveSubmitter else { return }
             guard selectionPreview == nil, !hasSelectionTexture else {
-                liveSubmitter.submit = nil
+                liveSubmitter.targets[target] = nil
                 return
             }
             let frames = frames, document = document, selectedLayerID = selectedLayerID
             let strokes = strokes, key = key
-            liveSubmitter.submit = { stroke, revision, strokeID in
+            liveSubmitter.targets[target] = { stroke, revision, strokeID in
                 frames.submit(document: document, selectedLayerID: selectedLayerID, selectionPreview: nil,
                               strokes: strokes, activeStroke: stroke, activeStrokeRevision: revision,
                               key: key, activeStrokeID: strokeID)
@@ -297,13 +308,15 @@ struct WatchRasterArtwork: View {
 /// evaluation; the later `.task(id:)` submit of the same revision is then dropped.
 @MainActor
 final class LiveFrameSubmitter {
-    fileprivate var submit: ((Stroke, UInt64, UInt64) -> Void)?
+    /// One closure per raster that draws the live stroke: the paper and each region tile
+    /// it crosses. Keyed by the raster's frame queue.
+    fileprivate var targets: [ObjectIdentifier: (Stroke, UInt64, UInt64) -> Void] = [:]
 
     func submitLive(_ stroke: Stroke?, revision: UInt64, strokeID: UInt64) {
         guard RenderStageSwitches.isOn(.directSubmit), let stroke else { return }
         // Object erasing edits the document mid-stroke; the captured one would be stale.
         if stroke.style.instrument == .eraser, stroke.style.eraserMode == .objects { return }
-        submit?(stroke, revision, strokeID)
+        for submit in targets.values { submit(stroke, revision, strokeID) }
     }
 }
 
@@ -460,7 +473,7 @@ private final class CanvasFrameQueue: ObservableObject {
 
     func submit(document: CanvasDocument?, selectedLayerID: UUID?, selectionPreview: WatchSelectionPreview?, strokes: [Stroke], activeStroke: Stroke?,
                 activeStrokeRevision: UInt64 = 0, key: WatchBitmapRenderer.CacheKey,
-                activeStrokeID: UInt64, animatesClear: Bool = false) {
+                activeStrokeID: UInt64, animatesClear: Bool = false, priority: TaskPriority? = nil) {
         // Direct submit already queued this live sample; drop the `.task(id:)` duplicate.
         if let activeStroke, selectionPreview == nil, let latest,
            latest.selectionPreview == nil, latest.key == key,
@@ -476,7 +489,7 @@ private final class CanvasFrameQueue: ObservableObject {
         latest = job
         guard worker == nil else { return }
         let token = generation
-        worker = Task { [weak self] in
+        worker = Task(priority: priority) { [weak self] in
             guard let self else { return }
             while let job = self.pending, !Task.isCancelled {
                 self.pending = nil
@@ -573,7 +586,12 @@ private final class CanvasFrameQueue: ObservableObject {
             && latest.key.size == rendered.key.size && latest.key.scale == rendered.key.scale
     }
 
+    /// The submitter this queue takes direct live frames from; see `registerLiveSubmitter`.
+    var liveRegistration: LiveFrameSubmitter?
+
     func stop() {
+        liveRegistration?.targets[ObjectIdentifier(self)] = nil
+        liveRegistration = nil
         generation &+= 1
         preparationID = UUID()
         preparedFrame = nil

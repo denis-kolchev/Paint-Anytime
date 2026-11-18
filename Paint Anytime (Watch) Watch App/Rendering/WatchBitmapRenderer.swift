@@ -193,6 +193,12 @@ nonisolated enum WatchBitmapRenderer {
            !strokes.contains(where: { mayDraw($0, in: bounds) }) {
             return makeFloatContext(width: 1, height: 1)?.makeImage().map { InkSnapshot(image: $0) }
         }
+        // Appending strokes that miss this raster keeps the base as is: a commit elsewhere
+        // must not copy and re-wrap every tile's float ink.
+        if cullsOutside, let base, selection == nil,
+           !strokes.contains(where: { mayDraw($0, in: bounds) }) {
+            return base
+        }
         let width = ceil(size.width * scale)
         let height = ceil(size.height * scale)
         guard width <= 8192, height <= 8192,
