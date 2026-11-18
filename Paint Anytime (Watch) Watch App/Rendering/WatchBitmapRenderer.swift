@@ -39,6 +39,8 @@ nonisolated enum WatchBitmapRenderer {
         /// Canvas point at the raster's top-left corner. Non-zero for a viewport region:
         /// `size` is then the region's size, not the canvas size.
         var origin: CGPoint = .zero
+        /// A viewport region's raster; see `LayerCache.isRegion`.
+        var isRegion = false
     }
 
     /// Prepared eraser regions per stroke, so replaying a layer (after Undo, a resize of
@@ -173,13 +175,23 @@ nonisolated enum WatchBitmapRenderer {
                                   base: InkSnapshot? = nil, geometry: [UUID: StrokeGeometry] = [:],
                                   selection: WatchSelectionPreview? = nil,
                                   masks: ErasureMaskCache? = nil,
-                                  origin: CGPoint = .zero) -> InkSnapshot? {
+                                  origin: CGPoint = .zero, cullsOutside: Bool = false) -> InkSnapshot? {
         // `origin` renders a viewport region: `size` is the region's size and canvas
         // point `origin` lands on the top-left pixel. It must be a whole number of
         // pixels, so the region matches the full-canvas raster pixel for pixel.
         guard size.width.isFinite, size.height.isFinite, scale.isFinite,
               size.width > 0, size.height > 0, scale > 0,
               origin.x.isFinite, origin.y.isFinite else { return nil }
+        // `cullsOutside`: skip strokes that cannot change a pixel of this raster. Each
+        // still costs its geometry, eraser masks, coverage buffers and, on alpha-locked
+        // layers, two passes over every pixel, which dominated zoomed regions of large
+        // drawings. Only for regions: an empty result is a 1×1 transparent ink, which
+        // the incremental live buffers (disabled for regions) cannot take as a base.
+        let bounds = CGRect(origin: origin, size: size)
+        if cullsOutside, base == nil, selection == nil,
+           !strokes.contains(where: { mayDraw($0, in: bounds) }) {
+            return makeFloatContext(width: 1, height: 1)?.makeImage().map { InkSnapshot(image: $0) }
+        }
         let width = ceil(size.width * scale)
         let height = ceil(size.height * scale)
         guard width <= 8192, height <= 8192,
@@ -198,10 +210,14 @@ nonisolated enum WatchBitmapRenderer {
             if let selection, selection.selectedIDs.contains(source.id) {
                 stroke.transform = StrokeTransform(source.transform.affine.concatenating(selection.transform))
             }
+            if cullsOutside, !mayDraw(stroke, in: bounds) { continue }
             context.saveGState()
             defer { context.restoreGState() }
             var erasure: CGContext?
-            if !stroke.erasures.isEmpty {
+            // Erasers wholly outside the raster leave the mask white: no mask, no clip.
+            if !stroke.erasures.isEmpty, !cullsOutside || stroke.erasures.contains(where: {
+                mayDraw($0, in: bounds, transform: $0.transform.affine.concatenating(stroke.transform.affine))
+            }) {
                 // A selection preview gives moved strokes a new revision every frame; do not cache those.
                 guard let maskContext = erasureMask(for: stroke, size: size, scale: scale,
                                                     masks: selection == nil ? masks : nil, origin: origin),
@@ -334,6 +350,35 @@ nonisolated enum WatchBitmapRenderer {
         }
         guard let image = context.makeImage() else { return nil }
         return InkSnapshot(image: image)
+    }
+
+    /// Whether `stroke` may change a pixel inside `rect` (canvas points), from cheap,
+    /// conservative bounds: its samples, fill rectangles and photo, padded beyond the
+    /// widest brush reach. Every brush stays within half its width of the samples (the
+    /// reed nib's corner 1.01×, the blur feather adds 0.15×); pencil grains and
+    /// antialiasing add under 2 pt, and one more point covers any pixel rounding.
+    static func mayDraw(_ stroke: Stroke, in rect: CGRect, transform: CGAffineTransform? = nil) -> Bool {
+        var minX = Float.infinity, minY = Float.infinity
+        var maxX = -Float.infinity, maxY = -Float.infinity
+        for sample in stroke.points {
+            let p = sample.position
+            minX = min(minX, p.x); maxX = max(maxX, p.x)
+            minY = min(minY, p.y); maxY = max(maxY, p.y)
+        }
+        for r in stroke.fillRects ?? [] {
+            minX = min(minX, r.x); maxX = max(maxX, r.x + r.z)
+            minY = min(minY, r.y); maxY = max(maxY, r.y + r.w)
+        }
+        var local = minX <= maxX && minY <= maxY
+            ? CGRect(x: CGFloat(minX), y: CGFloat(minY), width: CGFloat(maxX - minX), height: CGFloat(maxY - minY))
+            : CGRect.null
+        if let raster = stroke.raster { local = local.union(raster.bounds) }
+        guard !local.isNull, local.minX.isFinite, local.minY.isFinite,
+              local.maxX.isFinite, local.maxY.isFinite else { return false }
+        let pad = CGFloat(max(0.1, stroke.style.width.isFinite ? stroke.style.width : 0.1)) * 0.75 + 2
+        let reach = local.insetBy(dx: -pad, dy: -pad)
+            .applying(transform ?? stroke.transform.affine).insetBy(dx: -1, dy: -1)
+        return reach.intersects(rect)
     }
 
     /// `allowsRegion: false` forces the original full-canvas replay; checks compare both paths.

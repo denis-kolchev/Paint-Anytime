@@ -46,7 +46,8 @@ struct WatchRasterArtwork: View {
     private func key(paperSize: CGSize) -> WatchBitmapRenderer.CacheKey {
         if let region {
             return WatchBitmapRenderer.CacheKey(documentID: documentID, documentRevision: documentRevision,
-                                                size: region.size, scale: region.scale, origin: region.origin)
+                                                size: region.size, scale: region.scale, origin: region.origin,
+                                                isRegion: true)
         }
         return WatchBitmapRenderer.CacheKey(documentID: documentID,
             documentRevision: documentRevision, size: paperSize,

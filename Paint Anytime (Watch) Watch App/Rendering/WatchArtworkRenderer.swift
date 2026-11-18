@@ -108,7 +108,7 @@ actor WatchArtworkRenderer {
         let state = activeStroke == nil ? historyKey(document: document, strokes: [], key: key) : nil
         if let frame = recall(state) { return frame }
         guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: key.scale,
-            origin: key.origin, activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers), !Task.isCancelled else { return nil }
+            origin: key.origin, isRegion: key.isRegion, activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers), !Task.isCancelled else { return nil }
         let frame = WatchBitmapRenderer.ScreenFrame(background: image, tiles: [])
         if let state { rememberFrame(frame, key: state) }
         return frame
