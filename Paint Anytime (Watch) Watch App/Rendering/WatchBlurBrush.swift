@@ -365,7 +365,7 @@ nonisolated enum WatchBlurFilter {
     static func mix(_ rect: PixelRect, coverage: UnsafePointer<Float>, tiles: Tiles,
                     original: UnsafePointer<Float>, originalStride: Int,
                     output: UnsafeMutablePointer<Float>, outputStride: Int,
-                    erasure: UnsafePointer<Float>?, erasureStride: Int, parameters: Parameters) {
+                    erasure: UnsafePointer<UInt8>?, erasureStride: Int, parameters: Parameters) {
         guard !rect.isEmpty else { return }
         let copies = UnsafePointer(output) != original
         for row in (rect.y / tiles.tileHeight)...((rect.maxY - 1) / tiles.tileHeight) {
@@ -380,7 +380,7 @@ nonisolated enum WatchBlurFilter {
                         let i = y * originalStride + x * 4
                         let o = y * outputStride + x * 4
                         var amount = parameters.strength * weights[x]
-                        if let erasure, amount > 0 { amount *= erasure[y * erasureStride + x * 4 + 3] }
+                        if let erasure, amount > 0 { amount *= Float(erasure[y * erasureStride + x]) / 255 }
                         guard amount > 0, let filtered else {
                             if copies { for c in 0..<4 { output[o + c] = original[i + c] } }
                             continue
@@ -435,8 +435,8 @@ nonisolated extension WatchBitmapRenderer {
         guard tiles.prepare(tiles.covered(by: coverage, in: area)) else { return false }
         Filter.mix(area, coverage: coverage, tiles: tiles, original: pixels, originalStride: stride,
                    output: pixels, outputStride: stride,
-                   erasure: erasure?.data?.assumingMemoryBound(to: Float.self),
-                   erasureStride: (erasure?.bytesPerRow ?? 0) / MemoryLayout<Float>.size, parameters: parameters)
+                   erasure: erasure?.data?.assumingMemoryBound(to: UInt8.self),
+                   erasureStride: erasure?.bytesPerRow ?? 0, parameters: parameters)
         return true
     }
 

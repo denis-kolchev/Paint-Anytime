@@ -125,9 +125,22 @@ struct WatchRasterArtwork: View {
         }
 
         private func staticTexture(_ image: CGImage) -> some View {
-            Image(decorative: image, scale: key.scale)
+            let size = Self.pointSize(of: image, key: key)
+            return Image(decorative: image, scale: key.scale)
                 .resizable()
-                .frame(width: key.size.width, height: key.size.height)
+                .frame(width: size.width, height: size.height)
+                .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+        }
+
+        /// A raster has `ceil(size × scale)` pixels. Shown over `size`, a fractional last
+        /// column or row (scale 2.25 on a 205 pt canvas) stretched the whole image towards
+        /// it: content drifted by up to a fraction of a pixel, which zoom magnifies into a
+        /// visible jump against the sharp region and misplaced the pixel-exact live tiles.
+        /// Each pixel spans exactly `1 / scale` points; the caller clips the overhang.
+        private static func pointSize(of image: CGImage, key: WatchBitmapRenderer.CacheKey) -> CGSize {
+            guard image.width == Int(ceil(key.size.width * key.scale)),
+                  image.height == Int(ceil(key.size.height * key.scale)) else { return key.size }
+            return CGSize(width: CGFloat(image.width) / key.scale, height: CGFloat(image.height) / key.scale)
         }
 
         // No stroke arrays or point comparisons in task identity.
@@ -151,10 +164,11 @@ struct WatchRasterArtwork: View {
             // A region frame keeps the place and size it was rendered for until its
             // successor arrives; panning must not move stale pixels to a new place.
             let shown = isRegion ? (frames.frameKey ?? key) : key
+            let backgroundSize = Self.pointSize(of: frame.background, key: shown)
             return ZStack(alignment: .topLeading) {
                 Image(decorative: frame.background, scale: shown.scale)
                     .resizable()
-                    .frame(width: shown.size.width, height: shown.size.height)
+                    .frame(width: backgroundSize.width, height: backgroundSize.height)
                 if let texture = frame.selection {
                     ZStack(alignment: .topLeading) {
                         if let image = texture.layerBelow {

@@ -158,8 +158,10 @@ struct WatchCanvasView: View {
                             regionCovers($0.region, size: geometry.size, paper: paperSize)
                         } == true
                         ZStack(alignment: .topLeading) {
-                            // Screen resolution of the whole paper, never raised by zoom: the
-                            // region above sharpens the zoomed view within the memory budget.
+                            // Screen resolution of the whole paper: the region above sharpens the
+                            // zoomed view within the memory budget. Lasso hides regions (selection
+                            // textures span the paper), so then zoom raises the paper raster up to
+                            // what every layer's ink fits in `LayerCache.inkByteLimit`.
                             WatchRasterArtwork(document: useLayers ? displayedDocument : nil,
                                 selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, selectionSeed: lasso.selectionSeed,
                                 strokes: useLayers ? [] : (displayedDocument.layers.first?.strokes ?? []),
@@ -167,7 +169,7 @@ struct WatchCanvasView: View {
                                 documentRevision: controller.documentRevision,
                                 clearDocumentRevision: controller.clearDocumentRevision,
                                 activeStrokeRevision: regionIsLive ? 0 : controller.activeStrokeRevision,
-                                activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: 1,
+                                activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: lasso.isActive ? zoom : 1,
                                 fit: fit, liveSubmitter: regionIsLive ? nil : liveSubmitter,
                                 allowsInkTip: !regionIsLive && allowsInkTip)
                             if !lasso.isActive {

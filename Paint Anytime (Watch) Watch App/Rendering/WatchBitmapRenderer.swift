@@ -1,6 +1,7 @@
 import SwiftUI
 import simd
 import ImageIO
+import Accelerate
 
 nonisolated enum WatchBitmapRenderer {
     /// A transparent, floating-point ink snapshot preserves multiply and pixel erasing.
@@ -221,7 +222,7 @@ nonisolated enum WatchBitmapRenderer {
                 // A selection preview gives moved strokes a new revision every frame; do not cache those.
                 guard let maskContext = erasureMask(for: stroke, size: size, scale: scale,
                                                     masks: selection == nil ? masks : nil, origin: origin),
-                      let mask = maskContext.makeImage() else { return nil }
+                      let mask = clipMask(maskContext) else { return nil }
                 erasure = maskContext
                 // CGImage rows run down from the top, while CGContext image
                 // drawing uses a bottom-left origin. Flip only to install the clip.
@@ -387,18 +388,29 @@ nonisolated enum WatchBitmapRenderer {
 
     /// `allowsRegion: false` forces the original full-canvas replay; checks compare both paths.
     /// `masks` reuses a prepared eraser region for an unchanged stroke at this resolution.
+    ///
+    /// The mask is an 8-bit DeviceGray context (`makeMaskContext`): 255 keeps ink, 0
+    /// erases. Erasers still rasterize in float; only the result is quantized, by at
+    /// most 1/510 at antialiased edges, for 1 byte per pixel instead of 16.
     static func erasureMask(for stroke: Stroke, size: CGSize, scale: CGFloat,
                             allowsRegion: Bool = true, masks: ErasureMaskCache? = nil,
                             origin: CGPoint = .zero) -> CGContext? {
-        guard let background = makeFloatContext(width: Int(ceil(size.width * scale)),
-                                                height: Int(ceil(size.height * scale))) else { return nil }
-        background.setFillColor(CGColor(gray: 1, alpha: 1))
-        background.fill(CGRect(x: 0, y: 0, width: background.width, height: background.height))
+        guard let background = makeMaskContext(width: Int(ceil(size.width * scale)),
+                                               height: Int(ceil(size.height * scale))),
+              let data = background.data else { return nil }
+        let pixels = data.assumingMemoryBound(to: UInt8.self)
+        memset(pixels, 255, background.bytesPerRow * background.height)
+        /// Copies an 8-bit region mask (rows from the top) into the mask.
         func install(_ region: CGRect, _ image: CGImage?) {
-            guard let image else { return }
-            background.setBlendMode(.copy)
-            background.draw(image, in: CGRect(x: region.minX, y: CGFloat(background.height) - region.maxY,
-                                              width: region.width, height: region.height))
+            guard let image, let bytes = image.dataProvider?.data as Data? else { return }
+            let x = Int(region.minX), y = Int(region.minY), width = Int(region.width)
+            bytes.withUnsafeBytes { source in
+                guard let base = source.baseAddress else { return }
+                for row in 0..<Int(region.height) {
+                    UnsafeMutableRawPointer(pixels + (y + row) * background.bytesPerRow + x)
+                        .copyMemory(from: base + row * image.bytesPerRow, byteCount: width)
+                }
+            }
         }
         let key = ErasureMaskCache.Key(stroke: stroke.id, revision: stroke.geometryRevision,
                                        width: size.width, height: size.height, scale: scale,
@@ -418,21 +430,68 @@ nonisolated enum WatchBitmapRenderer {
             case .failed:
                 return nil
             case let .region(region, image):
-                masks?.store(key, region: region, image: image)
-                install(region, image)
+                let alpha = image.flatMap(maskImage)
+                if image != nil, alpha == nil { return nil }
+                masks?.store(key, region: region, image: alpha)
+                install(region, alpha)
                 return background
             case .unsupported:
                 break
             }
         }
-        guard let image = background.makeImage() else { return nil }
-        guard let mask = renderInk(strokes: erasers, size: size, scale: scale, base: InkSnapshot(image: image),
+        // General erasers replay over a white float raster, as before; it lives only here.
+        guard let white = makeFloatContext(width: background.width, height: background.height) else { return nil }
+        white.setFillColor(CGColor(gray: 1, alpha: 1))
+        white.fill(CGRect(x: 0, y: 0, width: white.width, height: white.height))
+        guard let image = white.makeImage(),
+              let mask = renderInk(strokes: erasers, size: size, scale: scale, base: InkSnapshot(image: image),
                                    origin: origin)?.image
         else { return nil }
-        background.setBlendMode(.copy)
-        background.draw(mask, in: CGRect(x: 0, y: 0, width: background.width, height: background.height))
+        guard copyAlpha(of: mask, into: pixels, stride: background.bytesPerRow) else { return nil }
         return background
     }
+
+    /// One byte per pixel: DeviceGray without alpha, the format `clip(to:mask:)` documents.
+    /// Its bytes are written directly (`copyAlpha`), never drawn: drawing would convert
+    /// color, while a mask needs the eraser alpha as is.
+    static func makeMaskContext(width: Int, height: Int) -> CGContext? {
+        CGContext(data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
+                  space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)
+    }
+
+    /// Writes the alpha of a premultiplied float RGBA image (`makeFloatContext`), rounded
+    /// to 8 bits, into `target` rows from the top.
+    private static func copyAlpha(of image: CGImage, into target: UnsafeMutablePointer<UInt8>, stride: Int) -> Bool {
+        guard image.bitsPerComponent == 32, image.bitsPerPixel == 128,
+              let data = image.dataProvider?.data as Data? else { return false }
+        let width = image.width, n = vDSP_Length(image.width)
+        let floatStride = image.bytesPerRow / MemoryLayout<Float>.stride
+        var row = [Float](repeating: 0, count: width)
+        var unit: Float = 255, low: Float = 0, high: Float = 255
+        data.withUnsafeBytes { source in
+            guard let floats = source.baseAddress?.assumingMemoryBound(to: Float.self) else { return }
+            row.withUnsafeMutableBufferPointer { row in
+                guard let values = row.baseAddress else { return }
+                for y in 0..<image.height {
+                    vDSP_vsmul(floats + y * floatStride + 3, 4, &unit, values, 1, n)
+                    vDSP_vclip(values, 1, &low, &high, values, 1, n)
+                    vDSP_vfixru8(values, 1, target + y * stride, 1, n)
+                }
+            }
+        }
+        return true
+    }
+
+    /// The 8-bit mask of a float eraser region, for the mask cache (16 times smaller).
+    private static func maskImage(_ image: CGImage) -> CGImage? {
+        guard let context = makeMaskContext(width: image.width, height: image.height),
+              let pixels = context.data,
+              copyAlpha(of: image, into: pixels.assumingMemoryBound(to: UInt8.self), stride: context.bytesPerRow)
+        else { return nil }
+        return context.makeImage()
+    }
+
+    static func clipMask(_ mask: CGContext) -> CGImage? { mask.makeImage() }
 
     private enum RegionalErasure {
         /// An eraser needs the general renderer.

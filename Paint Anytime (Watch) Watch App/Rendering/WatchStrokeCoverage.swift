@@ -258,8 +258,11 @@ nonisolated final class WatchStrokeCoverage {
         let outputPixels = outputData.assumingMemoryBound(to: Float.self)
         let baseStride = base.bytesPerRow / MemoryLayout<Float>.stride
         let outputStride = output.bytesPerRow / MemoryLayout<Float>.stride
-        let erasurePixels = erasure?.data?.assumingMemoryBound(to: Float.self)
-        let erasureStride = (erasure?.bytesPerRow ?? 0) / MemoryLayout<Float>.stride
+        // 8-bit alpha-only eraser mask (`WatchBitmapRenderer.erasureMask`).
+        let erasurePixels = erasure?.data?.assumingMemoryBound(to: UInt8.self)
+        let erasureStride = erasure?.bytesPerRow ?? 0
+        let erasureAlpha = scratch + width * 4
+        var unit: Float = 1 / 255
         let count = Int(rect.width)
         let n = vDSP_Length(count)
         let alpha = scratch
@@ -299,7 +302,9 @@ nonisolated final class WatchStrokeCoverage {
             var inkAlpha = style.color.w * style.effectiveOpacity
             vDSP_vsmul(alpha, 1, &inkAlpha, alpha, 1, n)
             if let erasurePixels {
-                vDSP_vmul(alpha, 1, erasurePixels + y * erasureStride + x * 4 + 3, 4, alpha, 1, n)
+                vDSP_vfltu8(erasurePixels + y * erasureStride + x, 1, erasureAlpha, 1, n)
+                vDSP_vsmul(erasureAlpha, 1, &unit, erasureAlpha, 1, n)
+                vDSP_vmul(alpha, 1, erasureAlpha, 1, alpha, 1, n)
             }
             let backdrop = basePixels + y * baseStride + x * 4
             let destination = outputPixels + y * outputStride + x * 4
