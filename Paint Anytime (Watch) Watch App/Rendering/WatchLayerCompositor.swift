@@ -34,8 +34,9 @@ nonisolated extension WatchBitmapRenderer {
         /// raster scale, and every scale change replays all layers.
         static let inkByteLimit: Int = {
             let ceiling = 96 * 1024 * 1024, minimum = 24 * 1024 * 1024
-            #if targetEnvironment(simulator)
-            // The Simulator enforces no per-app limit and reports 0.
+            #if targetEnvironment(simulator) || os(macOS)
+            // The Simulator enforces no per-app limit and reports 0; macOS (the
+            // `Tests/check-*.sh` builds) has no such call.
             return ceiling
             #else
             // On a watch 0 means the limit is already reached: keep the minimum.

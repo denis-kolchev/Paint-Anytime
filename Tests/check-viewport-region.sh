@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+cd "$(dirname "$0")/.."
+check_dir="$(mktemp -d "${TMPDIR:-/tmp}/paint-region-check.XXXXXX")"
+trap 'rm -rf "$check_dir"' EXIT
+xcrun swiftc -parse-as-library \
+  Shared/Document/CanvasDocument.swift Shared/Localization/AppLanguage.swift Shared/App/AppReleaseFeatures.swift \
+  Shared/Drawing/BrushGeometry.swift Shared/Drawing/FountainPenGeometry.swift Shared/Drawing/PencilTool.swift Shared/Drawing/ShapeRecognizer.swift \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchFloodFill.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchFillWorker.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchArtworkRenderer.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift" \
+  Tests/ViewportRegionChecks.swift -o "$check_dir/check"
+"$check_dir/check"
