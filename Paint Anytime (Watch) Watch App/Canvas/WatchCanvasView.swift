@@ -35,11 +35,21 @@ struct WatchCanvasView: View {
     @State private var fillWorker = WatchFillWorker()
     @State private var fillTask: Task<Void, Never>?
     @State private var fillRequestID: UUID?
-    /// Visible part of the zoomed canvas rendered at screen resolution; see
-    /// `WatchRasterArtwork.Region` and `desiredRegion`.
-    @State private var rasterRegion: WatchRasterArtwork.Region?
-    /// The region whose first frame is on screen; live strokes render there from then on.
-    @State private var readyRegion: WatchRasterArtwork.Region?
+    /// Visible part of the zoomed canvas rendered at screen resolution and on screen;
+    /// see `WatchRasterArtwork.Region` and `desiredRegion`. Live strokes render in it
+    /// while it covers the view, whatever the zoom asks for meanwhile.
+    @State private var shownRegion: RegionSlot?
+    /// The next region, rendered unseen until its first frame is ready; only then it
+    /// replaces `shownRegion`, so a rendered region is never discarded for a blank one.
+    @State private var nextRegion: RegionSlot?
+    /// Per-layer reach of the strokes, for the region memory budget.
+    @State private var layerReach = LayerReachMemo()
+    /// A region with its own identity: promoting `nextRegion` keeps its view, queue and
+    /// layer cache, instead of handing the region to another view to render again.
+    private struct RegionSlot: Equatable, Identifiable {
+        let id = UUID()
+        let region: WatchRasterArtwork.Region
+    }
     private struct RegionRequest: Equatable {
         let region: WatchRasterArtwork.Region?
         let isIdle: Bool
@@ -140,12 +150,13 @@ struct WatchCanvasView: View {
                     // Live samples re-evaluate only this observer, not the canvas or its menus.
                     LiveStrokeObserver(changes: controller.liveStroke) {
                         let displayedDocument = controller.document
-                        // Evaluated per live sample too. Once a region's first frame is up and it
-                        // covers the view at the current zoom, live strokes render only there; the
-                        // canvas below waits for the commit. Until then the canvas below draws them
-                        // everywhere, and the region hides frames of an earlier place over them.
-                        let regionIsLive = rasterRegion != nil && readyRegion == rasterRegion && !lasso.isActive
-                            && desiredRegion(size: geometry.size, paper: paperSize, fit: fit) == rasterRegion
+                        // Evaluated per live sample too. While the shown region covers the view,
+                        // live strokes render only there, at its resolution even if the zoom now
+                        // asks for more; the canvas below waits for the commit. Otherwise the
+                        // canvas below draws them, and the region is hidden over them.
+                        let regionIsLive = !lasso.isActive && shownRegion.map {
+                            regionCovers($0.region, size: geometry.size, paper: paperSize)
+                        } == true
                         ZStack(alignment: .topLeading) {
                             // Screen resolution of the whole paper, never raised by zoom: the
                             // region above sharpens the zoomed view within the memory budget.
@@ -159,18 +170,26 @@ struct WatchCanvasView: View {
                                 activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: 1,
                                 fit: fit, liveSubmitter: regionIsLive ? nil : liveSubmitter,
                                 allowsInkTip: !regionIsLive && allowsInkTip)
-                            if let region = rasterRegion, !lasso.isActive {
-                                WatchRasterArtwork(document: displayedDocument,
-                                    selectedLayerID: controller.selectedLayer.id,
-                                    strokes: [], activeStroke: regionIsLive ? controller.activeStroke : nil,
-                                    documentID: ObjectIdentifier(controller),
-                                    documentRevision: controller.documentRevision,
-                                    activeStrokeRevision: regionIsLive ? controller.activeStrokeRevision : 0,
-                                    activeStrokeID: controller.activeStrokeID,
-                                    onFramePrepared: { succeeded in if succeeded { readyRegion = region } },
-                                    zoom: zoom, fit: fit, liveSubmitter: regionIsLive ? liveSubmitter : nil,
-                                    allowsInkTip: regionIsLive && allowsInkTip, region: region,
-                                    showsStaleRegionFrame: regionIsLive || controller.activeStroke == nil)
+                            if !lasso.isActive {
+                                ForEach([shownRegion, nextRegion].compactMap { $0 }) { slot in
+                                    let isShown = slot.id == shownRegion?.id
+                                    let live = isShown && regionIsLive
+                                    WatchRasterArtwork(document: displayedDocument,
+                                        selectedLayerID: controller.selectedLayer.id,
+                                        strokes: [], activeStroke: live ? controller.activeStroke : nil,
+                                        documentID: ObjectIdentifier(controller),
+                                        documentRevision: controller.documentRevision,
+                                        activeStrokeRevision: live ? controller.activeStrokeRevision : 0,
+                                        activeStrokeID: controller.activeStrokeID,
+                                        onFramePrepared: { succeeded in
+                                            guard succeeded, nextRegion?.id == slot.id else { return }
+                                            shownRegion = slot
+                                            nextRegion = nil
+                                        },
+                                        zoom: zoom, fit: fit, liveSubmitter: live ? liveSubmitter : nil,
+                                        allowsInkTip: live && allowsInkTip, region: slot.region)
+                                        .opacity(isShown && (live || controller.activeStroke == nil) ? 1 : 0)
+                                }
                             }
                         }
                     }
@@ -307,17 +326,26 @@ struct WatchCanvasView: View {
             .onAppear { if isEyedropperActive { prepareSampler(size: geometry.size) } }
             .task(id: RegionRequest(region: desiredRegion(size: geometry.size, paper: paperSize, fit: fit),
                                     isIdle: controller.activeStroke == nil)) {
-                let desired = desiredRegion(size: geometry.size, paper: paperSize, fit: fit)
-                guard let desired else {
-                    rasterRegion = nil
-                    readyRegion = nil
+                // A stroke keeps the shown region; a region rendering in the background
+                // would only compete with it. It is requested again once the stroke ends.
+                guard controller.activeStroke == nil else {
+                    nextRegion = nil
                     return
                 }
-                guard desired != rasterRegion else { return }
-                // Render a new region only once zoom and pan have settled, never mid-stroke.
+                guard let desired = desiredRegion(size: geometry.size, paper: paperSize, fit: fit) else {
+                    shownRegion = nil
+                    nextRegion = nil
+                    return
+                }
+                if desired == shownRegion?.region {
+                    nextRegion = nil
+                    return
+                }
+                guard desired != nextRegion?.region else { return }
+                // Render a new region only once zoom and pan have settled.
                 do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
                 guard controller.activeStroke == nil else { return }
-                rasterRegion = desired
+                nextRegion = RegionSlot(region: desired)
             }
             .onChange(of: geometry.size) { _, size in
                 if isEyedropperActive { prepareSampler(size: size) }
@@ -912,21 +940,30 @@ struct WatchCanvasView: View {
         let layers = controller.document.layers.count
         let base = WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: 1, fit: fit,
                                                    canvasSize: paper, layerCount: layers)
+        // Steps of √2: zooming within a step keeps the region (see below), and the step
+        // at or above the screen's need keeps it sharp. Finer steps re-rendered the whole
+        // region for each small Crown adjustment; ×2 steps would cost up to 4× the pixels.
+        let shown = displayScale * fit * CGFloat(zoom)
         let needed = min(WatchBitmapRenderer.maximumRegionScale,
-                         (displayScale * fit * CGFloat(zoom) * 4).rounded(.up) / 4)
+                         pow(2, (log2(shown) * 2 - 0.001).rounded(.up) / 2))
         guard needed > base + 0.01 else { return nil }
         let bounds = CGRect(origin: .zero, size: paper)
         let visible = visibleCanvasRect(size).intersection(bounds)
         guard !visible.isNull, !visible.isEmpty else { return nil }
         let margin = Self.regionMargin / (CGFloat(zoom) * fit)
         let rect = visible.insetBy(dx: -margin, dy: -margin).intersection(bounds)
-        // Every layer keeps a float ink of the region: stay within the layer cache budget.
-        let fitting = (CGFloat(WatchBitmapRenderer.LayerCache.inkByteLimit)
-            / (16 * CGFloat(max(1, layers)) * rect.width * rect.height)).squareRoot()
+        // Each layer with ink in the region keeps a float ink of it (the others a 1×1 one).
+        // A shown and a next region may coexist: each gets half the layer cache budget.
+        let touched = layerReach.bounds(for: controller.document, revision: controller.documentRevision)
+            .filter { $0.intersects(rect) }.count
+        let fitting = (CGFloat(WatchBitmapRenderer.LayerCache.inkByteLimit) / 2
+            / (16 * CGFloat(max(1, touched)) * rect.width * rect.height)).squareRoot()
         let scale = min(needed, (fitting * 4).rounded(.down) / 4)
         guard scale > base + 0.01 else { return nil }
-        if let current = rasterRegion, current.scale == scale,
-           CGRect(origin: current.origin, size: current.size).insetBy(dx: -0.01, dy: -0.01).contains(visible) {
+        // Keep a region that covers the view at this resolution or a higher one, so a
+        // small zoom or pan inside it, or zooming out, does not render it again.
+        if let current = shownRegion?.region, current.scale >= scale - 0.01,
+           regionCovers(current, size: size, paper: paper) {
             return current
         }
         // Whole pixels on the paper raster's grid, so the region matches it exactly.
@@ -937,6 +974,12 @@ struct WatchCanvasView: View {
         return WatchRasterArtwork.Region(origin: CGPoint(x: minX / scale, y: minY / scale),
             size: CGSize(width: (maxX - minX - 0.001) / scale, height: (maxY - minY - 0.001) / scale),
             scale: scale)
+    }
+
+    private func regionCovers(_ region: WatchRasterArtwork.Region, size: CGSize, paper: CGSize) -> Bool {
+        let visible = visibleCanvasRect(size).intersection(CGRect(origin: .zero, size: paper))
+        guard !visible.isNull, !visible.isEmpty else { return true }
+        return CGRect(origin: region.origin, size: region.size).insetBy(dx: -0.01, dy: -0.01).contains(visible)
     }
 
     /// Canvas points shown in a viewport of `size`, possibly beyond the paper.

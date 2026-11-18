@@ -358,6 +358,11 @@ nonisolated enum WatchBitmapRenderer {
     /// reed nib's corner 1.01×, the blur feather adds 0.15×); pencil grains and
     /// antialiasing add under 2 pt, and one more point covers any pixel rounding.
     static func mayDraw(_ stroke: Stroke, in rect: CGRect, transform: CGAffineTransform? = nil) -> Bool {
+        reach(of: stroke, transform: transform).intersects(rect)
+    }
+
+    /// Canvas points `stroke` may change; null for a stroke that draws nothing. See `mayDraw`.
+    static func reach(of stroke: Stroke, transform: CGAffineTransform? = nil) -> CGRect {
         var minX = Float.infinity, minY = Float.infinity
         var maxX = -Float.infinity, maxY = -Float.infinity
         for sample in stroke.points {
@@ -374,11 +379,10 @@ nonisolated enum WatchBitmapRenderer {
             : CGRect.null
         if let raster = stroke.raster { local = local.union(raster.bounds) }
         guard !local.isNull, local.minX.isFinite, local.minY.isFinite,
-              local.maxX.isFinite, local.maxY.isFinite else { return false }
+              local.maxX.isFinite, local.maxY.isFinite else { return .null }
         let pad = CGFloat(max(0.1, stroke.style.width.isFinite ? stroke.style.width : 0.1)) * 0.75 + 2
-        let reach = local.insetBy(dx: -pad, dy: -pad)
+        return local.insetBy(dx: -pad, dy: -pad)
             .applying(transform ?? stroke.transform.affine).insetBy(dx: -1, dy: -1)
-        return reach.intersects(rect)
     }
 
     /// `allowsRegion: false` forces the original full-canvas replay; checks compare both paths.
