@@ -568,18 +568,38 @@ nonisolated extension WatchBitmapRenderer {
     /// Pixels of one strip, before its blur margins: ~8 MiB of float ink per layer.
     static let stripPixels: CGFloat = 512 * 1024
 
-    /// Canvas points a strip must render beyond its rows so that blur, which reads
-    /// neighbouring pixels, sees what the full canvas would: three box passes reach about
-    /// 1.75 radii, the feather 0.15 widths. Chained blurs read through each other, so the
-    /// margins add up (an upper bound).
-    static func stripMargin(for document: CanvasDocument) -> CGFloat {
-        document.layers.filter { $0.isVisible && $0.opacity > 0 }
-            .reduce(0) { $0 + blurMargin(of: $1.strokes) }
+    /// A blur stroke's vertical extent and how far beyond its pixels it reads.
+    private struct StripBlur {
+        let minY: CGFloat
+        let maxY: CGFloat
+        let margin: CGFloat
+    }
+
+    /// Canvas rows (points) a strip must render so that blur, which reads neighbouring
+    /// pixels, sees what the full canvas would. Only blurs reaching the band count; each
+    /// extends it by its read margin where it overlaps, and blurs reaching that extension
+    /// in turn (chains), until nothing grows. Summing every blur on the canvas instead
+    /// made each strip of a drawing with 15 blurs the whole canvas, and the save crashed.
+    private static func stripRows(_ band: ClosedRange<CGFloat>, blurs: [StripBlur]) -> ClosedRange<CGFloat> {
+        var low = band.lowerBound, high = band.upperBound
+        for _ in 0...blurs.count {
+            var nextLow = low, nextHigh = high
+            for blur in blurs where blur.maxY > low && blur.minY < high {
+                nextLow = min(nextLow, max(low, blur.minY) - blur.margin)
+                nextHigh = max(nextHigh, min(high, blur.maxY) + blur.margin)
+            }
+            if nextLow >= low - 0.001 && nextHigh <= high + 0.001 { break }
+            low = nextLow
+            high = nextHigh
+        }
+        return low...high
     }
 
     /// The same image as a single pass, assembled from viewport regions: regions match
     /// the full canvas pixel for pixel away from interior edges (`check-viewport-region`),
-    /// and each strip renders `stripMargin` beyond its rows, then keeps only its rows.
+    /// and each strip renders the rows its blurs read (`stripRows`), then keeps only its own.
+    /// No layer cache: like the single pass, one layer's float ink exists at a time
+    /// (a cache kept every layer's ink of the strip, up to its whole budget).
     static func renderInStrips(document: CanvasDocument, size: CGSize, scale: CGFloat) -> CGImage? {
         let width = Int(ceil(size.width * scale)), height = Int(ceil(size.height * scale))
         guard width > 0, height > 0, width <= 8192, height <= 8192,
@@ -587,19 +607,28 @@ nonisolated extension WatchBitmapRenderer {
         output.interpolationQuality = .none
         output.setBlendMode(.copy)
         let rows = max(64, Int(stripPixels) / width)
-        let margin = Int(ceil(stripMargin(for: document) * scale))
+        let blurs: [StripBlur] = document.layers.filter { $0.isVisible && $0.opacity > 0 }.flatMap { layer in
+            layer.strokes.compactMap { stroke -> StripBlur? in
+                guard stroke.style.instrument == .blur else { return nil }
+                let reach = WatchBitmapRenderer.reach(of: stroke)
+                guard !reach.isNull, reach.minY.isFinite, reach.maxY.isFinite else { return nil }
+                return StripBlur(minY: reach.minY, maxY: reach.maxY, margin: blurMargin(of: [stroke]))
+            }
+        }
         var top = 0
         while top < height {
             if Task.isCancelled { return nil }
             let bottom = min(height, top + rows)
-            let renderTop = max(0, top - margin), renderBottom = min(height, bottom + margin)
+            let needed = stripRows(CGFloat(top) / scale...CGFloat(bottom) / scale, blurs: blurs)
+            let renderTop = max(0, min(top, Int(floor(needed.lowerBound * scale))))
+            let renderBottom = min(height, max(bottom, Int(ceil(needed.upperBound * scale))))
             // Whole pixels of the full raster; slightly under the pixel count so
             // `ceil(size × scale)` cannot add a row (as `RegionTiling.tile`).
             let origin = CGPoint(x: 0, y: CGFloat(renderTop) / scale)
             let stripSize = CGSize(width: size.width, height: (CGFloat(renderBottom - renderTop) - 0.001) / scale)
             let image: CGImage? = autoreleasepool {
                 guard let strip = render(document: document, size: stripSize, scale: scale, origin: origin,
-                                         isRegion: true, cache: LayerCache()),
+                                         isRegion: true),
                       strip.width == width, strip.height == renderBottom - renderTop else { return nil }
                 return strip.cropping(to: CGRect(x: 0, y: top - renderTop, width: width, height: bottom - top))
             }
