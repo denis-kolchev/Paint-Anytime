@@ -94,10 +94,13 @@ struct WatchCanvasView: View {
     /// The canvas viewport, for the Crown's zoom limit (the Crown modifier sits outside
     /// the GeometryReader).
     @State private var viewportSize = CGSize.zero
-    @AppStorage(CanvasPixelView.storageKey) private var showsPixels = false
-    /// The tutorial's canvases keep the regular rendering.
+    @AppStorage(CanvasPixelView.storageKey) private var pixelMode = CanvasPixelView.Mode.smooth
+    /// The tutorial's canvases keep the regular rendering. Auto follows the settled zoom
+    /// (`zoom`, with the 100% snap), so it switches once per Crown detent at most.
     private var pixelGridScale: CGFloat? {
-        showsPixels && !tutorial.isActive ? CanvasPixelView.gridScale(displayScale: displayScale) : nil
+        guard !tutorial.isActive, viewportSize.width > 0, viewportSize.height > 0 else { return nil }
+        let screenScale = displayScale * canvasFit(viewportSize) * CGFloat(zoom)
+        return CanvasPixelView.activeGridScale(pixelMode, displayScale: displayScale, screenScale: screenScale)
     }
     @State private var offset = CGSize.zero
     @State private var panOrigin: CGSize?

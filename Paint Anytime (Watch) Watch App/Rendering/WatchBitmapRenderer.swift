@@ -450,6 +450,7 @@ nonisolated enum WatchBitmapRenderer {
         // General erasers replay over a white float raster, as before; it lives only here.
         guard let white = makeFloatContext(width: background.width, height: background.height) else { return nil }
         white.setFillColor(CGColor(gray: 1, alpha: 1))
+     
         white.fill(CGRect(x: 0, y: 0, width: white.width, height: white.height))
         guard let image = white.makeImage(),
               let mask = renderInk(strokes: erasers, size: size, scale: scale, base: InkSnapshot(image: image),
