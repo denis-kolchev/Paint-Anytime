@@ -120,11 +120,11 @@ final class SaveProgressModel {
         // it covers the share of its unfilled part that this step is of the time left, so
         // it slows down when the estimate grows and would end with the save; it jumps
         // forward when the estimate shrinks.
-        let left = max(0.001, remaining ?? 0)
-        let timeShare = min(1, snapshot.elapsed / (snapshot.elapsed + left))
+        let timeLeft = max(0.001, remaining ?? 0)
+        let timeShare = min(1, snapshot.elapsed / (snapshot.elapsed + timeLeft))
         if let shown = fraction, let last = lastElapsed {
             let step = max(0, snapshot.elapsed - last)
-            let advanced = shown + (1 - shown) * min(1, step / left)
+            let advanced = shown + (1 - shown) * min(1, step / timeLeft)
             fraction = min(1, max(advanced, timeShare))
         } else {
             fraction = timeShare
