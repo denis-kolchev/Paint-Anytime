@@ -216,13 +216,11 @@ nonisolated enum WatchBitmapRenderer {
         context.translateBy(x: 0, y: height)
         context.scaleBy(x: scale, y: -scale)
         context.translateBy(x: -origin.x, y: -origin.y)
-        // `blurSource`: the layer's strokes before each one, for blurs that read beyond
-        // this raster (`applyBlur(source:)`). Not with a selection preview (moved strokes).
-        var drawnBefore = selection == nil ? blurSource?.before : nil
-        for source in strokes {
+        // `blurSource`: the whole layer in order, for blurs that read beyond this raster
+        // (`applyBlur(source:)`). Not with a selection preview (moved strokes).
+        let blurLayer = selection == nil ? blurSource.map { $0.before + strokes } : nil
+        for (position, source) in strokes.enumerated() {
             guard !Task.isCancelled else { return nil }
-            let before = drawnBefore
-            drawnBefore?.append(source)
             var stroke = source
             if let selection, selection.selectedIDs.contains(source.id) {
                 stroke.transform = StrokeTransform(source.transform.affine.concatenating(selection.transform))
@@ -264,8 +262,11 @@ nonisolated enum WatchBitmapRenderer {
                 continue
             }
             if stroke.style.instrument == .blur {
-                let blurContext = before.flatMap { strokes in
-                    blurSource.map { BlurSourceContext(before: strokes, paper: $0.paper) }
+                let blurContext = blurLayer.flatMap { layer in
+                    blurSource.map {
+                        BlurSourceContext(before: $0.before, paper: $0.paper, layer: layer,
+                                          index: $0.before.count + position)
+                    }
                 }
                 guard applyBlur(stroke, in: context, scale: scale, erasure: erasure, origin: origin,
                                 source: blurContext) else { return nil }

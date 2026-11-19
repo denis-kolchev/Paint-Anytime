@@ -460,11 +460,14 @@ nonisolated enum WatchBlurFilter {
 
 nonisolated extension WatchBitmapRenderer {
     /// What a blur in part of the canvas (a zoom tile, a save strip) needs to read the
-    /// layer beyond that part: the layer's strokes drawn before the strokes being
-    /// replayed, and the paper the full canvas clips to.
+    /// layer beyond that part. `before`: the layer's strokes ahead of those being replayed
+    /// (the caller's input). `layer` and `index`: the whole layer in drawing order and the
+    /// blur's position in it, filled in by `renderInk`.
     struct BlurSourceContext {
         let before: [Stroke]
         let paper: CGSize
+        var layer: [Stroke] = []
+        var index = 0
     }
 
     /// Committed blur stroke over the ink already in `context`.
@@ -534,37 +537,56 @@ nonisolated extension WatchBitmapRenderer {
         case use(WatchBlurFilter.LowSource?)
     }
 
+    /// The low resolution every blur of a layer shares: just fine enough for its
+    /// smallest radius (~4 px per box pass), on the tile ladder so nearby scales share
+    /// blocks. No floor at the saved grid: a filtered layer is smooth, so a 17 pt blur
+    /// needs ~0.5 px per point, not 2. With a floor of 2, Pixels mode (tiles at 2 px/pt)
+    /// gained nothing from the source and only paid for it.
+    private static func layerLowScale(_ layer: [Stroke]) -> CGFloat {
+        let radii = layer.lazy.filter { $0.style.instrument == .blur }.map { stroke -> CGFloat in
+            let transform = stroke.transform.affine
+            return CGFloat(stroke.style.effectiveBlurRadius)
+                * max(hypot(transform.a, transform.b), hypot(transform.c, transform.d))
+        }
+        let smallest = radii.min() ?? 30
+        return pow(2, (log2(min(64, max(0.25, 7 / max(0.1, smallest)))) * 2).rounded(.up) / 2)
+    }
+
+    /// Hash of `layer[..<count]`: what a blur at `count` reads.
+    private static func prefixHash(_ layer: [Stroke], count: Int) -> Int {
+        var hasher = Hasher()
+        for stroke in layer[..<count] {
+            hasher.combine(stroke.id)
+            hasher.combine(stroke.geometryRevision)
+            hasher.combine(stroke.locksTransparency)
+        }
+        return hasher.finalize()
+    }
+
     /// The filtered layer under a blur, at low resolution, for the pixels of `area`.
     ///
-    /// The low-resolution grid is fixed per blur size (not per tile), and filtered in
-    /// blocks of `BlurSourceCache.blockPixels` that every tile and strip shares through
-    /// the cache: a block is rendered (with its read margin) and filtered once, and the
-    /// tiles around it only copy what they need. Blocks are exact away from the paper's
-    /// edges, so neighbouring tiles agree.
+    /// The low-resolution grid is fixed per layer (not per tile) and filtered in blocks
+    /// of `BlurSourceCache.blockPixels` that every tile and strip shares through the
+    /// cache. A missing block is made by one low-resolution replay of the layer that
+    /// filters every blur's block on the way (`fillLayerBlocks`): before, each blur
+    /// replayed all strokes under it, and a layer of 15 blurs took seconds to redraw.
     private static func lowResolutionSource(for stroke: Stroke, area: WatchBlurFilter.PixelRect,
                                             canvas: WatchBlurFilter.PixelRect, scale: CGFloat, origin: CGPoint,
                                             parameters: WatchBlurFilter.Parameters,
                                             context: BlurSourceContext) -> LowSourceChoice {
         typealias Filter = WatchBlurFilter
         let paper = CGRect(origin: .zero, size: context.paper)
-        guard !paper.isEmpty, !area.isEmpty else { return .filterRaster }
+        guard !paper.isEmpty, !area.isEmpty, context.index < context.layer.count else { return .filterRaster }
         let raster = CGRect(x: origin.x, y: origin.y,
                             width: CGFloat(canvas.width) / scale, height: CGFloat(canvas.height) / scale)
         let output = CGRect(x: origin.x + CGFloat(area.x) / scale, y: origin.y + CGFloat(area.y) / scale,
                             width: CGFloat(area.width) / scale, height: CGFloat(area.height) / scale)
         let reads = output.insetBy(dx: -CGFloat(parameters.margin) / scale, dy: -CGFloat(parameters.margin) / scale)
             .intersection(paper)
-        // Radius in canvas points, for a resolution that still resolves it well
-        // (at least ~4 px per box pass), never finer than the raster. Rounded to the
-        // tile ladder so nearby scales share blocks.
-        let transform = stroke.transform.affine
-        let radius = CGFloat(stroke.style.effectiveBlurRadius)
-            * max(hypot(transform.a, transform.b), hypot(transform.c, transform.d))
-        let lowScale = min(scale, pow(2, (log2(max(2, 7 / max(0.1, radius))) * 2).rounded(.up) / 2))
+        let lowScale = min(scale, layerLowScale(context.layer))
         let readsOutside = !raster.insetBy(dx: -0.01, dy: -0.01).contains(reads)
         guard readsOutside || scale > lowScale * 1.5 else { return .filterRaster }
         let low = Filter.Parameters(stroke: stroke, scale: lowScale)
-        let margin = low.margin + 2
         let paperWidth = Int(ceil(context.paper.width * lowScale))
         let paperHeight = Int(ceil(context.paper.height * lowScale))
         let paperPixels = Filter.PixelRect(x: 0, y: 0, width: paperWidth, height: paperHeight)
@@ -572,13 +594,7 @@ nonisolated extension WatchBitmapRenderer {
         let needed = Filter.PixelRect(output.applying(CGAffineTransform(scaleX: lowScale, y: lowScale)))
             .outset(by: 1).intersection(paperPixels)
         guard !needed.isEmpty else { return .use(nil) }
-        var prefix = Hasher()
-        for before in context.before {
-            prefix.combine(before.id)
-            prefix.combine(before.geometryRevision)
-            prefix.combine(before.locksTransparency)
-        }
-        let prefixHash = prefix.finalize()
+        let hash = prefixHash(context.layer, count: context.index)
         let side = BlurSourceCache.blockPixels
         let pixels = UnsafeMutablePointer<SIMD4<Float>>.allocate(capacity: needed.width * needed.height)
         pixels.initialize(repeating: .zero, count: needed.width * needed.height)
@@ -589,7 +605,7 @@ nonisolated extension WatchBitmapRenderer {
         for row in (needed.y / side)...((needed.maxY - 1) / side) {
             for column in (needed.x / side)...((needed.maxX - 1) / side) {
                 guard !Task.isCancelled else { return .filterRaster }
-                let key = BlurSourceCache.Key(prefix: prefixHash, prefixCount: context.before.count,
+                let key = BlurSourceCache.Key(prefix: hash, prefixCount: context.index,
                                               boxRadius: low.boxRadius, lowScale: Double(lowScale),
                                               paperWidth: paperWidth, paperHeight: paperHeight,
                                               column: column, row: row)
@@ -600,11 +616,12 @@ nonisolated extension WatchBitmapRenderer {
                     ?? BlurSourceCache.computing { () -> BlurSourceCache.Block? in
                         // Another tile may have made it while this one waited.
                         if let cached = BlurSourceCache.shared.block(for: key) { return cached }
-                        guard let made = filteredBlock(block, margin: margin, paperPixels: paperPixels,
-                                                       boxRadius: low.boxRadius, lowScale: lowScale,
-                                                       context: context) else { return nil }
-                        BlurSourceCache.shared.store(made, for: key)
-                        return made
+                        // Through the layer's last blur: one replay fills every blur's block here.
+                        let last = context.layer.lastIndex { $0.style.instrument == .blur } ?? context.index
+                        guard fillLayerBlocks(block, column: column, row: row, upTo: max(last, context.index),
+                                              lowScale: lowScale, paperPixels: paperPixels, context: context)
+                        else { return nil }
+                        return BlurSourceCache.shared.block(for: key)
                     }
                 guard let filtered = found else { return .filterRaster }
                 guard filtered.hasInk else { continue }
@@ -614,8 +631,8 @@ nonisolated extension WatchBitmapRenderer {
                 filtered.pixels.withUnsafeBufferPointer { source in
                     for y in part.y..<part.maxY {
                         let from = source.baseAddress! + (y - block.y) * block.width + (part.x - block.x)
-                        (pixels + (y - needed.y) * needed.width + (part.x - needed.x))
-                            .update(from: from, count: part.width)
+                        let to = pixels + (y - needed.y) * needed.width + (part.x - needed.x)
+                        for x in 0..<part.width { to[x] = SIMD4<Float>(from[x]) / 255 }
                     }
                 }
             }
@@ -623,38 +640,83 @@ nonisolated extension WatchBitmapRenderer {
         return .use(anyInk ? assembled : nil)
     }
 
-    /// One block of the filtered low-resolution layer: the layer before the blur rendered
-    /// over the block plus the filter's reach (within the paper, whose edges renormalize
-    /// as on the full canvas), filtered, and cropped to the block.
-    private static func filteredBlock(_ block: WatchBlurFilter.PixelRect, margin: Int,
-                                      paperPixels: WatchBlurFilter.PixelRect, boxRadius: Int, lowScale: CGFloat,
-                                      context: BlurSourceContext) -> BlurSourceCache.Block? {
+    /// One low-resolution replay of the layer over `block` plus the widest blur reach,
+    /// through the blur at `last`: at each blur on the way the ink so far is filtered for
+    /// the block and cached under that blur's key, then the blur is applied (to this
+    /// render itself) so later blurs read its result. Blurs that cannot reach the block
+    /// cache an empty entry. False when rendering failed or was cancelled.
+    private static func fillLayerBlocks(_ block: WatchBlurFilter.PixelRect, column: Int, row: Int, upTo last: Int,
+                                        lowScale: CGFloat, paperPixels: WatchBlurFilter.PixelRect,
+                                        context: BlurSourceContext) -> Bool {
         typealias Filter = WatchBlurFilter
+        let layer = context.layer
+        let blurs = layer.indices.filter { $0 <= last && layer[$0].style.instrument == .blur }
+        let parameters = Dictionary(uniqueKeysWithValues: blurs.map {
+            ($0, Filter.Parameters(stroke: layer[$0], scale: lowScale))
+        })
+        let margin = (parameters.values.map(\.margin).max() ?? 0) + 2
         let rendered = block.outset(by: margin).intersection(paperPixels)
         let region = regionGeometry(pixels: rendered.cgRect, scale: lowScale)
-        // The layer as drawn before this blur, earlier blurs included (they read beyond
-        // this area in turn, through the same path and cache).
-        guard let ink = renderInk(strokes: context.before, size: region.size, scale: lowScale,
-                                  origin: region.origin, cullsOutside: true,
-                                  blurSource: BlurSourceContext(before: [], paper: context.paper))?.image
-        else { return nil }
-        // Culling left a 1×1 ink: nothing of the layer under the blur here.
-        guard ink.width == rendered.width, ink.height == rendered.height else {
-            return BlurSourceCache.Block(pixels: [], hasInk: false)
-        }
-        guard let data = ink.dataProvider?.data as Data? else { return nil }
-        let inkStride = ink.bytesPerRow / MemoryLayout<Float>.size
+        let blockPoints = CGRect(x: CGFloat(block.x) / lowScale, y: CGFloat(block.y) / lowScale,
+                                 width: CGFloat(block.width) / lowScale, height: CGFloat(block.height) / lowScale)
         let local = Filter.PixelRect(x: block.x - rendered.x, y: block.y - rendered.y,
                                      width: block.width, height: block.height)
-        var filtered = [SIMD4<Float>](repeating: .zero, count: block.width * block.height)
-        let succeeded = data.withUnsafeBytes { bytes in
-            filtered.withUnsafeMutableBufferPointer { output in
-                Filter.blur(bytes.bindMemory(to: Float.self).baseAddress!, stride: inkStride,
-                            canvas: Filter.PixelRect(x: 0, y: 0, width: rendered.width, height: rendered.height),
-                            rect: local, radius: boxRadius, into: output.baseAddress!, workspace: Filter.Workspace())
+        let whole = Filter.PixelRect(x: 0, y: 0, width: rendered.width, height: rendered.height)
+        let workspace = Filter.Workspace()
+        var hasher = Hasher()
+        var hashed = 0
+        var ink: InkSnapshot?
+        var start = 0
+        for index in blurs {
+            guard !Task.isCancelled else { return false }
+            // The strokes since the previous blur, that blur included (applied to this render).
+            if index > start {
+                guard let next = renderInk(strokes: Array(layer[start..<index]), size: region.size, scale: lowScale,
+                                           base: ink, origin: region.origin, cullsOutside: true) else { return false }
+                ink = next
+                start = index
             }
+            while hashed < index {
+                hasher.combine(layer[hashed].id)
+                hasher.combine(layer[hashed].geometryRevision)
+                hasher.combine(layer[hashed].locksTransparency)
+                hashed += 1
+            }
+            var finished = hasher
+            let blurParameters = parameters[index]!
+            let key = BlurSourceCache.Key(prefix: finished.finalize(), prefixCount: index,
+                                          boxRadius: blurParameters.boxRadius, lowScale: Double(lowScale),
+                                          paperWidth: paperPixels.width, paperHeight: paperPixels.height,
+                                          column: column, row: row)
+            guard BlurSourceCache.shared.block(for: key) == nil else { continue }
+            // A blur reaching neither the block nor a sample beside it never reads it.
+            let reach = WatchBitmapRenderer.reach(of: layer[index])
+                .insetBy(dx: -2 / lowScale, dy: -2 / lowScale)
+            guard reach.intersects(blockPoints), let current = ink,
+                  current.image.width == rendered.width, current.image.height == rendered.height,
+                  let data = current.image.dataProvider?.data as Data? else {
+                BlurSourceCache.shared.store(BlurSourceCache.Block(pixels: [], hasInk: false), for: key)
+                continue
+            }
+            let inkStride = current.image.bytesPerRow / MemoryLayout<Float>.size
+            var filtered = [SIMD4<Float>](repeating: .zero, count: block.width * block.height)
+            let succeeded = data.withUnsafeBytes { bytes in
+                filtered.withUnsafeMutableBufferPointer { output in
+                    Filter.blur(bytes.bindMemory(to: Float.self).baseAddress!, stride: inkStride, canvas: whole,
+                                rect: local, radius: blurParameters.boxRadius, into: output.baseAddress!,
+                                workspace: workspace)
+                }
+            }
+            guard succeeded else { return false }
+            // 8 bits per channel: a quarter of the memory, so a layer's blurs fit the cache
+            // together. The filtered layer is smooth and the result is 8-bit anyway.
+            let quantized = filtered.map {
+                SIMD4<UInt8>(simd_clamp($0 * 255, SIMD4<Float>(repeating: 0), SIMD4<Float>(repeating: 255))
+                    .rounded(.toNearestOrAwayFromZero))
+            }
+            BlurSourceCache.shared.store(BlurSourceCache.Block(pixels: quantized, hasInk: true), for: key)
         }
-        return succeeded ? BlurSourceCache.Block(pixels: filtered, hasInk: true) : nil
+        return true
     }
 
     /// Live blur stroke over committed ink, extended by its new samples only.
@@ -803,15 +865,15 @@ nonisolated private extension CGPoint {
 /// recently used blocks go first beyond `byteLimit`.
 nonisolated final class BlurSourceCache: @unchecked Sendable {
     static let shared = BlurSourceCache()
-    /// Low pixels per block side: small enough that a tile needs few, large enough that
-    /// the read margin rendered around each is a modest share.
-    static let blockPixels = 128
-    /// A share of what this device leaves the app (as `LayerCache.inkByteLimit`), 4–16 MB,
-    /// fixed at first use.
+    /// Low pixels per block side. Each block also renders its read margin (~100 px around
+    /// for a large blur at 2 px/pt): at 128 that was ~9× the block's own pixels, at 256 ~3×.
+    static let blockPixels = 256
+    /// A share of what this device leaves the app (as `LayerCache.inkByteLimit`), 8–24 MB
+    /// (32 to 96 blocks of 256 KB), fixed at first use.
     static let byteLimit: Int = {
-        let ceiling = 16 * 1024 * 1024, minimum = 4 * 1024 * 1024
+        let ceiling = 24 * 1024 * 1024, minimum = 8 * 1024 * 1024
         guard let available = availableMemory else { return ceiling }
-        return min(ceiling, max(minimum, available / 20))
+        return min(ceiling, max(minimum, available / 10))
     }()
 
     /// Bytes left before the app's limit; nil without one (Simulator, macOS checks).
@@ -848,12 +910,12 @@ nonisolated final class BlurSourceCache: @unchecked Sendable {
     }
 
     final class Block {
-        /// Rows of the block's width; empty when `hasInk` is false.
-        let pixels: [SIMD4<Float>]
+        /// Premultiplied 8-bit RGBA, rows of the block's width; empty when `hasInk` is false.
+        let pixels: [SIMD4<UInt8>]
         let hasInk: Bool
-        var bytes: Int { pixels.count * MemoryLayout<SIMD4<Float>>.stride + 64 }
+        var bytes: Int { pixels.count * MemoryLayout<SIMD4<UInt8>>.stride + 64 }
 
-        init(pixels: [SIMD4<Float>], hasInk: Bool) {
+        init(pixels: [SIMD4<UInt8>], hasInk: Bool) {
             self.pixels = pixels
             self.hasInk = hasInk
         }

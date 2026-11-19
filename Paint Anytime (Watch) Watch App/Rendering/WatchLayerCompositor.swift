@@ -543,8 +543,10 @@ nonisolated extension WatchBitmapRenderer {
         }
         // One-off renders of a save report their layers (`RenderProgress`); cached
         // canvas renders never run under one.
-        // The paper blurs clip to: the raster itself for a whole-canvas render.
-        let blurPaper: CGSize? = isRegion ? (paper ?? document.canvasSize) : size
+        // Only zoom tiles (regions with a cache) read blurs from the low-resolution source.
+        // Whole-canvas renders hold all a blur reads, and save strips render their blur
+        // margins, so the paper view and saved files keep blurs filtered as before.
+        let blurPaper: CGSize? = isRegion && cache != nil ? (paper ?? document.canvasSize) : nil
         let progress = cache == nil ? RenderProgress.current : nil
         progress?.expect(visible.reduce(0) { $0 + RenderProgress.units(of: $1) })
         for (index, layer) in visible.enumerated() {
