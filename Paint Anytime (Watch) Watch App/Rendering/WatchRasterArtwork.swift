@@ -53,7 +53,7 @@ struct WatchRasterArtwork: View {
         if let region {
             return WatchBitmapRenderer.CacheKey(documentID: documentID, documentRevision: documentRevision,
                                                 size: region.size, scale: region.scale, origin: region.origin,
-                                                isRegion: true)
+                                                isRegion: true, paper: paperSize)
         }
         // Keep the previous resolution until Crown input settles.
         let scale = WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom,

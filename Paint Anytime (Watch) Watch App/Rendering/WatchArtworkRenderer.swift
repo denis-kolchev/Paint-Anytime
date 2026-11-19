@@ -38,6 +38,7 @@ actor WatchArtworkRenderer {
     /// Frees the layer inks of every live renderer, each on its own actor; frames on
     /// screen stay. The canvas replays layers when it next draws.
     static func releaseAllCachedInks() async {
+        BlurSourceCache.shared.removeAll()
         for renderer in registry.all { await renderer.releaseCachedInks() }
     }
 
@@ -146,7 +147,8 @@ actor WatchArtworkRenderer {
         let state = activeStroke == nil && !key.isRegion ? historyKey(document: document, strokes: [], key: key) : nil
         if let frame = recall(state) { return frame }
         guard let image = WatchBitmapRenderer.render(document: document, size: key.size, scale: key.scale,
-            origin: key.origin, isRegion: key.isRegion, activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers), !Task.isCancelled else { return nil }
+            origin: key.origin, isRegion: key.isRegion, activeStroke: activeStroke, selectedLayerID: selectedLayerID, cache: layers,
+            paper: key.paper), !Task.isCancelled else { return nil }
         let frame = WatchBitmapRenderer.ScreenFrame(background: image, tiles: [])
         if let state { rememberFrame(frame, key: state) }
         return frame

@@ -505,7 +505,8 @@ nonisolated extension WatchBitmapRenderer {
     static func render(document: CanvasDocument, size: CGSize, scale: CGFloat, origin: CGPoint = .zero,
                        isRegion: Bool = false,
                        activeStroke: Stroke? = nil, selectedLayerID: UUID? = nil,
-                       cache: LayerCache? = nil, selection: WatchSelectionPreview? = nil) -> CGImage? {
+                       cache: LayerCache? = nil, selection: WatchSelectionPreview? = nil,
+                       paper: CGSize? = nil) -> CGImage? {
         // One-off whole-canvas renders (save, share, eyedropper, previews) of a large canvas
         // go through horizontal strips: each layer's float ink (16 B/px) then exists for
         // one strip at a time instead of for the whole paper.
@@ -535,6 +536,8 @@ nonisolated extension WatchBitmapRenderer {
         }
         // One-off renders of a save report their layers (`RenderProgress`); cached
         // canvas renders never run under one.
+        // The paper blurs clip to: the raster itself for a whole-canvas render.
+        let blurPaper: CGSize? = isRegion ? (paper ?? document.canvasSize) : size
         let progress = cache == nil ? RenderProgress.current : nil
         progress?.expect(visible.reduce(0) { $0 + RenderProgress.units(of: $1) })
         for (index, layer) in visible.enumerated() {
@@ -547,7 +550,7 @@ nonisolated extension WatchBitmapRenderer {
             guard let committed = RenderDiagnostics.measure(.committed, {
                 committedInk(for: layer, revisions: revisions, size: size, scale: scale, origin: origin,
                              culls: isRegion,
-                             cache: cache, selection: selection)
+                             cache: cache, selection: selection, paper: blurPaper)
             }) else { return nil }
             var ink = committed
             if layer.id == selectedLayerID, let activeStroke {
@@ -676,7 +679,7 @@ nonisolated extension WatchBitmapRenderer {
             let stripSize = CGSize(width: size.width, height: (CGFloat(renderBottom - renderTop) - 0.001) / scale)
             let image: CGImage? = autoreleasepool {
                 guard let strip = render(document: document, size: stripSize, scale: scale, origin: origin,
-                                         isRegion: true),
+                                         isRegion: true, paper: size),
                       strip.width == width, strip.height == renderBottom - renderTop else { return nil }
                 return strip.cropping(to: CGRect(x: 0, y: top - renderTop, width: width, height: bottom - top))
             }
@@ -728,9 +731,11 @@ nonisolated extension WatchBitmapRenderer {
 
     /// The layer's committed ink: a lasso replay, a cache hit, an Undo snapshot,
     /// the promoted live stroke, or a replay of the strokes past the cached prefix.
+    /// `paper`: the full canvas, for blurs that read beyond a region (`BlurSourceContext`).
     private static func committedInk(for layer: CanvasLayer, revisions: [UUID], size: CGSize, scale: CGFloat,
                                      origin: CGPoint, culls: Bool,
-                                     cache: LayerCache?, selection: WatchSelectionPreview?) -> InkSnapshot? {
+                                     cache: LayerCache?, selection: WatchSelectionPreview?,
+                                     paper: CGSize? = nil) -> InkSnapshot? {
         if selection?.layerID == layer.id {
             // Replay the selected layer in its original order. Other layers stay cached.
             return renderInk(strokes: layer.strokes, size: size, scale: scale, selection: selection, origin: origin,
@@ -755,9 +760,12 @@ nonisolated extension WatchBitmapRenderer {
             let replaying = RenderDiagnostics.begin()
             defer { RenderDiagnostics.shapeCommitted("layer REPLAY", replaying) }
             let pending = previous.map { Array(layer.strokes.dropFirst($0.revisions.count)) } ?? layer.strokes
+            let blurSource = paper.map {
+                BlurSourceContext(before: Array(layer.strokes.prefix(layer.strokes.count - pending.count)), paper: $0)
+            }
             guard let ink = renderInk(strokes: pending, size: size, scale: scale,
                                       base: previous?.ink, masks: cache?.masks, origin: origin,
-                                      cullsOutside: culls) else { return nil }
+                                      cullsOutside: culls, blurSource: blurSource) else { return nil }
             cache?.didReplay(pending.count)
             committed = ink
         }

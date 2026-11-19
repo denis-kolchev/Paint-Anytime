@@ -42,6 +42,8 @@ nonisolated enum WatchBitmapRenderer {
         var origin: CGPoint = .zero
         /// A viewport region's raster; see `LayerCache.isRegion`.
         var isRegion = false
+        /// The whole canvas a region belongs to, for blurs reading beyond the region.
+        var paper: CGSize? = nil
     }
 
     /// Prepared eraser regions per stroke, so replaying a layer (after Undo, a resize of
@@ -178,7 +180,8 @@ nonisolated enum WatchBitmapRenderer {
                                   base: InkSnapshot? = nil, geometry: [UUID: StrokeGeometry] = [:],
                                   selection: WatchSelectionPreview? = nil,
                                   masks: ErasureMaskCache? = nil,
-                                  origin: CGPoint = .zero, cullsOutside: Bool = false) -> InkSnapshot? {
+                                  origin: CGPoint = .zero, cullsOutside: Bool = false,
+                                  blurSource: BlurSourceContext? = nil) -> InkSnapshot? {
         // `origin` renders a viewport region: `size` is the region's size and canvas
         // point `origin` lands on the top-left pixel. It must be a whole number of
         // pixels, so the region matches the full-canvas raster pixel for pixel.
@@ -213,8 +216,13 @@ nonisolated enum WatchBitmapRenderer {
         context.translateBy(x: 0, y: height)
         context.scaleBy(x: scale, y: -scale)
         context.translateBy(x: -origin.x, y: -origin.y)
+        // `blurSource`: the layer's strokes before each one, for blurs that read beyond
+        // this raster (`applyBlur(source:)`). Not with a selection preview (moved strokes).
+        var drawnBefore = selection == nil ? blurSource?.before : nil
         for source in strokes {
             guard !Task.isCancelled else { return nil }
+            let before = drawnBefore
+            drawnBefore?.append(source)
             var stroke = source
             if let selection, selection.selectedIDs.contains(source.id) {
                 stroke.transform = StrokeTransform(source.transform.affine.concatenating(selection.transform))
@@ -256,7 +264,11 @@ nonisolated enum WatchBitmapRenderer {
                 continue
             }
             if stroke.style.instrument == .blur {
-                guard applyBlur(stroke, in: context, scale: scale, erasure: erasure, origin: origin) else { return nil }
+                let blurContext = before.flatMap { strokes in
+                    blurSource.map { BlurSourceContext(before: strokes, paper: $0.paper) }
+                }
+                guard applyBlur(stroke, in: context, scale: scale, erasure: erasure, origin: origin,
+                                source: blurContext) else { return nil }
                 continue
             }
             // Paint on opaque straight RGB, then restore the original alpha mask.
