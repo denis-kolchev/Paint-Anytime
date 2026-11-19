@@ -17,8 +17,9 @@ nonisolated extension WatchBitmapRenderer {
         /// it is prepared). About twice the watch screen, so a selection larger than the
         /// view still has screen resolution when dragged into it.
         static let foregroundPixelBudget: CGFloat = 786_432
-        /// Pixels of each static image (2 MiB). The view plus margin needs about 330 k.
-        static let staticPixelBudget: CGFloat = 524_288
+        /// Pixels of each static image (3 MiB). The view plus margin at the tiles' scale
+        /// needs 330–660 k (the tile ladder rounds the screen's need up by up to √2).
+        static let staticPixelBudget: CGFloat = 786_432
         /// The low-resolution static scene shown outside `staticRect` (1 MiB).
         static let underlayPixelBudget: CGFloat = 262_144
 
@@ -204,7 +205,8 @@ nonisolated extension WatchBitmapRenderer {
                             4096 / max(extent.width, extent.height))
                 let view = viewport.rect.intersection(paper)
                 if !view.isNull, !view.isEmpty { area = view }
-                fixedScale = Self.ladderScale(viewport.scale)
+                // The resolution shown at rest; lower only past the budget.
+                fixedScale = viewport.scale
                 while fixedScale > 0.125, area.width * area.height * fixedScale * fixedScale > Self.staticPixelBudget {
                     fixedScale = Self.ladderScale(fixedScale / 2.squareRoot())
                 }

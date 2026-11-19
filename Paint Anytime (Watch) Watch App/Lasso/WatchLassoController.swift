@@ -16,6 +16,21 @@ final class WatchLassoController: ObservableObject {
     @Published private(set) var isPreparing = false
     @Published var errorMessage: String?
     @Published private(set) var selectionSeed: WatchSelectionPreview?
+    /// The seed session whose drag textures the canvas has prepared (or failed to).
+    @Published private(set) var preparedPreviewSession: UUID?
+    /// A move, resize or turn starts only once the selection's textures exist: a drag
+    /// before then replayed the whole document per move behind the preparation (a
+    /// freeze, then a blurred stale frame). Waiting shows the spinner instead.
+    var isPreviewReady: Bool {
+        guard let id = selectionSeed?.sessionID else { return true }
+        return preparedPreviewSession == id
+    }
+    var isWaitingForPreview: Bool { isActive && !isPreparing && !isPreviewReady }
+
+    func previewPrepared(sessionID: UUID) {
+        guard selectionSeed?.sessionID == sessionID, preparedPreviewSession != sessionID else { return }
+        preparedPreviewSession = sessionID
+    }
     /// Complete strokes runs in two steps: the outlined strokes wait for the user to
     /// confirm sending them to the iPhone, and object actions appear only once the
     /// generated image is on the canvas.
@@ -209,6 +224,7 @@ final class WatchLassoController: ObservableObject {
             let rotationDistance = WatchLassoGeometry.distance(rotationHandle, point)
             if rotationDistance <= tolerance,
                handles.allSatisfy({ WatchLassoGeometry.distance($0, point) > rotationDistance }) {
+                guard isPreviewReady else { return }
                 drag = .rotate
                 // Confirm the initial grab once, without repeating during rotation.
                 WKInterfaceDevice.current().play(.click)
@@ -221,6 +237,7 @@ final class WatchLassoController: ObservableObject {
             let moveDistance = WatchLassoGeometry.distance(moveHandle.point, point)
             if moveDistance <= tolerance,
                handles.allSatisfy({ WatchLassoGeometry.distance($0, point) > moveDistance }) {
+                guard isPreviewReady else { return }
                 pinnedMoveHandleOnRight = moveHandle.onRight
                 drag = .moveHandle
                 WKInterfaceDevice.current().play(.click)
@@ -231,11 +248,13 @@ final class WatchLassoController: ObservableObject {
                 WatchLassoGeometry.distance(handles[$0], point) < WatchLassoGeometry.distance(handles[$1], point)
             }), WatchLassoGeometry.distance(handles[nearest], point) <= tolerance,
                WatchLassoGeometry.distance(CGPoint(x: bounds.midX, y: bounds.midY), point) > min(tolerance, min(bounds.width, bounds.height) / 4) {
+                guard isPreviewReady else { return }
                 drag = .resize(nearest)
                 WKInterfaceDevice.current().play(.click)
                 return
             }
             if bounds.contains(point) {
+                guard isPreviewReady else { return }
                 drag = .move
                 WKInterfaceDevice.current().play(.click)
                 return
@@ -323,7 +342,9 @@ final class WatchLassoController: ObservableObject {
     func end(at point: CGPoint, controller: CanvasController, size: CGSize, scale: CGFloat,
              onSelectionFinished: @escaping (Bool) -> Void = { _ in }) {
         guard let drag else { return }
-        update(at: point, pointSpacing: 0)
+        // A transform commits what was last shown: the lift point (the finger rolling off,
+        // up to a few points away) was never drawn, so applying it moved the ink after release.
+        if case .outline = drag { update(at: point, pointSpacing: 0) }
         self.drag = nil
         pinnedMoveHandleOnRight = nil
         switch drag {

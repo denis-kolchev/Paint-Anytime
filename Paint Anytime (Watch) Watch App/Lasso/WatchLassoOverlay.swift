@@ -83,7 +83,7 @@ struct WatchLassoOverlay: View {
                     .padding(.bottom, 10)
             }
         }
-        .overlay { if lasso.isPreparing { ProgressView().tint(.cyan) } }
+        .overlay { if lasso.isPreparing || lasso.isWaitingForPreview { ProgressView().tint(.cyan) } }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
