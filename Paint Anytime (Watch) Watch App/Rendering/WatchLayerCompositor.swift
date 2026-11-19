@@ -205,6 +205,13 @@ nonisolated extension WatchBitmapRenderer {
             inkAccess.removeAll()
         }
 
+        /// Drops the copies that only save a replay later: compressed inks of evicted
+        /// layers and the Undo/Redo snapshots. Current inks stay (memory warning).
+        func releaseSpareCopies() {
+            compressedInks.removeAll()
+            previousInks.removeAll()
+        }
+
         fileprivate func retainLayers(_ ids: Set<UUID>) {
             inks = inks.filter { ids.contains($0.key) }
             inkAccess = inkAccess.filter { inks[$0.key] != nil }

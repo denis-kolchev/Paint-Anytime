@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import os
 import simd
 import SwiftUI
 
@@ -595,16 +596,17 @@ nonisolated extension WatchBitmapRenderer {
                 let block = Filter.PixelRect(x: column * side, y: row * side, width: side, height: side)
                     .intersection(paperPixels)
                 guard !block.isEmpty else { continue }
-                let filtered: BlurSourceCache.Block
-                if let cached = BlurSourceCache.shared.block(for: key) {
-                    filtered = cached
-                } else {
-                    guard let made = filteredBlock(block, margin: margin, paperPixels: paperPixels,
-                                                   boxRadius: low.boxRadius, lowScale: lowScale,
-                                                   context: context) else { return .filterRaster }
-                    BlurSourceCache.shared.store(made, for: key)
-                    filtered = made
-                }
+                let found: BlurSourceCache.Block? = BlurSourceCache.shared.block(for: key)
+                    ?? BlurSourceCache.computing { () -> BlurSourceCache.Block? in
+                        // Another tile may have made it while this one waited.
+                        if let cached = BlurSourceCache.shared.block(for: key) { return cached }
+                        guard let made = filteredBlock(block, margin: margin, paperPixels: paperPixels,
+                                                       boxRadius: low.boxRadius, lowScale: lowScale,
+                                                       context: context) else { return nil }
+                        BlurSourceCache.shared.store(made, for: key)
+                        return made
+                    }
+                guard let filtered = found else { return .filterRaster }
                 guard filtered.hasInk else { continue }
                 anyInk = true
                 let part = block.intersection(needed)
@@ -804,7 +806,35 @@ nonisolated final class BlurSourceCache: @unchecked Sendable {
     /// Low pixels per block side: small enough that a tile needs few, large enough that
     /// the read margin rendered around each is a modest share.
     static let blockPixels = 128
-    static let byteLimit = 16 * 1024 * 1024
+    /// A share of what this device leaves the app (as `LayerCache.inkByteLimit`), 4–16 MB,
+    /// fixed at first use.
+    static let byteLimit: Int = {
+        let ceiling = 16 * 1024 * 1024, minimum = 4 * 1024 * 1024
+        guard let available = availableMemory else { return ceiling }
+        return min(ceiling, max(minimum, available / 20))
+    }()
+
+    /// Bytes left before the app's limit; nil without one (Simulator, macOS checks).
+    static var availableMemory: Int? {
+        #if targetEnvironment(simulator) || os(macOS)
+        return nil
+        #else
+        return Int(os_proc_available_memory())
+        #endif
+    }
+
+    /// Below this much room, blocks are computed one at a time instead of by every tile
+    /// at once: each holds a float render of its area (and one per nested blur) meanwhile.
+    static let serialComputeThreshold = 64 * 1024 * 1024
+    /// Recursive: a block's render computes the blocks of blurs below it on the same thread.
+    private static let computeLock = NSRecursiveLock()
+
+    /// Runs `work` alone when memory is short; otherwise concurrently with other tiles.
+    static func computing<T>(_ work: () -> T) -> T {
+        guard let available = availableMemory, available < serialComputeThreshold else { return work() }
+        computeLock.lock(); defer { computeLock.unlock() }
+        return work()
+    }
 
     struct Key: Hashable {
         let prefix: Int

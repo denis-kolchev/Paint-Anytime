@@ -33,6 +33,34 @@ actor WatchArtworkRenderer {
 
     init() {
         Self.registry.add(self)
+        _ = Self.memoryPressure
+    }
+
+    /// The system's memory warnings, for every cache of the canvas at once. Until now
+    /// only a save released memory; zooming or drawing could reach the limit and the
+    /// app was killed without trying. Warning: drop what only saves work later (blur
+    /// blocks, compressed and Undo copies). Critical: also every renderer's layer inks;
+    /// frames on screen stay and layers replay when next drawn.
+    private static let memoryPressure: DispatchSourceMemoryPressure = {
+        let source = DispatchSource.makeMemoryPressureSource(eventMask: [.warning, .critical],
+                                                             queue: .global(qos: .userInitiated))
+        source.setEventHandler { [weak source] in
+            guard let event = source?.data else { return }
+            let critical = event.contains(.critical)
+            BlurSourceCache.shared.removeAll()
+            Task {
+                for renderer in WatchArtworkRenderer.registry.all {
+                    await renderer.releaseForMemoryPressure(critical: critical)
+                }
+            }
+        }
+        source.resume()
+        return source
+    }()
+
+    private func releaseForMemoryPressure(critical: Bool) {
+        if critical { layers.releaseInks() } else { layers.releaseSpareCopies() }
+        historyFrames.removeAll()
     }
 
     /// Frees the layer inks of every live renderer, each on its own actor; frames on
