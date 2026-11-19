@@ -14,9 +14,16 @@ nonisolated enum WatchBitmapRenderer {
         let rect: CGRect // Canvas points, top-left origin.
         let image: CGImage
     }
+    /// Lasso textures: the moving selection (`image` over `rect`) and the static scene
+    /// around it. The static images (the frame's background, `layerBelow`, `layerAbove`,
+    /// `upperLayers`) cover `staticRect` only: the view and a margin at screen resolution,
+    /// not the whole paper (`SelectionViewport`). `underlay` shows the static scene at
+    /// low resolution outside it, for a zoom-out before the textures are prepared again.
     struct SelectionTexture {
         let image: CGImage
         let rect: CGRect
+        /// Pixels per canvas point of `image`.
+        let scale: CGFloat
         let sessionID: UUID
         let key: CacheKey
         let transform: CGAffineTransform
@@ -24,6 +31,20 @@ nonisolated enum WatchBitmapRenderer {
         let layerAbove: CGImage?
         let upperLayers: CGImage?
         let opacity: Float
+        let staticRect: CGRect
+        let staticScale: CGFloat
+        var underlay: CGImage? = nil
+        /// Blends or stroke order the textures cannot move exactly (a later alpha-locked
+        /// stroke or multiply marker, a selection with gaps): approximate while dragging,
+        /// exact from the committed render.
+        let isApproximate: Bool
+    }
+
+    /// Where and how finely lasso textures are needed: the visible canvas plus a margin
+    /// (canvas points) and the resolution the screen shows it at (pixels per point).
+    struct SelectionViewport: Equatable {
+        let rect: CGRect
+        let scale: CGFloat
     }
 
     struct ScreenFrame {
@@ -121,13 +142,15 @@ nonisolated enum WatchBitmapRenderer {
     /// `LayerCache.inkByteLimit`. Never below what the unzoomed screen shows; quarter
     /// steps keep the cache key stable. The canvas view passes zoom 1: a viewport
     /// region (`WatchRasterArtwork.Region`) renders the zoomed view instead.
+    /// `inkShare` is the fraction of that limit the raster may use (lasso: the rest
+    /// goes to the viewport tiles above it).
     static func rasterScale(displayScale: CGFloat, zoom: Double, fit: CGFloat,
-                            canvasSize: CGSize, layerCount: Int) -> CGFloat {
+                            canvasSize: CGSize, layerCount: Int, inkShare: CGFloat = 1) -> CGFloat {
         let screen = max(0.25, (displayScale * (fit.isFinite && fit > 0 ? fit : 1) * 4).rounded(.up) / 4)
         let requested = min(maximumRasterScale, screen * CGFloat(max(1, zoom)))
         let pixels = canvasSize.width * canvasSize.height * CGFloat(max(1, layerCount))
         guard pixels.isFinite, pixels > 0 else { return requested }
-        let fitting = (CGFloat(LayerCache.inkByteLimit) / (16 * pixels)).squareRoot()
+        let fitting = (CGFloat(LayerCache.inkByteLimit) * min(1, max(0, inkShare)) / (16 * pixels)).squareRoot()
         return min(requested, max(screen, (fitting * 4).rounded(.down) / 4))
     }
 

@@ -60,6 +60,8 @@ struct WatchCanvasView: View {
     @State private var tilesRequestedAt: UInt64?
     /// Per-layer reach of the strokes, for the tile memory budget.
     @State private var layerReach = LayerReachMemo()
+    /// The paper raster shows the moving lasso selection; see `WatchRasterArtwork.onSelectionShown`.
+    @State private var paperShowsSelection = false
     private static let regionLogger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "PaintAnytime",
                                              category: "region")
     private struct TilePlan: Equatable {
@@ -209,7 +211,10 @@ struct WatchCanvasView: View {
                         let strokeReach = controller.activeStroke.map {
                             WatchBitmapRenderer.reach(of: $0).insetBy(dx: -strokePad, dy: -strokePad)
                         } ?? .null
-                        let shownTiles = lasso.isActive ? [] : tiles.filter {
+                        // A selection being moved, scaled or rotated lives only in the paper's
+                        // selection textures: tiles of the document would show it in place.
+                        // They stay until the paper shows it, sharp rather than a stale frame.
+                        let shownTiles = lasso.previewState != nil && paperShowsSelection ? [] : tiles.filter {
                             readyTiles.contains($0.id) && !lateTiles.contains($0.id)
                                 && ($0.id.scale != tileScale || completeScale == tileScale)
                         }
@@ -231,9 +236,10 @@ struct WatchCanvasView: View {
                         }
                         ZStack(alignment: .topLeading) {
                             // Screen resolution of the whole paper: the region above sharpens the
-                            // zoomed view within the memory budget. Lasso hides regions (selection
-                            // textures span the paper), so then zoom raises the paper raster up to
-                            // what every layer's ink fits in `LayerCache.inkByteLimit`.
+                            // zoomed view within the memory budget. Lasso hides regions while a
+                            // selection is transformed (selection textures span the paper), so then
+                            // zoom raises the paper raster up to what every layer's ink fits in its
+                            // share of `LayerCache.inkByteLimit`; the tiles get the rest.
                             WatchRasterArtwork(document: useLayers ? displayedDocument : nil,
                                 selectedLayerID: controller.selectedLayer.id, selectionPreview: lasso.previewState, selectionSeed: lasso.selectionSeed,
                                 strokes: useLayers ? [] : (displayedDocument.layers.first?.strokes ?? []),
@@ -243,27 +249,28 @@ struct WatchCanvasView: View {
                                 activeStrokeRevision: paperIsLive ? controller.activeStrokeRevision : 0,
                                 activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: lasso.isActive ? zoom : 1,
                                 fit: fit, liveSubmitter: paperIsLive ? liveSubmitter : nil,
-                                allowsInkTip: paperIsLive && allowsInkTip, pixelGridScale: pixelGridScale)
-                            if !lasso.isActive {
-                                ForEach(tiles) { tile in
-                                    let live = liveIDs.contains(tile.id)
-                                    WatchRasterArtwork(document: displayedDocument,
-                                        selectedLayerID: controller.selectedLayer.id,
-                                        strokes: [], activeStroke: live ? controller.activeStroke : nil,
-                                        documentID: ObjectIdentifier(controller),
-                                        documentRevision: controller.documentRevision,
-                                        activeStrokeRevision: live ? controller.activeStrokeRevision : 0,
-                                        activeStrokeID: controller.activeStrokeID,
-                                        onFramePrepared: { succeeded in
-                                            guard succeeded, tiles.contains(where: { $0.id == tile.id }) else { return }
-                                            tileBecameReady(tile.id)
-                                        },
-                                        zoom: zoom, fit: fit, liveSubmitter: live ? liveSubmitter : nil,
-                                        allowsInkTip: live && tile.id == tipTile && allowsInkTip, region: tile.region,
-                                        rendersInBackground: !tile.rect.intersects(visibleRect),
-                                        pixelGridScale: pixelGridScale)
-                                        .opacity(shownIDs.contains(tile.id) ? 1 : 0)
-                                }
+                                allowsInkTip: paperIsLive && allowsInkTip, pixelGridScale: pixelGridScale,
+                                inkShare: lasso.isActive ? Self.lassoPaperInkShare : 1,
+                                selectionViewport: selectionViewport(size: geometry.size, paper: paperSize, fit: fit),
+                                onSelectionShown: { paperShowsSelection = $0 })
+                            ForEach(tiles) { tile in
+                                let live = liveIDs.contains(tile.id)
+                                WatchRasterArtwork(document: displayedDocument,
+                                    selectedLayerID: controller.selectedLayer.id,
+                                    strokes: [], activeStroke: live ? controller.activeStroke : nil,
+                                    documentID: ObjectIdentifier(controller),
+                                    documentRevision: controller.documentRevision,
+                                    activeStrokeRevision: live ? controller.activeStrokeRevision : 0,
+                                    activeStrokeID: controller.activeStrokeID,
+                                    onFramePrepared: { succeeded in
+                                        guard succeeded, tiles.contains(where: { $0.id == tile.id }) else { return }
+                                        tileBecameReady(tile.id)
+                                    },
+                                    zoom: zoom, fit: fit, liveSubmitter: live ? liveSubmitter : nil,
+                                    allowsInkTip: live && tile.id == tipTile && allowsInkTip, region: tile.region,
+                                    rendersInBackground: !tile.rect.intersects(visibleRect),
+                                    pixelGridScale: pixelGridScale)
+                                    .opacity(shownIDs.contains(tile.id) ? 1 : 0)
                             }
                         }
                     }
@@ -730,7 +737,18 @@ struct WatchCanvasView: View {
             defer { TutorialDebug.trace("canvas.enabled.exit", "focused=\(crownFocused)") }
             if !enabled { cancelFill(); cancelShapeHold(); controller.cancelStroke(); lasso.cancelGesture() }
         }
-        .onChange(of: controller.documentRevision) { _, _ in cancelFill(); lasso.documentChanged(controller) }
+        .onChange(of: controller.documentRevision) { _, _ in
+            cancelFill()
+            if lasso.isActive {
+                // A lasso edit (move, duplicate, delete, undo) jumps: a tile's frame of the old
+                // revision would show the selection at its old place until the tile caught up.
+                // Hide the tiles until they have rendered the new revision; the paper holds
+                // the result meanwhile.
+                readyTiles = []
+                completeScale = nil
+            }
+            lasso.documentChanged(controller)
+        }
         .onChange(of: controller.selectedLayerID) { _, _ in cancelFill(); lasso.documentChanged(controller) }
         .alert(L10n.text("Could not create selection"), isPresented: Binding(
             get: { lasso.errorMessage != nil }, set: { if !$0 { lasso.errorMessage = nil } }
@@ -1025,12 +1043,32 @@ struct WatchCanvasView: View {
     /// strokes near the edge stay sharp without new tiles.
     private static let regionMargin: CGFloat = 32
 
+    /// Lasso textures cover the view and a margin at the resolution the screen shows,
+    /// on the √2 ladder of the zoom tiles (same pixel grid, so the switch between tiles
+    /// and textures does not shift the picture); the pixel view caps it at its grid.
+    private func selectionViewport(size: CGSize, paper: CGSize, fit: CGFloat) -> WatchBitmapRenderer.SelectionViewport? {
+        guard lasso.isActive, fit.isFinite, fit > 0, zoom > 0 else { return nil }
+        let bounds = CGRect(origin: .zero, size: paper)
+        let margin = Self.regionMargin / (CGFloat(zoom) * fit)
+        let rect = visibleCanvasRect(size).insetBy(dx: -margin, dy: -margin).intersection(bounds)
+        guard !rect.isNull, !rect.isEmpty else { return nil }
+        let shown = displayScale * fit * CGFloat(zoom)
+        guard shown.isFinite, shown > 0 else { return nil }
+        var scale = pow(2, (log2(shown) * 2 - 0.001).rounded(.up) / 2)
+        if let grid = pixelGridScale { scale = min(scale, grid) }
+        return WatchBitmapRenderer.SelectionViewport(rect: rect, scale: scale)
+    }
+
+    /// While the lasso is active the raised paper raster (ready for a transform) and the
+    /// tiles (sharp while the selection rests) share `LayerCache.inkByteLimit`.
+    private static let lassoPaperInkShare: CGFloat = 0.5
+
     /// The tiles to render above the paper raster, or nil when the paper raster already
     /// has every pixel the screen shows. The paper keeps all layers at screen resolution
     /// for the whole canvas; zooming in multiplies the pixels needed, which only fit in
     /// memory for the visible part.
     private func tilePlan(size: CGSize, paper: CGSize, fit: CGFloat) -> TilePlan? {
-        guard !lasso.isActive, zoom > 1, fit.isFinite, fit > 0 else { return nil }
+        guard zoom > 1, fit.isFinite, fit > 0 else { return nil }
         let layers = controller.document.layers.count
         let screenBase = WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: 1, fit: fit,
                                                          canvasSize: paper, layerCount: layers)
@@ -1050,9 +1088,11 @@ struct WatchCanvasView: View {
         let rect = visible.insetBy(dx: -margin, dy: -margin).intersection(bounds)
         // Each layer with ink in a tile keeps a float ink of it (the others a 1×1 one).
         // The current and the fallback scale may coexist: each gets half the budget.
+        // With the lasso, the raised paper raster keeps its share.
         let touched = layerReach.bounds(for: controller.document, revision: controller.documentRevision)
             .filter { $0.intersects(rect) }.count
-        let budget = CGFloat(WatchBitmapRenderer.LayerCache.inkByteLimit) / 2 / (16 * CGFloat(max(1, touched)))
+        let share = lasso.isActive ? 1 - Self.lassoPaperInkShare : 1
+        let budget = CGFloat(WatchBitmapRenderer.LayerCache.inkByteLimit) * share / 2 / (16 * CGFloat(max(1, touched)))
         func fits(_ scale: CGFloat) -> Bool {
             RegionTiling.pixels(covering: rect, scale: scale, paper: paper) <= budget
         }

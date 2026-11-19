@@ -37,6 +37,15 @@ struct WatchRasterArtwork: View {
     /// Pixel view (`CanvasPixelView`): the saved grid's scale, nil when off. Caps the
     /// raster at that scale; rasters on it are magnified without smoothing.
     var pixelGridScale: CGFloat? = nil
+    /// Fraction of `LayerCache.inkByteLimit` a zoomed whole-paper raster may use; see
+    /// `WatchBitmapRenderer.rasterScale`.
+    var inkShare: CGFloat = 1
+    /// Lasso: the view the selection textures cover and the resolution it shows; see
+    /// `WatchBitmapRenderer.SelectionViewport`. Nil keeps whole-paper textures.
+    var selectionViewport: WatchBitmapRenderer.SelectionViewport? = nil
+    /// Whether this raster shows the moving selection (its textures or a replay of the
+    /// gesture). Until then the canvas keeps the zoom tiles, sharp and in place, above it.
+    var onSelectionShown: (Bool) -> Void = { _ in }
     @State private var rasterZoom: Double = 1
 
     /// Part of the canvas rendered at a resolution the full canvas could not afford.
@@ -57,7 +66,7 @@ struct WatchRasterArtwork: View {
         }
         // Keep the previous resolution until Crown input settles.
         let scale = WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom,
-            fit: fit, canvasSize: paperSize, layerCount: document?.layers.count ?? 1)
+            fit: fit, canvasSize: paperSize, layerCount: document?.layers.count ?? 1, inkShare: inkShare)
         return WatchBitmapRenderer.CacheKey(documentID: documentID,
             documentRevision: documentRevision, size: paperSize,
             scale: pixelGridScale.map { min(scale, $0) } ?? scale)
@@ -72,7 +81,8 @@ struct WatchRasterArtwork: View {
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: key(paperSize: geometry.size), paperSize: geometry.size, isRegion: region != nil,
                         showsStaleFrame: showsStaleRegionFrame, rendersInBackground: rendersInBackground,
-                        pixelGridScale: pixelGridScale,
+                        pixelGridScale: pixelGridScale, selectionViewport: selectionViewport,
+                        onSelectionShown: onSelectionShown,
                         liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip && selectionPreview == nil)
         }
         .task(id: zoom) {
@@ -106,15 +116,32 @@ struct WatchRasterArtwork: View {
         let showsStaleFrame: Bool
         let rendersInBackground: Bool
         let pixelGridScale: CGFloat?
+        let selectionViewport: WatchBitmapRenderer.SelectionViewport?
+        var onSelectionShown: (Bool) -> Void
         var liveSubmitter: LiveFrameSubmitter?
         var allowsInkTip: Bool
 
         @StateObject private var frames = CanvasFrameQueue()
+
+        /// `key` without the raster scale: textures follow the viewport, not the paper's
+        /// raster, so a scale change must not restart their preparation.
+        private var sceneKey: WatchBitmapRenderer.CacheKey {
+            WatchBitmapRenderer.CacheKey(documentID: key.documentID, documentRevision: key.documentRevision,
+                                         size: key.size, scale: 0, origin: key.origin, isRegion: key.isRegion)
+        }
         @State private var finishedTransform: CGAffineTransform?
+
+        /// Textures of the same document state fit whatever raster scale they were
+        /// prepared at: each image carries its own scale and place. Requiring the exact
+        /// key hid them for every zoom step until they were prepared again, and the old
+        /// frame (the selection still at its old place) showed meanwhile.
+        private func fits(_ texture: WatchBitmapRenderer.SelectionTexture) -> Bool {
+            WatchBitmapRenderer.SelectionRenderCache.sameScene(texture.key, key)
+        }
 
         private var displayFrame: WatchBitmapRenderer.ScreenFrame? {
             if let preview = selectionPreview, let prepared = frames.preparedFrame,
-               prepared.selection?.sessionID == preview.sessionID, prepared.selection?.key == key {
+               let texture = prepared.selection, texture.sessionID == preview.sessionID, fits(texture) {
                 return prepared
             }
             return frames.frame
@@ -122,7 +149,13 @@ struct WatchRasterArtwork: View {
 
         private var hasSelectionTexture: Bool {
             guard let texture = displayFrame?.selection, let selectionPreview else { return false }
-            return texture.sessionID == selectionPreview.sessionID && texture.key == key
+            return texture.sessionID == selectionPreview.sessionID && fits(texture)
+        }
+
+        /// The moving selection is on screen: its textures, or a published replay frame.
+        private var showsSelection: Bool {
+            guard let selectionPreview else { return false }
+            return hasSelectionTexture || frames.frameSessionID == selectionPreview.sessionID
         }
 
         private func displayedTransform(_ texture: WatchBitmapRenderer.SelectionTexture) -> CGAffineTransform {
@@ -132,15 +165,6 @@ struct WatchRasterArtwork: View {
             // Hold the last interactive frame until the committed/cancelled frame
             // is ready, rather than snapping back while it is being rendered.
             return finishedTransform ?? texture.transform
-        }
-
-        private func staticTexture(_ image: CGImage) -> some View {
-            let size = Self.pointSize(of: image, key: key)
-            return Image(decorative: image, scale: key.scale)
-                .pixelGrid(isOnPixelGrid(key.scale))
-                .resizable()
-                .frame(width: size.width, height: size.height)
-                .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
         }
 
         /// A raster has `ceil(size × scale)` pixels. Shown over `size`, a fractional last
@@ -164,6 +188,62 @@ struct WatchRasterArtwork: View {
             let activeStrokeRevision: UInt64
             let sessionID: UUID?
             let transform: CGAffineTransform?
+            var viewport: WatchBitmapRenderer.SelectionViewport? = nil
+        }
+
+        /// An image of `scale` pixels per point placed at `rect`'s corner, one pixel per
+        /// `1 / scale` points (no stretch towards a fractional last column).
+        private func placed(_ image: CGImage, at origin: CGPoint, scale: CGFloat) -> some View {
+            Image(decorative: image, scale: scale)
+                .pixelGrid(isOnPixelGrid(scale))
+                .resizable()
+                .frame(width: CGFloat(image.width) / scale, height: CGFloat(image.height) / scale)
+                .offset(x: origin.x, y: origin.y)
+                .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+        }
+
+        /// The lasso preview: the static scene over `staticRect` (the low-resolution
+        /// underlay elsewhere), the selected layer with the moving selection between
+        /// its lower and upper strokes, then the layers above.
+        private func selectionArtwork(_ frame: WatchBitmapRenderer.ScreenFrame,
+                                      _ texture: WatchBitmapRenderer.SelectionTexture) -> some View {
+            let area = texture.staticRect, scale = texture.staticScale
+            let paper = CGRect(origin: .zero, size: key.size)
+            return ZStack(alignment: .topLeading) {
+                if let underlay = texture.underlay {
+                    Image(decorative: underlay, scale: CGFloat(underlay.width) / max(1, key.size.width))
+                        .resizable()
+                        .frame(width: key.size.width, height: key.size.height)
+                        .mask {
+                            Path { path in
+                                path.addRect(paper)
+                                path.addRect(area)
+                            }
+                            .fill(style: FillStyle(eoFill: true))
+                        }
+                }
+                placed(frame.background, at: area.origin, scale: scale)
+                ZStack(alignment: .topLeading) {
+                    if let image = texture.layerBelow {
+                        placed(image, at: area.origin, scale: scale)
+                    }
+                    placed(texture.image, at: texture.rect.origin, scale: texture.scale)
+                        .transformEffect(displayedTransform(texture))
+                    if let image = texture.layerAbove {
+                        placed(image, at: area.origin, scale: scale)
+                    }
+                }
+                .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+                .clipped()
+                .compositingGroup()
+                .opacity(Double(texture.opacity))
+                if let image = texture.upperLayers {
+                    placed(image, at: area.origin, scale: scale)
+                }
+            }
+            .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
+            .clipped()
+            .frame(width: paperSize.width, height: paperSize.height, alignment: .topLeading)
         }
 
         /// A region frame rendered for the current place and resolution always shows; it
@@ -175,7 +255,16 @@ struct WatchRasterArtwork: View {
             return showsStaleFrame && shown.documentRevision == key.documentRevision
         }
 
+        @ViewBuilder
         private func artwork(_ frame: WatchBitmapRenderer.ScreenFrame) -> some View {
+            if let texture = frame.selection {
+                selectionArtwork(frame, texture)
+            } else {
+                documentArtwork(frame)
+            }
+        }
+
+        private func documentArtwork(_ frame: WatchBitmapRenderer.ScreenFrame) -> some View {
             // A region frame keeps the place and size it was rendered for until its
             // successor arrives; panning must not move stale pixels to a new place.
             let shown = isRegion ? (frames.frameKey ?? key) : key
@@ -185,30 +274,6 @@ struct WatchRasterArtwork: View {
                     .pixelGrid(isOnPixelGrid(shown.scale))
                     .resizable()
                     .frame(width: backgroundSize.width, height: backgroundSize.height)
-                if let texture = frame.selection {
-                    ZStack(alignment: .topLeading) {
-                        if let image = texture.layerBelow {
-                            staticTexture(image)
-                        }
-                        Image(decorative: texture.image, scale: texture.key.scale)
-                            .pixelGrid(isOnPixelGrid(texture.key.scale))
-                            .resizable()
-                            .frame(width: texture.rect.width, height: texture.rect.height)
-                            .offset(x: texture.rect.minX, y: texture.rect.minY)
-                            .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
-                            .transformEffect(displayedTransform(texture))
-                        if let image = texture.layerAbove {
-                            staticTexture(image)
-                        }
-                    }
-                    .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
-                    .clipped()
-                    .compositingGroup()
-                    .opacity(Double(texture.opacity))
-                    if let image = texture.upperLayers {
-                        staticTexture(image)
-                    }
-                }
                 ForEach(frame.tiles) { tile in
                     Image(decorative: tile.image, scale: shown.scale)
                         .pixelGrid(isOnPixelGrid(shown.scale))
@@ -246,16 +311,20 @@ struct WatchRasterArtwork: View {
                         .frame(width: paperSize.width, height: paperSize.height, alignment: .topLeading)
                 }
             }
-            .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: hasSelectionTexture ? nil : selectionPreview?.transform)) { @MainActor in
+            .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: hasSelectionTexture ? nil : selectionPreview?.transform,
+                              viewport: selectionPreview == nil ? nil : selectionViewport)) { @MainActor in
                 if hasSelectionTexture { return }
-                frames.submit(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke,
+                frames.submit(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview,
+                              selectionViewport: selectionViewport, strokes: strokes, activeStroke: activeStroke,
                               activeStrokeRevision: activeStrokeRevision, key: key, activeStrokeID: activeStrokeID,
                               animatesClear: activeStroke == nil && key.documentRevision == clearDocumentRevision,
                               priority: rendersInBackground ? .utility : nil)
             }
-            .task(id: Request(key: key, activeStrokeRevision: 0, sessionID: selectionSeed?.sessionID, transform: nil)) {
-                await frames.prepareSelection(selectionSeed, key: key)
+            .task(id: Request(key: selectionViewport == nil ? key : sceneKey, activeStrokeRevision: 0,
+                              sessionID: selectionSeed?.sessionID, transform: nil, viewport: selectionViewport)) {
+                await frames.prepareSelection(selectionSeed, key: key, viewport: selectionViewport)
             }
+            .onChange(of: showsSelection, initial: true) { _, shown in onSelectionShown(shown) }
             .onChange(of: selectionPreview?.transform) { old, new in
                 if new == nil, let old {
                     finishedTransform = old
@@ -486,20 +555,34 @@ private final class CanvasFrameQueue: ObservableObject {
     @Published private(set) var frame: WatchBitmapRenderer.ScreenFrame?
     /// The key `frame` was rendered for.
     private(set) var frameKey: WatchBitmapRenderer.CacheKey?
+    /// The lasso session `frame` previews (textures or a replay), nil for a document frame.
+    private(set) var frameSessionID: UUID?
     @Published private(set) var preparedFrame: WatchBitmapRenderer.ScreenFrame?
     private let renderer = WatchArtworkRenderer()
     private var preparationID = UUID()
 
-    func prepareSelection(_ seed: WatchSelectionPreview?, key: WatchBitmapRenderer.CacheKey) async {
+    func prepareSelection(_ seed: WatchSelectionPreview?, key: WatchBitmapRenderer.CacheKey,
+                          viewport: WatchBitmapRenderer.SelectionViewport? = nil) async {
         let token = UUID()
         preparationID = token
         // Keep the previous interactive texture until its committed frame arrives.
         // A new seed is published as soon as the finger is released, and clearing
         // here could discard that texture before the view has a chance to hold it.
         guard let seed else { return }
-        let next = await renderer.prepareSelectionFrame(seed, key: key)
+        // Textures of this session exist: a new view or zoom prepares them again only once
+        // it settles (the textures shown meanwhile still fit, stretched or with the underlay).
+        if preparedFrame?.selection?.sessionID == seed.sessionID {
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
+        }
+        RenderDiagnostics.setSelectionPath("preparing")
+        let next = await renderer.prepareSelectionFrame(seed, key: key, viewport: viewport)
         guard !Task.isCancelled, preparationID == token, next?.selection != nil else { return }
         preparedFrame = next
+        // Second stage, after the textures are on screen: the scene outside their area.
+        guard let full = await renderer.prepareSelectionUnderlay(seed, key: key, viewport: viewport),
+              !Task.isCancelled, preparationID == token, full.selection?.sessionID == seed.sessionID else { return }
+        preparedFrame = full
+        if frame?.selection?.sessionID == seed.sessionID { frame = full }
     }
 
     func holdPreparedSelection(sessionID: UUID) {
@@ -511,6 +594,7 @@ private final class CanvasFrameQueue: ObservableObject {
         }
         if let preparedFrame, preparedFrame.selection?.sessionID == sessionID {
             frame = preparedFrame
+            frameSessionID = sessionID
         }
     }
 
@@ -518,6 +602,7 @@ private final class CanvasFrameQueue: ObservableObject {
         let document: CanvasDocument?
         let selectedLayerID: UUID?
         let selectionPreview: WatchSelectionPreview?
+        let selectionViewport: WatchBitmapRenderer.SelectionViewport?
         let strokes: [Stroke]
         let activeStroke: Stroke?
         let key: WatchBitmapRenderer.CacheKey
@@ -534,7 +619,8 @@ private final class CanvasFrameQueue: ObservableObject {
     private var worker: Task<Void, Never>?
     private var generation: UInt64 = 0
 
-    func submit(document: CanvasDocument?, selectedLayerID: UUID?, selectionPreview: WatchSelectionPreview?, strokes: [Stroke], activeStroke: Stroke?,
+    func submit(document: CanvasDocument?, selectedLayerID: UUID?, selectionPreview: WatchSelectionPreview?,
+                selectionViewport: WatchBitmapRenderer.SelectionViewport? = nil, strokes: [Stroke], activeStroke: Stroke?,
                 activeStrokeRevision: UInt64 = 0, key: WatchBitmapRenderer.CacheKey,
                 activeStrokeID: UInt64, animatesClear: Bool = false, priority: TaskPriority? = nil) {
         // Direct submit already queued this live sample; drop the `.task(id:)` duplicate.
@@ -544,7 +630,8 @@ private final class CanvasFrameQueue: ObservableObject {
            latest.activeStrokeRevision == activeStrokeRevision { return }
         if !animatesClear, clearTransition != nil { clearTransition = nil }
         if pending != nil { RenderDiagnostics.frameCoalesced() }
-        let job = Job(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID, animatesClear: animatesClear,
+        let job = Job(document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview,
+                      selectionViewport: selectionViewport, strokes: strokes, activeStroke: activeStroke, key: key, activeStrokeID: activeStrokeID, animatesClear: animatesClear,
                       activeStrokeRevision: activeStrokeRevision,
                       submittedAt: RenderDiagnostics.begin(),
                       eventAt: RenderDiagnostics.frameSubmitted(live: activeStroke != nil))
@@ -572,7 +659,7 @@ private final class CanvasFrameQueue: ObservableObject {
         let result: WatchBitmapRenderer.ScreenFrame?
         if let preview = job.selectionPreview {
             RenderDiagnostics.setPath("lasso")
-            result = await renderer.selectionFrame(preview, key: job.key)
+            result = await renderer.selectionFrame(preview, key: job.key, viewport: job.selectionViewport)
         } else if let document = job.document {
             RenderDiagnostics.setPath("layers")
             result = await renderer.layeredFrame(document: document, activeStroke: job.activeStroke,
@@ -604,6 +691,7 @@ private final class CanvasFrameQueue: ObservableObject {
             if job.activeStroke == nil { heldTipStroke = nil }
             // Plain property, set before the published frame that re-evaluates the body.
             frameKey = job.key
+            frameSessionID = job.selectionPreview?.sessionID
             self.frame = next
             // Assign only on change: every @Published write re-evaluates the raster body.
             let result = PreparedResult(key: job.key, succeeded: true)
@@ -611,7 +699,7 @@ private final class CanvasFrameQueue: ObservableObject {
             RenderDiagnostics.framePublished(live: job.activeStroke != nil, submittedAt: job.submittedAt,
                                              eventAt: job.eventAt, tiles: next.tiles.count)
             if let texture = next.selection, let pending = self.pending,
-               pending.key == texture.key,
+               WatchBitmapRenderer.SelectionRenderCache.sameScene(pending.key, texture.key),
                pending.selectionPreview?.sessionID == texture.sessionID {
                 self.pending = nil
             }

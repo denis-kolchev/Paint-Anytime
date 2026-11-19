@@ -154,14 +154,23 @@ actor WatchArtworkRenderer {
         historyFrames.append(HistoryFrame(key: key, frame: frame, bytes: bytes))
     }
 
-    func prepareSelectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
-        selection.render(preview, key: key, allowReplay: false)
+    func prepareSelectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey,
+                               viewport: WatchBitmapRenderer.SelectionViewport? = nil) -> WatchBitmapRenderer.ScreenFrame? {
+        selection.render(preview, key: key, viewport: viewport, allowReplay: false)
     }
 
-    func selectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey) -> WatchBitmapRenderer.ScreenFrame? {
+    /// The prepared textures plus the low-resolution scene outside their area, or nil
+    /// when that is not needed or the textures changed meanwhile.
+    func prepareSelectionUnderlay(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey,
+                                  viewport: WatchBitmapRenderer.SelectionViewport?) -> WatchBitmapRenderer.ScreenFrame? {
+        selection.prepareUnderlay(preview, key: key, viewport: viewport)
+    }
+
+    func selectionFrame(_ preview: WatchSelectionPreview, key: WatchBitmapRenderer.CacheKey,
+                        viewport: WatchBitmapRenderer.SelectionViewport? = nil) -> WatchBitmapRenderer.ScreenFrame? {
         let started = RenderDiagnostics.begin()
         defer { RenderDiagnostics.workEnded(started) }
-        return selection.render(preview, key: key)
+        return selection.render(preview, key: key, viewport: viewport)
     }
 
     func layeredFrame(document: CanvasDocument, activeStroke: Stroke?, selectedLayerID: UUID?,

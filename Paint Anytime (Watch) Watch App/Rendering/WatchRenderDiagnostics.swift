@@ -210,6 +210,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     private var probeTimer: DispatchSourceTimer?
     private var probeInFlight = false
     private var path = "—"
+    private var selectionPath = ""
     /// Pencil/pastel work per live frame, summed over the HUD window.
     private var dryFrames = 0
     private var dryIncremental = false
@@ -613,6 +614,13 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
         shared.locked { shared.path = name }
     }
 
+    /// How the lasso preview is drawn: exact or approximate textures (with their scales),
+    /// preparing, or replay of the document per move (and why). Kept until the next change.
+    static func setSelectionPath(_ text: String) {
+        guard RenderDebug.isEnabled else { return }
+        shared.locked { shared.selectionPath = text }
+    }
+
     private func record(_ span: RenderSpan, _ value: UInt64) {
         locked {
             spans[span.rawValue].add(value)
@@ -681,6 +689,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
                 "pub→idle \(avgMax(publishToIdle)) · tiles \(tiles) · body \(rate(bodies[RenderCounter.raster.rawValue]))"
                     + "/\(rate(bodies[RenderCounter.canvas.rawValue]))/\(rate(bodies[RenderCounter.screen.rawValue]))",
             ] + (extra.isEmpty ? [] : [extra.joined(separator: " ") + " · \(path)"])
+              + (selectionPath.isEmpty ? [] : ["lasso " + selectionPath])
               + dryLines(ms)
               + shapeLines()).joined(separator: "\n")
             spans = Array(repeating: Accumulator(), count: RenderSpan.allCases.count)
