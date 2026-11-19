@@ -61,29 +61,15 @@ private struct AutosaveSpinner: View {
     }
 }
 
-/// The caption-sized ring of an autosave's estimated time, replacing the loading wheel
-/// once the estimate exists: the same stroke as the wheel, filling clockwise from the
-/// top as the time passes (the save overlay's bar, as a ring). Reads the model here, so
-/// its updates redraw only the ring.
+/// The caption-sized ring of an autosave's progress, replacing the loading wheel once
+/// the estimate exists: the explicit Save's ring at the wheel's size and stroke.
 private struct AutosaveProgressRing: View {
     let progress: SaveProgressModel
     @ScaledMetric(relativeTo: .caption2) private var diameter: CGFloat = 11
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        let fraction = min(1, max(0, progress.fraction ?? 0))
-        ZStack {
-            Circle()
-                .stroke(.primary.opacity(0.3), lineWidth: 1.6)
-            Circle()
-                .trim(from: 0, to: fraction)
-                .stroke(.primary, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-        }
-        .frame(width: diameter, height: diameter)
-        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: fraction)
-        .accessibilityLabel(L10n.text("Autosaving…"))
-        .accessibilityValue(progress.remaining.map { SaveDurationText.spoken($0) } ?? "")
+        SaveProgressRingView(progress: progress, diameter: diameter, lineWidth: 1.6)
+            .accessibilityLabel(L10n.text("Autosaving…"))
     }
 }
 

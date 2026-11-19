@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// Estimated progress of one running save, for the save overlay or the autosave capsule.
+/// Estimated progress of one running save, for the Save overlay ring or the autosave capsule ring.
 /// Separate from `DrawingSessionController` so its updates (a few per second) redraw
 /// only the small views that read it, not the canvas screen.
 ///
@@ -116,7 +116,7 @@ final class SaveProgressModel {
         } else {
             remaining = left
         }
-        // Never moves back (the save bar and the autosave ring both read it). Each update
+        // Never moves back (the Save overlay ring and the autosave ring both read it). Each update
         // it covers the share of its unfilled part that this step is of the time left, so
         // it slows down when the estimate grows and would end with the save; it jumps
         // forward when the estimate shrinks.
