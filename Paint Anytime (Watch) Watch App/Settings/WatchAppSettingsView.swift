@@ -123,6 +123,11 @@ struct WatchAppSettingsView: View {
             }
             canvasLink
             NavigationLink {
+                DisplaySettingsView()
+            } label: {
+                Label(L10n.text("Display"), systemImage: "eye")
+            }
+            NavigationLink {
                 TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
             } label: {
                 Label(L10n.text("Tutorial"), systemImage: "graduationcap")

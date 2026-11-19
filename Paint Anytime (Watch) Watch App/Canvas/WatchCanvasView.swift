@@ -94,6 +94,11 @@ struct WatchCanvasView: View {
     /// The canvas viewport, for the Crown's zoom limit (the Crown modifier sits outside
     /// the GeometryReader).
     @State private var viewportSize = CGSize.zero
+    @AppStorage(CanvasPixelView.storageKey) private var showsPixels = false
+    /// The tutorial's canvases keep the regular rendering.
+    private var pixelGridScale: CGFloat? {
+        showsPixels && !tutorial.isActive ? CanvasPixelView.gridScale(displayScale: displayScale) : nil
+    }
     @State private var offset = CGSize.zero
     @State private var panOrigin: CGSize?
     @State private var acceptsCurrentGesture: Bool?
@@ -233,7 +238,7 @@ struct WatchCanvasView: View {
                                 activeStrokeRevision: paperIsLive ? controller.activeStrokeRevision : 0,
                                 activeStrokeID: controller.activeStrokeID, onFramePrepared: onArtworkPrepared, zoom: lasso.isActive ? zoom : 1,
                                 fit: fit, liveSubmitter: paperIsLive ? liveSubmitter : nil,
-                                allowsInkTip: paperIsLive && allowsInkTip)
+                                allowsInkTip: paperIsLive && allowsInkTip, pixelGridScale: pixelGridScale)
                             if !lasso.isActive {
                                 ForEach(tiles) { tile in
                                     let live = liveIDs.contains(tile.id)
@@ -250,7 +255,8 @@ struct WatchCanvasView: View {
                                         },
                                         zoom: zoom, fit: fit, liveSubmitter: live ? liveSubmitter : nil,
                                         allowsInkTip: live && tile.id == tipTile && allowsInkTip, region: tile.region,
-                                        rendersInBackground: !tile.rect.intersects(visibleRect))
+                                        rendersInBackground: !tile.rect.intersects(visibleRect),
+                                        pixelGridScale: pixelGridScale)
                                         .opacity(shownIDs.contains(tile.id) ? 1 : 0)
                                 }
                             }
@@ -1016,12 +1022,15 @@ struct WatchCanvasView: View {
     private func tilePlan(size: CGSize, paper: CGSize, fit: CGFloat) -> TilePlan? {
         guard !lasso.isActive, zoom > 1, fit.isFinite, fit > 0 else { return nil }
         let layers = controller.document.layers.count
-        let base = WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: 1, fit: fit,
-                                                   canvasSize: paper, layerCount: layers)
+        let screenBase = WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: 1, fit: fit,
+                                                         canvasSize: paper, layerCount: layers)
+        let grid = pixelGridScale
+        let base = grid.map { min(screenBase, $0) } ?? screenBase
         // Steps of √2: zooming within a step keeps the tiles, and the step at or above the
         // screen's need keeps them sharp; ×2 steps would cost up to 4× the pixels.
         let shown = displayScale * fit * CGFloat(zoom)
-        let needed = min(WatchBitmapRenderer.maximumRegionScale,
+        // Pixel view: never finer than the saved grid; past it the grid's tiles are magnified.
+        let needed = min(grid ?? WatchBitmapRenderer.maximumRegionScale,
                          pow(2, (log2(shown) * 2 - 0.001).rounded(.up) / 2))
         guard needed > base + 0.01 else { return nil }
         let bounds = CGRect(origin: .zero, size: paper)

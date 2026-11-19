@@ -34,6 +34,9 @@ struct WatchRasterArtwork: View {
     /// Renders at utility priority: tiles around the view, prepared for a pan, must not
     /// take the cores from the tiles on screen or from the live stroke.
     var rendersInBackground = false
+    /// Pixel view (`CanvasPixelView`): the saved grid's scale, nil when off. Caps the
+    /// raster at that scale; rasters on it are magnified without smoothing.
+    var pixelGridScale: CGFloat? = nil
     @State private var rasterZoom: Double = 1
 
     /// Part of the canvas rendered at a resolution the full canvas could not afford.
@@ -52,11 +55,12 @@ struct WatchRasterArtwork: View {
                                                 size: region.size, scale: region.scale, origin: region.origin,
                                                 isRegion: true)
         }
+        // Keep the previous resolution until Crown input settles.
+        let scale = WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom,
+            fit: fit, canvasSize: paperSize, layerCount: document?.layers.count ?? 1)
         return WatchBitmapRenderer.CacheKey(documentID: documentID,
             documentRevision: documentRevision, size: paperSize,
-            // Keep the previous resolution until Crown input settles.
-            scale: WatchBitmapRenderer.rasterScale(displayScale: displayScale, zoom: rasterZoom,
-                fit: fit, canvasSize: paperSize, layerCount: document?.layers.count ?? 1))
+            scale: pixelGridScale.map { min(scale, $0) } ?? scale)
     }
     @Environment(\.displayScale) private var displayScale
 
@@ -68,6 +72,7 @@ struct WatchRasterArtwork: View {
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
                         key: key(paperSize: geometry.size), paperSize: geometry.size, isRegion: region != nil,
                         showsStaleFrame: showsStaleRegionFrame, rendersInBackground: rendersInBackground,
+                        pixelGridScale: pixelGridScale,
                         liveSubmitter: liveSubmitter, allowsInkTip: allowsInkTip && selectionPreview == nil)
         }
         .task(id: zoom) {
@@ -100,6 +105,7 @@ struct WatchRasterArtwork: View {
         let isRegion: Bool
         let showsStaleFrame: Bool
         let rendersInBackground: Bool
+        let pixelGridScale: CGFloat?
         var liveSubmitter: LiveFrameSubmitter?
         var allowsInkTip: Bool
 
@@ -131,6 +137,7 @@ struct WatchRasterArtwork: View {
         private func staticTexture(_ image: CGImage) -> some View {
             let size = Self.pointSize(of: image, key: key)
             return Image(decorative: image, scale: key.scale)
+                .pixelGrid(isOnPixelGrid(key.scale))
                 .resizable()
                 .frame(width: size.width, height: size.height)
                 .frame(width: key.size.width, height: key.size.height, alignment: .topLeading)
@@ -141,6 +148,10 @@ struct WatchRasterArtwork: View {
         /// it: content drifted by up to a fraction of a pixel, which zoom magnifies into a
         /// visible jump against the sharp region and misplaced the pixel-exact live tiles.
         /// Each pixel spans exactly `1 / scale` points; the caller clips the overhang.
+        private func isOnPixelGrid(_ scale: CGFloat) -> Bool {
+            pixelGridScale.map { abs(scale - $0) < 0.01 } ?? false
+        }
+
         private static func pointSize(of image: CGImage, key: WatchBitmapRenderer.CacheKey) -> CGSize {
             guard image.width == Int(ceil(key.size.width * key.scale)),
                   image.height == Int(ceil(key.size.height * key.scale)) else { return key.size }
@@ -171,6 +182,7 @@ struct WatchRasterArtwork: View {
             let backgroundSize = Self.pointSize(of: frame.background, key: shown)
             return ZStack(alignment: .topLeading) {
                 Image(decorative: frame.background, scale: shown.scale)
+                    .pixelGrid(isOnPixelGrid(shown.scale))
                     .resizable()
                     .frame(width: backgroundSize.width, height: backgroundSize.height)
                 if let texture = frame.selection {
@@ -179,6 +191,7 @@ struct WatchRasterArtwork: View {
                             staticTexture(image)
                         }
                         Image(decorative: texture.image, scale: texture.key.scale)
+                            .pixelGrid(isOnPixelGrid(texture.key.scale))
                             .resizable()
                             .frame(width: texture.rect.width, height: texture.rect.height)
                             .offset(x: texture.rect.minX, y: texture.rect.minY)
@@ -198,6 +211,7 @@ struct WatchRasterArtwork: View {
                 }
                 ForEach(frame.tiles) { tile in
                     Image(decorative: tile.image, scale: shown.scale)
+                        .pixelGrid(isOnPixelGrid(shown.scale))
                         .resizable()
                         .frame(width: tile.rect.width, height: tile.rect.height)
                         .offset(x: tile.rect.minX, y: tile.rect.minY)
