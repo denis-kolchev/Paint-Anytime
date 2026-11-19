@@ -149,21 +149,22 @@ struct WatchCanvasView: View {
 
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
 
-    static let minimumZoom = 0.25
-    /// Up to 3200%, stopping once one canvas point fills `maximumPointZoom` screen points:
-    /// past that a small canvas shows only a few points of flat colour. Never below 800%.
-    static let maximumZoomLimit = 32.0
-    static let maximumPointZoom = 16.0
-    /// Crown detent in log2 of zoom: every click changes zoom by the same ~3.5%, so the
-    /// whole 25–3200% range is ~140 clicks, as 25–800% was with linear 0.05 steps.
-    static let crownLogStep = 0.05
+    /// Up to 12800%, stopping once one canvas point fills `maximumPointZoom` screen points
+    /// (one saved pixel 32 points on a 2× display): a screen-sized canvas reaches 6400%,
+    /// a 1024 pt one 12800%. Never below `minimumMaximumZoom`. Rounded down to a Crown
+    /// stop (`CanvasZoomStops`), so the limit is a round percent too.
+    static let maximumZoomLimit = 128.0
+    static let maximumPointZoom = 64.0
+    static let minimumMaximumZoom = 32.0
 
-    private var maximumZoom: Double {
-        guard viewportSize.width > 0, viewportSize.height > 0 else { return 8 }
+    private var maximumZoomIndex: Int {
+        guard viewportSize.width > 0, viewportSize.height > 0 else { return CanvasZoomStops.lastIndex(atMost: 8) }
         let fit = Double(canvasFit(viewportSize))
-        guard fit.isFinite, fit > 0 else { return 8 }
-        return min(Self.maximumZoomLimit, max(8, Self.maximumPointZoom / fit))
+        guard fit.isFinite, fit > 0 else { return CanvasZoomStops.lastIndex(atMost: 8) }
+        let limit = min(Self.maximumZoomLimit, max(Self.minimumMaximumZoom, Self.maximumPointZoom / fit))
+        return CanvasZoomStops.lastIndex(atMost: limit)
     }
+    private var maximumZoom: Double { CanvasZoomStops.all[maximumZoomIndex] }
     @FocusState private var crownFocused: Bool
     /// watchOS flashes the Crown indicator when the canvas takes Crown focus, for example
     /// as it appears after the welcome flow. The system can focus the canvas itself in the
@@ -639,12 +640,13 @@ struct WatchCanvasView: View {
         .focusable(acceptsInput || acceptsZoomOnlyInput)
         .focused($crownFocused)
         .digitalCrownRotation(detent: Binding(
-            get: { log2(crownZoom) },
-            set: { logValue in
+            // The Crown turns through stop indices; each detent is one round percent.
+            get: { Double(CanvasZoomStops.index(nearest: crownZoom)) },
+            set: { position in
                 guard tutorial.allowsCanvasZoom else { return }
                 guard (acceptsInput || acceptsZoomOnlyInput) && !isDragging && controller.activeStroke == nil else { return }
-                // Detents are multiples of the step; 0 maps back to exactly 100%.
-                let value = min(maximumZoom, max(Self.minimumZoom, pow(2, logValue)))
+                let index = min(maximumZoomIndex, max(0, Int(position.rounded())))
+                let value = CanvasZoomStops.all[index]
                 guard abs(value - crownZoom) > 0.000_1 else { return }
                 let previousZoom = zoom
                 let wasSnapped = previousZoom == 1
@@ -658,14 +660,14 @@ struct WatchCanvasView: View {
                 tutorial.changedZoom()
                 if zoom == 1 && !wasSnapped { WKInterfaceDevice.current().play(.click) }
             }
-        ), from: log2(Self.minimumZoom), through: log2(maximumZoom), by: Self.crownLogStep, sensitivity: .low,
+        ), from: 0, through: Double(maximumZoomIndex), by: 1, sensitivity: .low,
            isContinuous: false, isHapticFeedbackEnabled: false,
            onChange: { [step = tutorial.step] event in
                 tutorial.usedCrown(in: step, velocity: event.velocity)
             })
         .digitalCrownAccessory(hidesCrownIndicator ? .hidden : .automatic)
         .accessibilityLabel(lasso.isActive ? L10n.text(lasso.mode.title) : isMovingCanvas ? L10n.text("Moving canvas") : L10n.text("Finger drawing canvas"))
-        .accessibilityValue(L10n.format("Zoom %d percent", Int(zoom * 100)))
+        .accessibilityValue(L10n.format("Zoom %d percent", Int((zoom * 100).rounded())))
         .task(id: CrownFocusRequest(enabled: shouldFocusCrown, step: tutorial.step)) {
             crownFocused = false
             guard shouldFocusCrown else { return }
