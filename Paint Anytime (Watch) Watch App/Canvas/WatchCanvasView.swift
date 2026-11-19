@@ -91,6 +91,9 @@ struct WatchCanvasView: View {
     /// The protected control the current gesture started on.
     @State private var protectedStartControl: CanvasToolbarControl?
     @State private var crownZoom = 1.0
+    /// The canvas viewport, for the Crown's zoom limit (the Crown modifier sits outside
+    /// the GeometryReader).
+    @State private var viewportSize = CGSize.zero
     @State private var offset = CGSize.zero
     @State private var panOrigin: CGSize?
     @State private var acceptsCurrentGesture: Bool?
@@ -137,6 +140,22 @@ struct WatchCanvasView: View {
     }
 
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
+
+    static let minimumZoom = 0.25
+    /// Up to 3200%, stopping once one canvas point fills `maximumPointZoom` screen points:
+    /// past that a small canvas shows only a few points of flat colour. Never below 800%.
+    static let maximumZoomLimit = 32.0
+    static let maximumPointZoom = 16.0
+    /// Crown detent in log2 of zoom: every click changes zoom by the same ~3.5%, so the
+    /// whole 25–3200% range is ~140 clicks, as 25–800% was with linear 0.05 steps.
+    static let crownLogStep = 0.05
+
+    private var maximumZoom: Double {
+        guard viewportSize.width > 0, viewportSize.height > 0 else { return 8 }
+        let fit = Double(canvasFit(viewportSize))
+        guard fit.isFinite, fit > 0 else { return 8 }
+        return min(Self.maximumZoomLimit, max(8, Self.maximumPointZoom / fit))
+    }
     @FocusState private var crownFocused: Bool
     /// watchOS flashes the Crown indicator when the canvas takes Crown focus, for example
     /// as it appears after the welcome flow. The system can focus the canvas itself in the
@@ -400,6 +419,7 @@ struct WatchCanvasView: View {
             .onChange(of: geometry.size) { _, size in
                 if isEyedropperActive { prepareSampler(size: size) }
             }
+            .onChange(of: geometry.size, initial: true) { _, size in viewportSize = size }
             .onChange(of: controller.documentRevision) { _, _ in
                 if isEyedropperActive { prepareSampler(size: geometry.size) }
             }
@@ -610,11 +630,13 @@ struct WatchCanvasView: View {
         .focusable(acceptsInput || acceptsZoomOnlyInput)
         .focused($crownFocused)
         .digitalCrownRotation(detent: Binding(
-            get: { crownZoom },
-            set: { value in
+            get: { log2(crownZoom) },
+            set: { logValue in
                 guard tutorial.allowsCanvasZoom else { return }
                 guard (acceptsInput || acceptsZoomOnlyInput) && !isDragging && controller.activeStroke == nil else { return }
-                guard value != crownZoom else { return }
+                // Detents are multiples of the step; 0 maps back to exactly 100%.
+                let value = min(maximumZoom, max(Self.minimumZoom, pow(2, logValue)))
+                guard abs(value - crownZoom) > 0.000_1 else { return }
                 let previousZoom = zoom
                 let wasSnapped = previousZoom == 1
                 if !lasso.isActive { isMovingCanvas = true }
@@ -627,7 +649,7 @@ struct WatchCanvasView: View {
                 tutorial.changedZoom()
                 if zoom == 1 && !wasSnapped { WKInterfaceDevice.current().play(.click) }
             }
-        ), from: 0.25, through: 8, by: 0.05, sensitivity: .low,
+        ), from: log2(Self.minimumZoom), through: log2(maximumZoom), by: Self.crownLogStep, sensitivity: .low,
            isContinuous: false, isHapticFeedbackEnabled: false,
            onChange: { [step = tutorial.step] event in
                 tutorial.usedCrown(in: step, velocity: event.velocity)
@@ -679,6 +701,13 @@ struct WatchCanvasView: View {
             if moving { controller.cancelStroke() }
             panOrigin = nil
             if !moving && zoom == 1 { crownZoom = 1 }
+        }
+        // A resized canvas or viewport can lower the limit below the current zoom.
+        .onChange(of: maximumZoom) { _, limit in
+            guard crownZoom > limit else { return }
+            let ratio = limit / zoom
+            crownZoom = limit
+            offset = CGSize(width: offset.width * ratio, height: offset.height * ratio)
         }
         .onChange(of: acceptsInput) { _, enabled in
             TutorialDebug.trace("canvas.enabled.enter", "value=\(enabled)")
