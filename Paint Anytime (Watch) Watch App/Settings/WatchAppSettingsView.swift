@@ -123,11 +123,6 @@ struct WatchAppSettingsView: View {
             }
             canvasLink
             NavigationLink {
-                DisplaySettingsView()
-            } label: {
-                Label(L10n.text("Display"), systemImage: "eye")
-            }
-            NavigationLink {
                 TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
             } label: {
                 Label(L10n.text("Tutorial"), systemImage: "graduationcap")
@@ -379,8 +374,9 @@ struct CanvasSettingsView: View {
                 canvasEditorRow
                 perspectiveRow
             } else {
-                // Aids for the current drawing first, then its paper, then the app's layout,
-                // which is set up once. Deliberately differs from the tutorial's order.
+                // By how often they are opened: aids for the current drawing first, then its
+                // paper, then app-wide choices set once (how zoom shows pixels, then the
+                // controls' layout). Deliberately differs from the tutorial's order.
                 perspectiveRow
                 // The tour has no lesson for it, so its canvas never shows a reference.
                 NavigationLink {
@@ -389,6 +385,12 @@ struct CanvasSettingsView: View {
                     Label(L10n.text("Reference"), systemImage: "photo")
                 }
                 canvasSizeRow
+                // Changed now and then for pixel work, more often than the layout.
+                NavigationLink {
+                    DisplaySettingsView()
+                } label: {
+                    Label(L10n.text("Display"), systemImage: "eye")
+                }
                 canvasEditorRow
             }
         }
