@@ -105,10 +105,10 @@ nonisolated enum WatchBitmapRenderer {
     }
 
     /// Highest resolution of a viewport region: on a 2× display, the canvas's zoom limit
-    /// (one canvas point over `WatchCanvasView.maximumPointZoom` = 64 screen points).
+    /// (one canvas point over `WatchCanvasView.maximumPointZoom` = 128 screen points).
     /// Tiles cover about one screen of pixels whatever their scale, so this costs no
     /// memory; stamp spacing is in canvas points, so no extra stamps per tile either.
-    static let maximumRegionScale: CGFloat = 128
+    static let maximumRegionScale: CGFloat = 256
 
     /// Screen raster resolution, in pixels per canvas point.
     ///

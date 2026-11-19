@@ -149,12 +149,13 @@ struct WatchCanvasView: View {
 
     private var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
 
-    /// Up to 12800%, stopping once one canvas point fills `maximumPointZoom` screen points
-    /// (one saved pixel 32 points on a 2× display): a screen-sized canvas reaches 6400%,
-    /// a 1024 pt one 12800%. Never below `minimumMaximumZoom`. Rounded down to a Crown
-    /// stop (`CanvasZoomStops`), so the limit is a round percent too.
-    static let maximumZoomLimit = 128.0
-    static let maximumPointZoom = 64.0
+    /// Up to 51200%, stopping once one canvas point fills `maximumPointZoom` screen points
+    /// (one saved pixel 64 points on a 2× display): a screen-sized canvas reaches 12800%
+    /// (~1.5 points of it across the screen), a 1024 pt one 51200%. Never below
+    /// `minimumMaximumZoom`. Rounded down to a Crown stop (`CanvasZoomStops`), so the
+    /// limit is a round percent too.
+    static let maximumZoomLimit = 512.0
+    static let maximumPointZoom = 128.0
     static let minimumMaximumZoom = 32.0
 
     private var maximumZoomIndex: Int {
@@ -641,11 +642,14 @@ struct WatchCanvasView: View {
         .focused($crownFocused)
         .digitalCrownRotation(detent: Binding(
             // The Crown turns through stop indices; each detent is one round percent.
-            get: { Double(CanvasZoomStops.index(nearest: crownZoom)) },
+            // Positions are `crownStep` apart, not 1: the Crown's rotation per click
+            // follows the value distance, and 1 per stop made every click take far more
+            // turning than the earlier 0.05 log2 steps.
+            get: { Double(CanvasZoomStops.index(nearest: crownZoom)) * CanvasZoomStops.crownStep },
             set: { position in
                 guard tutorial.allowsCanvasZoom else { return }
                 guard (acceptsInput || acceptsZoomOnlyInput) && !isDragging && controller.activeStroke == nil else { return }
-                let index = min(maximumZoomIndex, max(0, Int(position.rounded())))
+                let index = min(maximumZoomIndex, max(0, Int((position / CanvasZoomStops.crownStep).rounded())))
                 let value = CanvasZoomStops.all[index]
                 guard abs(value - crownZoom) > 0.000_1 else { return }
                 let previousZoom = zoom
@@ -660,7 +664,8 @@ struct WatchCanvasView: View {
                 tutorial.changedZoom()
                 if zoom == 1 && !wasSnapped { WKInterfaceDevice.current().play(.click) }
             }
-        ), from: 0, through: Double(maximumZoomIndex), by: 1, sensitivity: .low,
+        ), from: 0, through: Double(maximumZoomIndex) * CanvasZoomStops.crownStep,
+           by: CanvasZoomStops.crownStep, sensitivity: .low,
            isContinuous: false, isHapticFeedbackEnabled: false,
            onChange: { [step = tutorial.step] event in
                 tutorial.usedCrown(in: step, velocity: event.velocity)

@@ -7,11 +7,14 @@ import Foundation
 enum CanvasZoomStops {
     /// (first percent of the band, step) — each band runs to the next one's start.
     private static let bands: [(start: Int, step: Int)] = [
-        (25, 5), (200, 10), (400, 20), (800, 50), (1600, 100), (3200, 200), (6400, 400)
+        (25, 5), (200, 10), (400, 20), (800, 50), (1600, 100), (3200, 200), (6400, 400), (12_800, 800), (25_600, 1600)
     ]
-    static let maximumPercent = 12_800
+    static let maximumPercent = 51_200
 
-    /// All stops as zoom factors, ascending: 0.25 … 128.
+    /// Crown position per stop: the 0.05 of the log2 Crown, whose turning felt right.
+    static let crownStep = 0.05
+
+    /// All stops as zoom factors, ascending: 0.25 … 512.
     static let all: [Double] = {
         var percents: [Int] = []
         for (index, band) in bands.enumerated() {
