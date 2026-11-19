@@ -240,8 +240,10 @@ struct WatchRasterArtwork: View {
                 if allowsInkTip, RenderStageSwitches.isOn(.inkTip),
                    let stroke = frames.tipStroke(for: activeStroke) {
                     // Canvas points: the overlay spans the paper, also above a region.
-                    InkTipOverlay(stroke: stroke, renderedPoints: frames.renderedPoints(of: stroke))
-                        .frame(width: paperSize.width, height: paperSize.height)
+                    InkTipOverlay(stroke: stroke, renderedPoints: frames.renderedPoints(of: stroke),
+                                  raster: CGRect(origin: key.origin, size: key.size), rasterScale: key.scale,
+                                  isRegion: isRegion)
+                        .frame(width: paperSize.width, height: paperSize.height, alignment: .topLeading)
                 }
             }
             .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: hasSelectionTexture ? nil : selectionPreview?.transform)) { @MainActor in
@@ -341,6 +343,14 @@ final class LiveFrameSubmitter {
 private struct InkTipOverlay: View {
     let stroke: Stroke
     let renderedPoints: Int
+    /// Canvas points of the raster below and its pixels per point.
+    let raster: CGRect
+    let rasterScale: CGFloat
+    let isRegion: Bool
+    @Environment(\.displayScale) private var displayScale
+
+    /// Largest side of the tip's Canvas in pixels.
+    private static let maximumPixelSide: CGFloat = 2048
 
     static func supports(_ style: PencilStyle) -> Bool {
         switch style.instrument {
@@ -351,20 +361,59 @@ private struct InkTipOverlay: View {
         }
     }
 
+    /// The canvas view magnifies everything by the zoom (`scaleEffect`), and a Canvas
+    /// rasterizes at its own layout size: spanning the paper at the display scale, the
+    /// tip was magnified up to ~600× at the zoom limit and showed a soft edge. The Canvas
+    /// now covers only the tail, at the resolution of the raster below it (screen
+    /// resolution in zoom tiles), and is shrunk back so the zoom restores its size.
     var body: some View {
-        Canvas { context, _ in
-            guard let path = tailPath() else { return }
+        if let path = tailPath(), let area = area(of: path) {
+            let k = magnification(for: area)
             let ink = stroke.style.color
             let color = Color(.sRGB, red: Double(ink.x), green: Double(ink.y), blue: Double(ink.z), opacity: 1)
-            switch path {
-            case let .fill(shape):
-                context.fill(shape, with: .color(color))
-            case let .stroke(line, style):
-                context.stroke(line, with: .color(color), style: style)
+            Canvas { context, _ in
+                context.scaleBy(x: k, y: k)
+                context.translateBy(x: -area.minX, y: -area.minY)
+                switch path {
+                case let .fill(shape):
+                    context.fill(shape, with: .color(color))
+                case let .stroke(line, style):
+                    context.stroke(line, with: .color(color), style: style)
+                }
             }
+            .frame(width: area.width * k, height: area.height * k)
+            .scaleEffect(1 / k, anchor: .topLeading)
+            .offset(x: area.minX, y: area.minY)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
         }
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
+    }
+
+    /// The tail's bounds within reach of the raster below. A tile's tip may run into
+    /// neighbouring tiles that have not drawn the newest samples yet, so it reaches one
+    /// tile size past its own.
+    private func area(of path: TailPath) -> CGRect? {
+        let bounds: CGRect
+        switch path {
+        case let .fill(shape): bounds = shape.boundingRect
+        case let .stroke(line, style):
+            bounds = line.boundingRect.insetBy(dx: -style.lineWidth / 2, dy: -style.lineWidth / 2)
+        }
+        let reach = isRegion ? raster.insetBy(dx: -raster.width, dy: -raster.height) : raster
+        // One pixel of margin keeps the antialiased edge inside the Canvas.
+        let pad = 1 / max(1, rasterScale)
+        let area = bounds.insetBy(dx: -pad, dy: -pad).intersection(reach)
+        guard !area.isNull, area.width > 0, area.height > 0 else { return nil }
+        return area
+    }
+
+    /// Canvas points per canvas point: the raster's resolution over the display's, never
+    /// below the display's resolution unless that exceeds `maximumPixelSide`.
+    private func magnification(for area: CGRect) -> CGFloat {
+        let display = max(1, displayScale)
+        let wanted = max(1, rasterScale / display)
+        let side = max(1, max(area.width, area.height) * display)
+        return min(wanted, max(0.25, Self.maximumPixelSide / side))
     }
 
     private enum TailPath {
