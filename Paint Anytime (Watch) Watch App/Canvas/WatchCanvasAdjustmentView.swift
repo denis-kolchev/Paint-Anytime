@@ -44,7 +44,7 @@ struct WatchCanvasAdjustmentView: View {
         turns % 2 == 0 ? original : CGSize(width: original.height, height: original.width)
     }
     private var ratio: Double { turned.width / turned.height }
-    private var maximumPixels: Double { 1024 }
+    private var maximumPixels: Double { Double(PhotoImportProtocol.maximumCanvasPixelSide) }
     private var validSize: Bool {
         width >= 1 && height >= 1 && width <= maximumPixels && height <= maximumPixels
     }
@@ -84,7 +84,7 @@ struct WatchCanvasAdjustmentView: View {
                 .watchToolbarButtonStyle()
                 .disabled(!validSize || !tutorial.permits([.applyCanvasSize]))
                 .accessibilityLabel(L10n.text("Apply"))
-                .accessibilityHint(!validSize ? L10n.text("Choose dimensions from 1 to 1024 pixels.") : "")
+                .accessibilityHint(!validSize ? L10n.text("Choose dimensions from 1 to 2048 pixels.") : "")
             }
         }
         .ignoresSafeArea()

@@ -19,7 +19,7 @@ nonisolated enum WatchTransparencyClipping {
                              8192 / max(size.width, size.height))
         var preceding: [Stroke] = []
         var result: [Stroke] = []
-        var alpha: CGImage?
+        let paperPoints = CGRect(origin: .zero, size: size)
         for stroke in strokes {
             try Task.checkCancellation()
             defer { preceding.append(stroke) }
@@ -27,29 +27,29 @@ nonisolated enum WatchTransparencyClipping {
             guard stroke.locksTransparency, stroke.style.instrument != .eraser,
                   stroke.style.instrument != .blur else {
                 result.append(stroke)
-                alpha = nil
                 continue
-            }
-            if alpha == nil {
-                alpha = WatchBitmapRenderer.layerThumbnail(strokes: preceding, size: size, scale: resolution)
             }
             var ink = stroke
             ink.locksTransparency = false
-            guard let alpha,
-                  let image = WatchBitmapRenderer.layerThumbnail(strokes: [ink], size: size, scale: resolution),
-                  image.width == alpha.width, image.height == alpha.height else {
-                throw ClippingError.rendering
-            }
-            let paper = CGRect(x: 0, y: 0, width: image.width, height: image.height)
-            let bounds = try WatchBitmapRenderer.StrokeGeometry(stroke).bounds
-                .applying(CGAffineTransform(scaleX: resolution, y: resolution)).integral
-                .intersection(paper)
+            // Only the stroke's own pixels are rendered (ink and the alpha it is locked
+            // to), not the paper: on a 2048 px canvas a paper-sized float ink at 4 px per
+            // point is 256 MiB. A large stroke gets a lower resolution within the budget.
+            let pointBounds = try WatchBitmapRenderer.StrokeGeometry(stroke).bounds.intersection(paperPoints)
+            let strokeResolution = WatchBitmapRenderer.affordableResolution(resolution, for: pointBounds)
+            let paper = CGRect(x: 0, y: 0, width: ceil(size.width * strokeResolution),
+                               height: ceil(size.height * strokeResolution))
+            let bounds = pointBounds.isNull ? CGRect.null
+                : pointBounds.applying(CGAffineTransform(scaleX: strokeResolution, y: strokeResolution)).integral
+                    .intersection(paper)
             // Retain even an invisible stroke's identity without letting off-paper
             // tails reappear later when the object is translated onto the paper.
             let region = bounds.isNull || bounds.isEmpty
                 ? CGRect(x: 0, y: 0, width: 1, height: 1) : bounds
-            guard let croppedInk = image.cropping(to: region),
-                  let croppedAlpha = alpha.cropping(to: region),
+            guard let croppedInk = WatchBitmapRenderer.regionInkImage(strokes: [ink], pixels: region,
+                                                                      paper: size, scale: strokeResolution),
+                  let croppedAlpha = WatchBitmapRenderer.regionInkImage(strokes: preceding, pixels: region,
+                                                                        paper: size, scale: strokeResolution),
+                  croppedInk.width == croppedAlpha.width, croppedInk.height == croppedAlpha.height,
                   let pixels = pixelContext(croppedInk), let pixelData = pixels.data,
                   let mask = pixelContext(croppedAlpha), let maskData = mask.data else {
                 throw ClippingError.rendering
@@ -82,7 +82,7 @@ nonisolated enum WatchTransparencyClipping {
             ink.excludedAreas = []
             ink.erasures = []
             ink.raster = StrokeRaster(png: data as Data, bounds: region.applying(
-                CGAffineTransform(scaleX: 1 / resolution, y: 1 / resolution)))
+                CGAffineTransform(scaleX: 1 / strokeResolution, y: 1 / strokeResolution)))
             result.append(ink)
         }
         return result

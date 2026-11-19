@@ -14,6 +14,9 @@ nonisolated extension WatchBitmapRenderer {
         /// Serves a viewport region: strokes outside it are skipped and empty layers hold
         /// a 1×1 ink, so the incremental live buffers (sized from the base ink) stay off.
         var isRegion = false
+        /// Fill connectivity image of a canvas too large for a whole-layer float ink: an
+        /// 8-bit image assembled from strips (`fillImage`). Kept until the layer changes.
+        fileprivate var fillStripImage: (layerID: UUID, size: CGSize, revisions: [UUID], image: CGImage)?
         fileprivate var inks: [UUID: (revisions: [UUID], ink: InkSnapshot)] = [:] {
             didSet {
                 if inks.isEmpty {
@@ -495,6 +498,14 @@ nonisolated extension WatchBitmapRenderer {
                        isRegion: Bool = false,
                        activeStroke: Stroke? = nil, selectedLayerID: UUID? = nil,
                        cache: LayerCache? = nil, selection: WatchSelectionPreview? = nil) -> CGImage? {
+        // One-off whole-canvas renders (save, share, eyedropper, previews) of a large canvas
+        // go through horizontal strips: each layer's float ink (16 B/px) then exists for
+        // one strip at a time instead of for the whole paper.
+        if cache == nil, !isRegion, origin == .zero, activeStroke == nil, selection == nil,
+           size.width > 0, size.height > 0, scale > 0,
+           ceil(size.width * scale) * ceil(size.height * scale) > stripRenderPixelThreshold {
+            return renderInStrips(document: document, size: size, scale: scale)
+        }
         guard size.width > 0, size.height > 0, scale > 0,
               size.width * scale <= 8192, size.height * scale <= 8192,
               let output = makeDisplayContext(width: Int(ceil(size.width * scale)),
@@ -549,6 +560,55 @@ nonisolated extension WatchBitmapRenderer {
             }
             return image
         }
+    }
+
+    /// Whole renders above this many pixels use strips. 1024 × 1024 px canvases (the limit
+    /// before 2048 px) keep the single pass they always had, pixel for pixel.
+    static let stripRenderPixelThreshold: CGFloat = 1024 * 1024 + 1
+    /// Pixels of one strip, before its blur margins: ~8 MiB of float ink per layer.
+    static let stripPixels: CGFloat = 512 * 1024
+
+    /// Canvas points a strip must render beyond its rows so that blur, which reads
+    /// neighbouring pixels, sees what the full canvas would: three box passes reach about
+    /// 1.75 radii, the feather 0.15 widths. Chained blurs read through each other, so the
+    /// margins add up (an upper bound).
+    static func stripMargin(for document: CanvasDocument) -> CGFloat {
+        document.layers.filter { $0.isVisible && $0.opacity > 0 }
+            .reduce(0) { $0 + blurMargin(of: $1.strokes) }
+    }
+
+    /// The same image as a single pass, assembled from viewport regions: regions match
+    /// the full canvas pixel for pixel away from interior edges (`check-viewport-region`),
+    /// and each strip renders `stripMargin` beyond its rows, then keeps only its rows.
+    static func renderInStrips(document: CanvasDocument, size: CGSize, scale: CGFloat) -> CGImage? {
+        let width = Int(ceil(size.width * scale)), height = Int(ceil(size.height * scale))
+        guard width > 0, height > 0, width <= 8192, height <= 8192,
+              let output = makeDisplayContext(width: width, height: height) else { return nil }
+        output.interpolationQuality = .none
+        output.setBlendMode(.copy)
+        let rows = max(64, Int(stripPixels) / width)
+        let margin = Int(ceil(stripMargin(for: document) * scale))
+        var top = 0
+        while top < height {
+            if Task.isCancelled { return nil }
+            let bottom = min(height, top + rows)
+            let renderTop = max(0, top - margin), renderBottom = min(height, bottom + margin)
+            // Whole pixels of the full raster; slightly under the pixel count so
+            // `ceil(size × scale)` cannot add a row (as `RegionTiling.tile`).
+            let origin = CGPoint(x: 0, y: CGFloat(renderTop) / scale)
+            let stripSize = CGSize(width: size.width, height: (CGFloat(renderBottom - renderTop) - 0.001) / scale)
+            let image: CGImage? = autoreleasepool {
+                guard let strip = render(document: document, size: stripSize, scale: scale, origin: origin,
+                                         isRegion: true, cache: LayerCache()),
+                      strip.width == width, strip.height == renderBottom - renderTop else { return nil }
+                return strip.cropping(to: CGRect(x: 0, y: top - renderTop, width: width, height: bottom - top))
+            }
+            guard let image else { return nil }
+            // Core Graphics' origin is bottom-left; rows count from the top.
+            output.draw(image, in: CGRect(x: 0, y: height - bottom, width: width, height: bottom - top))
+            top = bottom
+        }
+        return output.makeImage()
     }
 
     // MARK: Layer pipeline stages
@@ -663,13 +723,33 @@ nonisolated extension WatchBitmapRenderer {
 
     static func fillImage(layer: CanvasLayer, size: CGSize, cache: LayerCache) -> CGImage? {
         let scale: CGFloat = 2
+        let revisions = layer.strokes.map(\.geometryRevision)
+        if ceil(size.width * scale) * ceil(size.height * scale) > stripRenderPixelThreshold {
+            // A 2048 px canvas's float ink is 64 MiB, kept for incremental fills. Render
+            // the layer alone, opaque and over no paper, in strips instead: 16 MiB at
+            // 8 bits, re-rendered whole after each change (no incremental append).
+            cache.inks.removeAll()
+            if let kept = cache.fillStripImage, kept.layerID == layer.id, kept.size == size,
+               kept.revisions == revisions { return kept.image }
+            cache.fillStripImage = nil
+            var single = layer
+            single.isVisible = true
+            single.opacity = 1
+            var document = CanvasDocument()
+            document.layers = [single]
+            document.backgroundIsVisible = false
+            guard let image = renderInStrips(document: document, size: size, scale: scale),
+                  !Task.isCancelled else { return nil }
+            cache.fillStripImage = (layer.id, size, revisions, image)
+            return image
+        }
+        cache.fillStripImage = nil
         if cache.size != size || cache.scale != scale {
             cache.inks.removeAll()
         }
         cache.size = size
         cache.scale = scale
         cache.inks = cache.inks.filter { $0.key == layer.id }
-        let revisions = layer.strokes.map(\.geometryRevision)
         let previous = cache.inks[layer.id]
         if previous?.revisions == revisions { return previous?.ink.image }
         let canAppend = previous.map { revisions.starts(with: $0.revisions) } ?? false

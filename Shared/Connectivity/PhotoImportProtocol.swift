@@ -17,14 +17,18 @@ nonisolated enum PhotoImportProtocol {
     /// Bool: true sizes the canvas to fit the watch screen; false sizes it to the
     /// photo's pixels, limited to `maximumCanvasPixelSide`. Both keep the photo's aspect.
     static let fitsWatchKey = "photoImportFitsWatch"
-    /// The watch canvas editor accepts at most 1024 px per side. The watch renders the
-    /// whole canvas into float buffers at up to 4x zoom, so a larger canvas would cost
-    /// memory and brush speed in every drawing, not only in photos.
-    static let maximumCanvasPixelSide = 1024
-    /// A full-size canvas keeps up to twice its pixels of photo detail, which zooming
-    /// in shows. The photo layer is cached apart from the layers drawn above it.
+    /// The watch canvas editor accepts at most 2048 px per side (1024 pt on a 2× watch).
+    /// The screen shows the paper at screen resolution plus zoomed tiles, and whole-canvas
+    /// renders (save, share, eyedropper, fill) go through strips, so memory no longer
+    /// grows with the paper's float ink. Was 1024 until 1.2.
+    static let maximumCanvasPixelSide = 2048
+    /// A smaller canvas keeps up to twice its pixels of photo detail, which zooming in
+    /// shows, within `maximumPhotoPixelSide`. The photo layer is cached apart from the
+    /// layers drawn above it.
     static let photoDetailFactor = 2
-    static let maximumPhotoPixelSide = maximumCanvasPixelSide * photoDetailFactor
+    /// What the phone sends: unchanged at 2048 px, so phones and watches of either
+    /// version agree. A full 2048 px canvas therefore holds its photo at 1:1.
+    static let maximumPhotoPixelSide = 2048
     /// Gallery file stem chosen by the phone. The phone lists the photo under it at
     /// once; the watch saves the drawing under the same stem, so the drawing it sends
     /// back replaces that entry instead of adding a second one.

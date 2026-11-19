@@ -27,8 +27,19 @@ nonisolated enum WatchBlurBaking {
         while let index = strokes.firstIndex(where: { $0.style.instrument == .blur }) {
             try Task.checkCancellation()
             let blur = strokes[index]
-            let reach = readArea(of: blur, bounds: bounds[index], resolution: resolution)
-            let group = members(below: index, reach: reach, strokes: strokes, bounds: bounds)
+            var bakeResolution = resolution
+            var reach = readArea(of: blur, bounds: bounds[index], resolution: bakeResolution)
+            var group = members(below: index, reach: reach, strokes: strokes, bounds: bounds)
+            // Each bake renders only its area; a large one gets a lower resolution so its
+            // buffers stay within `regionOperationPixelBudget`. The read area grows in
+            // points as pixels get coarser, so it and its group are measured again.
+            let area = group.reduce(reach) { $0.union(bounds[$1]) }.intersection(paper)
+            let affordable = WatchBitmapRenderer.affordableResolution(resolution, for: area)
+            if affordable < bakeResolution - 0.001 {
+                bakeResolution = affordable
+                reach = readArea(of: blur, bounds: bounds[index], resolution: bakeResolution)
+                group = members(below: index, reach: reach, strokes: strokes, bounds: bounds)
+            }
             guard !group.isEmpty, reach.intersects(paper) else {
                 // Nothing visible to blur: the stroke has no effect on the picture.
                 strokes.remove(at: index)
@@ -36,7 +47,7 @@ nonisolated enum WatchBlurBaking {
                 continue
             }
             let baked = try bake(blur: index, group: group, reach: reach, strokes: strokes,
-                                 bounds: bounds, size: size, resolution: resolution)
+                                 bounds: bounds, size: size, resolution: bakeResolution)
             let removed = Set(group)
             var nextStrokes: [Stroke] = [], nextBounds: [CGRect] = []
             nextStrokes.reserveCapacity(strokes.count - group.count)
@@ -100,25 +111,34 @@ nonisolated enum WatchBlurBaking {
         let lowest = group[0]
         let isolated = (lowest..<index).filter { members.contains($0) || strokes[$0].style.instrument == .eraser }
             .map { strokes[$0] } + [strokes[index]]
-        guard let before = WatchBitmapRenderer.renderInk(strokes: prefix, size: size, scale: resolution),
-              let target = WatchBitmapRenderer.renderInk(strokes: [strokes[index]], size: size,
-                                                         scale: resolution, base: before)?.image,
-              let under = WatchBitmapRenderer.layerThumbnail(strokes: remaining, size: size, scale: resolution),
-              let own = WatchBitmapRenderer.layerThumbnail(strokes: isolated, size: size, scale: resolution),
+        let scaling = CGAffineTransform(scaleX: resolution, y: resolution)
+        let area = group.reduce(reach) { $0.union(bounds[$1]) }
+        let paperPixels = CGRect(x: 0, y: 0, width: ceil(size.width * resolution), height: ceil(size.height * resolution))
+        let region = area.applying(scaling).integral.intersection(paperPixels)
+        guard !region.isNull, !region.isEmpty else { return nil }
+        // Rendered over `region` only (whole pixels of the full raster, so its pixels
+        // match it). The area holds every pixel the blur reads, and the prefix has no
+        // unbaked blur (they bake in order), so nothing outside it changes the result.
+        let regionRect = WatchBitmapRenderer.regionGeometry(pixels: region, scale: resolution)
+        func ink(_ strokes: [Stroke], base: WatchBitmapRenderer.InkSnapshot? = nil) -> WatchBitmapRenderer.InkSnapshot? {
+            WatchBitmapRenderer.renderInk(strokes: strokes, size: regionRect.size, scale: resolution,
+                                          base: base, origin: regionRect.origin)
+        }
+        guard let before = ink(prefix),
+              let target = ink([strokes[index]], base: before)?.image,
+              let under = ink(remaining)?.image,
+              let own = ink(isolated)?.image,
+              target.width == Int(region.width), target.height == Int(region.height),
               target.width == under.width, target.height == under.height,
               own.width == target.width, own.height == target.height else {
             try Task.checkCancellation()
             throw BakingError.rendering
         }
-        let scaling = CGAffineTransform(scaleX: resolution, y: resolution)
-        let area = group.reduce(reach) { $0.union(bounds[$1]) }
-        let region = area.applying(scaling).integral
-            .intersection(CGRect(x: 0, y: 0, width: target.width, height: target.height))
-        guard !region.isNull, !region.isEmpty else { return nil }
-        guard let t = pixelContext(target, region), let tData = t.data,
-              let u = pixelContext(under, region), let uData = u.data,
-              let o = pixelContext(own, region), let oData = o.data,
-              let output = pixelContext(nil, region), let outData = output.data else {
+        let local = CGRect(origin: .zero, size: region.size)
+        guard let t = pixelContext(target, local), let tData = t.data,
+              let u = pixelContext(under, local), let uData = u.data,
+              let o = pixelContext(own, local), let oData = o.data,
+              let output = pixelContext(nil, local), let outData = output.data else {
             throw BakingError.rendering
         }
         let tp = tData.assumingMemoryBound(to: UInt8.self)
