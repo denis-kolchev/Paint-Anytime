@@ -20,6 +20,16 @@ nonisolated enum MemoryHeadroom {
             """)
     }
 
+    /// Bytes left before this process's limit; nil where there is no limit to read
+    /// (the Simulator reports 0 for that).
+    static var available: Int? {
+        #if targetEnvironment(simulator)
+        return nil
+        #else
+        return Int(os_proc_available_memory())
+        #endif
+    }
+
     /// What the system counts against the limit, as Xcode's memory gauge shows it.
     private static func physicalFootprint() -> UInt64 {
         var info = task_vm_info_data_t()

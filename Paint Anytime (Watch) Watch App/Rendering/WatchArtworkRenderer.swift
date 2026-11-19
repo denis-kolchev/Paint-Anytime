@@ -9,6 +9,42 @@ actor WatchArtworkRenderer {
     private let layers = WatchBitmapRenderer.LayerCache()
     private let selection = WatchBitmapRenderer.SelectionRenderCache()
 
+    /// Every live renderer (the paper and each zoom tile), so a save short of memory can
+    /// make them all drop their layer inks. Each cache budgets as if alone, so together
+    /// they can hold most of what the app may use.
+    private static let registry = Registry()
+
+    private final class Registry: @unchecked Sendable {
+        private struct Weak { weak var renderer: WatchArtworkRenderer? }
+        private let lock = NSLock()
+        private var entries: [Weak] = []
+
+        func add(_ renderer: WatchArtworkRenderer) {
+            lock.lock(); defer { lock.unlock() }
+            entries.removeAll { $0.renderer == nil }
+            entries.append(Weak(renderer: renderer))
+        }
+
+        var all: [WatchArtworkRenderer] {
+            lock.lock(); defer { lock.unlock() }
+            return entries.compactMap(\.renderer)
+        }
+    }
+
+    init() {
+        Self.registry.add(self)
+    }
+
+    /// Frees the layer inks of every live renderer, each on its own actor; frames on
+    /// screen stay. The canvas replays layers when it next draws.
+    static func releaseAllCachedInks() async {
+        for renderer in registry.all { await renderer.releaseCachedInks() }
+    }
+
+    private func releaseCachedInks() {
+        layers.releaseInks()
+    }
+
     // Revisions advance on Undo/Redo too. Identify the actual artwork using
     // immutable geometry versions, without comparing point arrays or PNG data.
     private struct HistoryKey: Equatable {

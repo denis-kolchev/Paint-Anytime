@@ -2,14 +2,19 @@ import SwiftUI
 
 struct AutosaveCountdownView: View {
     let timerRange: ClosedRange<Date>
-    /// A quiet autosave is writing: the clock icon turns into a loading wheel.
+    /// A quiet autosave is writing: the clock icon turns into a loading wheel, and a
+    /// long one's wheel into a ring filling with its estimated time.
     var isSaving = false
+    var progress: SaveProgressModel? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 3) {
             ZStack {
-                if isSaving {
+                if isSaving, let progress, progress.isShown {
+                    AutosaveProgressRing(progress: progress)
+                        .transition(iconTransition)
+                } else if isSaving {
                     AutosaveSpinner()
                         .transition(iconTransition)
                 } else {
@@ -28,6 +33,8 @@ struct AutosaveCountdownView: View {
         .padding(.vertical, 3)
         .background(.regularMaterial, in: Capsule())
         .animation(.easeInOut(duration: 0.25), value: isSaving)
+        // The wheel turns into the progress ring when the estimate appears.
+        .animation(.easeInOut(duration: 0.3), value: progress?.isShown == true)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(L10n.text("Autosave"))
         .allowsHitTesting(false)
@@ -54,6 +61,32 @@ private struct AutosaveSpinner: View {
     }
 }
 
+/// The caption-sized ring of an autosave's estimated time, replacing the loading wheel
+/// once the estimate exists: the same stroke as the wheel, filling clockwise from the
+/// top as the time passes (the save overlay's bar, as a ring). Reads the model here, so
+/// its updates redraw only the ring.
+private struct AutosaveProgressRing: View {
+    let progress: SaveProgressModel
+    @ScaledMetric(relativeTo: .caption2) private var diameter: CGFloat = 11
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let fraction = min(1, max(0, progress.fraction ?? 0))
+        ZStack {
+            Circle()
+                .stroke(.primary.opacity(0.3), lineWidth: 1.6)
+            Circle()
+                .trim(from: 0, to: fraction)
+                .stroke(.primary, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: diameter, height: diameter)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: fraction)
+        .accessibilityLabel(L10n.text("Autosaving…"))
+        .accessibilityValue(progress.remaining.map { SaveDurationText.spoken($0) } ?? "")
+    }
+}
+
 /// Places the countdown centered horizontally at the hidden system clock's height,
 /// and the zoom percent below it while zooming, or at that height without a countdown.
 struct CanvasStatusOverlay: View {
@@ -64,6 +97,7 @@ struct CanvasStatusOverlay: View {
     let autosave: CanvasAutosave
     let showsCountdown: Bool
     let zoom: CanvasZoomReadout
+    var autosaveProgress: SaveProgressModel? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -87,7 +121,7 @@ struct CanvasStatusOverlay: View {
                             .hidden()
                             .accessibilityHidden(true)
                     }
-                    AutosaveCountdownView(timerRange: timerRange, isSaving: isSaving)
+                    AutosaveCountdownView(timerRange: timerRange, isSaving: isSaving, progress: autosaveProgress)
                     if let percent {
                         CanvasZoomLabel(percent: percent)
                             .transition(.opacity)

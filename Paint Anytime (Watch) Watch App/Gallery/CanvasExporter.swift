@@ -69,6 +69,7 @@ enum CanvasExporter {
         // Export exactly the same compositing as the live canvas, including long marker paths.
         guard let image = WatchBitmapRenderer.render(document: document, size: size, scale: scale)
         else { throw ExportError.render }
+        RenderProgress.current?.enter(.encoding)
         let details: [String: Any] = [
             "application": "Paint Anytime",
             "version": info.version,

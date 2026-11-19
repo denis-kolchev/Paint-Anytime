@@ -102,7 +102,7 @@ struct ContentView: View {
                menuOnboarding.tutorialFolder == nil,
                !showsGallery, !showsToolSettings, !showsLayers, !showsSampledPalette {
                 CanvasStatusOverlay(autosave: autosave, showsCountdown: autosaveEnabled && showsAutosaveTimer,
-                                    zoom: zoomReadout)
+                                    zoom: zoomReadout, autosaveProgress: session.autosaveProgress)
                     .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
             }
         }
@@ -536,7 +536,7 @@ struct ContentView: View {
                 // appears at once, fades out as the "saved" notice springs in.
                 // The fade is scoped to this transition: an `.animation(value:)` on the
                 // whole stack would retime the morph collapse that starts in the same update.
-                LoadingDimOverlay()
+                LoadingDimOverlay(progress: session.saveProgress)
                     .ignoresSafeArea()
                     .transition(.asymmetric(
                         insertion: .identity,

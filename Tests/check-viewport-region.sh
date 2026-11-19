@@ -15,6 +15,7 @@ xcrun swiftc -parse-as-library \
   "Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift" \
+  "Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchFloodFill.swift" \
   "Paint Anytime (Watch) Watch App/Rendering/WatchFillWorker.swift" \

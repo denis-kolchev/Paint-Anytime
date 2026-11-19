@@ -197,6 +197,14 @@ nonisolated extension WatchBitmapRenderer {
                 .map { ($0.revisions, $0.ink) }
         }
 
+        /// Drops every layer's float ink (and with it the compressed and Undo copies),
+        /// keeping the composite and live state: a save that needs the memory calls it
+        /// through `WatchArtworkRenderer.releaseAllCachedInks()`. Layers replay when next drawn.
+        func releaseInks() {
+            inks.removeAll()
+            inkAccess.removeAll()
+        }
+
         fileprivate func retainLayers(_ ids: Set<UUID>) {
             inks = inks.filter { ids.contains($0.key) }
             inkAccess = inkAccess.filter { inks[$0.key] != nil }
@@ -525,7 +533,12 @@ nonisolated extension WatchBitmapRenderer {
         let reusedComposite = RenderDiagnostics.measure(.composite) {
             reuseComposite(compositeKey, cache: cache, in: output, bounds: bounds)
         }
+        // One-off renders of a save report their layers (`RenderProgress`); cached
+        // canvas renders never run under one.
+        let progress = cache == nil ? RenderProgress.current : nil
+        progress?.expect(visible.reduce(0) { $0 + RenderProgress.units(of: $1) })
         for (index, layer) in visible.enumerated() {
+            defer { progress?.complete(RenderProgress.units(of: layer)) }
             if index == prefixCount, !reusedComposite, let cache {
                 RenderDiagnostics.measure(.composite) { storeComposite(compositeKey, from: output, in: cache) }
             }
@@ -575,24 +588,63 @@ nonisolated extension WatchBitmapRenderer {
         let margin: CGFloat
     }
 
-    /// Canvas rows (points) a strip must render so that blur, which reads neighbouring
-    /// pixels, sees what the full canvas would. Only blurs reaching the band count; each
-    /// extends it by its read margin where it overlaps, and blurs reaching that extension
-    /// in turn (chains), until nothing grows. Summing every blur on the canvas instead
-    /// made each strip of a drawing with 15 blurs the whole canvas, and the save crashed.
-    private static func stripRows(_ band: ClosedRange<CGFloat>, blurs: [StripBlur]) -> ClosedRange<CGFloat> {
-        var low = band.lowerBound, high = band.upperBound
-        for _ in 0...blurs.count {
-            var nextLow = low, nextHigh = high
-            for blur in blurs where blur.maxY > low && blur.minY < high {
-                nextLow = min(nextLow, max(low, blur.minY) - blur.margin)
-                nextHigh = max(nextHigh, min(high, blur.maxY) + blur.margin)
+    /// Each visible layer's blurs in drawing order (layers with none left out).
+    private static func stripBlurs(_ document: CanvasDocument) -> [[StripBlur]] {
+        document.layers.filter { $0.isVisible && $0.opacity > 0 }.compactMap { layer in
+            let blurs = layer.strokes.compactMap { stroke -> StripBlur? in
+                guard stroke.style.instrument == .blur else { return nil }
+                let reach = WatchBitmapRenderer.reach(of: stroke)
+                guard !reach.isNull, reach.minY.isFinite, reach.maxY.isFinite else { return nil }
+                return StripBlur(minY: reach.minY, maxY: reach.maxY, margin: blurMargin(of: [stroke]))
             }
-            if nextLow >= low - 0.001 && nextHigh <= high + 0.001 { break }
-            low = nextLow
-            high = nextHigh
+            return blurs.isEmpty ? nil : blurs
+        }
+    }
+
+    /// Canvas rows (points) a strip must render so that blur, which reads neighbouring
+    /// pixels, sees what the full canvas would. A blur reads only its own layer's ink as
+    /// drawn before it, so each layer is walked from its last blur back to its first:
+    /// a blur reaching the rows needed so far adds its read margin where it overlaps
+    /// them. The strip renders the union over layers. Pooling every blur of every layer
+    /// (or summing their margins) made each strip of a drawing with many blurs the whole
+    /// canvas, and saving it ran out of memory.
+    private static func stripRows(_ band: ClosedRange<CGFloat>, layers: [[StripBlur]]) -> ClosedRange<CGFloat> {
+        var low = band.lowerBound, high = band.upperBound
+        for blurs in layers {
+            var layerLow = band.lowerBound, layerHigh = band.upperBound
+            for blur in blurs.reversed() where blur.maxY > layerLow && blur.minY < layerHigh {
+                let overlapLow = max(layerLow, blur.minY), overlapHigh = min(layerHigh, blur.maxY)
+                layerLow = min(layerLow, overlapLow - blur.margin)
+                layerHigh = max(layerHigh, overlapHigh + blur.margin)
+            }
+            low = min(low, layerLow)
+            high = max(high, layerHigh)
         }
         return low...high
+    }
+
+    /// Bytes a whole-canvas render of `document` needs at its peak, beyond the memory
+    /// already in use: the 8-bit output, and one strip's float ink, eraser mask, working
+    /// and transparency-layer buffers (~4 float buffers). Used to decide whether a save
+    /// must first release the canvas's caches.
+    static func estimatedRenderPeakBytes(document: CanvasDocument, size: CGSize, scale: CGFloat) -> Int {
+        let width = ceil(size.width * scale), height = ceil(size.height * scale)
+        guard width > 0, height > 0 else { return 0 }
+        var stripPixelsAtPeak = width * height
+        if width * height > stripRenderPixelThreshold {
+            let rows = max(64, (stripPixels / width).rounded(.down))
+            let layers = stripBlurs(document)
+            var tallest: CGFloat = 0, top: CGFloat = 0
+            while top < height {
+                let bottom = min(height, top + rows)
+                let needed = stripRows(top / scale...bottom / scale, layers: layers)
+                let rendered = min(height, ceil(needed.upperBound * scale)) - max(0, floor(needed.lowerBound * scale))
+                tallest = max(tallest, rendered)
+                top = bottom
+            }
+            stripPixelsAtPeak = width * tallest
+        }
+        return Int(width * height * 4 + stripPixelsAtPeak * 16 * 4)
     }
 
     /// The same image as a single pass, assembled from viewport regions: regions match
@@ -607,19 +659,15 @@ nonisolated extension WatchBitmapRenderer {
         output.interpolationQuality = .none
         output.setBlendMode(.copy)
         let rows = max(64, Int(stripPixels) / width)
-        let blurs: [StripBlur] = document.layers.filter { $0.isVisible && $0.opacity > 0 }.flatMap { layer in
-            layer.strokes.compactMap { stroke -> StripBlur? in
-                guard stroke.style.instrument == .blur else { return nil }
-                let reach = WatchBitmapRenderer.reach(of: stroke)
-                guard !reach.isNull, reach.minY.isFinite, reach.maxY.isFinite else { return nil }
-                return StripBlur(minY: reach.minY, maxY: reach.maxY, margin: blurMargin(of: [stroke]))
-            }
-        }
+        let stripCount = (height + rows - 1) / rows
+        RenderProgress.current?.expect(document.layers.filter { $0.isVisible && $0.opacity > 0 }
+            .reduce(0) { $0 + RenderProgress.units(of: $1) } * Double(stripCount))
+        let blurs = stripBlurs(document)
         var top = 0
         while top < height {
             if Task.isCancelled { return nil }
             let bottom = min(height, top + rows)
-            let needed = stripRows(CGFloat(top) / scale...CGFloat(bottom) / scale, blurs: blurs)
+            let needed = stripRows(CGFloat(top) / scale...CGFloat(bottom) / scale, layers: blurs)
             let renderTop = max(0, min(top, Int(floor(needed.lowerBound * scale))))
             let renderBottom = min(height, max(bottom, Int(ceil(needed.upperBound * scale))))
             // Whole pixels of the full raster; slightly under the pixel count so
