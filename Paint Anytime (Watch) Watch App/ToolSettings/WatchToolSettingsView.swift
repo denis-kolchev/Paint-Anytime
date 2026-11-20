@@ -715,6 +715,8 @@ private struct StaticPalettePromptButtonStyle: ButtonStyle {
 /// Match the camera guide while demonstrating only the required horizontal swipe.
 struct TutorialToolSwipeGuide: View {
     let direction: CGFloat
+    /// The wait before the arrow first appears.
+    var delay: Duration = .seconds(1)
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var offset: CGFloat = 0
     @State private var visible = false
@@ -733,7 +735,7 @@ struct TutorialToolSwipeGuide: View {
                 visible = false
                 offset = 0
                 do {
-                    try await Task.sleep(for: .seconds(1))
+                    try await Task.sleep(for: delay)
                     try Task.checkCancellation()
                     visible = true
                     guard !reduceMotion else { return }

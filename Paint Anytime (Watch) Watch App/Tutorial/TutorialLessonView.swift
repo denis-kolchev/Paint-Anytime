@@ -33,9 +33,13 @@ struct TutorialLessonView: View {
                 // The list fades in once the card has mostly grown; the hint below keeps
                 // its ✕ and progress ring, and ••• in the corner leads on.
                 VStack(spacing: 0) {
-                    TutorialShapeCatalog(topInset: shapeCatalogTopInset)
+                    TutorialShapeCatalog(topInset: shapeCatalogTopInset) { tutorial.browsedShapes() }
                         .frame(maxHeight: .infinity)
+                    // The expanded card drops its edge gap; restore it here so the hint and
+                    // its ✕ stay where the compact card showed them, instead of sinking
+                    // towards the display's lower corners.
                     compactCard
+                        .padding([.horizontal, .bottom], edgeGap)
                 }
                 .transition(.asymmetric(
                     insertion: .opacity.animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25)

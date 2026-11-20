@@ -17,6 +17,8 @@ final class TutorialSession: ObservableObject {
          .adjustPaletteColor, .savePaletteColor].contains(step)
     }
     @Published var galleryIsOpen = false
+    /// Set by the first page turn in the shape list; ••• and its hint wait for it.
+    @Published private(set) var hasBrowsedShapes = false
     /// The yellow marker line the blending lesson draws itself; set once it finishes, so a
     /// crossing stroke is checked only against it, never against the user's own earlier tries.
     @Published var markerLineStrokeID: UUID?
@@ -26,6 +28,7 @@ final class TutorialSession: ObservableObject {
     var instruction: String {
         switch step {
         case .holdCircle where releasedCircleEarly: return L10n.text("Hold your finger at the end.")
+        case .browseShapes where !hasBrowsedShapes: return L10n.text("Swipe to see more shapes.")
         case .pickColor where toolPage != 1:
             return L10n.text("Open Color, then turn the Crown.")
         case .chooseReed where toolPage != 2: return L10n.text("Open Tool and choose Reed pen.")
@@ -128,8 +131,17 @@ final class TutorialSession: ObservableObject {
         !isActive || (acceptsActions && steps.contains(step))
     }
 
-    /// ••• also leads on from the shape list, straight into the menu.
-    var permitsMenuButton: Bool { permits([.openMenu, .browseShapes]) }
+    /// ••• also leads on from the shape list, straight into the menu, once a page has turned.
+    var permitsMenuButton: Bool {
+        permits([.openMenu]) || (hasBrowsedShapes && permits([.browseShapes]))
+    }
+
+    /// The shape list turned a page: ••• appears and the hint asks for it.
+    func browsedShapes() {
+        guard step == .browseShapes, !hasBrowsedShapes else { return }
+        hasBrowsedShapes = true
+        activity()
+    }
 
     func allowsToolAdjustment(page: Int) -> Bool {
         !isActive || (acceptsActions && progress.allowsToolAdjustment(page: page))
@@ -146,6 +158,7 @@ final class TutorialSession: ObservableObject {
     func start(chapters: [TutorialChapter] = TutorialChapter.allCases) {
         cancelPendingAdvance()
         progress.start(chapters: chapters)
+        hasBrowsedShapes = false
         markerLineStrokeID = nil
         releasedCircleEarly = false
         failedCircleAttempts = 0
@@ -221,7 +234,14 @@ final class TutorialSession: ObservableObject {
         guard step == .holdCircle, acceptsActions else { return }
         // A finger-drawn circle can snap as an ellipse; both demonstrate the hold gesture.
         if kind == .circle || kind == .ellipse {
-            record(.heldCircle)
+            // The snap reports first, with the finger still down: closing input then would
+            // cancel the stroke and the circle would vanish. Wait for the lift, after which
+            // the circle stays on the canvas for a second before the shape list grows over it.
+            activity()
+            guard isStrokeComplete else { return }
+            if case .advance = progress.record(.heldCircle) {
+                advanceAfterResult(lockInput: true, delay: .seconds(1))
+            }
         } else if isStrokeComplete {
             failedCircleAttempts += 1
             if failedCircleAttempts >= 3 {
@@ -328,6 +348,7 @@ final class TutorialSession: ObservableObject {
         cancelPendingAdvance()
         let freshLessons = progress.freshLessonRevision
         progress.advance()
+        hasBrowsedShapes = false
         if progress.freshLessonRevision != freshLessons { chapterRevision &+= 1 }
         showsInstruction = false
         activity()

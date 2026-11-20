@@ -1,48 +1,121 @@
 import SwiftUI
 
 /// Every shape the recognizer snaps to, drawn in the circle lesson's red ink with names,
-/// three to a row. Display-only: the outlines are the snapped results, not recognizer input.
+/// six to a page in two rows of three. The pages turn sideways; an arrow like the tool
+/// editor's suggests the swipe until the first page turn. Display-only: the outlines are
+/// the snapped results, not recognizer input.
 struct TutorialShapeCatalog: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
-    /// Clears the ••• button in the top-left corner above the first row.
+    /// Clears the ••• button in the top-left corner above the title.
     let topInset: CGFloat
+    /// The first page turn: ••• appears and the hint below asks for it.
+    var onTurnPage: () -> Void = {}
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var isDrawn = false
+    @Environment(\.layoutDirection) private var layoutDirection
+    @State private var page: Int? = 0
+    /// Each page draws its outlines the first time it is shown.
+    @State private var drawnPages: Set<Int> = []
+    @State private var hasTurnedPage = false
 
     // Same red swatch as the circle guide and the lesson's brush.
     private var ink: Color {
         InkPreset.all.first { $0.nameKey == "Red" }?.color ?? .red
     }
 
-    private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 3)
+    private static let columns = 3
+    private static let rows = 2
+    private static let pages: [[TutorialCatalogShape]] = {
+        let all = TutorialCatalogShape.allCases
+        let size = columns * rows
+        return stride(from: 0, to: all.count, by: size).map { Array(all[$0..<min($0 + size, all.count)]) }
+    }()
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 8) {
-                Text(L10n.text("Shapes you can draw"))
-                    .font(.system(size: 13, weight: .semibold))
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity)
-                LazyVGrid(columns: columns, spacing: 8) {
-                    ForEach(Array(TutorialCatalogShape.allCases.enumerated()), id: \.element) { index, shape in
-                        cell(shape, index: index)
+        VStack(spacing: 6) {
+            Text(L10n.text("Shapes you can draw"))
+                .font(.system(size: 13, weight: .semibold))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 10)
+            // Paged sideways: the Crown keeps no role on this step.
+            ScrollView(.horizontal) {
+                LazyHStack(spacing: 0) {
+                    ForEach(Self.pages.indices, id: \.self) { index in
+                        pageView(Self.pages[index], page: index)
+                            .padding(.horizontal, 10)
+                            .containerRelativeFrame(.horizontal)
+                            .id(index)
                     }
                 }
+                .scrollTargetLayout()
             }
-            .padding(.top, topInset)
-            .padding(.horizontal, 10)
-            .padding(.bottom, 6)
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $page)
+            .scrollIndicators(.hidden)
+            .frame(maxHeight: .infinity)
+            .overlay {
+                // Forward is a swipe towards the leading edge, as in the tool editor.
+                if !hasTurnedPage {
+                    // Half a second later than in the tool editor: the list fades in and draws first.
+                    TutorialToolSwipeGuide(direction: layoutDirection == .leftToRight ? -1 : 1,
+                                           delay: .milliseconds(1500))
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: reduceMotion ? 0.15 : 0.25), value: hasTurnedPage)
+            pageIndicator
         }
-        .scrollIndicators(.hidden)
-        .onAppear {
-            guard !isDrawn else { return }
-            if reduceMotion { isDrawn = true }
-            else { withAnimation { isDrawn = true } }
+        .padding(.top, topInset)
+        .padding(.bottom, 4)
+        .onAppear { draw(page ?? 0) }
+        .onChange(of: page) { _, page in
+            guard let page else { return }
+            if page != 0, !hasTurnedPage {
+                hasTurnedPage = true
+                onTurnPage()
+            }
+            draw(page)
         }
     }
 
-    private func cell(_ shape: TutorialCatalogShape, index: Int) -> some View {
+    private func draw(_ page: Int) {
+        guard !drawnPages.contains(page) else { return }
+        if reduceMotion { drawnPages.insert(page) }
+        else { withAnimation { _ = drawnPages.insert(page) } }
+    }
+
+    private func pageView(_ shapes: [TutorialCatalogShape], page: Int) -> some View {
+        VStack(spacing: 6) {
+            ForEach(0..<Self.rows, id: \.self) { row in
+                HStack(alignment: .top, spacing: 4) {
+                    ForEach(0..<Self.columns, id: \.self) { column in
+                        let index = row * Self.columns + column
+                        if index < shapes.count {
+                            cell(shapes[index], index: index, isDrawn: drawnPages.contains(page))
+                        } else {
+                            Color.clear.frame(maxWidth: .infinity)
+                        }
+                    }
+                }
+                .frame(maxHeight: .infinity)
+            }
+        }
+    }
+
+    private var pageIndicator: some View {
+        HStack(spacing: 4) {
+            ForEach(Self.pages.indices, id: \.self) { index in
+                Circle()
+                    .fill(.white.opacity(index == (page ?? 0) ? 0.9 : 0.3))
+                    .frame(width: 4, height: 4)
+            }
+        }
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.2), value: page)
+        .accessibilityHidden(true)
+    }
+
+    private func cell(_ shape: TutorialCatalogShape, index: Int, isDrawn: Bool) -> some View {
         VStack(spacing: 3) {
             TutorialCatalogOutline(shape: shape)
                 .trim(from: 0, to: isDrawn ? 1 : 0)
@@ -50,7 +123,7 @@ struct TutorialShapeCatalog: View {
                 // Drawn one after another, as if by hand with the lesson's marker.
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.5).delay(0.25 + Double(index) * 0.09),
                            value: isDrawn)
-                .frame(height: 28)
+                .frame(minHeight: 16, maxHeight: 28)
                 .padding(.horizontal, 4)
             Text(L10n.text(shape.nameKey))
                 .font(.system(size: 9, weight: .medium))
@@ -60,6 +133,7 @@ struct TutorialShapeCatalog: View {
                 .minimumScaleFactor(0.75)
                 .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.text(shape.nameKey))
     }

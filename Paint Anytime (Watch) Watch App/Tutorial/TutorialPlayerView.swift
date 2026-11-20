@@ -323,9 +323,11 @@ struct TutorialPlayerView: View {
                         && !tutorial.permitsMenuButton {
                         ToolbarItem(placement: .topBarLeading) { toolbarPlaceholder }
                     }
-                    if page == .canvas && tutorial.permitsMenuButton {
+                    // Installed through the whole shape list, transparent until a page turns,
+                    // so ••• fades in where it will be instead of the toolbar inserting it.
+                    if page == .canvas && (tutorial.permitsMenuButton || showsShapeCatalog) {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button { player.openMenu() } label: {
+                            Button { openMenuFromCanvas() } label: {
                                 Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openMenu, .browseShapes])
                                     .frame(width: 32, height: 32)
                                     .contentShape(Circle())
@@ -371,8 +373,10 @@ struct TutorialPlayerView: View {
                     .frame(width: hintWidth)
                     // The continuation question and the shape list grow the card to the whole screen.
                     .fixedSize(horizontal: false, vertical: !expandsLessonCard)
-                    // The step changes outside withAnimation; the card grows and shrinks here.
-                    .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0),
+                    // The step changes outside withAnimation; the card grows here. Leaving the list
+                    // for the menu it does not shrink in view: the menu replaces it at once.
+                    .animation(showsShapeCatalog
+                               ? (reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0)) : nil,
                                value: showsShapeCatalog)
                     .background {
                         GeometryReader { hintGeometry in
@@ -616,6 +620,19 @@ struct TutorialPlayerView: View {
                 menuReturnsOverBackdrop = false
             }
             .zIndex(2)
+    }
+
+    /// ••• on the canvas. From the full-screen shape list the menu takes its place without
+    /// rising from below: the card shrinking, the menu sliding and the toolbar changing
+    /// together made too much move at once.
+    private func openMenuFromCanvas() {
+        guard tutorial.step == .browseShapes else { player.openMenu(); return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            menuRevealed = true
+            player.openMenu()
+        }
     }
 
     /// Back from the menu: it slides down over the drawing, as the editor's sheet does,
