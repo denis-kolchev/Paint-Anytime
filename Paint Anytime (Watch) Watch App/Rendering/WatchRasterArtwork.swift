@@ -27,6 +27,14 @@ struct WatchRasterArtwork: View {
     var allowsInkTip = false
     /// A viewport region rendered instead of the whole canvas; see `Region`.
     var region: Region? = nil
+    /// Layout points per canvas point, with `paper` in canvas points. Zoom tiles are laid
+    /// out in screen points (`zoom × fit`) rather than magnified by the paper's `scaleEffect`:
+    /// SwiftUI rounds frames to display pixels in the space they are laid out in, and the
+    /// zoom magnified that rounding (up to 0.25 pt per tile at fractional tile sizes) into
+    /// a visible shift each time tiles of another scale replaced the ones on screen.
+    /// Regions only: selection textures (the paper's) stay in canvas points.
+    var layoutScale: CGFloat = 1
+    var paper: CGSize? = nil
     /// Whether a region may keep showing a frame of its previous place or resolution
     /// until the new one is ready. Only while that frame's document is current and no
     /// stroke is being drawn below it: otherwise it would hide newer ink.
@@ -80,9 +88,11 @@ struct WatchRasterArtwork: View {
         let _ = TutorialDebug.trace("raster.body")
         GeometryReader { geometry in
             let _ = TutorialDebug.trace("raster.geometry", "size=\(geometry.size)")
+            let paperSize = paper ?? geometry.size
             RasterFrame(clearDocumentRevision: clearDocumentRevision, onFramePrepared: onFramePrepared, document: document, selectedLayerID: selectedLayerID, selectionPreview: selectionPreview, selectionSeed: selectionSeed, strokes: strokes, activeStroke: activeStroke,
                         activeStrokeRevision: activeStrokeRevision, activeStrokeID: activeStrokeID,
-                        key: key(paperSize: geometry.size), paperSize: geometry.size, isRegion: region != nil,
+                        key: key(paperSize: paperSize), paperSize: paperSize, layoutScale: layoutScale,
+                        isRegion: region != nil,
                         showsStaleFrame: showsStaleRegionFrame, rendersInBackground: rendersInBackground,
                         pixelGridScale: pixelGridScale, selectionViewport: selectionViewport,
                         onSelectionShown: onSelectionShown, onSelectionPrepared: onSelectionPrepared,
@@ -115,6 +125,8 @@ struct WatchRasterArtwork: View {
         let activeStrokeID: UInt64
         let key: WatchBitmapRenderer.CacheKey
         let paperSize: CGSize
+        /// Layout points per canvas point; see `WatchRasterArtwork.layoutScale`.
+        let layoutScale: CGFloat
         /// A region shows nothing until its first frame, letting the canvas below show.
         let isRegion: Bool
         let showsStaleFrame: Bool
@@ -279,23 +291,24 @@ struct WatchRasterArtwork: View {
             // successor arrives; panning must not move stale pixels to a new place.
             let shown = isRegion ? (frames.frameKey ?? key) : key
             let backgroundSize = Self.pointSize(of: frame.background, key: shown)
+            let s = layoutScale
             return ZStack(alignment: .topLeading) {
                 Image(decorative: frame.background, scale: shown.scale)
                     .pixelGrid(isOnPixelGrid(shown.scale))
                     .resizable()
-                    .frame(width: backgroundSize.width, height: backgroundSize.height)
+                    .frame(width: backgroundSize.width * s, height: backgroundSize.height * s)
                 ForEach(frame.tiles) { tile in
                     Image(decorative: tile.image, scale: shown.scale)
                         .pixelGrid(isOnPixelGrid(shown.scale))
                         .resizable()
-                        .frame(width: tile.rect.width, height: tile.rect.height)
-                        .offset(x: tile.rect.minX, y: tile.rect.minY)
+                        .frame(width: tile.rect.width * s, height: tile.rect.height * s)
+                        .offset(x: tile.rect.minX * s, y: tile.rect.minY * s)
                 }
             }
-            .frame(width: shown.size.width, height: shown.size.height, alignment: .topLeading)
+            .frame(width: shown.size.width * s, height: shown.size.height * s, alignment: .topLeading)
             .clipped()
-            .offset(x: shown.origin.x, y: shown.origin.y)
-            .frame(width: paperSize.width, height: paperSize.height, alignment: .topLeading)
+            .offset(x: shown.origin.x * s, y: shown.origin.y * s)
+            .frame(width: paperSize.width * s, height: paperSize.height * s, alignment: .topLeading)
         }
 
         var body: some View {
@@ -317,11 +330,12 @@ struct WatchRasterArtwork: View {
                 // stroke; the raster's own pixels catch up on the next frame instead.
                 if allowsInkTip, RenderStageSwitches.isOn(.inkTip), !isOnPixelGrid(key.scale),
                    let stroke = frames.tipStroke(for: activeStroke) {
-                    // Canvas points: the overlay spans the paper, also above a region.
+                    // The overlay spans the paper (in layout points), also above a region.
                     InkTipOverlay(stroke: stroke, renderedPoints: frames.renderedPoints(of: stroke),
                                   raster: CGRect(origin: key.origin, size: key.size), rasterScale: key.scale,
-                                  isRegion: isRegion)
-                        .frame(width: paperSize.width, height: paperSize.height, alignment: .topLeading)
+                                  isRegion: isRegion, layoutScale: layoutScale)
+                        .frame(width: paperSize.width * layoutScale, height: paperSize.height * layoutScale,
+                               alignment: .topLeading)
                 }
             }
             .task(id: Request(key: key, activeStrokeRevision: activeStrokeRevision, sessionID: selectionPreview?.sessionID, transform: hasSelectionTexture ? nil : selectionPreview?.transform,
@@ -436,6 +450,8 @@ private struct InkTipOverlay: View {
     let raster: CGRect
     let rasterScale: CGFloat
     let isRegion: Bool
+    /// Layout points per canvas point (zoom tiles: screen points).
+    var layoutScale: CGFloat = 1
     @Environment(\.displayScale) private var displayScale
 
     /// Largest side of the tip's Canvas in pixels.
@@ -471,8 +487,8 @@ private struct InkTipOverlay: View {
                 }
             }
             .frame(width: area.width * k, height: area.height * k)
-            .scaleEffect(1 / k, anchor: .topLeading)
-            .offset(x: area.minX, y: area.minY)
+            .scaleEffect(layoutScale / k, anchor: .topLeading)
+            .offset(x: area.minX * layoutScale, y: area.minY * layoutScale)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
         }

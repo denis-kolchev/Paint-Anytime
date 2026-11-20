@@ -234,7 +234,8 @@ struct WatchCanvasView: View {
                                 .applying(controller.activeStroke?.transform.affine ?? .identity)
                             return shownTiles.last { liveIDs.contains($0.id) && $0.rect.contains(p) }?.id
                         }
-                        ZStack(alignment: .topLeading) {
+                        let screenScale = CGFloat(zoom) * fit
+                        ZStack {
                             // Screen resolution of the whole paper: the region above sharpens the
                             // zoomed view within the memory budget. While a lasso selection moves,
                             // the paper shows its textures (the view at the tiles' resolution)
@@ -253,64 +254,74 @@ struct WatchCanvasView: View {
                                 onSelectionShown: { paperShowsSelection = $0 },
                                 onSelectionPrepared: { lasso.previewPrepared(sessionID: $0) },
                                 holdsSelectionFrame: lasso.isActive && !tiles.isEmpty && completeScale != tileScale)
-                            ForEach(tiles) { tile in
-                                let live = liveIDs.contains(tile.id)
-                                WatchRasterArtwork(document: displayedDocument,
-                                    selectedLayerID: controller.selectedLayer.id,
-                                    strokes: [], activeStroke: live ? controller.activeStroke : nil,
-                                    documentID: ObjectIdentifier(controller),
-                                    documentRevision: controller.documentRevision,
-                                    activeStrokeRevision: live ? controller.activeStrokeRevision : 0,
-                                    activeStrokeID: controller.activeStrokeID,
-                                    onFramePrepared: { succeeded in
-                                        guard succeeded, tiles.contains(where: { $0.id == tile.id }) else { return }
-                                        tileBecameReady(tile.id)
-                                    },
-                                    zoom: zoom, fit: fit, liveSubmitter: live ? liveSubmitter : nil,
-                                    allowsInkTip: live && tile.id == tipTile && allowsInkTip, region: tile.region,
-                                    rendersInBackground: !tile.rect.intersects(visibleRect),
-                                    pixelGridScale: pixelGridScale)
-                                    .opacity(shownIDs.contains(tile.id) ? 1 : 0)
+                            .frame(width: paperSize.width, height: paperSize.height)
+                            .overlay {
+                                if let failedCircleImage {
+                                    Image(decorative: failedCircleImage, scale: displayScale)
+                                        .resizable()
+                                        .opacity(failedCircleOpacity)
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                        .task {
+                                            do {
+                                                // Let the initial opaque frame appear before starting the fade.
+                                                try await Task.sleep(for: .milliseconds(20))
+                                                withAnimation(.easeOut(duration: 0.22)) { failedCircleOpacity = 0 }
+                                                try await Task.sleep(for: .milliseconds(220))
+                                                self.failedCircleImage = nil
+                                                tutorial.isFadingCircleAttempt = false
+                                                tutorial.finishedCircleAttempt(kind: failedCircleKind)
+                                            } catch {
+                                                self.failedCircleImage = nil
+                                                tutorial.isFadingCircleAttempt = false
+                                            }
+                                        }
+                                }
                             }
+                            .background {
+                                if controller.document.effectiveBackgroundColor.w < 1 {
+                                    TransparencyCheckerboard()
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                }
+                            }
+                            .clipped()
+                            .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
+                            .scaleEffect(zoom * fit)
+                            // Constrain layout after scaling: the paper must not resize the viewport.
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .offset(offset)
+                            // Laid out in screen points, not magnified with the paper: see
+                            // `WatchRasterArtwork.layoutScale`. Centred like the scaled paper.
+                            ZStack(alignment: .topLeading) {
+                                ForEach(tiles) { tile in
+                                    let live = liveIDs.contains(tile.id)
+                                    WatchRasterArtwork(document: displayedDocument,
+                                        selectedLayerID: controller.selectedLayer.id,
+                                        strokes: [], activeStroke: live ? controller.activeStroke : nil,
+                                        documentID: ObjectIdentifier(controller),
+                                        documentRevision: controller.documentRevision,
+                                        activeStrokeRevision: live ? controller.activeStrokeRevision : 0,
+                                        activeStrokeID: controller.activeStrokeID,
+                                        onFramePrepared: { succeeded in
+                                            guard succeeded, tiles.contains(where: { $0.id == tile.id }) else { return }
+                                            tileBecameReady(tile.id)
+                                        },
+                                        zoom: zoom, fit: fit, liveSubmitter: live ? liveSubmitter : nil,
+                                        allowsInkTip: live && tile.id == tipTile && allowsInkTip, region: tile.region,
+                                        layoutScale: screenScale, paper: paperSize,
+                                        rendersInBackground: !tile.rect.intersects(visibleRect),
+                                        pixelGridScale: pixelGridScale)
+                                        .opacity(shownIDs.contains(tile.id) ? 1 : 0)
+                                }
+                            }
+                            .frame(width: paperSize.width * screenScale, height: paperSize.height * screenScale,
+                                   alignment: .topLeading)
+                            .clipped()
+                            .frame(width: geometry.size.width, height: geometry.size.height)
+                            .offset(offset)
                         }
                     }
-                        .frame(width: paperSize.width, height: paperSize.height)
-                        .overlay {
-                            if let failedCircleImage {
-                                Image(decorative: failedCircleImage, scale: displayScale)
-                                    .resizable()
-                                    .opacity(failedCircleOpacity)
-                                    .allowsHitTesting(false)
-                                    .accessibilityHidden(true)
-                                    .task {
-                                        do {
-                                            // Let the initial opaque frame appear before starting the fade.
-                                            try await Task.sleep(for: .milliseconds(20))
-                                            withAnimation(.easeOut(duration: 0.22)) { failedCircleOpacity = 0 }
-                                            try await Task.sleep(for: .milliseconds(220))
-                                            self.failedCircleImage = nil
-                                            tutorial.isFadingCircleAttempt = false
-                                            tutorial.finishedCircleAttempt(kind: failedCircleKind)
-                                        } catch {
-                                            self.failedCircleImage = nil
-                                            tutorial.isFadingCircleAttempt = false
-                                        }
-                                    }
-                            }
-                        }
-                        .background {
-                            if controller.document.effectiveBackgroundColor.w < 1 {
-                                TransparencyCheckerboard()
-                                    .allowsHitTesting(false)
-                                    .accessibilityHidden(true)
-                            }
-                        }
-                        .clipped()
-                        .overlay { Rectangle().strokeBorder(.gray.opacity(0.6), lineWidth: zoom < 1 ? 1 : 0) }
-                        .scaleEffect(zoom * fit)
-                        // Constrain layout after scaling: the paper must not resize the viewport.
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .offset(offset)
                         .opacity(rendersArtwork ? 1 : 0)
                 }
             .clipped()
