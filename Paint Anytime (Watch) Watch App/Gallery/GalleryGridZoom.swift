@@ -8,6 +8,9 @@ final class GalleryGridZoom {
     private(set) var sessionID: UUID?
     private(set) var slots: [GalleryZoomSlot] = []
     private(set) var images: [URL: CGImage] = [:]
+    /// When a tile that was showing its low-res preview got its sharp image;
+    /// the overlay fades it in from that moment.
+    private(set) var imageArrivals: [URL: Date] = [:]
     private(set) var bitmaps: [URL: GalleryBitmap] = [:]
     private(set) var snapshot: [URL] = []
     private(set) var leading: [Int: Int] = [:]
@@ -75,6 +78,7 @@ final class GalleryGridZoom {
         self.position = GalleryZoomRules.position(baseColumns)
         self.bitmaps = cached
         self.images = cached.mapValues(\.image)
+        self.imageArrivals = [:]
         let size = cached[target]?.originalSize ?? CGSize(width: viewport.width,
             height: layout.height(for: target, width: viewport.width))
         singleFrame = GalleryArtworkLayout.frame(imageSize: size, viewport: viewport, fitsViewport: true)
@@ -131,6 +135,7 @@ final class GalleryGridZoom {
             let bitmap = await GalleryImageCache.shared.load(GalleryImageRequest(url: url, shortSidePixels: pixels, displayScale: scale))
             guard !Task.isCancelled, sessionID == session, loadingID == requestID else { return }
             if let bitmap {
+                if images[url] == nil { imageArrivals[url] = Date() }
                 images[url] = url != target && favorites.contains(url)
                     ? (GalleryFavoriteThumbnailRenderer.render(bitmap) ?? bitmap).image : bitmap.image
                 bitmaps[url] = bitmap
@@ -307,6 +312,7 @@ final class GalleryGridZoom {
         loadingComplete = false
         slots = []
         images = [:]
+        imageArrivals = [:]
         bitmaps = [:]
         snapshot = []
         offsetY = 0

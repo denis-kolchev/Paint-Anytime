@@ -350,8 +350,9 @@ struct GalleryFullscreenPage: View {
 
     var body: some View {
         // The persistent low-resolution preview keeps a page from ever showing black.
-        let displayedBitmap = original ?? preview ?? fallback
-            ?? GalleryPreviewStore.shared.slot(for: url).bitmap(for: url)
+        let sharpBitmap = original ?? preview ?? fallback
+        let lowResBitmap = GalleryPreviewStore.shared.slot(for: url).bitmap(for: url)
+        let displayedBitmap = sharpBitmap ?? lowResBitmap
         let previewRequest = isNearby
             ? GalleryImageRequest(url: url, shortSidePixels: thumbnailPixels, displayScale: displayScale) : nil
         let originalRequest = loadsOriginal
@@ -359,13 +360,11 @@ struct GalleryFullscreenPage: View {
         GeometryReader { pageGeometry in
             ZStack(alignment: .topLeading) {
                 Color.black
-                if let bitmap = displayedBitmap {
-                    let frame = GalleryArtworkLayout.frame(imageSize: bitmap.originalSize,
-                                                           viewport: size, fitsViewport: fitsViewport)
-                    Image(decorative: bitmap.image, scale: 1)
-                        .resizable()
-                        .frame(width: frame.width, height: frame.height)
-                        .position(x: frame.midX, y: frame.midY)
+                // The sharp image fades in over the low-resolution preview.
+                GalleryLowResCrossfade(showsSharp: sharpBitmap != nil) {
+                    if let sharpBitmap { pageImage(sharpBitmap) }
+                } lowRes: {
+                    if let lowResBitmap { pageImage(lowResBitmap) }
                 }
             }
             .frame(width: size.width, height: size.height, alignment: .topLeading)
@@ -395,5 +394,14 @@ struct GalleryFullscreenPage: View {
             original = loaded
         }
         .onDisappear { preview = nil; original = nil }
+    }
+
+    private func pageImage(_ bitmap: GalleryBitmap) -> some View {
+        let frame = GalleryArtworkLayout.frame(imageSize: bitmap.originalSize,
+                                               viewport: size, fitsViewport: fitsViewport)
+        return Image(decorative: bitmap.image, scale: 1)
+            .resizable()
+            .frame(width: frame.width, height: frame.height)
+            .position(x: frame.midX, y: frame.midY)
     }
 }
