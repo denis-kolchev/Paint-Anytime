@@ -5,6 +5,12 @@
       "comment" : "Bundle display name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paint Anytime"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -17,6 +23,12 @@
       "comment" : "Bundle name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paint Anytime (Watch)"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -32,6 +44,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "احفظ الرسومات التي تختارها في «الصور»."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запазване на избраните рисунки в Снимки."
           }
         },
         "cs" : {
@@ -199,7 +217,14 @@
       }
     },
     "Paint Anytime Project" : {
-
+      "localizations" : {
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проект на Paint Anytime"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

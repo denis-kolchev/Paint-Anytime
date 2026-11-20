@@ -264,6 +264,7 @@
 			knownRegions = (
 				en,
 				ar,
+				bg,
 				cs,
 				da,
 				nl,

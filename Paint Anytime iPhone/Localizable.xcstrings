@@ -10,6 +10,12 @@
             "value" : "اسمح بالوصول في الإعدادات لحفظ الرسومات في الصور."
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешете достъпа в Настройки, за да запазвате рисунки в Снимки."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -181,6 +187,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "السماح بالحفظ في الصور"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешаване на запазването в Снимки"
           }
         },
         "cs" : {
@@ -356,6 +368,12 @@
             "value" : "رجوع"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Назад"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -527,6 +545,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "العودة إلى المعرض"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Назад към галерията"
           }
         },
         "cs" : {
@@ -702,6 +726,12 @@
             "value" : "إلغاء"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отказ"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -873,6 +903,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "اللوحة على Apple Watch"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Платно на Apple Watch"
           }
         },
         "cs" : {
@@ -1048,6 +1084,12 @@
             "value" : "إغلاق"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Затваряне"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1219,6 +1261,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "وصّل Apple Watch وثبّت Paint Anytime قبل إرسال مشروع."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Свържете Apple Watch и инсталирайте Paint Anytime, преди да изпратите проект."
           }
         },
         "cs" : {
@@ -1394,6 +1442,12 @@
             "value" : "تعذّر إكمال الإجراء"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Действието не можа да бъде изпълнено"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1565,6 +1619,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تعذّر التصدير"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неуспешно експортиране"
           }
         },
         "cs" : {
@@ -1740,6 +1800,12 @@
             "value" : "تعذّرت قراءة الرسومات المستلمة: %@"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Получените рисунки не можаха да бъдат прочетени: %@"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -1911,6 +1977,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تعذّر استلام الرسم من ساعتك: %@"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рисунката не можа да бъде получена от часовника: %@"
           }
         },
         "cs" : {
@@ -2086,6 +2158,12 @@
             "value" : "تعذّر الحفظ"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Неуспешно запазване"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2257,6 +2335,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تعذّر حفظ الرسم في الصور: %@"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рисунката не можа да бъде запазена в Снимки: %@"
           }
         },
         "cs" : {
@@ -2432,6 +2516,12 @@
             "value" : "حذف"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изтриване"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2605,6 +2695,12 @@
             "value" : "هل تريد الحذف من Apple Watch وiPhone؟"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Да се изтрие ли от Apple Watch и iPhone?"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -2775,6 +2871,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "يؤدي حذف الرسم إلى إزالته من Apple Watch وiPhone معًا. احفظ نسخة في الصور أو الملفات أو تطبيق آخر قبل الحذف."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изтриването на рисунка я премахва както от Apple Watch, така и от iPhone. Запазете копие в Снимки, Файлове или друго приложение, преди да я изтриете."
           }
         },
         "cs" : {
@@ -2950,6 +3052,12 @@
             "value" : "تم"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3121,6 +3229,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "الرسم"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рисунка"
           }
         },
         "cs" : {
@@ -3296,6 +3410,12 @@
             "value" : "تظهر الرسومات المحفوظة على Apple Watch في تطبيق الصور على هذا الـ iPhone."
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рисунките, запазени на Apple Watch, се появяват в Снимки на този iPhone."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3467,6 +3587,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "صورة (.png)"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изображение (.png)"
           }
         },
         "cs" : {
@@ -3642,6 +3768,12 @@
             "value" : "استيراد صورة"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортиране на снимка"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -3813,6 +3945,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "استيراد مشروع"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортиране на проект"
           }
         },
         "cs" : {
@@ -3988,6 +4126,12 @@
             "value" : "المزيد"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Още"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4159,6 +4303,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "رسم جديد على Apple Watch"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нова рисунка на Apple Watch"
           }
         },
         "cs" : {
@@ -4334,6 +4484,12 @@
             "value" : "موافق"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4505,6 +4661,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "لا توجد على هذا الـ iPhone سوى معاينة PNG. افتح النسخة المحدثة من تطبيق Paint Anytime على Apple Watch، ثم زامن لاستلام المشروع القابل للتحرير."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "На този iPhone има само PNG преглед. Отворете актуализираното приложение Paint Anytime на Apple Watch, след което синхронизирайте, за да получите проекта за редактиране."
           }
         },
         "cs" : {
@@ -4680,6 +4842,12 @@
             "value" : "افتح Paint Anytime على Apple Watch واضغط على النقاط الثلاث لفتح الإعدادات."
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отворете Paint Anytime на Apple Watch и докоснете трите точки, за да отворите настройките."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -4851,6 +5019,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "افتح Paint Anytime على Apple Watch لمتابعة الرسم على اللوحة."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отворете Paint Anytime на Apple Watch, за да продължите да рисувате върху платното."
           }
         },
         "cs" : {
@@ -5026,6 +5200,12 @@
             "value" : "افتح Paint Anytime على Apple Watch. احفظ رسمك الحالي إذا لزم الأمر، ثم استخدم «مسح» في عناصر التحكم باللوحة لبدء رسم جديد."
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отворете Paint Anytime на Apple Watch. При нужда запазете текущата си рисунка, после използвайте „Изчистване“ в контролите на платното, за да започнете нова рисунка."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5197,6 +5377,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "فتح الإعدادات"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отваряне на Настройки"
           }
         },
         "cs" : {
@@ -5372,6 +5558,12 @@
             "value" : "الصور"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Снимки"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5543,6 +5735,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "المعاينة غير متاحة"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Прегледът не е наличен"
           }
         },
         "cs" : {
@@ -5718,6 +5916,12 @@
             "value" : "سياسة الخصوصية"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Политика за поверителност"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -5889,6 +6093,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "المشروع"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проект"
           }
         },
         "cs" : {
@@ -6064,6 +6274,12 @@
             "value" : "مشروع (.paintanytime)"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проект (.paintanytime)"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6235,6 +6451,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تم استيراد المشروع. افتحه في المعرض واضغط على «إرسال إلى Apple Watch» لمتابعة التعديل على ساعتك."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проектът е импортиран. Отворете го в галерията и докоснете „Изпращане към Apple Watch“, за да продължите редактирането на часовника."
           }
         },
         "cs" : {
@@ -6410,6 +6632,12 @@
             "value" : "المشروع في قائمة الانتظار"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проектът е в опашката"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6581,6 +6809,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تمت إضافة المشروع إلى قائمة الانتظار. سيظهر في معرض ساعتك عند انتهاء النقل. افتحه هناك لتعديله."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проектът е в опашката. Ще се появи в галерията на часовника, когато прехвърлянето приключи. Отворете го там, за да го редактирате."
           }
         },
         "cs" : {
@@ -6756,6 +6990,12 @@
             "value" : "جاهز لاستقبال الرسومات"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово за получаване на рисунки"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -6929,6 +7169,12 @@
             "value" : "حفظ"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запазване"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7099,6 +7345,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "احفظ نسخة في الصور أو الملفات أو تطبيق آخر أولًا. ستتم مزامنة الحذف عند إعادة اتصال أجهزتك."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Първо запазете копие в Снимки, Файлове или друго приложение. Изтриването ще се синхронизира, когато устройствата ви се свържат отново."
           }
         },
         "cs" : {
@@ -7275,6 +7527,12 @@
             "value" : "احفظ رسمًا في Paint Anytime على Apple Watch. افتح التطبيق على الساعة لمزامنة رسوماتك الحالية. قد يستغرق النقل بضع دقائق."
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запазете рисунка в Paint Anytime на Apple Watch. Отворете приложението на часовника, за да синхронизирате съществуващите си рисунки. Прехвърлянето може да отнеме няколко минути."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7446,6 +7704,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "حفظ المشروع في الملفات"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запазване на проекта във Файлове"
           }
         },
         "cs" : {
@@ -7621,6 +7885,12 @@
             "value" : "تم الحفظ في الصور"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запазено в Снимки"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -7792,6 +8062,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "جارٍ حفظ الرسومات في الصور…"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запазване на рисунки в Снимки…"
           }
         },
         "cs" : {
@@ -7967,6 +8243,12 @@
             "value" : "جارٍ الحفظ…"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Запазване…"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8138,6 +8420,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "إرسال إلى Apple Watch"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изпращане към Apple Watch"
           }
         },
         "cs" : {
@@ -8313,6 +8601,12 @@
             "value" : "الإعدادات على Apple Watch"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настройки на Apple Watch"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8484,6 +8778,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "مشاركة"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Споделяне"
           }
         },
         "cs" : {
@@ -8659,6 +8959,12 @@
             "value" : "مزامنة"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизиране"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -8830,6 +9136,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "مزامنة المشروع من Apple Watch"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизиране на проекта от Apple Watch"
           }
         },
         "cs" : {
@@ -9005,6 +9317,12 @@
             "value" : "المزامنة مع Apple Watch"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Синхронизиране с Apple Watch"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -9176,6 +9494,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تم حفظ الرسم في الصور، لكن تعذّر حذف الملف المؤقت: %@"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рисунката е запазена в Снимки, но временният файл не можа да бъде изтрит: %@"
           }
         },
         "cs" : {
@@ -9352,6 +9676,12 @@
             "value" : "يفتح هذا الرابط التطبيق المرافق على iPhone. ولا يمكنه فتح التطبيق على Apple Watch تلقائيًا."
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тази връзка отваря придружаващото приложение за iPhone. Тя не може автоматично да отвори приложението на Apple Watch."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -9523,6 +9853,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "بانتظار الحفظ: %lld"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чакащи за запазване: %lld"
           }
         },
         "cs" : {
@@ -9699,6 +10035,12 @@
             "value" : "معرض الساعة"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Галерия на часовника"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -9870,6 +10212,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "معرض ساعتك"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вашата галерия на часовника"
           }
         },
         "cs" : {
@@ -10045,6 +10393,12 @@
             "value" : "رسم جديد من صورة"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нова рисунка от снимка"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -10216,6 +10570,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ملاءمة شاشة Apple Watch"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Побиране в екрана на Apple Watch"
           }
         },
         "cs" : {
@@ -10391,6 +10751,12 @@
             "value" : "تصبح الصورة رسمًا جديدًا في معرض ساعتك. لها طبقة خاصة بها، وفوقها طبقة فارغة للرسم. حرّرها على Apple Watch."
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Снимката става нова рисунка в галерията на часовника. Тя е в собствен слой, с празен слой над нея за рисуване. Редактирайте я на Apple Watch."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -10562,6 +10928,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "إرسال"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Изпращане"
           }
         },
         "cs" : {
@@ -10737,6 +11109,12 @@
             "value" : "جارٍ تجهيز الصورة…"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Подготовка на снимката…"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -10908,6 +11286,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "اختيار صورة"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Избор на снимка"
           }
         },
         "cs" : {
@@ -11083,6 +11467,12 @@
             "value" : "الصورة المحددة. اختر صورة أخرى"
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Избрана снимка. Изберете друга снимка"
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -11254,6 +11644,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تعذر فتح هذه الصورة."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Тази снимка не можа да бъде отворена."
           }
         },
         "cs" : {
@@ -11429,6 +11825,12 @@
             "value" : "تمت إضافة الصورة إلى قائمة الانتظار. ستظهر في معرض ساعتك كرسم جديد عند اكتمال النقل. افتحها هناك لتحريرها."
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Снимката е в опашката. Ще се появи в галерията на часовника като нова рисунка, когато прехвърлянето приключи. Отворете я там, за да я редактирате."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -11600,6 +12002,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تأخذ اللوحة شكل الصورة وتتلاءم مع شاشة ساعتك."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Платното приема формата на снимката и се побира в екрана на часовника."
           }
         },
         "cs" : {
@@ -11775,6 +12183,12 @@
             "value" : "تأخذ اللوحة شكل الصورة ودقتها، حتى 1024 بكسل للضلع الأطول، وهي أكبر لوحة يمكن لـ Apple Watch تحريرها. تحتفظ الصور الأكبر بضعف هذه التفاصيل عند التكبير."
           }
         },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Платното приема формата и разделителната способност на снимката, до 1024 пиксела по дългата страна — най-голямото платно, което Apple Watch може да редактира. По-големите снимки запазват двойно повече детайли за увеличаване."
+          }
+        },
         "cs" : {
           "stringUnit" : {
             "state" : "translated",
@@ -11946,6 +12360,12 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "عند الحفظ أو المشاركة على iPhone تُستخدم الصورة الأصلية بدقتها الكاملة مع رسمك فوقها. يؤدي مسح الصورة أو تمويهها، أو استخدام القلم العريض أو الألوان المائية على طبقتها، إلى الإبقاء على دقة Apple Watch."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "При запазване или споделяне на iPhone се използва оригиналната снимка с пълната ѝ разделителна способност и рисунката ви върху нея. Изтриването или размазването на снимката, както и използването на маркер или акварел в нейния слой, запазва разделителната способност на Apple Watch."
           }
         },
         "cs" : {

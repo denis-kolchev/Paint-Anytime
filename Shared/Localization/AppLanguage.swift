@@ -33,6 +33,7 @@ struct AppLanguage: Identifiable {
         .init(id: "vi", nativeName: "Tiếng Việt"),
         .init(id: "th", nativeName: "ไทย"),
         .init(id: "uk", nativeName: "Українська"),
+        .init(id: "bg", nativeName: "Български"),
         .init(id: "cs", nativeName: "Čeština"),
         .init(id: "hu", nativeName: "Magyar"),
         .init(id: "el", nativeName: "Ελληνικά"),
