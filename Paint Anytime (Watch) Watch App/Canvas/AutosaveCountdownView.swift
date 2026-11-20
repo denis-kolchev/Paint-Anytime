@@ -54,27 +54,55 @@ private struct AutosaveSpinner: View {
     }
 }
 
-/// Places the countdown centered horizontally at the hidden system clock's height.
-struct AutosaveCountdownOverlay: View {
+/// Places the countdown centered horizontally at the hidden system clock's height,
+/// and the zoom percent below it while zooming, or at that height without a countdown.
+struct CanvasStatusOverlay: View {
     /// Center of the system clock text, in points from the top of the screen.
     private static let clockCenterY: CGFloat = 27
+    /// Gap between the countdown and the zoom label below it.
+    private static let rowGap: CGFloat = 4
     let autosave: CanvasAutosave
+    let showsCountdown: Bool
+    let zoom: CanvasZoomReadout
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         // Read here, not in the GeometryReader's closure: that closure runs during
         // layout, where an observable read may not be tracked, so the wheel never
         // replaced the clock icon when a save started.
         let isSaving = autosave.isSaving
-        if let timerRange = autosave.timerRange {
-            GeometryReader { overlay in
-                let frame = overlay.frame(in: .global)
-                // Fixed screen height of the hidden clock's center (measured on Apple Watch
-                // Ultra). Toolbar frames are not used: they differ in the free camera.
-                AutosaveCountdownView(timerRange: timerRange, isSaving: isSaving)
-                    .position(x: overlay.size.width / 2, y: Self.clockCenterY - frame.minY)
+        let timerRange = showsCountdown ? autosave.timerRange : nil
+        let percent = zoom.percent
+        GeometryReader { overlay in
+            let frame = overlay.frame(in: .global)
+            // Fixed screen height of the hidden clock's center (measured on Apple Watch
+            // Ultra). Toolbar frames are not used: they differ in the free camera.
+            let clockY = Self.clockCenterY - frame.minY
+            if let timerRange {
+                // Stacked, so no text size makes them overlap. An invisible copy of the
+                // label above keeps the countdown itself centered at the clock's height.
+                VStack(spacing: Self.rowGap) {
+                    if let percent {
+                        CanvasZoomLabel(percent: percent)
+                            .hidden()
+                            .accessibilityHidden(true)
+                    }
+                    AutosaveCountdownView(timerRange: timerRange, isSaving: isSaving)
+                    if let percent {
+                        CanvasZoomLabel(percent: percent)
+                            .transition(.opacity)
+                    }
+                }
+                .fixedSize()
+                .position(x: overlay.size.width / 2, y: clockY)
+            } else if let percent {
+                CanvasZoomLabel(percent: percent)
+                    .position(x: overlay.size.width / 2, y: clockY)
+                    .transition(.opacity)
             }
-            .ignoresSafeArea()
-            .allowsHitTesting(false)
         }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: percent == nil)
     }
 }

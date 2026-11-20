@@ -43,6 +43,8 @@ struct WatchCanvasView: View {
     /// native bars hidden, taps on a drawn control sometimes reach the canvas under it
     /// instead of the control; the screen forwards them to that control.
     var onProtectedTap: (CanvasToolbarControl) -> Void = { _ in }
+    /// Receives the zoom on every Crown change, for the status overlay.
+    var zoomReadout: CanvasZoomReadout? = nil
     /// The protected control the current gesture started on.
     @State private var protectedStartControl: CanvasToolbarControl?
     @State private var crownZoom = 1.0
@@ -481,6 +483,7 @@ struct WatchCanvasView: View {
                 let wasSnapped = previousZoom == 1
                 if !lasso.isActive { isMovingCanvas = true }
                 crownZoom = value
+                zoomReadout?.show(zoom)
                 // Keep the canvas point at the viewport center fixed, including
                 // when entering or leaving the 100% zoom snap range.
                 let ratio = zoom / previousZoom
