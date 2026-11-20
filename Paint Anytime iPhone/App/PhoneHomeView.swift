@@ -68,6 +68,10 @@ struct PhoneHomeView: View {
                     self.selectedDrawing = nil
                 }
                 imageLayout = GalleryImageLayout(images: images)
+                // Low-res snapshots fill tiles until sharp previews decode.
+                // A sync can rewrite a file under the same URL, so recheck dates.
+                GalleryPreviewStore.shared.prepare(urls: images, displayScale: displayScale,
+                                                   delay: .zero, revalidate: true)
                 previewCache.invalidate()
                 previewCache = PhoneGalleryPreviewCache()
                 if zoom.pinchTarget != nil, images != zoom.zoomSnapshot { resetGalleryZoom() }

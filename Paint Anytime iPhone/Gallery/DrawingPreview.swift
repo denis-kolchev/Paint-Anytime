@@ -43,8 +43,13 @@ struct DrawingPreview: View {
                         }
                 }
             }
-            else if isTransitionDestination { Color.clear }
             else if failed { Label("Preview unavailable", systemImage: "photo") }
+            else if cache != nil {
+                // Gallery tiles (resting grid and pinch overlay) show a low-res
+                // snapshot instead of a spinner while the sharp image decodes.
+                PhoneGalleryLowResPreview(url: url, fillsFrame: fillsFrame, viewportSize: viewportSize)
+            }
+            else if isTransitionDestination { Color.clear }
             else { ProgressView() }
         }
         .onAppear {

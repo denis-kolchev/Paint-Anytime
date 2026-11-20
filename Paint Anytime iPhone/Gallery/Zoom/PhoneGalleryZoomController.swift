@@ -439,6 +439,14 @@ final class PhoneGalleryZoomController {
             let right = snapshot.firstIndex(of: $1) ?? 0
             return abs(left - index) < abs(right - index)
         }
+        // Until a sharp copy loads, draw the low-res snapshot instead of an
+        // empty tile. Missing previews were listed above, so they still load
+        // and replace it; side backdrops use the same dictionary.
+        for url in zoomMissingPreviews {
+            if let image = GalleryPreviewStore.shared.slot(for: url).preview?.image {
+                zoomPreviews[url] = UIImage(cgImage: image)
+            }
+        }
         zoomSessionID = UUID()
     }
 

@@ -5,17 +5,12 @@ import Observation
 
 /// A tiny, always-resident snapshot of a drawing. The gallery shows it
 /// immediately while the sharp thumbnail decodes, so tiles never appear empty.
+/// Shared by the watch and iPhone galleries; each keeps its own cache folder.
 nonisolated struct GalleryPreview: @unchecked Sendable {
     let image: CGImage
     let originalSize: CGSize
     /// Modification date of the source image this preview was made from.
     let sourceModified: Double
-
-    func bitmap(for url: URL) -> GalleryBitmap {
-        GalleryBitmap(request: GalleryImageRequest(url: url, shortSidePixels: GalleryPreviewDisk.shortSide,
-                                                   displayScale: 1),
-                      image: image, originalSize: originalSize)
-    }
 }
 
 nonisolated private struct GalleryPreviewSource: @unchecked Sendable {
@@ -27,16 +22,9 @@ nonisolated private struct GalleryPreviewSource: @unchecked Sendable {
 @Observable
 final class GalleryPreviewSlot {
     var preview: GalleryPreview?
-    @ObservationIgnored private var cachedBitmap: GalleryBitmap?
-
-    /// A stable bitmap identity, so views comparing bitmaps do not see a new one per render.
-    func bitmap(for url: URL) -> GalleryBitmap? {
-        guard let preview else { return nil }
-        if let cachedBitmap, cachedBitmap.url == url, cachedBitmap.image === preview.image { return cachedBitmap }
-        let bitmap = preview.bitmap(for: url)
-        cachedBitmap = bitmap
-        return bitmap
-    }
+    /// A platform wrapper derived from `preview`, kept so its identity is
+    /// stable between renders (the watch stores its `GalleryBitmap` here).
+    @ObservationIgnored var derivedImage: AnyObject?
 }
 
 /// Previews persist in Caches and load once per launch. A stale preview of an
@@ -95,17 +83,17 @@ final class GalleryPreviewStore {
 
     /// Builds a preview from an already decoded thumbnail when the cached one
     /// is missing or older than the file.
-    func record(_ bitmap: GalleryBitmap) {
-        let url = bitmap.url
+    func record(image: CGImage, originalSize: CGSize, for url: URL) {
         let key = GalleryPreviewDisk.key(for: url)
         guard !verified.contains(key), !pending.contains(key) else { return }
         pending.insert(key)
         let known = slot(key).preview?.sourceModified
+        let source = GalleryPreviewSource(image: image)
         Task { [weak self] in
             let result = await Task.detached(priority: .utility) { () -> GalleryPreview?? in
                 guard let modified = GalleryPreviewDisk.modificationDate(of: url) else { return .some(nil) }
                 if known == modified { return .none }
-                return .some(GalleryPreviewDisk.make(from: bitmap.image, originalSize: bitmap.originalSize,
+                return .some(GalleryPreviewDisk.make(from: source.image, originalSize: originalSize,
                                                      sourceModified: modified, key: key))
             }.value
             guard let self else { return }
@@ -124,9 +112,13 @@ final class GalleryPreviewStore {
 
     /// Fills in missing or stale previews for the gallery's drawings in the
     /// background and drops cached previews of drawings that no longer exist.
-    func prepare(urls: [URL], displayScale: CGFloat, delay: Duration = .milliseconds(300)) {
+    /// `revalidate` rechecks file dates even for previews already checked this
+    /// launch; the iPhone needs it because a sync replaces files in place.
+    func prepare(urls: [URL], displayScale: CGFloat, delay: Duration = .milliseconds(300),
+                 revalidate: Bool = false) {
         refreshTask?.cancel()
         let keys = urls.map(GalleryPreviewDisk.key(for:))
+        if revalidate { verified.subtract(keys) }
         let scopes = Set(keys.map(GalleryPreviewDisk.scope(of:)))
         let current = Set(keys)
         for key in slots.keys where scopes.contains(GalleryPreviewDisk.scope(of: key)) && !current.contains(key) {
