@@ -17,38 +17,20 @@ struct DrawingPreview: View {
     @State private var failed = false
 
     var body: some View {
+        let image = frozenPreview ?? cache?.image(for: url, maximumSize: maximumSize)
+            ?? preview ?? cache?.availableImage(for: url, maximumSize: maximumSize)
         Group {
-            if let image = frozenPreview ?? cache?.image(for: url, maximumSize: maximumSize)
-                ?? preview ?? cache?.availableImage(for: url, maximumSize: maximumSize) {
-                if let viewportSize {
-                    // Use the same dimensions as the tile's clip. A fixed inner
-                    // frame also prevents an oversized aspect-fill image from
-                    // changing the ZStack's layout and centering during a pinch.
-                    let scale = max(viewportSize.width / max(image.size.width, 1),
-                                    viewportSize.height / max(image.size.height, 1))
-                    Image(uiImage: image)
-                        .resizable()
-                        .frame(width: image.size.width * scale, height: image.size.height * scale)
-                        .frame(width: viewportSize.width, height: viewportSize.height)
-                        .background {
-                            if isTransitionDestination { Color(uiColor: .systemBackground) }
-                        }
-                        .clipped()
-                } else {
-                    Image(uiImage: image)
-                        .resizable()
-                        .aspectRatio(contentMode: fillsFrame ? .fill : .fit)
-                        .background {
-                            if isTransitionDestination { Color(uiColor: .systemBackground) }
-                        }
+            if cache != nil, !failed {
+                // Gallery tiles (resting grid and pinch overlay) show a low-res
+                // snapshot instead of a spinner, then fade the sharp image in.
+                GalleryLowResCrossfade(showsSharp: image != nil) {
+                    if let image { sharpImage(image) }
+                } lowRes: {
+                    PhoneGalleryLowResPreview(url: url, fillsFrame: fillsFrame, viewportSize: viewportSize)
                 }
             }
+            else if let image { sharpImage(image) }
             else if failed { Label("Preview unavailable", systemImage: "photo") }
-            else if cache != nil {
-                // Gallery tiles (resting grid and pinch overlay) show a low-res
-                // snapshot instead of a spinner while the sharp image decodes.
-                PhoneGalleryLowResPreview(url: url, fillsFrame: fillsFrame, viewportSize: viewportSize)
-            }
             else if isTransitionDestination { Color.clear }
             else { ProgressView() }
         }
@@ -93,6 +75,32 @@ struct DrawingPreview: View {
                 if let image { preview = UIImage(cgImage: image) }
                 else { failed = true }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func sharpImage(_ image: UIImage) -> some View {
+        if let viewportSize {
+            // Use the same dimensions as the tile's clip. A fixed inner
+            // frame also prevents an oversized aspect-fill image from
+            // changing the ZStack's layout and centering during a pinch.
+            let scale = max(viewportSize.width / max(image.size.width, 1),
+                            viewportSize.height / max(image.size.height, 1))
+            Image(uiImage: image)
+                .resizable()
+                .frame(width: image.size.width * scale, height: image.size.height * scale)
+                .frame(width: viewportSize.width, height: viewportSize.height)
+                .background {
+                    if isTransitionDestination { Color(uiColor: .systemBackground) }
+                }
+                .clipped()
+        } else {
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: fillsFrame ? .fill : .fit)
+                .background {
+                    if isTransitionDestination { Color(uiColor: .systemBackground) }
+                }
         }
     }
 }

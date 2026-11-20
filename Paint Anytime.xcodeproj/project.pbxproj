@@ -10,6 +10,7 @@
 		257D4058305EA358002072CB /* Paint Anytime (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AB1000000000000000000001 /* Shared/Document/PaintProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1000000000000000000002 /* Shared/Document/PaintProject.swift */; };
 		AC1000000000000000000001 /* Shared/Gallery/GalleryDeletionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */; };
+		AF1040000000000000000005 /* Shared/Gallery/GalleryLowResCrossfade.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */; };
 		AE1030000000000000000001 /* Shared/Gallery/GalleryImageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */; };
 		AF1030000000000000000012 /* Shared/Debug/GalleryDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000011 /* Shared/Debug/GalleryDebug.swift */; };
 		AF1030000000000000000022 /* Shared/Debug/DebugGallerySamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000021 /* Shared/Debug/DebugGallerySamples.swift */; };
@@ -71,6 +72,7 @@
 		257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AB1000000000000000000002 /* Shared/Document/PaintProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Document/PaintProject.swift; sourceTree = SOURCE_ROOT; };
 		AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryDeletionStore.swift; sourceTree = SOURCE_ROOT; };
+		AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryLowResCrossfade.swift; sourceTree = SOURCE_ROOT; };
 		AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryImageLayout.swift; sourceTree = SOURCE_ROOT; };
 		AF1030000000000000000011 /* Shared/Debug/GalleryDebug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Debug/GalleryDebug.swift; sourceTree = SOURCE_ROOT; };
 		AF1030000000000000000021 /* Shared/Debug/DebugGallerySamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Debug/DebugGallerySamples.swift; sourceTree = SOURCE_ROOT; };
@@ -136,6 +138,7 @@
 				AB1000000000000000000002 /* Shared/Document/PaintProject.swift */,
 				AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */,
 				AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */,
+				AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */,
 				AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */,
 				AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */,
 				AF1030010000000000000001 /* Shared/Gallery/GalleryZoomSlot.swift */,
@@ -340,6 +343,7 @@
 				AB1000000000000000000001 /* Shared/Document/PaintProject.swift in Sources */,
 				AC1000000000000000000001 /* Shared/Gallery/GalleryDeletionStore.swift in Sources */,
 				AE1030000000000000000001 /* Shared/Gallery/GalleryImageLayout.swift in Sources */,
+				AF1040000000000000000005 /* Shared/Gallery/GalleryLowResCrossfade.swift in Sources */,
 				AF1040000000000000000003 /* Shared/Gallery/GalleryImageMetadata.swift in Sources */,
 				AF1040000000000000000001 /* Shared/Gallery/GalleryPreviewStore.swift in Sources */,
 				AF1030010000000000000011 /* Shared/Gallery/GalleryZoomSlot.swift in Sources */,

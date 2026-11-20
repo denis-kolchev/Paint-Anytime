@@ -36,6 +36,10 @@ final class PhoneGalleryZoomController {
     var measuredGridColumns = 0
     var zoomSlots: [PhoneGalleryZoomSlot] = []
     var zoomPreviews: [URL: UIImage] = [:]
+    /// 32 px snapshots drawn until a missing sharp preview loads.
+    var zoomLowResPreviews: [URL: UIImage] = [:]
+    /// When each sharp preview arrived during the session; the overlay fades it in.
+    var zoomPreviewArrivals: [URL: Date] = [:]
     var zoomPreviewSize = 640
     var zoomSideBackdrops: [Int: UIImage] = [:]
     var zoomSideBackdropFrame: CGRect = .zero
@@ -242,7 +246,10 @@ final class PhoneGalleryZoomController {
             guard !Task.isCancelled, zoomSessionID == sessionID else { return }
             let image = await cache.load(url, maximumSize: 320)
             guard !Task.isCancelled, zoomSessionID == sessionID else { return }
-            if let image { zoomPreviews[url] = image }
+            if let image {
+                zoomPreviews[url] = image
+                zoomPreviewArrivals[url] = Date()
+            }
         }
         #if DEBUG
         if zoomDiagnostics.session == diagnosticSession {
@@ -440,13 +447,13 @@ final class PhoneGalleryZoomController {
             return abs(left - index) < abs(right - index)
         }
         // Until a sharp copy loads, draw the low-res snapshot instead of an
-        // empty tile. Missing previews were listed above, so they still load
-        // and replace it; side backdrops use the same dictionary.
-        for url in zoomMissingPreviews {
+        // empty tile; the sharp copy then fades in over it.
+        zoomLowResPreviews = zoomMissingPreviews.reduce(into: [:]) { result, url in
             if let image = GalleryPreviewStore.shared.slot(for: url).preview?.image {
-                zoomPreviews[url] = UIImage(cgImage: image)
+                result[url] = UIImage(cgImage: image)
             }
         }
+        zoomPreviewArrivals = [:]
         zoomSessionID = UUID()
     }
 
@@ -488,7 +495,8 @@ final class PhoneGalleryZoomController {
                 let destinationRow = Int(((rect.minY - originY) / stride).rounded())
                 guard let url = GalleryZoomRules.backdropURL(images: zoomSnapshot,
                     leading: leading, row: destinationRow, column: column, direction: direction) else { continue }
-                guard let image = zoomPreviews[url] ?? previewCache.availableImage(for: url, maximumSize: zoomPreviewSize),
+                guard let image = zoomPreviews[url] ?? previewCache.availableImage(for: url, maximumSize: zoomPreviewSize)
+                        ?? zoomLowResPreviews[url],
                       image.size.width > 0, image.size.height > 0 else { continue }
                 let tile = rect.offsetBy(dx: 0, dy: -top)
                 drawTiles[direction, default: []].append(.init(image: image, rect: tile))
@@ -656,6 +664,8 @@ final class PhoneGalleryZoomController {
             zoomMissingPreviews = []
             zoomSlots = []
             zoomPreviews = [:]
+            zoomLowResPreviews = [:]
+            zoomPreviewArrivals = [:]
             zoomSideBackdrops = [:]
             zoomSideBackdropFrame = .zero
             zoomSnapshot = []

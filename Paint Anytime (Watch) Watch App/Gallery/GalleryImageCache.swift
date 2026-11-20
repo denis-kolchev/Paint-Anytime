@@ -240,10 +240,13 @@ struct GalleryThumbnailView: View {
         let _ = isNearViewport || showsPreviewBeforeMeasurement
             ? MenuGalleryTransitionDiagnostics.shared.tile(request.url,
                 displayed != nil ? "sharp" : preview != nil ? "low" : "gray") : ()
-        Group {
+        // The sharp thumbnail fades in over the low-resolution snapshot.
+        GalleryLowResCrossfade(showsSharp: displayed != nil) {
             if let displayed {
                 Image(decorative: displayed.image, scale: 1).resizable().scaledToFill()
-            } else if let preview {
+            }
+        } lowRes: {
+            if let preview {
                 // A low-resolution snapshot stands in until the sharp thumbnail decodes.
                 Image(decorative: preview.image, scale: 1)
                     .resizable()

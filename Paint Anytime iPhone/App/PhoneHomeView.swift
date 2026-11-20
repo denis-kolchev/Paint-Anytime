@@ -227,6 +227,8 @@ struct PhoneHomeView: View {
                         PhoneGalleryZoomOverlay(
                             presentation: zoom.zoomPresentation, slots: zoom.zoomSlots,
                             previews: zoom.zoomPreviews,
+                            lowResPreviews: zoom.zoomLowResPreviews,
+                            previewArrivals: zoom.zoomPreviewArrivals,
                             sideBackdrops: zoom.zoomSideBackdrops, sideBackdropFrame: zoom.zoomSideBackdropFrame,
                             viewportInsets: geometry.safeAreaInsets)
                     }
