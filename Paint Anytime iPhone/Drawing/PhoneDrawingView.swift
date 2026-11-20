@@ -12,15 +12,26 @@ struct PhoneDrawingView: View {
     @State private var showingPhotoConfirmation = false
     @State private var exportingProject = false
     @State private var transferMessage: String?
+    /// Toggled by a tap while zoomed in; zooming back out shows the bars.
+    @State private var barsHidden = false
     private var projectURL: URL { url.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension) }
     private var hasProject: Bool { FileManager.default.fileExists(atPath: projectURL.path) }
     @State private var exportError: String?
 
     private var drawingContent: some View {
-        GeometryReader { geometry in
-            DrawingPreview(url: url, maximumSize: 2400)
-                .frame(width: geometry.size.width, height: geometry.size.height)
-        }
+        // Zooming stays in this layout, so the bars keep their place.
+        PhoneZoomableDrawing(
+            url: url, maximumSize: 2400,
+            onZoomedTap: {
+                withAnimation(.easeInOut(duration: 0.2)) { barsHidden.toggle() }
+            },
+            onZoomedChange: { zoomed in
+                // Back at the fitted size, the bars always return.
+                if !zoomed, barsHidden {
+                    withAnimation(.easeInOut(duration: 0.2)) { barsHidden = false }
+                }
+            })
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .ignoresSafeArea(.container)
         .overlay(alignment: .bottom) {
             if inbox.isSaving {
@@ -35,10 +46,11 @@ struct PhoneDrawingView: View {
     private var drawingNavigation: some View {
         drawingContent
         .toolbarBackground(.hidden, for: .bottomBar)
-        .toolbar(.visible, for: .bottomBar)
+        .toolbar(barsHidden ? .hidden : .visible, for: .bottomBar)
         .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTitle("Drawing")
-        .toolbar(.visible, for: .navigationBar)
+        .toolbar(barsHidden ? .hidden : .visible, for: .navigationBar)
+        .statusBarHidden(barsHidden)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
                 PhoneDrawingActions(

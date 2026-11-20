@@ -245,6 +245,10 @@ struct PhoneHomeView: View {
                                     isPinching: { isPinching }, context: zoomContext)
                 }
                 .overlay {
+                    // The observer sits on the window. While a drawing is pushed
+                    // on top, the gallery stays alive beneath it and would start
+                    // its own zoom from a pinch on the drawing.
+                    if navigationPath.isEmpty {
                     PhoneGalleryTouchOverlay(onMovement: { positions in
                         zoom.touchesMoved(positions, width: width, viewportHeight: height, context: zoomContext)
                     }) { positions in
@@ -253,6 +257,7 @@ struct PhoneHomeView: View {
                     }
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
+                    }
                 }
                 #if DEBUG
                 .overlay(alignment: .topTrailing) {
