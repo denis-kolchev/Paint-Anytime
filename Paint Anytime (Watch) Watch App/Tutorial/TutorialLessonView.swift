@@ -15,6 +15,8 @@ struct TutorialLessonView: View {
     var onShowContinuation: (() -> Void)? = nil
     /// Set while the card fills the screen and asks whether to continue the tour.
     var continuation: TutorialContinuationActions? = nil
+    /// Set while the card fills the screen with the shapes that snap, above its usual hint.
+    var showsShapeCatalog = false
     @State private var completionProgress: CGFloat = 0
     @State private var revealsResultAction = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -27,6 +29,18 @@ struct TutorialLessonView: View {
                 TutorialContinuationContent(actions: continuation)
                     .transition(.asymmetric(insertion: .identity,
                                             removal: .opacity.animation(.easeInOut(duration: 0.15))))
+            } else if showsShapeCatalog {
+                // The list fades in once the card has mostly grown; the hint below keeps
+                // its ✕ and progress ring, and ••• in the corner leads on.
+                VStack(spacing: 0) {
+                    TutorialShapeCatalog(topInset: shapeCatalogTopInset)
+                        .frame(maxHeight: .infinity)
+                    compactCard
+                }
+                .transition(.asymmetric(
+                    insertion: .opacity.animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25)
+                        .delay(reduceMotion ? 0 : 0.3)),
+                    removal: .opacity.animation(.easeInOut(duration: 0.15))))
             } else {
                 // Returning from the question, the next hint waits until the card has nearly
                 // finished shrinking; leaving for it, the result fades out at once.
@@ -37,7 +51,7 @@ struct TutorialLessonView: View {
                         removal: .opacity.animation(.easeInOut(duration: 0.15))))
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: continuation == nil ? nil : .infinity)
+        .frame(maxWidth: .infinity, maxHeight: isExpanded ? .infinity : nil)
         .background(.regularMaterial, in: cardShape)
         .overlay {
             cardShape.stroke(.white.opacity(0.16), lineWidth: 0.5)
@@ -46,7 +60,7 @@ struct TutorialLessonView: View {
         .environment(\.colorScheme, .dark)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: displayedInstruction)
         // The expanded card reaches the display edges; its rounded corners lie beyond the screen's.
-        .padding(continuation == nil ? edgeGap : 0)
+        .padding(isExpanded ? 0 : edgeGap)
         .task(id: tutorial.step) {
             await animateCompletion()
         }
@@ -183,6 +197,11 @@ struct TutorialLessonView: View {
     }
 
     private let edgeGap: CGFloat = 10
+
+    private var isExpanded: Bool { continuation != nil || showsShapeCatalog }
+
+    /// The top toolbar band, where ••• sits; the clock is hidden over the canvas.
+    private var shapeCatalogTopInset: CGFloat { max(34, screenHeight * 0.17) }
 
     private var cardShape: TutorialHintShape {
         TutorialHintShape(expandedRadius: screenWidth * 0.09)

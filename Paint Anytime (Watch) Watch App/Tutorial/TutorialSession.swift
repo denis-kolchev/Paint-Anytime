@@ -128,6 +128,9 @@ final class TutorialSession: ObservableObject {
         !isActive || (acceptsActions && steps.contains(step))
     }
 
+    /// ••• also leads on from the shape list, straight into the menu.
+    var permitsMenuButton: Bool { permits([.openMenu, .browseShapes]) }
+
     func allowsToolAdjustment(page: Int) -> Bool {
         !isActive || (acceptsActions && progress.allowsToolAdjustment(page: page))
     }

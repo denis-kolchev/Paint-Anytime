@@ -142,7 +142,7 @@ final class TutorialPlayerController: ObservableObject {
         tutorial.record(.closedTools)
     }
     func openMenu() {
-        guard page == .canvas, tutorial.permits([.openMenu]) else { return }
+        guard page == .canvas, tutorial.permitsMenuButton else { return }
         canvas.cancelStroke()
         page = .menu
         tutorial.record(.openedMenu)

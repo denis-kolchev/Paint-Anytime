@@ -320,23 +320,23 @@ struct TutorialPlayerView: View {
                         ToolbarItem(placement: .topBarTrailing) { toolbarPlaceholder }
                     }
                     if page == .canvas && [.openTools, .openLayers].contains(tutorial.step)
-                        && !tutorial.permits([.openMenu]) {
+                        && !tutorial.permitsMenuButton {
                         ToolbarItem(placement: .topBarLeading) { toolbarPlaceholder }
                     }
-                    if page == .canvas && tutorial.permits([.openMenu]) {
+                    if page == .canvas && tutorial.permitsMenuButton {
                         ToolbarItem(placement: .topBarLeading) {
                             Button { player.openMenu() } label: {
-                                Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openMenu])
+                                Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openMenu, .browseShapes])
                                     .frame(width: 32, height: 32)
                                     .contentShape(Circle())
                             }
-                                .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: !tutorial.permits([.openMenu]))
+                                .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: !tutorial.permitsMenuButton)
                                 .accessibilityLabel(L10n.text("More"))
                                 .trackCanvasControl(.more, frames: $controls)
-                                .opacity(tutorial.permits([.openMenu]) ? 1 : 0)
-                                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25), value: tutorial.permits([.openMenu]))
-                                .allowsHitTesting(tutorial.permits([.openMenu]))
-                                .accessibilityHidden(!tutorial.permits([.openMenu]))
+                                .opacity(tutorial.permitsMenuButton ? 1 : 0)
+                                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25), value: tutorial.permitsMenuButton)
+                                .allowsHitTesting(tutorial.permitsMenuButton)
+                                .accessibilityHidden(!tutorial.permitsMenuButton)
                         }
                     }
                 }
@@ -369,8 +369,11 @@ struct TutorialPlayerView: View {
 
                 lessonCard(width: hintWidth, screenHeight: screen.size.height)
                     .frame(width: hintWidth)
-                    // The continuation question grows the card to the whole screen.
-                    .fixedSize(horizontal: false, vertical: !offersContinuation)
+                    // The continuation question and the shape list grow the card to the whole screen.
+                    .fixedSize(horizontal: false, vertical: !expandsLessonCard)
+                    // The step changes outside withAnimation; the card grows and shrinks here.
+                    .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0),
+                               value: showsShapeCatalog)
                     .background {
                         GeometryReader { hintGeometry in
                             Color.clear.preference(key: TutorialHintHeightKey.self,
@@ -396,8 +399,8 @@ struct TutorialPlayerView: View {
                                              .drawingSettings, .colorBlending, .canvasEditor, .autosave].contains(page)
                          || tutorial.isPaletteLesson ? .bottom : .all)
         .onPreferenceChange(TutorialHintHeightKey.self) { height in
-            // The full-screen question must not move the controls reserved for the compact card.
-            if height > 0, !offersContinuation { hintHeight = height }
+            // The full-screen card must not move the controls reserved for the compact card.
+            if height > 0, !expandsLessonCard { hintHeight = height }
         }
         .background(Color.black.ignoresSafeArea())
         .task(id: tutorial.step == .autosaveDrawing && page == .canvas) {
@@ -871,7 +874,7 @@ struct TutorialPlayerView: View {
             case .morph, .contentMorph, .custom, .reference: return false
             case .canvasToolsMorph: return tutorial.permits([.openLasso, .openLayers])
             case .tools: return showsPrimaryControl
-            case .more: return tutorial.permits([.openMenu])
+            case .more: return tutorial.permitsMenuButton
             case .undo: return tutorial.permits([.history, .undoMarkerLine])
             case .redo: return tutorial.permits([.history])
             case .save: return tutorial.permits([.saveDrawing])
@@ -1340,6 +1343,12 @@ private extension TutorialPlayerView {
     /// A full-screen question or confirmation hides the lesson and its toolbars.
     var coversLesson: Bool { confirmsFinish || offersContinuation || showsFavoritesWidget }
 
+    /// After the held circle the card lists every shape that snaps. Unlike the question it
+    /// keeps the toolbar: ••• in the top-left corner leads on to the menu.
+    var showsShapeCatalog: Bool { page == .canvas && tutorial.step == .browseShapes }
+
+    var expandsLessonCard: Bool { offersContinuation || showsShapeCatalog }
+
     /// The watch face with the favorites widget, over the gallery, until it is tapped.
     var showsFavoritesWidget: Bool { page == .gallery && tutorial.step == .showFavoritesWidget }
 
@@ -1364,7 +1373,8 @@ private extension TutorialPlayerView {
                                   maximumCardHeight: maximumCardHeight,
                                   confirmsFinish: $confirmsFinish,
                                   onShowContinuation: onShowContinuation,
-                                  continuation: continuation)
+                                  continuation: continuation,
+                                  showsShapeCatalog: showsShapeCatalog)
     }
 
     /// The first chapter's result of a run that asks before the rest: its card shows a

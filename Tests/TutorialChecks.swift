@@ -136,7 +136,7 @@ struct TutorialChecks {
         // Autosave: the menu offers only it and Gallery; Back from it adds Canvas.
         precondition(!progress.showsAutosaveInMenu && progress.teachesAutosave)
         for (step, event): (TutorialStep, TutorialProgress.Event) in [
-            (.openMenu, .openedMenu), (.openAutosave, .openedAutosave)
+            (.browseShapes, .openedMenu), (.openAutosave, .openedAutosave)
         ] {
             precondition(progress.step == step && progress.teachesAutosave && progress.record(event) == .advance)
             progress.advance()

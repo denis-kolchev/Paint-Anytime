@@ -31,6 +31,9 @@ enum TutorialStep: Int, CaseIterable {
     case openAutosave, enableAutosave, leaveAutosave, autosaveDrawing
     case openCanvasEditor, resetEditorLayout, chooseEditorSlot, groupEditorActions, chooseEditorActions
     case chooseGroupIcon, saveCanvasLayout, openPracticeGroup, toggleEraser, eraseStroke
+    /// After the held circle: the lesson card fills the screen with every shape that snaps;
+    /// ••• in the corner opens the menu and the next lesson.
+    case browseShapes
     // Results, not lessons: they wait for Next (or Done after the last chapter).
     case chapterComplete, finished
 
@@ -253,7 +256,7 @@ struct TutorialProgress {
              (.transformLasso, .transformedLasso), (.finishLasso, .finishedLasso): return .advance
         case (.clearCanvas, .cleared): return .showResult
         case (.openTools, .openedTools), (.closeTools, .closedTools), (.reedStrokes, .stroke), (.reedStrokes, .filled),
-             (.saveDrawing, .saved), (.openMenu, .openedMenu),
+             (.saveDrawing, .saved), (.openMenu, .openedMenu), (.browseShapes, .openedMenu),
              (.openGallery, .openedGallery), (.galleryFullscreen, .galleryFullscreen),
              (.deleteDrawing, .deleted), (.returnToCanvas, .returnedToCanvas),
              (.fillCanvas, .filled), (.blurCanvas, .stroke), (.openLayers, .openedLayers),

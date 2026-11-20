@@ -59,10 +59,11 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
     private var toolLessons: [Lesson] {
         [
             Lesson(steps: [.holdCircle]),
-            // Autosave comes first in the menu; Back from it leaves the menu open, now with
+            // The shape list follows the circle; its ••• opens the menu, so it takes the place
+            // of the lesson's own ••• step. Autosave comes first in the menu; Back from it leaves the menu open, now with
             // Canvas. Guides then straighten a stroke, like the held shape before them. Back
             // leads from the guides to the menu, and from the menu to the canvas.
-            Lesson(steps: [.openMenu, .openAutosave, .enableAutosave, .leaveAutosave,
+            Lesson(steps: [.browseShapes, .openAutosave, .enableAutosave, .leaveAutosave,
                            .openCanvasSettings, .openPerspective, .choosePerspective,
                            .setRayCount, .leavePerspective, .leaveMenu, .perspectiveStroke]),
             // The corner button opens the palette in use, as in the editor.
