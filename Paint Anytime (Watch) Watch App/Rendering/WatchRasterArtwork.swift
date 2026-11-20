@@ -312,7 +312,10 @@ struct WatchRasterArtwork: View {
                 }
             }
             .overlay(alignment: .topLeading) {
-                if allowsInkTip, RenderStageSwitches.isOn(.inkTip),
+                // Over a raster shown as pixel squares (Pixels, or Auto once pixels show)
+                // the antialiased vector tip reads as a soft blob ahead of the blocky
+                // stroke; the raster's own pixels catch up on the next frame instead.
+                if allowsInkTip, RenderStageSwitches.isOn(.inkTip), !isOnPixelGrid(key.scale),
                    let stroke = frames.tipStroke(for: activeStroke) {
                     // Canvas points: the overlay spans the paper, also above a region.
                     InkTipOverlay(stroke: stroke, renderedPoints: frames.renderedPoints(of: stroke),
