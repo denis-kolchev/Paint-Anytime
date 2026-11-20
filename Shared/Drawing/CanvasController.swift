@@ -54,7 +54,14 @@ final class CanvasController: ObservableObject {
     private var strokeBeforeRecognition: Stroke?
     private var undoStack: [CanvasDocument] = []
     private var redoStack: [CanvasDocument] = []
-    let historyLimit = 30
+    /// Estimated bytes `undoStack[i]` keeps beyond `undoStack[i + 1]`; one shorter than the stack.
+    private var undoCosts: [Int] = []
+    private var undoBytes = 0
+    let historyLimit = 256
+    /// The byte budget never trims history below this many steps.
+    let minimumHistory = 30
+    private let historyByteBudget = 24 * 1024 * 1024
+    var undoCount: Int { undoStack.count }
     var canClear: Bool {
         document.layers.count != 1
             || document.layers.first.map { $0 != CanvasLayer(id: $0.id) } == true
@@ -329,6 +336,8 @@ final class CanvasController: ObservableObject {
         strokeBeforeRecognition = nil
         undoStack.removeAll()
         redoStack.removeAll()
+        undoCosts.removeAll()
+        undoBytes = 0
         document = savedDocument
         selectedLayerID = document.layers.last?.id
         self.savedDocument = savedDocument
@@ -368,6 +377,7 @@ final class CanvasController: ObservableObject {
         guard !undoStack.isEmpty else { return }
         objectWillChange.send()
         let previous = undoStack.removeLast()
+        if let cost = undoCosts.popLast() { undoBytes -= cost }
         pencil.cancel()
         activeStrokeRevision &+= 1
         documentBeforeErasing = nil
@@ -387,15 +397,29 @@ final class CanvasController: ObservableObject {
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
         strokeBeforeRecognition = nil
-        undoStack.append(document)
+        pushUndo(document)
         document = next
         onNeedsDisplay?()
     }
 
     private func recordUndo(_ previous: CanvasDocument) {
-        undoStack.append(previous)
-        if undoStack.count > historyLimit { undoStack.removeFirst() }
+        pushUndo(previous)
+        // Trim by step count, then by estimated bytes down to `minimumHistory`.
+        while undoStack.count > historyLimit
+                || (undoStack.count > minimumHistory && undoBytes > historyByteBudget) {
+            undoStack.removeFirst()
+            if !undoCosts.isEmpty { undoBytes -= undoCosts.removeFirst() }
+        }
         redoStack.removeAll()
+    }
+
+    private func pushUndo(_ state: CanvasDocument) {
+        if let newest = undoStack.last {
+            let cost = HistoryCost.retainedBytes(newest, beyond: state)
+            undoCosts.append(cost)
+            undoBytes += cost
+        }
+        undoStack.append(state)
     }
 
     private func eraseObjects(from a: SIMD2<Float>, to b: SIMD2<Float>) {
@@ -406,5 +430,66 @@ final class CanvasController: ObservableObject {
             !(stroke.style.instrument != .eraser && stroke.style.instrument != .blur && BrushGeometry.touches(stroke, from: a, to: b, radius: style.width / 2))
         }
         if remaining.count != selectedLayer.strokes.count { document.layers[selectedLayerIndex].strokes = remaining }
+    }
+}
+
+/// Approximates the memory a history snapshot holds that a newer state does not
+/// share. Snapshots are copy-on-write: unchanged buffers (points, PNG data) are
+/// shared, so only buffers with a different storage address count.
+private nonisolated enum HistoryCost {
+    static func retainedBytes(_ older: CanvasDocument, beyond newer: CanvasDocument) -> Int {
+        var bytes = 0
+        if !shares(older.layers, newer.layers) {
+            bytes += older.layers.count * MemoryLayout<CanvasLayer>.stride
+        }
+        let newerLayers = Dictionary(newer.layers.map { ($0.id, $0.strokes) }, uniquingKeysWith: { first, _ in first })
+        var newerStrokes: [UUID: Stroke]?
+        for layer in older.layers where !shares(layer.strokes, newerLayers[layer.id] ?? []) {
+            bytes += layer.strokes.count * MemoryLayout<Stroke>.stride
+            // Strokes can move between layers; match them across the whole document.
+            if newerStrokes == nil {
+                newerStrokes = Dictionary(newer.layers.flatMap(\.strokes).map { ($0.id, $0) },
+                                          uniquingKeysWith: { first, _ in first })
+            }
+            for stroke in layer.strokes {
+                bytes += retainedBytes(stroke, beyond: newerStrokes?[stroke.id])
+            }
+        }
+        return bytes
+    }
+
+    private static func retainedBytes(_ stroke: Stroke, beyond newer: Stroke?) -> Int {
+        var bytes = 0
+        if newer.map({ !shares(stroke.points, $0.points) }) ?? true {
+            bytes += stroke.points.count * MemoryLayout<PointerSample>.stride
+        }
+        if let png = stroke.raster?.png, newer?.raster.map({ !shares(png, $0.png) }) ?? true {
+            bytes += png.count
+        }
+        if newer.map({ !shares(stroke.excludedAreas, $0.excludedAreas) }) ?? true {
+            bytes += stroke.excludedAreas.reduce(0) { $0 + $1.count * MemoryLayout<SIMD2<Float>>.stride }
+        }
+        if let rects = stroke.fillRects, newer?.fillRects.map({ !shares(rects, $0) }) ?? true {
+            bytes += rects.count * MemoryLayout<SIMD4<Float>>.stride
+        }
+        if newer.map({ !shares(stroke.erasures, $0.erasures) }) ?? true {
+            let previous = Dictionary((newer?.erasures ?? []).map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+            bytes += stroke.erasures.count * MemoryLayout<Stroke>.stride
+            for eraser in stroke.erasures {
+                bytes += retainedBytes(eraser, beyond: previous[eraser.id])
+            }
+        }
+        return bytes
+    }
+
+    private static func shares<Element>(_ a: [Element], _ b: [Element]) -> Bool {
+        if a.isEmpty && b.isEmpty { return true }
+        guard a.count == b.count else { return false }
+        return a.withUnsafeBufferPointer { a in b.withUnsafeBufferPointer { a.baseAddress == $0.baseAddress } }
+    }
+
+    private static func shares(_ a: Data, _ b: Data) -> Bool {
+        guard a.count == b.count else { return false }
+        return a.withUnsafeBytes { a in b.withUnsafeBytes { a.baseAddress == $0.baseAddress } }
     }
 }

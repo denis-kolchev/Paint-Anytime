@@ -79,7 +79,8 @@ final class WatchLassoController: ObservableObject {
         guard before.document != controller.document else { return }
         undoSteps.append(HistoryStep(before: before, after: state(controller)))
         // Never retain more document edits than the canvas can restore.
-        if undoSteps.count > controller.historyLimit { undoSteps.removeFirst() }
+        // The canvas trims by bytes too, so follow its current depth.
+        if undoSteps.count > controller.undoCount { undoSteps.removeFirst(undoSteps.count - controller.undoCount) }
         redoSteps.removeAll()
     }
 
