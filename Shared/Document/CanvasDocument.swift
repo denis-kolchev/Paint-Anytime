@@ -385,6 +385,8 @@ nonisolated struct CanvasDocument: Codable, Equatable {
     func size(fallback: CGSize) -> CGSize { canvasSize ?? fallback }
     var backgroundColor = SIMD4<Float>(1, 1, 1, 1)
     var backgroundIsVisible = true
+    /// Present in saved files; nil in `CanvasController.document`, which keeps it apart from history.
+    var metadata: ProjectMetadata?
     var effectiveBackgroundColor: SIMD4<Float> {
         var color = backgroundColor
         if !backgroundIsVisible { color.w = 0 }
@@ -400,7 +402,7 @@ nonisolated struct CanvasDocument: Codable, Equatable {
 
     init(strokes: [Stroke] = []) { layers = [CanvasLayer(strokes: strokes)] }
 
-    private enum CodingKeys: String, CodingKey { case id, layers, backgroundColor, backgroundIsVisible, strokes, canvasSize, resolution, erasers }
+    private enum CodingKeys: String, CodingKey { case id, layers, backgroundColor, backgroundIsVisible, strokes, canvasSize, resolution, erasers, metadata }
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         if let decoded = try values.decodeIfPresent([CanvasLayer].self, forKey: .layers) {
@@ -435,6 +437,8 @@ nonisolated struct CanvasDocument: Codable, Equatable {
         if layers.isEmpty { layers = [CanvasLayer()] }
         backgroundIsVisible = try values.decodeIfPresent(Bool.self, forKey: .backgroundIsVisible) ?? true
         backgroundColor = try values.decodeIfPresent(SIMD4<Float>.self, forKey: .backgroundColor) ?? SIMD4(1, 1, 1, 1)
+        // Older apps ignore this key; damaged metadata is dropped rather than failing the drawing.
+        metadata = (try? values.decodeIfPresent(ProjectMetadata.self, forKey: .metadata)) ?? nil
     }
     func encode(to encoder: Encoder) throws {
         var values = encoder.container(keyedBy: CodingKeys.self)
@@ -473,5 +477,184 @@ nonisolated struct CanvasDocument: Codable, Equatable {
         if !table.isEmpty { try values.encode(table, forKey: .erasers) }
         try values.encode(backgroundColor, forKey: .backgroundColor)
         try values.encode(backgroundIsVisible, forKey: .backgroundIsVisible)
+        try values.encodeIfPresent(metadata, forKey: .metadata)
+    }
+}
+
+/// Facts about a drawing for display and editing: who made it, when, for how long,
+/// on which devices and app versions. Stored only in the document file on this device
+/// and in projects the user transfers or shares; never sent anywhere by the app.
+/// Kept outside the canvas history: Undo/Redo never rewinds it.
+nonisolated struct ProjectMetadata: Codable, Equatable {
+    /// User-editable; nil until the user names the drawing or its author.
+    var title: String?
+    var author: String?
+    /// First edit of the drawing. Legacy drawings estimate it from their file name.
+    var createdAt: Date?
+    /// Time zone of the first edit, to show the local time the drawing was started.
+    var createdTimeZone: String?
+    /// Last edit of the drawing (not the last save).
+    var modifiedAt: Date?
+    /// Seconds of drawing activity; pauses longer than `CanvasController.idleGap` count as that gap.
+    var activeDuration: TimeInterval = 0
+    var createdWith: AppRelease?
+    var lastEditedWith: AppRelease?
+    /// Devices the drawing was edited on, in order of first use.
+    var devices: [Device] = []
+
+    static let maximumTextLength = 200
+
+    nonisolated struct AppRelease: Codable, Equatable {
+        var version: String
+        var build: String
+
+        static let current = AppRelease(
+            version: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "",
+            build: Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "")
+    }
+
+    nonisolated struct Device: Codable, Equatable {
+        /// Hardware model identifier, e.g. "Watch7,3"; never the user's device name.
+        var model: String
+        /// e.g. "watchOS 11.2", as of the last edit on this device.
+        var system: String
+        var firstUsedAt: Date?
+        var lastUsedAt: Date?
+
+        static let current: Device = {
+            let environment = ProcessInfo.processInfo.environment
+            var model = environment["SIMULATOR_MODEL_IDENTIFIER"] ?? ""
+            if model.isEmpty {
+                var info = utsname()
+                uname(&info)
+                model = withUnsafeBytes(of: info.machine) { bytes in
+                    String(decoding: bytes.prefix { $0 != 0 }, as: UTF8.self)
+                }
+            }
+            #if os(watchOS)
+            let platform = "watchOS"
+            #elseif os(iOS)
+            let platform = "iOS"
+            #else
+            let platform = "macOS"
+            #endif
+            let os = ProcessInfo.processInfo.operatingSystemVersion
+            let version = os.patchVersion > 0 ? "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+                : "\(os.majorVersion).\(os.minorVersion)"
+            return Device(model: model, system: "\(platform) \(version)")
+        }()
+    }
+
+    /// Fields the user edits; changing them is an unsaved change, unlike edit bookkeeping.
+    var editableFields: [String?] { [title, author] }
+
+    init() {}
+
+    /// Records an edit made now on this device with this app.
+    mutating func recordEdit(at date: Date, device: Device = .current, app: AppRelease = .current) {
+        if createdAt == nil {
+            createdAt = date
+            createdTimeZone = TimeZone.current.identifier
+        }
+        if createdWith == nil { createdWith = app }
+        modifiedAt = date
+        if lastEditedWith != app { lastEditedWith = app }
+        if let index = devices.firstIndex(where: { $0.model == device.model }) {
+            devices[index].lastUsedAt = date
+            if devices[index].system != device.system { devices[index].system = device.system }
+        } else {
+            var used = device
+            used.firstUsedAt = date
+            used.lastUsedAt = date
+            devices.append(used)
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case title, author, createdAt, createdTimeZone, modifiedAt, activeDuration, createdWith, lastEditedWith, devices
+    }
+
+    // Every field decodes on its own: damaged metadata never keeps a drawing from opening.
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        func text(_ key: CodingKeys) -> String? {
+            guard let value = (try? values.decodeIfPresent(String.self, forKey: key)) ?? nil else { return nil }
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : String(trimmed.prefix(ProjectMetadata.maximumTextLength))
+        }
+        title = text(.title)
+        author = text(.author)
+        createdAt = Self.date(text(.createdAt))
+        createdTimeZone = text(.createdTimeZone).flatMap { TimeZone(identifier: $0)?.identifier }
+        modifiedAt = Self.date(text(.modifiedAt))
+        let duration = (try? values.decodeIfPresent(Double.self, forKey: .activeDuration)) ?? nil
+        activeDuration = duration.map { $0.isFinite ? max(0, $0) : 0 } ?? 0
+        createdWith = (try? values.decodeIfPresent(AppRelease.self, forKey: .createdWith)) ?? nil
+        lastEditedWith = (try? values.decodeIfPresent(AppRelease.self, forKey: .lastEditedWith)) ?? nil
+        devices = ((try? values.decodeIfPresent([StoredDevice].self, forKey: .devices)) ?? nil)?
+            .compactMap(\.device) ?? []
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var values = encoder.container(keyedBy: CodingKeys.self)
+        try values.encodeIfPresent(title, forKey: .title)
+        try values.encodeIfPresent(author, forKey: .author)
+        try values.encodeIfPresent(createdAt.map(Self.string), forKey: .createdAt)
+        try values.encodeIfPresent(createdTimeZone, forKey: .createdTimeZone)
+        try values.encodeIfPresent(modifiedAt.map(Self.string), forKey: .modifiedAt)
+        try values.encode(activeDuration, forKey: .activeDuration)
+        try values.encodeIfPresent(createdWith, forKey: .createdWith)
+        try values.encodeIfPresent(lastEditedWith, forKey: .lastEditedWith)
+        try values.encode(devices.map(StoredDevice.init), forKey: .devices)
+    }
+
+    /// Dates are ISO 8601 strings so other tools can read them.
+    private struct StoredDevice: Codable {
+        var model: String
+        var system: String?
+        var firstUsedAt: String?
+        var lastUsedAt: String?
+
+        init(_ device: Device) {
+            model = device.model
+            system = device.system
+            firstUsedAt = device.firstUsedAt.map(ProjectMetadata.string)
+            lastUsedAt = device.lastUsedAt.map(ProjectMetadata.string)
+        }
+
+        var device: Device? {
+            guard !model.isEmpty else { return nil }
+            return Device(model: String(model.prefix(64)), system: String((system ?? "").prefix(64)),
+                          firstUsedAt: ProjectMetadata.date(firstUsedAt),
+                          lastUsedAt: ProjectMetadata.date(lastUsedAt))
+        }
+    }
+
+    private static func formatter() -> ISO8601DateFormatter {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }
+
+    /// The local time a file stem from `CanvasExporter.newFileStem(at:)` (or the older format without
+    /// milliseconds) was created; nil for other names.
+    static func fileDate(ofStem stem: String) -> Date? {
+        guard let separator = stem.firstIndex(of: "_") else { return nil }
+        let suffix = stem[stem.index(after: separator)...]
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        for format in ["yyyy-MM-dd_HH-mm-ss_SSS", "yyyy-MM-dd_HH-mm-ss"] where suffix.count >= format.count {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: String(suffix.prefix(format.count))) { return date }
+        }
+        return nil
+    }
+
+    static func string(_ date: Date) -> String { formatter().string(from: date) }
+
+    static func date(_ string: String?) -> Date? {
+        guard let string else { return nil }
+        // Accept timestamps written without fractional seconds, too.
+        return formatter().date(from: string) ?? ISO8601DateFormatter().date(from: string)
     }
 }

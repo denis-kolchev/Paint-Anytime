@@ -64,7 +64,8 @@ final class DrawingSessionController: ObservableObject {
     /// (the spinner and its time left stay live). Input is blocked while it runs.
     func saveDrawing(size: CGSize, scale: CGFloat) async {
         dropDeletedAutosave()
-        let snapshot = canvas.document
+        // With its metadata (start, time worked, devices); `markSaved` compares it separately.
+        let snapshot = canvas.documentForSaving()
         let previous = autosavedDrawing
         let now = Date()
         let name = previous.map(CanvasExporter.fileStem(of:)) ?? CanvasExporter.newFileStem(at: now)
@@ -131,7 +132,8 @@ final class DrawingSessionController: ObservableObject {
     func autosaveQuietly(size: CGSize, scale: CGFloat, onlyIfChanged: Bool = false) async -> Bool {
         guard canAutosave, !onlyIfChanged || canvas.hasUnsavedChanges else { return false }
         dropDeletedAutosave()
-        let snapshot = canvas.document
+        // With its metadata (start, time worked, devices); `markSaved` compares it separately.
+        let snapshot = canvas.documentForSaving()
         let previous = autosavedDrawing
         let generation = autosaveGeneration
         let now = Date()

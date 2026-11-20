@@ -140,7 +140,14 @@ enum CanvasExportStore {
         if lacksID {
             try JSONEncoder().encode(document).write(to: url, options: .atomic)
         }
-        return document
+        // Drawings saved before metadata existed: estimate the start from the file name,
+        // in memory only. The next save stores it.
+        guard document.metadata == nil else { return document }
+        var estimated = document
+        var metadata = ProjectMetadata()
+        metadata.createdAt = ProjectMetadata.fileDate(ofStem: imageURL.deletingPathExtension().lastPathComponent)
+        estimated.metadata = metadata
+        return estimated
     }
 
     static func delete(_ drawing: CanvasExport, in destination: URL? = nil) throws {

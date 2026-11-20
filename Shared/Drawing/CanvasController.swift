@@ -32,8 +32,18 @@ final class CanvasController: ObservableObject {
     private(set) var activeStrokeRevision: UInt64 = 0
     private(set) var activeStrokeID: UInt64 = 0
     private(set) var document = CanvasDocument() {
-        didSet { documentRevision &+= 1 }
+        didSet {
+            documentRevision &+= 1
+            noteActivity()
+        }
     }
+    /// The drawing's metadata, kept out of `document` so Undo/Redo never rewinds it.
+    /// Edits to the document update it; `documentForSaving()` attaches it.
+    private(set) var metadata = ProjectMetadata()
+    private var savedEditableMetadata = ProjectMetadata().editableFields
+    /// Edits closer together than this count as continuous work; a longer pause counts as this much.
+    static let idleGap: TimeInterval = 30
+    private var lastActivity: ContinuousClock.Instant?
     private var transparencyLockCache: (revision: UInt64, value: Bool)?
     /// Whether any committed stroke clips to transparency. Scans every stroke once
     /// per document revision instead of on every view update.
@@ -44,7 +54,9 @@ final class CanvasController: ObservableObject {
         return value
     }
     private var savedDocument = CanvasDocument()
-    var hasUnsavedChanges: Bool { document != savedDocument }
+    var hasUnsavedChanges: Bool {
+        document != savedDocument || metadata.editableFields != savedEditableMetadata
+    }
     // Clearing can differ from the saved snapshot, but leaves nothing to discard.
     // Use the same empty-canvas condition as the Clear button.
     var needsDiscardConfirmation: Bool { canClear && hasUnsavedChanges }
@@ -260,6 +272,8 @@ final class CanvasController: ObservableObject {
             documentBeforeErasing = document
         }
         activeStrokeID &+= 1
+        // Time only: a stroke that is cancelled does not edit the drawing.
+        noteActivity(recordsEdit: false)
         pencil.begin(at: sample, style: pencilStyle)
         activeStrokeRevision &+= 1
         eraseObjects(from: sample.position, to: sample.position)
@@ -329,6 +343,9 @@ final class CanvasController: ObservableObject {
 
     func load(_ savedDocument: CanvasDocument) {
         objectWillChange.send()
+        var savedDocument = savedDocument
+        let loadedMetadata = savedDocument.metadata ?? ProjectMetadata()
+        savedDocument.metadata = nil
         pencil.cancel()
         activeStrokeRevision &+= 1
         documentBeforeErasing = nil
@@ -339,6 +356,8 @@ final class CanvasController: ObservableObject {
         undoCosts.removeAll()
         undoBytes = 0
         document = savedDocument
+        // After the assignment, which counted as an edit of the previous drawing.
+        resetMetadata(to: loadedMetadata)
         selectedLayerID = document.layers.last?.id
         self.savedDocument = savedDocument
         onNeedsDisplay?()
@@ -350,9 +369,50 @@ final class CanvasController: ObservableObject {
 
     /// Marks a snapshot taken before a background save; edits made while it was
     /// writing stay unsaved.
+    /// The snapshot may come from `documentForSaving()`; its metadata is compared separately.
     func markSaved(_ snapshot: CanvasDocument) {
         objectWillChange.send()
+        var snapshot = snapshot
+        savedEditableMetadata = (snapshot.metadata ?? metadata).editableFields
+        snapshot.metadata = nil
         savedDocument = snapshot
+    }
+
+    /// The document with its metadata, as it should be written to disk.
+    func documentForSaving() -> CanvasDocument {
+        var saved = document
+        saved.metadata = metadata
+        return saved
+    }
+
+    /// Edits the user-facing title and author; empty text removes them.
+    func updateMetadata(title: String?? = nil, author: String?? = nil) {
+        func cleaned(_ text: String?) -> String? {
+            guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty else { return nil }
+            return String(text.prefix(ProjectMetadata.maximumTextLength))
+        }
+        objectWillChange.send()
+        if let title { metadata.title = cleaned(title) }
+        if let author { metadata.author = cleaned(author) }
+    }
+
+    private func resetMetadata(to value: ProjectMetadata) {
+        metadata = value
+        savedEditableMetadata = value.editableFields
+        lastActivity = nil
+    }
+
+    /// Called for every change of the document: strokes, fills, layers, Undo/Redo.
+    /// Counts the time since the previous edit, up to `idleGap`.
+    private func noteActivity(recordsEdit: Bool = true) {
+        let now = ContinuousClock.now
+        if let lastActivity {
+            let gap = now - lastActivity
+            let seconds = Double(gap.components.seconds) + Double(gap.components.attoseconds) * 1e-18
+            metadata.activeDuration += min(max(0, seconds), Self.idleGap)
+        }
+        lastActivity = now
+        if recordsEdit { metadata.recordEdit(at: Date()) }
     }
 
     func clear() {
@@ -369,6 +429,8 @@ final class CanvasController: ObservableObject {
         document.backgroundColor = SIMD4(1, 1, 1, 1)
         document.backgroundIsVisible = true
         clearDocumentRevision = documentRevision
+        // A cleared canvas starts a new drawing; its first stroke sets the start time.
+        resetMetadata(to: ProjectMetadata())
         selectedLayerID = firstLayer.id
         onNeedsDisplay?()
     }
