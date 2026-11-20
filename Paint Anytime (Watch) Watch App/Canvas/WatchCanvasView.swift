@@ -46,6 +46,8 @@ struct WatchCanvasView: View {
     /// Tiles that became ready during the current stroke: hidden until lift, so a tile
     /// never shows a frame without the stroke over ink drawn in another raster.
     @State private var lateTiles: Set<RegionTile.ID> = []
+    /// Debug HUD: tiles whose render returned no frame (never retried).
+    @State private var failedTiles: Set<RegionTile.ID> = []
     @State private var tileScale: CGFloat?
     /// The scale whose tiles over the view were all ready at once. Tiles of a new scale
     /// stay hidden until then and replace the previous resolution in one frame: shown one
@@ -304,7 +306,12 @@ struct WatchCanvasView: View {
                                         activeStrokeRevision: live ? controller.activeStrokeRevision : 0,
                                         activeStrokeID: controller.activeStrokeID,
                                         onFramePrepared: { succeeded in
-                                            guard succeeded, tiles.contains(where: { $0.id == tile.id }) else { return }
+                                            guard tiles.contains(where: { $0.id == tile.id }) else { return }
+                                            guard succeeded else {
+                                                failedTiles.insert(tile.id)
+                                                reportTiles()
+                                                return
+                                            }
                                             tileBecameReady(tile.id)
                                         },
                                         zoom: zoom, fit: fit, liveSubmitter: live ? liveSubmitter : nil,
@@ -428,6 +435,8 @@ struct WatchCanvasView: View {
                     completeScale = nil
                     fallbackScale = nil
                     viewTileIDs = []
+                    failedTiles = []
+                    reportTiles(planless: zoom > 1)
                     return
                 }
                 let existing = Set(tiles.map(\.id))
@@ -1147,7 +1156,21 @@ struct WatchCanvasView: View {
         readyTiles = readyTiles.intersection(alive)
         viewTileIDs = plan.view
         if fallback.isEmpty { fallbackScale = nil }
+        failedTiles = failedTiles.intersection(alive)
         dropCoveredFallback()
+        reportTiles()
+    }
+
+    /// Debug HUD line `zt`: scale on the ladder, view tiles ready/planned, the scale shown
+    /// in full (`ok`), the fallback, failed renders, and `none` when zoomed without a plan.
+    private func reportTiles(planless: Bool = false) {
+        guard RenderDebug.isEnabled else { return }
+        func f(_ v: CGFloat?) -> String { v.map { String(format: "%.0f", Double($0)) } ?? "—" }
+        if planless { RenderDiagnostics.setZoomTiles("none (paper only)"); return }
+        guard let tileScale else { RenderDiagnostics.setZoomTiles(""); return }
+        let ready = viewTileIDs.filter(readyTiles.contains).count
+        RenderDiagnostics.setZoomTiles("s\(f(tileScale)) \(ready)/\(viewTileIDs.count) ok \(f(completeScale))"
+            + " fb \(f(fallbackScale)) fail \(failedTiles.count) late \(lateTiles.count)")
     }
 
     private func tileBecameReady(_ id: RegionTile.ID) {
@@ -1166,7 +1189,9 @@ struct WatchCanvasView: View {
                 """)
             tilesRequestedAt = nil
         }
+        failedTiles.remove(id)
         dropCoveredFallback()
+        reportTiles()
     }
 
     /// The previous resolution leaves once every tile over the view is ready, and never

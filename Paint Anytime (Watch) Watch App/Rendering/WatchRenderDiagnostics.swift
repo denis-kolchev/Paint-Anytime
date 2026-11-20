@@ -211,6 +211,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
     private var probeInFlight = false
     private var path = "—"
     private var selectionPath = ""
+    private var zoomTilePath = ""
     /// Pencil/pastel work per live frame, summed over the HUD window.
     private var dryFrames = 0
     private var dryIncremental = false
@@ -616,6 +617,12 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
 
     /// How the lasso preview is drawn: exact or approximate textures (with their scales),
     /// preparing, or replay of the document per move (and why). Kept until the next change.
+    /// Zoom tile state of the canvas (`WatchCanvasView.reportTiles`).
+    static func setZoomTiles(_ text: String) {
+        guard RenderDebug.isEnabled else { return }
+        shared.locked { shared.zoomTilePath = text }
+    }
+
     static func setSelectionPath(_ text: String) {
         guard RenderDebug.isEnabled else { return }
         shared.locked { shared.selectionPath = text }
@@ -690,6 +697,7 @@ nonisolated final class RenderDiagnostics: @unchecked Sendable {
                     + "/\(rate(bodies[RenderCounter.canvas.rawValue]))/\(rate(bodies[RenderCounter.screen.rawValue]))",
             ] + (extra.isEmpty ? [] : [extra.joined(separator: " ") + " · \(path)"])
               + (selectionPath.isEmpty ? [] : ["lasso " + selectionPath])
+              + (zoomTilePath.isEmpty ? [] : ["zt " + zoomTilePath])
               + dryLines(ms)
               + shapeLines()).joined(separator: "\n")
             spans = Array(repeating: Accumulator(), count: RenderSpan.allCases.count)
