@@ -227,7 +227,16 @@ struct TutorialChecks {
         precondition(progress.step == .paintOverStroke && !progress.locksLessonColor)
         precondition(progress.record(.stroke) == .none)
         precondition(progress.record(.paintedOver) == .advance)
+        let ringBeforeLasso = progress.chapterProgress
+        let lessonsBeforeLasso = progress.completedLessonCount
         progress.advance()
+        // The lasso lesson and its section begin at the layers button: the new layer and the
+        // strokes behind are what the lasso then selects.
+        precondition(progress.step == .openLayers && progress.chapterProgress > ringBeforeLasso
+                     && progress.completedLessonCount == lessonsBeforeLasso + 1,
+                     "The lasso lesson starts at the layers button")
+        let lassoRing = progress.chapterProgress
+        let lassoLessons = progress.completedLessonCount
         for (step, event): (TutorialStep, TutorialProgress.Event) in [
             (.openLayers, .openedLayers), (.addLayer, .addedLayer),
             (.moveLayerDown, .movedLayerDown), (.closeLayers, .closedLayers), (.openTools, .openedTools)
@@ -247,6 +256,9 @@ struct TutorialChecks {
                      "Only a stroke behind an upper-layer stroke completes the layer-order lesson")
         precondition(progress.record(.drewBehind) == .advance)
         progress.advance()
+        precondition(progress.step == .openLasso && progress.chapterProgress == lassoRing
+                     && progress.completedLessonCount == lassoLessons,
+                     "The lasso button continues the lesson the layers button began")
         precondition(progress.record(.openedLasso) == .advance)
         progress.advance()
         for _ in 0..<3 { precondition(progress.record(.failedLassoSelection) == .none) }

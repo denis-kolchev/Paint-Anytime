@@ -5,6 +5,23 @@ import Foundation
 /// Publishes live-stroke samples without invalidating every observer of the canvas.
 final class LiveStrokeChanges: ObservableObject {}
 
+/// State outside the document that shares the canvas's Undo/Redo history, such as
+/// the watch's perspective guides. Its entries never change the document.
+protocol CanvasHistoryCompanion: AnyObject {
+    var historyState: AnyHashable { get }
+    func restoreHistoryState(_ state: AnyHashable)
+}
+
+private enum HistoryEntry {
+    case document(CanvasDocument)
+    case companion(AnyHashable)
+
+    var document: CanvasDocument? {
+        if case let .document(document) = self { return document }
+        return nil
+    }
+}
+
 final class CanvasController: ObservableObject {
     let tools: ToolSettings
     private var toolChanges: AnyCancellable?
@@ -66,9 +83,12 @@ final class CanvasController: ObservableObject {
     private var documentBeforeErasing: CanvasDocument?
     private var documentAtStrokeStart: CanvasDocument?
     private var strokeBeforeRecognition: Stroke?
-    private var undoStack: [CanvasDocument] = []
-    private var redoStack: [CanvasDocument] = []
-    /// Estimated bytes `undoStack[i]` keeps beyond `undoStack[i + 1]`; one shorter than the stack.
+    private var undoStack: [HistoryEntry] = []
+    private var redoStack: [HistoryEntry] = []
+    /// Restores `.companion` entries; without it they are skipped.
+    weak var historyCompanion: CanvasHistoryCompanion?
+    /// Estimated bytes the previous document entry keeps beyond the document pushed
+    /// at `undoStack[i + 1]`; one shorter than the stack.
     private var undoCosts: [Int] = []
     private var undoBytes = 0
     let historyLimit = 256
@@ -447,8 +467,7 @@ final class CanvasController: ObservableObject {
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
         strokeBeforeRecognition = nil
-        redoStack.append(document)
-        document = previous
+        redoStack.append(apply(previous))
         onNeedsDisplay?()
     }
 
@@ -461,12 +480,38 @@ final class CanvasController: ObservableObject {
         documentBeforeErasing = nil
         documentAtStrokeStart = nil
         strokeBeforeRecognition = nil
-        pushUndo(document)
-        document = next
+        pushUndo(apply(next))
         onNeedsDisplay?()
     }
 
+    /// Restores an entry and returns the entry that restores the current state.
+    private func apply(_ entry: HistoryEntry) -> HistoryEntry {
+        switch entry {
+        case let .document(previous):
+            let current = document
+            document = previous
+            return .document(current)
+        case let .companion(state):
+            guard let historyCompanion else { return entry }
+            let current = historyCompanion.historyState
+            historyCompanion.restoreHistoryState(state)
+            return .companion(current)
+        }
+    }
+
+    /// Records a completed change of `historyCompanion` as one Undo step; `previous` is
+    /// its state before the change. Clears Redo, like any edit.
+    func recordCompanionChange(from previous: AnyHashable) {
+        guard let historyCompanion, historyCompanion.historyState != previous else { return }
+        objectWillChange.send()
+        recordUndo(.companion(previous))
+    }
+
     private func recordUndo(_ previous: CanvasDocument) {
+        recordUndo(.document(previous))
+    }
+
+    private func recordUndo(_ previous: HistoryEntry) {
         pushUndo(previous)
         // Trim by step count, then by estimated bytes down to `minimumHistory`.
         while undoStack.count > historyLimit
@@ -477,13 +522,18 @@ final class CanvasController: ObservableObject {
         redoStack.removeAll()
     }
 
-    private func pushUndo(_ state: CanvasDocument) {
-        if let newest = undoStack.last {
-            let cost = HistoryCost.retainedBytes(newest, beyond: state)
+    private func pushUndo(_ entry: HistoryEntry) {
+        if !undoStack.isEmpty {
+            // Companion entries hold no document; compare with the newest document entry.
+            var cost = 0
+            if let state = entry.document,
+               let newest = undoStack.last(where: { $0.document != nil })?.document {
+                cost = HistoryCost.retainedBytes(newest, beyond: state)
+            }
             undoCosts.append(cost)
             undoBytes += cost
         }
-        undoStack.append(state)
+        undoStack.append(entry)
     }
 
     private func eraseObjects(from a: SIMD2<Float>, to b: SIMD2<Float>) {

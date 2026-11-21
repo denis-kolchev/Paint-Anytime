@@ -27,6 +27,8 @@ struct PerspectiveGuidesSettingsView: View {
     @FocusState private var crownFocused: Bool
     @State private var selectedPage = Page.viewAngle
     @State private var preview: CGImage?
+    /// Guide state when the screen appeared; the visit's changes become one Undo step.
+    @State private var guidesOnAppear: PerspectiveGuides.Snapshot?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.layoutDirection) private var layoutDirection
 
@@ -193,6 +195,13 @@ struct PerspectiveGuidesSettingsView: View {
                                           tutorial.usedCrown(in: step, velocity: event.velocity)
                                       }))
         .onChange(of: page) { _, _ in crownFocused = true }
+        .onAppear { guidesOnAppear = guides.snapshot }
+        .onDisappear {
+            if let guidesOnAppear, controller.historyCompanion === guides {
+                controller.recordCompanionChange(from: guidesOnAppear)
+            }
+            guidesOnAppear = nil
+        }
         .navigationTitle(L10n.text("Perspective"))
         .toolbar {
             // A link from the tutorial's own page would push over the lesson.

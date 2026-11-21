@@ -87,10 +87,13 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
                            .closeLayerSettings, .closeLayers], startsFresh: true, keepsBrush: true),
             Lesson(steps: [.openTools, .pickColor, .closeTools, .paintOverStroke]),
             // Moving the new layer under the first one shows which layer covers the other;
-            // a third color keeps the strokes behind distinct from both earlier ones.
+            // a third color keeps the strokes behind distinct from both earlier ones. These
+            // strokes on two layers are what the lasso then selects, so the lasso lesson and
+            // its section start at the layers button, not at the lasso button.
             Lesson(steps: [.openLayers, .addLayer, .moveLayerDown, .closeLayers,
-                           .openTools, .pickColor, .closeTools, .drawBehindStroke]),
-            Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso], sectionStarts: [.openLasso]),
+                           .openTools, .pickColor, .closeTools, .drawBehindStroke,
+                           .openLasso, .selectLasso, .transformLasso, .finishLasso],
+                   sectionStarts: [.openLayers]),
             // The user clears the lasso result before the demonstrated line.
             // The lesson clears the canvas and draws a yellow marker line itself; the user's
             // light blue marker mixes with it, then Color inversion changes the overlap. Back

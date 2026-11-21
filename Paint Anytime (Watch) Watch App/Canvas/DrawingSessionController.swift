@@ -27,6 +27,8 @@ final class DrawingSessionController: ObservableObject {
 
     init(canvas: CanvasController? = nil) {
         self.canvas = canvas ?? CanvasController()
+        // Guide edits on the main canvas share its Undo/Redo; the tour's canvas has its own guides.
+        self.canvas.historyCompanion = PerspectiveGuides.shared
         canvasChanges = self.canvas.objectWillChange.sink { [weak self] _ in
             self?.objectWillChange.send()
         }

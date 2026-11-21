@@ -157,7 +157,8 @@ struct PerspectiveGuideLayout: Equatable {
     }
 }
 
-/// Perspective guide preferences and placement. Kept outside the document, history and exports.
+/// Perspective guide preferences and placement. Kept outside the document and exports;
+/// completed edits join the canvas Undo/Redo history as `CanvasHistoryCompanion` entries.
 final class PerspectiveGuides: ObservableObject {
     static let shared = PerspectiveGuides()
     static let viewAngleRange: ClosedRange<Double> = 20...150
@@ -227,5 +228,37 @@ final class PerspectiveGuides: ObservableObject {
         if value > .pi { value -= 2 * .pi }
         if value <= -.pi { value += 2 * .pi }
         return value
+    }
+}
+
+extension PerspectiveGuides: CanvasHistoryCompanion {
+    /// Everything the guide controls change; `activeRuler` is transient.
+    struct Snapshot: Hashable {
+        var isEnabled: Bool
+        var preset: PerspectivePreset
+        var viewAngle: Double
+        var rayCount: Int
+        var rotation: Double
+        var centerX: Double
+        var centerY: Double
+    }
+
+    var snapshot: Snapshot {
+        Snapshot(isEnabled: isEnabled, preset: preset, viewAngle: viewAngle, rayCount: rayCount,
+                 rotation: rotation, centerX: Double(center.x), centerY: Double(center.y))
+    }
+
+    var historyState: AnyHashable { snapshot }
+
+    func restoreHistoryState(_ state: AnyHashable) {
+        guard let state = state.base as? Snapshot else { return }
+        if isEnabled != state.isEnabled { isEnabled = state.isEnabled }
+        if preset != state.preset { preset = state.preset }
+        if viewAngle != state.viewAngle { viewAngle = state.viewAngle }
+        if rayCount != state.rayCount { rayCount = state.rayCount }
+        rotation = state.rotation
+        center = CGPoint(x: state.centerX, y: state.centerY)
+        activeRuler = nil
+        savePlacement()
     }
 }

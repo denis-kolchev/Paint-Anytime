@@ -122,6 +122,8 @@ struct WatchCanvasView: View {
     /// Queues live frames straight from the touch handler (Direct submit).
     @State private var liveSubmitter = LiveFrameSubmitter()
     @State private var guideDrag: GuideDrag?
+    /// Guide state before the current handle drag, recorded as one Undo step when it ends.
+    @State private var guidesBeforeDrag: PerspectiveGuides.Snapshot?
     // A stroke that starts on a guide waits for its direction before choosing a ruler.
     @State private var isRulerPending = false
     @Environment(\.scenePhase) private var scenePhase
@@ -502,6 +504,7 @@ struct WatchCanvasView: View {
                                         controller: controller)
                                 } else if showsGuides, !isMovingCanvas, !isEyedropperActive {
                                     guideDrag = guideDragStart(at: value.startLocation, size: geometry.size)
+                                    guidesBeforeDrag = guideDrag == nil ? nil : guides.snapshot
                                 }
                             }
                         }
@@ -1046,7 +1049,11 @@ struct WatchCanvasView: View {
 
     private func endGuideInteraction() {
         if guideDrag != nil { guides.savePlacement() }
+        if let guidesBeforeDrag, controller.historyCompanion === guides {
+            controller.recordCompanionChange(from: guidesBeforeDrag)
+        }
         guideDrag = nil
+        guidesBeforeDrag = nil
         isRulerPending = false
         if guides.activeRuler != nil { guides.activeRuler = nil }
     }
