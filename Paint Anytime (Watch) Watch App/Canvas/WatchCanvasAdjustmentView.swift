@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 /// Canvas size: one page that turns, resizes and places the drawing.
 /// Draft values stay local until Apply, so leaving the page keeps the drawing intact.
@@ -97,12 +98,9 @@ struct WatchCanvasAdjustmentView: View {
             height = (original.height * displayScale).rounded()
             resolution = controller.document.resolution
             if tutorial.isActive {
-                // The tour keeps the drawing's size and starts slightly smaller, so the
-                // frame has room to move; the Crown can still shrink or grow it.
+                // The tour keeps the drawing's size; the Crown crops or extends it from 100%,
+                // and the size step comes first, so the frame has room to move by then.
                 resample = false
-                resizePercent = 90
-                width = max(1, (original.width * displayScale * 0.9).rounded())
-                height = max(1, (original.height * displayScale * 0.9).rounded())
             }
             focusedAdjustment = "Resize"
         }
@@ -205,12 +203,22 @@ struct WatchCanvasAdjustmentView: View {
                     let start = dragStartPosition ?? CGPoint(x: positionX, y: positionY)
                     if dragStartPosition == nil { dragStartPosition = start }
                     // The frame or the drawing follows the finger on either axis.
+                    var proposedX = positionX, proposedY = positionY
                     if roomX > 0 {
-                        positionX = min(100, max(0, start.x + value.translation.width / scale / roomX * 100)).rounded()
+                        proposedX = min(100, max(0, start.x + value.translation.width / scale / roomX * 100)).rounded()
                     }
                     if roomY > 0 {
-                        positionY = min(100, max(0, start.y + value.translation.height / scale / roomY * 100)).rounded()
+                        proposedY = min(100, max(0, start.y + value.translation.height / scale / roomY * 100)).rounded()
                     }
+                    // Magnetize the centre as the canvas pan does: in screen points, so it feels
+                    // the same at every preview scale, with a wider release radius against repeated clicks.
+                    let wasCentered = positionX == 50 && positionY == 50
+                    let distance = hypot((proposedX - 50) / 100 * roomX * scale,
+                                         (proposedY - 50) / 100 * roomY * scale)
+                    let isCentered = distance <= (wasCentered ? 12 : 8)
+                    positionX = isCentered ? 50 : proposedX
+                    positionY = isCentered ? 50 : proposedY
+                    if isCentered && !wasCentered { WKInterfaceDevice.current().play(.click) }
                 }
                 .onEnded { value in
                     isDraggingFrame = false
