@@ -176,6 +176,9 @@ struct TutorialLessonView: View {
             return
         }
         do {
+            // The last section fills first, then the completed ring turns green.
+            try await Task.sleep(for: .seconds(TutorialProgressRing.fillDuration))
+            try Task.checkCancellation()
             withAnimation(.linear(duration: 0.7)) {
                 completionProgress = 1
             }
@@ -216,23 +219,39 @@ private struct TutorialProgressRing: View {
     let progress: Double
     let completionProgress: CGFloat
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Follows `progress` with its own animation: some steps change while leaving a page
+    /// in a transaction that disables animations, and the ring must still fill there.
+    @State private var displayedProgress: Double?
 
     var body: some View {
         ZStack {
             Circle()
                 .stroke(Color(white: 0.3), lineWidth: 2.5)
             Circle()
-                .trim(from: 0, to: min(1, max(0, progress)))
+                .trim(from: 0, to: min(1, max(0, displayedProgress ?? progress)))
                 .stroke(Color(white: 0.8), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
-                .animation(reduceMotion ? nil : .easeInOut(duration: 0.3), value: progress)
             Circle()
                 .trim(from: 0, to: completionProgress)
                 .stroke(.green, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                 .rotationEffect(.degrees(-90))
         }
         .padding(2)
+        .onChange(of: progress) { previous, progress in
+            // A section fills; a new chapter or an undone step resets at once.
+            guard progress > previous, !reduceMotion else {
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { displayedProgress = progress }
+                return
+            }
+            withAnimation(.easeInOut(duration: TutorialProgressRing.fillDuration)) {
+                displayedProgress = progress
+            }
+        }
     }
+
+    static let fillDuration = 0.3
 }
 
 /// Dims and restores the result checkmark in step with the bounce of `tutorialHint`.

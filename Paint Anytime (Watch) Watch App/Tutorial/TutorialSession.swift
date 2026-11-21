@@ -120,7 +120,10 @@ final class TutorialSession: ObservableObject {
     var lessonKeepsBrush: Bool { progress.lessonKeepsBrush }
     var locksLessonColor: Bool { progress.locksLessonColor }
     var chapter: TutorialChapter? { progress.chapter }
-    var chapterProgress: Double { progress.chapterProgress }
+    /// The first section ends when ••• appears on the shape list, not when the list opens.
+    var chapterProgress: Double {
+        step == .browseShapes && !hasBrowsedShapes ? progress.chapterProgressBeforeStep : progress.chapterProgress
+    }
     var completedLessonCount: Int { progress.completedLessonCount }
     var lessonCount: Int { progress.chapter?.lessons.count ?? 0 }
     /// Changes whenever the following chapter, or a lesson that starts fresh, begins,

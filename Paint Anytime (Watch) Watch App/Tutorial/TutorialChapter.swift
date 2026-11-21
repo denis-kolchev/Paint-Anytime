@@ -11,6 +11,9 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
         var startsFresh = false
         /// With `startsFresh`, clears only the canvas and keeps the brush in use.
         var keepsBrush = false
+        /// Steps that open a new section of the progress ring. A chapter with sections
+        /// fills its ring once per finished section instead of once per exercise.
+        var sectionStarts: Set<TutorialStep> = []
     }
 
     var id: Int { rawValue }
@@ -58,18 +61,21 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
 
     private var toolLessons: [Lesson] {
         [
-            Lesson(steps: [.holdCircle]),
+            // Sections: shapes, autosave, guides, palette, layers, lasso, blending, editor,
+            // canvas size and gallery; each fills one part of the ring.
+            Lesson(steps: [.holdCircle], sectionStarts: [.holdCircle]),
             // The shape list follows the circle; its ••• opens the menu, so it takes the place
             // of the lesson's own ••• step. Autosave comes first in the menu; Back from it leaves the menu open, now with
             // Canvas. Guides then straighten a stroke, like the held shape before them. Back
             // leads from the guides to the menu, and from the menu to the canvas.
             Lesson(steps: [.browseShapes, .openAutosave, .enableAutosave, .leaveAutosave,
                            .openCanvasSettings, .openPerspective, .choosePerspective,
-                           .setRayCount, .leavePerspective, .leaveMenu, .perspectiveStroke]),
+                           .setRayCount, .leavePerspective, .leaveMenu, .perspectiveStroke],
+                   sectionStarts: [.browseShapes, .openCanvasSettings]),
             // The corner button opens the palette in use, as in the editor.
             Lesson(steps: [.openTools, .openCurrentPalette, .openPalettes, .findNewPalette,
                            .createPalette, .addPaletteColor, .adjustPaletteColor, .savePaletteColor,
-                           .closeTools, .clearCanvas])
+                           .closeTools, .clearCanvas], sectionStarts: [.openTools, .clearCanvas])
         ]
     }
 
@@ -84,14 +90,15 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             // a third color keeps the strokes behind distinct from both earlier ones.
             Lesson(steps: [.openLayers, .addLayer, .moveLayerDown, .closeLayers,
                            .openTools, .pickColor, .closeTools, .drawBehindStroke]),
-            Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso]),
+            Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso], sectionStarts: [.openLasso]),
             // The user clears the lasso result before the demonstrated line.
             // The lesson clears the canvas and draws a yellow marker line itself; the user's
             // light blue marker mixes with it, then Color inversion changes the overlap. Back
             // leads out of the pages; the user undoes the crossing line and draws it again.
             Lesson(steps: [.clearCanvas, .crossMarkerLine, .openMenu, .openDrawingSettings, .openColorBlending,
                            .chooseColorInversion, .leaveColorBlending, .leaveDrawingSettings, .leaveMenu,
-                           .undoMarkerLine, .redrawMarkerLine]),
+                           .undoMarkerLine, .redrawMarkerLine],
+                   sectionStarts: [.clearCanvas, .openMenu]),
             // The tutorial's editor starts from the original menus and never changes the
             // user's layout. Reset empties both top circles; one becomes a group of the
             // eyedropper and the eraser toggle. Back leaves the icon picker, ✕ the action
@@ -104,14 +111,15 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
         // Canvas size frames the whole picture: the Crown shrinks the canvas, a drag places it.
         if includesAdjustSize {
             lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize,
-                                          .setCanvasSize, .moveCanvasFrame, .applyCanvasSize]))
+                                          .setCanvasSize, .moveCanvasFrame, .applyCanvasSize],
+                                   sectionStarts: [.openMenu]))
         }
         // The gallery shows the saved pictures; the tutorial gallery also starts with
         // practice pictures, so selection never lacks two. The liked ones
         // then appear in a watch-face widget, as the favorites widget would show them.
         lessons.append(Lesson(steps: [.openMenu, .openGallery, .startSelection,
                                       .selectDrawings, .favoriteSelection, .showFavoritesWidget,
-                                      .returnToCanvas]))
+                                      .returnToCanvas], sectionStarts: [.openMenu]))
         return lessons
     }
 

@@ -98,14 +98,35 @@ struct TutorialProgress {
         return lessons[lessonIndex].steps
     }
 
-    /// Fraction of the current chapter's exercises; the ring fills once per chapter.
-    var chapterProgress: Double {
+    /// Fraction of the current chapter; the ring fills once per chapter. A chapter with
+    /// sections moves the ring only when a section ends, otherwise after every exercise.
+    var chapterProgress: Double { chapterProgress(heldBack: false) }
+
+    /// The ring as it stood before the current exercise began, for a step that reveals
+    /// its goal later, such as ••• on the shape list.
+    var chapterProgressBeforeStep: Double { chapterProgress(heldBack: true) }
+
+    private func chapterProgress(heldBack: Bool) -> Double {
         guard let chapter else { return 0 }
         if step == .chapterComplete || step == .finished { return 1 }
         let lessons = chapter.lessons
         let total = lessons.reduce(0) { $0 + $1.steps.count }
-        let previous = lessons.prefix(lessonIndex).reduce(0) { $0 + $1.steps.count }
-        return Double(previous + stepIndex) / Double(max(1, total))
+        let current = lessons.prefix(lessonIndex).reduce(0) { $0 + $1.steps.count } + stepIndex
+        let position = heldBack ? max(0, current - 1) : current
+        // Chapter-wide indices of the steps that begin a section.
+        var sectionStarts: [Int] = []
+        var offset = 0
+        for lesson in lessons {
+            for (index, step) in lesson.steps.enumerated() where lesson.sectionStarts.contains(step) {
+                sectionStarts.append(offset + index)
+            }
+            offset += lesson.steps.count
+        }
+        guard !sectionStarts.isEmpty else { return Double(position) / Double(max(1, total)) }
+        // Exercises before the first marked step belong to the first section.
+        let started = max(1, sectionStarts.filter { $0 <= position }.count + (sectionStarts.first == 0 ? 0 : 1))
+        let count = sectionStarts.count + (sectionStarts.first == 0 ? 0 : 1)
+        return Double(started - 1) / Double(count)
     }
 
     var completedLessonCount: Int {
