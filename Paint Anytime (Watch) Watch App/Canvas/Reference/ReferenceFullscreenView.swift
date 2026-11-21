@@ -126,7 +126,12 @@ struct ReferenceFullscreenView: View {
                     }
                 }
             }
-            .navigationDestination(isPresented: $choosesReplacement) {
+        }
+        // Over the reference, not pushed onto its stack: a pop back relays out this page's
+        // toolbar mid-transition, so Back and the "⋯" slot drew with other insets and then
+        // jumped into place. Under a cover the page and its toolbar stay where they are.
+        .fullScreenCover(isPresented: $choosesReplacement) {
+            NavigationStack {
                 ReferencePickerView {
                     canvasImage = nil
                     showsCanvas = false
