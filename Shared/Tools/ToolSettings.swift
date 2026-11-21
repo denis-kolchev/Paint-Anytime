@@ -27,6 +27,32 @@ final class ToolSettings: ObservableObject {
 
     func toggleEraser() { selectInstrument(eraserToggleTarget) }
 
+    /// The tool a picked color belongs to: the current one, or while the eraser or blur
+    /// (which have no color of their own) is selected, the drawing tool used before it.
+    private var colorTarget: DrawingInstrument {
+        for instrument in [pencilStyle.instrument, lastDrawingInstrument]
+            where instrument != .eraser && instrument != .blur { return instrument }
+        return .monoline
+    }
+
+    /// The color the next stroke of a drawing tool will use.
+    var drawingColor: SIMD4<Float> { style(for: colorTarget).color }
+
+    /// Makes `color` the current drawing color even while the eraser or blur is selected,
+    /// so switching back to the drawing tool does not bring back an older color.
+    func setDrawingColor(_ color: SIMD4<Float>) {
+        let target = colorTarget
+        guard target != pencilStyle.instrument else {
+            pencilStyle.color = color
+            return
+        }
+        var style = savedStyles[target.rawValue] ?? .initial(for: target)
+        style.color = color
+        savedStyles[target.rawValue] = style
+        if synchronization.color { synchronization.sharedColor = color }
+        scheduleStylePersistence()
+    }
+
     private func rememberDrawingInstrument() {
         let instrument = pencilStyle.instrument
         guard instrument != .eraser, instrument != lastDrawingInstrument else { return }

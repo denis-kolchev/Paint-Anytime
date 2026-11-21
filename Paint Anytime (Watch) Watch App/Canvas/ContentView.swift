@@ -133,7 +133,7 @@ struct ContentView: View {
         .modifier(QuickSettingsPresentation(action: $quickSettings, controller: controller,
                                             viewportSize: canvasSize))
         .modifier(ReferencePresentation(isPresented: $showsReferenceFullscreen, controller: controller,
-                                        viewportSize: canvasSize, onSampleColor: openSampledPalette))
+                                        viewportSize: canvasSize))
         .modifier(SketchAssistRequirementsAlert(isPresented: $showsSketchAssistRequirements))
         .onChange(of: customLayoutEnabled) { _, _ in
             morphState.customExpandedSlot = nil
@@ -834,12 +834,6 @@ struct ContentView: View {
         case .more: showsAppSettings = true
         case .nothing: break
         }
-    }
-
-    /// The reference eyedropper's ✓ ends like the canvas one: in the palette.
-    private func openSampledPalette(_ color: SIMD4<Float>) {
-        cameraSampledColor = color
-        showsSampledPalette = true
     }
 
     /// Opens the reference full screen, as tapping a photo does.

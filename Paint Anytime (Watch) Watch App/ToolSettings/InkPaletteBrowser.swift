@@ -210,7 +210,7 @@ struct InkPaletteBrowser: View {
             if returnsToCanvasAfterColorSave || tutorial.isActive {
                 // Also select an existing swatch when the sampled color
                 // already belongs to the palette.
-                controller.pencilStyle.color = preset.rgba
+                controller.setDrawingColor(preset.rgba)
                 confirm()
             }
         }
@@ -707,7 +707,7 @@ struct InkPaletteBrowser: View {
                !library.palettes[index].palette.selectedIDs.contains(color.id) {
                 library.palettes[index].palette.selectedIDs.append(color.id)
             }
-            controller.pencilStyle.color = color.rgba
+            controller.setDrawingColor(color.rgba)
         }
         onSave(library)
         if !tutorial.isActive { dismiss() }

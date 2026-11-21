@@ -19,6 +19,8 @@ final class CanvasController: ObservableObject {
     func selectInstrument(_ instrument: DrawingInstrument) { tools.selectInstrument(instrument) }
     func style(for instrument: DrawingInstrument) -> PencilStyle { tools.style(for: instrument) }
     func toggleEraser() { tools.toggleEraser() }
+    var drawingColor: SIMD4<Float> { tools.drawingColor }
+    func setDrawingColor(_ color: SIMD4<Float>) { tools.setDrawingColor(color) }
     func setSynchronizeWidth(_ enabled: Bool) { tools.setSynchronizeWidth(enabled) }
     func setSynchronizeColor(_ enabled: Bool) { tools.setSynchronizeColor(enabled) }
     func setSynchronizeOpacity(_ enabled: Bool) { tools.setSynchronizeOpacity(enabled) }

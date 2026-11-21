@@ -8,22 +8,11 @@ struct ReferencePresentation: ViewModifier {
     // Not observed: the full-screen view reads the drawing only when asked to show it.
     let controller: CanvasController
     let viewportSize: CGSize
-    /// A color the eyedropper confirmed, handed over once the cover has closed,
-    /// as the canvas eyedropper's ✓ opens the palette.
-    let onSampleColor: (SIMD4<Float>) -> Void
-    @State private var sampledColor: SIMD4<Float>?
 
     func body(content: Content) -> some View {
         content
-            .fullScreenCover(isPresented: $isPresented, onDismiss: {
-                guard let color = sampledColor else { return }
-                sampledColor = nil
-                onSampleColor(color)
-            }) {
-                ReferenceFullscreenView(controller: controller, viewportSize: viewportSize) { color in
-                    sampledColor = color
-                    isPresented = false
-                }
+            .fullScreenCover(isPresented: $isPresented) {
+                ReferenceFullscreenView(controller: controller, viewportSize: viewportSize)
             }
     }
 }
@@ -36,9 +25,10 @@ struct ReferenceFullscreenView: View {
     @ObservedObject var store = ReferenceImageStore.shared
     let controller: CanvasController
     let viewportSize: CGSize
-    /// Where the eyedropper's ✓ hands its color; nil hides the eyedropper (opened from
-    /// settings, where no palette waits for it).
-    var onConfirmColor: ((SIMD4<Float>) -> Void)? = nil
+    @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
+    @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
+    /// The color the eyedropper took to the palette opened over the reference.
+    @State private var paletteColor: SIMD4<Float>?
     @Environment(\.dismiss) private var dismiss
     @Environment(\.displayScale) private var displayScale
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -95,7 +85,7 @@ struct ReferenceFullscreenView: View {
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
-                .focusable(!choosesReplacement)
+                .focusable(!choosesReplacement && paletteColor == nil)
                 .focused($crownFocused)
                 .digitalCrownRotation(detent: Binding(
                     get: { crownZoom },
@@ -108,8 +98,7 @@ struct ReferenceFullscreenView: View {
                     ReferenceMorphActions(state: morphState,
                                           canvasOrigin: geometry.frame(in: .global).origin,
                                           size: geometry.size, showsCanvas: showsCanvas,
-                                          onEyedropper: onConfirmColor == nil ? nil
-                                            : { startSampling(size: geometry.size) },
+                                          onEyedropper: { startSampling(size: geometry.size) },
                                           onToggleCanvas: toggleCanvas,
                                           onReplace: { choosesReplacement = true },
                                           // Nothing left to remove once the image is gone.
@@ -146,11 +135,11 @@ struct ReferenceFullscreenView: View {
             }
         }
         // The canvas under the cover gives up the Crown; take it here, and again on
-        // coming back from the replacement picker. watchOS 10 can drop focus requested in
-        // the same update that installs the target, so wait for it as the canvas does.
-        .task(id: choosesReplacement) {
+        // coming back from the replacement picker or the palette. watchOS 10 can drop focus
+        // requested in the same update that installs the target, so wait for it as the canvas does.
+        .task(id: choosesReplacement || paletteColor != nil) {
             crownFocused = false
-            guard !choosesReplacement else { return }
+            guard !choosesReplacement, paletteColor == nil else { return }
             try? await Task.sleep(for: .milliseconds(100))
             guard !Task.isCancelled else { return }
             crownFocused = true
@@ -166,6 +155,21 @@ struct ReferenceFullscreenView: View {
         // like the canvas editor.
         .requestsHiddenClock(isCleanViewing)
         .modifier(ClockVisibilityHost())
+        // The sampled color goes to the palette as on the canvas, and saving it comes back
+        // to this reference, whether it was opened from the canvas or from settings.
+        .fullScreenCover(isPresented: Binding(get: { paletteColor != nil },
+                                              set: { if !$0 { paletteColor = nil } })) {
+            InkPaletteBrowser(library: InkPaletteLibrary.decode(palettesData, legacy: paletteData),
+                              controller: controller, initialColor: paletteColor) { library in
+                if let data = try? JSONEncoder().encode(library) { palettesData = data }
+                // The color just picked is in the active palette, so it stays current.
+                if !library.activePalette.selectedColors.contains(where: { $0.rgba == controller.drawingColor }),
+                   let first = library.activePalette.selectedColors.first {
+                    controller.setDrawingColor(first.rgba)
+                }
+            }
+            .environment(\.colorScheme, .dark)
+        }
     }
 
     /// The gallery's clean viewing: a tap folds the actions and hides or shows the chrome.
@@ -234,10 +238,12 @@ struct ReferenceFullscreenView: View {
         }
     }
 
-    /// The canvas eyedropper's green ✓: takes the sampled color to the palette.
+    /// The canvas eyedropper's green ✓: takes the sampled color to the palette over the reference.
     private var confirmButton: some View {
         Button {
-            if let color = sample?.color { onConfirmColor?(color) }
+            guard let color = sample?.color else { return }
+            stopSampling()
+            paletteColor = color
         } label: {
             Image(systemName: "checkmark").opacity(0)
         }
