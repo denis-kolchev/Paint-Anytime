@@ -407,15 +407,20 @@ private struct ReferenceMorphActions: View {
                     Button(action: onEyedropper) { icon("eyedropper", width: nil) }
                         .accessibilityLabel(L10n.text("Eyedropper"))
                 }
+                // One icon in both states; green marks the canvas on screen, as the
+                // canvas toolbar marks its active eyedropper.
                 Button(action: onToggleCanvas) {
-                    icon(showsCanvas ? "photo" : "square.on.square", width: nil)
+                    icon("square.on.square", width: nil)
+                        .foregroundStyle(showsCanvas ? AnyShapeStyle(.green) : AnyShapeStyle(.primary))
                 }
-                .accessibilityLabel(L10n.text(showsCanvas ? "Show reference" : "Show canvas"))
+                .accessibilityLabel(L10n.text("Show canvas"))
+                .accessibilityAddTraits(showsCanvas ? [.isSelected] : [])
                 Button {
                     collapse()
                     onReplace()
                 } label: {
-                    icon("arrow.triangle.2.circlepath", width: nil)
+                    // The same symbol as Choose image in the reference settings.
+                    icon("photo.on.rectangle", width: nil)
                 }
                 .accessibilityLabel(L10n.text("Replace image"))
                 if let onRemove {
