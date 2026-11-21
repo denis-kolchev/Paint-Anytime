@@ -115,11 +115,11 @@ struct CanvasLayoutEditorView: View {
         }
     }
 
-    /// The top row's circles centre `top + 18` from the screen's top and 30 pt from its sides,
-    /// as on the canvas and in the editor.
-    static let tutorialRowTop = MorphPanelGeometry(size: .zero, layoutDirection: .leftToRight).top
-        + 18 - MorphPanelGeometry.buttonDiameter / 2
-    static let tutorialRowInset: CGFloat = 30 - MorphPanelGeometry.buttonDiameter / 2
+    /// Where the editor's native toolbar slots centre its top circles: about 38 pt from the
+    /// screen's top and 34 pt from its sides (measured from screenshots of the editor on Apple
+    /// Watch Ultra). The canvas's own circles sit a little higher and wider apart (16 + 18, 30).
+    static let tutorialRowTop: CGFloat = 38 - MorphPanelGeometry.buttonDiameter / 2
+    static let tutorialRowInset: CGFloat = 34 - MorphPanelGeometry.buttonDiameter / 2
 
     /// Reset in the lesson empties both top circles, so the lesson starts the group from nothing.
     private static let tutorialEmptyLayout = CanvasControlLayout(
