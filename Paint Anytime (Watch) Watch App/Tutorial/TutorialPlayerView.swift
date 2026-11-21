@@ -63,6 +63,8 @@ struct TutorialPlayerView: View {
         self.onCompleteChapter = onCompleteChapter
         self.onFinish = onFinish
         _player = StateObject(wrappedValue: TutorialPlayerController(folder: folder, chapters: chapters))
+        // The tour opens on its first chapter; later chapters reset the palette on `chapterRevision`.
+        _tutorialPaletteLibrary = State(initialValue: InkPaletteLibrary.tutorial(for: self.chapters.first))
     }
 
     var body: some View {
@@ -511,7 +513,7 @@ struct TutorialPlayerView: View {
         .onChange(of: tutorial.chapterRevision) { _, _ in
             isMovingCanvas = false
             // A palette made in the palette lesson must not replace the colors later lessons use.
-            tutorialPaletteLibrary = InkPaletteLibrary.tutorial
+            tutorialPaletteLibrary = InkPaletteLibrary.tutorial(for: tutorial.chapter)
             player.beginChapter(keepsBrush: tutorial.lessonKeepsBrush)
             // The step change may be handled first; the reset must not drop the lesson ink.
             applyCircleInk(for: tutorial.step)

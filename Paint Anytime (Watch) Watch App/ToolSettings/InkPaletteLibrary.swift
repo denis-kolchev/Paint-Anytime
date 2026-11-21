@@ -34,10 +34,17 @@ struct InkPaletteLibrary: Codable {
         return Self(palettes: merged, activeID: draft.activeID)
     }
 
-    static var tutorial: Self {
-        return Self(palettes: [SavedInkPalette(id: "tutorial", palette:
-            initial.activePalette)],
-            activeID: "tutorial")
+    static var tutorial: Self { tutorial(for: nil) }
+
+    /// The advanced course draws on white paper, so its basic colors leave out white:
+    /// every color it offers stays visible on the canvas.
+    static func tutorial(for chapter: TutorialChapter?) -> Self {
+        var palette = initial.activePalette
+        if chapter == .advanced, let white = InkPreset.all.first(where: { $0.nameKey == "White" }) {
+            palette.delete(white.id)
+        }
+        return Self(palettes: [SavedInkPalette(id: "tutorial", palette: palette)],
+                    activeID: "tutorial")
     }
 
     static let basicColors = InkPreset.all + colors("basic", "78CBB0 CDB4DB E9CBA7")
