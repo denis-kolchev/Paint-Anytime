@@ -6,6 +6,8 @@ struct AppLanguage: Identifiable {
     let nativeName: String
 
     static let storageKey = "app.language"
+    /// Watch application-context entry that the iPhone app follows.
+    static let contextKey = "appLanguage"
     private static let preferredCodeCache = NSCache<NSString, NSString>()
     // Keep English first for language negotiation; sort the picker separately.
     static let supported: [AppLanguage] = [
@@ -66,6 +68,16 @@ struct AppLanguage: Identifiable {
     static var currentCode: String {
         let saved = UserDefaults.standard.string(forKey: storageKey) ?? defaultCode
         return resolvedSavedCode(saved, preferences: Locale.preferredLanguages)
+    }
+
+    /// The language the user picked in the app, or nil while it still follows the system.
+    static var explicitCode: String? {
+        UserDefaults.standard.string(forKey: storageKey)
+            .map { resolvedSavedCode($0, preferences: Locale.preferredLanguages) }
+    }
+
+    static func isSupported(_ code: String) -> Bool {
+        supported.contains { $0.id == code }
     }
 
     /// Preserve the previous generic Portuguese selection after adding regional variants.

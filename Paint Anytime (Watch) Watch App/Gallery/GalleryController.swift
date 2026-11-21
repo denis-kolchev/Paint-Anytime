@@ -58,7 +58,7 @@ final class GalleryController: ObservableObject {
     }
 
     func delete(_ drawing: CanvasExport, in folder: URL? = nil) -> Bool {
-        defer { if folder == nil { WatchPhotoTransfer.shared.publishDeletions() } }
+        defer { if folder == nil { WatchPhotoTransfer.shared.publishContext() } }
         do {
             try CanvasExportStore.delete(drawing, in: DebugGallerySamples.contains(drawing.url) ? DebugGallerySamples.directory() : folder)
             Task { await GalleryImageCache.shared.remove(drawing.url) }

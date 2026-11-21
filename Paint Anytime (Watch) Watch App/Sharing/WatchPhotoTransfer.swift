@@ -216,10 +216,15 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         }
     }
 
+    /// Sends gallery deletions and the chosen app language. Each update replaces the whole
+    /// application context, so every entry the iPhone relies on is rebuilt here together.
     @MainActor
-    func publishDeletions() {
+    func publishContext() {
         let session = WCSession.default
         guard session.activationState == .activated else { return }
+        var context: [String: Any] = [:]
+        // Only an explicit choice: otherwise the iPhone keeps its own system language.
+        if let language = AppLanguage.explicitCode { context[AppLanguage.contextKey] = language }
         do {
             let names = try GalleryDeletionStore.names(in: CanvasExportStore.directory())
             for transfer in session.outstandingFileTransfers {
@@ -227,8 +232,9 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
                 let imageName = URL(fileURLWithPath: name).deletingPathExtension().appendingPathExtension("png").lastPathComponent
                 if names.contains(imageName) { transfer.cancel() }
             }
-            try session.updateApplicationContext([GalleryDeletionStore.contextKey: names.sorted()])
-        } catch { NSLog("Gallery deletion sync failed: %@", error.localizedDescription) }
+            context[GalleryDeletionStore.contextKey] = names.sorted()
+            try session.updateApplicationContext(context)
+        } catch { NSLog("Watch context sync failed: %@", error.localizedDescription) }
     }
 
     private func synchronize(_ context: [String: Any]) {
@@ -249,7 +255,7 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
                     CanvasExportStore.refreshWidgets()
                     NotificationCenter.default.post(name: .galleryDrawingsDeleted, object: nil)
                 }
-                publishDeletions()
+                publishContext()
                 guard context["galleryRequest"] != nil else { return }
                 for drawing in try CanvasExportStore.all() where !known.contains(drawing.url.deletingPathExtension().appendingPathExtension(PaintProject.fileExtension).lastPathComponent) {
                     _ = queue(drawing.url)

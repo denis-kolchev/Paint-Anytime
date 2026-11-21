@@ -137,11 +137,11 @@ struct PhoneDrawingView: View {
     private func sendToWatch() {
         let session = WCSession.default
         guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else {
-            exportError = String(localized: "Connect your Apple Watch and install Paint Anytime before sending a project.")
+            exportError = L10n.text("Connect your Apple Watch and install Paint Anytime before sending a project.")
             return
         }
         session.transferFile(projectURL, metadata: ["project": true])
-        transferMessage = String(localized: "Project queued. It will appear in your watch gallery when the transfer finishes. Open it there to edit.")
+        transferMessage = L10n.text("Project queued. It will appear in your watch gallery when the transfer finishes. Open it there to edit.")
     }
 
     private func close() {

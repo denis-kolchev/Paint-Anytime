@@ -11,8 +11,8 @@ nonisolated enum PhonePhotoImport {
         case unreadable, watchUnavailable
         var errorDescription: String? {
             switch self {
-            case .unreadable: String(localized: "This photo could not be opened.")
-            case .watchUnavailable: String(localized: "Connect your Apple Watch and install Paint Anytime before sending a project.")
+            case .unreadable: L10n.text("This photo could not be opened.")
+            case .watchUnavailable: L10n.text("Connect your Apple Watch and install Paint Anytime before sending a project.")
             }
         }
     }
@@ -93,6 +93,6 @@ nonisolated enum PhonePhotoImport {
         // Always keeps the photo's resolution: tools that edit the photo's own layer
         // reduce it to the watch resolution anyway, so fitting it first gains nothing.
         try send(png: png, original: original, fitsWatch: false)
-        return String(localized: "Photo queued. It will appear in your watch gallery as a new drawing when the transfer finishes. Open it there to edit.")
+        return L10n.text("Photo queued. It will appear in your watch gallery as a new drawing when the transfer finishes. Open it there to edit.")
     }
 }

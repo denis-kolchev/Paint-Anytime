@@ -1,9 +1,14 @@
 import SwiftUI
+import UIKit
 
 /// Stays outside the scroll content so the title never collapses into a toolbar.
 struct PhoneGalleryHeader: View {
     /// The More menu when it sits beside the title rather than in a system bar.
     var menu: PhoneGalleryMoreMenu?
+    /// Window-space center of the navigation bar's More button. When set, the
+    /// header ignores the top safe area and centers the title on that line.
+    var titleMidY: CGFloat?
+    @State private var titleHeight: CGFloat = 0
 
     var body: some View {
         HStack(spacing: 12) {
@@ -17,7 +22,7 @@ struct PhoneGalleryHeader: View {
         // so iPhone Duo can move it into the vertical bar. Leave its width free.
         .padding(.trailing, menu == nil ? PhoneGalleryMoreMenu.reservedWidth : 0)
         .padding(.horizontal, 16)
-        .padding(.top, 8)
+        .padding(.top, titleMidY.map { max(0, $0 - titleHeight / 2) } ?? 8)
         .padding(.bottom, 12)
         .background {
             Rectangle()
@@ -51,8 +56,63 @@ struct PhoneGalleryHeader: View {
         Text("Watch Gallery")
             .font(.largeTitle.bold())
             .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { titleHeight = $0 }
             .accessibilityAddTraits(.isHeader)
             .layoutPriority(1)
+    }
+}
+
+/// Reports the vertical center of the enclosing navigation bar in window
+/// coordinates, where its bar buttons are centered. SwiftUI hosts toolbar
+/// menus as UIKit bar buttons, so the button itself cannot be measured.
+struct PhoneNavigationBarMidYReader: UIViewRepresentable {
+    @Binding var midY: CGFloat?
+
+    func makeUIView(context: Context) -> ReaderView {
+        let view = ReaderView()
+        view.isUserInteractionEnabled = false
+        view.onChange = { midY = $0 }
+        return view
+    }
+
+    func updateUIView(_ view: ReaderView, context: Context) {
+        view.onChange = { midY = $0 }
+        view.report()
+    }
+
+    final class ReaderView: UIView {
+        var onChange: ((CGFloat) -> Void)?
+        private var reported: CGFloat?
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            report()
+            // The bar may finish its own layout after this view appears.
+            DispatchQueue.main.async { [weak self] in self?.report() }
+        }
+
+        override func layoutSubviews() {
+            super.layoutSubviews()
+            report()
+        }
+
+        // Showing the bar, rotating or folding changes the top safe area.
+        override func safeAreaInsetsDidChange() {
+            super.safeAreaInsetsDidChange()
+            report()
+        }
+
+        func report() {
+            guard window != nil else { return }
+            let controller = sequence(first: self as UIResponder, next: \.next)
+                .lazy.compactMap { ($0 as? UIViewController)?.navigationController }.first
+            guard let bar = controller?.navigationBar, !bar.isHidden, bar.window != nil else { return }
+            let midY = bar.convert(CGPoint(x: bar.bounds.midX, y: bar.bounds.midY), to: nil).y
+            guard reported.map({ abs($0 - midY) > 0.5 }) ?? true else { return }
+            reported = midY
+            // UIKit layout can run during a SwiftUI update; publish afterwards.
+            DispatchQueue.main.async { [weak self] in self?.onChange?(midY) }
+        }
     }
 }
 

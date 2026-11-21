@@ -100,7 +100,7 @@ private struct PhoneZoomableImage: UIViewRepresentable {
             minimumZoomScale = 1
             maximumZoomScale = 8
             imageView.isAccessibilityElement = true
-            imageView.accessibilityLabel = String(localized: "Drawing")
+            imageView.accessibilityLabel = L10n.text("Drawing")
             addSubview(imageView)
             let doubleTap = UITapGestureRecognizer(target: self, action: #selector(doubleTapped(_:)))
             doubleTap.numberOfTapsRequired = 2

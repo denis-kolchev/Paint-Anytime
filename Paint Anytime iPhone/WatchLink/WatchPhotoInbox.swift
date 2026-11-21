@@ -98,7 +98,7 @@ final class WatchPhotoInbox: ObservableObject {
             if !writer.canSave { await writer.requestPermission() }
             photoPermissionRequiresSettings = writer.permissionRequiresSettings
             guard writer.canSave else {
-                errorMessage = String(localized: "Allow access in Settings to save drawings to Photos.")
+                errorMessage = L10n.text("Allow access in Settings to save drawings to Photos.")
                 return
             }
             do {

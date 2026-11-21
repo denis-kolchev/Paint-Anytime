@@ -38,6 +38,7 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
         Task { @MainActor in
             if let error { onReceive?(.failure(error)) }
             else {
+                receiveLanguage(session.receivedApplicationContext)
                 receiveDeletions(session.receivedApplicationContext)
                 requestSync()
                 // Once per launch, in case the watch app was reinstalled meanwhile.
@@ -45,6 +46,13 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
             }
         }
     }
+    /// Adopts the language chosen on the watch; the app root observes this default.
+    private func receiveLanguage(_ context: [String: Any]) {
+        guard let code = context[AppLanguage.contextKey] as? String, AppLanguage.isSupported(code),
+              UserDefaults.standard.string(forKey: AppLanguage.storageKey) != code else { return }
+        UserDefaults.standard.set(code, forKey: AppLanguage.storageKey)
+    }
+
     private func receiveDeletions(_ context: [String: Any]) {
         guard let names = context[GalleryDeletionStore.contextKey] as? [String],
               let gallery = store as? IncomingDrawingStore else { return }
@@ -56,7 +64,10 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
     }
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
-        Task { @MainActor in receiveDeletions(applicationContext) }
+        Task { @MainActor in
+            receiveLanguage(applicationContext)
+            receiveDeletions(applicationContext)
+        }
     }
 
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}

@@ -12,7 +12,7 @@ enum PhotoshopExport {
 
     /// Writes the PSD to a temporary file named after the drawing and returns it.
     static func write(projectAt projectURL: URL) throws -> URL {
-        let data = try encode(projectAt: projectURL, paperName: String(localized: "Paper"))
+        let data = try encode(projectAt: projectURL, paperName: L10n.text("Paper"))
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("Photoshop", isDirectory: true)
         removeStaleExports(in: root)
         // A folder per export, so a share sheet and a save running together never
@@ -82,7 +82,7 @@ enum PhotoshopExport {
 
     enum ExportError: LocalizedError {
         case failed
-        var errorDescription: String? { String(localized: "Could not create the Photoshop file.") }
+        var errorDescription: String? { L10n.text("Could not create the Photoshop file.") }
     }
 }
 

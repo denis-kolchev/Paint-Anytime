@@ -42,6 +42,8 @@ struct PaintAnytimeWatchApp: App {
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active { CanvasExportStore.refreshWidgets() }
                 }
+                // The iPhone app follows the language chosen here.
+                .onChange(of: languageCode) { _, _ in WatchPhotoTransfer.shared.publishContext() }
         }
     }
 }

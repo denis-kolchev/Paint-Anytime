@@ -13,6 +13,9 @@ struct PhoneHomeView: View {
     @Environment(\.displayScale) private var displayScale
     @Environment(\.colorScheme) private var colorScheme
     @State private var galleryHeaderBottom: CGFloat = 0
+    /// Window-space center of the navigation bar's More button; the header
+    /// title is centered on it.
+    @State private var barButtonMidY: CGFloat?
     // The header's material fade extends 40 pt below its bottom edge.
     private var galleryScrollTopInset: CGFloat { galleryHeaderBottom + 40 }
     @GestureState private var isPinching = false
@@ -100,8 +103,22 @@ struct PhoneHomeView: View {
             // Keep artwork beneath the status area and header. An inset
             // reserves a separate top region and shifts the gallery viewport.
             .overlay(alignment: .top) {
-                PhoneGalleryHeader(menu: verticalBarIsLeading ? galleryMoreMenu : nil)
-                    .padding(.top, container.safeAreaInsets.top)
+                // The visible navigation bar adds its height to the top safe
+                // area, so with the bar's button the header ignores that area
+                // and centers the title on the button instead.
+                let titleMidY = verticalBarIsLeading ? nil : barButtonMidY
+                PhoneGalleryHeader(menu: verticalBarIsLeading ? galleryMoreMenu : nil,
+                                   titleMidY: titleMidY)
+                    .ignoresSafeArea(.container, edges: titleMidY == nil ? [] : .top)
+                    .background {
+                        // The bar turns the menu into a UIKit bar button, so it
+                        // cannot be measured; it is centered in the bar instead.
+                        if !verticalBarIsLeading {
+                            PhoneNavigationBarMidYReader(midY: $barButtonMidY)
+                                .allowsHitTesting(false)
+                                .accessibilityHidden(true)
+                        }
+                    }
                     .background {
                         // The header's bottom edge in window space, which includes
                         // the status bar; the gallery viewport starts at the window top.
@@ -453,7 +470,7 @@ struct PhoneHomeView: View {
             try project.write(to: temporary)
             try IncomingDrawingStore().receive(temporary, name: "Imported_" + UUID().uuidString + "." + PaintProject.fileExtension)
             photoInbox.refresh()
-            projectMessage = String(localized: "Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch.")
+            projectMessage = L10n.text("Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch.")
         } catch { projectMessage = error.localizedDescription }
     }
 
@@ -486,7 +503,7 @@ struct PhoneHomeView: View {
                 let notice = try await work.value
                 status.finish()
                 photoInbox.refresh()
-                let message = String(localized: "Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch.")
+                let message = L10n.text("Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch.")
                 projectMessage = notice.map { message + "\n\n" + $0 } ?? message
             } catch is CancellationError {
                 // Cancelled from the progress capsule: nothing was added, nothing to say.

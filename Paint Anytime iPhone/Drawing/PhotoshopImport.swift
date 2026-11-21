@@ -332,8 +332,8 @@ enum PhotoshopImport {
         let project = PaintProject(document: json, preview: preview, restoresCanvasSize: false)
         let notice: String? = switch loss {
         case .none: nil
-        case .simplified: String(localized: "Some Photoshop features could not be kept, such as blend modes, layer effects or adjustment layers. The drawing may look different.")
-        case .flattened: String(localized: "This Photoshop file was imported as a single layer.")
+        case .simplified: L10n.text("Some Photoshop features could not be kept, such as blend modes, layer effects or adjustment layers. The drawing may look different.")
+        case .flattened: L10n.text("This Photoshop file was imported as a single layer.")
         }
         return Imported(project: project, notice: notice)
     }
@@ -357,8 +357,8 @@ enum PhotoshopImport {
         case unreadable, tooLarge
         var errorDescription: String? {
             switch self {
-            case .unreadable: String(localized: "This Photoshop file could not be opened.")
-            case .tooLarge: String(localized: "This Photoshop file is too large to import. Merge some layers or reduce the image size, then try again.")
+            case .unreadable: L10n.text("This Photoshop file could not be opened.")
+            case .tooLarge: L10n.text("This Photoshop file is too large to import. Merge some layers or reduce the image size, then try again.")
             }
         }
     }
