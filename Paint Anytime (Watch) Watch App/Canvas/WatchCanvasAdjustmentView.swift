@@ -314,19 +314,23 @@ struct WatchCanvasAdjustmentView: View {
     }
 
     private func editor(height availableHeight: CGFloat) -> some View {
-        VStack(spacing: 4) {
+        // The option column fits the room left by the paddings, the value row and the carousel,
+        // so the value row stays above the tutorial's lesson card instead of being pushed under it.
+        let columnRoom = availableHeight - 42 - 8 - 26 - (4 + 28) - (tutorial.isActive ? 0 : 4 + 28)
+        let slot = max(0, columnRoom / 3)
+        return VStack(spacing: 4) {
             // Options stand beside the preview, as the presets do in perspective guides.
             HStack(spacing: 8) {
                 canvasPreview
                 // The tour teaches only the size and the frame; the options stay as set.
                 VStack(spacing: 0) {
-                    roundButton("Scale proportionally", symbol: "link", isOn: proportional,
+                    roundButton(slot: slot, "Scale proportionally", symbol: "link", isOn: proportional,
                                 isSlashed: !proportional) { proportional.toggle() }
                         .frame(maxHeight: .infinity)
-                    roundButton("Resample image", symbol: "arrow.up.left.and.arrow.down.right",
+                    roundButton(slot: slot, "Resample image", symbol: "arrow.up.left.and.arrow.down.right",
                                 isOn: resample) { resample.toggle() }
                         .frame(maxHeight: .infinity)
-                    roundButton("Rotate", symbol: "rotate.left", isOn: false, action: rotateLeft)
+                    roundButton(slot: slot, "Rotate", symbol: "rotate.left", isOn: false, action: rotateLeft)
                         .frame(maxHeight: .infinity)
                 }
                 .disabled(tutorial.isActive)
@@ -416,9 +420,12 @@ struct WatchCanvasAdjustmentView: View {
 
 
     /// The same round button as the perspective guide presets; filled while its option is on.
-    private func roundButton(_ title: String, symbol: String, isOn: Bool, isSlashed: Bool = false,
+    /// `slot` is the column height each button gets; a short screen above the lesson card
+    /// shrinks the circle instead of overflowing the page.
+    private func roundButton(slot: CGFloat, _ title: String, symbol: String, isOn: Bool, isSlashed: Bool = false,
                              action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let circleScale = min(1, max(0.6, (slot - 4) / 28))
+        return Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .bold))
                 // SF Symbols has no "link.slash"; cut a gap and draw the slash like system slash symbols.
@@ -445,7 +452,9 @@ struct WatchCanvasAdjustmentView: View {
                 .overlay {
                     Circle().strokeBorder(isOn ? Color.accentColor : Color.white.opacity(0.35), lineWidth: 1.5)
                 }
-                .frame(width: 44, height: 44)
+                .scaleEffect(circleScale)
+                .frame(width: 28 * circleScale, height: 28 * circleScale)
+                .frame(width: 44, height: min(44, max(28 * circleScale, slot)))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
