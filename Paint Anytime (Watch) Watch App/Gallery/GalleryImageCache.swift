@@ -344,6 +344,8 @@ struct GalleryFullscreenPage: View {
     var respectsSafeArea = false
     var fitsViewport = true
     var isSelected = false
+    /// Crown zoom of the settled photo; identity for other pages.
+    var zoom = GalleryPhotoZoom()
     var onDisplayedBitmap: (GalleryBitmap) -> Void = { _ in }
     @State private var preview: GalleryBitmap?
     @State private var original: GalleryBitmap?
@@ -366,6 +368,9 @@ struct GalleryFullscreenPage: View {
                 } lowRes: {
                     if let lowResBitmap { pageImage(lowResBitmap) }
                 }
+                .frame(width: size.width, height: size.height, alignment: .topLeading)
+                .scaleEffect(zoom.scale)
+                .offset(zoom.offset)
             }
             .frame(width: size.width, height: size.height, alignment: .topLeading)
             .clipped()

@@ -53,6 +53,12 @@ struct SavedDrawingsView: View {
     @State private var isCleanViewing = false
     @State private var showsFullscreenActions = false
     @State private var morphState = GalleryMorphState()
+    /// Crown zoom inside the settled 1:1 photo; the grid zoom never sees it.
+    @State private var photoZoom = GalleryPhotoZoom()
+    /// A Crown turn that began on the photo zoom stays there until the Crown rests,
+    /// so zooming out stops at the fitted photo instead of running into the grid.
+    @State private var crownTurnZoomsPhoto = false
+    @State private var photoPanStart: CGSize?
     @State private var pageVisibility: [URL: Double] = [:]
     @State private var galleryScrollTarget: URL?
     @State private var gridStorage = GalleryGridStorage()
@@ -162,11 +168,18 @@ struct SavedDrawingsView: View {
                         thumbnailPixels: thumbnailPixels, displayScale: displayScale,
                         loadsNearbyPages: !gridZoom.active || gridZoom.pendingCommit?.columns == 1,
                         isTransitioning: isTransitioning, transitionBitmap: transitionBitmap,
-                        respectsSafeArea: tutorial.isActive,
+                        respectsSafeArea: tutorial.isActive, zoom: photoZoom,
                         onSelect: selectPage, onDisplayedBitmap: pageDisplayed,
                         onTap: toggleCleanViewing, onVisibilityChange: setPageVisibility)
-                        .allowsHitTesting(!isTransitioning && tutorial.allowsGalleryPaging)
+                        // A zoomed photo pans instead of paging.
+                        .allowsHitTesting(!isTransitioning && tutorial.allowsGalleryPaging && !photoZoom.isZoomed)
                         .accessibilityHidden(isTransitioning)
+                    if photoZoom.isZoomed && !isTransitioning {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .gesture(photoPanGesture(viewport: geometry.size))
+                            .onTapGesture(perform: toggleCleanViewing)
+                    }
                 }
 
                 if gridZoom.active {
@@ -531,8 +544,12 @@ struct SavedDrawingsView: View {
             crownFocused = !showing && tutorial.allowsGalleryZoom && pendingDeletion == nil
             if !showing && showsFullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
         }
+        .onChange(of: selectedDrawing?.id) { _, _ in
+            resetPhotoZoom()
+        }
         .onChange(of: showsFullscreen) { _, fullscreen in
             morphState.isExpanded = false
+            if !fullscreen { resetPhotoZoom() }
             if fullscreen { setSelecting(false) }
             if !fullscreen { pageVisibility = [:] }
             tutorial.galleryIsFullscreen = fullscreen
@@ -674,6 +691,12 @@ struct SavedDrawingsView: View {
         guard !isLoading else { return }
         guard tutorial.allowsGalleryBack else { return }
         tutorial.activity()
+        // Back first returns a zoomed photo to fit, keeping the photo open.
+        if showsFullscreen, !isTransitioning, photoZoom.isZoomed {
+            resetPhotoZoom(animated: true)
+            WKInterfaceDevice.current().play(.click)
+            return
+        }
         guard !isTransitioning else { return backDuringZoom() }
         #if DEBUG
         WatchGalleryDiagnostics.shared.back(result: isSelecting ? "end select" : showsFullscreen
@@ -804,6 +827,7 @@ struct SavedDrawingsView: View {
             sourceFrame: frame, viewport: galleryViewport, topInset: galleryTopInset,
             bottomInset: tutorialHintReservedHeight + 12, layout: imageLayout,
             cached: cached, favorites: Set(drawings.filter(\.isFavorite).map(\.url)), crown: crownPosition)
+        resetPhotoZoom()
         isCleanViewing = false
         morphState.isExpanded = false
     }
@@ -825,6 +849,23 @@ struct SavedDrawingsView: View {
         #endif
         guard !isLoading, pendingDeletion == nil, !isSelecting, tutorial.allowsGalleryZoom else { return }
         tutorial.activity()
+        // On the settled photo, turning in (or any turn while zoomed) zooms the photo;
+        // turning out from the fitted photo still zooms out to the grid.
+        if showsFullscreen, !gridZoom.active, !tutorial.isActive, let bitmap = displayedBitmap,
+           bitmap.url == selectedDrawing?.url {
+            let delta = value - crownPosition
+            if crownTurnZoomsPhoto || photoZoom.isZoomed || delta > 0 {
+                crownTurnZoomsPhoto = true
+                crownPosition = value
+                var zoom = photoZoom
+                // A click marks reaching 8× or the fitted photo.
+                if zoom.zoom(byCrown: delta, imageSize: bitmap.originalSize, viewport: galleryViewport) {
+                    WKInterfaceDevice.current().play(.click)
+                }
+                withoutAnimation { photoZoom = zoom }
+                return
+            }
+        }
         if !gridZoom.active {
             guard let target = selectedDrawing ?? focusedDrawing ?? drawings.first else { return }
             beginGridZoom(target: target)
@@ -837,7 +878,34 @@ struct SavedDrawingsView: View {
         #if DEBUG
         if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.crownIdleEvents += 1 }
         #endif
+        crownTurnZoomsPhoto = false
         gridZoom.settle(reduceMotion: reduceMotion)
+    }
+
+    private func photoPanGesture(viewport: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 2)
+            .onChanged { value in
+                guard let bitmap = displayedBitmap else { return }
+                let start = photoPanStart ?? photoZoom.offset
+                photoPanStart = start
+                var zoom = photoZoom
+                zoom.pan(to: CGSize(width: start.width + value.translation.width,
+                                    height: start.height + value.translation.height),
+                         imageSize: bitmap.originalSize, viewport: viewport)
+                withoutAnimation { photoZoom = zoom }
+            }
+            .onEnded { _ in photoPanStart = nil }
+    }
+
+    private func resetPhotoZoom(animated: Bool = false) {
+        photoPanStart = nil
+        crownTurnZoomsPhoto = false
+        guard photoZoom != GalleryPhotoZoom() else { return }
+        if animated && !reduceMotion {
+            withAnimation(.easeInOut(duration: 0.25)) { photoZoom.reset() }
+        } else {
+            withoutAnimation { photoZoom.reset() }
+        }
     }
 
     private func completeGridZoom() {
@@ -863,6 +931,7 @@ struct SavedDrawingsView: View {
     private func returnToGrid() {
         queuedTap = nil
         gridZoom.reset()
+        resetPhotoZoom()
         isCleanViewing = false
         showsFullscreen = false
         selectedDrawing = nil

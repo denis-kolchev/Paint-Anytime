@@ -1213,7 +1213,11 @@ struct WatchCanvasView: View {
 
     private func canvasFit(_ size: CGSize) -> CGFloat {
         let paper = controller.document.size(fallback: size)
-        return min(size.width / paper.width, size.height / paper.height)
+        // A zero-sized layout pass with no stored canvas size would divide 0 by 0;
+        // NaN here reaches `.frame` and SwiftUI rejects it.
+        guard paper.width > 0, paper.height > 0 else { return 1 }
+        let fit = min(size.width / paper.width, size.height / paper.height)
+        return fit.isFinite ? fit : 1
     }
 
     private func canvasPoint(_ point: CGPoint, size: CGSize) -> CGPoint {

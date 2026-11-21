@@ -682,7 +682,7 @@ nonisolated extension WatchBitmapRenderer {
                 hasher.combine(layer[hashed].locksTransparency)
                 hashed += 1
             }
-            var finished = hasher
+            let finished = hasher
             let blurParameters = parameters[index]!
             let key = BlurSourceCache.Key(prefix: finished.finalize(), prefixCount: index,
                                           boxRadius: blurParameters.boxRadius, lowScale: Double(lowScale),

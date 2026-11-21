@@ -16,6 +16,8 @@ struct GalleryFullscreenPager: View {
     let transitionBitmap: GalleryBitmap?
     /// The tutorial keeps the system safe areas.
     let respectsSafeArea: Bool
+    /// Crown zoom applied to the selected page.
+    let zoom: GalleryPhotoZoom
     let onSelect: (URL?) -> Void
     let onDisplayedBitmap: (CanvasExport, GalleryBitmap) -> Void
     let onTap: () -> Void
@@ -35,6 +37,7 @@ struct GalleryFullscreenPager: View {
                                       respectsSafeArea: respectsSafeArea,
                                       fitsViewport: true,
                                       isSelected: drawing.id == selectedID,
+                                      zoom: drawing.id == selectedID ? zoom : GalleryPhotoZoom(),
                                       onDisplayedBitmap: { bitmap in
                                           onDisplayedBitmap(drawing, bitmap)
                                       })
