@@ -43,8 +43,9 @@ struct PerspectiveGuidesSettingsView: View {
         if tutorial.isActive { return [.rays] }
         return guides.preset == .one ? [.tilt, .rays] : Page.allCases
     }
-    /// The tour's value row and Crown change the rays only in their own lesson step.
-    private var adjustsValue: Bool { tutorial.permits([.setRayCount]) }
+    /// The tour's value row and Crown change the rays in their own lesson step and stay
+    /// free while the card asks for Back, so the user can keep trying counts.
+    private var adjustsValue: Bool { tutorial.permits([.setRayCount, .leavePerspective]) }
     private var page: Page { pages.contains(selectedPage) ? selectedPage : pages[0] }
     private var pageIndex: Binding<Int> {
         Binding(get: { pages.firstIndex(of: page) ?? 0 },
