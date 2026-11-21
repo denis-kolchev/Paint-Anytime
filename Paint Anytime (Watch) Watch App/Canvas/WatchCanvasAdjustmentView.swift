@@ -211,15 +211,24 @@ struct WatchCanvasAdjustmentView: View {
                     if roomY > 0 {
                         proposedY = min(100, max(0, start.y + value.translation.height / scale / roomY * 100)).rounded()
                     }
-                    // Magnetize the centre as the canvas pan does: in screen points, so it feels
-                    // the same at every preview scale, with a wider release radius against repeated clicks.
-                    let wasCentered = positionX == 50 && positionY == 50
-                    let distance = hypot((proposedX - 50) / 100 * roomX * scale,
-                                         (proposedY - 50) / 100 * roomY * scale)
-                    let isCentered = distance <= (wasCentered ? 12 : 8)
-                    positionX = isCentered ? 50 : proposedX
-                    positionY = isCentered ? 50 : proposedY
-                    if isCentered && !wasCentered { WKInterfaceDevice.current().play(.click) }
+                    // Each axis snaps to its centre on its own. The magnet is a share of that
+                    // axis's travel, capped in screen points: a fixed radius would swallow the
+                    // whole travel of a slight crop or extension. Release is wider than capture
+                    // so the edge does not click repeatedly.
+                    func snapped(_ proposed: Double, current: Double, room: CGFloat) -> Double {
+                        guard room > 0 else { return proposed }
+                        let travel = room * scale
+                        let wasCentered = current == 50
+                        let radius = wasCentered ? min(12, travel * 0.09) : min(8, travel * 0.06)
+                        return abs(proposed - 50) / 100 * travel <= radius ? 50 : proposed
+                    }
+                    let nextX = snapped(proposedX, current: positionX, room: roomX)
+                    let nextY = snapped(proposedY, current: positionY, room: roomY)
+                    if (nextX == 50 && positionX != 50 && roomX > 0) || (nextY == 50 && positionY != 50 && roomY > 0) {
+                        WKInterfaceDevice.current().play(.click)
+                    }
+                    positionX = nextX
+                    positionY = nextY
                 }
                 .onEnded { value in
                     isDraggingFrame = false

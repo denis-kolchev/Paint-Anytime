@@ -20,6 +20,26 @@
 		AF1030100000000000000001 /* Shared/App/PaintDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */; };
 		AF1030200000000000000001 /* Shared/Connectivity/SketchAssistProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */; };
 		AF1030300000000000000001 /* Shared/Connectivity/PhotoImportProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */; };
+		AF1060000000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060000000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift */; };
+		AF1060010000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060010000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift */; };
+		AF1060020000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060020000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift */; };
+		AF1060030000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060030000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift */; };
+		AF1060040000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060040000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift */; };
+		AF1060050000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060050000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift */; };
+		AF1060060000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060060000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift */; };
+		AF1060070000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060070000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift */; };
+		AF1060080000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060080000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift */; };
+		AF1060090000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060090000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift */; };
+		AF1060100000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060100000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift */; };
+		AF1060110000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060110000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift */; };
+		AF1060120000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060120000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift */; };
+		AF1060130000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060130000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift */; };
+		AF1060140000000000000001 /* Shared/Document/CanvasDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060140000000000000002 /* Shared/Document/CanvasDocument.swift */; };
+		AF1060150000000000000001 /* Shared/Document/PSDWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060150000000000000002 /* Shared/Document/PSDWriter.swift */; };
+		AF1060160000000000000001 /* Shared/Drawing/BrushGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060160000000000000002 /* Shared/Drawing/BrushGeometry.swift */; };
+		AF1060170000000000000001 /* Shared/Drawing/FountainPenGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060170000000000000002 /* Shared/Drawing/FountainPenGeometry.swift */; };
+		AF1060180000000000000001 /* Shared/App/AppReleaseFeatures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060180000000000000002 /* Shared/App/AppReleaseFeatures.swift */; };
+		AF1060190000000000000001 /* Shared/Localization/AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060190000000000000002 /* Shared/Localization/AppLanguage.swift */; };
 		AF1040000000000000000001 /* Shared/Gallery/GalleryPreviewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */; };
 		AF1040000000000000000003 /* Shared/Gallery/GalleryImageMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */; };
 		AF1040000000000000000005 /* Shared/Gallery/GalleryLowResCrossfade.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */; };
@@ -81,6 +101,26 @@
 		AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/App/PaintDeepLink.swift; sourceTree = SOURCE_ROOT; };
 		AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Connectivity/SketchAssistProtocol.swift; sourceTree = SOURCE_ROOT; };
 		AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Connectivity/PhotoImportProtocol.swift; sourceTree = SOURCE_ROOT; };
+		AF1060000000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060010000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060020000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060030000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060040000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060050000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060060000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060070000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060080000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060090000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060100000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060110000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060120000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060130000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060140000000000000002 /* Shared/Document/CanvasDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Document/CanvasDocument.swift; sourceTree = SOURCE_ROOT; };
+		AF1060150000000000000002 /* Shared/Document/PSDWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Document/PSDWriter.swift; sourceTree = SOURCE_ROOT; };
+		AF1060160000000000000002 /* Shared/Drawing/BrushGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Drawing/BrushGeometry.swift; sourceTree = SOURCE_ROOT; };
+		AF1060170000000000000002 /* Shared/Drawing/FountainPenGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Drawing/FountainPenGeometry.swift; sourceTree = SOURCE_ROOT; };
+		AF1060180000000000000002 /* Shared/App/AppReleaseFeatures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/App/AppReleaseFeatures.swift; sourceTree = SOURCE_ROOT; };
+		AF1060190000000000000002 /* Shared/Localization/AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Localization/AppLanguage.swift; sourceTree = SOURCE_ROOT; };
 		AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryPreviewStore.swift; sourceTree = SOURCE_ROOT; };
 		AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryImageMetadata.swift; sourceTree = SOURCE_ROOT; };
 		AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryLowResCrossfade.swift; sourceTree = SOURCE_ROOT; };
@@ -135,6 +175,26 @@
 				AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */,
 				AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */,
 				AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */,
+				AF1060000000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift */,
+				AF1060010000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift */,
+				AF1060020000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift */,
+				AF1060030000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift */,
+				AF1060040000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift */,
+				AF1060050000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift */,
+				AF1060060000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift */,
+				AF1060070000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift */,
+				AF1060080000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift */,
+				AF1060090000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift */,
+				AF1060100000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift */,
+				AF1060110000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift */,
+				AF1060120000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift */,
+				AF1060130000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift */,
+				AF1060140000000000000002 /* Shared/Document/CanvasDocument.swift */,
+				AF1060150000000000000002 /* Shared/Document/PSDWriter.swift */,
+				AF1060160000000000000002 /* Shared/Drawing/BrushGeometry.swift */,
+				AF1060170000000000000002 /* Shared/Drawing/FountainPenGeometry.swift */,
+				AF1060180000000000000002 /* Shared/App/AppReleaseFeatures.swift */,
+				AF1060190000000000000002 /* Shared/Localization/AppLanguage.swift */,
 				AB1000000000000000000002 /* Shared/Document/PaintProject.swift */,
 				AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */,
 				AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */,
@@ -341,6 +401,26 @@
 				AF1030100000000000000001 /* Shared/App/PaintDeepLink.swift in Sources */,
 				AF1030200000000000000001 /* Shared/Connectivity/SketchAssistProtocol.swift in Sources */,
 				AF1030300000000000000001 /* Shared/Connectivity/PhotoImportProtocol.swift in Sources */,
+				AF1060000000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift in Sources */,
+				AF1060010000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift in Sources */,
+				AF1060020000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift in Sources */,
+				AF1060030000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift in Sources */,
+				AF1060040000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift in Sources */,
+				AF1060050000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift in Sources */,
+				AF1060060000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift in Sources */,
+				AF1060070000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift in Sources */,
+				AF1060080000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift in Sources */,
+				AF1060090000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift in Sources */,
+				AF1060100000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift in Sources */,
+				AF1060110000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift in Sources */,
+				AF1060120000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift in Sources */,
+				AF1060130000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift in Sources */,
+				AF1060140000000000000001 /* Shared/Document/CanvasDocument.swift in Sources */,
+				AF1060150000000000000001 /* Shared/Document/PSDWriter.swift in Sources */,
+				AF1060160000000000000001 /* Shared/Drawing/BrushGeometry.swift in Sources */,
+				AF1060170000000000000001 /* Shared/Drawing/FountainPenGeometry.swift in Sources */,
+				AF1060180000000000000001 /* Shared/App/AppReleaseFeatures.swift in Sources */,
+				AF1060190000000000000001 /* Shared/Localization/AppLanguage.swift in Sources */,
 				AB1000000000000000000001 /* Shared/Document/PaintProject.swift in Sources */,
 				AC1000000000000000000001 /* Shared/Gallery/GalleryDeletionStore.swift in Sources */,
 				AE1030000000000000000001 /* Shared/Gallery/GalleryImageLayout.swift in Sources */,

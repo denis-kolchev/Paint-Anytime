@@ -10,6 +10,7 @@ struct PhoneDrawingActions: ToolbarContent {
     let saveToPhotos: () -> Void
     let exportImage: () -> Void
     let exportProject: () -> Void
+    let exportPhotoshop: () -> Void
     let synchronize: () -> Void
     let sendToWatch: () -> Void
     let delete: () -> Void
@@ -29,6 +30,11 @@ struct PhoneDrawingActions: ToolbarContent {
                 }
                 ShareLink(item: projectURL) {
                     Label("Project (.paintanytime)", systemImage: "doc")
+                }
+                .disabled(!hasProject)
+                // Layers exist only in the project; built when the share sheet asks for the file.
+                ShareLink(item: DrawingPhotoshopExport(projectURL: projectURL), preview: SharePreview("Drawing")) {
+                    Label("Photoshop (.psd)", systemImage: "square.3.layers.3d")
                 }
                 .disabled(!hasProject)
             } label: {
@@ -51,6 +57,10 @@ struct PhoneDrawingActions: ToolbarContent {
                 }
                 Button(action: exportProject) {
                     Label("Save Project to Files", systemImage: "doc")
+                }
+                .disabled(!hasProject)
+                Button(action: exportPhotoshop) {
+                    Label("Photoshop (.psd)", systemImage: "square.3.layers.3d")
                 }
                 .disabled(!hasProject)
             } label: {
