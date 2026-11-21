@@ -13068,6 +13068,901 @@
           }
         }
       }
+    },
+    "This Photoshop file could not be opened." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تعذّر فتح ملف Photoshop هذا."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Този файл на Photoshop не можа да бъде отворен."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento soubor Photoshopu se nepodařilo otevřít."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne Photoshop-fil kunne ikke åbnes."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Photoshop-Datei konnte nicht geöffnet werden."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Δεν ήταν δυνατό το άνοιγμα αυτού του αρχείου Photoshop."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Photoshop file could not be opened."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se ha podido abrir este archivo de Photoshop."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tätä Photoshop-tiedostoa ei voitu avata."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’ouvrir ce fichier Photoshop."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "לא ניתן לפתוח את קובץ ה‑Photoshop הזה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ezt a Photoshop-fájlt nem sikerült megnyitni."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File Photoshop ini tidak dapat dibuka."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile aprire questo file di Photoshop."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このPhotoshopファイルを開けませんでした。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Photoshop 파일을 열 수 없습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne Photoshop-filen kunne ikke åpnes."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Photoshop-bestand kan niet worden geopend."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można otworzyć tego pliku Photoshopa."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível abrir este arquivo do Photoshop."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível abrir este ficheiro do Photoshop."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось открыть этот файл Photoshop."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photoshop-filen kunde inte öppnas."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่สามารถเปิดไฟล์ Photoshop นี้ได้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Photoshop dosyası açılamadı."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося відкрити цей файл Photoshop."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không thể mở tệp Photoshop này."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法打开此 Photoshop 文件。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "無法打開此 Photoshop 檔案。"
+          }
+        }
+      }
+    },
+    "This Photoshop file is too large to import. Merge some layers or reduce the image size, then try again." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ملف Photoshop هذا كبير جدًا بحيث لا يمكن استيراده. ادمج بعض الطبقات أو صغّر حجم الصورة، ثم حاول مرة أخرى."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Този файл на Photoshop е твърде голям за импортиране. Обединете някои слоеве или намалете размера на изображението и опитайте отново."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento soubor Photoshopu je příliš velký na import. Slučte některé vrstvy nebo zmenšete obrázek a zkuste to znovu."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne Photoshop-fil er for stor til at blive importeret. Flet nogle lag, eller gør billedet mindre, og prøv igen."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Photoshop-Datei ist zu groß für den Import. Füge einige Ebenen zusammen oder verkleinere das Bild und versuche es erneut."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αυτό το αρχείο Photoshop είναι πολύ μεγάλο για εισαγωγή. Συγχωνεύστε ορισμένα επίπεδα ή μειώστε το μέγεθος της εικόνας και δοκιμάστε ξανά."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Photoshop file is too large to import. Merge some layers or reduce the image size, then try again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este archivo de Photoshop es demasiado grande para importarlo. Combina algunas capas o reduce el tamaño de la imagen y vuelve a intentarlo."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tämä Photoshop-tiedosto on liian suuri tuotavaksi. Yhdistä joitakin tasoja tai pienennä kuvaa ja yritä uudelleen."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce fichier Photoshop est trop volumineux pour être importé. Fusionnez des calques ou réduisez la taille de l’image, puis réessayez."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קובץ ה‑Photoshop הזה גדול מדי לייבוא. מזגו חלק מהשכבות או הקטינו את התמונה ונסו שוב."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ez a Photoshop-fájl túl nagy az importáláshoz. Egyesíts néhány réteget, vagy csökkentsd a kép méretét, majd próbáld újra."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File Photoshop ini terlalu besar untuk diimpor. Gabungkan beberapa lapisan atau perkecil ukuran gambar, lalu coba lagi."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo file di Photoshop è troppo grande per essere importato. Unisci alcuni livelli o riduci le dimensioni dell’immagine, quindi riprova."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このPhotoshopファイルは大きすぎて読み込めません。いくつかのレイヤーを結合するか画像サイズを小さくしてから、もう一度お試しください。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Photoshop 파일은 너무 커서 가져올 수 없습니다. 일부 레이어를 병합하거나 이미지 크기를 줄인 후 다시 시도하십시오."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne Photoshop-filen er for stor til å importeres. Slå sammen noen lag eller gjør bildet mindre, og prøv igjen."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Photoshop-bestand is te groot om te importeren. Voeg enkele lagen samen of verklein de afbeelding en probeer het opnieuw."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten plik Photoshopa jest za duży do zaimportowania. Scal niektóre warstwy lub zmniejsz obraz i spróbuj ponownie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este arquivo do Photoshop é grande demais para ser importado. Mescle algumas camadas ou reduza o tamanho da imagem e tente novamente."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este ficheiro do Photoshop é demasiado grande para ser importado. Junte algumas camadas ou reduza o tamanho da imagem e tente novamente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот файл Photoshop слишком большой для импорта. Объедините часть слоёв или уменьшите изображение и попробуйте снова."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photoshop-filen är för stor för att importeras. Slå ihop några lager eller minska bildens storlek och försök igen."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไฟล์ Photoshop นี้ใหญ่เกินกว่าจะนำเข้าได้ ให้รวมเลเยอร์บางส่วนหรือลดขนาดภาพ แล้วลองอีกครั้ง"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Photoshop dosyası içe aktarılamayacak kadar büyük. Bazı katmanları birleştirin veya görüntü boyutunu küçültüp yeniden deneyin."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей файл Photoshop завеликий для імпорту. Об’єднайте частину шарів або зменште зображення й спробуйте ще раз."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tệp Photoshop này quá lớn để nhập. Hãy hợp nhất một số lớp hoặc giảm kích thước hình ảnh rồi thử lại."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Photoshop 文件过大，无法导入。请合并部分图层或缩小图像尺寸，然后重试。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Photoshop 檔案過大，無法輸入。請合併部分圖層或縮小影像尺寸，然後再試一次。"
+          }
+        }
+      }
+    },
+    "Some Photoshop features could not be kept, such as blend modes, layer effects or adjustment layers. The drawing may look different." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تعذّر الاحتفاظ ببعض ميزات Photoshop، مثل أوضاع المزج أو تأثيرات الطبقات أو طبقات الضبط. قد يبدو الرسم مختلفًا."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Някои функции на Photoshop не можаха да бъдат запазени, например режими на смесване, ефекти на слоеве или коригиращи слоеве. Рисунката може да изглежда различно."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Některé funkce Photoshopu se nepodařilo zachovat, například režimy prolnutí, efekty vrstev nebo vrstvy úprav. Kresba může vypadat jinak."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nogle Photoshop-funktioner kunne ikke bevares, f.eks. blandingstilstande, lageffekter eller justeringslag. Tegningen kan se anderledes ud."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Photoshop-Funktionen konnten nicht übernommen werden, etwa Füllmethoden, Ebeneneffekte oder Einstellungsebenen. Die Zeichnung kann anders aussehen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ορισμένες λειτουργίες του Photoshop δεν διατηρήθηκαν, όπως λειτουργίες ανάμειξης, εφέ επιπέδων ή επίπεδα προσαρμογής. Το σχέδιο μπορεί να φαίνεται διαφορετικό."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Some Photoshop features could not be kept, such as blend modes, layer effects or adjustment layers. The drawing may look different."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se han podido conservar algunas funciones de Photoshop, como los modos de fusión, los efectos de capa o las capas de ajuste. Es posible que el dibujo se vea diferente."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Joitakin Photoshopin ominaisuuksia ei voitu säilyttää, kuten sekoitustiloja, tasotehosteita tai säätötasoja. Piirros voi näyttää erilaiselta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certaines fonctionnalités de Photoshop n’ont pas pu être conservées, comme les modes de fusion, les effets de calque ou les calques de réglage. Le dessin peut paraître différent."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "לא ניתן היה לשמור חלק מתכונות Photoshop, כמו מצבי מיזוג, אפקטים של שכבות או שכבות התאמה. הציור עשוי להיראות אחרת."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Néhány Photoshop-funkciót nem sikerült megtartani, például a keverési módokat, a rétegeffektusokat vagy a korrekciós rétegeket. A rajz eltérően nézhet ki."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beberapa fitur Photoshop tidak dapat dipertahankan, seperti mode campuran, efek lapisan, atau lapisan penyesuaian. Gambar mungkin terlihat berbeda."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non è stato possibile mantenere alcune funzioni di Photoshop, come metodi di fusione, effetti di livello o livelli di regolazione. Il disegno potrebbe apparire diverso."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "描画モード、レイヤー効果、調整レイヤーなど、一部のPhotoshopの機能は保持できませんでした。描画の見た目が異なる場合があります。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "혼합 모드, 레이어 효과, 조정 레이어 등 일부 Photoshop 기능을 유지할 수 없었습니다. 그림이 다르게 보일 수 있습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noen Photoshop-funksjoner kunne ikke beholdes, for eksempel blandingsmoduser, lageffekter eller justeringslag. Tegningen kan se annerledes ut."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sommige Photoshop-functies konden niet worden behouden, zoals overvloeimodi, laageffecten of aanpassingslagen. De tekening kan er anders uitzien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie udało się zachować niektórych funkcji Photoshopa, takich jak tryby mieszania, efekty warstw czy warstwy dopasowania. Rysunek może wyglądać inaczej."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível manter alguns recursos do Photoshop, como modos de mesclagem, efeitos de camada ou camadas de ajuste. O desenho pode ficar diferente."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível manter algumas funcionalidades do Photoshop, como modos de mistura, efeitos de camada ou camadas de ajuste. O desenho pode ficar diferente."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Некоторые возможности Photoshop не сохранились, например режимы наложения, эффекты слоёв или корректирующие слои. Рисунок может выглядеть иначе."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vissa Photoshop-funktioner kunde inte behållas, till exempel blandningslägen, lagereffekter eller justeringslager. Teckningen kan se annorlunda ut."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ไม่สามารถคงคุณสมบัติบางอย่างของ Photoshop ไว้ได้ เช่น โหมดผสม เอฟเฟกต์เลเยอร์ หรือเลเยอร์ปรับแต่ง ภาพวาดอาจดูแตกต่างออกไป"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Karışım modları, katman efektleri veya ayarlama katmanları gibi bazı Photoshop özellikleri korunamadı. Çizim farklı görünebilir."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Деякі можливості Photoshop не збереглися, наприклад режими накладання, ефекти шарів або коригувальні шари. Малюнок може виглядати інакше."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Không thể giữ lại một số tính năng của Photoshop, như chế độ hòa trộn, hiệu ứng lớp hoặc lớp điều chỉnh. Bản vẽ có thể trông khác đi."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分 Photoshop 功能无法保留，例如混合模式、图层效果或调整图层。绘图看起来可能会有所不同。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "部分 Photoshop 功能無法保留，例如混合模式、圖層效果或調整圖層。繪圖看起來可能會有所不同。"
+          }
+        }
+      }
+    },
+    "This Photoshop file was imported as a single layer." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم استيراد ملف Photoshop هذا كطبقة واحدة."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Този файл на Photoshop е импортиран като един слой."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tento soubor Photoshopu byl importován jako jedna vrstva."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne Photoshop-fil blev importeret som ét lag."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Photoshop-Datei wurde als einzelne Ebene importiert."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αυτό το αρχείο Photoshop εισήχθη ως ένα επίπεδο."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This Photoshop file was imported as a single layer."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este archivo de Photoshop se ha importado como una sola capa."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tämä Photoshop-tiedosto tuotiin yhtenä tasona."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce fichier Photoshop a été importé sous forme d’un seul calque."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "קובץ ה‑Photoshop הזה יובא כשכבה אחת."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ez a Photoshop-fájl egyetlen rétegként lett importálva."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File Photoshop ini diimpor sebagai satu lapisan."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo file di Photoshop è stato importato come un unico livello."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このPhotoshopファイルは1つのレイヤーとして読み込まれました。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 Photoshop 파일은 단일 레이어로 가져왔습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Denne Photoshop-filen ble importert som ett lag."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit Photoshop-bestand is als één laag geïmporteerd."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten plik Photoshopa został zaimportowany jako jedna warstwa."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este arquivo do Photoshop foi importado como uma única camada."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este ficheiro do Photoshop foi importado como uma única camada."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Этот файл Photoshop импортирован одним слоем."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photoshop-filen importerades som ett enda lager."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "นำเข้าไฟล์ Photoshop นี้เป็นเลเยอร์เดียวแล้ว"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu Photoshop dosyası tek bir katman olarak içe aktarıldı."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей файл Photoshop імпортовано одним шаром."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tệp Photoshop này đã được nhập dưới dạng một lớp duy nhất."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Photoshop 文件已作为单个图层导入。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此 Photoshop 檔案已作為單一圖層輸入。"
+          }
+        }
+      }
+    },
+    "Importing Photoshop File…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "جارٍ استيراد ملف Photoshop…"
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импортиране на файл от Photoshop…"
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importuje se soubor Photoshopu…"
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importerer Photoshop-fil…"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photoshop-Datei wird importiert …"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Εισαγωγή αρχείου Photoshop…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing Photoshop File…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importando archivo de Photoshop…"
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuodaan Photoshop-tiedostoa…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importation du fichier Photoshop…"
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "מייבא קובץ Photoshop…"
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photoshop-fájl importálása…"
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mengimpor File Photoshop…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importazione del file di Photoshop…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photoshopファイルを読み込み中…"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photoshop 파일 가져오는 중…"
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importerer Photoshop-fil …"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photoshop-bestand importeren…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importowanie pliku Photoshopa…"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importando arquivo do Photoshop…"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A importar ficheiro do Photoshop…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Импорт файла Photoshop…"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importerar Photoshop-fil …"
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "กำลังนำเข้าไฟล์ Photoshop…"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Photoshop dosyası içe aktarılıyor…"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Імпорт файлу Photoshop…"
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Đang nhập tệp Photoshop…"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在导入 Photoshop 文件…"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "正在輸入 Photoshop 檔案…"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

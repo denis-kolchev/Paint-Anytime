@@ -92,6 +92,8 @@ struct PhoneGalleryMoreMenu: View {
     let synchronize: () -> Void
     /// True while a picked photo is decoded and sent to the watch.
     var isPreparingPhoto = false
+    /// True while a Photoshop file is converted; its progress shows in the gallery.
+    var isImportingProject = false
 
     /// Room the header keeps free beside the title for the bar button.
     static let reservedWidth: CGFloat = 56
@@ -106,6 +108,7 @@ struct PhoneGalleryMoreMenu: View {
             Button(action: importProject) {
                 Label("Import Project", systemImage: "square.and.arrow.down")
             }
+            .disabled(isImportingProject)
             Divider()
             Button(action: synchronize) {
                 Label("Sync", systemImage: "arrow.triangle.2.circlepath")

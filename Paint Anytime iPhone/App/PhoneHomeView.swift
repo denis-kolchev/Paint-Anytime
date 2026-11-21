@@ -25,6 +25,8 @@ struct PhoneHomeView: View {
     @State private var importingPhoto = false
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var preparingPhoto = false
+    /// Non-nil while a PSD is converted into a project.
+    @State private var photoshopImport: PhotoshopImportStatus?
     @State private var showingInboxError = false
     @State private var projectMessage: String?
     @State private var watchDestination: PaintDeepLink?
@@ -109,11 +111,19 @@ struct PhoneHomeView: View {
                         }
                     }
             }
+            .overlay(alignment: .bottom) {
+                if let photoshopImport {
+                    PhotoshopImportProgressView(status: photoshopImport)
+                        .padding(.bottom, container.safeAreaInsets.bottom + 12)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(reduceMotion ? nil : .smooth(duration: 0.3), value: photoshopImport != nil)
             .onPreferenceChange(PhoneGalleryHeaderHeightKey.self) { bottom in
                 if galleryHeaderBottom != bottom { galleryHeaderBottom = bottom }
             }
             .refreshable { photoInbox.synchronize() }
-            .fileImporter(isPresented: $importingProject, allowedContentTypes: [.paintAnytimeProject]) { result in
+            .fileImporter(isPresented: $importingProject, allowedContentTypes: [.paintAnytimeProject, .photoshopImage]) { result in
                 switch result {
                 case .success(let url): importProject(url)
                 case .failure(let error): projectMessage = error.localizedDescription
@@ -343,7 +353,8 @@ struct PhoneHomeView: View {
             importPhoto: { importingPhoto = true },
             importProject: { importingProject = true },
             synchronize: { photoInbox.synchronize() },
-            isPreparingPhoto: preparingPhoto)
+            isPreparingPhoto: preparingPhoto,
+            isImportingProject: photoshopImport != nil)
     }
 
     private var drawingPresentationAnimation: Animation {
@@ -429,6 +440,10 @@ struct PhoneHomeView: View {
     }
 
     private func importProject(_ url: URL) {
+        if url.pathExtension.lowercased() == PhotoshopExport.fileExtension {
+            importPhotoshop(url)
+            return
+        }
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -440,5 +455,42 @@ struct PhoneHomeView: View {
             photoInbox.refresh()
             projectMessage = String(localized: "Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch.")
         } catch { projectMessage = error.localizedDescription }
+    }
+
+    /// Converts the PSD into a project in the phone gallery, like an imported project.
+    /// Decoding a large file takes a while, so it runs off the main actor.
+    private func importPhotoshop(_ url: URL) {
+        // One at a time: the progress capsule shows a single import.
+        guard photoshopImport == nil else { return }
+        let status = PhotoshopImportStatus()
+        photoshopImport = status
+        Task {
+            let access = url.startAccessingSecurityScopedResource()
+            defer {
+                if access { url.stopAccessingSecurityScopedResource() }
+                photoshopImport = nil
+            }
+            let work = Task.detached(priority: .userInitiated) { () throws -> String? in
+                let imported = try PhotoshopImport.project(from: url) { status.report($0) }
+                let temporary = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+                    .appendingPathExtension(PaintProject.fileExtension)
+                defer { try? FileManager.default.removeItem(at: temporary) }
+                try imported.project.write(to: temporary)
+                // Cancelling after this point would leave the drawing in the gallery anyway.
+                try Task.checkCancellation()
+                try IncomingDrawingStore().receive(temporary, name: "Imported_" + UUID().uuidString + "." + PaintProject.fileExtension)
+                return imported.notice
+            }
+            status.work = work
+            do {
+                let notice = try await work.value
+                status.finish()
+                photoInbox.refresh()
+                let message = String(localized: "Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch.")
+                projectMessage = notice.map { message + "\n\n" + $0 } ?? message
+            } catch is CancellationError {
+                // Cancelled from the progress capsule: nothing was added, nothing to say.
+            } catch { projectMessage = error.localizedDescription }
+        }
     }
 }

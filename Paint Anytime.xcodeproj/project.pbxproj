@@ -20,6 +20,9 @@
 		AF1030100000000000000001 /* Shared/App/PaintDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */; };
 		AF1030200000000000000001 /* Shared/Connectivity/SketchAssistProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */; };
 		AF1030300000000000000001 /* Shared/Connectivity/PhotoImportProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */; };
+		AF1040000000000000000001 /* Shared/Gallery/GalleryPreviewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */; };
+		AF1040000000000000000003 /* Shared/Gallery/GalleryImageMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */; };
+		AF1040000000000000000005 /* Shared/Gallery/GalleryLowResCrossfade.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */; };
 		AF1060000000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060000000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift */; };
 		AF1060010000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060010000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift */; };
 		AF1060020000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060020000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift */; };
@@ -40,9 +43,6 @@
 		AF1060170000000000000001 /* Shared/Drawing/FountainPenGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060170000000000000002 /* Shared/Drawing/FountainPenGeometry.swift */; };
 		AF1060180000000000000001 /* Shared/App/AppReleaseFeatures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060180000000000000002 /* Shared/App/AppReleaseFeatures.swift */; };
 		AF1060190000000000000001 /* Shared/Localization/AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060190000000000000002 /* Shared/Localization/AppLanguage.swift */; };
-		AF1040000000000000000001 /* Shared/Gallery/GalleryPreviewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */; };
-		AF1040000000000000000003 /* Shared/Gallery/GalleryImageMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */; };
-		AF1040000000000000000005 /* Shared/Gallery/GalleryLowResCrossfade.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
 		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D40000000000000000000001 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */; };
@@ -101,6 +101,9 @@
 		AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/App/PaintDeepLink.swift; sourceTree = SOURCE_ROOT; };
 		AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Connectivity/SketchAssistProtocol.swift; sourceTree = SOURCE_ROOT; };
 		AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Connectivity/PhotoImportProtocol.swift; sourceTree = SOURCE_ROOT; };
+		AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryPreviewStore.swift; sourceTree = SOURCE_ROOT; };
+		AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryImageMetadata.swift; sourceTree = SOURCE_ROOT; };
+		AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryLowResCrossfade.swift; sourceTree = SOURCE_ROOT; };
 		AF1060000000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift"; sourceTree = SOURCE_ROOT; };
 		AF1060010000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift"; sourceTree = SOURCE_ROOT; };
 		AF1060020000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift"; sourceTree = SOURCE_ROOT; };
@@ -121,9 +124,6 @@
 		AF1060170000000000000002 /* Shared/Drawing/FountainPenGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Drawing/FountainPenGeometry.swift; sourceTree = SOURCE_ROOT; };
 		AF1060180000000000000002 /* Shared/App/AppReleaseFeatures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/App/AppReleaseFeatures.swift; sourceTree = SOURCE_ROOT; };
 		AF1060190000000000000002 /* Shared/Localization/AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Localization/AppLanguage.swift; sourceTree = SOURCE_ROOT; };
-		AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryPreviewStore.swift; sourceTree = SOURCE_ROOT; };
-		AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryImageMetadata.swift; sourceTree = SOURCE_ROOT; };
-		AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryLowResCrossfade.swift; sourceTree = SOURCE_ROOT; };
 		B20000020000000000000002 /* Preset Photos */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preset Photos"; sourceTree = "<group>"; };
 		C30000000000000000000002 /* PaintAnytimeComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
