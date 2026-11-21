@@ -137,10 +137,35 @@ struct TutorialProgress {
         }
     }
 
-    mutating func start(chapters: [TutorialChapter] = TutorialChapter.allCases) {
+    /// `resumingAt` continues the first chapter at a lesson and exercise saved earlier.
+    mutating func start(chapters: [TutorialChapter] = TutorialChapter.allCases,
+                        resumingAt resume: (lesson: Int, step: Int)? = nil) {
         self = TutorialProgress()
         self.chapters = chapters.isEmpty ? TutorialChapter.allCases : chapters
-        beginLesson()
+        if let resume, self.chapters[0].lessons.indices.contains(resume.lesson),
+           self.chapters[0].lessons[resume.lesson].steps.indices.contains(resume.step) {
+            lessonIndex = resume.lesson
+            beginLesson()
+            enter(resume.step)
+        } else {
+            beginLesson()
+        }
+    }
+
+    /// Where an interrupted chapter can pick up again, if the current exercise is such a
+    /// place. The basic course resumes at the exercise itself; the advanced one where a
+    /// section or a lesson begins. Never the chapter's first exercise, which is no progress,
+    /// nor an exercise whose lesson later needs what the canvas does not keep: the undo
+    /// history (Undo practice) or the zoomed camera (pan, ✓ after it).
+    var resumePosition: (lesson: Int, step: Int)? {
+        guard let chapter, !step.isResult, lessonIndex > 0 || stepIndex > 0 else { return nil }
+        let lesson = chapter.lessons[lessonIndex]
+        if stepIndex > 0 {
+            let needsSession: Set<TutorialStep> = [.history, .undoMarkerLine, .panCanvas, .finishCamera]
+            guard !lesson.steps[stepIndex...].contains(where: needsSession.contains) else { return nil }
+            if chapter == .advanced, !lesson.sectionStarts.contains(step) { return nil }
+        }
+        return (lessonIndex, stepIndex)
     }
     mutating func stop() { step = .inactive }
 

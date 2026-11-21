@@ -12,6 +12,7 @@ xcrun swiftc -parse-as-library \
   "Paint Anytime (Watch) Watch App/Tutorial/TutorialLesson.swift" \
   "Paint Anytime (Watch) Watch App/Tutorial/TutorialDebug.swift" \
   "Paint Anytime (Watch) Watch App/Tutorial/TutorialWorkspace.swift" \
+  "Paint Anytime (Watch) Watch App/Tutorial/TutorialResume.swift" \
   "Paint Anytime (Watch) Watch App/Tutorial/OnboardingController.swift" \
   "Paint Anytime (Watch) Watch App/Tutorial/TutorialCrownPlacement.swift" \
   Tests/TutorialChecks.swift -o "$check_dir/check"

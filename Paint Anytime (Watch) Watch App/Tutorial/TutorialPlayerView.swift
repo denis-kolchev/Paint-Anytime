@@ -58,6 +58,7 @@ struct TutorialPlayerView: View {
     @Environment(\.irisHoldsRevealedContent) private var irisHoldsRevealedContent
 
     init(folder: URL, chapters: [TutorialChapter] = TutorialChapter.allCases,
+         resume: TutorialResumeSnapshot? = nil,
          offersRemainingChapters: Bool = false,
          onCompleteChapter: @escaping (TutorialChapter) -> Void = { _ in },
          onFinish: @escaping () -> Void) {
@@ -66,7 +67,8 @@ struct TutorialPlayerView: View {
         self.offersRemainingChapters = offersRemainingChapters
         self.onCompleteChapter = onCompleteChapter
         self.onFinish = onFinish
-        _player = StateObject(wrappedValue: TutorialPlayerController(folder: folder, chapters: chapters))
+        _player = StateObject(wrappedValue: TutorialPlayerController(folder: folder, chapters: chapters,
+                                                                     resume: resume))
         // The tour opens on its first chapter; later chapters reset the palette on `chapterRevision`.
         _tutorialPaletteLibrary = State(initialValue: InkPaletteLibrary.tutorial(for: self.chapters.first))
     }
@@ -474,6 +476,7 @@ struct TutorialPlayerView: View {
                 player.lasso.deactivate()
             }
             if step == .chapterComplete || step == .finished, let chapter = tutorial.chapter {
+                player.clearResumePoint(for: chapter)
                 onCompleteChapter(chapter)
             }
             applyCircleInk(for: step)
@@ -486,6 +489,8 @@ struct TutorialPlayerView: View {
             if step == .crossMarkerLine {
                 player.demonstrateMarkerLine(viewportSize: canvasSize, reduceMotion: reduceMotion)
             }
+            // A later run can offer to continue from here.
+            player.scheduleResumePoint()
         }
         .task(id: tutorial.step) {
             // Ask once: the ring fills (~1.5 s), then the checkmark blinks and bounces for about
@@ -610,7 +615,7 @@ struct TutorialPlayerView: View {
                                  // Crossfade the menu into the gallery like the other menu pages.
                                  withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.35)) { player.openGallery() }
                              },
-                             onStartTutorial: { _ in },
+                             onStartTutorial: { _, _ in },
                              tutorial: tutorial, guides: player.guides,
                              onOpenCanvasSettings: {
                                  withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { player.openCanvasSettings() }

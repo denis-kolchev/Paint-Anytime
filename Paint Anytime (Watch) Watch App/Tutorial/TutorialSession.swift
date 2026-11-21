@@ -158,9 +158,13 @@ final class TutorialSession: ObservableObject {
         "session=\(ObjectIdentifier(self)) step=\(step) instruction=\(showsInstruction) result=\(showsResult) paused=\(remindersPaused) acceptsActions=\(acceptsActions) allowsDrawing=\(allowsDrawing) count=\(progress.count)"
     }
 
-    func start(chapters: [TutorialChapter] = TutorialChapter.allCases) {
+    /// The current exercise as a place to continue later, if it is one.
+    var resumePosition: (lesson: Int, step: Int)? { progress.resumePosition }
+
+    func start(chapters: [TutorialChapter] = TutorialChapter.allCases,
+               resumingAt resume: (lesson: Int, step: Int)? = nil) {
         cancelPendingAdvance()
-        progress.start(chapters: chapters)
+        progress.start(chapters: chapters, resumingAt: resume)
         hasBrowsedShapes = false
         markerLineStrokeID = nil
         releasedCircleEarly = false

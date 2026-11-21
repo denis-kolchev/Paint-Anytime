@@ -206,6 +206,7 @@ struct ContentView: View {
             if showsAppSettings, showsMenuTutorial, let folder = menuOnboarding.tutorialFolder {
                 NavigationStack {
                     TutorialPlayerView(folder: folder, chapters: menuOnboarding.tutorialChapters,
+                                       resume: menuOnboarding.tutorialResume,
                                        onCompleteChapter: menuOnboarding.completeChapter) {
                         // The editor returns behind the closed iris.
                         switchMenuTutorialMode { showsAppSettings = false }

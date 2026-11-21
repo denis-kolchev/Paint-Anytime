@@ -39,12 +39,20 @@ final class TutorialPlayerController: ObservableObject {
     private let chapters: [TutorialChapter]
     private var initialStyle = PencilStyle()
     private var subscriptions: Set<AnyCancellable> = []
+    /// The saved place this run continues from, used once when it starts.
+    private var resume: TutorialResumeSnapshot?
+    private let resumeStore: TutorialResumeStore
+    /// Resume writes run in order off the main actor, so an older point never lands last.
+    private var resumeWrite: Task<Void, Never>?
 
     private static let guidesSuite = "PaintAnytimeTutorial.perspectiveGuides"
 
-    init(folder: URL, chapters: [TutorialChapter] = TutorialChapter.allCases) {
+    init(folder: URL, chapters: [TutorialChapter] = TutorialChapter.allCases,
+         resume: TutorialResumeSnapshot? = nil, resumeStore: TutorialResumeStore = TutorialResumeStore()) {
         self.folder = folder
         self.chapters = chapters
+        self.resume = resume
+        self.resumeStore = resumeStore
         // Never nil: the name is neither the app's bundle identifier nor the global domain.
         let guideDefaults = UserDefaults(suiteName: Self.guidesSuite)!
         guideDefaults.removePersistentDomain(forName: Self.guidesSuite)
@@ -67,8 +75,65 @@ final class TutorialPlayerController: ObservableObject {
             canvas.setSynchronizeColor(true)
             canvas.setSynchronizeOpacity(true)
             initialStyle = canvas.pencilStyle
-            tutorial.start(chapters: chapters)
+            if let resume, resume.point.chapter == chapters.first?.rawValue, resume.point.isValid {
+                tutorial.start(chapters: chapters,
+                               resumingAt: (resume.point.lessonIndex, resume.point.stepIndex))
+                restore(resume)
+            } else {
+                tutorial.start(chapters: chapters)
+            }
+            resume = nil
         } else { tutorial.resumeReminders() }
+    }
+
+    /// The canvas, brush and page as they were when the saved exercise began.
+    private func restore(_ snapshot: TutorialResumeSnapshot) {
+        let point = snapshot.point
+        canvas.load(snapshot.document)
+        canvas.setBlendingMode(point.style.blendingMode)
+        canvas.pencilStyle = point.style
+        tutorial.markerLineStrokeID = point.markerLineStrokeID
+        practiceAutosaveEnabled = point.autosaveEnabled
+        page = point.page == .menu ? .menu : .canvas
+    }
+
+    /// Saves the current exercise as the chapter's place to continue, if it is one.
+    /// Deferred by a turn: a lesson that starts fresh clears the canvas in the same update
+    /// that changes the step, and the saved canvas must be the cleared one.
+    func scheduleResumePoint() {
+        let step = tutorial.step
+        Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self, self.tutorial.step == step else { return }
+            self.recordResumePoint()
+        }
+    }
+
+    private func recordResumePoint() {
+        guard let chapter = tutorial.chapter, let position = tutorial.resumePosition,
+              page == .canvas || page == .menu, !isDemonstrating else { return }
+        let point = TutorialResumePoint(chapter: chapter.rawValue, lessonIndex: position.lesson,
+                                        stepIndex: position.step, step: tutorial.step.rawValue,
+                                        page: page == .menu ? .menu : .canvas, style: canvas.pencilStyle,
+                                        markerLineStrokeID: tutorial.markerLineStrokeID,
+                                        autosaveEnabled: practiceAutosaveEnabled, savedAt: Date())
+        let snapshot = TutorialResumeSnapshot(point: point, document: canvas.document)
+        enqueueResumeWrite { store in store.save(snapshot.point, document: snapshot.document) }
+    }
+
+    /// A finished chapter has nothing left to continue.
+    func clearResumePoint(for chapter: TutorialChapter) {
+        let chapter = chapter.rawValue
+        enqueueResumeWrite { store in store.clear(chapter) }
+    }
+
+    private func enqueueResumeWrite(_ write: @escaping @Sendable (TutorialResumeStore) -> Void) {
+        let previous = resumeWrite
+        let store = resumeStore
+        resumeWrite = Task.detached(priority: .utility) {
+            await previous?.value
+            write(store)
+        }
     }
 
     func setActive(_ active: Bool) {

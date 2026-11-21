@@ -11,8 +11,10 @@ struct WatchAppSettingsView: View {
     @ObservedObject var controller: CanvasController
     let viewportSize: CGSize
     var onOpenDrawings: () -> Void
-    var onStartTutorial: ([TutorialChapter]) -> Void
+    /// The chapters to run, and whether a single chapter continues where it was left.
+    var onStartTutorial: ([TutorialChapter], Bool) -> Void
     var completedTutorialChapters: Set<TutorialChapter> = []
+    var inProgressTutorialChapters: Set<TutorialChapter> = []
     var opensTutorialChapters = false
     var onClose: (() -> Void)? = nil
     /// Runs a canvas action chosen in the menu; the caller closes the menu first.
@@ -34,7 +36,8 @@ struct WatchAppSettingsView: View {
         NavigationStack {
             if opensTutorialChapters {
                 // The canvas Tutorial button opens straight into the choice of tour.
-                TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
+                TutorialChaptersView(completed: completedTutorialChapters, inProgress: inProgressTutorialChapters,
+                                     onStart: onStartTutorial)
                     .toolbar { closeToolbar }
             } else {
                 menu
@@ -123,7 +126,8 @@ struct WatchAppSettingsView: View {
             }
             canvasLink
             NavigationLink {
-                TutorialChaptersView(completed: completedTutorialChapters, onStart: onStartTutorial)
+                TutorialChaptersView(completed: completedTutorialChapters, inProgress: inProgressTutorialChapters,
+                                     onStart: onStartTutorial)
             } label: {
                 Label(L10n.text("Tutorial"), systemImage: "graduationcap")
             }
@@ -1097,16 +1101,24 @@ private struct PaletteSwatchIcon: View {
 
 private struct TutorialChaptersView: View {
     let completed: Set<TutorialChapter>
-    let onStart: ([TutorialChapter]) -> Void
+    /// Left part-way through: a yellow ring, and a tap asks whether to continue.
+    let inProgress: Set<TutorialChapter>
+    let onStart: ([TutorialChapter], Bool) -> Void
+    @State private var resumeQuestion: TutorialChapter?
+    /// The answer starts the run once the question has gone, so the tutorial's iris
+    /// never runs over a sheet that is still dismissing.
+    @State private var pendingStart: (chapter: TutorialChapter, resumes: Bool)?
 
     var body: some View {
         List {
-            Button { onStart(TutorialChapter.allCases) } label: {
+            Button { onStart(TutorialChapter.allCases, false) } label: {
                 Label(L10n.text("Full tour"), systemImage: "play.fill")
             }
             Section(L10n.text("Chapters")) {
                 ForEach(TutorialChapter.allCases) { chapter in
-                    Button { onStart([chapter]) } label: {
+                    Button {
+                        if inProgress.contains(chapter) { resumeQuestion = chapter } else { onStart([chapter], false) }
+                    } label: {
                         HStack {
                             Label(chapter.title, systemImage: chapter.systemImage)
                             Spacer(minLength: 4)
@@ -1114,6 +1126,11 @@ private struct TutorialChaptersView: View {
                                 Image(systemName: "checkmark")
                                     .foregroundStyle(.green)
                                     .accessibilityLabel(L10n.text("Completed"))
+                            } else if inProgress.contains(chapter) {
+                                // The same symbol weight as the checkmark: a ring not yet closed.
+                                Image(systemName: "circle")
+                                    .foregroundStyle(.yellow)
+                                    .accessibilityLabel(L10n.text("In progress"))
                             }
                         }
                     }
@@ -1122,5 +1139,56 @@ private struct TutorialChaptersView: View {
         }
         .navigationTitle(L10n.text("Tutorial"))
         .toolbarTitleDisplayMode(.inline)
+        .sheet(item: $resumeQuestion, onDismiss: {
+            guard let start = pendingStart else { return }
+            pendingStart = nil
+            onStart([start.chapter], start.resumes)
+        }) { chapter in
+            TutorialResumeQuestion(chapter: chapter) { resumes in
+                pendingStart = (chapter, resumes)
+                resumeQuestion = nil
+            }
+        }
+    }
+}
+
+/// Asked before an unfinished chapter: continue where it was left, or begin again.
+/// The sheet's close button keeps the menu without starting either.
+private struct TutorialResumeQuestion: View {
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @Environment(\.layoutDirection) private var layoutDirection
+    let chapter: TutorialChapter
+    let onAnswer: (_ resumes: Bool) -> Void
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                Label(chapter.title, systemImage: chapter.systemImage)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(L10n.text("Continue where you left off?"))
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                ConfirmationButtonsLayout(layoutDirection: layoutDirection) {
+                    Button { onAnswer(false) } label: {
+                        Text(L10n.text("Start over"))
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    }
+                    .watchActionButtonStyle()
+                    Button { onAnswer(true) } label: {
+                        Text(L10n.text("Continue"))
+                            .frame(maxWidth: .infinity, minHeight: 32)
+                    }
+                    .watchProminentActionButtonStyle()
+                    .tint(.green)
+                }
+                .font(.caption.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+        }
     }
 }

@@ -45,6 +45,7 @@ struct WatchWelcomeView: View {
                 if let tutorialFolder = onboarding.tutorialFolder {
                     // The first-launch run starts with the first chapter and asks before the rest.
                     TutorialPlayerView(folder: tutorialFolder, chapters: onboarding.tutorialChapters,
+                                       resume: onboarding.tutorialResume,
                                        offersRemainingChapters: true,
                                        onCompleteChapter: onboarding.completeChapter,
                                        onFinish: finishTutorialThroughIris)
@@ -570,8 +571,9 @@ struct TutorialMenuPresentation: View {
 
     var body: some View {
         WatchAppSettingsView(controller: controller, viewportSize: viewportSize, onOpenDrawings: onOpenDrawings,
-                             onStartTutorial: { onboarding.requestTutorial(chapters: $0) },
+                             onStartTutorial: { onboarding.requestTutorial(chapters: $0, resumes: $1) },
                              completedTutorialChapters: onboarding.completedChapters,
+                             inProgressTutorialChapters: onboarding.inProgressChapters,
                              opensTutorialChapters: opensTutorialChapters, onClose: onFinish,
                              onCanvasAction: onCanvasAction)
         .opacity(transition?.hidesMenuContent == true ? 0 : 1)
