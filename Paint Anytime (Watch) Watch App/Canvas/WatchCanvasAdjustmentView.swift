@@ -98,7 +98,7 @@ struct WatchCanvasAdjustmentView: View {
             resolution = controller.document.resolution
             if tutorial.isActive {
                 // The tour keeps the drawing's size and starts slightly smaller, so the
-                // frame can always move and the Crown only shrinks it further.
+                // frame has room to move; the Crown can still shrink or grow it.
                 resample = false
                 resizePercent = 90
                 width = max(1, (original.width * displayScale * 0.9).rounded())
@@ -254,8 +254,7 @@ struct WatchCanvasAdjustmentView: View {
     private var resizeRange: ClosedRange<Double> {
         switch resizePage {
         case 0:
-            // The tour starts at 90% and only shrinks further, so the frame can always move.
-            if tutorial.isActive { return 10...90 }
+            // The tour uses the same range: past 100% the drawing moves inside a larger canvas.
             let largest = max(turned.width, turned.height) * displayScale
             return 1...max(1, floor(maximumPixels / max(1, largest) * 100))
         case 3: return 18...300
