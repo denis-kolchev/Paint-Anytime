@@ -186,8 +186,9 @@ struct WatchCanvasAdjustmentView: View {
             }
             .offset(x: canvas.x * scale, y: canvas.y * scale)
             if tutorial.isActive && tutorial.step == .moveCanvasFrame {
-                // From the frame's centre, a short way inside the preview.
-                TutorialMoveGuide(distance: min(10, max(4, min(roomX, roomY) * scale / 2)),
+                // From the frame's centre; the sway follows the frame's size, not the room
+                // left to move, which a slight crop or extension makes almost nothing.
+                TutorialMoveGuide(distance: min(16, max(10, min(target.width, target.height) * scale / 4)),
                                   isHidden: isDraggingFrame)
                     .position(x: (canvas.x + target.width / 2) * scale,
                               y: (canvas.y + target.height / 2) * scale)
