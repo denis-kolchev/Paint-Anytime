@@ -236,11 +236,11 @@ final class TutorialSession: ObservableObject {
         if kind == .circle || kind == .ellipse {
             // The snap reports first, with the finger still down: closing input then would
             // cancel the stroke and the circle would vanish. Wait for the lift, after which
-            // the circle stays on the canvas for a second before the shape list grows over it.
+            // the circle stays on the canvas for 0.7 s before the shape list grows over it.
             activity()
             guard isStrokeComplete else { return }
             if case .advance = progress.record(.heldCircle) {
-                advanceAfterResult(lockInput: true, delay: .seconds(1))
+                advanceAfterResult(lockInput: true, delay: .milliseconds(700))
             }
         } else if isStrokeComplete {
             failedCircleAttempts += 1

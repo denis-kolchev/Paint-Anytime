@@ -81,6 +81,22 @@ struct GalleryActivationObserver: View {
     }
 }
 
+/// Installs the gallery's toolbar only while the gallery is the active screen, reading
+/// the flag here so the gallery's own body does not depend on it.
+struct GalleryToolbarHost<Content: ToolbarContent>: View {
+    let state: MenuGalleryTransitionState?
+    @ToolbarContentBuilder var content: () -> Content
+
+    var body: some View {
+        Color.clear
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .toolbar {
+                if state?.galleryActive ?? true { content() }
+            }
+    }
+}
+
 struct GalleryRevealOpacity: ViewModifier {
     let state: MenuGalleryTransitionState
     func body(content: Content) -> some View {

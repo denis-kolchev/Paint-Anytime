@@ -326,15 +326,22 @@ struct SavedDrawingsView: View {
         .disabled(isLoading)
         .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
         .requestsHiddenClock(isCleanViewing)
-        .toolbar {
-            SavedDrawingsToolbar(
-                tutorial: tutorial, morphState: morphState,
-                showsMorphButton: showsFullscreen && !isTransitioning && !tutorial.isActive,
-                hostsSelectButton: hostsSelectButton, showsSelectButton: showsSelectButton,
-                allowsBack: tutorial.allowsGalleryBack, isSelecting: isSelecting,
-                isLoading: isLoading, isTransitioning: isTransitioning,
-                isCleanViewing: isCleanViewing, reduceMotion: reduceMotion,
-                onToggleSelecting: { setSelecting(!isSelecting) }, onBack: goBack)
+        // A gallery prewarmed under the menu shares the canvas's navigation bar, and toolbar
+        // items ignore its zero opacity: its Select circle showed over the canvas and pushed
+        // the canvas's trailing slot aside, so the drawn brush flew to the corner until the
+        // gallery unmounted. Its items arrive when it is promoted. A child view reads the flag,
+        // so promotion does not re-run this body.
+        .background {
+            GalleryToolbarHost(state: transitionState) {
+                SavedDrawingsToolbar(
+                    tutorial: tutorial, morphState: morphState,
+                    showsMorphButton: showsFullscreen && !isTransitioning && !tutorial.isActive,
+                    hostsSelectButton: hostsSelectButton, showsSelectButton: showsSelectButton,
+                    allowsBack: tutorial.allowsGalleryBack, isSelecting: isSelecting,
+                    isLoading: isLoading, isTransitioning: isTransitioning,
+                    isCleanViewing: isCleanViewing, reduceMotion: reduceMotion,
+                    onToggleSelecting: { setSelecting(!isSelecting) }, onBack: goBack)
+            }
         }
 
         .overlay {

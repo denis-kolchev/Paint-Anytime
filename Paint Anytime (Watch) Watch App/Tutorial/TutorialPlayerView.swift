@@ -31,6 +31,11 @@ struct TutorialPlayerView: View {
     /// Back from a settings page returns to the open menu: the black floor stays under it,
     /// or the drawing showed through while the page and the menu crossfaded.
     @State private var menuReturnsOverBackdrop = false
+    /// ••• from the shape list: the menu fades in over the whole, full-screen list, then the
+    /// compact card for the menu's step fades in above the menu.
+    @State private var shapeCatalogFadesOut = false
+    @State private var lessonCardHidden = false
+    @State private var menuFadesIn = false
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
     /// The practice group from the canvas editor lesson is open on the canvas.
     @State private var practiceGroupExpanded = false
@@ -137,13 +142,6 @@ struct TutorialPlayerView: View {
                         .frame(width: geometry.size.width, height: geometry.size.height)
                         .onAppear { canvasSize = geometry.size }
                         .onChange(of: geometry.size) { _, size in canvasSize = size }
-                    }
-
-                    if page == .menu {
-                        // Rise from below the screen like the editor's menu sheet, over the drawing.
-                        // An explicit offset animates the native List reliably, where an insertion
-                        // transition collapses into a crossfade.
-                        menuPage(screen: screen)
                     }
 
                     // Its own container: ••• opens the menu outside an animation, and the notice
@@ -369,10 +367,25 @@ struct TutorialPlayerView: View {
                 .frame(width: screen.size.width, height: screen.size.height)
                 .animation(.easeInOut(duration: reduceMotion ? 0.1 : 0.22), value: showsPracticeAutosave)
 
-                lessonCard(width: hintWidth, screenHeight: screen.size.height)
+                if page == .menu {
+                    // Rise from below the screen like the editor's menu sheet, over the drawing.
+                    // An explicit offset animates the native List reliably, where an insertion
+                    // transition collapses into a crossfade. Below the lesson card, except while
+                    // it fades in over the shape list: the list then stays whole under it, and
+                    // neither the drawing nor a resized list shows through.
+                    menuPage(screen: screen)
+                        .frame(width: screen.size.width, height: screen.size.height)
+                        .zIndex(shapeCatalogFadesOut ? 1 : 0)
+                }
+
+                // The list keeps the full screen it had over the canvas while the menu, which
+                // restores the top safe area, fades in over it.
+                lessonCard(width: hintWidth,
+                           screenHeight: cardShowsShapeCatalog ? paperSize(screen).height : screen.size.height)
                     .frame(width: hintWidth)
                     // The continuation question and the shape list grow the card to the whole screen.
                     .fixedSize(horizontal: false, vertical: !expandsLessonCard)
+                    .ignoresSafeArea(.container, edges: cardShowsShapeCatalog ? .top : [])
                     // The step changes outside withAnimation; the card grows here. Leaving the list
                     // for the menu it does not shrink in view: the menu replaces it at once.
                     .animation(showsShapeCatalog
@@ -390,6 +403,9 @@ struct TutorialPlayerView: View {
                     .opacity(irisHoldsRevealedContent ? 0 : 1)
                     .allowsHitTesting(!irisHoldsRevealedContent)
                     .animation(.easeOut(duration: reduceMotion ? 0.15 : 0.25), value: irisHoldsRevealedContent)
+                    // Driven by withAnimation in `openMenuFromCanvas`; the menu takes taps at once.
+                    .opacity(lessonCardHidden ? 0 : 1)
+                    .allowsHitTesting(!shapeCatalogFadesOut)
             }
         }
         // Native menu and palette content start below the navigation toolbar.
@@ -610,6 +626,8 @@ struct TutorialPlayerView: View {
                              onTutorialBack: tutorial.teachesPerspective || tutorial.teachesBlending
                                 ? { closeMenu() } : nil)
             .background(Color.black)
+            // From the shape list the menu fades in under the fading list instead of rising.
+            .opacity(menuFadesIn ? 0 : 1)
             .offset(y: menuRevealed || reduceMotion
                     ? 0 : screen.size.height + screen.safeAreaInsets.top + screen.safeAreaInsets.bottom)
             .onAppear {
@@ -619,19 +637,40 @@ struct TutorialPlayerView: View {
                 menuRevealed = false
                 menuReturnsOverBackdrop = false
             }
-            .zIndex(2)
     }
 
     /// ••• on the canvas. From the full-screen shape list the menu takes its place without
     /// rising from below: the card shrinking, the menu sliding and the toolbar changing
-    /// together made too much move at once.
+    /// together made too much move at once. Instead the opaque menu fades in over the list,
+    /// which stays whole and full screen over the drawing, so neither the drawing nor a
+    /// resized list shows through. Once the menu covers it, the card becomes compact out of
+    /// sight and fades back in above the menu with the menu's hint.
     private func openMenuFromCanvas() {
         guard tutorial.step == .browseShapes else { player.openMenu(); return }
         var transaction = Transaction()
         transaction.disablesAnimations = true
         withTransaction(transaction) {
+            shapeCatalogFadesOut = true
+            menuFadesIn = true
             menuRevealed = true
             player.openMenu()
+        }
+        guard page == .menu else {
+            withTransaction(transaction) {
+                shapeCatalogFadesOut = false
+                menuFadesIn = false
+            }
+            return
+        }
+        let fade = reduceMotion ? 0.2 : 0.35
+        withAnimation(.easeInOut(duration: fade)) { menuFadesIn = false }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(fade))
+            withTransaction(transaction) {
+                lessonCardHidden = true
+                shapeCatalogFadesOut = false
+            }
+            withAnimation(.easeOut(duration: reduceMotion ? 0.15 : 0.25)) { lessonCardHidden = false }
         }
     }
 
@@ -1364,7 +1403,10 @@ private extension TutorialPlayerView {
     /// keeps the toolbar: ••• in the top-left corner leads on to the menu.
     var showsShapeCatalog: Bool { page == .canvas && tutorial.step == .browseShapes }
 
-    var expandsLessonCard: Bool { offersContinuation || showsShapeCatalog }
+    var expandsLessonCard: Bool { offersContinuation || cardShowsShapeCatalog }
+
+    /// The list also stays on the card while it fades out over the menu.
+    var cardShowsShapeCatalog: Bool { showsShapeCatalog || shapeCatalogFadesOut }
 
     /// The watch face with the favorites widget, over the gallery, until it is tapped.
     var showsFavoritesWidget: Bool { page == .gallery && tutorial.step == .showFavoritesWidget }
@@ -1391,7 +1433,7 @@ private extension TutorialPlayerView {
                                   confirmsFinish: $confirmsFinish,
                                   onShowContinuation: onShowContinuation,
                                   continuation: continuation,
-                                  showsShapeCatalog: showsShapeCatalog)
+                                  showsShapeCatalog: cardShowsShapeCatalog)
     }
 
     /// The first chapter's result of a run that asks before the rest: its card shows a
