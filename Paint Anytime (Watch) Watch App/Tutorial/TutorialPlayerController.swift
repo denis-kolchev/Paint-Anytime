@@ -225,17 +225,6 @@ final class TutorialPlayerController: ObservableObject {
         page = .menu
         tutorial.record(.leftAutosave)
     }
-    /// The tour's autosave: a copy of the drawing in the tutorial gallery only, so the
-    /// selection lesson shows it. Unlike Save, it never reaches the user's gallery.
-    func autosave(size: CGSize, scale: CGFloat) {
-        guard page == .canvas, tutorial.step == .autosaveDrawing, canvas.canClear else { return }
-        _ = try? CanvasExporter.save(strokes: canvas.document.strokes, size: size, scale: scale, in: folder)
-    }
-    func finishAutosave() {
-        guard tutorial.step == .autosaveDrawing else { return }
-        tutorial.record(.autosaved)
-    }
-
     func openDrawingSettings() {
         guard page == .menu, tutorial.permits([.openDrawingSettings]) else { return }
         page = .drawingSettings
@@ -260,11 +249,11 @@ final class TutorialPlayerController: ObservableObject {
         tutorial.record(.leftDrawingSettings)
     }
 
-    /// The canvas size lesson leaves its page once ✓ applies the size: the next lesson's autosave
+    /// The canvas size lesson leaves its page once ✓ applies the size: the next lesson's •••
     /// begins on the resized canvas. The other lessons return through Back instead.
     func returnToCanvasAfterSetting() {
         guard [.menu, .canvasSettings, .canvasSize].contains(page),
-              tutorial.step == .autosaveDrawing else { return }
+              tutorial.step == .openMenu else { return }
         page = .canvas
     }
 

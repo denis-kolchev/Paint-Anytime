@@ -81,7 +81,6 @@ enum TutorialLesson {
             return L10n.text("Favorites can appear in a widget on your watch face.")
         case .openAutosave: return L10n.text("Tap Autosave.")
         case .enableAutosave: return L10n.text("Turn on Autosave.")
-        case .autosaveDrawing: return L10n.text("Autosave keeps your drawing in the gallery.")
         case .openCanvasEditor: return L10n.text("Tap Canvas editor.")
         case .resetEditorLayout: return L10n.text("Tap ↺ to clear both circles.")
         case .chooseEditorSlot: return L10n.text("Tap an empty circle.")

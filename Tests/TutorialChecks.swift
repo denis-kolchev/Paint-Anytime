@@ -189,9 +189,7 @@ struct TutorialChecks {
             precondition(progress.record(event) == .advance)
             progress.advance()
         }
-        // The tour autosaves the circle and the guide line, then the canvas is cleared.
-        precondition(progress.step == .autosaveDrawing && progress.record(.autosaved) == .advance)
-        progress.advance()
+        // The canvas is cleared after the palette lesson.
         precondition(progress.step == .clearCanvas && progress.record(.cleared) == .showResult)
         progress.advance()
         // The composition lessons follow in the same chapter, on a fresh canvas.
@@ -253,11 +251,10 @@ struct TutorialChecks {
         progress.advance()
         for _ in 0..<3 { precondition(progress.record(.failedLassoSelection) == .none) }
         precondition(!progress.lessonKeepsBrush)
-        // Blending, after the lasso: the tour autosaves first, even when misses ended the lasso
-        // lesson; crossing the demonstrated line then shows the mix, then Color inversion.
-        precondition(progress.step == .autosaveDrawing, "Repeated misses end the lasso lesson")
-        precondition(progress.showsAutosaveInMenu && progress.record(.autosaved) == .advance)
-        progress.advance()
+        // Blending, after the lasso: the canvas is cleared first, even when misses ended the
+        // lasso lesson; crossing the demonstrated line then shows the mix, then Color inversion.
+        precondition(progress.step == .clearCanvas, "Repeated misses end the lasso lesson")
+        precondition(progress.showsAutosaveInMenu)
         precondition(progress.step == .clearCanvas && progress.record(.cleared) == .showResult)
         progress.advance()
         precondition(progress.step == .crossMarkerLine)
@@ -322,7 +319,7 @@ struct TutorialChecks {
         precondition(progress.record(.erased) == .advance)
         progress.advance()
         precondition(!progress.teachesCanvasEditor
-                     && progress.step == (AppReleaseFeatures.current.showsCanvasSizeControls ? .openMenu : .autosaveDrawing))
+                     && progress.step == .openMenu)
         if AppReleaseFeatures.current.showsCanvasSizeControls {
             for (step, event): (TutorialStep, TutorialProgress.Event) in [
                 (.openMenu, .openedMenu), (.openCanvasSettings, .openedCanvasSettings),
@@ -341,9 +338,7 @@ struct TutorialChecks {
             precondition(progress.step == .applyCanvasSize && progress.record(.resizedCanvas) == .advance)
             progress.advance()
         }
-        // A last autosave, then the gallery shows the saved pictures for selection.
-        precondition(progress.step == .autosaveDrawing && progress.record(.autosaved) == .advance)
-        progress.advance()
+        // The gallery then shows the saved pictures for selection.
         for (step, event): (TutorialStep, TutorialProgress.Event) in [
             (.openMenu, .openedMenu), (.openGallery, .openedGallery), (.startSelection, .startedSelection)
         ] {

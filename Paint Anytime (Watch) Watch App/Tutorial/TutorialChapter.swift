@@ -69,7 +69,7 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             // The corner button opens the palette in use, as in the editor.
             Lesson(steps: [.openTools, .openCurrentPalette, .openPalettes, .findNewPalette,
                            .createPalette, .addPaletteColor, .adjustPaletteColor, .savePaletteColor,
-                           .closeTools, .autosaveDrawing, .clearCanvas])
+                           .closeTools, .clearCanvas])
         ]
     }
 
@@ -85,13 +85,11 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             Lesson(steps: [.openLayers, .addLayer, .moveLayerDown, .closeLayers,
                            .openTools, .pickColor, .closeTools, .drawBehindStroke]),
             Lesson(steps: [.openLasso, .selectLasso, .transformLasso, .finishLasso]),
-            // The tour's autosave keeps the lasso result first; it opens this lesson rather
-            // than ending the lasso one, which repeated misses end early. The user then clears
-            // the canvas before the demonstrated line.
+            // The user clears the lasso result before the demonstrated line.
             // The lesson clears the canvas and draws a yellow marker line itself; the user's
             // light blue marker mixes with it, then Color inversion changes the overlap. Back
             // leads out of the pages; the user undoes the crossing line and draws it again.
-            Lesson(steps: [.autosaveDrawing, .clearCanvas, .crossMarkerLine, .openMenu, .openDrawingSettings, .openColorBlending,
+            Lesson(steps: [.clearCanvas, .crossMarkerLine, .openMenu, .openDrawingSettings, .openColorBlending,
                            .chooseColorInversion, .leaveColorBlending, .leaveDrawingSettings, .leaveMenu,
                            .undoMarkerLine, .redrawMarkerLine]),
             // The tutorial's editor starts from the original menus and never changes the
@@ -108,10 +106,10 @@ enum TutorialChapter: Int, CaseIterable, Identifiable {
             lessons.append(Lesson(steps: [.openMenu, .openCanvasSettings, .openCanvasSize,
                                           .setCanvasSize, .moveCanvasFrame, .applyCanvasSize]))
         }
-        // A last autosave, then the gallery shows the saved pictures; the tutorial gallery
-        // also starts with practice pictures, so selection never lacks two. The liked ones
+        // The gallery shows the saved pictures; the tutorial gallery also starts with
+        // practice pictures, so selection never lacks two. The liked ones
         // then appear in a watch-face widget, as the favorites widget would show them.
-        lessons.append(Lesson(steps: [.autosaveDrawing, .openMenu, .openGallery, .startSelection,
+        lessons.append(Lesson(steps: [.openMenu, .openGallery, .startSelection,
                                       .selectDrawings, .favoriteSelection, .showFavoritesWidget,
                                       .returnToCanvas]))
         return lessons

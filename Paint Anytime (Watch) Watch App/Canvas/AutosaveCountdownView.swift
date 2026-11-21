@@ -6,6 +6,8 @@ struct AutosaveCountdownView: View {
     /// long one's wheel into a ring filling with its estimated time.
     var isSaving = false
     var progress: SaveProgressModel? = nil
+    /// The tutorial's practice countdown shows this fixed remaining time instead of counting.
+    var heldRemaining: Duration? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -23,9 +25,15 @@ struct AutosaveCountdownView: View {
                 }
             }
             .accessibilityHidden(true)
-            Text(timerInterval: timerRange, countsDown: true, showsHours: false)
-                .monospacedDigit()
-                .fixedSize()
+            Group {
+                if let heldRemaining {
+                    Text(heldRemaining.formatted(.time(pattern: .minuteSecond)))
+                } else {
+                    Text(timerInterval: timerRange, countsDown: true, showsHours: false)
+                }
+            }
+            .monospacedDigit()
+            .fixedSize()
         }
         .font(.caption2)
         .foregroundStyle(.primary)
@@ -77,7 +85,7 @@ private struct AutosaveProgressRing: View {
 /// and the zoom percent below it while zooming, or at that height without a countdown.
 struct CanvasStatusOverlay: View {
     /// Center of the system clock text, in points from the top of the screen.
-    private static let clockCenterY: CGFloat = 27
+    static let clockCenterY: CGFloat = 27
     /// Gap between the countdown and the zoom label below it.
     private static let rowGap: CGFloat = 4
     let autosave: CanvasAutosave

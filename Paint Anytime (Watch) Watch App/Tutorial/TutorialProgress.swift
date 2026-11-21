@@ -27,8 +27,8 @@ enum TutorialStep: Int, CaseIterable {
     /// After the group like: a watch face whose widget shows the pictures just liked.
     case showFavoritesWidget
     case startSelection, selectDrawings, favoriteSelection
-    // The tour's autosave: a lesson turns it on, then the tour saves on its own at set points.
-    case openAutosave, enableAutosave, leaveAutosave, autosaveDrawing
+    // The tour's autosave: a lesson turns it on; the canvas then shows a practice countdown.
+    case openAutosave, enableAutosave, leaveAutosave
     case openCanvasEditor, resetEditorLayout, chooseEditorSlot, groupEditorActions, chooseEditorActions
     case chooseGroupIcon, saveCanvasLayout, openPracticeGroup, toggleEraser, eraseStroke
     /// After the held circle: the lesson card fills the screen with every shape that snaps;
@@ -77,7 +77,7 @@ struct TutorialProgress {
         case changedRayCount, movedCanvasFrame, leftColorBlending, leftDrawingSettings, undidMarkerLine
         case leftIconPicker, closedActionList, sawFavoritesWidget
         case startedSelection, cancelledSelection, selectedDrawings, deselectedDrawings, favoritedSelection
-        case openedAutosave, enabledAutosave, leftAutosave, autosaved
+        case openedAutosave, enabledAutosave, leftAutosave
         case crossedMarkerLine, openedDrawingSettings, openedColorBlending, choseColorInversion
     }
     enum Effect: Equatable {
@@ -220,7 +220,7 @@ struct TutorialProgress {
             return .none
         // The switch turns on and Back is asked for at once; the switch stays on.
         case (.openAutosave, .openedAutosave), (.enableAutosave, .enabledAutosave),
-             (.leaveAutosave, .leftAutosave), (.autosaveDrawing, .autosaved): return .advance
+             (.leaveAutosave, .leftAutosave): return .advance
         // The chosen guides lead straight to the ray count, which the Crown changes; Back is
         // asked for once the count settles, and leads to the menu and then the canvas.
         case (.choosePerspective, .choseVanishingPoints): return .advance
