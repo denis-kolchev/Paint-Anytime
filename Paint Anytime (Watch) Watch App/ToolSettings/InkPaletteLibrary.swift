@@ -43,8 +43,13 @@ struct InkPaletteLibrary: Codable {
         if chapter == .advanced, let white = InkPreset.all.first(where: { $0.nameKey == "White" }) {
             palette.delete(white.id)
         }
-        return Self(palettes: [SavedInkPalette(id: "tutorial", palette: palette)],
-                    activeID: "tutorial")
+        // The browsing lesson swipes past a second built-in palette on its way to New palette.
+        var entries = [SavedInkPalette(id: "tutorial", palette: palette)]
+        if var reds = initial.palettes.first(where: { $0.id == "reds" }) {
+            reds.isHidden = nil
+            entries.append(reds)
+        }
+        return Self(palettes: entries, activeID: "tutorial")
     }
 
     static let basicColors = InkPreset.all + colors("basic", "78CBB0 CDB4DB E9CBA7")
@@ -70,11 +75,14 @@ struct InkPaletteLibrary: Codable {
             ("mono", "Black & white", "000000 191919 303030 484848 606060 787878 909090 A8A8A8 C0C0C0 D8D8D8 E8E8E8 F4F4F4 FFFFFF 827D77 A4ADB2"),
             ("browns", "Browns", "382B25 594034 7C5140 A16C4F C28C66 DDB491 EED8B8 713F3B A56455 CB9180 626346 8D9065 B8B58A 6E7770 C7C8B6")
         ]
+        // Reds sit next to the basic colors from the start; the basic colors stay active.
+        let visibleOnFirstLaunch: Set<String> = ["reds"]
         var entries = [SavedInkPalette(id: "basic", palette: InkPalette(title: "Basic colors"))]
         entries += families.map { id, title, hexes in
             let swatches = colors(id, hexes)
             return SavedInkPalette(id: id, palette: InkPalette(baseColors: swatches, title: title,
-                                                               selectedIDs: swatches.map(\.id)), isHidden: true)
+                                                               selectedIDs: swatches.map(\.id)),
+                                    isHidden: visibleOnFirstLaunch.contains(id) ? nil : true)
         }
         return Self(palettes: entries, activeID: "basic")
     }
