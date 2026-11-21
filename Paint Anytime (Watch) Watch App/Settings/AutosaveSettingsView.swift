@@ -10,6 +10,8 @@ struct AutosaveSettingsView: View {
     @ObservedObject var tutorial = TutorialSession.inactive
     var tutorialIsEnabled = false
     var onTutorialEnable: (() -> Void)? = nil
+    /// The tour's own Show timer, on by default; never asked for, but honored on its canvas.
+    var tutorialShowsTimer: Binding<Bool> = .constant(true)
 
     var body: some View {
         if tutorial.isActive {
@@ -45,8 +47,9 @@ struct AutosaveSettingsView: View {
         }
     }
 
-    /// The same switch and title, without the timer, the interval or the information link:
-    /// the link would push over the whole lesson, and the tour saves at its own moments.
+    /// The same switch and title, and Show timer growing in once it is on, as in the settings;
+    /// without the interval or the information link: the link would push over the whole
+    /// lesson, and the tour saves at its own moments.
     private var tutorialList: some View {
         List {
             Toggle(isOn: Binding(get: { tutorialIsEnabled }, set: { on in if on { onTutorialEnable?() } })) {
@@ -56,6 +59,12 @@ struct AutosaveSettingsView: View {
             // Turned on once; the lesson never offers turning it off. Not disabled: a dimmed
             // switch would look unlike the setting.
             .allowsHitTesting(!tutorialIsEnabled && tutorial.permits([.enableAutosave]))
+            // No lesson step asks for it; the user may still hide the canvas countdown.
+            if tutorialIsEnabled {
+                Toggle(L10n.text("Show timer"), isOn: tutorialShowsTimer)
+                    .allowsHitTesting(tutorial.acceptsActions)
+                    .transition(optionsTransition)
+            }
         }
         .animation(toggleAnimation, value: tutorialIsEnabled)
         .navigationTitle(L10n.text("Autosave"))

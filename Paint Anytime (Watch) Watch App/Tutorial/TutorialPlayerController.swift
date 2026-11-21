@@ -27,6 +27,8 @@ final class TutorialPlayerController: ObservableObject {
     @Published private(set) var practiceLayout: CanvasControlLayout?
     /// The tour's own autosave switch; the user's setting never changes.
     @Published private(set) var practiceAutosaveEnabled = false
+    /// The tour's own Show timer: on by default; turning it off hides the canvas countdown.
+    @Published var practiceShowsTimer = true
     /// The lesson draws or erases on the canvas itself; the user's input waits.
     @Published private(set) var isDemonstrating = false
     private var demonstration: Task<Void, Never>?
@@ -225,6 +227,13 @@ final class TutorialPlayerController: ObservableObject {
         page = .menu
         tutorial.record(.leftAutosave)
     }
+    /// The tour's practice autosave: a copy of the drawing in the tutorial gallery only, so the
+    /// selection lesson shows it. Unlike Save, it never reaches the user's gallery.
+    func autosave(size: CGSize, scale: CGFloat) {
+        guard page == .canvas, canvas.canClear else { return }
+        _ = try? CanvasExporter.save(strokes: canvas.document.strokes, size: size, scale: scale, in: folder)
+    }
+
     func openDrawingSettings() {
         guard page == .menu, tutorial.permits([.openDrawingSettings]) else { return }
         page = .drawingSettings

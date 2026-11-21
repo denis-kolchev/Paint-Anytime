@@ -40,12 +40,12 @@ struct TutorialPlayerView: View {
     /// The practice group from the canvas editor lesson is open on the canvas.
     @State private var practiceGroupExpanded = false
     /// The practice countdown once the lesson's autosave is on, in the editor's own capsule:
-    /// a minute that holds at 0:05, and a save only before the canvas is cleared. Nothing is saved.
+    /// a minute that holds at 0:01, and a save to the tutorial gallery only before the canvas is cleared.
     @State private var practiceTimerRange: ClosedRange<Date>?
     @State private var practiceTimerSaving = false
     /// The current clear-canvas step already showed its save.
     @State private var practiceSavedBeforeClear = false
-    /// The countdown reached 0:05 and shows it fixed.
+    /// The countdown reached 0:01 and shows it fixed.
     @State private var practiceTimerHeld = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.layoutDirection) private var layoutDirection
@@ -750,7 +750,8 @@ struct TutorialPlayerView: View {
         }
         if page == .autosave {
             AutosaveSettingsView(tutorial: tutorial, tutorialIsEnabled: player.practiceAutosaveEnabled,
-                                 onTutorialEnable: { player.enableAutosave() })
+                                 onTutorialEnable: { player.enableAutosave() },
+                                 tutorialShowsTimer: $player.practiceShowsTimer)
             .background(Color.black.ignoresSafeArea())
             .transition(.opacity)
             .zIndex(1)
@@ -950,10 +951,10 @@ struct TutorialPlayerView: View {
         }
     }
 
-    /// The countdown runs a minute like the editor's, but holds at 0:05: the tour saves only
+    /// The countdown runs a minute like the editor's, but holds at 0:01: the tour saves only
     /// right before a step that clears the canvas.
     private static let practiceTimerSeconds: TimeInterval = 60
-    private static let practiceTimerHold: TimeInterval = 5
+    private static let practiceTimerHold: TimeInterval = 1
     private static let practiceSaveDuration: Duration = .seconds(1)
 
     private struct PracticeTimerRequest: Equatable {
@@ -983,6 +984,8 @@ struct TutorialPlayerView: View {
         practiceTimerHeld = false
         practiceTimerRange = now.addingTimeInterval(-Self.practiceTimerSeconds)...now
         practiceTimerSaving = true
+        // The drawing goes to the tutorial gallery before it is cleared, for the selection lesson.
+        player.autosave(size: canvasSize, scale: displayScale)
         try? await Task.sleep(for: Self.practiceSaveDuration)
         practiceTimerSaving = false
         restartPracticeTimer()
@@ -995,11 +998,11 @@ struct TutorialPlayerView: View {
         practiceTimerRange = start...start.addingTimeInterval(Self.practiceTimerSeconds)
     }
 
-    /// Waits for 0:05, then fixes the countdown there. `Text(timerInterval:pauseTime:)` showed
+    /// Waits for 0:01, then fixes the countdown there. `Text(timerInterval:pauseTime:)` showed
     /// the elapsed time (0:55) instead of the remaining time when counting down.
     @MainActor private func holdPracticeTimer() async {
         guard let range = practiceTimerRange, !practiceTimerHeld else { return }
-        // A little early, so the live countdown never shows 0:04 before it is fixed.
+        // A little early, so the live countdown never shows 0:00 before it is fixed.
         let wait = range.upperBound.timeIntervalSinceNow - Self.practiceTimerHold - 0.05
         if wait > 0 {
             do {
@@ -1013,10 +1016,11 @@ struct TutorialPlayerView: View {
 
     /// The countdown capsule centered at the hidden clock's height, as on the editor's canvas.
     private var practiceAutosaveTimer: some View {
-        let range = runsPracticeTimer ? practiceTimerRange : nil
+        // Hidden by the tour's Show timer, the countdown still runs and saves before a clear.
+        let range = runsPracticeTimer && player.practiceShowsTimer ? practiceTimerRange : nil
         return GeometryReader { overlay in
             if let range {
-                // Holds at 0:05 until the save before a clear sets it to 0:00.
+                // Holds at 0:01 until the save before a clear sets it to 0:00.
                 AutosaveCountdownView(timerRange: range, isSaving: practiceTimerSaving,
                                       heldRemaining: practiceTimerHeld
                                         ? .seconds(Self.practiceTimerHold) : nil)
