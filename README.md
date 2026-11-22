@@ -120,30 +120,84 @@
 
 ## Description
 
-Paint Anytime is a drawing app made specifically for Apple Watch. Sketch a quick idea or create a tiny piece of art right from your wrist.
+Paint Anytime is for anyone who wants to draw anywhere, anytime. A vector canvas with no loss of quality, 8 brushes, layers, lasso, perspective guides and shape recognition — and Apple Intelligence turns your sketch into a detailed artwork.
 
-Choose from a variety of brushes and customize colors, stroke width, angle, and opacity. Organize your artwork with layers, lock transparency to paint within existing boundaries, and use the Lasso to select, move, and rearrange parts of your drawing. Draw and hold to create cleaner shapes, or use the Fill tool to color larger areas in seconds.
-
-Create custom colors with HSB and RGB sliders, organize them into palettes, and switch between color collections to match your mood. Explore different blending modes and see how colors interact on the canvas.
-
-Save your drawings to your personal gallery and continue editing whenever inspiration returns. Use widgets to display your favorite creations or jump straight back into drawing.
+It suits both first-time artists and those who draw every day: the interactive tutorial covers the basics in a couple of minutes, and the advanced tools will be waiting whenever you're ready.
 
 ## Features
 
-- 6 brush presets with unique drawing behaviors;
-- Custom colors, stroke width, angle, and opacity;
-- Layers with transparency lock;
-- Lasso tool for arranging your artwork;
-- Shape recognition with draw-and-hold;
-- Fill tool for coloring enclosed areas;
-- Multiple color blending modes;
-- Custom color palettes with RGB and HSB editors;
-- Canvas zoom and expandable drawing space;
-- Undo, Redo, and two types of erasers;
-- Personal gallery with editable saved drawings;
-- Apple Watch widgets for artwork and quick access;
-- Compact, interactive drawing tutorial;
-- Sharing creations through iMessage or email.
+### BRUSHES AND TOOLS
+• 8 brushes familiar from the Apple ecosystem — each with its own behavior
+• Adjust color, sensitivity and opacity
+• Tilt angle for the reed pen
+• Blur brush: strength, width and radius
+• An eraser that works pixel by pixel or removes whole objects
+• 14 color blending modes for strokes
+• Shared width, density and color across all tools — if you like
+
+### COLOR AND PALETTES
+• Color wheel, eyedropper, HSB and RGB
+• Your own palettes: add, delete and reorder colors and the palettes themselves
+• Unique palette names inspired by their colors
+• Hide built-in and custom palettes you don't use
+
+### LAYERS AND LASSO
+• Create, delete and reorder layers
+• Opacity, visibility and layer lock — color without going outside the lines
+• Lasso selection by shape or by stroke
+• Move, rotate, mirror and duplicate a selection
+• Move a selection to another layer or delete it
+
+### SMART HELPERS
+• Apple Intelligence: from sketch to detailed artwork
+• Recognition of 15 shapes: line, arc, circle, ellipse, square, rectangle, triangle, polygon, star, heart, cloud, callout and three kinds of arrows
+• Perspective guides with 0, 1 or 2 vanishing points, even beyond the canvas
+• Adjust the angle, tilt, number of rays and distance between vanishing points
+• Straight lines along a ray or a ruler
+• Up to 256 undo steps
+
+### REFERENCE
+• Keep a reference image next to the canvas or overlay it and switch back
+• Pick colors right from the reference with the eyedropper
+• Zoom up to 800%, kept when you return to the canvas
+• Show and hide the reference with a single tap
+
+### CANVAS
+• Zoom up to 51,200%
+• Size up to 2056 × 2056 pixels
+• Resize by percentage or by width and height, keeping proportions
+• Extend horizontally and vertically, rotate and crop
+• Vector drawings scale without losing quality (except blurred areas)
+• Three display modes: Smooth (vector), Pixels (as in the final file) and Auto
+• Your own layout: arrange and group buttons, pick a group icon from 20 options, or reset everything
+
+### GALLERY AND FILES
+• Grid from 5×5 to 1×1
+• Favorites, editing and deleting
+• Share via Messages and Mail right from your watch
+• Select several artworks at once to favorite, share or delete them
+• Sync with your iPhone gallery
+• Import from Photos and Files
+• PSD, JPG, PNG and the native .paintanytime format
+
+### AUTOSAVE
+• Your work is saved in the background
+• Interval from 1 to 10 minutes
+• Show or hide the autosave timer
+
+### WIDGETS
+• Quick access: open the app, the gallery or jump straight to a new canvas
+• Your artwork on the Home Screen: random drawings from the gallery or favorites, 1 to 3 per widget
+
+### TUTORIAL
+• Interactive lessons with hints
+• Basic course: how to change color and brush and save a drawing to the gallery
+• Advanced course: color blending, lasso, layers, shape recognition, canvas editing, creating colors and palettes
+• Progress is saved — pick up right where you left off
+
+### MORE
+• iPhone Duo support
+
 
 ## What's New in 1.2.0
 
