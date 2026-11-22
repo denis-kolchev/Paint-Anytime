@@ -85,6 +85,10 @@ struct ReferenceFullscreenView: View {
                     }
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height)
+                // The canvas thumbnail maps the saved offset with this size.
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                    if store.viewerState.screenSize != size { store.viewerState.screenSize = size }
+                }
                 .focusable(!choosesReplacement && paletteColor == nil)
                 .focused($crownFocused)
                 .digitalCrownRotation(detent: Binding(

@@ -33,15 +33,19 @@ struct ReferenceCanvasThumbnail: View {
                 let image = store.image
                 // Without an image the reference stays in place as an empty square window.
                 let imageSize = image.map { CGSize(width: $0.width, height: $0.height) } ?? CGSize(width: 1, height: 1)
-                let frame = Self.frame(for: imageSize,
+                // The part the full-screen view shows, so its zoom carries over to the canvas.
+                let region = image == nil ? CGRect(x: 0, y: 0, width: 1, height: 1)
+                    : store.viewerState.reference.visibleRegion(imageSize: imageSize,
+                                                                screen: store.viewerState.screenSize)
+                let regionSize = CGSize(width: imageSize.width * region.width,
+                                        height: imageSize.height * region.height)
+                let frame = Self.frame(for: regionSize,
                                        layout: layout, regions: regions, size: size,
                                        canvasOrigin: canvasOrigin, layoutDirection: layoutDirection)
                 Button(action: onOpen) {
                     Group {
                         if let image {
-                            Image(decorative: image, scale: 1)
-                                .resizable()
-                                .scaledToFill()
+                            Self.picture(image, region: region, imageSize: imageSize, frame: frame.size)
                         } else {
                             Color.black.opacity(0.35)
                         }
@@ -76,7 +80,22 @@ struct ReferenceCanvasThumbnail: View {
         .accessibilityHidden(isCoveredByEditor)
     }
 
-    /// The thumbnail's rectangle in canvas coordinates: the image's aspect within
+    /// `region` of the picture filling `frame`, centered: the whole picture is laid out
+    /// at the scale that makes the region cover the frame, then clipped by the caller.
+    private static func picture(_ image: CGImage, region: CGRect, imageSize: CGSize, frame: CGSize) -> some View {
+        let regionSize = CGSize(width: max(1, imageSize.width * region.width),
+                                height: max(1, imageSize.height * region.height))
+        let scale = max(frame.width / regionSize.width, frame.height / regionSize.height)
+        let full = CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
+        return Image(decorative: image, scale: 1)
+            .resizable()
+            .frame(width: full.width, height: full.height)
+            .offset(x: frame.width / 2 - region.midX * full.width,
+                    y: frame.height / 2 - region.midY * full.height)
+            .frame(width: frame.width, height: frame.height, alignment: .topLeading)
+    }
+
+    /// The thumbnail's rectangle in canvas coordinates: the shown region's aspect within
     /// `longSide`, centered where the bottom-trailing control's circle is, or above it.
     static func frame(for imageSize: CGSize, layout: CanvasControlLayout?, regions: CanvasControlRegions,
                       size: CGSize, canvasOrigin: CGPoint, layoutDirection: LayoutDirection) -> CGRect {

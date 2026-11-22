@@ -22,9 +22,9 @@ final class ReferenceImageStore: ObservableObject {
     @Published private(set) var image: CGImage?
     @Published private(set) var isImporting = false
     @Published var errorMessage: String?
-    /// Where the full-screen view was zoomed and moved, kept between openings. Not
-    /// published: only the full-screen view reads it, when it opens.
-    var viewerState = ReferenceViewerState()
+    /// Where the full-screen view was zoomed and moved, kept between openings. Published:
+    /// the canvas thumbnail shows the part of the reference the full-screen view shows.
+    @Published var viewerState = ReferenceViewerState()
     /// Bumped by every change, so a slower load never overwrites a newer choice.
     private var generation = 0
 
@@ -117,6 +117,31 @@ struct ReferenceViewport: Equatable {
     var offset = CGSize.zero
     /// The Crown value with the 100% snap applied.
     var zoom: Double { abs(crownZoom - 1) <= 0.075 ? 1 : crownZoom }
+
+    /// The part of a picture of `imageSize` pixels this viewport shows on a `screen` of
+    /// points, as a rectangle in unit picture coordinates (origin top-left). The whole
+    /// picture when nothing of it is on screen, or the screen is not known yet.
+    func visibleRegion(imageSize: CGSize, screen: CGSize?) -> CGRect {
+        let whole = CGRect(x: 0, y: 0, width: 1, height: 1)
+        guard let screen, screen.width > 0, screen.height > 0,
+              imageSize.width > 0, imageSize.height > 0, zoom > 0 else { return whole }
+        // The picture scaled to fit and centered, as the full-screen view lays it out.
+        let fit = min(screen.width / imageSize.width, screen.height / imageSize.height)
+        let fitted = CGSize(width: imageSize.width * fit, height: imageSize.height * fit)
+        let picture = CGRect(x: (screen.width - fitted.width) / 2, y: (screen.height - fitted.height) / 2,
+                             width: fitted.width, height: fitted.height)
+        // The screen in that unzoomed frame: zoom about the screen center, then the offset.
+        let visibleSize = CGSize(width: screen.width / zoom, height: screen.height / zoom)
+        let center = CGPoint(x: screen.width / 2 - offset.width / zoom,
+                             y: screen.height / 2 - offset.height / zoom)
+        let visible = CGRect(x: center.x - visibleSize.width / 2, y: center.y - visibleSize.height / 2,
+                             width: visibleSize.width, height: visibleSize.height)
+        let shown = visible.intersection(picture)
+        guard !shown.isNull, shown.width > 0.5, shown.height > 0.5 else { return whole }
+        return CGRect(x: (shown.minX - picture.minX) / picture.width,
+                      y: (shown.minY - picture.minY) / picture.height,
+                      width: shown.width / picture.width, height: shown.height / picture.height)
+    }
 }
 
 /// The full-screen view's zoom and position for the reference and for the canvas
@@ -124,6 +149,8 @@ struct ReferenceViewport: Equatable {
 struct ReferenceViewerState {
     var reference = ReferenceViewport()
     var canvas = ReferenceViewport()
+    /// The full-screen view's size the offsets are in, once it has been opened.
+    var screenSize: CGSize?
     /// The drawing size the canvas viewport belongs to; another size starts it over.
     var canvasSize: CGSize?
 }
