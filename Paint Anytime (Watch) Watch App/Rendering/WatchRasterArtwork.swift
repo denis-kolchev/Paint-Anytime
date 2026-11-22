@@ -292,13 +292,16 @@ struct WatchRasterArtwork: View {
             let shown = isRegion ? (frames.frameKey ?? key) : key
             let backgroundSize = Self.pointSize(of: frame.background, key: shown)
             let s = layoutScale
+            // Image scale 1: the frames below set the size. A zoom tile at 256 px per point
+            // made a 1 pt image, which SwiftUI resolved at about the display scale (~2 px)
+            // before magnifying it ~128×: sharp tiles showed as blurry as the paper.
             return ZStack(alignment: .topLeading) {
-                Image(decorative: frame.background, scale: shown.scale)
+                Image(decorative: frame.background, scale: 1)
                     .pixelGrid(isOnPixelGrid(shown.scale))
                     .resizable()
                     .frame(width: backgroundSize.width * s, height: backgroundSize.height * s)
                 ForEach(frame.tiles) { tile in
-                    Image(decorative: tile.image, scale: shown.scale)
+                    Image(decorative: tile.image, scale: 1)
                         .pixelGrid(isOnPixelGrid(shown.scale))
                         .resizable()
                         .frame(width: tile.rect.width * s, height: tile.rect.height * s)
