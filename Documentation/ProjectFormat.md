@@ -28,7 +28,7 @@ Unknown envelope versions are rejected rather than partially imported.
 2. Open the drawing on iPhone and use **Project → Share Project** or
    **Save Project to Files**.
 3. Open a received `.paintanytime` file with Paint Anytime, or use
-   **Import Project** in the phone gallery.
+   **More → Import File** in the phone gallery.
 4. Open the imported drawing and choose **Project → Send to Apple Watch**.
 5. After delivery, open the new watch gallery entry for editing.
 

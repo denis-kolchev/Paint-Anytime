@@ -166,7 +166,7 @@ struct PhoneGalleryMoreMenu: View {
             }
             .disabled(isPreparingPhoto)
             Button(action: importProject) {
-                Label("Import Project", systemImage: "square.and.arrow.down")
+                Label("Import File", systemImage: "square.and.arrow.down")
             }
             .disabled(isImportingProject)
             Divider()

@@ -140,7 +140,7 @@ struct PhoneHomeView: View {
                 if galleryHeaderBottom != bottom { galleryHeaderBottom = bottom }
             }
             .refreshable { photoInbox.synchronize() }
-            .fileImporter(isPresented: $importingProject, allowedContentTypes: [.paintAnytimeProject, .photoshopImage]) { result in
+            .fileImporter(isPresented: $importingProject, allowedContentTypes: [.paintAnytimeProject, .photoshopImage, .jpeg]) { result in
                 switch result {
                 case .success(let url): importProject(url)
                 case .failure(let error): projectMessage = error.localizedDescription
@@ -461,6 +461,10 @@ struct PhoneHomeView: View {
             importPhotoshop(url)
             return
         }
+        if UTType(filenameExtension: url.pathExtension)?.conforms(to: .jpeg) == true {
+            importJPEG(url)
+            return
+        }
         let access = url.startAccessingSecurityScopedResource()
         defer { if access { url.stopAccessingSecurityScopedResource() } }
         do {
@@ -472,6 +476,21 @@ struct PhoneHomeView: View {
             photoInbox.refresh()
             projectMessage = L10n.text("Project imported. Open it in the gallery and tap Send to Apple Watch to continue editing on your watch.")
         } catch { projectMessage = error.localizedDescription }
+    }
+
+    /// A JPEG becomes a new drawing on the watch, exactly like a photo from the library.
+    private func importJPEG(_ url: URL) {
+        guard !preparingPhoto else { return }
+        preparingPhoto = true
+        Task {
+            defer { preparingPhoto = false }
+            do {
+                let message = try await PhonePhotoImport.importPhoto(at: url)
+                // Shows the photo the import just added to the phone gallery.
+                photoInbox.refresh()
+                projectMessage = message
+            } catch { projectMessage = error.localizedDescription }
+        }
     }
 
     /// Converts the PSD into a project in the phone gallery, like an imported project.

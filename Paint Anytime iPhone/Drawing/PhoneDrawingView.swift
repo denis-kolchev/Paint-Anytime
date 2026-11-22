@@ -12,6 +12,7 @@ struct PhoneDrawingView: View {
     @State private var showingPhotoConfirmation = false
     @State private var exportingProject = false
     @State private var exportingPhotoshop = false
+    @State private var exportingJPEG = false
     @State private var transferMessage: String?
     /// Toggled by a tap while zoomed in; zooming back out shows the bars.
     @State private var barsHidden = false
@@ -62,6 +63,7 @@ struct PhoneDrawingView: View {
                     isSaving: inbox.isSaving,
                     saveToPhotos: { inbox.saveToPhotos(url) },
                     exportImage: { exporting = true },
+                    exportJPEG: { exportingJPEG = true },
                     exportProject: { exportingProject = true },
                     exportPhotoshop: { exportingPhotoshop = true },
                     synchronize: { inbox.synchronize() },
@@ -93,6 +95,10 @@ struct PhoneDrawingView: View {
             if !images.contains(url) { close() }
         }
         .fileExporter(isPresented: $exporting, document: DrawingFile(url: url, fullResolution: true), contentType: .png,
+                      defaultFilename: url.deletingPathExtension().lastPathComponent) { result in
+            if case .failure(let error) = result { exportError = error.localizedDescription }
+        }
+        .fileExporter(isPresented: $exportingJPEG, document: DrawingFile(jpegFrom: url), contentType: .jpeg,
                       defaultFilename: url.deletingPathExtension().lastPathComponent) { result in
             if case .failure(let error) = result { exportError = error.localizedDescription }
         }

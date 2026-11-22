@@ -9,6 +9,7 @@ struct PhoneDrawingActions: ToolbarContent {
     let isSaving: Bool
     let saveToPhotos: () -> Void
     let exportImage: () -> Void
+    let exportJPEG: () -> Void
     let exportProject: () -> Void
     let exportPhotoshop: () -> Void
     let synchronize: () -> Void
@@ -27,6 +28,10 @@ struct PhoneDrawingActions: ToolbarContent {
                     ShareLink(item: url) {
                         Label("Image (.png)", systemImage: "photo")
                     }
+                }
+                // Flattened and encoded only once the share sheet asks for the file.
+                ShareLink(item: DrawingJPEGExport(url: url), preview: SharePreview("Drawing")) {
+                    Label("Image (.jpg)", systemImage: "photo")
                 }
                 ShareLink(item: projectURL) {
                     Label("Project (.paintanytime)", systemImage: "doc")
@@ -54,6 +59,9 @@ struct PhoneDrawingActions: ToolbarContent {
                 .disabled(isSaving)
                 Button(action: exportImage) {
                     Label("Image (.png)", systemImage: "folder")
+                }
+                Button(action: exportJPEG) {
+                    Label("Image (.jpg)", systemImage: "folder")
                 }
                 Button(action: exportProject) {
                     Label("Save Project to Files", systemImage: "doc")

@@ -86,6 +86,22 @@ nonisolated enum PhonePhotoImport {
         guard let original = try await item.loadTransferable(type: Data.self) else {
             throw ImportError.unreadable
         }
+        return try await importPhoto(original)
+    }
+
+    /// Imports an image file opened from Files or another app (a JPEG) like a picked photo.
+    @MainActor
+    static func importPhoto(at url: URL) async throws -> String {
+        let original = try await Task.detached(priority: .userInitiated) { () throws -> Data in
+            let access = url.startAccessingSecurityScopedResource()
+            defer { if access { url.stopAccessingSecurityScopedResource() } }
+            do { return try Data(contentsOf: url) } catch { throw ImportError.unreadable }
+        }.value
+        return try await importPhoto(original)
+    }
+
+    @MainActor
+    private static func importPhoto(_ original: Data) async throws -> String {
         // Full camera photos are large; decode and encode away from the main actor.
         let png = try await Task.detached(priority: .userInitiated) {
             try preparedPNG(from: original)
