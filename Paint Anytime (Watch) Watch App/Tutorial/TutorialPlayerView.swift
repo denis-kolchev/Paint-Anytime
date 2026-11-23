@@ -465,7 +465,7 @@ struct TutorialPlayerView: View {
         // is removed the clock would otherwise slide from the centre to the corner.
         .requestsHiddenClock(((page == .canvas || isLeavingPage) && !confirmsFinish) || offersContinuation
                              || showsFavoritesWidget)
-        .modifier(TutorialCrownHint(tutorial: tutorial))
+        .modifier(TutorialCrownHint(tutorial: tutorial, lessonCardHeight: hintHeight))
         .onAppear {
             // Inserted behind the closed iris: hold it until the canvas has drawn.
             if irisHoldsRevealedContent { irisReadiness?.awaitFirstFrame() }

@@ -189,10 +189,14 @@ struct TutorialAttentionMotion: ViewModifier {
 /// flies into the pill beside the physical Crown, so the pill reads as "that wheel".
 struct TutorialCrownHint: ViewModifier {
     @ObservedObject var tutorial: TutorialSession
+    /// The lesson card's measured height, including its 10 pt of clear padding on top;
+    /// 0 before the first measurement. The mini watch fits into the space above it.
+    var lessonCardHeight: CGFloat = 0
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var revealed = false
     @State private var intro = Intro.hidden
+    @State private var introSize = CGSize.zero
     /// Keeps a pause or a return from the background from replaying it within the same lesson.
     @State private var introPlayed = false
 
@@ -219,14 +223,15 @@ struct TutorialCrownHint: ViewModifier {
                     )
                     if eligible && intro != .hidden {
                         let collapsing = intro == .collapsing
+                        let fit = introFit(in: screen.size)
                         TutorialCrownWatchIntro()
+                            .onGeometryChange(for: CGSize.self) { $0.size } action: { introSize = $0 }
                             // Left-Crown orientation turns the physical case by 180 degrees.
                             .rotationEffect(.degrees(
                                 WKInterfaceDevice.current().crownOrientation == .left ? 180 : 0))
-                            .scaleEffect(collapsing ? 0.2 : 1)
+                            .scaleEffect(fit.scale * (collapsing ? 0.2 : 1))
                             .opacity(collapsing ? 0 : 1)
-                            .position(collapsing ? crown
-                                      : CGPoint(x: screen.size.width / 2, y: screen.size.height * 0.4))
+                            .position(collapsing ? crown : fit.center)
                             .transition(.scale(scale: 0.6).combined(with: .opacity))
                     }
                     if eligible && revealed {
@@ -277,6 +282,22 @@ struct TutorialCrownHint: ViewModifier {
                     intro = .hidden
                 }
             }
+    }
+
+    /// Centres the mini watch in the space between the top of the screen and the lesson
+    /// card, shrinking it only when its full size would reach the card.
+    private func introFit(in screen: CGSize) -> (scale: CGFloat, center: CGPoint) {
+        let margin: CGFloat = 4
+        // Same fallback as the player uses before the card has measured itself.
+        let cardHeight = lessonCardHeight > 0 ? lessonCardHeight : screen.height * 0.32 + 20
+        // The measurement includes 10 pt of clear padding; keep a 6 pt gap above the card.
+        let bottom = max(margin, screen.height - cardHeight + 4)
+        let available = CGSize(width: screen.width - margin * 2, height: bottom - margin)
+        guard introSize.width > 0, introSize.height > 0 else {
+            return (1, CGPoint(x: screen.width / 2, y: screen.height * 0.4))
+        }
+        let scale = min(1, available.width / introSize.width, available.height / introSize.height)
+        return (max(0, scale), CGPoint(x: screen.width / 2, y: margin + available.height / 2))
     }
 }
 
