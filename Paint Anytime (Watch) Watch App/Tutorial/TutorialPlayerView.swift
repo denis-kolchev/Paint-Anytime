@@ -250,6 +250,26 @@ struct TutorialPlayerView: View {
                             .tutorialChromeFade()
                         }
                     }
+                    // Installed here with Back, outside the page's crossfade: from inside the
+                    // Layers list the toolbar animated it in, so it flew into place.
+                    if page == .layers {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button {
+                                guard tutorial.permits([.addLayer]) else { return }
+                                controller.addLayer()
+                                tutorial.record(.addedLayer)
+                            } label: {
+                                Image(systemName: "plus")
+                                    .tutorialHint(tutorial, steps: [.addLayer])
+                                    .frame(width: 32, height: 32)
+                                    .contentShape(Circle())
+                            }
+                            .watchToolbarButtonStyle()
+                            .disabled(!tutorial.permits([.addLayer]) || isLeavingPage)
+                            .accessibilityLabel(L10n.text("Add layer"))
+                            .tutorialChromeFade()
+                        }
+                    }
                     if page == .perspective && tutorial.teachesPerspective {
                         ToolbarItem(placement: .topBarLeading) {
                             Button {
@@ -732,7 +752,7 @@ struct TutorialPlayerView: View {
         if page == .layers {
             WatchLayersView(controller: controller,
                             canvasSize: controller.document.size(fallback: geometry.size),
-                            tutorial: tutorial, embedsNavigation: false,
+                            tutorial: tutorial, embedsNavigation: false, showsAddButton: false,
                             onEditLayer: { id in
                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
                                     player.openLayerSettings(id)

@@ -8,6 +8,9 @@ struct WatchLayersView: View {
     @ObservedObject var tutorial: TutorialSession = .inactive
     /// The tutorial hosts this list in its own navigation stack and pages.
     var embedsNavigation = true
+    /// The tutorial installs + in its own toolbar beside Back, so both arrive with the page
+    /// instead of + flying into place inside the page's crossfade.
+    var showsAddButton = true
     var onEditLayer: ((UUID) -> Void)? = nil
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     private let rowSpacing: CGFloat = 4
@@ -196,14 +199,16 @@ struct WatchLayersView: View {
         .task(id: grabHintLayer) { await runGrabHint() }
         .navigationTitle(L10n.text("Layers"))
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    guard tutorial.permits([.addLayer]) else { return }
-                    controller.addLayer()
-                    tutorial.record(.addedLayer)
-                } label: { Image(systemName: "plus").tutorialHint(tutorial, steps: [.addLayer]) }
-                .disabled(!tutorial.permits([.addLayer]))
-                .accessibilityLabel(L10n.text("Add layer"))
+            if showsAddButton {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        guard tutorial.permits([.addLayer]) else { return }
+                        controller.addLayer()
+                        tutorial.record(.addedLayer)
+                    } label: { Image(systemName: "plus").tutorialHint(tutorial, steps: [.addLayer]) }
+                    .disabled(!tutorial.permits([.addLayer]))
+                    .accessibilityLabel(L10n.text("Add layer"))
+                }
             }
         }
         .navigationDestination(isPresented: Binding(
