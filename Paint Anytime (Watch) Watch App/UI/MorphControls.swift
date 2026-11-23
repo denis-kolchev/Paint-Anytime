@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import WatchKit
 
 /// Only the control views read these properties during body evaluation.
 /// The canvas owner keeps a reference for dismissal and lifecycle events.
@@ -57,7 +58,9 @@ struct MorphPanelGeometry {
     var size: CGSize
     var layoutDirection: LayoutDirection
     var top: CGFloat = 16
-    static let buttonDiameter: CGFloat = 36
+    /// On 40 mm (162 pt wide) the four bottom circles sit about 34 pt apart, so 36 pt
+    /// circles overlap; there they shrink to keep a gap. 41 mm and larger keep 36 pt.
+    static let buttonDiameter: CGFloat = WKInterfaceDevice.current().screenBounds.width < 170 ? 32 : 36
     var diameter: CGFloat = Self.buttonDiameter
 
     var leadingX: CGFloat { layoutDirection == .rightToLeft ? size.width - 30 : 30 }
