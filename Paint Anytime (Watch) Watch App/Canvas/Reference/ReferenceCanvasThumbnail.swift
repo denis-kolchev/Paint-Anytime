@@ -22,6 +22,12 @@ struct ReferenceCanvasThumbnail: View {
     /// Space between the thumbnail and the control below it.
     static let controlGap: CGFloat = 6
     static let bottomTrailingSlot = 4
+    /// The bottom-row slot beside the bottom-trailing corner.
+    static let neighborSlot = 3
+    /// Space between a free-corner thumbnail and the circle beside it.
+    static let neighborGap: CGFloat = 4
+    /// The thumbnail shrinks no further than this beside that circle; below it, it moves up.
+    static let longSideMinimum: CGFloat = 32
 
     private var frames: Binding<[CanvasToolbarControl: CGRect]> {
         Binding(get: { regions.frames }, set: { regions.frames = $0 })
@@ -117,9 +123,30 @@ struct ReferenceCanvasThumbnail: View {
         let top = CustomCanvasControls.slotCenter(0, geometry: geometry, regions: regions,
                                                   canvasOrigin: canvasOrigin)
         let radius = geometry.diameter / 2
-        let bottom = size.height - (top.y - radius)
+        var bottom = size.height - (top.y - radius)
         let isRightToLeft = layoutDirection == .rightToLeft
-        let x = isRightToLeft ? top.x - radius : top.x + radius - thumbnail.width
-        return CGRect(x: x, y: bottom - thumbnail.height, width: thumbnail.width, height: thumbnail.height)
+        let outerX = isRightToLeft ? top.x - radius : top.x + radius
+        var thumbnailSize = thumbnail
+        // The circle next to the free corner: on narrow screens it reaches under the
+        // thumbnail. Shrink the thumbnail to the space beside it, then, if it still overlaps
+        // at the minimum size, lift it just above the circle.
+        if let layout, layout.slots.indices.contains(neighborSlot), !layout.slots[neighborSlot].isEmpty {
+            let neighbor = CustomCanvasControls.slotCenter(neighborSlot, geometry: geometry,
+                                                           regions: regions, canvasOrigin: canvasOrigin)
+            let clearance = radius + neighborGap
+            let available = abs(outerX - neighbor.x) - clearance
+            let longest = max(thumbnailSize.width, thumbnailSize.height)
+            if thumbnailSize.width > available {
+                let scale = min(1, max(available / thumbnailSize.width, longSideMinimum / longest))
+                thumbnailSize = CGSize(width: thumbnailSize.width * scale, height: thumbnailSize.height * scale)
+            }
+            let dx = abs(outerX - neighbor.x) - thumbnailSize.width
+            if dx < clearance {
+                bottom = min(bottom, neighbor.y - (clearance * clearance - dx * dx).squareRoot())
+            }
+        }
+        let x = isRightToLeft ? outerX : outerX - thumbnailSize.width
+        return CGRect(x: x, y: bottom - thumbnailSize.height,
+                      width: thumbnailSize.width, height: thumbnailSize.height)
     }
 }
