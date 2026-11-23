@@ -336,12 +336,17 @@ struct WatchCanvasAdjustmentView: View {
     }
 
     private func editor(height availableHeight: CGFloat) -> some View {
+        // The page ignores the safe area, so its geometry reports no top inset to measure the
+        // toolbar by. The checkmark's circle ends about 5 pt below the editor's 42 pt top
+        // (42 mm screenshot), so the column starts just under it.
+        let columnClearance: CGFloat = 8
         // The option column fits the room left by the paddings, the value row and the carousel,
         // so the value row stays above the tutorial's lesson card instead of being pushed under it.
-        let columnRoom = availableHeight - 42 - 8 - 26 - (4 + 28) - (tutorial.isActive ? 0 : 4 + 28)
+        let columnRoom = availableHeight - 42 - 8 - columnClearance - (4 + 28)
+            - (tutorial.isActive ? 0 : 4 + 28)
         let slot = max(0, columnRoom / 3)
-        // Three full circles need their 32 pt slots; with less room (40 mm above the lesson
-        // card) a column would shrink them until they touch, so they stand in a triangle.
+        // Three full circles need their 30 pt slots, as the perspective presets have; with less
+        // room (above the lesson card) a column would shrink them, so they stand in a triangle.
         let usesTriangle = columnRoom < Self.fullColumnHeight
         return VStack(spacing: 4) {
             // Options stand beside the preview, as the presets do in perspective guides.
@@ -361,8 +366,10 @@ struct WatchCanvasAdjustmentView: View {
                     }
                 }
                 .disabled(tutorial.isActive)
-                // Clear the toolbar's checkmark, which overlaps the top of this column.
-                .padding(.top, 26)
+                // Clear the toolbar's checkmark, which overlaps the top of this column. The
+                // tour's triangle keeps the wider gap it was checked with, so the checkmark
+                // stays easy to tap in the lesson that asks for it.
+                .padding(.top, usesTriangle ? 26 : columnClearance)
                 // The triangle takes its width from the preview, so each circle gets a finger's room.
                 .frame(width: usesTriangle ? 2 * Self.triangleHit : 48)
             }
@@ -447,8 +454,9 @@ struct WatchCanvasAdjustmentView: View {
     }
 
 
-    /// Three circles in their full 32 pt slots, the column's height before they start to shrink.
-    private static let fullColumnHeight: CGFloat = 3 * 32
+    /// Three 28 pt circles with a 2 pt gap each, as the perspective presets stand; the column's
+    /// height before they start to shrink.
+    private static let fullColumnHeight: CGFloat = 3 * 30
     /// Each triangle button's touch area: wider than the column's, so a finger can aim.
     private static let triangleHit: CGFloat = 38
 
@@ -489,7 +497,7 @@ struct WatchCanvasAdjustmentView: View {
     /// shrinks the circle instead of overflowing the page.
     private func roundButton(slot: CGFloat, hitWidth: CGFloat = 44, _ title: String, symbol: String, isOn: Bool, isSlashed: Bool = false,
                              action: @escaping () -> Void) -> some View {
-        let circleScale = min(1, max(0.6, (slot - 4) / 28))
+        let circleScale = min(1, max(0.6, (slot - 2) / 28))
         return Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .bold))
