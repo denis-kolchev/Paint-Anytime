@@ -237,6 +237,9 @@ struct PerspectiveGuidesSettingsView: View {
     /// 0 hides the guides; any other number shows them with that many vanishing points.
     private func presetButton(_ preset: PerspectivePreset?, height: CGFloat) -> some View {
         let isSelected = preset.map { guides.isEnabled && guides.preset == $0 } ?? !guides.isEnabled
+        // A short column (40 mm) gives each slot less than a full circle; the circles shrink
+        // to keep a 2 pt gap instead of overlapping, as the canvas size options do.
+        let diameter = min(28, max(18, height - 2))
         return Button {
             if let preset { guides.preset = preset }
             guides.isEnabled = preset != nil
@@ -244,10 +247,10 @@ struct PerspectiveGuidesSettingsView: View {
             if preset != nil { tutorial.record(.choseVanishingPoints) }
         } label: {
             Text(verbatim: "\(preset?.rawValue ?? 0)")
-                .font(.system(size: 15, weight: .bold))
+                .font(.system(size: 15 * diameter / 28, weight: .bold))
                 .monospacedDigit()
                 .foregroundStyle(isSelected ? Color.black : Color.white)
-                .frame(width: 28, height: 28)
+                .frame(width: diameter, height: diameter)
                 .background {
                     Circle().fill(isSelected ? Color.accentColor : Color.white.opacity(0.12))
                 }

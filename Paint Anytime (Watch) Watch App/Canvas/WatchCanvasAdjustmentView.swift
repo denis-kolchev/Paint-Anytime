@@ -343,11 +343,12 @@ struct WatchCanvasAdjustmentView: View {
         // The option column fits the room left by the paddings, the value row and the carousel,
         // so the value row stays above the tutorial's lesson card instead of being pushed under it.
         let columnRoom = availableHeight - 42 - 8 - columnClearance - (4 + 28)
-            - (tutorial.isActive ? 0 : 4 + 28)
+            - (tutorial.isActive ? 0 : 28)
         let slot = max(0, columnRoom / 3)
-        // Three full circles need their 30 pt slots, as the perspective presets have; with less
-        // room (above the lesson card) a column would shrink them, so they stand in a triangle.
-        let usesTriangle = columnRoom < Self.fullColumnHeight
+        // Three full circles need their 30 pt slots. Outside the tour the column always stays,
+        // with smaller circles on a short screen (40 mm), so the preview keeps its width; above
+        // the lesson card the room is too small even for that, so they stand in a triangle.
+        let usesTriangle = tutorial.isActive && columnRoom < Self.fullColumnHeight
         return VStack(spacing: 4) {
             // Options stand beside the preview, as the presets do in perspective guides.
             HStack(spacing: 8) {
@@ -374,11 +375,14 @@ struct WatchCanvasAdjustmentView: View {
                 .frame(width: usesTriangle ? 2 * Self.triangleHit : 48)
             }
             .frame(maxHeight: .infinity)
-            valueRow(value: resizeValue, range: resizeRange, valueTitle: resizeValueTitle,
-                     title: resizeTitle, focus: "Resize")
-            if !tutorial.isActive {
-                CanvasResizeCarousel(selection: $resizePage, titles: resizeTitles)
-                    .frame(height: 28)
+            // The carousel sits right under the value row, as in perspective guides.
+            VStack(spacing: 0) {
+                valueRow(value: resizeValue, range: resizeRange, valueTitle: resizeValueTitle,
+                         title: resizeTitle, focus: "Resize")
+                if !tutorial.isActive {
+                    CanvasResizeCarousel(selection: $resizePage, titles: resizeTitles)
+                        .frame(height: 28)
+                }
             }
         }
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: tutorial.step == .moveCanvasFrame)
