@@ -164,7 +164,7 @@ It suits both first-time artists and those who draw every day: the interactive t
 
 ### CANVAS
 * Zoom up to 51,200%
-* Size up to 2056 × 2056 pixels
+* Size up to 2048 × 2048 pixels
 * Resize by percentage or by width and height, keeping proportions
 * Extend horizontally and vertically, rotate and crop
 * Vector drawings scale without losing quality (except blurred areas)
