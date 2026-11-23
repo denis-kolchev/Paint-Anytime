@@ -78,6 +78,9 @@ struct WatchAppSettingsView: View {
         .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(tutorial.isActive ? "" : L10n.text("More"))
         .toolbarTitleDisplayMode(.inline)
+        // watchOS 10 and 11 draw the bar's material over the raised "More" header,
+        // which then showed as a blurred band with no title.
+        .toolbarBackground(tutorial.isActive ? .hidden : .automatic, for: .navigationBar)
         .toolbar { closeToolbar }
         #if DEBUG
         .alert(L10n.text("Show the welcome screen again?"), isPresented: $confirmsStartOver) {

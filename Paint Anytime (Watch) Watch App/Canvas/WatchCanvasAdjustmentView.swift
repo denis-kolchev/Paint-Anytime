@@ -21,6 +21,9 @@ struct WatchCanvasAdjustmentView: View {
     @State private var dragStartPosition: CGPoint?
     /// Set while the preview itself is being dragged, so the page-switch swipe below yields.
     @State private var isDraggingFrame = false
+    /// The tutorial's frame has been moved once; its arrows stay gone while the lesson
+    /// card shows the result, instead of returning when the finger lifts.
+    @State private var hasMovedFrame = false
     /// Unbounded quarter-turn count, clockwise, so the preview always animates the short way.
     @State private var rotationSteps = 0
     private var turns: Int { ((rotationSteps % 4) + 4) % 4 }
@@ -189,7 +192,7 @@ struct WatchCanvasAdjustmentView: View {
                 // From the frame's centre; the sway follows the frame's size, not the room
                 // left to move, which a slight crop or extension makes almost nothing.
                 TutorialMoveGuide(distance: min(16, max(10, min(target.width, target.height) * scale / 4)),
-                                  isHidden: isDraggingFrame)
+                                  isHidden: isDraggingFrame || hasMovedFrame)
                     .position(x: (canvas.x + target.width / 2) * scale,
                               y: (canvas.y + target.height / 2) * scale)
                     .transition(.opacity)
@@ -201,6 +204,11 @@ struct WatchCanvasAdjustmentView: View {
             DragGesture(minimumDistance: 2)
                 .onChanged { value in
                     isDraggingFrame = true
+                    // Counted during the drag: watchOS can cancel the gesture without onEnded.
+                    if !hasMovedFrame, hypot(value.translation.width, value.translation.height) > 4 {
+                        hasMovedFrame = true
+                        tutorial.record(.movedCanvasFrame)
+                    }
                     let start = dragStartPosition ?? CGPoint(x: positionX, y: positionY)
                     if dragStartPosition == nil { dragStartPosition = start }
                     // The frame or the drawing follows the finger on either axis.
@@ -233,9 +241,6 @@ struct WatchCanvasAdjustmentView: View {
                 .onEnded { value in
                     isDraggingFrame = false
                     dragStartPosition = nil
-                    if hypot(value.translation.width, value.translation.height) > 4 {
-                        tutorial.record(.movedCanvasFrame)
-                    }
                 }
         )
     }

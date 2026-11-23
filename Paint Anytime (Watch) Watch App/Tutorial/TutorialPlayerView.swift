@@ -1590,13 +1590,17 @@ struct TutorialChromeFade: ViewModifier {
     @State private var isRevealed = false
 
     func body(content: Content) -> some View {
+        let shows = isRevealed && !isHidden
+        // The animation is scoped to the opacity and scale: a withAnimation in onAppear
+        // also animated the toolbar's first layout, so the button flew in from the edge.
         content
-            .opacity(isRevealed && !isHidden ? 1 : 0)
-            .onAppear {
-                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : TutorialChromeFade.duration)) {
-                    isRevealed = true
-                }
+            .animation(.easeInOut(duration: reduceMotion ? 0.15 : TutorialChromeFade.duration)) { view in
+                view
+                    // Grows in place from its centre, as a newly shown button does.
+                    .scaleEffect(shows || reduceMotion ? 1 : 0.5)
+                    .opacity(shows ? 1 : 0)
             }
+            .onAppear { isRevealed = true }
             .onDisappear { isRevealed = false }
     }
 

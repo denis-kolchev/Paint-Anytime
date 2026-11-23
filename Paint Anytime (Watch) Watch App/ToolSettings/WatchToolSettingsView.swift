@@ -544,38 +544,40 @@ struct WatchToolSettingsView: View {
                     .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
                 }
-            } else if tutorial.step == .openCurrentPalette {
-                // The palette lesson uses the editor's corner button on the Color page.
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        crownFocused = false
-                        tutorial.record(.openedCurrentPalette)
-                    } label: {
-                        CurrentPaletteIcon()
-                            .tutorialHint(tutorial, steps: [.openCurrentPalette])
-                    }
-                    .watchToolbarButtonStyle()
-                    .accessibilityLabel(L10n.text("Current palette"))
-                    // Fades in with the editor, as the trailing ✓ does, and out before it leaves.
-                    .tutorialChromeFade()
-                }
             } else if !tutorial.isPaletteLesson {
+                // One item for the whole tutorial, as outside it: the palette on the Color page,
+                // Information elsewhere. Swapping items when the palette step began made the
+                // toolbar insert a new one, which flew into place.
                 ToolbarItem(placement: .topBarLeading) {
-                    // Reference: the compact Information button seen after returning
-                    // from Width. The shared modifier fixes that diameter on first
-                    // appearance too, and applies it to every canvas toolbar button.
+                    let opensPalette = selection == .color || tutorial.step == .openCurrentPalette
+                    // Outside its lesson the tour's palette has nothing to open.
+                    let isEnabled = tutorial.allowsToolInfo
+                        && (!opensPalette || tutorial.step == .openCurrentPalette)
                     Button {
                         crownFocused = false
-                        tutorial.record(.openedInfo)
-                        showsInformation = true
+                        if tutorial.step == .openCurrentPalette {
+                            tutorial.record(.openedCurrentPalette)
+                        } else if !opensPalette {
+                            tutorial.record(.openedInfo)
+                            showsInformation = true
+                        }
                     } label: {
-                        Image(systemName: "info.circle")
+                        ZStack {
+                            Image(systemName: "info.circle")
+                                .opacity(opensPalette ? 0 : 1)
+                                .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
+                            CurrentPaletteIcon()
+                                .opacity(opensPalette ? 1 : 0)
+                                .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
+                        }
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: opensPalette)
+                        .tutorialHint(tutorial, steps: [.openCurrentPalette])
                     }
                     .watchToolbarButtonStyle()
-                    .accessibilityLabel(L10n.text("Information"))
+                    .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
                     // Tutorial result cards temporarily disable actions, not the clock's layout.
                     .opacity(tutorial.allowsToolInfo ? 1 : 0)
-                    .allowsHitTesting(tutorial.allowsToolInfo)
+                    .allowsHitTesting(isEnabled)
                     .accessibilityHidden(!tutorial.allowsToolInfo)
                     // Fades in with the editor, as the trailing ✓ does, and out before it leaves.
                     .tutorialChromeFade()
