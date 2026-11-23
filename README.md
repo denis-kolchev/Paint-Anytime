@@ -201,30 +201,52 @@ It suits both first-time artists and those who draw every day: the interactive t
 
 ## What's New in 1.2.0
 
-### New Features
+### NEW FEATURES
 
-- New Pencil and Crayon brushes to better express the texture;
-- Blur brush for softening edges and better gradient;
-- iPhone companion app to display, upload, download, delete, and share projects;
-- Updates gallery animations to optimize for more content, and it is ported to iPhone;
-- Autosave to make you less worry about battery drain;
-- Rotate, crop and change Canvas size;
-- Canvas Editor lets you choose and arrange on-canvas controls;
-- Shape recognition understands more shapes, including clouds;
-- Leading lines to easier draw the perspective images;
-- Tutorial is separated on levels to get into the business faster (atwork);
-- Allows to change your pictures from your gallery on your watch (atwork);
-- Lets you put other image new by Canvas as reference (atwork);
-- Apple Intelligence turns your sketch into picture.
+* Zoom up to 51,200% instead of 800%. The limit is dynamic and depends on the canvas size: you can zoom in until a single pixel of your artwork fills a noticeable part of the screen — beyond that there's nothing more to see. Even a small canvas goes up to at least 3,200%. The current zoom level is shown right on the screen.
+* Resize the canvas up to 2048 × 2048 pixels, by percentage or by width and height while keeping proportions. Rotate, crop and extend the canvas, all in one menu.
+* New Pencil and Crayon brushes with a lively texture.
+* Blur brush for soft edges and smooth gradients, with adjustable strength, width and radius.
+* Perspective guides with 0, 1 or 2 vanishing points — even beyond the canvas. Adjust the angle, tilt, number of rays and distance between points, and draw straight lines along a ray or a ruler.
+* Apple Intelligence turns your sketch into a detailed artwork (requires an iPhone with iOS 18.2 or later).
+* Reference: keep an image next to the canvas or over it, pick colors from it with the Eyedropper and zoom it up to 800%.
+* Up to 256 undo steps instead of 30. Simple actions use little memory, so you can undo further back. Heavy ones — erasing, blurring, working with photos — use more, so the history gets shorter, but never below 30 steps. This keeps the app within the watch's memory limit so watchOS doesn't close it.
+* The Lasso can now mirror a selection and has a handle for moving it.
+* Canvas editor: arrange and group the buttons on the canvas your way, pick a group icon, or reset everything with one tap.
+* Choose the canvas color from the current palette.
+* Color wheel and Eyedropper in the color settings.
+* The "+" at the end of the color list now creates a new color and adds it to the palette instead of opening the palette editor.
+* Three display modes: Smooth (vector), Pixels (as in the final file) and Auto.
+* Background Autosave with an interval from 1 to 10 minutes.
+* iPhone app: browse the gallery, upload, download, delete and share your artworks. Send a photo from the Photos app to your watch and paint over it.
+* PSD and JPEG support.
+* Gallery: grid from 5×5 to 1×1, zoom an artwork up to 800%, and select several artworks at once to favorite, share or delete them.
+* The Tutorial is split into basic and advanced courses with new lessons. Progress is saved, so you can pick up right where you left off.
 
-### Bug Fixes
+### BUG FIXES
 
-- Drawing area now extends under the system clock;
-- Faster Undo and Redo.
-- Faster Fill tool.
-- Smoother movement of objects selected with the Lasso.
-- Much smoother zoom in the gallery, without freezes, lag or jumps between grid sizes.
-- Fixed mistakes in the tutorial.
+* The system clock no longer covers the canvas — you can now draw under it, and there's more room for your artwork.
+* Shape recognition is faster and handles shaky lines: you no longer need to draw an almost perfect heart or star for it to be recognized.
+* The Pen responds more evenly to pressure changes and no longer leaves blots.
+* Artwork no longer gets blurry at high zoom in Smooth mode.
+* Cancel in the canvas Eyedropper now really cancels the color pick instead of opening the color wheel.
+* The bottom row in tool settings no longer jumps when you switch tools.
+* Fixed mistakes in the Tutorial.
+
+### OTHER
+
+* New rendering engine: images render faster and sharper, especially when zoomed in, and don't get blurry while you draw.
+* Faster Undo and Redo, Fill, Lasso, Eraser, plus Pencil and Crayon in multi-layer artworks.
+* The app uses memory more carefully, so watchOS closes it less often.
+* New grid-change animation in the gallery: the artwork under your fingers stays in the center of the screen and no longer drifts down when you have many artworks.
+* Updated start menu with more paths: choose your language, a basic or advanced course, or take the tutorial later.
+* Menu items are regrouped: the most frequent and useful ones are at the top, the rest below.
+* Some menus now have icons, for example palette visibility and color blending.
+* Vibration tells you when there's nothing left to undo or redo.
+* More animations in the Tutorial.
+* Progress indicator while saving.
+* iPhone Duo support.
+* Bulgarian language.
 
 ## Requirements
 
