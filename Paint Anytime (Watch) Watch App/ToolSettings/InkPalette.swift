@@ -33,9 +33,14 @@ struct InkPalette: Codable {
     }
 
     var allColors: [InkPreset] {
-        let available = ((baseColors ?? InkPaletteLibrary.basicColors) + customColors).filter { !(deletedIDs ?? []).contains($0.id) }
-        let ordered = (orderedIDs ?? []).compactMap { id in available.first { $0.id == id } }
-        return ordered + available.filter { !(orderedIDs ?? []).contains($0.id) }
+        // Sets and a dictionary keep this linear: large palettes read it on every Crown step.
+        let deleted = Set(deletedIDs ?? [])
+        let available = ((baseColors ?? InkPaletteLibrary.basicColors) + customColors).filter { !deleted.contains($0.id) }
+        guard let orderedIDs, !orderedIDs.isEmpty else { return available }
+        let byID = Dictionary(available.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let ordered = orderedIDs.compactMap { byID[$0] }
+        let orderedSet = Set(orderedIDs)
+        return ordered + available.filter { !orderedSet.contains($0.id) }
     }
 
     mutating func delete(_ id: String) {
@@ -55,7 +60,8 @@ struct InkPalette: Codable {
         orderedIDs = ids
     }
     var selectedColors: [InkPreset] {
-        let selected = allColors.filter { selectedIDs.contains($0.id) }
+        let selectedSet = Set(selectedIDs)
+        let selected = allColors.filter { selectedSet.contains($0.id) }
         return selected.isEmpty ? Array(allColors.prefix(1)) : selected
     }
 

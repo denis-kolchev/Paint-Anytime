@@ -16,6 +16,19 @@ struct ToolColorPicker: View {
 
     private var rowHeight: CGFloat { 30 }
     private var swatchSize: CGFloat { 22 }
+    private var rowStep: CGFloat { rowHeight + 3 }
+
+    /// Rows that can show in the viewport, plus two on each side so a Crown step never
+    /// reveals an empty slot. Large palettes otherwise lay out every swatch on each step.
+    /// In the tutorial the column shows past the viewport, so every row stays.
+    private func visibleIndices(viewportHeight: CGFloat) -> [Int] {
+        guard itemCount > 0 else { return [] }
+        guard !extendsBeyondViewport else { return Array(0..<itemCount) }
+        let reach = Int((viewportHeight / 2 / rowStep).rounded(.up)) + 2
+        let lower = max(0, colorIndex - reach)
+        let upper = min(itemCount, colorIndex + reach + 1)
+        return lower < upper ? Array(lower..<upper) : []
+    }
 
     var body: some View {
         VStack(spacing: 2) {
@@ -28,8 +41,9 @@ struct ToolColorPicker: View {
             }
             GeometryReader { geometry in
                 ZStack(alignment: .top) {
-                    VStack(spacing: 3) {
-                        ForEach(0..<itemCount, id: \.self) { index in
+                    // Rows sit at fixed positions, so only the window around the choice is built.
+                    ZStack(alignment: .top) {
+                        ForEach(visibleIndices(viewportHeight: geometry.size.height), id: \.self) { index in
                             Button {
                                 onSelect(index)
                             } label: {
@@ -54,17 +68,17 @@ struct ToolColorPicker: View {
                             .accessibilityLabel(index < presets.count ? presets[index].name : L10n.text("Add colors"))
                             .accessibilityAddTraits(colorIndex == index ? [.isSelected] : [])
                             .id(index)
+                            .offset(y: CGFloat(index) * rowStep)
                         }
                     }
-                    .fixedSize(horizontal: false, vertical: true)
                     .offset(y: (geometry.size.height - rowHeight) / 2
-                            - CGFloat(colorIndex) * (rowHeight + 3))
+                            - CGFloat(colorIndex) * rowStep)
                     .animation(choiceAnimation, value: colorIndex)
                 }
                 .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
                 .mask {
                     Rectangle()
-                        .padding(.vertical, extendsBeyondViewport ? -CGFloat(itemCount) * (rowHeight + 3) : 0)
+                        .padding(.vertical, extendsBeyondViewport ? -CGFloat(itemCount) * rowStep : 0)
                 }
                 .overlay(alignment: .center) {
                     // The selection window stays fixed while swatches move beneath it.

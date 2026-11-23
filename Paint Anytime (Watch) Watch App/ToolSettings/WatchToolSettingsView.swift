@@ -19,11 +19,15 @@ struct WatchToolSettingsView: View {
     // Decode only when stored palettes change, not for every computed property
     // read during a page transition or Crown update.
     @State private var paletteLibrary = InkPaletteLibrary.initial
+    /// The active palette's selected colors, built once per palette change: `colors` and
+    /// `colorIndex` are read many times per body, and rebuilding the list each time made
+    /// large palettes lag on every Crown step.
+    @State private var paletteColors = InkPaletteLibrary.initial.activePalette.selectedColors
 
     private func reloadPaletteLibrary() {
         paletteLibrary = InkPaletteLibrary.decode(palettesData, legacy: paletteData)
+        paletteColors = paletteLibrary.activePalette.selectedColors
     }
-    private var palette: InkPalette { paletteLibrary.activePalette }
     private var isAddingColor: Bool { selectsAddColor }
 
     private func openPalette() {
@@ -90,7 +94,7 @@ struct WatchToolSettingsView: View {
     }
 
     private var colors: [InkPreset] {
-        guard tutorial.isActive else { return palette.selectedColors }
+        guard tutorial.isActive else { return paletteColors }
         guard tutorial.locksLessonColor else { return tutorialColors }
         // Read live until the snapshot below is taken on appear, so the first frame matches.
         let used = lessonColors.isEmpty
