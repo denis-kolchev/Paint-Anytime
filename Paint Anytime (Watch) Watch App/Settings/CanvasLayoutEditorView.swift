@@ -30,6 +30,9 @@ struct CanvasLayoutEditorView: View {
     /// size and watchOS, so the lesson's row follows them instead of fixed offsets.
     var tutorialLeadingFrame: CGRect? = nil
     var tutorialTrailingFrame: CGRect? = nil
+    /// Whether the lesson's action list is open: the player hides its navigation bar over the
+    /// editor's row and brings it back for the list's ✕, icon button and clock.
+    var onTutorialListChange: ((Bool) -> Void)? = nil
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     @Environment(\.layoutDirection) private var layoutDirection
 
@@ -139,6 +142,8 @@ struct CanvasLayoutEditorView: View {
     private func tutorialEditor(onSave: @escaping (CanvasControlLayout) -> Void) -> some View {
         ZStack {
             Color.white.ignoresSafeArea()
+                // Debug builds: where touches that miss the circles land.
+                .canvasLayoutTouchProbe("bg", debug: touchDebug)
             // The clock band is hidden, so the row ignores the safe area like the editor's
             // toolbar buttons do.
             GeometryReader { proxy in
@@ -146,13 +151,17 @@ struct CanvasLayoutEditorView: View {
                 // Reset and the checkmark split the row in thirds: the editor centres them
                 // over its second and third bottom circles, whose outer ones sit under the corners.
                 let third = CGPoint(x: (row.trailing.x - row.leading.x) / 3, y: (row.trailing.y - row.leading.y) / 3)
+                let reset = CGPoint(x: row.leading.x + third.x, y: row.leading.y + third.y)
+                let save = CGPoint(x: row.trailing.x - third.x, y: row.trailing.y - third.y)
                 tutorialSlot(CanvasControlLayout.topLeadingSlot)
+                    .canvasLayoutTouchProbe("slotL", debug: touchDebug)
                     .position(row.leading)
                 tutorialResetButton
-                    .position(x: row.leading.x + third.x, y: row.leading.y + third.y)
+                    .canvasLayoutTouchProbe("reset", debug: touchDebug)
+                    .position(reset)
                 Button {
-                    guard tutorial.permits([.saveCanvasLayout]) else { return }
-                    onSave(draft)
+                    touchDebug?.record("save", "action")
+                    tapTutorialSave(onSave)
                 } label: {
                     CanvasLayoutCircle {
                         Image(systemName: "checkmark").foregroundStyle(.green)
@@ -162,8 +171,10 @@ struct CanvasLayoutEditorView: View {
                 .buttonStyle(.plain)
                 .allowsHitTesting(tutorial.permits([.saveCanvasLayout]))
                 .accessibilityLabel(L10n.text("Save and apply"))
-                .position(x: row.trailing.x - third.x, y: row.trailing.y - third.y)
+                .canvasLayoutTouchProbe("save", debug: touchDebug)
+                .position(save)
                 tutorialSlot(0)
+                    .canvasLayoutTouchProbe("slotR", debug: touchDebug)
                     .position(row.trailing)
                 // Each group's actions in a column below its circle, as in the editor.
                 tutorialMorphPreview(CanvasControlLayout.topLeadingSlot, below: row.leading)
@@ -171,6 +182,20 @@ struct CanvasLayoutEditorView: View {
             }
             .ignoresSafeArea()
             // No colour scheme of its own: like the editor's, the glass follows the app's.
+
+            // Debug builds: touches, actions and frames (global points) for screenshots,
+            // between the row and the lesson card. "m"/"t" are the canvas's measured ••• and brush.
+            if let touchDebug, editingSlot == nil {
+                CanvasLayoutTouchDebugPanel(
+                    debug: touchDebug, isClockHiddenRequested: true,
+                    probes: ["slotL", "reset", "save", "slotR", "bg"],
+                    header: "m \(CanvasLayoutTouchDebug.format(tutorialLeadingFrame)) t \(CanvasLayoutTouchDebug.format(tutorialTrailingFrame))",
+                    eventLimit: 3)
+                    .padding(.horizontal, 6)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(.top, 44)
+                    .ignoresSafeArea()
+            }
 
             if let slot = editingSlot {
                 CanvasSlotEditorView(assignment: $draft.slots[slot], instrument: instrument,
@@ -196,6 +221,8 @@ struct CanvasLayoutEditorView: View {
             draft = .original
             loaded = true
         }
+        .onChange(of: editingSlot) { _, slot in onTutorialListChange?(slot != nil) }
+        .onDisappear { onTutorialListChange?(false) }
         .onChange(of: tutorial.step) { _, step in
             // The chosen action has been shown; the list closes on the editor's canvas.
             guard step == .saveCanvasLayout, editingSlot != nil else { return }
@@ -207,9 +234,8 @@ struct CanvasLayoutEditorView: View {
         let assignment = draft.slots[index]
         let choosable = assignment.isEmpty && tutorial.permits([.chooseEditorSlot])
         return Button {
-            guard choosable else { return }
-            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { editingSlot = index }
-            tutorial.record(.choseEditorSlot)
+            touchDebug?.record(index == CanvasControlLayout.topLeadingSlot ? "slotL" : "slotR", "action")
+            tapTutorialSlot(index)
         } label: {
             CanvasQuickActionIcon(action: assignment.actions[0], instrument: instrument,
                                   isMorph: assignment.isMorph, morphIcon: assignment.icon)
@@ -222,13 +248,30 @@ struct CanvasLayoutEditorView: View {
         .accessibilityLabel(slotLabel(index))
     }
 
+    /// Shared by the circles' Buttons and the taps forwarded to them; each checks the lesson's step.
+    private func tapTutorialSlot(_ index: Int) {
+        guard editingSlot == nil, draft.slots[index].isEmpty, tutorial.permits([.chooseEditorSlot]) else { return }
+        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { editingSlot = index }
+        tutorial.record(.choseEditorSlot)
+    }
+
+    private func tapTutorialReset() {
+        guard editingSlot == nil, tutorial.permits([.resetEditorLayout]) else { return }
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { draft = Self.tutorialEmptyLayout }
+        tutorial.record(.resetEditorLayout)
+    }
+
+    private func tapTutorialSave(_ onSave: (CanvasControlLayout) -> Void) {
+        guard editingSlot == nil, tutorial.permits([.saveCanvasLayout]) else { return }
+        onSave(draft)
+    }
+
     /// Dimmed like the editor's Reset with nothing to reset, until the lesson asks for it.
     private var tutorialResetButton: some View {
         let permitted = tutorial.permits([.resetEditorLayout])
         return Button {
-            guard permitted else { return }
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { draft = Self.tutorialEmptyLayout }
-            tutorial.record(.resetEditorLayout)
+            touchDebug?.record("reset", "action")
+            tapTutorialReset()
         } label: {
             CanvasLayoutCircle {
                 Image(systemName: "arrow.counterclockwise")

@@ -37,6 +37,8 @@ struct TutorialPlayerView: View {
     @State private var lessonCardHidden = false
     @State private var menuFadesIn = false
     @State private var controls: [CanvasToolbarControl: CGRect] = [:]
+    /// The canvas editor lesson's action list is open over the editor page.
+    @State private var canvasEditorListOpen = false
     /// The practice group from the canvas editor lesson is open on the canvas.
     @State private var practiceGroupExpanded = false
     /// The practice countdown once the lesson's autosave is on, in the editor's own capsule:
@@ -479,7 +481,11 @@ struct TutorialPlayerView: View {
         // Flatten the opaque confirmation and lesson before the host applies
         // its exit opacity; otherwise the lesson can show through fading children.
         .compositingGroup()
-        .toolbar(coversLesson ? .hidden : .automatic, for: .navigationBar, .bottomBar)
+        // The canvas editor's top row sits where the bar is: on watchOS 26 the bar takes every
+        // touch across its height even with the clock hidden and no items (debug readout: taps
+        // on the circles at y 9–41 reached neither them nor the page). Its action list needs the bar.
+        .toolbar(coversLesson || (page == .canvasEditor && !canvasEditorListOpen) ? .hidden : .automatic,
+                 for: .navigationBar, .bottomBar)
         // The expanded card is the whole screen, so the clock stays hidden over it.
         // Hidden as soon as a page starts leaving for the canvas: once its leading button
         // is removed the clock would otherwise slide from the centre to the corner.
@@ -797,7 +803,8 @@ struct TutorialPlayerView: View {
             // editor's toolbar slots sit on this watch.
             CanvasLayoutEditorView(instrument: controller.pencilStyle.instrument, tutorial: tutorial,
                                    onTutorialSave: { layout in leavePage { player.finishCanvasEditor(layout) } },
-                                   tutorialLeadingFrame: controls[.more], tutorialTrailingFrame: controls[.tools])
+                                   tutorialLeadingFrame: controls[.more], tutorialTrailingFrame: controls[.tools],
+                                   onTutorialListChange: { canvasEditorListOpen = $0 })
             .opacity(isLeavingPage ? 0 : 1)
             .allowsHitTesting(!isLeavingPage)
             .transition(.opacity)

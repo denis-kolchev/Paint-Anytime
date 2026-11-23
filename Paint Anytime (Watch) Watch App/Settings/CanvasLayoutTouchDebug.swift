@@ -24,6 +24,12 @@ final class CanvasLayoutTouchDebug {
 
     func count(_ probe: String, _ kind: String) -> Int { counts["\(probe).\(kind)"] ?? 0 }
 
+    /// A frame as `x,y wxh`, or – when there is none.
+    nonisolated static func format(_ frame: CGRect?) -> String {
+        guard let frame else { return "–" }
+        return "\(format(frame.minX)),\(format(frame.minY)) \(format(frame.width))x\(format(frame.height))"
+    }
+
     /// Pure formatting, callable from any isolation.
     nonisolated static func format(_ value: CGFloat) -> String { String(format: "%.0f", value) }
 }
@@ -76,15 +82,21 @@ private struct CanvasLayoutTouchProbe: ViewModifier {
 struct CanvasLayoutTouchDebugPanel: View {
     let debug: CanvasLayoutTouchDebug
     let isClockHiddenRequested: Bool
+    /// The lesson's editor probes its four circles and replaces the first line with its own.
+    var probes = ["reset", "save", "bg"]
+    var header: String? = nil
+    /// The latest events shown; the lesson's card leaves little room.
+    var eventLimit = Int.max
 
     var body: some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(verbatim: "topMidY \(debug.topControlMidY.map { CanvasLayoutTouchDebug.format($0) } ?? "–")  clockReq \(isClockHiddenRequested ? 1 : 0)")
-            ForEach(["reset", "save", "bg"], id: \.self) { probe in
+            Text(verbatim: header ?? "topMidY \(debug.topControlMidY.map { CanvasLayoutTouchDebug.format($0) } ?? "–")  clockReq \(isClockHiddenRequested ? 1 : 0)")
+            ForEach(probes, id: \.self) { probe in
                 Text(verbatim: line(probe))
             }
-            ForEach(debug.events.indices, id: \.self) { index in
-                Text(verbatim: debug.events[index])
+            let events = debug.events.suffix(eventLimit)
+            ForEach(events.indices, id: \.self) { index in
+                Text(verbatim: events[index])
             }
         }
         .font(.system(size: 9, weight: .medium, design: .monospaced))
