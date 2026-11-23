@@ -85,7 +85,7 @@ struct TutorialLessonView: View {
     }
 
     private var compactCard: some View {
-        TutorialHintLayout(maximumHeight: min(screenHeight * 0.32, maximumCardHeight ?? .infinity)) {
+        TutorialHintLayout(maximumHeight: compactCardMaximumHeight) {
             // Keep one layout child while the old and new copy crossfade.
             // The independent measurement below sizes the card for the new copy.
             ZStack {
@@ -210,6 +210,21 @@ struct TutorialLessonView: View {
     /// The top toolbar band, where ••• sits; the clock is hidden over the canvas.
     private var shapeCatalogTopInset: CGFloat { max(34, screenHeight * 0.17) }
 
+    /// As in the tool editor, the hint keeps a fixed band and scrolls any overflow.
+    /// Under the shape list that band is what the full-size list leaves, but never less
+    /// than two lines of copy, so a long hint or a larger text size scrolls instead of
+    /// shrinking the shapes.
+    private var compactCardMaximumHeight: CGFloat {
+        var limit = min(screenHeight * 0.32, maximumCardHeight ?? .infinity)
+        if showsShapeCatalog {
+            let twoLines = instructionFontSize * 2.6 + 20
+            let leftByCatalog = screenHeight - shapeCatalogTopInset
+                - TutorialShapeCatalog.preferredHeight - edgeGap
+            limit = min(limit, max(twoLines, leftByCatalog))
+        }
+        return limit
+    }
+
     private var cardShape: TutorialHintShape {
         TutorialHintShape(expandedRadius: screenWidth * 0.09)
     }
@@ -326,7 +341,7 @@ private struct TutorialContinuationContent: View {
     }
 
     private func fittedContent(scale: CGFloat) -> some View {
-        TutorialContinuationFitLayout(scale: scale) {
+        TutorialScaleFitLayout(scale: scale) {
             cardContent
                 .scaleEffect(scale)
         }
@@ -502,7 +517,8 @@ private struct TutorialCourseRow: View {
 /// Reports the content's size as already shrunk by `scale`, so `ViewThatFits` can pick the
 /// largest scale that still fits, then lays the (separately `.scaleEffect`-ed) content out
 /// within that smaller box instead of its unscaled footprint.
-private struct TutorialContinuationFitLayout: Layout {
+/// Shared by the continuation question and the shape catalog.
+struct TutorialScaleFitLayout: Layout {
     let scale: CGFloat
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {

@@ -16,11 +16,18 @@ struct TutorialShapeCatalog: View {
     /// Each page draws its outlines the first time it is shown.
     @State private var drawnPages: Set<Int> = []
     @State private var hasTurnedPage = false
+    /// Index into `fits`, reported by the off-screen measurement.
+    @State private var fitIndex = 0
 
     // Same red swatch as the circle guide and the lesson's brush.
     private var ink: Color {
         InkPreset.all.first { $0.nameKey == "Red" }?.color ?? .red
     }
+
+    /// The list at full size below `topInset`: a one-line title, two rows of 28 pt outlines
+    /// with one-line names, the page dots and the spacing between them. The hint below
+    /// caps itself to leave this much, scrolling its copy instead.
+    static let preferredHeight: CGFloat = 16 + 6 + (2 * (28 + 3 + 11) + 6) + 6 + 4 + 4
 
     private static let columns = 3
     private static let rows = 2
@@ -31,18 +38,15 @@ struct TutorialShapeCatalog: View {
     }()
 
     var body: some View {
+        let fit = Self.fits[min(fitIndex, Self.fits.count - 1)]
         VStack(spacing: 6) {
-            Text(L10n.text("Shapes you can draw"))
-                .font(.system(size: 13, weight: .semibold))
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 10)
+            title(size: fit.title)
             // Paged sideways: the Crown keeps no role on this step.
             ScrollView(.horizontal) {
                 LazyHStack(spacing: 0) {
                     ForEach(Self.pages.indices, id: \.self) { index in
-                        pageView(Self.pages[index], page: index)
+                        scaledGrid(Self.pages[index], page: index, fit: fit, isDrawn: drawnPages.contains(index))
+                            .frame(maxHeight: .infinity)
                             .padding(.horizontal, 10)
                             .containerRelativeFrame(.horizontal)
                             .id(index)
@@ -66,6 +70,8 @@ struct TutorialShapeCatalog: View {
             .animation(.easeOut(duration: reduceMotion ? 0.15 : 0.25), value: hasTurnedPage)
             pageIndicator
         }
+        .background { fitMeasurement }
+        .onPreferenceChange(CatalogFitKey.self) { fitIndex = $0 }
         .padding(.top, topInset)
         .padding(.bottom, 4)
         .onAppear { draw(page ?? 0) }
@@ -85,20 +91,70 @@ struct TutorialShapeCatalog: View {
         else { withAnimation { _ = drawnPages.insert(page) } }
     }
 
-    private func pageView(_ shapes: [TutorialCatalogShape], page: Int) -> some View {
+    /// The hint below grows with its copy and text size, leaving the catalog less height.
+    /// The shapes and their names matter most, so the title gives up its size first, then
+    /// the outlines; only then does the whole grid scale.
+    private static let fits: [(title: CGFloat, outline: CGFloat, scale: CGFloat)] = [
+        (13, 28, 1), (12, 28, 1), (11, 28, 1), (10, 28, 1), (9, 28, 1),
+        (9, 24, 1), (9, 20, 1), (9, 16, 1),
+        (9, 16, 0.92), (9, 16, 0.84), (9, 16, 0.76), (9, 16, 0.68), (9, 16, 0.6)
+    ]
+
+    /// The largest fit for the tallest page, measured off screen in the catalog's own
+    /// frame: every page uses it, so nothing jumps while paging.
+    private var fitMeasurement: some View {
+        ViewThatFits(in: .vertical) {
+            ForEach(Self.fits.indices, id: \.self) { index in
+                let fit = Self.fits[index]
+                VStack(spacing: 6) {
+                    title(size: fit.title)
+                    ZStack {
+                        ForEach(Self.pages.indices, id: \.self) { page in
+                            scaledGrid(Self.pages[page], page: page, fit: fit, isDrawn: true)
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    pageIndicator
+                }
+                .preference(key: CatalogFitKey.self, value: index)
+            }
+        }
+        .hidden()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private func title(size: CGFloat) -> some View {
+        Text(L10n.text("Shapes you can draw"))
+            .font(.system(size: size, weight: .semibold))
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 10)
+    }
+
+    private func scaledGrid(_ shapes: [TutorialCatalogShape], page: Int,
+                            fit: (title: CGFloat, outline: CGFloat, scale: CGFloat),
+                            isDrawn: Bool) -> some View {
+        TutorialScaleFitLayout(scale: fit.scale) {
+            grid(shapes, outlineHeight: fit.outline, isDrawn: isDrawn)
+                .scaleEffect(fit.scale)
+        }
+    }
+
+    private func grid(_ shapes: [TutorialCatalogShape], outlineHeight: CGFloat, isDrawn: Bool) -> some View {
         VStack(spacing: 6) {
             ForEach(0..<Self.rows, id: \.self) { row in
                 HStack(alignment: .top, spacing: 4) {
                     ForEach(0..<Self.columns, id: \.self) { column in
                         let index = row * Self.columns + column
                         if index < shapes.count {
-                            cell(shapes[index], index: index, isDrawn: drawnPages.contains(page))
+                            cell(shapes[index], index: index, isDrawn: isDrawn, outlineHeight: outlineHeight)
                         } else {
-                            Color.clear.frame(maxWidth: .infinity)
+                            Color.clear.frame(maxWidth: .infinity, maxHeight: 1)
                         }
                     }
                 }
-                .frame(maxHeight: .infinity)
             }
         }
     }
@@ -115,7 +171,8 @@ struct TutorialShapeCatalog: View {
         .accessibilityHidden(true)
     }
 
-    private func cell(_ shape: TutorialCatalogShape, index: Int, isDrawn: Bool) -> some View {
+    private func cell(_ shape: TutorialCatalogShape, index: Int, isDrawn: Bool,
+                      outlineHeight: CGFloat) -> some View {
         VStack(spacing: 3) {
             TutorialCatalogOutline(shape: shape)
                 .trim(from: 0, to: isDrawn ? 1 : 0)
@@ -123,7 +180,7 @@ struct TutorialShapeCatalog: View {
                 // Drawn one after another, as if by hand with the lesson's marker.
                 .animation(reduceMotion ? nil : .easeInOut(duration: 0.5).delay(0.25 + Double(index) * 0.09),
                            value: isDrawn)
-                .frame(minHeight: 16, maxHeight: 28)
+                .frame(height: outlineHeight)
                 .padding(.horizontal, 4)
             Text(L10n.text(shape.nameKey))
                 .font(.system(size: 9, weight: .medium))
@@ -136,6 +193,14 @@ struct TutorialShapeCatalog: View {
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.text(shape.nameKey))
+    }
+}
+
+private struct CatalogFitKey: PreferenceKey {
+    static let defaultValue = 0
+
+    static func reduce(value: inout Int, nextValue: () -> Int) {
+        value = max(value, nextValue())
     }
 }
 
