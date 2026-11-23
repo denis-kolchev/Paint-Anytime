@@ -25,7 +25,13 @@ struct CanvasLayoutEditorView: View {
     /// menus and the checkmark hands it back instead of storing it.
     @ObservedObject var tutorial = TutorialSession.inactive
     var onTutorialSave: ((CanvasControlLayout) -> Void)? = nil
+    /// Global frames of the lesson canvas's native top buttons (••• and the brush). The
+    /// editor's toolbar puts its top circles in the same slots, which move with the watch's
+    /// size and watchOS, so the lesson's row follows them instead of fixed offsets.
+    var tutorialLeadingFrame: CGRect? = nil
+    var tutorialTrailingFrame: CGRect? = nil
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
+    @Environment(\.layoutDirection) private var layoutDirection
 
     @ViewBuilder var body: some View {
         if tutorial.isActive, let onTutorialSave {
@@ -115,11 +121,12 @@ struct CanvasLayoutEditorView: View {
         }
     }
 
-    /// Where the editor's native toolbar slots centre its top circles: about 38 pt from the
-    /// screen's top and 34 pt from its sides (measured from screenshots of the editor on Apple
-    /// Watch Ultra). The canvas's own circles sit a little higher and wider apart (16 + 18, 30).
-    static let tutorialRowTop: CGFloat = 38 - MorphPanelGeometry.buttonDiameter / 2
-    static let tutorialRowInset: CGFloat = 34 - MorphPanelGeometry.buttonDiameter / 2
+    /// Fallback when the lesson has not measured the native top buttons: where the editor's
+    /// toolbar slots centre its top circles on Apple Watch Ultra, about 38 pt from the screen's
+    /// top and 34 pt from its sides. Smaller watches put them nearer the corners (about 25 pt
+    /// on 40 mm with watchOS 26), hence the measured frames.
+    static let tutorialRowCenterY: CGFloat = 38
+    static let tutorialRowCenterInset: CGFloat = 34
 
     /// Reset in the lesson empties both top circles, so the lesson starts the group from nothing.
     private static let tutorialEmptyLayout = CanvasControlLayout(
@@ -132,39 +139,36 @@ struct CanvasLayoutEditorView: View {
     private func tutorialEditor(onSave: @escaping (CanvasControlLayout) -> Void) -> some View {
         ZStack {
             Color.white.ignoresSafeArea()
-            VStack(spacing: MorphPreviewLayout.gap) {
-                HStack {
-                    tutorialSlot(CanvasControlLayout.topLeadingSlot)
-                    Spacer(minLength: 0)
-                    tutorialResetButton
-                    Spacer(minLength: 0)
-                    Button {
-                        guard tutorial.permits([.saveCanvasLayout]) else { return }
-                        onSave(draft)
-                    } label: {
-                        CanvasLayoutCircle {
-                            Image(systemName: "checkmark").foregroundStyle(.green)
-                                .tutorialHint(tutorial, steps: [.saveCanvasLayout])
-                        }
+            // The clock band is hidden, so the row ignores the safe area like the editor's
+            // toolbar buttons do.
+            GeometryReader { proxy in
+                let row = tutorialRow(in: proxy)
+                // Reset and the checkmark split the row in thirds: the editor centres them
+                // over its second and third bottom circles, whose outer ones sit under the corners.
+                let third = CGPoint(x: (row.trailing.x - row.leading.x) / 3, y: (row.trailing.y - row.leading.y) / 3)
+                tutorialSlot(CanvasControlLayout.topLeadingSlot)
+                    .position(row.leading)
+                tutorialResetButton
+                    .position(x: row.leading.x + third.x, y: row.leading.y + third.y)
+                Button {
+                    guard tutorial.permits([.saveCanvasLayout]) else { return }
+                    onSave(draft)
+                } label: {
+                    CanvasLayoutCircle {
+                        Image(systemName: "checkmark").foregroundStyle(.green)
+                            .tutorialHint(tutorial, steps: [.saveCanvasLayout])
                     }
-                    .buttonStyle(.plain)
-                    .allowsHitTesting(tutorial.permits([.saveCanvasLayout]))
-                    .accessibilityLabel(L10n.text("Save and apply"))
-                    Spacer(minLength: 0)
-                    tutorialSlot(0)
                 }
+                .buttonStyle(.plain)
+                .allowsHitTesting(tutorial.permits([.saveCanvasLayout]))
+                .accessibilityLabel(L10n.text("Save and apply"))
+                .position(x: row.trailing.x - third.x, y: row.trailing.y - third.y)
+                tutorialSlot(0)
+                    .position(row.trailing)
                 // Each group's actions in a column below its circle, as in the editor.
-                HStack(alignment: .top) {
-                    tutorialMorphPreview(CanvasControlLayout.topLeadingSlot)
-                    Spacer(minLength: 0)
-                    tutorialMorphPreview(0)
-                }
-                Spacer(minLength: 0)
+                tutorialMorphPreview(CanvasControlLayout.topLeadingSlot, below: row.leading)
+                tutorialMorphPreview(0, below: row.trailing)
             }
-            // Where the canvas draws its top circles (`MorphPanelGeometry`): the clock band is
-            // hidden, so the row ignores the safe area like the editor's toolbar buttons do.
-            .padding(.horizontal, Self.tutorialRowInset)
-            .padding(.top, Self.tutorialRowTop)
             .ignoresSafeArea()
             // No colour scheme of its own: like the editor's, the glass follows the app's.
 
@@ -237,19 +241,41 @@ struct CanvasLayoutEditorView: View {
         .accessibilityLabel(L10n.text("Reset interface"))
     }
 
-    /// A slot's group column, or an empty column of the circle's width.
-    @ViewBuilder private func tutorialMorphPreview(_ index: Int) -> some View {
-        let assignment = draft.slots[index]
-        Group {
-            if assignment.isMorph {
-                morphPreview(assignment, layout: MorphPreviewLayout(row: MorphPreviewLayout.maximumRow, columns: 1))
-                    .transition(.opacity)
-            } else {
-                Color.clear.frame(height: 0)
-            }
+    /// Centres of the lesson's top corner circles in the reader's space: the measured native
+    /// buttons, or the Ultra fallback.
+    private func tutorialRow(in proxy: GeometryProxy) -> (leading: CGPoint, trailing: CGPoint) {
+        let origin = proxy.frame(in: .global).origin
+        let bounds = CGRect(origin: .zero, size: proxy.size).insetBy(dx: 4, dy: 4)
+        func measured(_ frame: CGRect?) -> CGPoint? {
+            guard let frame, !frame.isEmpty else { return nil }
+            let point = CGPoint(x: frame.midX - origin.x, y: frame.midY - origin.y)
+            return bounds.contains(point) ? point : nil
         }
-        .frame(width: MorphPanelGeometry.buttonDiameter)
-        .accessibilityHidden(true)
+        // The toolbar's corners mirror each other, so one measured corner places both. The
+        // lesson may not have measured the other one (on 40 mm the brush stayed unmeasured and
+        // its circle fell back to the Ultra numbers, tilting the row), and two frames taken
+        // at different times need not share a row.
+        let mirrored = { (point: CGPoint) in CGPoint(x: proxy.size.width - point.x, y: point.y) }
+        if let leading = measured(tutorialLeadingFrame) { return (leading, mirrored(leading)) }
+        if let trailing = measured(tutorialTrailingFrame) { return (mirrored(trailing), trailing) }
+        let left = CGPoint(x: Self.tutorialRowCenterInset, y: Self.tutorialRowCenterY)
+        let right = mirrored(left)
+        return layoutDirection == .rightToLeft ? (right, left) : (left, right)
+    }
+
+    /// A slot's group column, hanging below its circle as in the editor.
+    @ViewBuilder private func tutorialMorphPreview(_ index: Int, below center: CGPoint) -> some View {
+        let assignment = draft.slots[index]
+        if assignment.isMorph {
+            let layout = MorphPreviewLayout(row: MorphPreviewLayout.maximumRow, columns: 1)
+            let height = layout.height(count: assignment.actions.count)
+            morphPreview(assignment, layout: layout)
+                .frame(width: MorphPanelGeometry.buttonDiameter)
+                .position(x: center.x,
+                          y: center.y + MorphPanelGeometry.buttonDiameter / 2 + MorphPreviewLayout.gap + height / 2)
+                .transition(.opacity)
+                .accessibilityHidden(true)
+        }
     }
 
     /// watchOS has no centre toolbar placement, so Reset and the checkmark sit

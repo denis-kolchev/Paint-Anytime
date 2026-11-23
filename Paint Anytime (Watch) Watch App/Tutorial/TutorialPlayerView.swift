@@ -793,8 +793,11 @@ struct TutorialPlayerView: View {
         }
         if page == .canvasEditor {
             // The checkmark fades the editor out over the canvas that shows the new button.
+            // The native ••• and brush the lesson measured on the canvas mark where the
+            // editor's toolbar slots sit on this watch.
             CanvasLayoutEditorView(instrument: controller.pencilStyle.instrument, tutorial: tutorial,
-                                   onTutorialSave: { layout in leavePage { player.finishCanvasEditor(layout) } })
+                                   onTutorialSave: { layout in leavePage { player.finishCanvasEditor(layout) } },
+                                   tutorialLeadingFrame: controls[.more], tutorialTrailingFrame: controls[.tools])
             .opacity(isLeavingPage ? 0 : 1)
             .allowsHitTesting(!isLeavingPage)
             .transition(.opacity)
