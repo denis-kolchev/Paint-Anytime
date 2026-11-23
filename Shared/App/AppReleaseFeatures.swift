@@ -13,7 +13,6 @@ struct AppReleaseFeatures {
     var showsCanvasSizeControls: Bool { includesVersion12Tools }
     var showsNamedInkColors: Bool { includesVersion12Tools }
     /// Apple Intelligence sketch completion through the iPhone app.
-    /// TEMPORARY: enabled from 1.2 for testing; restore `includesVersion13Tools` before release.
     var showsSketchAssist: Bool { includesVersion12Tools }
     let showsPhotoTransferControls: Bool
 
