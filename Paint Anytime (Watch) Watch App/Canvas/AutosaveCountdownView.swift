@@ -80,6 +80,8 @@ struct CanvasStatusOverlay: View {
     static let clockCenterY: CGFloat = 27
     /// Gap between the countdown and the zoom label below it.
     private static let rowGap: CGFloat = 4
+    /// Space kept between the zoom capsule and each top circle.
+    private static let circleGap: CGFloat = 6
     let autosave: CanvasAutosave
     let showsCountdown: Bool
     let zoom: CanvasZoomReadout
@@ -98,25 +100,30 @@ struct CanvasStatusOverlay: View {
             // Fixed screen height of the hidden clock's center (measured on Apple Watch
             // Ultra). Toolbar frames are not used: they differ in the free camera.
             let clockY = Self.clockCenterY - frame.minY
+            // The width between the top circles, where the canvas lays them out.
+            let circles = MorphPanelGeometry(size: overlay.size, layoutDirection: .leftToRight)
+            let labelWidth = max(0, circles.trailingX - circles.leadingX - circles.diameter - 2 * Self.circleGap)
             if let timerRange {
                 // Stacked, so no text size makes them overlap. An invisible copy of the
                 // label above keeps the countdown itself centered at the clock's height.
                 VStack(spacing: Self.rowGap) {
                     if let percent {
-                        CanvasZoomLabel(percent: percent)
+                        CanvasZoomLabel(percent: percent, maxWidth: labelWidth)
                             .hidden()
                             .accessibilityHidden(true)
                     }
                     AutosaveCountdownView(timerRange: timerRange, isSaving: isSaving, progress: autosaveProgress)
+                        .fixedSize()
                     if let percent {
-                        CanvasZoomLabel(percent: percent)
+                        CanvasZoomLabel(percent: percent, maxWidth: labelWidth)
                             .transition(.opacity)
                     }
                 }
-                .fixedSize()
+                // Width stays proposed, so a long zoom label can shrink its digits.
+                .fixedSize(horizontal: false, vertical: true)
                 .position(x: overlay.size.width / 2, y: clockY)
             } else if let percent {
-                CanvasZoomLabel(percent: percent)
+                CanvasZoomLabel(percent: percent, maxWidth: labelWidth)
                     .position(x: overlay.size.width / 2, y: clockY)
                     .transition(.opacity)
             }

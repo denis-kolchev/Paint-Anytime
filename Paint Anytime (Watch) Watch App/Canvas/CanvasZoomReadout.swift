@@ -21,8 +21,11 @@ final class CanvasZoomReadout {
 }
 
 /// Zoom percent in the same capsule as the autosave countdown.
+/// Long percents shrink only the digits, so the capsule keeps its height and stays
+/// within `maxWidth` (the space between the top circles).
 struct CanvasZoomLabel: View {
     let percent: Int
+    var maxWidth: CGFloat = .infinity
 
     var body: some View {
         HStack(spacing: 3) {
@@ -30,13 +33,16 @@ struct CanvasZoomLabel: View {
                 .accessibilityHidden(true)
             Text(verbatim: "\(percent)%")
                 .monospacedDigit()
-                .fixedSize()
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
         }
         .font(.caption2)
         .foregroundStyle(.primary)
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
         .background(.regularMaterial, in: Capsule())
+        // After the background: the capsule hugs the text, the frame only caps its width.
+        .frame(maxWidth: maxWidth)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(L10n.format("Zoom %d percent", percent))
         .allowsHitTesting(false)
