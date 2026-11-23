@@ -32,6 +32,8 @@ struct CanvasQuickSettingsView: View {
         case .share: CanvasShareView(controller: controller, viewportSize: viewportSize)
         // The More menu's Canvas → Reference page: show or hide it and pick its image.
         case .reference: ReferenceSettingsView(controller: controller, viewportSize: viewportSize)
+        // The More menu's Canvas → Display page: how zoomed-in pixels are drawn.
+        case .display: DisplaySettingsView()
         default: EmptyView()
         }
     }
