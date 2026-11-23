@@ -1142,6 +1142,8 @@ private struct TutorialChaptersView: View {
                 }
             }
         }
+        // Keeps each icon centred against a title that wraps to several lines.
+        .labelStyle(CenteredMenuLabelStyle())
         .navigationTitle(L10n.text("Tutorial"))
         .toolbarTitleDisplayMode(.inline)
         .sheet(item: $resumeQuestion, onDismiss: {

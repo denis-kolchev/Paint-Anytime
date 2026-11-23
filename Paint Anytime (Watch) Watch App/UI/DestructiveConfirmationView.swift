@@ -68,13 +68,23 @@ struct DestructiveConfirmationView: View {
 
 /// Share spare width equally after measuring the localized button labels, so a long
 /// label takes the room a short one does not need instead of shrinking or truncating.
-/// Also used by the tutorial's Later / Continue question.
+/// When both labels cannot fit side by side at all, the buttons stack full-width in
+/// their source order, so no label is ever cut off.
+/// Also used by the tutorial's Later / Continue and resume questions.
 struct ConfirmationButtonsLayout: Layout {
     let layoutDirection: LayoutDirection
     private let spacing: CGFloat = 8
 
-    private func widths(for proposedWidth: CGFloat?, subviews: Subviews) -> [CGFloat] {
-        let ideal = subviews.map { $0.sizeThatFits(.unspecified).width }
+    private func idealWidths(_ subviews: Subviews) -> [CGFloat] {
+        subviews.map { $0.sizeThatFits(.unspecified).width }
+    }
+
+    private func stacks(in proposedWidth: CGFloat?, ideal: [CGFloat]) -> Bool {
+        guard ideal.count == 2, let proposedWidth else { return false }
+        return ideal[0] + ideal[1] + spacing > proposedWidth
+    }
+
+    private func widths(for proposedWidth: CGFloat?, ideal: [CGFloat]) -> [CGFloat] {
         guard ideal.count == 2 else { return ideal }
         let available = max(0, (proposedWidth ?? (ideal[0] + ideal[1] + spacing)) - spacing)
         let minimum = min(44, available / 2)
@@ -83,7 +93,12 @@ struct ConfirmationButtonsLayout: Layout {
     }
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        let widths = widths(for: proposal.width, subviews: subviews)
+        let ideal = idealWidths(subviews)
+        if stacks(in: proposal.width, ideal: ideal), let width = proposal.width {
+            let heights = subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)).height }
+            return CGSize(width: width, height: heights.reduce(0, +) + spacing * CGFloat(heights.count - 1))
+        }
+        let widths = widths(for: proposal.width, ideal: ideal)
         let height = zip(subviews, widths).map { view, width in
             view.sizeThatFits(ProposedViewSize(width: width, height: nil)).height
         }.max() ?? 0
@@ -91,7 +106,18 @@ struct ConfirmationButtonsLayout: Layout {
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
-        let widths = widths(for: bounds.width, subviews: subviews)
+        let ideal = idealWidths(subviews)
+        if stacks(in: bounds.width, ideal: ideal) {
+            var y = bounds.minY
+            for view in subviews {
+                let height = view.sizeThatFits(ProposedViewSize(width: bounds.width, height: nil)).height
+                view.place(at: CGPoint(x: bounds.midX, y: y), anchor: .top,
+                           proposal: ProposedViewSize(width: bounds.width, height: height))
+                y += height + spacing
+            }
+            return
+        }
+        let widths = widths(for: bounds.width, ideal: ideal)
         var offset: CGFloat = 0
         for (view, width) in zip(subviews, widths) {
             let x = layoutDirection == .rightToLeft
