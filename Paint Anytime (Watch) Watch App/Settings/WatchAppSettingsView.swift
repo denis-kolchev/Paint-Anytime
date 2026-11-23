@@ -79,6 +79,7 @@ struct WatchAppSettingsView: View {
         .navigationTitle(tutorial.isActive ? "" : L10n.text("More"))
         .toolbarTitleDisplayMode(.inline)
         .toolbar { closeToolbar }
+        #if DEBUG
         .alert(L10n.text("Show the welcome screen again?"), isPresented: $confirmsStartOver) {
             Button(L10n.text("Start over")) {
                 // Close the menu, then show the first-launch questions over the kept editor.
@@ -89,6 +90,7 @@ struct WatchAppSettingsView: View {
         } message: {
             Text(L10n.text("The language and tutorial questions will appear again. Your drawings and the current canvas stay as they are."))
         }
+        #endif
     }
 
     @ViewBuilder
@@ -131,11 +133,6 @@ struct WatchAppSettingsView: View {
             } label: {
                 Label(L10n.text("Tutorial"), systemImage: "graduationcap")
             }
-            if restartWelcome != nil {
-                Button { confirmsStartOver = true } label: {
-                    Label(L10n.text("Start over"), systemImage: "arrow.counterclockwise")
-                }
-            }
             NavigationLink {
                 AutosaveSettingsView()
             } label: {
@@ -154,6 +151,14 @@ struct WatchAppSettingsView: View {
             Button(action: reportBug) {
                 Label(L10n.text("Report a bug"), systemImage: "envelope")
             }
+            #if DEBUG
+            // Debug builds only: replays the first-launch questions.
+            if restartWelcome != nil {
+                Button { confirmsStartOver = true } label: {
+                    Label(L10n.text("Start over"), systemImage: "arrow.counterclockwise")
+                }
+            }
+            #endif
             if RenderDebug.isEnabled {
                 // Debug builds only; not localized.
                 NavigationLink {
