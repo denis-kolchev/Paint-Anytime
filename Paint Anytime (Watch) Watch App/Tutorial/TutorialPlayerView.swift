@@ -1011,13 +1011,19 @@ struct TutorialPlayerView: View {
     /// saves it to the tutorial gallery and shows the save at once; otherwise each minute
     /// ends with the same save animation, without a new picture.
     @MainActor private func updatePracticeTimer() async {
+        // A replaced request can still start after its successor was scheduled: ✓ on Canvas
+        // size moves the step and then the page in one update, so the request for the old
+        // page starts already cancelled, on the canvas. Its save rendered a large canvas in
+        // strips, which stop on cancellation, and the flag kept the next request from saving.
+        guard !Task.isCancelled else { return }
         if !savesPracticeDrawing { practiceSavedForStep = false }
         guard runsPracticeTimer else { return }
         if practiceTimerRange == nil { restartPracticeTimer() }
-        if savesPracticeDrawing, !practiceSavedForStep {
+        // Synchronous on the main actor, so the request cannot be cancelled while it saves.
+        // The copy goes to the tutorial gallery, for the selection lesson.
+        if savesPracticeDrawing, !practiceSavedForStep,
+           player.autosave(size: canvasSize, scale: displayScale) {
             practiceSavedForStep = true
-            // The copy goes to the tutorial gallery, for the selection lesson.
-            player.autosave(size: canvasSize, scale: displayScale)
             guard await showPracticeSave() else { return }
         }
         while let range = practiceTimerRange {

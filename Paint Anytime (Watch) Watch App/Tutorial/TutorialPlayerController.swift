@@ -295,9 +295,11 @@ final class TutorialPlayerController: ObservableObject {
     /// The tour's practice autosave: a copy of the drawing in the tutorial gallery only, so the
     /// selection lesson shows it. Unlike Save, it never reaches the user's gallery. The whole
     /// document is saved, so a copy after the canvas size lesson keeps the new size.
-    func autosave(size: CGSize, scale: CGFloat) {
-        guard page == .canvas, canvas.canClear else { return }
-        _ = try? CanvasExporter.save(document: canvas.document, size: size, scale: scale, in: folder)
+    /// Returns whether a copy was written.
+    @discardableResult
+    func autosave(size: CGSize, scale: CGFloat) -> Bool {
+        guard page == .canvas, canvas.canClear else { return false }
+        return (try? CanvasExporter.save(document: canvas.document, size: size, scale: scale, in: folder)) != nil
     }
 
     func openDrawingSettings() {
