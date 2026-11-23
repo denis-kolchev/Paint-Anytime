@@ -12,8 +12,6 @@ struct CustomCanvasControls: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let anchors: [CanvasToolbarControl] = [.tools, .clear, .undo, .redo, .save, .more]
-    /// Fallback bottom-row center, measured from the bottom edge.
-    static let bottomRowCenterInset: CGFloat = 38
 
     /// Top slots expand downwards, the bottom row upwards.
     static func isTop(_ index: Int) -> Bool {
@@ -109,7 +107,7 @@ struct CustomCanvasControls: View {
     static func slotCenter(_ index: Int, geometry: MorphPanelGeometry, regions: CanvasControlRegions,
                            canvasOrigin: CGPoint) -> CGPoint {
         let size = geometry.size
-        if let frame = regions.toolbarAnchors[Self.anchors[index]], !frame.isEmpty {
+        if usesNativeAnchor(index), let frame = regions.toolbarAnchors[Self.anchors[index]], !frame.isEmpty {
             let point = CGPoint(x: frame.midX - canvasOrigin.x, y: frame.midY - canvasOrigin.y)
             // The canvas hides the native bars for this layout; a hidden bar reports its slots
             // off screen (the bottom row vanished below the edge). Use only on-screen anchors.
@@ -124,14 +122,24 @@ struct CustomCanvasControls: View {
         }
         if index == 0 { return CGPoint(x: geometry.trailingX, y: geometry.top + 18) }
         if index == CanvasControlLayout.topLeadingSlot { return CGPoint(x: geometry.leadingX, y: geometry.top + 18) }
-        // Bottom row as the native bottom bar lays it out (Canvas Editor): the outer circles
-        // straight below the top ones, equal spacing between, center about 38 pt above the
-        // bottom edge on Apple Watch Ultra (from device screenshots).
+        // Bottom row as the Canvas Editor lays it out: the outer circles straight below the
+        // top ones, equal spacing between, and the row mirrors the top row vertically
+        // (as far from the bottom edge as the top circles are from the top edge).
         let leading = slotCenter(CanvasControlLayout.topLeadingSlot, geometry: geometry, regions: regions,
                                  canvasOrigin: canvasOrigin).x
-        let trailing = slotCenter(0, geometry: geometry, regions: regions, canvasOrigin: canvasOrigin).x
-        return CGPoint(x: leading + (trailing - leading) * CGFloat(index - 1) / 3,
-                       y: size.height - Self.bottomRowCenterInset)
+        let top = slotCenter(0, geometry: geometry, regions: regions, canvasOrigin: canvasOrigin)
+        return CGPoint(x: leading + (top.x - leading) * CGFloat(index - 1) / 3,
+                       y: size.height - top.y)
+    }
+
+    /// Before watchOS 26 the bottom bar does not spread four items with spacers across the
+    /// screen: the hidden bar reports them packed toward the leading edge (watchOS 10 and 11
+    /// simulators), which shifted the row and the reference thumbnail above it. There the
+    /// bottom row uses the layout derived from the top circles instead.
+    private static func usesNativeAnchor(_ index: Int) -> Bool {
+        if isTop(index) { return true }
+        if #available(watchOS 26, *) { return true }
+        return false
     }
 }
 
