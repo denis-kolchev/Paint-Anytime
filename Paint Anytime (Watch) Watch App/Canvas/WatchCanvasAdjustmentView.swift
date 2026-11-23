@@ -335,25 +335,31 @@ struct WatchCanvasAdjustmentView: View {
         // so the value row stays above the tutorial's lesson card instead of being pushed under it.
         let columnRoom = availableHeight - 42 - 8 - 26 - (4 + 28) - (tutorial.isActive ? 0 : 4 + 28)
         let slot = max(0, columnRoom / 3)
+        // Three full circles need their 32 pt slots; with less room (40 mm above the lesson
+        // card) a column would shrink them until they touch, so they stand in a triangle.
+        let usesTriangle = columnRoom < Self.fullColumnHeight
         return VStack(spacing: 4) {
             // Options stand beside the preview, as the presets do in perspective guides.
             HStack(spacing: 8) {
                 canvasPreview
                 // The tour teaches only the size and the frame; the options stay as set.
-                VStack(spacing: 0) {
-                    roundButton(slot: slot, "Scale proportionally", symbol: "link", isOn: proportional,
-                                isSlashed: !proportional) { proportional.toggle() }
-                        .frame(maxHeight: .infinity)
-                    roundButton(slot: slot, "Resample image", symbol: "arrow.up.left.and.arrow.down.right",
-                                isOn: resample) { resample.toggle() }
-                        .frame(maxHeight: .infinity)
-                    roundButton(slot: slot, "Rotate", symbol: "rotate.left", isOn: false, action: rotateLeft)
-                        .frame(maxHeight: .infinity)
+                Group {
+                    if usesTriangle {
+                        optionTriangle()
+                            .frame(maxHeight: .infinity)
+                    } else {
+                        VStack(spacing: 0) {
+                            linkButton(slot: slot).frame(maxHeight: .infinity)
+                            resampleButton(slot: slot).frame(maxHeight: .infinity)
+                            rotateButton(slot: slot).frame(maxHeight: .infinity)
+                        }
+                    }
                 }
                 .disabled(tutorial.isActive)
                 // Clear the toolbar's checkmark, which overlaps the top of this column.
                 .padding(.top, 26)
-                .frame(width: 48)
+                // The triangle takes its width from the preview, so each circle gets a finger's room.
+                .frame(width: usesTriangle ? 2 * Self.triangleHit : 48)
             }
             .frame(maxHeight: .infinity)
             valueRow(value: resizeValue, range: resizeRange, valueTitle: resizeValueTitle,
@@ -436,10 +442,47 @@ struct WatchCanvasAdjustmentView: View {
     }
 
 
+    /// Three circles in their full 32 pt slots, the column's height before they start to shrink.
+    private static let fullColumnHeight: CGFloat = 3 * 32
+    /// Each triangle button's touch area: wider than the column's, so a finger can aim.
+    private static let triangleHit: CGFloat = 38
+
+    /// Proportional on top, Resample and Rotate side by side below it, at the corners of an
+    /// equilateral triangle. Full-size circles in 38 pt touch areas.
+    private func optionTriangle() -> some View {
+        let hit = Self.triangleHit
+        // The pair's centres are `hit` apart, so the apex rises √3/2 of that above them.
+        let rise = hit * 3.squareRoot() / 2
+        // `slot` is the touch area's height; at 38 pt `roundButton` keeps the circle full size.
+        return ZStack(alignment: .top) {
+            HStack(spacing: 0) {
+                resampleButton(slot: hit, hitWidth: hit)
+                rotateButton(slot: hit, hitWidth: hit)
+            }
+            .padding(.top, rise)
+            linkButton(slot: hit, hitWidth: hit)
+        }
+        .frame(width: 2 * hit)
+    }
+
+    private func linkButton(slot: CGFloat, hitWidth: CGFloat = 44) -> some View {
+        roundButton(slot: slot, hitWidth: hitWidth, "Scale proportionally", symbol: "link", isOn: proportional,
+                    isSlashed: !proportional) { proportional.toggle() }
+    }
+
+    private func resampleButton(slot: CGFloat, hitWidth: CGFloat = 44) -> some View {
+        roundButton(slot: slot, hitWidth: hitWidth, "Resample image", symbol: "arrow.up.left.and.arrow.down.right",
+                    isOn: resample) { resample.toggle() }
+    }
+
+    private func rotateButton(slot: CGFloat, hitWidth: CGFloat = 44) -> some View {
+        roundButton(slot: slot, hitWidth: hitWidth, "Rotate", symbol: "rotate.left", isOn: false, action: rotateLeft)
+    }
+
     /// The same round button as the perspective guide presets; filled while its option is on.
     /// `slot` is the column height each button gets; a short screen above the lesson card
     /// shrinks the circle instead of overflowing the page.
-    private func roundButton(slot: CGFloat, _ title: String, symbol: String, isOn: Bool, isSlashed: Bool = false,
+    private func roundButton(slot: CGFloat, hitWidth: CGFloat = 44, _ title: String, symbol: String, isOn: Bool, isSlashed: Bool = false,
                              action: @escaping () -> Void) -> some View {
         let circleScale = min(1, max(0.6, (slot - 4) / 28))
         return Button(action: action) {
@@ -471,7 +514,7 @@ struct WatchCanvasAdjustmentView: View {
                 }
                 .scaleEffect(circleScale)
                 .frame(width: 28 * circleScale, height: 28 * circleScale)
-                .frame(width: 44, height: min(44, max(28 * circleScale, slot)))
+                .frame(width: hitWidth, height: min(44, max(28 * circleScale, slot)))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
