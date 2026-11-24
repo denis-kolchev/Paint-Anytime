@@ -19,6 +19,11 @@ struct CanvasLayoutEditorView: View {
     @State private var isSaving = false
     /// Debug builds: on-screen touch readout for Reset and the checkmark.
     @State private var touchDebug: CanvasLayoutTouchDebug? = RenderDebug.isEnabled ? CanvasLayoutTouchDebug() : nil
+    @ObservedObject private var renderDebug = RenderDebugSettings.shared
+    /// The touch readout, unless Render debug → Debug info on screen is off.
+    private var visibleTouchDebug: CanvasLayoutTouchDebug? {
+        renderDebug.showsDebugInfo ? touchDebug : nil
+    }
     /// Global frames of Reset and the checkmark.
     @State private var topActionFrames: [CanvasLayoutTopAction: CGRect] = [:]
     /// The tutorial shows the editor as its own page: the draft starts from the original
@@ -85,7 +90,7 @@ struct CanvasLayoutEditorView: View {
         // taps of anything drawn beneath it inside the stack.
         .overlay { topActions }
         .overlay {
-            if let touchDebug {
+            if let touchDebug = visibleTouchDebug {
                 CanvasLayoutTouchDebugPanel(debug: touchDebug, isClockHiddenRequested: editingSlot == nil)
                     .padding(.horizontal, 30)
             }
@@ -185,7 +190,7 @@ struct CanvasLayoutEditorView: View {
 
             // Debug builds: touches, actions and frames (global points) for screenshots,
             // between the row and the lesson card. "m"/"t" are the canvas's measured ••• and brush.
-            if let touchDebug, editingSlot == nil {
+            if let touchDebug = visibleTouchDebug, editingSlot == nil {
                 CanvasLayoutTouchDebugPanel(
                     debug: touchDebug, isClockHiddenRequested: true,
                     probes: ["slotL", "reset", "save", "slotR", "bg"],

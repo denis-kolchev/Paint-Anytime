@@ -32,10 +32,19 @@ enum RenderHUDPosition: CaseIterable {
 }
 
 /// Main-actor mirror of the render debug switches for SwiftUI. The renderer reads
-/// `RenderStageSwitches` directly. Nothing persists: every launch starts from the defaults.
+/// `RenderStageSwitches` directly. Only `showsDebugInfo` persists; everything else
+/// starts from the defaults on every launch.
 final class RenderDebugSettings: ObservableObject {
     static let shared = RenderDebugSettings()
 
+    private static let showsDebugInfoKey = "renderDebug.showsDebugInfo"
+
+    /// Master switch for every on-screen debug readout: the speed HUD, the gallery
+    /// tap and transition panels, and the canvas layout touch panel. Off: none is drawn.
+    @Published var showsDebugInfo: Bool = RenderDebug.isEnabled
+        && (UserDefaults.standard.object(forKey: RenderDebugSettings.showsDebugInfoKey) as? Bool ?? true) {
+        didSet { UserDefaults.standard.set(showsDebugInfo, forKey: Self.showsDebugInfoKey) }
+    }
     @Published var showsHUD = RenderDebug.isEnabled
     @Published var hudPosition = RenderHUDPosition.top
     @Published private(set) var disabledStages = RenderStageSwitches.shared.disabledStages
@@ -68,9 +77,17 @@ struct RenderDebugSettingsView: View {
     var body: some View {
         List {
             Section {
+                Toggle(isOn: $settings.showsDebugInfo) {
+                    Text(verbatim: "Debug info on screen")
+                }
+            } footer: {
+                Text(verbatim: "Off: no debug panel is drawn anywhere — speed HUD, gallery tap and transition timelines, layout editor touches.")
+            }
+            Section {
                 Toggle(isOn: $settings.showsHUD) {
                     Text(verbatim: "Speed HUD")
                 }
+                .disabled(!settings.showsDebugInfo)
                 Picker(selection: $settings.hudPosition) {
                     ForEach(RenderHUDPosition.allCases, id: \.self) { position in
                         Text(verbatim: position.title).tag(position)
@@ -78,6 +95,7 @@ struct RenderDebugSettingsView: View {
                 } label: {
                     Text(verbatim: "HUD position")
                 }
+                .disabled(!settings.showsDebugInfo)
             } footer: {
                 Text(verbatim: "FPS: published frames/s. drop: frames replaced before rendering. ev: touch event → handler. disp: handler → frame queued. pub: queued → published. e2e: touch event → published; the screen shows it 1–2 vsyncs later. Stage times are averages in ms. main lag: wait of a main-queue probe every 50 ms. body: view re-evaluations/s. heat, LPM, mem, WC: thermal state, Low Power Mode, footprint, pending iPhone transfers.")
             }

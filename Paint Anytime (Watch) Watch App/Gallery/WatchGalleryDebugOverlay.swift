@@ -4,10 +4,17 @@ import SwiftUI
 /// Poll isolated diagnostic state; never invalidate the gallery for a label tick.
 struct WatchGalleryDebugOverlay: View {
     let snapshot: () -> String
+    @ObservedObject private var renderDebug = RenderDebugSettings.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var text = "Input —"
 
     var body: some View {
+        if renderDebug.showsDebugInfo {
+            panel
+        }
+    }
+
+    private var panel: some View {
         Text(verbatim: text)
             .font(.system(size: 8, weight: .medium, design: .monospaced))
             .foregroundStyle(.white)
@@ -29,13 +36,14 @@ struct WatchGalleryDebugOverlay: View {
 /// so neither the gallery stack nor the menu timeline covers it.
 struct WatchGalleryTapHUD: View {
     @Environment(\.scenePhase) private var scenePhase
+    @ObservedObject private var renderDebug = RenderDebugSettings.shared
     @State private var text: String?
 
     var body: some View {
         // A real container, not Group: modifiers on an empty Group are dropped,
         // so `.task` never started and the panel stayed hidden.
         ZStack {
-            if let text {
+            if let text, renderDebug.showsDebugInfo {
                 Text(verbatim: text)
                     .font(.system(size: 8, weight: .medium, design: .monospaced))
                     .foregroundStyle(.yellow)
@@ -46,14 +54,20 @@ struct WatchGalleryTapHUD: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-        .task(id: scenePhase) {
-            guard scenePhase == .active, WatchGalleryDiagnostics.tapPanelEnabled else { return }
+        .task(id: TaskKey(phase: scenePhase, isShown: renderDebug.showsDebugInfo)) {
+            guard scenePhase == .active, renderDebug.showsDebugInfo,
+                  WatchGalleryDiagnostics.tapPanelEnabled else { return }
             while !Task.isCancelled {
                 let next = WatchGalleryDiagnostics.shared.tapSnapshot?()
                 if next != text { text = next }
                 do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
             }
         }
+    }
+
+    private struct TaskKey: Equatable {
+        let phase: ScenePhase
+        let isShown: Bool
     }
 }
 #endif

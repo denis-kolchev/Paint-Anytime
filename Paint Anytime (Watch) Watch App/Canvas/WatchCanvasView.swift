@@ -403,7 +403,7 @@ struct WatchCanvasView: View {
                 if fillRequestID != nil { ProgressView().allowsHitTesting(false) }
             }
             .overlay(alignment: renderDebug.hudPosition.alignment) {
-                if RenderDebug.isEnabled, renderDebug.showsHUD, rendersArtwork {
+                if RenderDebug.isEnabled, renderDebug.showsDebugInfo, renderDebug.showsHUD, rendersArtwork {
                     RenderDebugOverlay()
                         .padding(renderDebug.hudPosition.insets)
                 }

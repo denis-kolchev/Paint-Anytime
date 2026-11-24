@@ -241,8 +241,10 @@ final class MenuGalleryTransitionDiagnostics {
 /// Drawn both inside the menu sheet (which covers the app) and over the canvas
 /// stack, so the timeline stays visible across the whole transition.
 struct MenuGalleryTransitionHUD: View {
+    @ObservedObject private var renderDebug = RenderDebugSettings.shared
+
     var body: some View {
-        if MenuGalleryTransitionDiagnostics.isEnabled {
+        if MenuGalleryTransitionDiagnostics.isEnabled, renderDebug.showsDebugInfo {
             let diagnostics = MenuGalleryTransitionDiagnostics.shared
             TimelineView(.animation(minimumInterval: nil, paused: !diagnostics.isRecording)) { _ in
                 let _ = diagnostics.frame()
