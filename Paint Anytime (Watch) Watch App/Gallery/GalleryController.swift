@@ -43,7 +43,8 @@ final class GalleryController: ObservableObject {
             if folder == nil {
                 // The same switch, bundled fixtures, installation rules and image
                 // list as WatchPhotoInbox on iPhone. Only Watch metadata is added.
-                let samples = try DebugGallerySamples.images()
+                let samples = try DebugGallerySamples.images(
+                    includingTutorial: RenderDebugSettings.shared.showsTutorialSamples)
                 if !samples.isEmpty {
                     loaded += try CanvasExportStore.exports(for: samples, in: DebugGallerySamples.directory())
                 }

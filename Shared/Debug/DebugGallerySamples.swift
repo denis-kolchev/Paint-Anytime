@@ -12,18 +12,26 @@ enum DebugGallerySamples {
     }
 
     static func contains(_ url: URL) -> Bool {
-        guard GalleryDebug.isEnabled, let folder = try? directory() else { return false }
+        #if DEBUG
+        guard let folder = try? directory() else { return false }
         return url.deletingLastPathComponent().standardizedFileURL == folder.standardizedFileURL
+        #else
+        return false
+        #endif
     }
 
-    static func images() throws -> [URL] {
-        guard GalleryDebug.isEnabled else { return [] }
+    /// `GalleryDebug` lists every fixture. Without it, `includingTutorial` lists only the
+    /// `TutorialSample_` images (Watch: Render debug → Tutorial images in gallery).
+    static func images(includingTutorial: Bool = false) throws -> [URL] {
+        let includesProjects = GalleryDebug.isEnabled
+        guard includesProjects || includingTutorial else { return [] }
         #if DEBUG
+        func isListed(_ url: URL) -> Bool { includesProjects || isTutorialName(url) }
         guard let resources = Bundle.main.resourceURL?.appendingPathComponent("DebugGallerySamples"),
               FileManager.default.fileExists(atPath: resources.path) else { return [] }
         let folder = try directory()
         let sources = try FileManager.default.contentsOfDirectory(at: resources, includingPropertiesForKeys: nil)
-            .filter { [PaintProject.fileExtension, "png"].contains($0.pathExtension.lowercased()) }
+            .filter { [PaintProject.fileExtension, "png"].contains($0.pathExtension.lowercased()) && isListed($0) }
             .sorted(by: orderedBefore)
         for source in sources {
             let name = source.deletingPathExtension().lastPathComponent
@@ -44,7 +52,7 @@ enum DebugGallerySamples {
             }
         }
         return try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
-            .filter { $0.pathExtension == "png" }
+            .filter { $0.pathExtension == "png" && isListed($0) }
             .sorted(by: orderedBefore)
         #else
         return []
@@ -55,14 +63,17 @@ enum DebugGallerySamples {
     /// Keep the ordinary descending filename order within each group.
     nonisolated static func orderedBefore(_ lhs: URL, _ rhs: URL) -> Bool {
         func isTutorial(_ url: URL) -> Bool {
-            GalleryDebug.isEnabled
-                && url.deletingLastPathComponent().lastPathComponent.hasPrefix("DebugGallerySamples")
-                && url.lastPathComponent.hasPrefix("TutorialSample_")
+            url.deletingLastPathComponent().lastPathComponent.hasPrefix("DebugGallerySamples")
+                && isTutorialName(url)
         }
         let leftIsTutorial = isTutorial(lhs)
         let rightIsTutorial = isTutorial(rhs)
         if leftIsTutorial != rightIsTutorial { return leftIsTutorial }
         return lhs.lastPathComponent > rhs.lastPathComponent
+    }
+
+    nonisolated static func isTutorialName(_ url: URL) -> Bool {
+        url.lastPathComponent.hasPrefix("TutorialSample_")
     }
 
     static func remove(_ image: URL) throws {

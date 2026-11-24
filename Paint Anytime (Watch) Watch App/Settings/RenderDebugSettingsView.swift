@@ -38,12 +38,19 @@ final class RenderDebugSettings: ObservableObject {
     static let shared = RenderDebugSettings()
 
     private static let showsDebugInfoKey = "renderDebug.showsDebugInfo"
+    private static let showsTutorialSamplesKey = "renderDebug.showsTutorialSamples"
 
     /// Master switch for every on-screen debug readout: the speed HUD, the gallery
     /// tap and transition panels, and the canvas layout touch panel. Off: none is drawn.
     @Published var showsDebugInfo: Bool = RenderDebug.isEnabled
         && (UserDefaults.standard.object(forKey: RenderDebugSettings.showsDebugInfoKey) as? Bool ?? true) {
         didSet { UserDefaults.standard.set(showsDebugInfo, forKey: Self.showsDebugInfoKey) }
+    }
+    /// The bundled `TutorialSample_` drawings, listed first in the gallery.
+    /// Applies the next time the gallery is opened.
+    @Published var showsTutorialSamples: Bool = RenderDebug.isEnabled
+        && (UserDefaults.standard.object(forKey: RenderDebugSettings.showsTutorialSamplesKey) as? Bool ?? true) {
+        didSet { UserDefaults.standard.set(showsTutorialSamples, forKey: Self.showsTutorialSamplesKey) }
     }
     @Published var showsHUD = RenderDebug.isEnabled
     @Published var hudPosition = RenderHUDPosition.top
@@ -82,6 +89,13 @@ struct RenderDebugSettingsView: View {
                 }
             } footer: {
                 Text(verbatim: "Off: no debug panel is drawn anywhere — speed HUD, gallery tap and transition timelines, layout editor touches.")
+            }
+            Section {
+                Toggle(isOn: $settings.showsTutorialSamples) {
+                    Text(verbatim: "Tutorial images in gallery")
+                }
+            } footer: {
+                Text(verbatim: "The bundled tutorial drawings at the top of the gallery. Applies when the gallery is opened next.")
             }
             Section {
                 Toggle(isOn: $settings.showsHUD) {
