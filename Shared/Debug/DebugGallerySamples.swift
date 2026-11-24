@@ -21,12 +21,13 @@ enum DebugGallerySamples {
     }
 
     /// `GalleryDebug` lists every fixture. Without it, `includingTutorial` lists only the
-    /// `TutorialSample_` images (Watch: Render debug → Tutorial images in gallery).
+    /// `TutorialSample_` images and the `ExampleSample_` projects
+    /// (Watch: Render debug → Tutorial images in gallery).
     static func images(includingTutorial: Bool = false) throws -> [URL] {
         let includesProjects = GalleryDebug.isEnabled
         guard includesProjects || includingTutorial else { return [] }
         #if DEBUG
-        func isListed(_ url: URL) -> Bool { includesProjects || isTutorialName(url) }
+        func isListed(_ url: URL) -> Bool { includesProjects || isTutorialName(url) || isExampleName(url) }
         guard let resources = Bundle.main.resourceURL?.appendingPathComponent("DebugGallerySamples"),
               FileManager.default.fileExists(atPath: resources.path) else { return [] }
         let folder = try directory()
@@ -59,21 +60,31 @@ enum DebugGallerySamples {
         #endif
     }
 
-    /// Tutorial fixtures precede the project fixtures, regardless of their older dates.
-    /// Keep the ordinary descending filename order within each group.
+    /// Tutorial fixtures come first, then the example projects, then everything else,
+    /// regardless of their dates. Examples keep their numbered `ExampleSample_<n>_` order;
+    /// the other groups keep the ordinary descending filename order.
     nonisolated static func orderedBefore(_ lhs: URL, _ rhs: URL) -> Bool {
-        func isTutorial(_ url: URL) -> Bool {
-            url.deletingLastPathComponent().lastPathComponent.hasPrefix("DebugGallerySamples")
-                && isTutorialName(url)
+        func group(_ url: URL) -> Int {
+            guard url.deletingLastPathComponent().lastPathComponent.hasPrefix("DebugGallerySamples") else { return 2 }
+            if isTutorialName(url) { return 0 }
+            if isExampleName(url) { return 1 }
+            return 2
         }
-        let leftIsTutorial = isTutorial(lhs)
-        let rightIsTutorial = isTutorial(rhs)
-        if leftIsTutorial != rightIsTutorial { return leftIsTutorial }
+        let leftGroup = group(lhs)
+        let rightGroup = group(rhs)
+        if leftGroup != rightGroup { return leftGroup < rightGroup }
+        if leftGroup == 1 {
+            return lhs.lastPathComponent.localizedStandardCompare(rhs.lastPathComponent) == .orderedAscending
+        }
         return lhs.lastPathComponent > rhs.lastPathComponent
     }
 
     nonisolated static func isTutorialName(_ url: URL) -> Bool {
         url.lastPathComponent.hasPrefix("TutorialSample_")
+    }
+
+    nonisolated static func isExampleName(_ url: URL) -> Bool {
+        url.lastPathComponent.hasPrefix("ExampleSample_")
     }
 
     static func remove(_ image: URL) throws {

@@ -47,7 +47,8 @@ final class RenderDebugSettings: ObservableObject {
         && (UserDefaults.standard.object(forKey: RenderDebugSettings.showsDebugInfoKey) as? Bool ?? true) {
         didSet { UserDefaults.standard.set(showsDebugInfo, forKey: Self.showsDebugInfoKey) }
     }
-    /// The bundled `TutorialSample_` drawings, listed first in the gallery.
+    /// The bundled `TutorialSample_` drawings, listed first in the gallery,
+    /// followed by the `ExampleSample_` projects.
     /// Applies the next time the gallery is opened.
     @Published var showsTutorialSamples: Bool = RenderDebug.isEnabled
         && (UserDefaults.standard.object(forKey: RenderDebugSettings.showsTutorialSamplesKey) as? Bool ?? true) {
