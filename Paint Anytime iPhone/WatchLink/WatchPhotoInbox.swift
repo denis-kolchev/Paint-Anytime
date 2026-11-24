@@ -83,7 +83,9 @@ final class WatchPhotoInbox: ObservableObject {
         do {
             let received = try store.pendingImages()
             images = received.sorted { $0.lastPathComponent > $1.lastPathComponent }
-            let samples = try DebugGallerySamples.images()
+            // Debug builds: the bundled tutorial drawings head the gallery, as on the watch.
+            // Release builds get none.
+            let samples = try DebugGallerySamples.images(includingTutorial: true)
             images = (received + samples).sorted(by: DebugGallerySamples.orderedBefore)
         }
         catch { errorMessage = error.localizedDescription }

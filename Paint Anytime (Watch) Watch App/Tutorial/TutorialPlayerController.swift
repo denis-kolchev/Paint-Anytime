@@ -295,10 +295,12 @@ final class TutorialPlayerController: ObservableObject {
     /// The tour's practice autosave: a copy of the drawing in the tutorial gallery only, so the
     /// selection lesson shows it. Unlike Save, it never reaches the user's gallery. The whole
     /// document is saved, so a copy after the canvas size lesson keeps the new size.
-    /// Returns whether a copy was written.
+    /// Returns whether a copy was written. With Render debug → Save tutorial drawings off,
+    /// nothing is written but the copy counts as made, so the step still saves only once.
     @discardableResult
     func autosave(size: CGSize, scale: CGFloat) -> Bool {
         guard page == .canvas, canvas.canClear else { return false }
+        guard RenderDebugSettings.shared.savesTutorialDrawings else { return true }
         return (try? CanvasExporter.save(document: canvas.document, size: size, scale: scale, in: folder)) != nil
     }
 
@@ -443,8 +445,14 @@ final class TutorialPlayerController: ObservableObject {
     func save(size: CGSize, scale: CGFloat) {
         guard page == .canvas, tutorial.permits([.saveDrawing]) else { return }
         do {
-            savedDrawing = try CanvasExporter.save(strokes: canvas.document.strokes,
-                                                  size: size, scale: scale, in: folder)
+            // Debug builds can skip the file: the lesson still plays the save, but the drawing
+            // reaches neither the tutorial gallery nor, through `preserveDrawing`, the user's.
+            if RenderDebugSettings.shared.savesTutorialDrawings {
+                savedDrawing = try CanvasExporter.save(strokes: canvas.document.strokes,
+                                                      size: size, scale: scale, in: folder)
+            } else {
+                savedDrawing = nil
+            }
             canvas.markSaved()
             // Training never queues files to the real iPhone photo library.
             saveRevision += 1
