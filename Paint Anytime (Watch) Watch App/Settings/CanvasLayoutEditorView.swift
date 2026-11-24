@@ -653,7 +653,7 @@ private struct CanvasSlotEditorView: View {
             }
             Section {
                 // Stays open to show the choice; the sheet's close button dismisses it.
-                ForEach(tutorial.isActive ? Self.tutorialActions : CanvasQuickAction.menuOrder(inMorph: isGrouped)) { action in
+                ForEach(listedActions) { action in
                     Button { select(action) } label: {
                         HStack {
                             CanvasQuickActionLabel(action: action, instrument: instrument,
@@ -661,7 +661,8 @@ private struct CanvasSlotEditorView: View {
                             Spacer()
                             marker(for: action)
                         }
-                        .tutorialHint(tutorial, steps: [.chooseEditorActions], isSuggested: !selection.contains(action))
+                        .tutorialHint(tutorial, steps: [.chooseEditorActions],
+                                      isSuggested: isTutorialAction(action) && !selection.contains(action))
                     }
                     .disabled(isDisabled(action))
                     .accessibilityAddTraits(selection.contains(action) ? .isSelected : [])
@@ -799,8 +800,22 @@ private struct CanvasSlotEditorView: View {
         return L10n.format("In slots %@", numbers.map(String.init).joined(separator: ", "))
     }
 
+    /// The lesson lists its two actions first and the rest of the menu below them,
+    /// dimmed, so the list still shows everything the editor offers and scrolls.
+    private var listedActions: [CanvasQuickAction] {
+        let menu = CanvasQuickAction.menuOrder(inMorph: isGrouped)
+        guard tutorial.isActive else { return menu }
+        return Self.tutorialActions + menu.filter { !Self.tutorialActions.contains($0) }
+    }
+
+    private func isTutorialAction(_ action: CanvasQuickAction) -> Bool {
+        !tutorial.isActive || Self.tutorialActions.contains(action)
+    }
+
     private func isDisabled(_ action: CanvasQuickAction) -> Bool {
-        if tutorial.isActive { return !tutorial.permits([.chooseEditorActions]) }
+        if tutorial.isActive {
+            return !isTutorialAction(action) || !tutorial.permits([.chooseEditorActions])
+        }
         if isGrouped {
             return (selection.count == CanvasControlAssignment.maxMorphActions && !selection.contains(action))
                 || keptActions.contains(action)
@@ -839,7 +854,7 @@ private struct CanvasSlotEditorView: View {
 
     private func select(_ action: CanvasQuickAction) {
         if tutorial.isActive {
-            guard isGrouped, tutorial.permits([.chooseEditorActions]) else { return }
+            guard isGrouped, isTutorialAction(action), tutorial.permits([.chooseEditorActions]) else { return }
             if selection.contains(action) { selection.removeAll { $0 == action } } else { selection.append(action) }
             commit()
             if Set(selection) == Set(Self.tutorialActions) { tutorial.record(.choseEditorActions) }

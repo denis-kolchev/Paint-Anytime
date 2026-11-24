@@ -6,8 +6,17 @@ struct WatchToolSettingsView: View {
     @ObservedObject var controller: CanvasController
     @ObservedObject var tutorial = TutorialSession.inactive
     var tutorialColors: [InkPreset] = InkPaletteLibrary.tutorial.activePalette.selectedColors
+    /// The tutorial owns the corner button, so it also presents Information through this.
+    var tutorialShowsInformation: Binding<Bool>? = nil
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
-    @State private var showsInformation = false
+    @State private var ownShowsInformation = false
+    private var showsInformation: Bool {
+        get { tutorialShowsInformation?.wrappedValue ?? ownShowsInformation }
+        nonmutating set {
+            if let binding = tutorialShowsInformation { binding.wrappedValue = newValue }
+            else { ownShowsInformation = newValue }
+        }
+    }
     @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
     @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
     @State private var showsPalette = false
@@ -544,45 +553,9 @@ struct WatchToolSettingsView: View {
                     .watchToolbarButtonStyle()
                     .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
                 }
-            } else if !tutorial.isPaletteLesson {
-                // One item for the whole tutorial, as outside it: the palette on the Color page,
-                // Information elsewhere. Swapping items when the palette step began made the
-                // toolbar insert a new one, which flew into place.
-                ToolbarItem(placement: .topBarLeading) {
-                    let opensPalette = selection == .color || tutorial.step == .openCurrentPalette
-                    // Outside its lesson the tour's palette has nothing to open.
-                    let isEnabled = tutorial.allowsToolInfo
-                        && (!opensPalette || tutorial.step == .openCurrentPalette)
-                    Button {
-                        crownFocused = false
-                        if tutorial.step == .openCurrentPalette {
-                            tutorial.record(.openedCurrentPalette)
-                        } else if !opensPalette {
-                            tutorial.record(.openedInfo)
-                            showsInformation = true
-                        }
-                    } label: {
-                        ZStack {
-                            Image(systemName: "info.circle")
-                                .opacity(opensPalette ? 0 : 1)
-                                .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
-                            CurrentPaletteIcon()
-                                .opacity(opensPalette ? 1 : 0)
-                                .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
-                        }
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: opensPalette)
-                        .tutorialHint(tutorial, steps: [.openCurrentPalette])
-                    }
-                    .watchToolbarButtonStyle()
-                    .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
-                    // Tutorial result cards temporarily disable actions, not the clock's layout.
-                    .opacity(tutorial.allowsToolInfo ? 1 : 0)
-                    .allowsHitTesting(isEnabled)
-                    .accessibilityHidden(!tutorial.allowsToolInfo)
-                    // Fades in with the editor, as the trailing ✓ does, and out before it leaves.
-                    .tutorialChromeFade()
-                }
             }
+            // In the tutorial the player installs this corner in its own toolbar, outside
+            // the page crossfade: inserted from here, the toolbar animated it in from the edge.
         }
         .fullScreenCover(isPresented: $showsPalette, onDismiss: { crownFocused = true }) {
             InkPaletteBrowser(library: paletteLibrary, controller: controller, onSave: savePalettes)
@@ -595,7 +568,8 @@ struct WatchToolSettingsView: View {
                               onSave: savePalettes)
                 .environment(\.colorScheme, .dark)
         }
-        .fullScreenCover(isPresented: $showsInformation, onDismiss: {
+        .fullScreenCover(isPresented: Binding(get: { showsInformation },
+                                              set: { showsInformation = $0 }), onDismiss: {
             tutorial.record(.closedInfo)
             tutorial.changedStyle(from: controller.pencilStyle, to: controller.pencilStyle, page: selection.rawValue)
             if !tutorial.isActive { crownFocused = true }

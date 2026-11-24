@@ -11,6 +11,9 @@ struct WatchLayersView: View {
     /// The tutorial installs + in its own toolbar beside Back, so both arrive with the page
     /// instead of + flying into place inside the page's crossfade.
     var showsAddButton = true
+    /// The tutorial sets the title outside the page's crossfade: set here, the navigation bar
+    /// laid out under that animation, and the title, clock and buttons flew into place.
+    var showsTitle = true
     var onEditLayer: ((UUID) -> Void)? = nil
     @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
     private let rowSpacing: CGFloat = 4
@@ -197,7 +200,7 @@ struct WatchLayersView: View {
         }
         .onDisappear { resetDrag() }
         .task(id: grabHintLayer) { await runGrabHint() }
-        .navigationTitle(L10n.text("Layers"))
+        .layersNavigationTitle(showsTitle)
         .toolbar {
             if showsAddButton {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -538,5 +541,12 @@ private struct LayerContentFrame: PreferenceKey {
     static let defaultValue: CGRect = .zero
     static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
         value = nextValue()
+    }
+}
+
+private extension View {
+    /// Leaves the title unset when hidden, so an empty one never overrides the host's.
+    @ViewBuilder func layersNavigationTitle(_ shows: Bool) -> some View {
+        if shows { navigationTitle(L10n.text("Layers")) } else { self }
     }
 }

@@ -26,6 +26,8 @@ struct TutorialPlayerView: View {
     /// A full-screen page is fading out over the canvas; the page itself changes once
     /// the fade ends, so its native toolbar items can fade with it instead of vanishing.
     @State private var isLeavingPage = false
+    /// Information over the tool editor, opened from the corner this view installs.
+    @State private var toolShowsInformation = false
     /// The menu mounts below the screen, then rises like the editor's sheet.
     @State private var menuRevealed = false
     /// Back from a settings page returns to the open menu: the black floor stays under it,
@@ -227,49 +229,99 @@ struct TutorialPlayerView: View {
                             .accessibilityHidden(!showsPrimaryControl)
                         }
                     }
-                    if page == .layers || page == .layerSettings {
+                    // Installed here, outside the page's crossfade: from inside the tool editor
+                    // the toolbar animated it in, so it flew into place from the edge.
+                    // The palette on the Color page, Information elsewhere, as in the editor.
+                    if page == .tools && !tutorial.isPaletteLesson {
                         ToolbarItem(placement: .topBarLeading) {
-                            let back: Set<TutorialStep> = page == .layers ? [.closeLayers] : [.closeLayerSettings]
+                            let opensPalette = tutorial.toolPage == ToolSetting.color.rawValue
+                                || tutorial.step == .openCurrentPalette
+                            // Outside its lesson the tour's palette has nothing to open.
+                            let isEnabled = tutorial.allowsToolInfo
+                                && (!opensPalette || tutorial.step == .openCurrentPalette)
                             Button {
-                                if page == .layers {
-                                    guard tutorial.permits([.closeLayers]) else { return }
-                                    // Back leaves with the list, so it fades out rather than vanishing.
-                                    leavePage { player.closeLayers() }
-                                } else {
-                                    withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                                        player.closeLayerSettings()
-                                    }
+                                if tutorial.step == .openCurrentPalette {
+                                    tutorial.record(.openedCurrentPalette)
+                                } else if !opensPalette {
+                                    tutorial.record(.openedInfo)
+                                    toolShowsInformation = true
                                 }
                             } label: {
-                                Image(systemName: "chevron.backward")
-                                    .tutorialHint(tutorial, steps: back)
-                                    .frame(width: 32, height: 32)
-                                    .contentShape(Circle())
+                                ZStack {
+                                    Image(systemName: "info.circle")
+                                        .opacity(opensPalette ? 0 : 1)
+                                        .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
+                                    CurrentPaletteIcon()
+                                        .opacity(opensPalette ? 1 : 0)
+                                        .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
+                                }
+                                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: opensPalette)
+                                .tutorialHint(tutorial, steps: [.openCurrentPalette])
                             }
                             .watchToolbarButtonStyle()
-                            .disabled(!tutorial.permits(back) || isLeavingPage)
-                            .accessibilityLabel(L10n.text("Back"))
+                            .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
+                            // Tutorial result cards temporarily disable actions, not the clock's layout.
+                            .opacity(tutorial.allowsToolInfo ? 1 : 0)
+                            .allowsHitTesting(isEnabled && !isLeavingPage)
+                            .accessibilityHidden(!tutorial.allowsToolInfo)
                             .tutorialChromeFade()
+                        }
+                    }
+                    // One item per corner from the canvas step that opens Layers through the
+                    // Layers pages: it shows a placeholder on the canvas, then Back. Replacing the
+                    // placeholder with a new item inserted it while the clock fades in, and the
+                    // toolbar flew it into place from the edge.
+                    if page == .layers || page == .layerSettings || holdsLayersLeadingSlot {
+                        ToolbarItem(placement: .topBarLeading) {
+                            if page == .canvas {
+                                toolbarPlaceholder
+                            } else {
+                                let back: Set<TutorialStep> = page == .layers ? [.closeLayers] : [.closeLayerSettings]
+                                Button {
+                                    if page == .layers {
+                                        guard tutorial.permits([.closeLayers]) else { return }
+                                        // Back leaves with the list, so it fades out rather than vanishing.
+                                        leavePage { player.closeLayers() }
+                                    } else {
+                                        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                                            player.closeLayerSettings()
+                                        }
+                                    }
+                                } label: {
+                                    Image(systemName: "chevron.backward")
+                                        .tutorialHint(tutorial, steps: back)
+                                        .frame(width: 32, height: 32)
+                                        .contentShape(Circle())
+                                }
+                                .watchToolbarButtonStyle()
+                                .disabled(!tutorial.permits(back) || isLeavingPage)
+                                .accessibilityLabel(L10n.text("Back"))
+                                .tutorialChromeFade()
+                            }
                         }
                     }
                     // Installed here with Back, outside the page's crossfade: from inside the
                     // Layers list the toolbar animated it in, so it flew into place.
-                    if page == .layers {
+                    if page == .layers || holdsLayersTrailingSlot {
                         ToolbarItem(placement: .topBarTrailing) {
-                            Button {
-                                guard tutorial.permits([.addLayer]) else { return }
-                                controller.addLayer()
-                                tutorial.record(.addedLayer)
-                            } label: {
-                                Image(systemName: "plus")
-                                    .tutorialHint(tutorial, steps: [.addLayer])
-                                    .frame(width: 32, height: 32)
-                                    .contentShape(Circle())
+                            if page == .canvas {
+                                toolbarPlaceholder
+                            } else {
+                                Button {
+                                    guard tutorial.permits([.addLayer]) else { return }
+                                    controller.addLayer()
+                                    tutorial.record(.addedLayer)
+                                } label: {
+                                    Image(systemName: "plus")
+                                        .tutorialHint(tutorial, steps: [.addLayer])
+                                        .frame(width: 32, height: 32)
+                                        .contentShape(Circle())
+                                }
+                                .watchToolbarButtonStyle()
+                                .disabled(!tutorial.permits([.addLayer]) || isLeavingPage)
+                                .accessibilityLabel(L10n.text("Add layer"))
+                                .tutorialChromeFade()
                             }
-                            .watchToolbarButtonStyle()
-                            .disabled(!tutorial.permits([.addLayer]) || isLeavingPage)
-                            .accessibilityLabel(L10n.text("Add layer"))
-                            .tutorialChromeFade()
                         }
                     }
                     if page == .perspective && tutorial.teachesPerspective {
@@ -346,11 +398,8 @@ struct TutorialPlayerView: View {
                     // The page these steps open has a button in each top corner. Holding both
                     // corners already keeps the clock where it will be: inserted with the page,
                     // it slid in from the edge and the new buttons flew into place.
-                    if page == .canvas && tutorial.step == .openLayers && !installsPrimaryControl {
-                        ToolbarItem(placement: .topBarTrailing) { toolbarPlaceholder }
-                    }
-                    if page == .canvas && [.openTools, .openLayers].contains(tutorial.step)
-                        && !tutorial.permitsMenuButton {
+                    // The Layers step holds its corners in the Back and + items above.
+                    if page == .canvas && tutorial.step == .openTools && !tutorial.permitsMenuButton {
                         ToolbarItem(placement: .topBarLeading) { toolbarPlaceholder }
                     }
                     // Installed through the whole shape list, transparent until a page turns,
@@ -373,6 +422,13 @@ struct TutorialPlayerView: View {
                     }
                 }
                 .toolbarBackground(page == .tools ? .hidden : .automatic, for: .navigationBar)
+                // Outside the page's crossfade, like Back and +: from inside the Layers list the
+                // title was inserted under that animation and the whole bar flew into place.
+                .background {
+                    if page == .layers {
+                        Color.clear.navigationTitle(L10n.text("Layers"))
+                    }
+                }
                 .frame(width: screen.size.width, height: screen.size.height)
                 .environment(\.tutorialHintReservedHeight, hintReservedHeight)
                 .environment(\.tutorialChromeHidden, isLeavingPage)
@@ -728,7 +784,8 @@ struct TutorialPlayerView: View {
                     // Mount with the saved palette already installed, so the
                     // returning picker never animates removal of the old colors.
                     WatchToolSettingsView(controller: controller, tutorial: tutorial,
-                                          tutorialColors: tutorialPaletteLibrary.activePalette.selectedColors)
+                                          tutorialColors: tutorialPaletteLibrary.activePalette.selectedColors,
+                                          tutorialShowsInformation: $toolShowsInformation)
                         .background(.black)
                         .transition(.opacity)
                 } else {
@@ -758,7 +815,7 @@ struct TutorialPlayerView: View {
         if page == .layers {
             WatchLayersView(controller: controller,
                             canvasSize: controller.document.size(fallback: geometry.size),
-                            tutorial: tutorial, embedsNavigation: false, showsAddButton: false,
+                            tutorial: tutorial, embedsNavigation: false, showsAddButton: false, showsTitle: false,
                             onEditLayer: { id in
                                 withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
                                     player.openLayerSettings(id)
@@ -950,6 +1007,16 @@ struct TutorialPlayerView: View {
 
     // Lasso drags hide the control only briefly; keep its slot so the toolbar
     // does not reinsert the item around every selection gesture.
+    /// The canvas step that opens Layers keeps Back's corner, unless ••• already holds it.
+    private var holdsLayersLeadingSlot: Bool {
+        page == .canvas && tutorial.step == .openLayers && !tutorial.permitsMenuButton
+    }
+
+    /// The canvas step that opens Layers keeps +'s corner, unless the tool button holds it.
+    private var holdsLayersTrailingSlot: Bool {
+        page == .canvas && tutorial.step == .openLayers && !installsPrimaryControl
+    }
+
     private var installsPrimaryControl: Bool {
         page == .tools || showsPrimaryControl || player.lasso.hidesControls
     }
