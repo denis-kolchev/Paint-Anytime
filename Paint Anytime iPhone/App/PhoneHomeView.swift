@@ -366,13 +366,33 @@ struct PhoneHomeView: View {
     }
 
     private var galleryMoreMenu: PhoneGalleryMoreMenu {
-        PhoneGalleryMoreMenu(
+        var menu = PhoneGalleryMoreMenu(
             importPhoto: { importingPhoto = true },
             importProject: { importingProject = true },
             synchronize: { photoInbox.synchronize() },
             isPreparingPhoto: preparingPhoto,
             isImportingProject: photoshopImport != nil)
+        #if DEBUG
+        // Sorted 1, 3, 5: zooming in moves to fewer columns.
+        let options = columnOptions.sorted()
+        if let index = options.firstIndex(of: columnCount) {
+            menu.showsZoomItems = true
+            if index > 0 { menu.zoomIn = { setColumnCountFromMenu(options[index - 1]) } }
+            if index < options.count - 1 { menu.zoomOut = { setColumnCountFromMenu(options[index + 1]) } }
+        }
+        #endif
+        return menu
     }
+
+    #if DEBUG
+    /// Debug menu zoom step: switches the grid at once, without the pinch animation.
+    private func setColumnCountFromMenu(_ columns: Int) {
+        guard zoom.pinchTarget == nil, !zoom.settlingZoom else { return }
+        zoom.leadingSlots = 0
+        storedColumnCount = columns
+        resetGalleryZoom()
+    }
+    #endif
 
     private var drawingPresentationAnimation: Animation {
         reduceMotion ? .easeInOut(duration: 0.18) : .smooth(duration: 0.38)

@@ -154,6 +154,11 @@ struct PhoneGalleryMoreMenu: View {
     var isPreparingPhoto = false
     /// True while a Photoshop file is converted; its progress shows in the gallery.
     var isImportingProject = false
+    /// Debug builds only: one zoom step (5 → 3 → 1 columns and back). Nil hides the
+    /// item; a nil step in the other direction still shows it, disabled at the limit.
+    var zoomIn: (() -> Void)?
+    var zoomOut: (() -> Void)?
+    var showsZoomItems = false
 
     /// Room the header keeps free beside the title for the bar button.
     static let reservedWidth: CGFloat = 56
@@ -172,6 +177,17 @@ struct PhoneGalleryMoreMenu: View {
             Divider()
             Button(action: synchronize) {
                 Label("Sync", systemImage: "arrow.triangle.2.circlepath")
+            }
+            if showsZoomItems {
+                Divider()
+                Button { zoomIn?() } label: {
+                    Label("Zoom In", systemImage: "plus.magnifyingglass")
+                }
+                .disabled(zoomIn == nil)
+                Button { zoomOut?() } label: {
+                    Label("Zoom Out", systemImage: "minus.magnifyingglass")
+                }
+                .disabled(zoomOut == nil)
             }
         } label: {
             // Large camera photos take a moment to prepare; the spinner replaces
