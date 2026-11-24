@@ -687,11 +687,11 @@ private struct CanvasSlotEditorView: View {
             // The lesson shows the icon list in place of a pushed page, with the same title
             // and Back. Choosing an icon keeps it open, as the editor's pushed list does.
             if showsTutorialIconPicker {
-                CanvasMorphIconPicker(icon: $icon) {
+                // The last rows scroll above the lesson card, as the action list's do.
+                CanvasMorphIconPicker(icon: $icon, bottomInset: tutorialHintReservedHeight) {
                     commit()
                     tutorial.record(.choseGroupIcon)
                 }
-                .contentMargins(.bottom, tutorialHintReservedHeight, for: .scrollContent)
                 .background(Color.black.ignoresSafeArea())
                 .transition(.opacity)
             }
@@ -880,6 +880,8 @@ private struct CanvasSlotEditorView: View {
 
 private struct CanvasMorphIconPicker: View {
     @Binding var icon: String
+    /// Room under the grid for a floating card, such as the lesson's hint.
+    var bottomInset: CGFloat = 0
     let onSelect: () -> Void
 
     var body: some View {
@@ -901,6 +903,7 @@ private struct CanvasMorphIconPicker: View {
                 }
             }
             .padding(.horizontal, 4)
+            .padding(.bottom, bottomInset)
         }
         .navigationTitle(L10n.text("Icon"))
     }
