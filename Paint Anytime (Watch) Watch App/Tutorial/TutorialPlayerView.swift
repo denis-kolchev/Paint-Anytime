@@ -241,58 +241,18 @@ struct TutorialPlayerView: View {
                     // One item per corner from the canvas step that opens Layers through the
                     // Layers pages: it shows a placeholder on the canvas, then Back. Replacing the
                     // placeholder with a new item inserted it while the clock fades in, and the
-                    // toolbar flew it into place from the edge.
+                    // toolbar flew it into place from the edge. The placeholder and Back are also
+                    // one Button: a different view in the item moved its icon in from the corner.
                     if page == .layers || page == .layerSettings || holdsLayersLeadingSlot {
                         ToolbarItem(placement: .topBarLeading) {
-                            if page == .canvas {
-                                toolbarPlaceholder
-                            } else {
-                                let back: Set<TutorialStep> = page == .layers ? [.closeLayers] : [.closeLayerSettings]
-                                Button {
-                                    if page == .layers {
-                                        guard tutorial.permits([.closeLayers]) else { return }
-                                        // Back leaves with the list, so it fades out rather than vanishing.
-                                        leavePage { player.closeLayers() }
-                                    } else {
-                                        withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
-                                            player.closeLayerSettings()
-                                        }
-                                    }
-                                } label: {
-                                    Image(systemName: "chevron.backward")
-                                        .tutorialHint(tutorial, steps: back)
-                                        .frame(width: 32, height: 32)
-                                        .contentShape(Circle())
-                                }
-                                .watchToolbarButtonStyle()
-                                .disabled(!tutorial.permits(back) || isLeavingPage)
-                                .accessibilityLabel(L10n.text("Back"))
-                                .tutorialChromeFade()
-                            }
+                            layersBackControl
                         }
                     }
                     // Installed here with Back, outside the page's crossfade: from inside the
                     // Layers list the toolbar animated it in, so it flew into place.
                     if page == .layers || holdsLayersTrailingSlot {
                         ToolbarItem(placement: .topBarTrailing) {
-                            if page == .canvas {
-                                toolbarPlaceholder
-                            } else {
-                                Button {
-                                    guard tutorial.permits([.addLayer]) else { return }
-                                    controller.addLayer()
-                                    tutorial.record(.addedLayer)
-                                } label: {
-                                    Image(systemName: "plus")
-                                        .tutorialHint(tutorial, steps: [.addLayer])
-                                        .frame(width: 32, height: 32)
-                                        .contentShape(Circle())
-                                }
-                                .watchToolbarButtonStyle()
-                                .disabled(!tutorial.permits([.addLayer]) || isLeavingPage)
-                                .accessibilityLabel(L10n.text("Add layer"))
-                                .tutorialChromeFade()
-                            }
+                            layersAddControl
                         }
                     }
                     if page == .perspective && tutorial.teachesPerspective {
@@ -1240,15 +1200,60 @@ struct TutorialPlayerView: View {
         .accessibilityHidden(!isShown)
     }
 
-    private var toolbarPlaceholder: some View {
-        Button {} label: {
-            Image(systemName: "ellipsis").frame(width: 18, height: 18).opacity(0)
+    /// The Layers pages' Back, transparent on the canvas step that opens them. On the canvas it
+    /// is the placeholder that holds the corner; the icon and flags change on one Button.
+    private var layersBackControl: some View {
+        let isPage = page != .canvas
+        let back: Set<TutorialStep> = page == .layerSettings ? [.closeLayerSettings] : [.closeLayers]
+        return Button {
+            if page == .layers {
+                guard tutorial.permits([.closeLayers]) else { return }
+                // Back leaves with the list, so it fades out rather than vanishing.
+                leavePage { player.closeLayers() }
+            } else if page == .layerSettings {
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                    player.closeLayerSettings()
+                }
+            }
+        } label: {
+            layersCornerIcon("chevron.backward", steps: back, isShown: isPage)
         }
-        .disabled(true)
-        .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter,
-                                 usesCanvasMaterial: true, hidesNativeChrome: true)
-        .accessibilityHidden(true)
+        .modifier(LayersCornerStyle(isPage: isPage, isLeavingPage: isLeavingPage, reduceMotion: reduceMotion))
+        .disabled(!isPage || !tutorial.permits(back) || isLeavingPage)
+        .accessibilityLabel(L10n.text("Back"))
+        .accessibilityHidden(!isPage)
     }
+
+    /// The Layers list's +, transparent on the canvas step that opens it.
+    private var layersAddControl: some View {
+        let isPage = page == .layers
+        return Button {
+            guard isPage, tutorial.permits([.addLayer]) else { return }
+            controller.addLayer()
+            tutorial.record(.addedLayer)
+        } label: {
+            layersCornerIcon("plus", steps: [.addLayer], isShown: isPage)
+        }
+        .modifier(LayersCornerStyle(isPage: isPage, isLeavingPage: isLeavingPage, reduceMotion: reduceMotion))
+        .disabled(!isPage || !tutorial.permits([.addLayer]) || isLeavingPage)
+        .accessibilityLabel(L10n.text("Add layer"))
+        .accessibilityHidden(!isPage)
+    }
+
+    private func layersCornerIcon(_ systemName: String, steps: Set<TutorialStep>, isShown: Bool) -> some View {
+        Group {
+            if isShown {
+                // The whole button grows in and fades out in `LayersCornerStyle`.
+                Image(systemName: systemName)
+                    .tutorialHint(tutorial, steps: steps)
+            } else {
+                Image(systemName: systemName).opacity(0)
+            }
+        }
+        .frame(width: 32, height: 32)
+        .contentShape(Circle())
+    }
+
 
     private func practiceGroupAction(_ action: CanvasQuickAction, height: CGFloat) -> some View {
         let acts = action == .eraserToggle
@@ -1685,6 +1690,42 @@ private extension TutorialPlayerView {
     var remainingChapters: [TutorialChapter] {
         guard let chapter = tutorial.chapter, let index = chapters.firstIndex(of: chapter) else { return [] }
         return Array(chapters[(index + 1)...])
+    }
+}
+
+// MARK: - Layers corners
+
+/// Back and + of the Layers pages, and their transparent placeholders on the canvas step that
+/// opens them. Canvas material: the whole button is drawn here, so it can stay invisible while
+/// the toolbar moves the item. The canvas hides the clock, so its corners sit higher than the
+/// Layers pages' and the toolbar slides the held item down as the page opens (about 17 pt on
+/// the 49 mm simulator). With native chrome the system circle appeared in place but the icon
+/// inside slid in from the corner; here the button appears once the item has arrived.
+private struct LayersCornerStyle: ViewModifier {
+    let isPage: Bool
+    let isLeavingPage: Bool
+    let reduceMotion: Bool
+    @State private var isRevealed = false
+
+    /// The toolbar's own move of the item, measured at about 0.4 s.
+    private static let toolbarSettleDelay: Duration = .milliseconds(420)
+
+    func body(content: Content) -> some View {
+        content
+            .watchToolbarButtonStyle(diameter: MorphPanelGeometry.buttonDiameter,
+                                     usesCanvasMaterial: true, hidesNativeChrome: !isPage)
+            .opacity(isRevealed && !isLeavingPage ? 1 : 0)
+            .scaleEffect(isRevealed || reduceMotion ? 1 : 0.5)
+            .animation(.easeInOut(duration: reduceMotion ? 0.15 : TutorialChromeFade.duration),
+                       value: isRevealed)
+            // The circle leaves with the page, as the icon does through `tutorialChromeFade`.
+            .animation(.easeInOut(duration: reduceMotion ? 0.15 : TutorialChromeFade.duration),
+                       value: isLeavingPage)
+            .task(id: isPage) {
+                guard isPage else { isRevealed = false; return }
+                do { try await Task.sleep(for: Self.toolbarSettleDelay) } catch { return }
+                isRevealed = true
+            }
     }
 }
 
