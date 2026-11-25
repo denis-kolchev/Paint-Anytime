@@ -15,9 +15,8 @@ struct WatchLassoModeNotice: View {
                         .multilineTextAlignment(.center)
                         .lineLimit(3)
                         .minimumScaleFactor(0.5)
-                    // Complete strokes needs a first step the other modes do not.
-                    if lasso.mode == .sketchAssist {
-                        Text(L10n.text("Circle the strokes to redraw"))
+                    if let hint {
+                        Text(hint)
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -32,7 +31,7 @@ struct WatchLassoModeNotice: View {
                 .id(noticeID)
                 .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
                 .task(id: noticeID) {
-                    let seconds = lasso.mode == .sketchAssist ? 3.0 : 2.0
+                    let seconds = lasso.lostSketchAssist ? 4.0 : lasso.mode == .sketchAssist ? 3.0 : 2.0
                     do { try await Task.sleep(for: .seconds(seconds)) } catch { return }
                     withAnimation(.easeOut(duration: 0.2)) { self.noticeID = nil }
                 }
@@ -55,5 +54,14 @@ struct WatchLassoModeNotice: View {
         .onChange(of: lasso.sketchAssistStage) { _, stage in
             if stage != .idle { noticeID = nil }
         }
+    }
+
+    /// Complete strokes needs a first step the other modes do not; a switch away from it
+    /// that the user did not choose says why.
+    private var hint: String? {
+        if lasso.lostSketchAssist {
+            return L10n.text("Image Playground is unavailable on iPhone, so Complete strokes is locked.")
+        }
+        return lasso.mode == .sketchAssist ? L10n.text("Circle the strokes to redraw") : nil
     }
 }

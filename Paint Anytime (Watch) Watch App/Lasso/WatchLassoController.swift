@@ -9,6 +9,9 @@ final class WatchLassoController: ObservableObject {
     /// Set when the lasso opens straight into one mode, such as Complete strokes,
     /// so the mode picker stays hidden until the lasso closes.
     @Published private(set) var isModeLocked = false
+    /// The lasso left Complete strokes because the iPhone reported Image Playground
+    /// unavailable; the mode notice explains the switch. Cleared by the next mode choice.
+    @Published private(set) var lostSketchAssist = false
     @Published private(set) var outline: [CGPoint] = []
     @Published private(set) var rotation: CGFloat = 0
     @Published private(set) var bounds: CGRect?
@@ -180,13 +183,31 @@ final class WatchLassoController: ObservableObject {
         clearHistory()
         if let lockedMode { mode = lockedMode }
         isModeLocked = lockedMode != nil
+        lostSketchAssist = false
         isActive = true
     }
-    func deactivate() { resetSelection(); clearHistory(); isModeLocked = false; isActive = false }
+    func deactivate() {
+        resetSelection(); clearHistory(); isModeLocked = false; lostSketchAssist = false; isActive = false
+    }
     func setMode(_ value: WatchLassoMode) {
         guard mode != value else { return }
         resetSelection()
+        lostSketchAssist = false
         mode = value
+    }
+
+    /// The iPhone can no longer complete strokes: switch to Select area and say why. The
+    /// mode picker returns (also for a lasso opened straight into Complete strokes) and
+    /// shows the mode with its lock.
+    func sketchAssistBecameUnavailable() {
+        guard mode == .sketchAssist else { return }
+        guard isActive else { return mode = .area }
+        resetSelection()
+        // The mode notice explains it; a failure notice on top would stack two messages.
+        WatchSketchAssist.shared.dismissNotice()
+        isModeLocked = false
+        lostSketchAssist = true
+        mode = .area
     }
 
     func resetSelection() {

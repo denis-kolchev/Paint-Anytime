@@ -135,6 +135,10 @@ struct ContentView: View {
         .modifier(ReferencePresentation(isPresented: $showsReferenceFullscreen, controller: controller,
                                         viewportSize: canvasSize))
         .modifier(SketchAssistRequirementsAlert(isPresented: $showsSketchAssistRequirements))
+        // Here rather than in the lasso panel, which is not on screen while strokes wait for ✓.
+        .onChange(of: sketchAssistOnPhone) { _, available in
+            if !available { lasso.sketchAssistBecameUnavailable() }
+        }
         .onChange(of: customLayoutEnabled) { _, _ in
             morphState.customExpandedSlot = nil
         }

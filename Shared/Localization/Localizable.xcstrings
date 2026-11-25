@@ -90054,6 +90054,185 @@
           }
         }
       }
+    },
+    "Image Playground is unavailable on iPhone, so Complete strokes is locked." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground غير متاح على iPhone، لذا تم قفل «إكمال الخطوط»."
+          }
+        },
+        "bg" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground не е наличен на iPhone, затова „Довършване на щрихите“ е заключено."
+          }
+        },
+        "cs" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground není na iPhonu k dispozici, proto je Dokreslit tahy zamčeno."
+          }
+        },
+        "da" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground er ikke tilgængelig på iPhone, så Fuldfør strøg er låst."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground ist auf dem iPhone nicht verfügbar, daher ist „Striche vervollständigen“ gesperrt."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Το Image Playground δεν είναι διαθέσιμο στο iPhone, γι’ αυτό η Ολοκλήρωση πινελιών είναι κλειδωμένη."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground is unavailable on iPhone, so Complete strokes is locked."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground no está disponible en el iPhone, así que Completar trazos está bloqueado."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground ei ole käytettävissä iPhonessa, joten Täydennä vedot on lukittu."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground n’est pas disponible sur l’iPhone : Compléter les traits est verrouillé."
+          }
+        },
+        "he" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground אינו זמין ב‑iPhone, ולכן השלמת משיכות נעולה."
+          }
+        },
+        "hu" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Az Image Playground nem érhető el az iPhone-on, ezért a Vonások kiegészítése zárolva van."
+          }
+        },
+        "id" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground tidak tersedia di iPhone, jadi Lengkapi goresan dikunci."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground non è disponibile su iPhone, quindi Completa tratti è bloccato."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhoneでImage Playgroundを利用できないため、ストローク補完はロックされています。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone에서 Image Playground를 사용할 수 없어 획 완성이 잠겼습니다."
+          }
+        },
+        "nb" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground er ikke tilgjengelig på iPhone, så Fullfør strøk er låst."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground is niet beschikbaar op iPhone, dus Streken aanvullen is vergrendeld."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground jest niedostępne na iPhonie, więc Dokończ pociągnięcia jest zablokowane."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Image Playground não está disponível no iPhone, então Completar traços está bloqueado."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Image Playground não está disponível no iPhone, por isso Completar traços está bloqueado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground недоступен на iPhone, поэтому «Дорисовать штрихи» заблокировано."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground är inte tillgängligt på iPhone, så Komplettera drag är låst."
+          }
+        },
+        "th" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground ไม่พร้อมใช้งานบน iPhone จึงล็อกการวาดเส้นให้สมบูรณ์ไว้"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground iPhone’da kullanılamıyor, bu yüzden Çizgileri tamamla kilitlendi."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground недоступний на iPhone, тому «Домалювати штрихи» заблоковано."
+          }
+        },
+        "vi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image Playground không khả dụng trên iPhone nên tính năng Hoàn thiện nét vẽ đã bị khóa."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 上的 Image Playground 不可用，因此“补全笔画”已锁定。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "iPhone 上的 Image Playground 無法使用，因此「補全筆畫」已鎖定。"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

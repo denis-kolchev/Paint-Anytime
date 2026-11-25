@@ -731,9 +731,6 @@ struct CanvasMorphPanels: View {
         .frame(width: panelWidth, height: diameter)
         .modifier(CanvasMorphGlass(adaptsToCanvas: true))
         .trackCanvasControl(.canvasToolsMorph, frames: framesBinding)
-        .onChange(of: sketchAssistOnPhone) { _, available in
-            if !available && lasso.mode == .sketchAssist { lasso.setMode(.area) }
-        }
         .modifier(SketchAssistRequirementsAlert(isPresented: $showsSketchAssistRequirements))
     }
 
