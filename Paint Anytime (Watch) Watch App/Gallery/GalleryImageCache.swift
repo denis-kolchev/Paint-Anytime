@@ -213,6 +213,8 @@ enum GalleryFavoriteThumbnailRenderer {
 
 struct GalleryThumbnailView: View {
     let request: GalleryImageRequest
+    /// The tile's side in points; both crossfade layers are cropped to it.
+    let side: CGFloat
     var loadsImage: Bool
     let visibility: GalleryThumbnailVisibility
     var isFavorite = false
@@ -240,10 +242,16 @@ struct GalleryThumbnailView: View {
         let _ = isNearViewport || showsPreviewBeforeMeasurement
             ? MenuGalleryTransitionDiagnostics.shared.tile(request.url,
                 displayed != nil ? "sharp" : preview != nil ? "low" : "gray") : ()
-        // The sharp thumbnail fades in over the low-resolution snapshot.
+        // The sharp thumbnail fades in over the low-resolution snapshot. Each layer is
+        // cropped to the tile itself, so an oversized aspect-fill image never sizes the
+        // crossfade and both layers always show the same part of the drawing.
         GalleryLowResCrossfade(showsSharp: displayed != nil) {
             if let displayed {
-                Image(decorative: displayed.image, scale: 1).resizable().scaledToFill()
+                Image(decorative: displayed.image, scale: 1)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: side, height: side)
+                    .clipped()
             }
         } lowRes: {
             if let preview {
@@ -252,10 +260,12 @@ struct GalleryThumbnailView: View {
                     .resizable()
                     .interpolation(.medium)
                     .scaledToFill()
+                    .frame(width: side, height: side)
+                    .clipped()
                     .overlay {
-                        if isFavorite, let pixels = request.shortSidePixels {
-                            GalleryFavoriteBadge(side: CGFloat(pixels) / max(1, request.displayScale))
-                        }
+                        // The tile's own side, not the decode size: `thumbnailPixels` is
+                        // rounded up to 32 px, which made the badge larger than the tile.
+                        if isFavorite { GalleryFavoriteBadge(side: side) }
                     }
             } else {
                 Rectangle().fill(.white.opacity(0.12))

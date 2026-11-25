@@ -41,6 +41,7 @@ struct SavedDrawingsGrid: View {
                         } label: {
                             GalleryThumbnailView(request: GalleryImageRequest(
                                 url: drawing.url, shortSidePixels: thumbnailPixels, displayScale: displayScale),
+                                side: side,
                                 loadsImage: loadsImages,
                                 visibility: gridStorage.visibility(for: drawing.id),
                                 isFavorite: drawing.isFavorite,
