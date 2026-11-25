@@ -612,6 +612,7 @@ struct ContentView: View {
             instrument: controller.pencilStyle.instrument,
             lassoIsActive: lasso.isActive,
             awaitsSketchAssistConfirmation: lasso.awaitsSketchAssistConfirmation,
+            showsSketchAssistCancel: lasso.showsSketchAssistCancel,
             lassoHidesControls: lasso.hidesControls,
             canMoveSelectionUp: lasso.canMoveLayer(1, controller: controller),
             showsMorphToolbar: showsMorphToolbar,
@@ -920,11 +921,14 @@ struct ContentView: View {
     }
 
     private var protectedCanvasControls: [CanvasToolbarControl: CGRect] {
-        guard isActive && !showsGallery && !showsToolSettings && controller.activeStroke == nil && !lasso.hidesControls else { return [:] }
+        // While Complete strokes waits for its image, only its ✕ is left on screen.
+        guard isActive && !showsGallery && !showsToolSettings && controller.activeStroke == nil
+                && (!lasso.hidesControls || lasso.isWaitingForSketchAssistResult) else { return [:] }
         return canvasControlFrames.filter { control, _ in
             // The thumbnail removes its frame when hidden; it is hidden in lasso and camera.
             if control == .reference { return !lasso.isActive && !isMovingCanvas }
-            if lasso.isActive { return (!showsSelectionActions && control == .tools) || control == .canvasToolsMorph || (showsSelectionActions && control == .morph) || (lasso.awaitsSketchAssistConfirmation && control == .more) }
+            if lasso.isWaitingForSketchAssistResult { return lasso.showsSketchAssistCancel && control == .more }
+            if lasso.isActive { return (!showsSelectionActions && control == .tools) || control == .canvasToolsMorph || (showsSelectionActions && control == .morph) || (lasso.showsSketchAssistCancel && control == .more) }
             if isMovingCanvas { return control == .tools || control == .more }
             if let customLayout {
                 if case .custom = control { return true }

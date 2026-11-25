@@ -18,6 +18,9 @@ nonisolated enum SketchAssistProtocol {
     /// `Stage` raw value the phone reports with `sendMessage`, or `transferUserInfo`
     /// when the watch app is not reachable.
     static let stageKey = "sketchAssistStage"
+    /// Request identifier the watch sends with `sendMessage`, or `transferUserInfo` when
+    /// the phone is not reachable, after the user cancels the request on the watch.
+    static let cancelKey = "sketchAssistCancel"
     static let requestKind = "sketchAssistRequest"
     static let resultKind = "sketchAssistResult"
 
@@ -28,7 +31,9 @@ nonisolated enum SketchAssistProtocol {
         case sending
         /// Watch: the phone has the sketch; the user needs to open the iPhone app.
         case delivered
-        /// Phone: the app is on screen with Image Playground.
+        /// Phone: the app is on screen and prepares Image Playground (recognizes the sketch).
+        case preparing
+        /// Phone: Image Playground is on screen and generates; the user taps Done there.
         case choosing
         /// Phone: the chosen image is on its way back to the watch.
         case returning

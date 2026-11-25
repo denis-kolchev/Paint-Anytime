@@ -411,7 +411,7 @@ struct WatchCanvasView: View {
             .overlay {
                 if rendersArtwork && acceptsInput {
                     WatchLassoModeNotice(lasso: lasso)
-                    SketchAssistNotice()
+                    SketchAssistNotice(lasso: lasso)
                 }
             }
             .onChange(of: isEyedropperActive) { _, active in

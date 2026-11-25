@@ -19,6 +19,8 @@ struct CanvasToolbar: ToolbarContent {
     let instrument: DrawingInstrument
     let lassoIsActive: Bool
     let awaitsSketchAssistConfirmation: Bool
+    /// Complete strokes' ✕: before ✓ and while its request is out.
+    let showsSketchAssistCancel: Bool
     let lassoHidesControls: Bool
     let canMoveSelectionUp: Bool
     let showsMorphToolbar: Bool
@@ -82,7 +84,7 @@ struct CanvasToolbar: ToolbarContent {
                     // native toolbar region's drags to the same lasso controller.
                     WatchLassoToolbarTouchRegion(input: lassoToolbarInput, lasso: lasso,
                         controller: controller, diameter: canvasToolbarDiameter)
-                        .allowsHitTesting(!awaitsSketchAssistConfirmation)
+                        .allowsHitTesting(!showsSketchAssistCancel)
                     sketchAssistCancelControl
                 }
             }
@@ -146,13 +148,13 @@ struct CanvasToolbar: ToolbarContent {
         } else { showsAppSettings = true }
     }
 
-    /// Complete strokes: discards the outlined strokes instead of sending them.
-    /// Shown only while the outlined strokes wait for confirmation.
+    /// Complete strokes: before ✓ discards the outlined strokes; after ✓ cancels the
+    /// request on the watch and the iPhone, keeping the strokes ready to send again.
     private var sketchAssistCancelControl: some View {
-        let isShown = awaitsSketchAssistConfirmation && !lassoHidesControls
+        let isShown = showsSketchAssistCancel
         return MorphControlsScope {
             Button {
-                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { lasso.resetSelection() }
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { lasso.cancelSketchAssist() }
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 17, weight: .semibold))

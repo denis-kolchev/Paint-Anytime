@@ -39,6 +39,12 @@ final class WatchLassoController: ObservableObject {
     var awaitsSketchAssistConfirmation: Bool { sketchAssistStage == .awaitingConfirmation }
     /// True until the generated image replaces the outlined strokes.
     var hidesSelectionActions: Bool { sketchAssistStage != .idle }
+    /// After ✓ the canvas is locked until the request ends in a result, a failure or ✕.
+    var isWaitingForSketchAssistResult: Bool { sketchAssistStage == .waitingForResult }
+    /// ✕ discards the outlined strokes before ✓, and cancels the request after it.
+    var showsSketchAssistCancel: Bool {
+        isActive && drag == nil && !isPreparing && sketchAssistStage != .idle
+    }
     private var sketchAssistRender: (size: CGSize, scale: CGFloat)?
     private var sketchAssistObservation: AnyCancellable?
     private var selection: WatchLassoSelection? {
@@ -160,7 +166,8 @@ final class WatchLassoController: ObservableObject {
     }
     /// The side the move handle had when the finger grabbed it; it stays there for the drag.
     @Published private(set) var pinnedMoveHandleOnRight: Bool?
-    var hidesControls: Bool { isActive && (drag != nil || isPreparing) }
+    /// Also while Complete strokes waits for its image: handles, history and Done stay hidden.
+    var hidesControls: Bool { isActive && (drag != nil || isPreparing || isWaitingForSketchAssistResult) }
     var activeResizeHandle: Int? {
         guard let drag, case let .resize(handle) = drag else { return nil }
         return handle
@@ -183,6 +190,11 @@ final class WatchLassoController: ObservableObject {
     }
 
     func resetSelection() {
+        // Closing the lasso or dropping the selection also abandons a request in flight.
+        if sketchAssistStage == .waitingForResult {
+            sketchAssistObservation = nil
+            WatchSketchAssist.shared.cancel(showsNotice: false)
+        }
         preparation?.cancel()
         preparation = nil
         generation = UUID()
@@ -209,7 +221,7 @@ final class WatchLassoController: ObservableObject {
 
     /// `visibleRect`: the on-screen canvas in document coordinates; side handles avoid its edges.
     func begin(at point: CGPoint, tolerance: CGFloat, visibleRect: CGRect?, controller: CanvasController) {
-        guard isActive, !isPreparing, controller.selectedLayer.isVisible,
+        guard isActive, !isPreparing, !isWaitingForSketchAssistResult, controller.selectedLayer.isVisible,
               controller.selectedLayer.opacity > 0 else { return }
         documentChanged(controller)
         dragStart = point
@@ -488,6 +500,15 @@ final class WatchLassoController: ObservableObject {
         requestSketchAssist(selection, controller: controller, size: render.size, scale: render.scale)
     }
 
+    /// ✕ while Complete strokes is in progress: before ✓ it discards the outlined strokes;
+    /// after ✓ it cancels the request and keeps them selected, so ✓ can send them again.
+    func cancelSketchAssist() {
+        guard sketchAssistStage == .waitingForResult else { return resetSelection() }
+        sketchAssistObservation = nil
+        sketchAssistStage = selection == nil ? .idle : .awaitingConfirmation
+        WatchSketchAssist.shared.cancel(showsNotice: selection != nil)
+    }
+
     /// Sends only the selected strokes, rendered on the paper, to Image Playground on
     /// the iPhone. The result replaces them if the drawing is unchanged by then.
     private func requestSketchAssist(_ selection: WatchLassoSelection, controller: CanvasController,
@@ -541,6 +562,9 @@ final class WatchLassoController: ObservableObject {
     private func applySketchAssist(_ raster: Stroke, strokes: [Stroke], layerID: UUID,
                                    controller: CanvasController) {
         let before = state(controller)
+        // The request is finishing, so resetting the selection must not cancel it.
+        sketchAssistStage = .idle
+        sketchAssistObservation = nil
         resetSelection()
         controller.replaceLayerStrokes(strokes, in: layerID)
         guard isActive, let bounds = raster.raster?.bounds else { return }

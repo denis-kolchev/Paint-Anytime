@@ -86,7 +86,20 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
         Task { @MainActor in onReceive?(.failure(error)) }
     }
 
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        receiveSketchAssistCancel(message)
+    }
+
+    /// The user tapped ✕ on the watch; true when `info` was that request.
+    @discardableResult
+    nonisolated private func receiveSketchAssistCancel(_ info: [String: Any]) -> Bool {
+        guard let requestID = info[SketchAssistProtocol.cancelKey] as? String else { return false }
+        Task { @MainActor in PhoneSketchAssist.shared.cancelFromWatch(requestID: requestID) }
+        return true
+    }
+
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
+        if receiveSketchAssistCancel(userInfo) { return }
         guard let message = userInfo["projectImportError"] as? String else { return }
         let error = NSError(domain: "PaintAnytime.ProjectImport", code: 1,
                             userInfo: [NSLocalizedDescriptionKey: message])

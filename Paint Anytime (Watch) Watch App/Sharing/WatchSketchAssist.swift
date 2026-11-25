@@ -38,7 +38,9 @@ final class WatchSketchAssist: ObservableObject {
         guard session.activationState == .activated, session.isCompanionAppInstalled else {
             return fail(L10n.text("Install Paint Anytime on your iPhone."))
         }
-        guard session.isReachable else { return fail(L10n.text("Your iPhone is not reachable.")) }
+        guard session.isReachable else {
+            return fail(L10n.text("Your iPhone is not reachable. Keep it nearby with Bluetooth on."))
+        }
         let id = UUID().uuidString
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("SketchAssist-\(id)").appendingPathExtension("png")
@@ -60,7 +62,9 @@ final class WatchSketchAssist: ObservableObject {
             // The user opens the app and picks an image on the phone, which takes a while.
             try? await Task.sleep(for: .seconds(600))
             guard !Task.isCancelled, let self, self.requestID == id else { return }
-            self.fail(L10n.text("Your iPhone did not respond. Open Paint Anytime on iPhone and try again."))
+            self.fail(L10n.text("Your iPhone did not respond. Tap ✓ to try again."))
+            // Close a forgotten Image Playground, so a late result is not generated for nothing.
+            Self.sendCancel(requestID: id)
         }
     }
 
@@ -93,6 +97,27 @@ final class WatchSketchAssist: ObservableObject {
         UserDefaults.standard.set(available, forKey: Self.phoneAvailabilityKey)
     }
 
+    /// Stops waiting for the current request and asks the phone to close Image Playground.
+    /// `showsNotice` is false when the lasso closes, so nothing points at its ✓ any more.
+    func cancel(showsNotice: Bool) {
+        guard let id = requestID else { return }
+        finish()
+        phase = showsNotice ? .failed(L10n.text("Cancelled. Tap ✓ to send again.")) : .idle
+        Self.sendCancel(requestID: id)
+    }
+
+    private static func sendCancel(requestID id: String) {
+        let session = WCSession.default
+        guard session.activationState == .activated else { return }
+        let info = [SketchAssistProtocol.cancelKey: id]
+        guard session.isReachable else {
+            session.transferUserInfo(info)
+            return
+        }
+        // The error handler runs on a WatchConnectivity queue.
+        session.sendMessage(info, replyHandler: nil) { @Sendable _ in WCSession.default.transferUserInfo(info) }
+    }
+
     /// Clears a finished notice; a pending request stays visible.
     func dismissNotice() {
         guard !phase.isWaiting else { return }
@@ -114,9 +139,9 @@ final class WatchSketchAssist: ObservableObject {
     private static func message(for failure: SketchAssistProtocol.Failure) -> String {
         switch failure {
         case .unavailable: L10n.text("Apple Intelligence is not available on your iPhone.")
-        case .cancelled: L10n.text("Cancelled on iPhone.")
-        case .unsupportedDrawing: L10n.text("This drawing could not be used. Try another sketch.")
-        case .failed: L10n.text("Could not complete the sketch. Please try again.")
+        case .cancelled: L10n.text("Closed on iPhone. Tap ✓ to try again.")
+        case .unsupportedDrawing: L10n.text("These strokes could not be used. Circle other strokes and try again.")
+        case .failed: L10n.text("Could not complete the strokes. Tap ✓ to try again.")
         }
     }
 
@@ -142,53 +167,83 @@ final class WatchSketchAssist: ObservableObject {
     }
 }
 
-/// Canvas status for a sketch assist request, styled like the lasso mode notice.
+/// Center-screen status and hints for Complete strokes: what to do next while the
+/// outlined strokes wait for ✓, progress while the request is out (✕ cancels it),
+/// and the outcome.
 struct SketchAssistNotice: View {
+    @ObservedObject var lasso: WatchLassoController
     @ObservedObject private var assist = WatchSketchAssist.shared
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Set when freshly outlined strokes wait for ✓; cleared after a few seconds.
+    @State private var confirmationHintID: UUID?
 
     var body: some View {
         ZStack {
-            if let text {
-                HStack(spacing: 6) {
-                    if assist.phase.isWaiting { ProgressView().frame(width: 18, height: 18) }
-                    Text(text)
-                        .font(.footnote)
-                        .multilineTextAlignment(.center)
-                        .lineLimit(4)
-                        .minimumScaleFactor(0.6)
+            if let content {
+                VStack(spacing: 4) {
+                    HStack(spacing: 6) {
+                        if assist.phase.isWaiting { ProgressView().frame(width: 18, height: 18) }
+                        Text(content.text)
+                            .font(.footnote)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(4)
+                            .minimumScaleFactor(0.6)
+                    }
+                    if assist.phase.isWaiting {
+                        Text(L10n.text("Tap ✕ to cancel"))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.6)
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
                 .padding(.horizontal, 24)
+                .id(content.id)
                 .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
-                .task(id: assist.phase) {
-                    guard !assist.phase.isWaiting else { return }
-                    do { try await Task.sleep(for: .seconds(3)) } catch { return }
-                    withAnimation(.easeOut(duration: 0.2)) { assist.dismissNotice() }
+                .task(id: content.id) {
+                    guard let duration = content.duration else { return }
+                    do { try await Task.sleep(for: .seconds(duration)) } catch { return }
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        if assist.phase == .idle { confirmationHintID = nil } else { assist.dismissNotice() }
+                    }
                 }
             }
         }
-        // Stay clear of the lasso controls at the bottom while the user keeps drawing.
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.top, 28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(false)
         .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: assist.phase)
+        .animation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8), value: confirmationHintID)
+        .onChange(of: lasso.sketchAssistStage) { old, stage in
+            // Only a new selection; a failure brings its own next step.
+            confirmationHintID = old == .idle && stage == .awaitingConfirmation ? UUID() : nil
+        }
     }
 
-    private var text: String? {
+    /// `duration` nil keeps the notice until the phase changes.
+    private var content: (id: String, text: String, duration: Double?)? {
         switch assist.phase {
-        case .idle: nil
-        case .waiting(.sending): L10n.text("Sending to iPhone…")
-        case .waiting(.delivered): L10n.text("Open Paint Anytime on iPhone")
-        case .waiting(.choosing): L10n.text("Choose an image on iPhone")
-        case .waiting(.returning): L10n.text("Receiving image…")
+        case .idle:
+            guard let confirmationHintID, lasso.awaitsSketchAssistConfirmation else { return nil }
+            return (confirmationHintID.uuidString, L10n.text("Tap ✓ to send the strokes to iPhone"), 3)
+        case .waiting(let stage):
+            let text = switch stage {
+            case .sending: L10n.text("Sending to iPhone…")
+            case .delivered: L10n.text("Open Paint Anytime on iPhone")
+            case .preparing: L10n.text("Opening Image Playground on iPhone…")
+            case .choosing: L10n.text("Image Playground is drawing on iPhone. Tap Done there to keep the result.")
+            case .returning: L10n.text("Adding the image…")
+            }
+            return ("waiting", text, nil)
         case .completed(let applied):
-            L10n.text(applied ? "Strokes replaced. Use Undo to bring them back."
-                              : "The drawing changed, so the image was not added.")
-        case .failed(let message, _): message
+            if applied { return ("completed", L10n.text("Done! Use Undo to get your strokes back."), 3) }
+            return ("notApplied", L10n.text("The drawing changed, so the image was not added. Tap ✓ to try again."), 5)
+        case .failed(let message, _):
+            // Failures say what to do next; give them time to be read on the wrist.
+            return ("failed-" + message, message, 5)
         }
     }
 }
@@ -197,11 +252,21 @@ struct SketchAssistNotice: View {
 struct SketchAssistRequirementsAlert: ViewModifier {
     @Binding var isPresented: Bool
 
+    /// No report yet: most often the iPhone app was never opened, not a missing feature.
+    private var phoneHasReported: Bool {
+        UserDefaults.standard.object(forKey: WatchSketchAssist.phoneAvailabilityKey) != nil
+    }
+
     func body(content: Content) -> some View {
-        content.alert(L10n.text("Image Playground is unavailable"), isPresented: $isPresented) {
+        content.alert(L10n.text(phoneHasReported ? "Image Playground is unavailable" : "Open Paint Anytime on iPhone"),
+                      isPresented: $isPresented) {
             Button(L10n.text("OK"), role: .cancel) {}
         } message: {
-            Text(L10n.text("To complete strokes, you need an iPhone that supports Apple Intelligence (iPhone 15 Pro or later) with iOS 18.4 or later, Apple Intelligence turned on in Settings, and Image Playground available. Install Paint Anytime on iPhone and open it once so your watch can check."))
+            if phoneHasReported {
+                Text(L10n.text("To complete strokes, you need an iPhone that supports Apple Intelligence (iPhone 15 Pro or later) with iOS 18.4 or later, Apple Intelligence turned on in Settings, and Image Playground available. Install Paint Anytime on iPhone and open it once so your watch can check."))
+            } else {
+                Text(L10n.text("Your watch checks Image Playground through the iPhone app. Install Paint Anytime on iPhone, open it once, then try again."))
+            }
         }
     }
 }

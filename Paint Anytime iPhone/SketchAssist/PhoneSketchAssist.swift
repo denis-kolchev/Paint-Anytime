@@ -37,15 +37,24 @@ final class PhoneSketchAssist: ObservableObject {
     /// background wait here until the user opens the app.
     @Published private(set) var pending: Request?
     private var preparing: Task<Void, Never>?
+    /// The request being recognized before Image Playground opens.
+    private var preparingID: String?
     private var publishedAvailability: Bool?
+    private var reportedPreparingID: String?
     private var reportedChoosingID: String?
+    /// Cancelled on the watch; the message can overtake the sketch file.
+    private var cancelledIDs: Set<String> = []
 
     private init() {}
 
     func handle(imageData: Data, requestID: String, maximumPixels: Int) {
+        guard !cancelledIDs.contains(requestID) else { return }
         // The watch only waits for its latest request.
         preparing?.cancel()
+        preparingID = requestID
+        reportProgressIfOnScreen()
         preparing = Task {
+            defer { if preparingID == requestID { preparingID = nil } }
             guard let source = CGImageSourceCreateWithData(imageData as CFData, nil),
                   let sketch = CGImageSourceCreateImageAtIndex(source, 0, nil)
             else { return fail(.unsupportedDrawing, detail: "Unreadable sketch image", requestID: requestID) }
@@ -54,21 +63,39 @@ final class PhoneSketchAssist: ObservableObject {
                             requestID: requestID)
             }
             let label = await recognize(sketch)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, !cancelledIDs.contains(requestID) else { return }
             pending = Request(id: requestID, sketch: UIImage(cgImage: sketch),
                               sketchSize: CGSize(width: sketch.width, height: sketch.height),
                               sketchContent: Self.contentBounds(of: sketch), label: label,
                               maximumPixels: min(1024, max(128, maximumPixels)))
-            reportChoosingIfOnScreen()
+            reportProgressIfOnScreen()
         }
     }
 
-    /// Tells the watch that Image Playground is up; call when the app becomes active.
-    func reportChoosingIfOnScreen() {
-        guard let request = pending, reportedChoosingID != request.id,
-              UIApplication.shared.applicationState == .active else { return }
-        reportedChoosingID = request.id
-        report(.choosing, requestID: request.id)
+    /// Tells the watch the app is on screen: preparing Image Playground, or showing it.
+    /// Call when the app becomes active; a request in the background waits for that.
+    func reportProgressIfOnScreen() {
+        guard UIApplication.shared.applicationState == .active else { return }
+        if let request = pending {
+            guard reportedChoosingID != request.id else { return }
+            reportedChoosingID = request.id
+            report(.choosing, requestID: request.id)
+        } else if let id = preparingID, reportedPreparingID != id {
+            reportedPreparingID = id
+            report(.preparing, requestID: id)
+        }
+    }
+
+    /// ✕ on the watch: drop the request and close Image Playground without reporting back.
+    func cancelFromWatch(requestID: String) {
+        cancelledIDs.insert(requestID)
+        if preparingID == requestID {
+            preparing?.cancel()
+            preparing = nil
+            preparingID = nil
+        }
+        // Clearing `pending` dismisses the sheet; its cancel callback then finds nothing to report.
+        if pending?.id == requestID { pending = nil }
     }
 
     /// Live message when the watch app is open, queued user info otherwise.
