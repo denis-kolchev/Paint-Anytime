@@ -229,42 +229,13 @@ struct TutorialPlayerView: View {
                             .accessibilityHidden(!showsPrimaryControl)
                         }
                     }
-                    // Installed here, outside the page's crossfade: from inside the tool editor
-                    // the toolbar animated it in, so it flew into place from the edge.
-                    // The palette on the Color page, Information elsewhere, as in the editor.
-                    if page == .tools && !tutorial.isPaletteLesson {
+                    // ••• or its placeholder on the canvas, then the palette / Information corner
+                    // in the tool editor: one item and one Button, as in the canvas's own toolbar.
+                    // A separate corner item, inserted with the editor, moved into place from the
+                    // corner (and from inside the editor's crossfade, from the edge).
+                    if leadingCorner != nil {
                         ToolbarItem(placement: .topBarLeading) {
-                            let opensPalette = tutorial.toolPage == ToolSetting.color.rawValue
-                                || tutorial.step == .openCurrentPalette
-                            // Outside its lesson the tour's palette has nothing to open.
-                            let isEnabled = tutorial.allowsToolInfo
-                                && (!opensPalette || tutorial.step == .openCurrentPalette)
-                            Button {
-                                if tutorial.step == .openCurrentPalette {
-                                    tutorial.record(.openedCurrentPalette)
-                                } else if !opensPalette {
-                                    tutorial.record(.openedInfo)
-                                    toolShowsInformation = true
-                                }
-                            } label: {
-                                ZStack {
-                                    Image(systemName: "info.circle")
-                                        .opacity(opensPalette ? 0 : 1)
-                                        .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
-                                    CurrentPaletteIcon()
-                                        .opacity(opensPalette ? 1 : 0)
-                                        .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
-                                }
-                                .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: opensPalette)
-                                .tutorialHint(tutorial, steps: [.openCurrentPalette])
-                            }
-                            .watchToolbarButtonStyle()
-                            .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
-                            // Tutorial result cards temporarily disable actions, not the clock's layout.
-                            .opacity(tutorial.allowsToolInfo ? 1 : 0)
-                            .allowsHitTesting(isEnabled && !isLeavingPage)
-                            .accessibilityHidden(!tutorial.allowsToolInfo)
-                            .tutorialChromeFade()
+                            leadingCornerControl
                         }
                     }
                     // One item per corner from the canvas step that opens Layers through the
@@ -393,31 +364,6 @@ struct TutorialPlayerView: View {
                             .disabled(!tutorial.permits(back) || isLeavingPage)
                             .accessibilityLabel(L10n.text("Back"))
                             .tutorialChromeFade()
-                        }
-                    }
-                    // The page these steps open has a button in each top corner. Holding both
-                    // corners already keeps the clock where it will be: inserted with the page,
-                    // it slid in from the edge and the new buttons flew into place.
-                    // The Layers step holds its corners in the Back and + items above.
-                    if page == .canvas && tutorial.step == .openTools && !tutorial.permitsMenuButton {
-                        ToolbarItem(placement: .topBarLeading) { toolbarPlaceholder }
-                    }
-                    // Installed through the whole shape list, transparent until a page turns,
-                    // so ••• fades in where it will be instead of the toolbar inserting it.
-                    if page == .canvas && (tutorial.permitsMenuButton || showsShapeCatalog) {
-                        ToolbarItem(placement: .topBarLeading) {
-                            Button { openMenuFromCanvas() } label: {
-                                Image(systemName: "ellipsis").tutorialHint(tutorial, steps: [.openMenu, .browseShapes])
-                                    .frame(width: 32, height: 32)
-                                    .contentShape(Circle())
-                            }
-                                .watchToolbarButtonStyle(usesCanvasMaterial: true, hidesNativeChrome: !tutorial.permitsMenuButton)
-                                .accessibilityLabel(L10n.text("More"))
-                                .trackCanvasControl(.more, frames: $controls)
-                                .opacity(tutorial.permitsMenuButton ? 1 : 0)
-                                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25), value: tutorial.permitsMenuButton)
-                                .allowsHitTesting(tutorial.permitsMenuButton)
-                                .accessibilityHidden(!tutorial.permitsMenuButton)
                         }
                     }
                 }
@@ -1204,6 +1150,96 @@ struct TutorialPlayerView: View {
     }
 
     /// Holds a top corner of the bar without showing anything, like the editor's empty slots.
+    private enum LeadingCorner { case placeholder, more, tools }
+
+    /// What the shared leading item shows, or nil while it is not installed.
+    private var leadingCorner: LeadingCorner? {
+        if page == .tools { return tutorial.isPaletteLesson ? nil : .tools }
+        guard page == .canvas else { return nil }
+        // Installed through the whole shape list, transparent until a page turns,
+        // so ••• fades in where it will be instead of the toolbar inserting it.
+        if tutorial.permitsMenuButton || showsShapeCatalog { return .more }
+        // The tool editor has a button in each top corner. Holding both corners already
+        // keeps the clock where it will be: inserted with the page, it slid in from the edge.
+        if tutorial.step == .openTools { return .placeholder }
+        return nil
+    }
+
+    /// ••• (or its transparent placeholder) on the canvas and, in the tool editor, the
+    /// palette on the Color page and Information elsewhere, as in the editor. The label and
+    /// flags change on one Button, so the toolbar never inserts a new view in this corner.
+    private var leadingCornerControl: some View {
+        let corner = leadingCorner ?? .placeholder
+        let opensPalette = tutorial.toolPage == ToolSetting.color.rawValue
+            || tutorial.step == .openCurrentPalette
+        let isShown: Bool
+        let isEnabled: Bool
+        switch corner {
+        case .tools:
+            // Tutorial result cards temporarily disable actions, not the clock's layout.
+            isShown = tutorial.allowsToolInfo && !isLeavingPage
+            // Outside its lesson the tour's palette has nothing to open.
+            isEnabled = isShown && (!opensPalette || tutorial.step == .openCurrentPalette)
+        case .more:
+            isShown = tutorial.permitsMenuButton
+            isEnabled = tutorial.permitsMenuButton
+        case .placeholder:
+            isShown = false
+            isEnabled = false
+        }
+        return Button {
+            switch corner {
+            case .tools:
+                if tutorial.step == .openCurrentPalette {
+                    tutorial.record(.openedCurrentPalette)
+                } else if !opensPalette {
+                    tutorial.record(.openedInfo)
+                    toolShowsInformation = true
+                }
+            case .more:
+                openMenuFromCanvas()
+            case .placeholder:
+                break
+            }
+        } label: {
+            Group {
+                if corner == .tools {
+                    ZStack {
+                        Image(systemName: "info.circle")
+                            .opacity(opensPalette ? 0 : 1)
+                            .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
+                        CurrentPaletteIcon()
+                            .opacity(opensPalette ? 1 : 0)
+                            .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
+                    }
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: opensPalette)
+                    .tutorialHint(tutorial, steps: [.openCurrentPalette])
+                    // Grows in with the editor and fades out with it.
+                    .tutorialChromeFade()
+                } else {
+                    Image(systemName: "ellipsis")
+                        .tutorialHint(tutorial, steps: [.openMenu, .browseShapes])
+                        .opacity(corner == .more ? 1 : 0)
+                }
+            }
+            .frame(width: 32, height: 32)
+            .contentShape(Circle())
+        }
+        // Canvas material and the drawn circles' size in the editor as well: the native style
+        // lays the button out about 2.5 pt away, and the toolbar slid the icon there.
+        .watchToolbarButtonStyle(diameter: corner == .more ? 32 : MorphPanelGeometry.buttonDiameter,
+                                 usesCanvasMaterial: true,
+                                 hidesNativeChrome: corner != .tools && !(corner == .more && tutorial.permitsMenuButton))
+        .accessibilityLabel(L10n.text(corner == .tools ? (opensPalette ? "Current palette" : "Information") : "More"))
+        // Only ••• reports its frame: the canvas protects it from strokes and the lessons
+        // point at it, which the placeholder and the editor's corner must not change.
+        .trackCanvasControl(.more, frames: corner == .more ? $controls : .constant([:]))
+        .opacity(isShown ? 1 : 0)
+        .animation(.easeInOut(duration: reduceMotion ? 0.15 : TutorialChromeFade.duration), value: isShown)
+        .allowsHitTesting(isEnabled)
+        .accessibilityHidden(!isShown)
+    }
+
     private var toolbarPlaceholder: some View {
         Button {} label: {
             Image(systemName: "ellipsis").frame(width: 18, height: 18).opacity(0)
