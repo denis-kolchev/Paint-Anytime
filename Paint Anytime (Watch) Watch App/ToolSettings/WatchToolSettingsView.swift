@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import WatchKit
 
@@ -19,6 +20,8 @@ struct WatchToolSettingsView: View {
     }
     @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
     @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
+    /// The canvas's leading corner, which opens the palette or Information from here.
+    var corner: ToolSettingsCorner? = nil
     @State private var showsPalette = false
     /// Add color opens the HSB and RGB editor straight away, not the palette first.
     @State private var showsColorEditor = false
@@ -77,7 +80,7 @@ struct WatchToolSettingsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @FocusState private var crownFocused: Bool
-    @AppStorage("watch.settings.lastPage") private var savedPage = 1
+    @AppStorage(WatchToolSettingsView.savedPageKey) private var savedPage = ToolSetting.color.rawValue
     @State private var selectedPage = 1
     @State private var didRestorePage = false
 
@@ -139,16 +142,26 @@ struct WatchToolSettingsView: View {
     @State private var lessonColors: [SIMD4<Float>] = []
     private var instrumentIndex: Int { instruments.firstIndex(of: controller.pencilStyle.instrument) ?? 0 }
 
-    private var availableSettings: [ToolSetting] {
-        let pages: [ToolSetting]
-        if isEraser { pages = controller.pencilStyle.eraserMode == .pixels
+    private var availableSettings: [ToolSetting] { Self.availableSettings(for: controller.pencilStyle) }
+
+    static func availableSettings(for style: PencilStyle) -> [ToolSetting] {
+        switch style.instrument {
+        case .eraser: style.eraserMode == .pixels
             ? [.width, .opacity, .instrument, .mode]
-            : [.width, .instrument, .mode] }
-        else if controller.pencilStyle.instrument == .blur { pages = [.blurStrength, .width, .blurRadius, .instrument] }
-        else if controller.pencilStyle.instrument == .fill { pages = [.color, .sensitivity, .opacity, .instrument] }
-        else if controller.pencilStyle.instrument == .reed { pages = [.color, .width, .opacity, .instrument, .direction] }
-        else { pages = [.color, .width, .opacity, .instrument] }
-        return pages
+            : [.width, .instrument, .mode]
+        case .blur: [.blurStrength, .width, .blurRadius, .instrument]
+        case .fill: [.color, .sensitivity, .opacity, .instrument]
+        case .reed: [.color, .width, .opacity, .instrument, .direction]
+        default: [.color, .width, .opacity, .instrument]
+        }
+    }
+
+    static let savedPageKey = "watch.settings.lastPage"
+
+    /// Whether the settings will open on the Color page, before they restore it on appear.
+    static func opensOnColorPage(style: PencilStyle) -> Bool {
+        let saved = UserDefaults.standard.object(forKey: savedPageKey) as? Int ?? ToolSetting.color.rawValue
+        return saved == ToolSetting.color.rawValue && availableSettings(for: style).contains(.color)
     }
 
     private var tutorialSwipeTarget: ToolSetting? {
@@ -526,37 +539,9 @@ struct WatchToolSettingsView: View {
                     if availableSettings.indices.contains(next) { select(availableSettings[next]) }
                 }
         )
-        .toolbar {
-            if !tutorial.isActive {
-                // Outside the tutorial the corner opens the current palette on the
-                // Color page and Information on every other page; the icons cross-fade.
-                ToolbarItem(placement: .topBarLeading) {
-                    let opensPalette = selection == .color
-                    Button {
-                        crownFocused = false
-                        if opensPalette {
-                            showsPalette = true
-                        } else {
-                            showsInformation = true
-                        }
-                    } label: {
-                        ZStack {
-                            Image(systemName: "info.circle")
-                                .opacity(opensPalette ? 0 : 1)
-                                .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
-                            CurrentPaletteIcon()
-                                .opacity(opensPalette ? 1 : 0)
-                                .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
-                        }
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: opensPalette)
-                    }
-                    .watchToolbarButtonStyle()
-                    .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
-                }
-            }
-            // In the tutorial the player installs this corner in its own toolbar, outside
-            // the page crossfade: inserted from here, the toolbar animated it in from the edge.
-        }
+        // The leading corner is installed by the canvas toolbar (`ToolSettingsCornerButton`)
+        // and in the tutorial by the player, outside the fade that opens these settings:
+        // inserted from here, the toolbar moved the new item into place from the corner.
         .fullScreenCover(isPresented: $showsPalette, onDismiss: { crownFocused = true }) {
             InkPaletteBrowser(library: paletteLibrary, controller: controller, onSave: savePalettes)
                 .environment(\.colorScheme, .dark)
@@ -606,6 +591,8 @@ struct WatchToolSettingsView: View {
             // The initial page may equal the default and so never reach onChange below.
             tutorial.showedToolPage(selectedPage)
             if !tutorial.isActive { crownFocused = true }
+            corner?.opensPalette = selection == .color
+            corner?.onTap = { cornerTapped() }
         }
         .task {
             // The canvas shows its native bars again as these settings open, which rebuilds
@@ -617,7 +604,12 @@ struct WatchToolSettingsView: View {
                 crownFocused = true
             }
         }
-        .onDisappear { controller.flushStylePreferences() }
+        .onDisappear {
+            controller.flushStylePreferences()
+            corner?.opensPalette = nil
+            corner?.onTap = {}
+        }
+        .onChange(of: selection) { _, setting in corner?.opensPalette = setting == .color }
         .onChange(of: tutorial.showsInstruction) { _, showing in
             if !tutorial.isActive {
                 crownFocused = !showing && tutorial.allowsToolAdjustment(page: selection.rawValue)
@@ -636,6 +628,16 @@ struct WatchToolSettingsView: View {
         }
         .onChange(of: controller.pencilStyle.instrument) { _, _ in
             withAnimation(pageAnimation) { selectedPage = selection.rawValue }
+        }
+    }
+
+    /// The canvas's leading corner: the current palette on the Color page, Information elsewhere.
+    private func cornerTapped() {
+        crownFocused = false
+        if selection == .color {
+            showsPalette = true
+        } else {
+            showsInformation = true
         }
     }
 
@@ -855,5 +857,52 @@ private struct ToolPreviewLayout: Layout {
                                                     height: max(1, bounds.height - captionSpace)))
         subviews[1].place(at: CGPoint(x: bounds.midX, y: bounds.maxY), anchor: .bottom,
                          proposal: ProposedViewSize(width: bounds.width, height: captionHeight))
+    }
+}
+
+// MARK: - Leading corner
+
+/// The tool settings' leading corner, shared by the settings and the canvas toolbar.
+/// The canvas toolbar installs the button outside the fade that opens the settings, as it
+/// does Done: installed by the settings themselves, the new toolbar item was laid out under
+/// that fade and moved into place from the screen's corner.
+final class ToolSettingsCorner: ObservableObject {
+    /// Set by the settings while on screen; `nil` before they restore their page.
+    @Published var opensPalette: Bool?
+    var onTap: () -> Void = {}
+}
+
+/// The current palette on the Color page and Information elsewhere; the icons cross-fade.
+struct ToolSettingsCornerButton: View {
+    @ObservedObject var corner: ToolSettingsCorner
+    let style: PencilStyle
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isRevealed = false
+
+    var body: some View {
+        // Until the settings restore their page, open on the page they will restore.
+        let opensPalette = corner.opensPalette ?? WatchToolSettingsView.opensOnColorPage(style: style)
+        let swap: Animation? = reduceMotion ? nil : .easeInOut(duration: 0.25)
+        Button { corner.onTap() } label: {
+            ZStack {
+                Image(systemName: "info.circle")
+                    .animation(swap) { icon in
+                        icon.opacity(opensPalette ? 0 : 1)
+                            .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
+                    }
+                CurrentPaletteIcon()
+                    .animation(swap) { icon in
+                        icon.opacity(opensPalette ? 1 : 0)
+                            .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
+                    }
+            }
+            // The icon appears on its button with the settings, scoped to its opacity.
+            .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25)) { icons in
+                icons.opacity(isRevealed ? 1 : 0)
+            }
+            .onAppear { isRevealed = true }
+        }
+        .watchToolbarButtonStyle()
+        .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
     }
 }

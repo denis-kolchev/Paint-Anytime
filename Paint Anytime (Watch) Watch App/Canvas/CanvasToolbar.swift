@@ -36,6 +36,8 @@ struct CanvasToolbar: ToolbarContent {
     @Binding var isEyedropperActive: Bool
     @Binding var hasEyedropperSession: Bool
     @Binding var cameraSampledColor: SIMD4<Float>?
+    /// Tool settings' palette / Information corner, installed here with Done.
+    let toolSettingsCorner: ToolSettingsCorner
     let controlFrames: Binding<[CanvasToolbarControl: CGRect]>
     let onMoveSelectionLayer: (Int) -> Void
     let onFinishLasso: () -> Void
@@ -90,10 +92,16 @@ struct CanvasToolbar: ToolbarContent {
             }
         }
         // A custom layout assigns the top-left slot itself, except while the
-        // free camera borrows it for the eyedropper.
-        if isShown && !showsToolSettings && !lassoIsActive && (customLayout == nil || isMovingCanvas) {
+        // free camera borrows it for the eyedropper. Tool settings put their corner in the
+        // same item, as Done replaces the trailing control: added inside the settings'
+        // fade, the toolbar moved it into place from the screen's corner.
+        if isShown && (showsToolSettings || (!lassoIsActive && (customLayout == nil || isMovingCanvas))) {
             ToolbarItem(placement: .topBarLeading) {
-                leadingControl
+                if showsToolSettings {
+                    ToolSettingsCornerButton(corner: toolSettingsCorner, style: controller.pencilStyle)
+                } else {
+                    leadingControl
+                }
             }
         }
         if isShown && (customLayout == nil || showsToolSettings || isMovingCanvas || lassoIsActive) {

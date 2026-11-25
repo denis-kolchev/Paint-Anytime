@@ -37,6 +37,7 @@ struct ContentView: View {
     @State private var showsReferenceFullscreen = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showsToolSettings = false
+    @StateObject private var toolSettingsCorner = ToolSettingsCorner()
     @State private var isMovingCanvas = false
     @State private var isEyedropperActive = false
     @State private var hasEyedropperSession = false
@@ -562,7 +563,7 @@ struct ContentView: View {
             }
 
             if showsToolSettings {
-                WatchToolSettingsView(controller: controller)
+                WatchToolSettingsView(controller: controller, corner: toolSettingsCorner)
                 .frame(width: geometry.size.width, height: geometry.size.height)
                 .background(.black)
                 .transition(.opacity)
@@ -628,6 +629,7 @@ struct ContentView: View {
             showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
             isEyedropperActive: $isEyedropperActive, hasEyedropperSession: $hasEyedropperSession,
             cameraSampledColor: $cameraSampledColor,
+            toolSettingsCorner: toolSettingsCorner,
             controlFrames: controlFramesBinding,
             onMoveSelectionLayer: moveSelectionLayer,
             onFinishLasso: finishLasso,
