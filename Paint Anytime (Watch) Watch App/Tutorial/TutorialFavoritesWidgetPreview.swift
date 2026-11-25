@@ -1,14 +1,13 @@
 import SwiftUI
 import UIKit
 
-/// After the favorites lesson: a watch face with the time and the rectangular favorites
-/// widget, filled with the pictures the user just liked, as the widget lays out three of them
-/// side by side. Display only; after a moment a ✕ appears where the canvas keeps its •••
-/// button, and it closes the preview back to the gallery.
+/// After the favorites lesson the lesson card grows over the gallery and shows, above its
+/// hint, a watch face with the time and the rectangular favorites widget, filled with the
+/// pictures the user just liked, as the widget lays out three of them side by side.
+/// Display only; after a moment a ✕ appears where the canvas keeps its ••• button, and it
+/// closes the preview back to the gallery. The face starts below that ✕, so the two never overlap.
 struct TutorialFavoritesWidgetPreview: View {
     let drawings: [URL]
-    /// The lesson card's height; the face is centred in the space above it.
-    let hintReservedHeight: CGFloat
     /// The canvas's ••• button as measured in earlier lessons, in global coordinates.
     let closeButtonFrame: CGRect?
     let onClose: () -> Void
@@ -19,33 +18,35 @@ struct TutorialFavoritesWidgetPreview: View {
 
     var body: some View {
         GeometryReader { geometry in
-            let width = geometry.size.width * 0.8
+            let anchor = closeAnchor(in: geometry)
+            // The band of the ✕ stays clear even before the button appears.
+            let top = min(geometry.size.height, anchor.y + MorphPanelGeometry.buttonDiameter / 2 + 4)
             VStack(spacing: 6) {
                 TimelineView(.everyMinute) { context in
                     Text(context.date, format: .dateTime.hour().minute())
-                        .font(.system(size: 48, weight: .regular, design: .rounded))
+                        .font(.system(size: 44, weight: .regular, design: .rounded))
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
                         .foregroundStyle(.white)
                 }
+                // Shrinks with its proportions when a small screen leaves less height.
                 widget
-                    .frame(width: width, height: width * 0.42)
+                    .aspectRatio(1 / 0.42, contentMode: .fit)
+                    .frame(maxWidth: geometry.size.width * 0.8)
             }
-            .frame(width: geometry.size.width,
-                   height: max(0, geometry.size.height - hintReservedHeight))
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(L10n.text("Favorites can appear in a widget on your watch face."))
+            .padding(.bottom, 8)
+            .frame(width: geometry.size.width, height: max(0, geometry.size.height - top))
+            .offset(y: top)
+            // The hint below the face says the same.
+            .accessibilityHidden(true)
 
             if showsClose {
-                let anchor = closeAnchor(in: geometry)
                 closeButton
                     .position(x: anchor.x, y: anchor.y)
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.6)))
             }
         }
-        .background(Color.black)
-        .ignoresSafeArea()
         .task(id: drawings) { await load() }
         .task {
             // A moment to look at the face before it can be dismissed.

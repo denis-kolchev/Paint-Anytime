@@ -17,6 +17,8 @@ struct TutorialLessonView: View {
     var continuation: TutorialContinuationActions? = nil
     /// Set while the card fills the screen with the shapes that snap, above its usual hint.
     var showsShapeCatalog = false
+    /// Set while the card fills the screen with the favorites widget on a watch face, above its usual hint.
+    var favoritesWidget: TutorialFavoritesWidgetPreview? = nil
     @State private var completionProgress: CGFloat = 0
     @State private var revealsResultAction = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -38,6 +40,19 @@ struct TutorialLessonView: View {
                     // The expanded card drops its edge gap; restore it here so the hint and
                     // its ✕ stay where the compact card showed them, instead of sinking
                     // towards the display's lower corners.
+                    compactCard
+                        .padding([.horizontal, .bottom], edgeGap)
+                }
+                .transition(.asymmetric(
+                    insertion: .opacity.animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25)
+                        .delay(reduceMotion ? 0 : 0.3)),
+                    removal: .opacity.animation(.easeInOut(duration: 0.15))))
+            } else if let favoritesWidget {
+                // As the shape list: the face fades in once the card has mostly grown, and
+                // the hint keeps its place, ✕ and progress ring below it.
+                VStack(spacing: 0) {
+                    favoritesWidget
+                        .frame(maxHeight: .infinity)
                     compactCard
                         .padding([.horizontal, .bottom], edgeGap)
                 }
@@ -205,7 +220,7 @@ struct TutorialLessonView: View {
 
     private let edgeGap: CGFloat = 10
 
-    private var isExpanded: Bool { continuation != nil || showsShapeCatalog }
+    private var isExpanded: Bool { continuation != nil || showsShapeCatalog || favoritesWidget != nil }
 
     /// The top toolbar band, where ••• sits; the clock is hidden over the canvas.
     private var shapeCatalogTopInset: CGFloat { max(34, screenHeight * 0.17) }

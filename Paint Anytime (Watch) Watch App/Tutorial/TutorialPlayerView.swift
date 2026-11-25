@@ -339,20 +339,6 @@ struct TutorialPlayerView: View {
                 .environment(\.tutorialHintReservedHeight, hintReservedHeight)
                 .environment(\.tutorialChromeHidden, isLeavingPage)
 
-                // The widget preview after the favorites lesson; the lesson card stays above it.
-                ZStack {
-                    if showsFavoritesWidget {
-                        TutorialFavoritesWidgetPreview(drawings: tutorial.favoritedDrawings,
-                                                       hintReservedHeight: hintReservedHeight,
-                                                       closeButtonFrame: controls[.more]) {
-                            tutorial.record(.sawFavoritesWidget)
-                        }
-                        .transition(reduceMotion ? .opacity : .opacity.combined(with: .scale(scale: 0.94)))
-                    }
-                }
-                .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.35), value: showsFavoritesWidget)
-                .frame(width: screen.size.width, height: screen.size.height)
-
                 if page == .menu {
                     // Rise from below the screen like the editor's menu sheet, over the drawing.
                     // An explicit offset animates the native List reliably, where an insertion
@@ -377,6 +363,9 @@ struct TutorialPlayerView: View {
                     .animation(showsShapeCatalog
                                ? (reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0)) : nil,
                                value: showsShapeCatalog)
+                    // After the favorites lesson the card grows into the widget preview and back.
+                    .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0),
+                               value: showsFavoritesWidget)
                     .background {
                         GeometryReader { hintGeometry in
                             Color.clear.preference(key: TutorialHintHeightKey.self,
@@ -1614,12 +1603,12 @@ private extension TutorialPlayerView {
     /// keeps the toolbar: ••• in the top-left corner leads on to the menu.
     var showsShapeCatalog: Bool { page == .canvas && tutorial.step == .browseShapes }
 
-    var expandsLessonCard: Bool { offersContinuation || cardShowsShapeCatalog }
+    var expandsLessonCard: Bool { offersContinuation || cardShowsShapeCatalog || showsFavoritesWidget }
 
     /// The list also stays on the card while it fades out over the menu.
     var cardShowsShapeCatalog: Bool { showsShapeCatalog || shapeCatalogFadesOut }
 
-    /// The watch face with the favorites widget, over the gallery, until it is tapped.
+    /// The watch face with the favorites widget, in the grown card over the gallery, until its ✕ is tapped.
     var showsFavoritesWidget: Bool { page == .gallery && tutorial.step == .showFavoritesWidget }
 
     /// Split out of `body`: inline, the optional closures and the height ternary
@@ -1635,6 +1624,13 @@ private extension TutorialPlayerView {
         var onShowContinuation: (() -> Void)? = nil
         if awaitsContinuation { onShowContinuation = { showContinuationOffer() } }
         let continuation: TutorialContinuationActions? = offersContinuation ? continuationActions : nil
+        var favoritesWidget: TutorialFavoritesWidgetPreview? = nil
+        if showsFavoritesWidget {
+            favoritesWidget = TutorialFavoritesWidgetPreview(drawings: tutorial.favoritedDrawings,
+                                                             closeButtonFrame: controls[.more]) {
+                tutorial.record(.sawFavoritesWidget)
+            }
+        }
         let preserveAndFinish: () -> Void = {
             if player.preserveDrawing() { onFinish() }
         }
@@ -1644,7 +1640,8 @@ private extension TutorialPlayerView {
                                   confirmsFinish: $confirmsFinish,
                                   onShowContinuation: onShowContinuation,
                                   continuation: continuation,
-                                  showsShapeCatalog: cardShowsShapeCatalog)
+                                  showsShapeCatalog: cardShowsShapeCatalog,
+                                  favoritesWidget: favoritesWidget)
     }
 
     /// The first chapter's result of a run that asks before the rest: its card shows a
