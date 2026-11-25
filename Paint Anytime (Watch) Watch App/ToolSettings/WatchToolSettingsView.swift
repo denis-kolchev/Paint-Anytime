@@ -539,7 +539,7 @@ struct WatchToolSettingsView: View {
                     if availableSettings.indices.contains(next) { select(availableSettings[next]) }
                 }
         )
-        // The leading corner is installed by the canvas toolbar (`ToolSettingsCornerButton`)
+        // The leading corner is installed by the canvas toolbar (`ToolSettingsCornerIcon`)
         // and in the tutorial by the player, outside the fade that opens these settings:
         // inserted from here, the toolbar moved the new item into place from the corner.
         .fullScreenCover(isPresented: $showsPalette, onDismiss: { crownFocused = true }) {
@@ -872,37 +872,32 @@ final class ToolSettingsCorner: ObservableObject {
     var onTap: () -> Void = {}
 }
 
-/// The current palette on the Color page and Information elsewhere; the icons cross-fade.
-struct ToolSettingsCornerButton: View {
-    @ObservedObject var corner: ToolSettingsCorner
-    let style: PencilStyle
+/// The corner's label: the current palette on the Color page and Information elsewhere;
+/// the icons cross-fade. The canvas toolbar shows it on its own leading button, so the
+/// toolbar keeps one button in that corner as the settings open.
+struct ToolSettingsCornerIcon: View {
+    let opensPalette: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isRevealed = false
 
     var body: some View {
-        // Until the settings restore their page, open on the page they will restore.
-        let opensPalette = corner.opensPalette ?? WatchToolSettingsView.opensOnColorPage(style: style)
         let swap: Animation? = reduceMotion ? nil : .easeInOut(duration: 0.25)
-        Button { corner.onTap() } label: {
-            ZStack {
-                Image(systemName: "info.circle")
-                    .animation(swap) { icon in
-                        icon.opacity(opensPalette ? 0 : 1)
-                            .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
-                    }
-                CurrentPaletteIcon()
-                    .animation(swap) { icon in
-                        icon.opacity(opensPalette ? 1 : 0)
-                            .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
-                    }
-            }
-            // The icon appears on its button with the settings, scoped to its opacity.
-            .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25)) { icons in
-                icons.opacity(isRevealed ? 1 : 0)
-            }
-            .onAppear { isRevealed = true }
+        ZStack {
+            Image(systemName: "info.circle")
+                .animation(swap) { icon in
+                    icon.opacity(opensPalette ? 0 : 1)
+                        .scaleEffect(reduceMotion || !opensPalette ? 1 : 0.6)
+                }
+            CurrentPaletteIcon()
+                .animation(swap) { icon in
+                    icon.opacity(opensPalette ? 1 : 0)
+                        .scaleEffect(reduceMotion || opensPalette ? 1 : 0.6)
+                }
         }
-        .watchToolbarButtonStyle()
-        .accessibilityLabel(L10n.text(opensPalette ? "Current palette" : "Information"))
+        // The icon appears on its button with the settings, scoped to its opacity.
+        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.25)) { icons in
+            icons.opacity(isRevealed ? 1 : 0)
+        }
+        .onAppear { isRevealed = true }
     }
 }

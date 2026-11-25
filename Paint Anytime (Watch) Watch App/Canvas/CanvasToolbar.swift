@@ -49,6 +49,9 @@ struct CanvasToolbar: ToolbarContent {
     private var canvasToolbarDiameter: CGFloat {
         usesMorphToolbar ? 32 : MorphPanelGeometry.buttonDiameter
     }
+    /// Tool settings' corner and Done: the drawn canvas circles' size, so the circles
+    /// keep their size as the settings open (32 pt read smaller than the morph's 36 pt).
+    private var toolSettingsDiameter: CGFloat { MorphPanelGeometry.buttonDiameter }
     /// The canvas draws this corner's glass; the native button keeps only the slot and taps.
     /// The lasso's Done is drawn there too, sharing one glass with the drawing morph.
     private var morphOwnsTrailingControl: Bool {
@@ -92,16 +95,13 @@ struct CanvasToolbar: ToolbarContent {
             }
         }
         // A custom layout assigns the top-left slot itself, except while the
-        // free camera borrows it for the eyedropper. Tool settings put their corner in the
-        // same item, as Done replaces the trailing control: added inside the settings'
-        // fade, the toolbar moved it into place from the screen's corner.
+        // free camera borrows it for the eyedropper. Tool settings put their corner on the
+        // same button, as Done replaces the trailing control: added inside the settings'
+        // fade, the toolbar moved it into place from the screen's corner, and a different
+        // view in this item flew in the same way.
         if isShown && (showsToolSettings || (!lassoIsActive && (customLayout == nil || isMovingCanvas))) {
             ToolbarItem(placement: .topBarLeading) {
-                if showsToolSettings {
-                    ToolSettingsCornerButton(corner: toolSettingsCorner, style: controller.pencilStyle)
-                } else {
-                    leadingControl
-                }
+                leadingControl
             }
         }
         if isShown && (customLayout == nil || showsToolSettings || isMovingCanvas || lassoIsActive) {
@@ -111,30 +111,51 @@ struct CanvasToolbar: ToolbarContent {
         }
     }
 
-    /// More, canvas actions, the free camera's eyedropper or the lasso's check.
+    /// The tool settings' corner opens the palette on the Color page and Information elsewhere.
+    /// `ContentView` observes the corner, so this toolbar is rebuilt as the page changes.
+    private var cornerOpensPalette: Bool {
+        // Until the settings restore their page, open on the page they will restore.
+        toolSettingsCorner.opensPalette
+            ?? WatchToolSettingsView.opensOnColorPage(style: controller.pencilStyle)
+    }
+
+    /// More, canvas actions, the free camera's eyedropper, the lasso's check or,
+    /// in tool settings, the palette / Information corner.
     private var leadingControl: some View {
-        MorphControlsScope {
+        let hidesForStroke = !showsToolSettings && hasActiveStroke
+        return MorphControlsScope {
             Button(action: leadingAction) {
-                Image(systemName: lassoIsActive ? "checkmark" : isMovingCanvas ? "eyedropper" : usesMorphToolbar ? "doc.badge.gearshape" : "ellipsis")
-                    .foregroundStyle(lassoIsActive || isEyedropperActive ? .green : .primary)
-                    .frame(width: 18, height: 18, alignment: .center)
-                    .opacity(lassoIsActive || isMovingCanvas || usesMorphToolbar ? 0 : 1)
-                    .contentShape(Rectangle())
+                Group {
+                    if showsToolSettings {
+                        ToolSettingsCornerIcon(opensPalette: cornerOpensPalette)
+                    } else {
+                        Image(systemName: lassoIsActive ? "checkmark" : isMovingCanvas ? "eyedropper" : usesMorphToolbar ? "doc.badge.gearshape" : "ellipsis")
+                            .foregroundStyle(lassoIsActive || isEyedropperActive ? .green : .primary)
+                            .frame(width: 18, height: 18, alignment: .center)
+                            .opacity(lassoIsActive || isMovingCanvas || usesMorphToolbar ? 0 : 1)
+                    }
+                }
+                .contentShape(Rectangle())
             }
-            .watchToolbarButtonStyle(diameter: canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: lassoIsActive ? true : (usesMorphToolbar || isMovingCanvas) || hasActiveStroke)
-            .accessibilityLabel(L10n.text(lassoIsActive ? (showsSelectionActions ? "Move to layer above" : WatchLassoMode.strokes.title) : isMovingCanvas ? "Eyedropper" : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
-            .disabled(lassoIsActive && showsSelectionActions && !canMoveSelectionUp)
-            .accessibilityAddTraits(isEyedropperActive ? [.isSelected] : [])
+            // Canvas material in tool settings too: the native style lays the button out
+            // about 2.5 pt from this slot, and the toolbar slid it there as the settings opened.
+            .watchToolbarButtonStyle(diameter: showsToolSettings ? toolSettingsDiameter : canvasToolbarDiameter, usesCanvasMaterial: true,
+                                     hidesNativeChrome: !showsToolSettings && (lassoIsActive || usesMorphToolbar || isMovingCanvas || hasActiveStroke))
+            .accessibilityLabel(L10n.text(showsToolSettings ? (cornerOpensPalette ? "Current palette" : "Information") : lassoIsActive ? (showsSelectionActions ? "Move to layer above" : WatchLassoMode.strokes.title) : isMovingCanvas ? "Eyedropper" : usesMorphToolbar && !showsContentActions ? "Canvas actions" : "More"))
+            .disabled(!showsToolSettings && lassoIsActive && showsSelectionActions && !canMoveSelectionUp)
+            .accessibilityAddTraits(!showsToolSettings && isEyedropperActive ? [.isSelected] : [])
             .trackCanvasControl(.more, frames: controlFrames)
             .modifier(CanvasMenuControlVisibility(isHidden: hidesMenuControls))
-            .opacity(hasActiveStroke ? 0 : 1)
-            .allowsHitTesting(!hasActiveStroke)
-            .accessibilityHidden(hasActiveStroke)
+            .opacity(hidesForStroke ? 0 : 1)
+            .allowsHitTesting(!hidesForStroke)
+            .accessibilityHidden(hidesForStroke)
         }
     }
 
     private func leadingAction() {
-        if lassoIsActive {
+        if showsToolSettings {
+            toolSettingsCorner.onTap()
+        } else if lassoIsActive {
             if showsSelectionActions { onMoveSelectionLayer(1) }
             else { lasso.setMode(.strokes) }
         } else if isMovingCanvas {
@@ -200,7 +221,9 @@ struct CanvasToolbar: ToolbarContent {
                 .opacity(morphOwnsTrailingControl ? 0 : 1)
                 .contentShape(Rectangle())
             }
-            .watchToolbarButtonStyle(diameter: showsToolSettings ? 32 : canvasToolbarDiameter, usesCanvasMaterial: !showsToolSettings, hidesNativeChrome: morphOwnsTrailingControl || lassoHidesControls || (!showsToolSettings && hasActiveStroke))
+            // Canvas material for Done too: the native style lays the button out about 2.5 pt
+            // from this slot, and the toolbar slid ✓ there as the settings opened.
+            .watchToolbarButtonStyle(diameter: showsToolSettings ? toolSettingsDiameter : canvasToolbarDiameter, usesCanvasMaterial: true, hidesNativeChrome: morphOwnsTrailingControl || lassoHidesControls || (!showsToolSettings && hasActiveStroke))
             .accessibilityLabel(lassoIsActive && awaitsSketchAssistConfirmation ? L10n.text("Send to iPhone") : showsToolSettings || isMovingCanvas || lassoIsActive ? L10n.text("Done") : L10n.text(usesMorphToolbar && !showsMorphToolbar ? "Open drawing controls" : "Tool settings"))
             .trackCanvasControl(.tools, frames: controlFrames)
             .modifier(CanvasMenuControlVisibility(isHidden: hidesMenuControls))
