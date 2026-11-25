@@ -27,14 +27,18 @@ final class WatchPhotoInbox: ObservableObject {
     /// The file to save for a gallery image; the app composes imported photos at their
     /// original resolution here. May take a while, so it runs off the main actor.
     private let imageOutput: @Sendable (URL) throws -> URL
+    /// Runs after each gallery refresh; the app updates its Home Screen widgets here.
+    private let onRefresh: @MainActor () -> Void
 
     init(store: any IncomingDrawingStoring, writer: any PhotoLibraryWriting,
          receiver: any WatchDrawingReceiving,
-         imageOutput: @escaping @Sendable (URL) throws -> URL = { $0 }) {
+         imageOutput: @escaping @Sendable (URL) throws -> URL = { $0 },
+         onRefresh: @escaping @MainActor () -> Void = {}) {
         self.store = store
         self.writer = writer
         self.receiver = receiver
         self.imageOutput = imageOutput
+        self.onRefresh = onRefresh
     }
 
     func start() {
@@ -90,6 +94,7 @@ final class WatchPhotoInbox: ObservableObject {
         }
         catch { errorMessage = error.localizedDescription }
         photoPermissionRequiresSettings = writer.permissionRequiresSettings
+        onRefresh()
     }
 
     func saveToPhotos(_ image: URL) {

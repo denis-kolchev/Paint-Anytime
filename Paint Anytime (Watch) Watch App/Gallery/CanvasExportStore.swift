@@ -59,6 +59,11 @@ enum CanvasExportStore {
         if destination == nil { refreshWidgets() }
     }
 
+    /// Favorite filenames of the gallery, which the iPhone widgets also show.
+    nonisolated static func favoriteNames() throws -> Set<String> {
+        try favoriteNames(in: directory())
+    }
+
     private nonisolated static func favoriteNames(in folder: URL) throws -> Set<String> {
         let url = folder.appendingPathComponent("favorites.json")
         guard FileManager.default.fileExists(atPath: url.path) else { return [] }

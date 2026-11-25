@@ -40,6 +40,7 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
             else {
                 receiveLanguage(session.receivedApplicationContext)
                 receiveDeletions(session.receivedApplicationContext)
+                receiveFavorites(session.receivedApplicationContext)
                 requestSync()
                 // Once per launch, in case the watch app was reinstalled meanwhile.
                 PhoneSketchAssist.shared.publishAvailability(force: true)
@@ -63,10 +64,20 @@ final class WatchDrawingReceiver: NSObject, WatchDrawingReceiving, WCSessionDele
         } catch { onReceive?(.failure(error)) }
     }
 
+    /// The watch keeps the favorites; a watch app without them sends no key.
+    private func receiveFavorites(_ context: [String: Any]) {
+        guard let names = context[GalleryWidgetStore.favoritesContextKey] as? [String],
+              let gallery = store as? IncomingDrawingStore else { return }
+        do {
+            if try gallery.setFavoriteNames(Set(names)) { PhoneGalleryWidgets.refresh() }
+        } catch { NSLog("Favorites were not kept: %@", error.localizedDescription) }
+    }
+
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         Task { @MainActor in
             receiveLanguage(applicationContext)
             receiveDeletions(applicationContext)
+            receiveFavorites(applicationContext)
         }
     }
 
@@ -145,6 +156,7 @@ extension WatchPhotoInbox {
         let store = IncomingDrawingStore()
         return WatchPhotoInbox(store: store, writer: PhotoLibraryWriter(),
                                receiver: WatchDrawingReceiver(store: store),
-                               imageOutput: { try PhotoOriginalStore().outputImage(for: $0) })
+                               imageOutput: { try PhotoOriginalStore().outputImage(for: $0) },
+                               onRefresh: { PhoneGalleryWidgets.refresh() })
     }()
 }

@@ -1,6 +1,6 @@
 import Foundation
 import ImageIO
-#if os(watchOS)
+#if os(watchOS) || os(iOS)
 import WidgetKit
 #endif
 
@@ -16,6 +16,15 @@ nonisolated enum GalleryWidgetStore {
     static let randomTrioKind = "PaintAnytime.RandomArtworkTrio"
     static let favoriteTrioKind = "PaintAnytime.FavoriteArtworkTrio"
     static let favoriteKind = "PaintAnytime.FavoriteArtwork"
+    /// Application-context key: the watch's favorite drawing filenames, for the iPhone widgets.
+    static let favoritesContextKey = "favoriteDrawings"
+    /// Longest preview side. The watch's 360 px fills its complications; iPhone widgets
+    /// show up to four tiles at 3× and need more.
+    #if os(iOS)
+    static let previewPixelSize = 600
+    #else
+    static let previewPixelSize = 360
+    #endif
 
     static func directory() throws -> URL {
         guard let root = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupID)
@@ -44,6 +53,9 @@ nonisolated enum GalleryWidgetStore {
     static func publish(_ drawings: [(url: URL, isFavorite: Bool)]) throws {
         let folder = try directory()
         var items: [GalleryWidgetArtwork] = []
+        // Widgets reload only when their images or favorites change: the iPhone app
+        // publishes on every gallery refresh, and background reloads are budgeted.
+        var changed = false
         for drawing in drawings {
             let name = drawing.url.lastPathComponent
             let preview = folder.appendingPathComponent(name)
@@ -66,7 +78,7 @@ nonisolated enum GalleryWidgetStore {
                       let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                         kCGImageSourceCreateThumbnailFromImageAlways: true,
                         kCGImageSourceCreateThumbnailWithTransform: true,
-                        kCGImageSourceThumbnailMaxPixelSize: 360
+                        kCGImageSourceThumbnailMaxPixelSize: previewPixelSize
                       ] as CFDictionary) else { continue }
                 let data = NSMutableData()
                 guard let destination = CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil)
@@ -74,16 +86,23 @@ nonisolated enum GalleryWidgetStore {
                 CGImageDestinationAddImage(destination, image, nil)
                 guard CGImageDestinationFinalize(destination) else { continue }
                 try (data as Data).write(to: preview, options: .atomic)
+                changed = true
             }
             items.append(GalleryWidgetArtwork(filename: name, isFavorite: drawing.isFavorite))
         }
-        try JSONEncoder().encode(items).write(to: folder.appendingPathComponent("index.json"), options: .atomic)
+        let indexURL = folder.appendingPathComponent("index.json")
+        let index = try JSONEncoder().encode(items)
+        if (try? Data(contentsOf: indexURL)) != index {
+            try index.write(to: indexURL, options: .atomic)
+            changed = true
+        }
         let retained = Set(items.map(\.filename))
         for url in try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
             where url.pathExtension == "png" && !retained.contains(url.lastPathComponent) {
             try? FileManager.default.removeItem(at: url)
         }
-        #if os(watchOS)
+        guard changed else { return }
+        #if os(watchOS) || os(iOS)
         WidgetCenter.shared.reloadTimelines(ofKind: randomKind)
         WidgetCenter.shared.reloadTimelines(ofKind: favoriteKind)
         WidgetCenter.shared.reloadTimelines(ofKind: randomTrioKind)

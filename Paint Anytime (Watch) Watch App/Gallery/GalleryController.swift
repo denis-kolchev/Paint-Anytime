@@ -73,6 +73,8 @@ final class GalleryController: ObservableObject {
     }
 
     func setFavorite(_ isFavorite: Bool, for drawing: CanvasExport, in folder: URL? = nil) {
+        // The iPhone widgets show the watch's favorites.
+        defer { if folder == nil { WatchPhotoTransfer.shared.publishContext() } }
         do {
             try CanvasExportStore.setFavorite(isFavorite, for: drawing, in: DebugGallerySamples.contains(drawing.url) ? DebugGallerySamples.directory() : folder)
             if let index = drawings.firstIndex(where: { $0.id == drawing.id }) {

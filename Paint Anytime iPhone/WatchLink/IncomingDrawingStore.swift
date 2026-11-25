@@ -73,6 +73,26 @@ struct IncomingDrawingStore: IncomingDrawingStoring {
         return try GalleryDeletionStore.names(in: directory()).sorted()
     }
 
+    /// The watch's favorites as image filenames; the phone shows them in its widgets.
+    nonisolated func favoriteNames() throws -> Set<String> {
+        Self.fileLock.lock()
+        defer { Self.fileLock.unlock() }
+        let url = try directory().appendingPathComponent("favorites.json")
+        guard FileManager.default.fileExists(atPath: url.path) else { return [] }
+        return Set(try JSONDecoder().decode([String].self, from: Data(contentsOf: url)))
+    }
+
+    /// Replaces the favorites; returns false when they were already these.
+    @discardableResult
+    nonisolated func setFavoriteNames(_ names: Set<String>) throws -> Bool {
+        guard try favoriteNames() != names else { return false }
+        Self.fileLock.lock()
+        defer { Self.fileLock.unlock() }
+        let data = try JSONEncoder().encode(names.sorted())
+        try data.write(to: directory().appendingPathComponent("favorites.json"), options: .atomic)
+        return true
+    }
+
     nonisolated func applyDeletions(_ names: [String]) throws {
         Self.fileLock.lock()
         defer { Self.fileLock.unlock() }

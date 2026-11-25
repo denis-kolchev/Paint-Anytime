@@ -22,6 +22,8 @@ struct PhoneHomeView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State private var selectedDrawing: URL?
+    /// Whether the drawing opens beside the gallery; read when a widget opens one.
+    @State private var showsBookLayout = false
     @State private var navigationPath: [URL] = []
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var importingProject = false
@@ -197,6 +199,9 @@ struct PhoneHomeView: View {
             }
             .onChange(of: showsBook) { _, expanded in
                 moveSelection(toBook: expanded)
+            }
+            .onChange(of: showsBook, initial: true) { _, expanded in
+                showsBookLayout = expanded
             }
             .onChange(of: container.size) { _, _ in
                 resetGalleryZoom()
@@ -452,6 +457,14 @@ struct PhoneHomeView: View {
         selectedDrawing = nil
         resetGalleryZoom()
         watchDestination = destination == .gallery ? nil : destination
+        // A gallery widget's artwork opens that drawing. On a cold launch the URL can
+        // arrive before the app's start task has listed the gallery.
+        photoInbox.start()
+        guard destination == .gallery,
+              let name = URLComponents(url: url, resolvingAgainstBaseURL: false)?
+                .queryItems?.first(where: { $0.name == "artwork" })?.value,
+              let drawing = photoInbox.images.first(where: { $0.lastPathComponent == name }) else { return }
+        if showsBookLayout { selectedDrawing = drawing } else { navigationPath = [drawing] }
     }
 
     private func openSettings() {

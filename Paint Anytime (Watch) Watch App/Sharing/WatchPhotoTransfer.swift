@@ -216,7 +216,7 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
         }
     }
 
-    /// Sends gallery deletions and the chosen app language. Each update replaces the whole
+    /// Sends gallery deletions, favorites and the chosen app language. Each update replaces the whole
     /// application context, so every entry the iPhone relies on is rebuilt here together.
     @MainActor
     func publishContext() {
@@ -233,6 +233,7 @@ final class WatchPhotoTransfer: NSObject, WCSessionDelegate {
                 if names.contains(imageName) { transfer.cancel() }
             }
             context[GalleryDeletionStore.contextKey] = names.sorted()
+            context[GalleryWidgetStore.favoritesContextKey] = try CanvasExportStore.favoriteNames().sorted()
             try session.updateApplicationContext(context)
         } catch { NSLog("Watch context sync failed: %@", error.localizedDescription) }
     }
