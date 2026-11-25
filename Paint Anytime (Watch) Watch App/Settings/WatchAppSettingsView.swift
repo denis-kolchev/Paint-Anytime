@@ -897,10 +897,15 @@ struct ColorBlendingSelectionView: View {
     @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
     @ObservedObject var controller: CanvasController
     @ObservedObject var tutorial = TutorialSession.inactive
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
 
-    /// The lesson compares the default with the one mode it teaches.
+    /// The modes the lesson compares: the default and the one it teaches.
+    private static let tutorialModes: [ColorBlendingMode] = [.hybrid, .difference]
+
+    /// The lesson lists its two modes first and the rest below them, inactive.
     private var modes: [ColorBlendingMode] {
-        tutorial.isActive ? [.hybrid, .difference] : ColorBlendingMode.allCases
+        guard tutorial.isActive else { return ColorBlendingMode.allCases }
+        return Self.tutorialModes + ColorBlendingMode.allCases.filter { !Self.tutorialModes.contains($0) }
     }
 
     private func select(_ mode: ColorBlendingMode) {
@@ -937,12 +942,15 @@ struct ColorBlendingSelectionView: View {
                         }
                         .tutorialHint(tutorial, steps: [.chooseColorInversion], isSuggested: mode == .difference)
                     }
+                    .disabled(tutorial.isActive && !Self.tutorialModes.contains(mode))
                     .accessibilityAddTraits(controller.blendingMode == mode ? .isSelected : [])
                 }
             } footer: {
                 Text(L10n.text("Applies to new marker and watercolor strokes. Hybrid is the default."))
             }
         }
+        // The lesson's card floats over the list; the last modes still scroll above it.
+        .contentMargins(.bottom, tutorial.isActive ? tutorialHintReservedHeight : 0, for: .scrollContent)
         .navigationTitle(L10n.text("Color blending"))
         .toolbar {
             // A link from the tutorial's own page would push over the lesson.
