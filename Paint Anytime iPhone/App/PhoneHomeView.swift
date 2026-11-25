@@ -1,4 +1,5 @@
 import PhotosUI
+import StoreKit
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -26,6 +27,8 @@ struct PhoneHomeView: View {
     @State private var showsBookLayout = false
     @State private var navigationPath: [URL] = []
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.requestReview) private var requestReview
     @State private var importingProject = false
     @State private var importingPhoto = false
     @State private var pickedPhoto: PhotosPickerItem?
@@ -85,6 +88,11 @@ struct PhoneHomeView: View {
                 previewCache.preparationPaused = zoom.pinchTarget != nil
             }
             .onDisappear { resetGalleryZoom() }
+            // Restarts when the app or the gallery stops being in front, so the
+            // request never interrupts a drawing.
+            .task(id: scenePhase == .active && navigationPath.isEmpty && selectedDrawing == nil) {
+                await requestReviewIfDue()
+            }
             .navigationTitle("Watch Gallery")
             // The More menu is a system bar item so iPhone Duo can move it into
             // the vertical bar below the status icons, like the drawing actions.
@@ -385,8 +393,22 @@ struct PhoneHomeView: View {
             if index > 0 { menu.zoomIn = { setColumnCountFromMenu(options[index - 1]) } }
             if index < options.count - 1 { menu.zoomOut = { setColumnCountFromMenu(options[index + 1]) } }
         }
+        // Shows the review request now, without the days-of-use condition.
+        menu.requestReview = { requestReview() }
         #endif
         return menu
+    }
+
+    /// Asks for an App Store review once this version has been used on enough days.
+    private func requestReviewIfDue() async {
+        guard scenePhase == .active else { return }
+        PhoneReviewPrompt.recordActiveDay()
+        guard navigationPath.isEmpty, selectedDrawing == nil, PhoneReviewPrompt.isDue() else { return }
+        // Let the gallery settle after launch before the system sheet appears.
+        try? await Task.sleep(for: .seconds(2))
+        guard !Task.isCancelled, PhoneReviewPrompt.isDue() else { return }
+        PhoneReviewPrompt.markRequested()
+        requestReview()
     }
 
     #if DEBUG

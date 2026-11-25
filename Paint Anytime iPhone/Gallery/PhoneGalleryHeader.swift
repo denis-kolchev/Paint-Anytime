@@ -159,6 +159,8 @@ struct PhoneGalleryMoreMenu: View {
     var zoomIn: (() -> Void)?
     var zoomOut: (() -> Void)?
     var showsZoomItems = false
+    /// Debug builds only: shows the App Store review request at once. Nil hides it.
+    var requestReview: (() -> Void)?
 
     /// Room the header keeps free beside the title for the bar button.
     static let reservedWidth: CGFloat = 56
@@ -188,6 +190,12 @@ struct PhoneGalleryMoreMenu: View {
                     Label("Zoom Out", systemImage: "minus.magnifyingglass")
                 }
                 .disabled(zoomOut == nil)
+            }
+            if let requestReview {
+                Divider()
+                Button(action: requestReview) {
+                    Label("Request Review", systemImage: "star.bubble")
+                }
             }
         } label: {
             // Large camera photos take a moment to prepare; the spinner replaces
