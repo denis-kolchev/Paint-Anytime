@@ -1,0 +1,264 @@
+import Combine
+import SwiftUI
+
+enum PerspectivePreset: Int, CaseIterable, Identifiable {
+    case one = 1, two
+
+    var id: Int { rawValue }
+
+    var title: String {
+        switch self {
+        case .one: L10n.text("1-point perspective")
+        case .two: L10n.text("2-point perspective")
+        }
+    }
+}
+
+/// A guide line in canvas points. Rays start at their vanishing point.
+struct PerspectiveGuideLine: Equatable {
+    enum Kind: Equatable { case horizon, vanishing, ruler }
+
+    var point: CGPoint
+    /// Unit direction.
+    var direction: CGPoint
+    var kind: Kind
+    var isRay = false
+
+    func project(_ location: CGPoint) -> CGPoint {
+        let t = (location.x - point.x) * direction.x + (location.y - point.y) * direction.y
+        return CGPoint(x: point.x + direction.x * t, y: point.y + direction.y * t)
+    }
+
+    /// The closest point of the drawn guide; a ray ends at its vanishing point.
+    func nearestPoint(to location: CGPoint) -> CGPoint {
+        let t = (location.x - point.x) * direction.x + (location.y - point.y) * direction.y
+        return isRay && t < 0 ? point : project(location)
+    }
+
+    func distance(to location: CGPoint) -> CGFloat {
+        let foot = nearestPoint(to: location)
+        return hypot(location.x - foot.x, location.y - foot.y)
+    }
+}
+
+/// Resolved guide geometry for one paper size. Display-only: it never enters the document.
+struct PerspectiveGuideLayout: Equatable {
+    static let handleDistance: CGFloat = 40
+    static let handleHitRadius: CGFloat = 16
+
+    var preset: PerspectivePreset
+    var center: CGPoint
+    var rotation: Double
+    var viewAngle: Double
+    /// Rays per vanishing point; even, so a ring of rays stays symmetric around the horizon.
+    var rayCount: Int
+    var paperSize: CGSize
+
+    var axis: CGPoint { CGPoint(x: cos(rotation), y: sin(rotation)) }
+
+    /// Distance from the center of vision to the side vanishing points. A wider view
+    /// angle brings them closer, like a wider lens, and steepens the vanishing lines.
+    private var vanishingDistance: CGFloat {
+        let half = max(paperSize.width, paperSize.height) / 2
+        return half / CGFloat(tan(viewAngle * .pi / 360))
+    }
+
+    var vanishingPoints: [CGPoint] {
+        let d = vanishingDistance
+        switch preset {
+        case .one:
+            return [center]
+        case .two:
+            return [offset(center, axis, -d), offset(center, axis, d)]
+        }
+    }
+
+    var lines: [PerspectiveGuideLine] {
+        var result = [PerspectiveGuideLine(point: center, direction: axis, kind: .horizon)]
+        let paper = CGRect(origin: .zero, size: paperSize)
+        for point in vanishingPoints {
+            if paper.contains(point) {
+                // A point on the paper gets an even ring of rays; the horizon covers two of them.
+                for index in 1..<rayCount where index != rayCount / 2 {
+                    let radians = rotation + Double(index) * 2 * .pi / Double(rayCount)
+                    result.append(PerspectiveGuideLine(point: point,
+                        direction: CGPoint(x: cos(radians), y: sin(radians)), kind: .vanishing, isRay: true))
+                }
+            } else {
+                // Fan rays across the paper, which keeps them fixed while the canvas pans.
+                let base = atan2(paper.midY - point.y, paper.midX - point.x)
+                let corners = [CGPoint(x: paper.minX, y: paper.minY), CGPoint(x: paper.maxX, y: paper.minY),
+                               CGPoint(x: paper.minX, y: paper.maxY), CGPoint(x: paper.maxX, y: paper.maxY)]
+                let deltas = corners.map { corner -> CGFloat in
+                    var delta = atan2(corner.y - point.y, corner.x - point.x) - base
+                    while delta > .pi { delta -= 2 * .pi }
+                    while delta < -.pi { delta += 2 * .pi }
+                    return delta
+                }
+                let low = deltas.min() ?? 0, high = deltas.max() ?? 0
+                let count = max(2, rayCount)
+                for index in 0..<count {
+                    let radians = base + low + (high - low) * CGFloat(index) / CGFloat(count - 1)
+                    result.append(PerspectiveGuideLine(point: point,
+                        direction: CGPoint(x: cos(radians), y: sin(radians)), kind: .vanishing, isRay: true))
+                }
+            }
+        }
+        return result
+    }
+
+    /// Where a tap lands while guides are on: the closest point of the nearest drawn guide.
+    func snappedPoint(_ location: CGPoint) -> CGPoint {
+        lines.min { $0.distance(to: location) < $1.distance(to: location) }?.nearestPoint(to: location) ?? location
+    }
+
+    /// The ruler for a stroke that starts at `start`: among the displayed guides nearest to the start
+    /// (within `tolerance` of the closest one), the one that best matches the stroke's initial direction.
+    /// A start between guides still gets the nearest one, so strokes never leave the guides.
+    func ruler(from start: CGPoint, toward location: CGPoint, tolerance: CGFloat) -> PerspectiveGuideLine? {
+        let movement = CGPoint(x: location.x - start.x, y: location.y - start.y)
+        let length = hypot(movement.x, movement.y)
+        let distances = lines.map { $0.distance(to: start) }
+        guard let nearest = distances.min() else { return nil }
+        // Every displayed line through a vanishing point is within tolerance when the stroke starts there.
+        let candidates = zip(lines, distances).filter { $0.1 <= nearest + tolerance }.map(\.0)
+        guard !candidates.isEmpty else { return nil }
+        guard length > 0.001 else {
+            var line = lines[distances.firstIndex(of: nearest) ?? 0]
+            line.kind = .ruler
+            line.isRay = false
+            return line
+        }
+        let heading = CGPoint(x: movement.x / length, y: movement.y / length)
+        var best = candidates[0]
+        var bestAlignment = -CGFloat.infinity
+        for candidate in candidates {
+            let alignment = abs(candidate.direction.x * heading.x + candidate.direction.y * heading.y)
+            if alignment > bestAlignment {
+                best = candidate
+                bestAlignment = alignment
+            }
+        }
+        best.kind = .ruler
+        best.isRay = false
+        return best
+    }
+
+    /// Screen positions of the move and rotation handles, across the horizon so they never
+    /// cover vanishing points, which lie on it. Move sits above the horizon, rotation below.
+    func handles(_ canvasToScreen: CGAffineTransform) -> (move: CGPoint, rotate: CGPoint) {
+        let screenCenter = center.applying(canvasToScreen)
+        let normal = CGPoint(x: -sin(rotation), y: cos(rotation))
+        return (offset(screenCenter, normal, -Self.handleDistance), offset(screenCenter, normal, Self.handleDistance))
+    }
+
+    private func offset(_ point: CGPoint, _ direction: CGPoint, _ distance: CGFloat) -> CGPoint {
+        CGPoint(x: point.x + direction.x * distance, y: point.y + direction.y * distance)
+    }
+}
+
+/// Perspective guide preferences and placement. Kept outside the document and exports;
+/// completed edits join the canvas Undo/Redo history as `CanvasHistoryCompanion` entries.
+final class PerspectiveGuides: ObservableObject {
+    static let shared = PerspectiveGuides()
+    static let viewAngleRange: ClosedRange<Double> = 20...150
+    static let rayCountRange: ClosedRange<Int> = 2...24
+    static let defaultRayCount = 12
+
+    private enum Key {
+        static let enabled = "perspectiveGuides.enabled"
+        static let preset = "perspectiveGuides.preset"
+        static let viewAngle = "perspectiveGuides.viewAngle"
+        static let rayCount = "perspectiveGuides.rayCount"
+        static let rotation = "perspectiveGuides.rotation"
+        static let centerX = "perspectiveGuides.centerX"
+        static let centerY = "perspectiveGuides.centerY"
+    }
+
+    private let defaults: UserDefaults
+
+    @Published var isEnabled: Bool { didSet { defaults.set(isEnabled, forKey: Key.enabled) } }
+    @Published var preset: PerspectivePreset { didSet { defaults.set(preset.rawValue, forKey: Key.preset) } }
+    @Published var viewAngle: Double { didSet { defaults.set(viewAngle, forKey: Key.viewAngle) } }
+    /// Even values in `rayCountRange`; use `setRayCount(_:)` to keep it valid.
+    @Published private(set) var rayCount: Int { didSet { defaults.set(rayCount, forKey: Key.rayCount) } }
+    /// Radians in (-π, π]. Canvas drags persist it through `savePlacement()`.
+    @Published var rotation: Double
+    /// Center of vision as a fraction of the paper size, so it follows canvas resizing.
+    @Published var center: CGPoint
+    /// The line the current stroke follows, for highlighting.
+    @Published var activeRuler: PerspectiveGuideLine?
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        isEnabled = defaults.bool(forKey: Key.enabled)
+        preset = PerspectivePreset(rawValue: defaults.integer(forKey: Key.preset)) ?? .two
+        let angle = defaults.object(forKey: Key.viewAngle) as? Double ?? 60
+        viewAngle = min(Self.viewAngleRange.upperBound, max(Self.viewAngleRange.lowerBound, angle))
+        rayCount = Self.validRayCount(defaults.object(forKey: Key.rayCount) as? Int ?? Self.defaultRayCount)
+        rotation = defaults.double(forKey: Key.rotation)
+        center = CGPoint(x: defaults.object(forKey: Key.centerX) as? Double ?? 0.5,
+                         y: defaults.object(forKey: Key.centerY) as? Double ?? 0.5)
+    }
+
+    func layout(paperSize: CGSize) -> PerspectiveGuideLayout {
+        PerspectiveGuideLayout(preset: preset,
+            center: CGPoint(x: center.x * paperSize.width, y: center.y * paperSize.height),
+            rotation: rotation, viewAngle: viewAngle, rayCount: rayCount, paperSize: paperSize)
+    }
+
+    func setRayCount(_ count: Int) {
+        let value = Self.validRayCount(count)
+        if value != rayCount { rayCount = value }
+    }
+
+    private static func validRayCount(_ count: Int) -> Int {
+        let clamped = min(rayCountRange.upperBound, max(rayCountRange.lowerBound, count))
+        return clamped - clamped % 2
+    }
+
+    func savePlacement() {
+        defaults.set(rotation, forKey: Key.rotation)
+        defaults.set(Double(center.x), forKey: Key.centerX)
+        defaults.set(Double(center.y), forKey: Key.centerY)
+    }
+
+    static func normalizedRotation(_ radians: Double) -> Double {
+        var value = radians.truncatingRemainder(dividingBy: 2 * .pi)
+        if value > .pi { value -= 2 * .pi }
+        if value <= -.pi { value += 2 * .pi }
+        return value
+    }
+}
+
+extension PerspectiveGuides: CanvasHistoryCompanion {
+    /// Everything the guide controls change; `activeRuler` is transient.
+    struct Snapshot: Hashable {
+        var isEnabled: Bool
+        var preset: PerspectivePreset
+        var viewAngle: Double
+        var rayCount: Int
+        var rotation: Double
+        var centerX: Double
+        var centerY: Double
+    }
+
+    var snapshot: Snapshot {
+        Snapshot(isEnabled: isEnabled, preset: preset, viewAngle: viewAngle, rayCount: rayCount,
+                 rotation: rotation, centerX: Double(center.x), centerY: Double(center.y))
+    }
+
+    var historyState: AnyHashable { snapshot }
+
+    func restoreHistoryState(_ state: AnyHashable) {
+        guard let state = state.base as? Snapshot else { return }
+        if isEnabled != state.isEnabled { isEnabled = state.isEnabled }
+        if preset != state.preset { preset = state.preset }
+        if viewAngle != state.viewAngle { viewAngle = state.viewAngle }
+        if rayCount != state.rayCount { rayCount = state.rayCount }
+        rotation = state.rotation
+        center = CGPoint(x: state.centerX, y: state.centerY)
+        activeRuler = nil
+        savePlacement()
+    }
+}

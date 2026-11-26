@@ -95,7 +95,7 @@ struct ArchitectureChecks {
         precondition(BrushGeometry.touches(fill, from: SIMD2(40, 40), to: SIMD2(42, 42), radius: 1))
         precondition(!BrushGeometry.touches(fill, from: SIMD2(70, 70), to: SIMD2(80, 80), radius: 1))
         let order = DrawingInstrument.displayOrder
-        precondition(order.firstIndex(of: .fill)! + 1 == order.firstIndex(of: .eraser)!)
+        precondition(order.last == .fill)
         precondition(DrawingInstrument.eraser.rawValue == 8)
         try checkOpacity()
         try checkShapeHistory()
@@ -121,6 +121,12 @@ struct ArchitectureChecks {
                              "Saved tool must respect release availability: \(version), \(tool)")
             }
             precondition(features.allows(.monoline) && features.allows(.eraser))
+        }
+        // TEMPORARY 1.2 threshold, matching AppReleaseFeatures.showsSketchAssist.
+        for (version, enabled) in [("1.1", false), ("1.1.9", false), ("1.2", true), ("1.2.9", true), ("1.3", true), ("1.3.0", true),
+                                   ("1.10", true), ("2.0", true), ("0.9", false)] {
+            precondition(AppReleaseFeatures(version: version).showsSketchAssist == enabled,
+                         "Sketch assist threshold: \(version)")
         }
         let suite = "PaintArchitectureChecks.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
@@ -175,7 +181,15 @@ struct ArchitectureChecks {
         let initialGesture = revisions.activeStrokeID
         revisions.beginStroke(at: start)
         let firstGesture = revisions.activeStrokeID
+        var structuralChanges = 0
+        var liveChanges = 0
+        let structuralSubscription = revisions.objectWillChange.sink { structuralChanges += 1 }
+        let liveSubscription = revisions.liveStroke.objectWillChange.sink { liveChanges += 1 }
         revisions.continueStroke(at: end)
+        precondition(structuralChanges == 0 && liveChanges == 1,
+                     "Live samples must not invalidate every canvas observer")
+        structuralSubscription.cancel()
+        liveSubscription.cancel()
         precondition(firstGesture != initialGesture && revisions.activeStrokeID == firstGesture,
                      "Gesture identity must remain stable while appending")
         precondition(revisions.documentRevision == initialRevision,

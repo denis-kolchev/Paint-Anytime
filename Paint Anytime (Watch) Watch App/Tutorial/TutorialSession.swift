@@ -1,0 +1,369 @@
+import Foundation
+import Combine
+
+/// The inactive instance keeps the normal editor free of tutorial restrictions.
+@MainActor
+final class TutorialSession: ObservableObject {
+    static let inactive = TutorialSession()
+    @Published private var progress = TutorialProgress()
+    var step: TutorialStep { progress.step }
+    @Published private(set) var toolPage = 1
+    @Published private var toolIsEraser = false
+    @Published private var releasedCircleEarly = false
+    private var failedCircleAttempts = 0
+    @Published var isFadingCircleAttempt = false
+    var isPaletteLesson: Bool {
+        [.openPalettes, .findNewPalette, .createPalette, .addPaletteColor,
+         .adjustPaletteColor, .savePaletteColor].contains(step)
+    }
+    @Published var galleryIsOpen = false
+    /// Set by the first page turn in the shape list; ••• and its hint wait for it.
+    @Published private(set) var hasBrowsedShapes = false
+    /// The yellow marker line the blending lesson draws itself; set once it finishes, so a
+    /// crossing stroke is checked only against it, never against the user's own earlier tries.
+    @Published var markerLineStrokeID: UUID?
+    @Published var galleryIsFullscreen = false
+    /// The pictures the selection lesson liked, for the widget preview that follows it.
+    @Published var favoritedDrawings: [URL] = []
+    var instruction: String {
+        switch step {
+        case .holdCircle where releasedCircleEarly: return L10n.text("Hold your finger at the end.")
+        case .browseShapes where !hasBrowsedShapes: return L10n.text("Swipe to see more shapes.")
+        case .pickColor where toolPage != 1:
+            return L10n.text("Open Color, then turn the Crown.")
+        case .chooseReed where toolPage != 2: return L10n.text("Open Tool and choose Reed pen.")
+        case .openWidth where toolPage != 1: return L10n.text("Open Width.")
+        case .setWidth where toolPage != 0: return L10n.text("Open Width, then turn the Crown.")
+        case .openOpacity where toolIsEraser, .setOpacity where toolIsEraser:
+            return L10n.text("Choose a drawing tool to change opacity.")
+        case .openOpacity where toolPage != 0: return L10n.text("Open Opacity.")
+        case .setOpacity where toolPage != 5: return L10n.text("Open Opacity, then turn the Crown.")
+        case .openTool where toolPage != 5: return L10n.text("Open Tool.")
+        case .selectReed where toolPage != 2: return L10n.text("Choose any tool and explore its settings.")
+        case .openAngle where toolPage != 2: return L10n.text("Open Angle.")
+        case .setAngle where toolPage != 4: return L10n.text("Open Angle, then turn the Crown.")
+        case .galleryFullscreen where !galleryIsOpen, .deleteDrawing where !galleryIsOpen: return L10n.text("Tap Gallery to see your pictures.")
+        case .deleteDrawing where !galleryIsFullscreen:
+            return L10n.text("Turn the Crown or double-tap a picture.")
+        case .openMenu where progress.teachesPerspective || progress.teachesAdjustSize || progress.teachesBlending
+                || progress.teachesCanvasEditor:
+            return L10n.text("Tap ••• to open the menu.")
+        default: return TutorialLesson.compactInstruction(for: step)
+        }
+    }
+    @Published var showsInstruction = false
+    @Published private(set) var remindersPaused = false
+    private var lastActivity = Date()
+    private var advanceTask: Task<Void, Never>?
+    private var pendingAdvanceStep: TutorialStep?
+    @Published private(set) var showsResult = false
+    var isActive: Bool { step != .inactive }
+    var acceptsActions: Bool { !isActive || (!showsInstruction && !showsResult) }
+    // Free drawing stays available wherever the canvas is the current page and a stroke
+    // cannot disturb the exercise; camera, lasso, and gallery steps keep their own input.
+    var allowsDrawing: Bool {
+        !progress.keepsCanvasForComparison
+            && permits([.firstStrokes, .holdCircle, .perspectiveStroke, .zoomCanvas, .openTools, .reedStrokes, .fillCanvas, .blurCanvas, .crossMarkerLine, .redrawMarkerLine, .paintOverStroke, .drawBehindStroke, .openLayers, .openLasso, .history, .clearCanvas, .saveDrawing, .openMenu, .drawPracticeLine, .openPracticeGroup, .toggleEraser, .eraseStroke, .chapterComplete])
+    }
+    var allowsLassoInput: Bool { permits([.selectLasso, .transformLasso, .finishLasso]) }
+    var allowsCanvasZoom: Bool { permits([.zoomCanvas, .panCanvas, .finishCamera, .openTools, .reedStrokes, .history, .saveDrawing, .openMenu]) }
+    var allowsCanvasPan: Bool { allowsCanvasZoom }
+    var allowsGalleryZoom: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    /// Tiles toggle membership instead of opening while the selection exercise runs.
+    var allowsGallerySelection: Bool { permits([.selectDrawings, .favoriteSelection]) }
+    /// Lesson-wide flags keep menu rows and the select button installed through their pages.
+    var teachesPerspective: Bool { progress.teachesPerspective }
+    var teachesAdjustSize: Bool { progress.teachesAdjustSize }
+    var teachesBlending: Bool { progress.teachesBlending }
+    var teachesCanvasEditor: Bool { progress.teachesCanvasEditor }
+    var teachesGallerySelection: Bool { progress.teachesGallerySelection }
+    var teachesAutosave: Bool { progress.teachesAutosave }
+    var showsAutosaveInMenu: Bool { progress.showsAutosaveInMenu }
+    /// The tutorial's own guides appear only in their lesson; the editor always shows its guides.
+    var showsPerspectiveGuides: Bool { !isActive || progress.teachesPerspective }
+    var allowsGalleryPaging: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsGalleryDelete: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsGalleryBack: Bool { permits([.galleryFullscreen, .deleteDrawing, .returnToCanvas]) }
+    var allowsToolInfo: Bool { acceptsActions }
+
+    @Published private(set) var crownPracticedSteps: Set<TutorialStep> = []
+    var crownHintIsSubtle: Bool { !crownPracticedSteps.isEmpty }
+    var showsCrownHint: Bool {
+        suggestsCrownRotation && !crownPracticedSteps.contains(step)
+            && ([.selectReed, .chooseReed, .chooseFill, .chooseBlur, .setCanvasSize, .setRayCount].contains(step)
+                || crownPracticedSteps.count < 3)
+    }
+
+    func usedCrown(in expectedStep: TutorialStep, velocity: Double) {
+        guard velocity.isFinite, velocity != 0, step == expectedStep, suggestsCrownRotation else { return }
+        if !crownPracticedSteps.contains(step) { crownPracticedSteps.insert(step) }
+        activity()
+    }
+
+    var suggestsCrownRotation: Bool {
+        guard acceptsActions else { return false }
+        switch step {
+        case .zoomCanvas, .setCanvasSize, .setRayCount: return true
+        case .pickColor: return toolPage == 1
+        case .setWidth: return toolPage == 0
+        case .setOpacity: return toolPage == 5 && !toolIsEraser
+        case .selectReed, .chooseReed, .chooseFill, .chooseBlur: return toolPage == 2
+        case .setAngle: return toolPage == 4
+        case .galleryFullscreen, .deleteDrawing: return galleryIsOpen && !galleryIsFullscreen
+        default: return false
+        }
+    }
+
+    var visibleToolPages: Set<Int> { progress.visibleToolPages }
+    var initialToolPage: Int { progress.initialToolPage }
+    var lessonInstrument: DrawingInstrument? { progress.lessonInstrument }
+    var lessonKeepsBrush: Bool { progress.lessonKeepsBrush }
+    var locksLessonColor: Bool { progress.locksLessonColor }
+    var chapter: TutorialChapter? { progress.chapter }
+    /// The first section ends when ••• appears on the shape list, not when the list opens.
+    var chapterProgress: Double {
+        step == .browseShapes && !hasBrowsedShapes ? progress.chapterProgressBeforeStep : progress.chapterProgress
+    }
+    var completedLessonCount: Int { progress.completedLessonCount }
+    var lessonCount: Int { progress.chapter?.lessons.count ?? 0 }
+    /// Changes whenever the following chapter, or a lesson that starts fresh, begins,
+    /// so the player can reset its canvas.
+    @Published private(set) var chapterRevision = 0
+
+    func permits(_ steps: Set<TutorialStep>) -> Bool {
+        !isActive || (acceptsActions && steps.contains(step))
+    }
+
+    /// ••• also leads on from the shape list, straight into the menu, once a page has turned.
+    var permitsMenuButton: Bool {
+        permits([.openMenu]) || (hasBrowsedShapes && permits([.browseShapes]))
+    }
+
+    /// The shape list turned a page: ••• appears and the hint asks for it.
+    func browsedShapes() {
+        guard step == .browseShapes, !hasBrowsedShapes else { return }
+        hasBrowsedShapes = true
+        activity()
+    }
+
+    func allowsToolAdjustment(page: Int) -> Bool {
+        !isActive || (acceptsActions && progress.allowsToolAdjustment(page: page))
+    }
+
+    func allowsToolPage(_ page: Int) -> Bool {
+        !isActive || (acceptsActions && progress.allowsToolPage(page))
+    }
+
+    var debugState: String {
+        "session=\(ObjectIdentifier(self)) step=\(step) instruction=\(showsInstruction) result=\(showsResult) paused=\(remindersPaused) acceptsActions=\(acceptsActions) allowsDrawing=\(allowsDrawing) count=\(progress.count)"
+    }
+
+    /// The current exercise as a place to continue later, if it is one.
+    var resumePosition: (lesson: Int, step: Int)? { progress.resumePosition }
+
+    func start(chapters: [TutorialChapter] = TutorialChapter.allCases,
+               resumingAt resume: (lesson: Int, step: Int)? = nil) {
+        cancelPendingAdvance()
+        progress.start(chapters: chapters, resumingAt: resume)
+        hasBrowsedShapes = false
+        markerLineStrokeID = nil
+        releasedCircleEarly = false
+        failedCircleAttempts = 0
+        crownPracticedSteps = []
+        toolPage = 1
+        toolIsEraser = false
+        galleryIsOpen = false
+        galleryIsFullscreen = false
+        remindersPaused = false
+        showsInstruction = false
+        lastActivity = Date()
+    }
+
+    /// Retained for callers that explicitly resume an exercise; never skips a step.
+    func beginExercise() {
+        TutorialDebug.trace("beginExercise.beforeHide", debugState)
+        showsInstruction = false
+        TutorialDebug.trace("beginExercise.afterHide", debugState)
+        activity()
+        TutorialDebug.trace("beginExercise.exit", debugState)
+    }
+
+    /// Next on a chapter result.
+    func continueToNext() {
+        guard step == .chapterComplete, acceptsActions else { return }
+        cancelPendingAdvance()
+        guard progress.continueToNext() else { return }
+        chapterRevision &+= 1
+        releasedCircleEarly = false
+        failedCircleAttempts = 0
+        toolIsEraser = false
+        toolPage = 1
+        galleryIsOpen = false
+        galleryIsFullscreen = false
+        showsInstruction = false
+        activity()
+    }
+
+    /// Supplies the practice canvas, so stroke checks can compare against other layers.
+    var canvasDocument: (() -> CanvasDocument?)?
+
+    /// Overlap lessons complete once a stroke reaches the shape of an earlier one:
+    /// on the same layer, or on a layer above for the layer-order lesson.
+    func finishedStroke(in layer: CanvasLayer) {
+        guard acceptsActions, let stroke = layer.strokes.last else { return }
+        switch step {
+        case .paintOverStroke:
+            guard TutorialStrokeOverlap.paintsOver(stroke, earlier: Array(layer.strokes.dropLast())) else { return }
+            record(.paintedOver)
+        case .crossMarkerLine, .redrawMarkerLine:
+            // Only a stroke across the demonstrated yellow line shows the blend; checking
+            // against every earlier stroke would also accept the user's own earlier, missed try.
+            guard let lineID = markerLineStrokeID, let line = layer.strokes.first(where: { $0.id == lineID }),
+                  TutorialStrokeOverlap.paintsOver(stroke, earlier: [line]) else { return }
+            record(.crossedMarkerLine)
+        case .drawBehindStroke:
+            guard let document = canvasDocument?(),
+                  TutorialStrokeOverlap.passesBehind(stroke, on: layer.id, in: document) else { return }
+            record(.drewBehind)
+        default: break
+        }
+    }
+
+    /// The layer-order lesson completes once the moved layer lies below another layer.
+    func movedLayer(_ id: UUID, in document: CanvasDocument) {
+        guard step == .moveLayerDown,
+              let index = document.layers.firstIndex(where: { $0.id == id }),
+              index < document.layers.count - 1 else { return }
+        record(.movedLayerDown)
+    }
+
+    func finishedCircleAttempt(kind: ShapeRecognizer.Kind?, isStrokeComplete: Bool = true) {
+        guard step == .holdCircle, acceptsActions else { return }
+        // A finger-drawn circle can snap as an ellipse; both demonstrate the hold gesture.
+        if kind == .circle || kind == .ellipse {
+            // The snap reports first, with the finger still down: closing input then would
+            // cancel the stroke and the circle would vanish. Wait for the lift, after which
+            // the circle stays on the canvas for 0.7 s before the shape list grows over it.
+            activity()
+            guard isStrokeComplete else { return }
+            if case .advance = progress.record(.heldCircle) {
+                advanceAfterResult(lockInput: true, delay: .milliseconds(700))
+            }
+        } else if isStrokeComplete {
+            failedCircleAttempts += 1
+            if failedCircleAttempts >= 3 {
+                advance()
+                return
+            }
+            releasedCircleEarly = kind == nil
+            activity()
+        }
+    }
+
+    func activity() { if isActive { lastActivity = Date() } }
+
+    func pauseReminders() {
+        guard isActive else { return }
+        remindersPaused = true
+        advanceTask?.cancel()
+    }
+
+    func resumeReminders() {
+        guard isActive else { return }
+        remindersPaused = false
+        activity()
+        if pendingAdvanceStep == step {
+            advanceAfterResult(lockInput: showsResult)
+        }
+    }
+
+    typealias Event = TutorialProgress.Event
+
+    func record(_ event: Event) {
+        guard isActive, acceptsActions else { return }
+        activity()
+        switch progress.record(event) {
+        case .none: break
+        case .advance: advance()
+        case .showResult: advanceAfterResult(lockInput: true)
+        // Input stays open, so further turns restart the wait instead of being cut off;
+        // the wait is short, as the change is already on screen.
+        case .advanceWhenSettled: advanceAfterResult(lockInput: false, delay: .milliseconds(600))
+        case .pauseReminders: pauseReminders()
+        case .resumeReminders(let shouldAdvance):
+            resumeReminders()
+            if shouldAdvance { advance() }
+        }
+    }
+
+    var canFinishCamera: Bool { !isActive || (step != .zoomCanvas && step != .panCanvas) }
+    var showsPanGuide: Bool { step == .panCanvas && !progress.hasPanned }
+
+    /// The settings opened on this page. Restoring it is not a page change, so it never
+    /// completes a step, but the instructions must not describe the previous lesson's page.
+    func showedToolPage(_ page: Int) {
+        guard isActive else { return }
+        toolPage = page
+    }
+
+    func changedPage(_ page: Int) {
+        guard isActive, allowsToolPage(page) else { return }
+        activity()
+        toolPage = page
+        if progress.completesPageChange(page) { advance() }
+    }
+
+    func changedStyle(from old: PencilStyle, to style: PencilStyle, page: Int) {
+        guard isActive, acceptsActions else { return }
+        activity()
+        toolIsEraser = style.instrument == .eraser
+        if progress.changedStyle(from: old, to: style, page: page) { advance() }
+    }
+
+    func changedZoom() {
+        guard isActive, allowsCanvasZoom else { return }
+        activity()
+        if step == .zoomCanvas { advance() }
+    }
+
+    /// Leave the result visible long enough for animations and visual feedback.
+    private func advanceAfterResult(lockInput: Bool, delay: Duration = .milliseconds(1200)) {
+        advanceTask?.cancel()
+        pendingAdvanceStep = step
+        showsResult = lockInput
+        activity()
+        guard !remindersPaused else { return }
+        let completedStep = step
+        advanceTask = Task { @MainActor [weak self] in
+            do { try await Task.sleep(for: delay) } catch { return }
+            guard let self, !Task.isCancelled, self.step == completedStep,
+                  self.pendingAdvanceStep == completedStep,
+                  !self.showsInstruction, !self.remindersPaused else { return }
+            self.advance()
+        }
+    }
+
+    private func cancelPendingAdvance() {
+        advanceTask?.cancel()
+        advanceTask = nil
+        pendingAdvanceStep = nil
+        showsResult = false
+    }
+
+    private func advance() {
+        guard step != .inactive, !step.isResult else { return }
+        cancelPendingAdvance()
+        let freshLessons = progress.freshLessonRevision
+        progress.advance()
+        hasBrowsedShapes = false
+        if progress.freshLessonRevision != freshLessons { chapterRevision &+= 1 }
+        showsInstruction = false
+        activity()
+    }
+
+    func stop() {
+        cancelPendingAdvance()
+        progress.stop()
+        showsInstruction = false
+    }
+}

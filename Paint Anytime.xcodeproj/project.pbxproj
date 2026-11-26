@@ -8,10 +8,50 @@
 
 /* Begin PBXBuildFile section */
 		257D4058305EA358002072CB /* Paint Anytime (Watch) Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AB1000000000000000000001 /* Shared/Document/PaintProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB1000000000000000000002 /* Shared/Document/PaintProject.swift */; };
+		AC1000000000000000000001 /* Shared/Gallery/GalleryDeletionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */; };
+		AE1030000000000000000001 /* Shared/Gallery/GalleryImageLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */; };
+		AF1030000000000000000012 /* Shared/Debug/GalleryDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000011 /* Shared/Debug/GalleryDebug.swift */; };
+		AF1030000000000000000022 /* Shared/Debug/DebugGallerySamples.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000021 /* Shared/Debug/DebugGallerySamples.swift */; };
+		AF1030000000000000000041 /* DebugGallerySamples in Resources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000031 /* DebugGallerySamples */; };
+		AF1030000000000000000042 /* DebugGallerySamples in Resources */ = {isa = PBXBuildFile; fileRef = AF1030000000000000000031 /* DebugGallerySamples */; };
+		AF1030010000000000000011 /* Shared/Gallery/GalleryZoomSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000001 /* Shared/Gallery/GalleryZoomSlot.swift */; };
+		AF1030010000000000000012 /* Shared/Gallery/GalleryZoomRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030010000000000000002 /* Shared/Gallery/GalleryZoomRules.swift */; };
+		AF1030100000000000000001 /* Shared/App/PaintDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */; };
+		AF1030200000000000000001 /* Shared/Connectivity/SketchAssistProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */; };
+		AF1030300000000000000001 /* Shared/Connectivity/PhotoImportProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */; };
+		AF1040000000000000000001 /* Shared/Gallery/GalleryPreviewStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */; };
+		AF1040000000000000000003 /* Shared/Gallery/GalleryImageMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */; };
+		AF1040000000000000000005 /* Shared/Gallery/GalleryLowResCrossfade.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */; };
+		AF1060000000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060000000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift */; };
+		AF1060010000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060010000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift */; };
+		AF1060020000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060020000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift */; };
+		AF1060030000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060030000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift */; };
+		AF1060040000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060040000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift */; };
+		AF1060050000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060050000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift */; };
+		AF1060060000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060060000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift */; };
+		AF1060070000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060070000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift */; };
+		AF1060080000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060080000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift */; };
+		AF1060090000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060090000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift */; };
+		AF1060100000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060100000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift */; };
+		AF1060110000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060110000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift */; };
+		AF1060120000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060120000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift */; };
+		AF1060130000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060130000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift */; };
+		AF1060140000000000000001 /* Shared/Document/CanvasDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060140000000000000002 /* Shared/Document/CanvasDocument.swift */; };
+		AF1060150000000000000001 /* Shared/Document/PSDWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060150000000000000002 /* Shared/Document/PSDWriter.swift */; };
+		AF1060160000000000000001 /* Shared/Drawing/BrushGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060160000000000000002 /* Shared/Drawing/BrushGeometry.swift */; };
+		AF1060170000000000000001 /* Shared/Drawing/FountainPenGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060170000000000000002 /* Shared/Drawing/FountainPenGeometry.swift */; };
+		AF1060180000000000000001 /* Shared/App/AppReleaseFeatures.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060180000000000000002 /* Shared/App/AppReleaseFeatures.swift */; };
+		AF1060190000000000000001 /* Shared/Localization/AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1060190000000000000002 /* Shared/Localization/AppLanguage.swift */; };
 		B20000010000000000000001 /* Preset Photos in Resources */ = {isa = PBXBuildFile; fileRef = B20000020000000000000002 /* Preset Photos */; };
-		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		D40000000000000000000001 /* Shared/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */; };
-		E50000000000000000000001 /* Shared/Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E50000000000000000000002 /* Shared/Localizable.xcstrings */; };
+		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D40000000000000000000001 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */; };
+		D50000000000000000000001 /* PaintAnytimeWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D50000000000000000000002 /* PaintAnytimeWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D50000000000000000000013 /* Paint Anytime Complications/LauncherComplications.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50000000000000000000012 /* Paint Anytime Complications/LauncherComplications.swift */; };
+		D5000000000000000000000F /* Paint Anytime Complications/GalleryArtworkComplications.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5000000000000000000000E /* Paint Anytime Complications/GalleryArtworkComplications.swift */; };
+		D50000000000000000000010 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */; };
+		D50000000000000000000011 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */; };
+		F60000000000000000000001 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon in Resources */ = {isa = PBXBuildFile; fileRef = F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,6 +69,13 @@
 			remoteGlobalIDString = C30000000000000000000005;
 			remoteInfo = PaintAnytimeComplications;
 		};
+		D50000000000000000000004 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 25AC818F305D90C700C8F69E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D50000000000000000000005;
+			remoteInfo = PaintAnytimeWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -41,25 +88,71 @@
 			);
 			name = "Embed Watch Content";
 		};
-		C3000000000000000000000C /* Embed App Extensions */ = {
+		C3000000000000000000000C /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			dstPath = "";
 			dstSubfolder = PlugIns;
 			files = (
-				C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed App Extensions */,
+				C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed Foundation Extensions */,
 			);
-			name = "Embed App Extensions";
+			name = "Embed Foundation Extensions";
+		};
+		D5000000000000000000000C /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = "";
+			dstSubfolder = PlugIns;
+			files = (
+				D50000000000000000000001 /* PaintAnytimeWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		257D4052305EA358002072CB /* Paint Anytime (Watch).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch).app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime (Watch) Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		25AC8197305D90C700C8F69E /* Paint Anytime.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paint Anytime.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB1000000000000000000002 /* Shared/Document/PaintProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Document/PaintProject.swift; sourceTree = SOURCE_ROOT; };
+		AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryDeletionStore.swift; sourceTree = SOURCE_ROOT; };
+		AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryImageLayout.swift; sourceTree = SOURCE_ROOT; };
+		AF1030000000000000000011 /* Shared/Debug/GalleryDebug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Debug/GalleryDebug.swift; sourceTree = SOURCE_ROOT; };
+		AF1030000000000000000021 /* Shared/Debug/DebugGallerySamples.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Debug/DebugGallerySamples.swift; sourceTree = SOURCE_ROOT; };
+		AF1030000000000000000031 /* DebugGallerySamples */ = {isa = PBXFileReference; lastKnownFileType = folder; path = DebugGallerySamples; sourceTree = SOURCE_ROOT; };
+		AF1030010000000000000001 /* Shared/Gallery/GalleryZoomSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryZoomSlot.swift; sourceTree = SOURCE_ROOT; };
+		AF1030010000000000000002 /* Shared/Gallery/GalleryZoomRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryZoomRules.swift; sourceTree = SOURCE_ROOT; };
+		AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/App/PaintDeepLink.swift; sourceTree = SOURCE_ROOT; };
+		AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Connectivity/SketchAssistProtocol.swift; sourceTree = SOURCE_ROOT; };
+		AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Connectivity/PhotoImportProtocol.swift; sourceTree = SOURCE_ROOT; };
+		AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryPreviewStore.swift; sourceTree = SOURCE_ROOT; };
+		AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryImageMetadata.swift; sourceTree = SOURCE_ROOT; };
+		AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryLowResCrossfade.swift; sourceTree = SOURCE_ROOT; };
+		AF1060000000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060010000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060020000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060030000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060040000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060050000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060060000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060070000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060080000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060090000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060100000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060110000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060120000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060130000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift"; sourceTree = SOURCE_ROOT; };
+		AF1060140000000000000002 /* Shared/Document/CanvasDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Document/CanvasDocument.swift; sourceTree = SOURCE_ROOT; };
+		AF1060150000000000000002 /* Shared/Document/PSDWriter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Document/PSDWriter.swift; sourceTree = SOURCE_ROOT; };
+		AF1060160000000000000002 /* Shared/Drawing/BrushGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Drawing/BrushGeometry.swift; sourceTree = SOURCE_ROOT; };
+		AF1060170000000000000002 /* Shared/Drawing/FountainPenGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Drawing/FountainPenGeometry.swift; sourceTree = SOURCE_ROOT; };
+		AF1060180000000000000002 /* Shared/App/AppReleaseFeatures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/App/AppReleaseFeatures.swift; sourceTree = SOURCE_ROOT; };
+		AF1060190000000000000002 /* Shared/Localization/AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Localization/AppLanguage.swift; sourceTree = SOURCE_ROOT; };
 		B20000020000000000000002 /* Preset Photos */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "Preset Photos"; sourceTree = "<group>"; };
 		C30000000000000000000002 /* PaintAnytimeComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
-		E50000000000000000000002 /* Shared/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Shared/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
+		D50000000000000000000002 /* PaintAnytimeWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D50000000000000000000012 /* Paint Anytime Complications/LauncherComplications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime Complications/LauncherComplications.swift"; sourceTree = SOURCE_ROOT; };
+		D5000000000000000000000E /* Paint Anytime Complications/GalleryArtworkComplications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime Complications/GalleryArtworkComplications.swift"; sourceTree = SOURCE_ROOT; };
+		E50000000000000000000002 /* Shared/Localization/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Shared/Localization/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+		F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.icon; path = "Paint Anytime (Watch) Watch App/Paint-Anytime.icon"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -73,11 +166,6 @@
 			path = "Paint Anytime (Watch) Watch App";
 			sourceTree = "<group>";
 		};
-		25AC8199305D90C700C8F69E /* Paint Anytime */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Paint Anytime";
-			sourceTree = "<group>";
-		};
 		A10000050000000000000005 /* Paint Anytime iPhone */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Paint Anytime iPhone";
@@ -88,6 +176,11 @@
 			path = "Paint Anytime Complications";
 			sourceTree = "<group>";
 		};
+		D50000000000000000000003 /* Paint Anytime Widgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Paint Anytime Widgets";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,12 +189,12 @@
 			files = (
 			);
 		};
-		25AC8194305D90C700C8F69E /* Frameworks */ = {
+		C30000000000000000000008 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
 		};
-		C30000000000000000000008 /* Frameworks */ = {
+		D50000000000000000000008 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
 			);
@@ -112,7 +205,43 @@
 		259166BF307D5FE20044FEF7 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
-				D40000000000000000000002 /* Shared/GalleryWidgetStore.swift */,
+				D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */,
+				D5000000000000000000000E /* Paint Anytime Complications/GalleryArtworkComplications.swift */,
+				D50000000000000000000012 /* Paint Anytime Complications/LauncherComplications.swift */,
+				AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */,
+				AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */,
+				AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */,
+				AF1060000000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift */,
+				AF1060010000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift */,
+				AF1060020000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift */,
+				AF1060030000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift */,
+				AF1060040000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift */,
+				AF1060050000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift */,
+				AF1060060000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift */,
+				AF1060070000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift */,
+				AF1060080000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift */,
+				AF1060090000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift */,
+				AF1060100000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift */,
+				AF1060110000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift */,
+				AF1060120000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift */,
+				AF1060130000000000000002 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift */,
+				AF1060140000000000000002 /* Shared/Document/CanvasDocument.swift */,
+				AF1060150000000000000002 /* Shared/Document/PSDWriter.swift */,
+				AF1060160000000000000002 /* Shared/Drawing/BrushGeometry.swift */,
+				AF1060170000000000000002 /* Shared/Drawing/FountainPenGeometry.swift */,
+				AF1060180000000000000002 /* Shared/App/AppReleaseFeatures.swift */,
+				AF1060190000000000000002 /* Shared/Localization/AppLanguage.swift */,
+				AB1000000000000000000002 /* Shared/Document/PaintProject.swift */,
+				AC1000000000000000000002 /* Shared/Gallery/GalleryDeletionStore.swift */,
+				AE1030000000000000000002 /* Shared/Gallery/GalleryImageLayout.swift */,
+				AF1040000000000000000006 /* Shared/Gallery/GalleryLowResCrossfade.swift */,
+				AF1040000000000000000004 /* Shared/Gallery/GalleryImageMetadata.swift */,
+				AF1040000000000000000002 /* Shared/Gallery/GalleryPreviewStore.swift */,
+				AF1030010000000000000001 /* Shared/Gallery/GalleryZoomSlot.swift */,
+				AF1030010000000000000002 /* Shared/Gallery/GalleryZoomRules.swift */,
+				AF1030000000000000000031 /* DebugGallerySamples */,
+				AF1030000000000000000021 /* Shared/Debug/DebugGallerySamples.swift */,
+				AF1030000000000000000011 /* Shared/Debug/GalleryDebug.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -122,21 +251,22 @@
 			children = (
 				C30000000000000000000003 /* Paint Anytime Complications */,
 				B20000020000000000000002 /* Preset Photos */,
-				25AC8199305D90C700C8F69E /* Paint Anytime */,
+				D50000000000000000000003 /* Paint Anytime Widgets */,
 				A10000050000000000000005 /* Paint Anytime iPhone */,
+				F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */,
 				257D405B305EA358002072CB /* Paint Anytime (Watch) Watch App */,
 				25AC8198305D90C700C8F69E /* Products */,
 				2523992A3060233F00774395 /* Shared */,
 				259166BF307D5FE20044FEF7 /* Recovered References */,
-				E50000000000000000000002 /* Shared/Localizable.xcstrings */,
+				E50000000000000000000002 /* Shared/Localization/Localizable.xcstrings */,
 			);
 			sourceTree = "<group>";
 		};
 		25AC8198305D90C700C8F69E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				25AC8197305D90C700C8F69E /* Paint Anytime.app */,
 				C30000000000000000000002 /* PaintAnytimeComplications.appex */,
+				D50000000000000000000002 /* PaintAnytimeWidgets.appex */,
 				257D4052305EA358002072CB /* Paint Anytime (Watch).app */,
 				257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */,
 			);
@@ -150,18 +280,24 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 257D4068305EA359002072CB /* Build configuration list for PBXNativeTarget "Paint Anytime (Watch)" */;
 			buildPhases = (
+				A10000060000000000000006 /* Sources */,
 				257D4050305EA358002072CB /* Resources */,
 				257D4064305EA359002072CB /* Embed Watch Content */,
+				D5000000000000000000000C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				257D405A305EA358002072CB /* PBXTargetDependency */,
+				D5000000000000000000000D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000050000000000000005 /* Paint Anytime iPhone */,
 			);
 			name = "Paint Anytime (Watch)";
 			productName = "Paint Anytime (Watch)";
 			productReference = 257D4052305EA358002072CB /* Paint Anytime (Watch).app */;
-			productType = "com.apple.product-type.application.watchapp2-container";
+			productType = "com.apple.product-type.application";
 		};
 		257D4056305EA358002072CB /* Paint Anytime (Watch) Watch App */ = {
 			isa = PBXNativeTarget;
@@ -170,7 +306,7 @@
 				257D4053305EA358002072CB /* Sources */,
 				257D4054305EA358002072CB /* Frameworks */,
 				257D4055305EA358002072CB /* Resources */,
-				C3000000000000000000000C /* Embed App Extensions */,
+				C3000000000000000000000C /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
@@ -184,25 +320,6 @@
 			name = "Paint Anytime (Watch) Watch App";
 			productName = "Paint Anytime (Watch) Watch App";
 			productReference = 257D4057305EA358002072CB /* Paint Anytime (Watch) Watch App.app */;
-			productType = "com.apple.product-type.application";
-		};
-		25AC8196305D90C700C8F69E /* Paint Anytime */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 25AC81A2305D90C900C8F69E /* Build configuration list for PBXNativeTarget "Paint Anytime" */;
-			buildPhases = (
-				25AC8193305D90C700C8F69E /* Sources */,
-				25AC8194305D90C700C8F69E /* Frameworks */,
-				25AC8195305D90C700C8F69E /* Resources */,
-			);
-			buildRules = (
-			);
-			fileSystemSynchronizedGroups = (
-				2523992A3060233F00774395 /* Shared */,
-				25AC8199305D90C700C8F69E /* Paint Anytime */,
-			);
-			name = "Paint Anytime";
-			productName = "Paint Anytime";
-			productReference = 25AC8197305D90C700C8F69E /* Paint Anytime.app */;
 			productType = "com.apple.product-type.application";
 		};
 		C30000000000000000000005 /* PaintAnytimeComplications */ = {
@@ -223,6 +340,24 @@
 			productReference = C30000000000000000000002 /* PaintAnytimeComplications.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		D50000000000000000000005 /* PaintAnytimeWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D50000000000000000000006 /* Build configuration list for PBXNativeTarget "PaintAnytimeWidgets" */;
+			buildPhases = (
+				D50000000000000000000007 /* Sources */,
+				D50000000000000000000008 /* Frameworks */,
+				D50000000000000000000009 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				D50000000000000000000003 /* Paint Anytime Widgets */,
+			);
+			name = PaintAnytimeWidgets;
+			productName = PaintAnytimeWidgets;
+			productReference = D50000000000000000000002 /* PaintAnytimeWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -231,15 +366,12 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 2700;
-				LastUpgradeCheck = 2700;
+				LastUpgradeCheck = 2720;
 				TargetAttributes = {
 					257D4051305EA358002072CB = {
 						CreatedOnToolsVersion = 27.0;
 					};
 					257D4056305EA358002072CB = {
-						CreatedOnToolsVersion = 27.0;
-					};
-					25AC8196305D90C700C8F69E = {
 						CreatedOnToolsVersion = 27.0;
 					};
 				};
@@ -250,6 +382,7 @@
 			knownRegions = (
 				en,
 				ar,
+				bg,
 				cs,
 				da,
 				nl,
@@ -286,8 +419,8 @@
 			projectRoot = "";
 			targets = (
 				C30000000000000000000005 /* PaintAnytimeComplications */,
-				25AC8196305D90C700C8F69E /* Paint Anytime */,
 				257D4051305EA358002072CB /* Paint Anytime (Watch) */,
+				D50000000000000000000005 /* PaintAnytimeWidgets */,
 				257D4056305EA358002072CB /* Paint Anytime (Watch) Watch App */,
 			);
 		};
@@ -297,21 +430,23 @@
 		257D4050305EA358002072CB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
-				E50000000000000000000001 /* Shared/Localizable.xcstrings in Resources */,
+				AF1030000000000000000041 /* DebugGallerySamples in Resources */,
+				F60000000000000000000001 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon in Resources */,
 			);
 		};
 		257D4055305EA358002072CB /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
+				AF1030000000000000000042 /* DebugGallerySamples in Resources */,
 				B20000010000000000000001 /* Preset Photos in Resources */,
 			);
 		};
-		25AC8195305D90C700C8F69E /* Resources */ = {
+		C30000000000000000000009 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
 		};
-		C30000000000000000000009 /* Resources */ = {
+		D50000000000000000000009 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -324,15 +459,57 @@
 			files = (
 			);
 		};
-		25AC8193305D90C700C8F69E /* Sources */ = {
+		A10000060000000000000006 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
+				AF1030100000000000000001 /* Shared/App/PaintDeepLink.swift in Sources */,
+				AF1030200000000000000001 /* Shared/Connectivity/SketchAssistProtocol.swift in Sources */,
+				AF1030300000000000000001 /* Shared/Connectivity/PhotoImportProtocol.swift in Sources */,
+				AF1060000000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/AuthoredNibBrush.swift in Sources */,
+				AF1060010000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/RenderProgress.swift in Sources */,
+				AF1060020000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapCache.swift in Sources */,
+				AF1060030000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBitmapRenderer.swift in Sources */,
+				AF1060040000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchBlurBrush.swift in Sources */,
+				AF1060050000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDrawingCommands.swift in Sources */,
+				AF1060060000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryGrainField.swift in Sources */,
+				AF1060070000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchDryPixelFill.swift in Sources */,
+				AF1060080000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchLayerCompositor.swift in Sources */,
+				AF1060090000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchRegionInk.swift in Sources */,
+				AF1060100000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchRenderDiagnostics.swift in Sources */,
+				AF1060110000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchSelectionRenderCache.swift in Sources */,
+				AF1060120000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeCoverage.swift in Sources */,
+				AF1060130000000000000001 /* Paint Anytime (Watch) Watch App/Rendering/WatchStrokeDrawing.swift in Sources */,
+				AF1060140000000000000001 /* Shared/Document/CanvasDocument.swift in Sources */,
+				AF1060150000000000000001 /* Shared/Document/PSDWriter.swift in Sources */,
+				AF1060160000000000000001 /* Shared/Drawing/BrushGeometry.swift in Sources */,
+				AF1060170000000000000001 /* Shared/Drawing/FountainPenGeometry.swift in Sources */,
+				AF1060180000000000000001 /* Shared/App/AppReleaseFeatures.swift in Sources */,
+				AF1060190000000000000001 /* Shared/Localization/AppLanguage.swift in Sources */,
+				AB1000000000000000000001 /* Shared/Document/PaintProject.swift in Sources */,
+				AC1000000000000000000001 /* Shared/Gallery/GalleryDeletionStore.swift in Sources */,
+				AE1030000000000000000001 /* Shared/Gallery/GalleryImageLayout.swift in Sources */,
+				AF1040000000000000000005 /* Shared/Gallery/GalleryLowResCrossfade.swift in Sources */,
+				AF1040000000000000000003 /* Shared/Gallery/GalleryImageMetadata.swift in Sources */,
+				AF1040000000000000000001 /* Shared/Gallery/GalleryPreviewStore.swift in Sources */,
+				AF1030010000000000000011 /* Shared/Gallery/GalleryZoomSlot.swift in Sources */,
+				AF1030010000000000000012 /* Shared/Gallery/GalleryZoomRules.swift in Sources */,
+				AF1030000000000000000022 /* Shared/Debug/DebugGallerySamples.swift in Sources */,
+				AF1030000000000000000012 /* Shared/Debug/GalleryDebug.swift in Sources */,
+				D50000000000000000000011 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */,
 			);
 		};
 		C30000000000000000000007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
-				D40000000000000000000001 /* Shared/GalleryWidgetStore.swift in Sources */,
+				D40000000000000000000001 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */,
+			);
+		};
+		D50000000000000000000007 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+				D5000000000000000000000F /* Paint Anytime Complications/GalleryArtworkComplications.swift in Sources */,
+				D50000000000000000000013 /* Paint Anytime Complications/LauncherComplications.swift in Sources */,
+				D50000000000000000000010 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */,
 			);
 		};
 /* End PBXSourcesBuildPhase section */
@@ -348,25 +525,44 @@
 			target = C30000000000000000000005 /* PaintAnytimeComplications */;
 			targetProxy = C30000000000000000000004 /* PBXContainerItemProxy */;
 		};
+		D5000000000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D50000000000000000000005 /* PaintAnytimeWidgets */;
+			targetProxy = D50000000000000000000004 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		257D4062305EA359002072CB /* Debug configuration for PBXNativeTarget "Paint Anytime (Watch)" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
+				CODE_SIGN_ENTITLEMENTS = PhoneApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				EXECUTABLE_NAME = PaintAnytime;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PhoneApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-weak_framework",
+					ImagePlayground,
+					"-weak_framework",
+					FoundationModels,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = NO;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
@@ -374,19 +570,33 @@
 		257D4063305EA359002072CB /* Release configuration for PBXNativeTarget "Paint Anytime (Watch)" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = "Paint-Anytime";
+				CODE_SIGN_ENTITLEMENTS = PhoneApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				EXECUTABLE_NAME = PaintAnytime;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "PhoneApp-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save your selected drawings to Photos.";
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-weak_framework",
+					ImagePlayground,
+					"-weak_framework",
+					FoundationModels,
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = NO;
+				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALIDATE_PRODUCT = YES;
 			};
@@ -400,7 +610,7 @@
 				CODE_SIGN_ENTITLEMENTS = WatchApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_PREVIEWS = YES;
 				EXECUTABLE_NAME = PaintAnytimeWatch;
@@ -409,12 +619,13 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKWatchOnly = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.deniskolchev.paintanytime;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -438,7 +649,7 @@
 				CODE_SIGN_ENTITLEMENTS = WatchApp.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_PREVIEWS = YES;
 				EXECUTABLE_NAME = PaintAnytimeWatch;
@@ -447,12 +658,13 @@
 				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				INFOPLIST_KEY_WKWatchOnly = YES;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.deniskolchev.paintanytime;
+				INFOPLIST_KEY_WKRunsIndependentlyOfCompanionApp = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -474,6 +686,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -504,6 +717,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -529,6 +743,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -539,6 +754,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_LOCALIZABILITY_NONLOCALIZED = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
@@ -569,6 +785,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -587,77 +804,8 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
-			};
-			name = Release;
-		};
-		25AC81A3305D90C900C8F69E /* Debug configuration for PBXNativeTarget "Paint Anytime" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 7H7XHY3693;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-			};
-			name = Debug;
-		};
-		25AC81A4305D90C900C8F69E /* Release configuration for PBXNativeTarget "Paint Anytime" */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
-				CODE_SIGN_STYLE = Automatic;
-				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
-				DEVELOPMENT_TEAM = 7H7XHY3693;
-				ENABLE_APP_SANDBOX = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
-				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.graphics-design";
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/../Frameworks",
-				);
-				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				REGISTER_APP_GROUPS = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
 			};
 			name = Release;
 		};
@@ -667,7 +815,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Complications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Complications-Info.plist";
@@ -678,7 +826,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp.complications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -696,7 +844,7 @@
 				APPLICATION_EXTENSION_API_ONLY = YES;
 				CODE_SIGN_ENTITLEMENTS = Complications.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = 7H7XHY3693;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "Complications-Info.plist";
@@ -707,7 +855,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.1;
+				MARKETING_VERSION = 1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.watchkitapp.complications;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -716,6 +864,65 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		D5000000000000000000000A /* Debug configuration for PBXNativeTarget "PaintAnytimeWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 7H7XHY3693;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Widgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D5000000000000000000000B /* Release configuration for PBXNativeTarget "PaintAnytimeWidgets" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = Widgets.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 4;
+				DEVELOPMENT_TEAM = 7H7XHY3693;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Widgets-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Paint Anytime";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.deniskolchev.paintanytime.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -746,19 +953,19 @@
 			);
 			defaultConfigurationName = Release;
 		};
-		25AC81A2305D90C900C8F69E /* Build configuration list for PBXNativeTarget "Paint Anytime" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				25AC81A3305D90C900C8F69E /* Debug configuration for PBXNativeTarget "Paint Anytime" */,
-				25AC81A4305D90C900C8F69E /* Release configuration for PBXNativeTarget "Paint Anytime" */,
-			);
-			defaultConfigurationName = Release;
-		};
 		C30000000000000000000006 /* Build configuration list for PBXNativeTarget "PaintAnytimeComplications" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C3000000000000000000000A /* Debug configuration for PBXNativeTarget "PaintAnytimeComplications" */,
 				C3000000000000000000000B /* Release configuration for PBXNativeTarget "PaintAnytimeComplications" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		D50000000000000000000006 /* Build configuration list for PBXNativeTarget "PaintAnytimeWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5000000000000000000000A /* Debug configuration for PBXNativeTarget "PaintAnytimeWidgets" */,
+				D5000000000000000000000B /* Release configuration for PBXNativeTarget "PaintAnytimeWidgets" */,
 			);
 			defaultConfigurationName = Release;
 		};

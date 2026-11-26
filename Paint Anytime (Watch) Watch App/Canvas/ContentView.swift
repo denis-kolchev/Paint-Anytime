@@ -1,0 +1,969 @@
+import SwiftUI
+
+struct ContentView: View {
+    @Binding var launchRequest: WatchLaunchRequest?
+    var isActive = true
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    @StateObject private var session = DrawingSessionController()
+    @AppStorage(AutosaveSettings.enabledKey) private var autosaveEnabled = false
+    @AppStorage(AutosaveSettings.intervalKey) private var autosaveMinutes = AutosaveSettings.defaultMinutes
+    @AppStorage(AutosaveSettings.showsTimerKey) private var showsAutosaveTimer = AutosaveSettings.defaultShowsTimer
+    @State private var autosave = CanvasAutosave()
+    @State private var zoomReadout = CanvasZoomReadout()
+    @StateObject private var menuOnboarding = OnboardingController()
+    private var controller: CanvasController { session.canvas }
+    @AppStorage(CanvasControlLayout.storageKey) private var controlLayoutData = Data()
+    @AppStorage(CanvasControlLayout.enabledKey) private var customLayoutEnabled = false
+    @State private var quickSettings: CanvasQuickAction?
+    @AppStorage(WatchSketchAssist.phoneAvailabilityKey) private var sketchAssistOnPhone = false
+    @State private var showsSketchAssistRequirements = false
+    @Environment(\.openURL) private var openURL
+    @State private var layoutCache = CanvasControlLayoutCache()
+    private var customLayout: CanvasControlLayout? {
+        CanvasControlLayout.custom(from: controlLayoutData, enabled: customLayoutEnabled,
+                                   decode: layoutCache.layout(for:))
+    }
+    /// The built-in controls are the morph menus; any other arrangement is a custom layout.
+    private var usesMorphToolbar: Bool { customLayout == nil }
+    private var showsMorphToolbar: Bool {
+        get { morphState.showsMorphToolbar }
+        nonmutating set { morphState.showsMorphToolbar = newValue }
+    }
+    private var showsContentActions: Bool {
+        get { morphState.showsContentActions }
+        nonmutating set { morphState.showsContentActions = newValue }
+    }
+    @State private var showsLayers = false
+    @State private var showsReferenceFullscreen = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var showsToolSettings = false
+    @StateObject private var toolSettingsCorner = ToolSettingsCorner()
+    @State private var isMovingCanvas = false
+    @State private var isEyedropperActive = false
+    @State private var hasEyedropperSession = false
+    @State private var cameraSampledColor: SIMD4<Float>?
+    @State private var showsSampledPalette = false
+    @AppStorage("watch.inkPalette.v1") private var paletteData = Data()
+    @AppStorage("watch.inkPalettes.v2") private var palettesData = Data()
+    @StateObject private var lasso = WatchLassoController()
+    @State private var lassoToolbarInput = WatchLassoToolbarInput()
+    private var showsSelectionActions: Bool {
+        get { morphState.showsSelectionActions }
+        nonmutating set { morphState.showsSelectionActions = newValue }
+    }
+    @State private var layerMoveName: String?
+    @State private var layerMoveID = UUID()
+    @State private var showsAppSettings = false
+    /// An action chosen in the More menu, run once the menu has closed.
+    @State private var pendingMenuAction: CanvasQuickAction?
+    /// The canvas Tutorial button presents the menu sheet on the chapter choice.
+    @State private var opensTutorialChapters = false
+    /// The menu's tutorial is on screen. Set behind the closed iris once the tutorial
+    /// is prepared, not with the folder, so it never appears before the circle closes.
+    @State private var showsMenuTutorial = false
+    @Environment(\.irisTransition) private var irisTransition
+    @State private var showsGallery = false
+    /// Animated values of the menu → gallery transition. Read only by small modifiers
+    /// and the menu, so animating them does not re-run this body or the gallery's.
+    @State private var galleryTransition = MenuGalleryTransitionState()
+    /// Keeps the canvas opaque beneath a gallery that is still fading in, so the
+    /// dissolve goes from canvas to photos without passing through black.
+    @State private var keepsCanvasUnderGallery = false
+    /// The gallery is mounted invisibly under the open menu, so opening it starts at once.
+    /// Separate from `showsGallery`: nothing on the canvas may change under the menu's blur.
+    @State private var prewarmsGallery = false
+    @State private var galleryArtworkFilename: String?
+    @State private var galleryInitialBitmap: GalleryBitmap?
+    @State private var savedNoticeID: UUID?
+    @State private var galleryLaunchID = UUID()
+    @State private var canvasSize: CGSize = .zero
+    @State private var morphState = CanvasMorphState()
+    @State private var controlRegions = CanvasControlRegions()
+    private var canvasControlFrames: [CanvasToolbarControl: CGRect] { controlRegions.frames }
+    private var controlFramesBinding: Binding<[CanvasToolbarControl: CGRect]> {
+        Binding(get: { controlRegions.frames }, set: { controlRegions.updateToolbarFrames($0) })
+    }
+    @Environment(\.displayScale) private var displayScale
+    @Environment(\.scenePhase) private var scenePhase
+    var body: some View {
+        let _ = RenderDiagnostics.bodyEvaluated(.screen)
+        Group {
+        GeometryReader { geometry in
+            canvasStack(geometry)
+        }
+        // Establish full-screen bounds before applying any presentation effects.
+        .ignoresSafeArea()
+        .overlay {
+            // The canvas hides the system clock, so the countdown takes its place:
+            // centered at the clock's height, with the zoom below it while the Crown
+            // zooms (or in its place without a countdown). A separate view reads both,
+            // so they do not invalidate this screen. Behind the menu and quick
+            // settings it stays mounted and fades with the canvas controls.
+            if isActive, scenePhase == .active,
+               menuOnboarding.tutorialFolder == nil,
+               !showsGallery, !showsToolSettings, !showsLayers, !showsSampledPalette {
+                CanvasStatusOverlay(autosave: autosave, showsCountdown: autosaveEnabled && showsAutosaveTimer,
+                                    zoom: zoomReadout, autosaveProgress: session.autosaveProgress)
+                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
+            }
+        }
+        // Reinstall toolbar items when returning from onboarding so watchOS
+        // recalculates the clock position around the trailing tool button.
+        // Keep the toolbar slots installed during autosave: removing the trailing
+        // item makes watchOS move its clock. CanvasMenuControlVisibility hides the
+        // controls and disables their hit targets without changing the clock layout.
+        .toolbar { canvasToolbar }
+        // A custom layout draws every control over the canvas, so its native bars only took
+        // touches: strokes started in the top strip or beside an empty bottom slot never
+        // reached the canvas. Tool settings keep the bars for their buttons.
+        .toolbar(hidesCanvasBars ? .hidden : .automatic, for: .navigationBar, .bottomBar)
+        }
+        .requestsHiddenClock(isActive && menuOnboarding.tutorialFolder == nil
+            && !showsGallery && !showsToolSettings && !showsAppSettings)
+        .fullScreenCover(isPresented: $showsSampledPalette) {
+            InkPaletteBrowser(library: InkPaletteLibrary.decode(palettesData, legacy: paletteData),
+                              controller: controller, initialColor: cameraSampledColor) { library in
+                if let data = try? JSONEncoder().encode(library) { palettesData = data }
+                if !library.activePalette.selectedColors.contains(where: { $0.rgba == controller.pencilStyle.color }),
+                   let first = library.activePalette.selectedColors.first {
+                    controller.pencilStyle.color = first.rgba
+                }
+            }
+            .environment(\.colorScheme, .dark)
+        }
+        .modifier(QuickSettingsPresentation(action: $quickSettings, controller: controller,
+                                            viewportSize: canvasSize))
+        .modifier(ReferencePresentation(isPresented: $showsReferenceFullscreen, controller: controller,
+                                        viewportSize: canvasSize))
+        .modifier(SketchAssistRequirementsAlert(isPresented: $showsSketchAssistRequirements))
+        // Here rather than in the lasso panel, which is not on screen while strokes wait for ✓.
+        .onChange(of: sketchAssistOnPhone) { _, available in
+            if !available { lasso.sketchAssistBecameUnavailable() }
+        }
+        .onChange(of: customLayoutEnabled) { _, _ in
+            morphState.customExpandedSlot = nil
+        }
+        .onChange(of: controlLayoutData) { _, _ in
+            morphState.customExpandedSlot = nil
+            showsMorphToolbar = false
+            showsContentActions = false
+        }
+        .sheet(isPresented: $showsLayers) {
+            WatchLayersView(controller: controller, canvasSize: controller.document.size(fallback: canvasSize))
+        }
+        .onChange(of: showsAppSettings) { _, shows in
+            // The prewarmed gallery is dropped in the sheet's onDismiss: tearing it down
+            // here, in a no-animation transaction, cut the menu's slide-away to one frame.
+            // The fold is deferred for the same reason: written in this update, its
+            // disablesAnimations reached the sheet's dismissal too. It still happens
+            // under the sliding menu, a frame later.
+            if !shows {
+                Task { @MainActor in
+                    guard !showsAppSettings else { return }
+                    foldMorphsWithoutAnimation()
+                }
+            }
+            if !shows { opensTutorialChapters = false }
+            if !shows { showsMenuTutorial = false }
+            if !shows, menuOnboarding.tutorialFolder != nil { menuOnboarding.finishTutorial() }
+        }
+        .accessibilityHidden(showsAppSettings)
+        .task(id: showsAppSettings) {
+            guard showsAppSettings, !showsGallery, !prewarmsGallery else { return }
+            // After the menu's own presentation. Building the grid briefly occupies the
+            // main thread, so it is not done while the menu is still sliding in.
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled, showsAppSettings, !showsGallery, !prewarmsGallery,
+                  !showsMenuTutorial, menuOnboarding.tutorialFolder == nil else { return }
+            mountGalleryInvisibly(active: false)
+            withoutAnimations { prewarmsGallery = true }
+        }
+        .sheet(isPresented: Binding(
+            // The menu stays up while its own circle closes over it, and leaves behind black.
+            get: { showsAppSettings && !showsMenuTutorial },
+            set: { presented in
+                // Starting the tutorial dismisses only the menu's system sheet.
+                if !presented && menuOnboarding.tutorialFolder == nil {
+                    showsAppSettings = false
+                }
+            }
+        ), onDismiss: {
+            MenuGalleryTransitionDiagnostics.shared.mark("dismissed")
+            galleryTransition.hidesMenuContent = false
+            // Closed without choosing Gallery: drop the prewarmed one once the menu is gone.
+            if !showsAppSettings && !showsGallery { unmountPrewarmedGallery() }
+            // Another sheet cannot present while the menu is still dismissing.
+            guard let action = pendingMenuAction else { return }
+            pendingMenuAction = nil
+            performQuickAction(action)
+        }) {
+            TutorialMenuPresentation(controller: controller, viewportSize: canvasSize, onboarding: menuOnboarding, onOpenDrawings: {
+                // The menu stays up here: openGalleryFromMenu closes it over the gallery.
+                openGalleryFromMenu()
+            }, onFinish: {
+                showsAppSettings = false
+            }, opensTutorialChapters: opensTutorialChapters, transition: galleryTransition, onCanvasAction: { action in
+                pendingMenuAction = action
+                showsAppSettings = false
+            })
+        }
+        .overlay {
+            if showsAppSettings, showsMenuTutorial, let folder = menuOnboarding.tutorialFolder {
+                NavigationStack {
+                    TutorialPlayerView(folder: folder, chapters: menuOnboarding.tutorialChapters,
+                                       resume: menuOnboarding.tutorialResume,
+                                       onCompleteChapter: menuOnboarding.completeChapter) {
+                        // The editor returns behind the closed iris.
+                        switchMenuTutorialMode { showsAppSettings = false }
+                    }
+                    .toolbarColorScheme(.dark, for: .navigationBar, .bottomBar)
+                }
+                .id(folder)
+                .preferredColorScheme(.dark)
+                .environment(\.colorScheme, .dark)
+                .compositingGroup()
+                // Only the Reduce Motion fallback animates this; the iris swaps it unseen.
+                .transition(.opacity)
+            }
+        }
+        .onChange(of: menuOnboarding.tutorialFolder) { _, folder in
+            // The menu sheet slides away over the canvas while the iris closes;
+            // the tutorial is inserted behind black and the circle opens onto it.
+            if folder != nil, !showsGallery { unmountPrewarmedGallery() }
+            guard folder != nil, showsAppSettings, !showsMenuTutorial else { return }
+            let usesIris = irisTransition != nil && !reduceMotion
+            switchMenuTutorialMode {
+                // The run may have ended while the circle was closing.
+                guard showsAppSettings, menuOnboarding.tutorialFolder != nil else { return }
+                if !usesIris {
+                    showsMenuTutorial = true
+                    return
+                }
+                // Both circles are closed: dismiss the sheet without its slide, unseen.
+                var transaction = Transaction(animation: nil)
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { showsMenuTutorial = true }
+            }
+        }
+        .task(id: session.savedDrawing?.id) {
+            guard session.savedDrawing != nil else { return }
+            var transaction = Transaction(animation: nil)
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                galleryArtworkFilename = nil
+                galleryInitialBitmap = nil
+                galleryLaunchID = UUID()
+                session.savedDrawing = nil
+            }
+            withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(response: 0.35, dampingFraction: 0.8)) {
+                savedNoticeID = UUID()
+            }
+        }
+        .onChange(of: session.autosaveNoticeID) { _, noticeID in
+            guard noticeID != nil else { return }
+            galleryInitialBitmap = nil
+            galleryLaunchID = UUID()
+        }
+        .fullScreenCover(item: $session.pendingCanvasAction) { action in
+            DestructiveConfirmationView(title: action.title, confirmTitle: L10n.text("Clear")) {
+                session.pendingCanvasAction = nil
+            } onConfirm: {
+                session.pendingCanvasAction = nil
+                session.performCanvasAction(action)
+            }
+        }
+        .alert(L10n.text("Could not save"), isPresented: Binding(
+            get: { session.exportError != nil }, set: { if !$0 { session.exportError = nil } }
+        )) {
+            Button(L10n.text("OK"), role: .cancel) { session.exportError = nil }
+        } message: {
+            Text(session.exportError ?? "")
+        }
+        // Selection actions morph out of the lasso's Done and mode picker with the same
+        // spring as the other canvas morphs.
+        .onChange(of: lasso.bounds) { _, bounds in
+            if bounds != nil && !lasso.hidesSelectionActions { setShowsSelectionActions(true) }
+        }
+        .onChange(of: lasso.hidesSelectionActions) { _, hides in
+            // Complete strokes shows object actions only for the generated image.
+            if hides { setShowsSelectionActions(false) }
+            else if lasso.bounds != nil { setShowsSelectionActions(true) }
+        }
+        .onChange(of: usesMorphToolbar) { _, _ in
+            showsContentActions = false
+            showsMorphToolbar = false
+        }
+        .onChange(of: showsToolSettings) { _, shows in
+            if !shows { foldMorphsWithoutAnimation() }
+        }
+        .onChange(of: isActive) { _, active in
+            if !active { morphState.customExpandedSlot = nil }
+            if !active { showsMorphToolbar = false; showsContentActions = false }
+        }
+        .onChange(of: isMovingCanvas) { _, moving in
+            morphState.customExpandedSlot = nil
+            if moving { showsMorphToolbar = false; showsContentActions = false; cameraSampledColor = nil }
+            else {
+                lasso.deactivate()
+                isEyedropperActive = false
+                hasEyedropperSession = false
+            }
+        }
+        .onChange(of: session.canvasSessionID) { _, _ in
+            showsContentActions = false
+            showsMorphToolbar = false
+            isMovingCanvas = false
+            isEyedropperActive = false
+            hasEyedropperSession = false
+            lasso.deactivate()
+            showsToolSettings = false
+            if !session.isPreparingCanvas { showsGallery = false }
+        }
+        .task(id: isActive ? launchRequest?.id : nil) {
+            guard isActive, let request = launchRequest else { return }
+            await openDeepLink(request)
+        }
+        .onChange(of: scenePhase) { oldPhase, phase in
+            if phase != .active {
+                MemoryHeadroom.log(phase == .background ? "scene-background" : "scene-inactive")
+                showsContentActions = false
+                if !showsAppSettings && session.savedDrawing == nil && session.pendingCanvasAction == nil {
+                    showsMorphToolbar = false
+                }
+                controller.cancelStroke()
+                controller.flushStylePreferences()
+                if oldPhase == .active { autosaveOnWristDown() }
+            }
+        }
+        .task(id: autosaveTaskID) {
+            await runAutosave()
+        }
+        // Current color, width and opacity show the brush on the canvas, in its menus
+        // and in the canvas editor; a setting the tool lacks leaves its ring empty.
+        .environment(\.brushSummary, BrushSummary(style: controller.pencilStyle))
+    }
+
+    private var autosaveConfigurationID: String {
+        "\(autosaveEnabled)-\(isActive)-\(AutosaveSettings.minutes(autosaveMinutes))-\(session.canvasSessionID)"
+    }
+
+    private var autosaveTaskID: String {
+        "\(autosaveConfigurationID)-\(scenePhase == .active)"
+    }
+
+    private func runAutosave() async {
+        await autosave.run(
+            configurationID: autosaveConfigurationID,
+            seconds: AutosaveSettings.minutes(autosaveMinutes) * 60,
+            canRun: { autosaveEnabled && isActive && scenePhase == .active },
+            isBusy: { isBusyForAutosave },
+            prepare: {
+                // Nothing to save, or a save the session would refuse: the countdown
+                // restarts after its short wheel.
+                guard controller.canClear, session.canAutosave else { return false }
+                // The autosave's own notice replaces this one; fade rather than cut it.
+                withAnimation(.easeOut(duration: 0.2)) { savedNoticeID = nil }
+                return true
+            },
+            save: {
+                await session.autosaveQuietly(size: canvasSize, scale: displayScale)
+            })
+    }
+
+    /// Wrist-down or leaving the app: write unsaved changes right away instead of
+    /// waiting for the countdown, in case watchOS ends the app in the background.
+    /// Open menus do not matter here; only states that alter the document do.
+    private func autosaveOnWristDown() {
+        guard autosaveEnabled, isActive, menuOnboarding.tutorialFolder == nil,
+              !blocksAutosaveSnapshot, session.canAutosave, controller.hasUnsavedChanges else { return }
+        let size = canvasSize
+        let scale = displayScale
+        Task {
+            if await session.autosaveQuietly(size: size, scale: scale, onlyIfChanged: true) {
+                autosave.restartCountdown()
+            }
+        }
+    }
+
+    /// Interaction and presentations an autosave waits for.
+    private var isBusyForAutosave: Bool {
+        blocksAutosaveSnapshot || showsGallery || showsAppSettings || showsLayers || showsToolSettings
+            || showsSampledPalette || quickSettings != nil || showsReferenceFullscreen
+    }
+
+    /// States in which the document is mid-change (a stroke, a lasso selection or a move)
+    /// or a canvas transition is pending, so a snapshot would not be the user's picture.
+    private var blocksAutosaveSnapshot: Bool {
+        controller.activeStroke != nil || lasso.isActive || lasso.isPreparing || isMovingCanvas
+            || session.isPreparingCanvas || session.isSavingDrawing || session.pendingCanvasAction != nil
+            || session.savedDrawing != nil || session.exportError != nil
+    }
+
+    @MainActor
+    private func openDeepLink(_ request: WatchLaunchRequest) async {
+        guard request.destination != .app else { return }
+        controller.cancelStroke()
+        let hasPresentation = showsSampledPalette || showsLayers || showsAppSettings
+            || session.savedDrawing != nil || session.pendingCanvasAction != nil || session.exportError != nil
+        showsSampledPalette = false
+        showsLayers = false
+        showsAppSettings = false
+        showsReferenceFullscreen = false
+        session.savedDrawing = nil
+        session.pendingCanvasAction = nil
+        session.exportError = nil
+        showsToolSettings = false
+        showsGallery = false
+        galleryInitialBitmap = nil
+        savedNoticeID = nil
+        showsMorphToolbar = false
+        showsContentActions = false
+        isMovingCanvas = false
+        isEyedropperActive = false
+        hasEyedropperSession = false
+        lasso.deactivate()
+        // Let an existing modal finish dismissing before presenting a discard prompt.
+        if hasPresentation {
+            do { try await Task.sleep(for: .milliseconds(500)) }
+            catch { return }
+        }
+        guard !Task.isCancelled, isActive, launchRequest?.id == request.id else { return }
+        switch request.destination {
+        case .app, .canvas:
+            break
+        case .settings:
+            showsAppSettings = true
+        case .newCanvas:
+            session.requestCanvasAction(.open(CanvasDocument()))
+        case .gallery:
+            galleryArtworkFilename = request.artworkFilename
+            galleryLaunchID = request.id
+            showsGallery = true
+        }
+        launchRequest = nil
+    }
+
+
+    private func canvasStack(_ geometry: GeometryProxy) -> some View {
+        ZStack {
+            Color.black
+
+            drawingPage
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .background(.white)
+                .opacity(showsToolSettings || (showsGallery && !keepsCanvasUnderGallery) ? 0 : 1)
+                .allowsHitTesting(!showsToolSettings && !showsGallery)
+                .accessibilityHidden(showsToolSettings)
+                .zIndex(0)
+
+            // Its own container: finishing the lasso is not animated, and the notice
+            // must fade out then instead of vanishing.
+            ZStack {
+                if let layerMoveName, lasso.isActive, !showsGallery, !showsToolSettings {
+                    CanvasNoticeLabel(text: layerMoveName)
+                        .id(layerMoveID)
+                        .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
+                        .allowsHitTesting(false)
+                        .task(id: layerMoveID) {
+                            do { try await Task.sleep(for: .seconds(1.2)) } catch { return }
+                            withAnimation(.easeOut(duration: 0.2)) { self.layerMoveName = nil }
+                        }
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: lasso.isActive)
+            .zIndex(4)
+
+            CanvasMorphPanels(state: morphState, regions: controlRegions,
+                              session: session, lasso: lasso, size: geometry.size,
+                              canvasOrigin: geometry.frame(in: .global).origin,
+                              isVisible: isActive && !showsGallery && !showsToolSettings &&
+                                  (customLayout == nil || isMovingCanvas || lasso.isActive),
+                              usesMorphToolbar: usesMorphToolbar, isMovingCanvas: isMovingCanvas,
+                              isEyedropperActive: isEyedropperActive,
+                              showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
+                              showsLayers: $showsLayers,
+                              onStartLasso: { startLasso() }, onFinishLasso: finishLasso,
+                              onMoveSelectionLayer: moveSelectionLayer,
+                              onClearLayerMoveName: { withAnimation(.easeOut(duration: 0.2)) { layerMoveName = nil } })
+                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings))
+                .zIndex(3)
+
+            if let customLayout, isActive, !showsGallery, !showsToolSettings,
+               !isMovingCanvas, !lasso.isActive, controller.activeStroke == nil {
+                CustomCanvasControls(layout: customLayout, state: morphState,
+                                     regions: controlRegions, controller: controller,
+                                     size: geometry.size,
+                                     canvasOrigin: geometry.frame(in: .global).origin,
+                                     onAction: performQuickAction)
+                    .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
+                    .zIndex(3)
+            }
+
+            // Below the controls, so an expanded morph covers it rather than the reverse.
+            ReferenceCanvasThumbnail(layout: customLayout, regions: controlRegions, size: geometry.size,
+                                     canvasOrigin: geometry.frame(in: .global).origin,
+                                     isVisible: isActive && menuOnboarding.tutorialFolder == nil
+                                        && !showsGallery && !isMovingCanvas && !lasso.isActive
+                                        // Hidden while drawing, like the custom controls; it
+                                        // appears and disappears without a transition.
+                                        && controller.activeStroke == nil,
+                                     isCoveredByEditor: showsToolSettings,
+                                     onOpen: openReference)
+                .modifier(CanvasMenuControlVisibility(isHidden: showsAppSettings || quickSettings != nil))
+                .zIndex(2.5)
+
+            if showsGallery || prewarmsGallery {
+                SavedDrawingsView(initialArtworkFilename: galleryArtworkFilename, initialBitmap: galleryInitialBitmap,
+                    needsDiscardConfirmation: controller.needsDiscardConfirmation,
+                    isPreparingCanvas: session.isPreparingCanvas,
+                    preparationError: session.canvasPreparationError,
+                    defersThumbnails: keepsCanvasUnderGallery,
+                    transitionState: galleryTransition, onClose: {
+                    showsGallery = false
+                    galleryArtworkFilename = nil
+                    galleryInitialBitmap = nil
+                    savedNoticeID = nil
+                }) { document in
+                    // Gallery confirms discard before it reads the saved project.
+                    session.performCanvasAction(.open(document))
+                }
+                .equatable()
+                .id(galleryLaunchID)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                // Fade the gallery as one surface. Fading its overlapping
+                // layers separately reveals the thumbnail grid underneath.
+                .compositingGroup()
+                .modifier(GalleryRevealOpacity(state: galleryTransition))
+                .allowsHitTesting(showsGallery)
+                .accessibilityHidden(!showsGallery)
+                .transition(.opacity)
+                .zIndex(2)
+            }
+
+            if session.isSavingDrawing {
+                // Same overlay and fade as opening a drawing from the gallery:
+                // appears at once, fades out as the "saved" notice springs in.
+                // The fade is scoped to this transition: an `.animation(value:)` on the
+                // whole stack would retime the morph collapse that starts in the same update.
+                LoadingDimOverlay(progress: session.saveProgress)
+                    .ignoresSafeArea()
+                    .transition(.asymmetric(
+                        insertion: .identity,
+                        removal: .opacity.animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3))))
+                    .zIndex(5)
+            }
+
+            if let savedNoticeID, !showsGallery {
+                CanvasNoticeLabel(text: L10n.text("Artwork saved to gallery"), minimumScaleFactor: 0.5)
+                    .id(savedNoticeID)
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.85).combined(with: .opacity))
+                    .allowsHitTesting(false)
+                    .zIndex(4)
+                    .task(id: savedNoticeID) {
+                        do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                        withAnimation(.easeOut(duration: 0.2)) { self.savedNoticeID = nil }
+                    }
+            }
+
+            if showsToolSettings {
+                WatchToolSettingsView(controller: controller, corner: toolSettingsCorner)
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .background(.black)
+                .transition(.opacity)
+                .zIndex(1)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: showsToolSettings)
+        .animation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3), value: showsGallery)
+        .frame(width: geometry.size.width, height: geometry.size.height)
+        .clipped()
+        // Debug builds: the transition timeline, above the canvas and the gallery,
+        // with the gallery tap/Back panel stacked on top of it.
+        .overlay(alignment: .bottom) {
+            VStack(spacing: 2) {
+                #if DEBUG
+                WatchGalleryTapHUD()
+                #endif
+                MenuGalleryTransitionHUD()
+            }
+        }
+        .onAppear {
+            canvasSize = geometry.size
+            controlRegions.screenBounds = geometry.frame(in: .global)
+        }
+        .onChange(of: geometry.size) { _, size in
+            canvasSize = size
+            controlRegions.screenBounds = geometry.frame(in: .global)
+        }
+    }
+
+    /// The custom canvas layout is on screen with no native control of its own:
+    /// the same state that installs only the custom toolbar anchors.
+    /// The bars stay up until every anchor has been measured on screen once. Leaving the
+    /// first-launch tutorial (its finish confirmation hides the bars) inserted the anchors
+    /// straight into hidden bars, so the drawn controls fell back to estimated corners.
+    /// The anchors are invisible, so the bars show nothing for that one layout pass.
+    private var hidesCanvasBars: Bool {
+        customLayout != nil && isActive && menuOnboarding.tutorialFolder == nil
+            && !showsGallery && !showsToolSettings && !isMovingCanvas && !lasso.isActive
+            && controlRegions.hasCustomLayoutAnchors
+    }
+
+    /// Kept out of `body` so the view stays within type-checking limits.
+    private var canvasToolbar: CanvasToolbar {
+        CanvasToolbar(
+            controller: controller, lasso: lasso, lassoToolbarInput: lassoToolbarInput,
+            morphState: morphState, customLayout: customLayout,
+            isShown: isActive && menuOnboarding.tutorialFolder == nil && !showsGallery,
+            isMovingCanvas: isMovingCanvas,
+            hasActiveStroke: controller.activeStroke != nil,
+            instrument: controller.pencilStyle.instrument,
+            lassoIsActive: lasso.isActive,
+            awaitsSketchAssistConfirmation: lasso.awaitsSketchAssistConfirmation,
+            showsSketchAssistCancel: lasso.showsSketchAssistCancel,
+            lassoHidesControls: lasso.hidesControls,
+            canMoveSelectionUp: lasso.canMoveLayer(1, controller: controller),
+            showsMorphToolbar: showsMorphToolbar,
+            showsContentActions: showsContentActions,
+            showsSelectionActions: showsSelectionActions,
+            hidesMenuControls: showsAppSettings,
+            hidesCustomAnchors: showsAppSettings || quickSettings != nil,
+            reduceMotion: reduceMotion,
+            showsToolSettings: $showsToolSettings, showsAppSettings: $showsAppSettings,
+            isEyedropperActive: $isEyedropperActive, hasEyedropperSession: $hasEyedropperSession,
+            cameraSampledColor: $cameraSampledColor,
+            toolSettingsCorner: toolSettingsCorner,
+            controlFrames: controlFramesBinding,
+            onMoveSelectionLayer: moveSelectionLayer,
+            onFinishLasso: finishLasso,
+            onFinishCameraTool: finishCameraTool,
+            onAction: performQuickAction)
+    }
+
+
+    /// A short tap the canvas received inside a drawn custom control's zone: with the native
+    /// bars hidden such taps sometimes reach the canvas under the control instead of it
+    /// (device log: the top-trailing control). Do what that collapsed control does.
+    private func forwardCanvasTap(_ control: CanvasToolbarControl) {
+        if control == .reference { return openReference() }
+        guard hidesCanvasBars, let customLayout else { return }
+        let index: Int
+        if case .custom(let slot) = control { index = slot }
+        else if let slot = CustomCanvasControls.anchors.firstIndex(of: control) { index = slot }
+        else { return }
+        guard customLayout.slots.indices.contains(index), !customLayout.slots[index].isEmpty,
+              // An open morph's rows are buttons of their own.
+              morphState.customExpandedSlot != index else { return }
+        let assignment = customLayout.slots[index]
+        if assignment.isMorph {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+                morphState.customExpandedSlot = index
+            }
+        } else if let action = assignment.actions.first {
+            performQuickAction(action)
+        }
+    }
+
+    /// Menu → gallery: the menu's buttons fade out while the canvas beneath dissolves
+    /// straight into the photos; the menu's background is removed once its buttons are gone. The canvas stays opaque under the
+    /// fading gallery, so no black frame appears; the menu keeps its system look.
+    private func openGalleryFromMenu() {
+        savedNoticeID = nil
+        guard showsAppSettings else {
+            galleryArtworkFilename = nil
+            galleryInitialBitmap = nil
+            galleryLaunchID = UUID()
+            showsGallery = true
+            return
+        }
+        let diagnostics = MenuGalleryTransitionDiagnostics.shared
+        diagnostics.begin()
+        diagnostics.note("prewarmed", value: prewarmsGallery ? 1 : 0)
+        if !prewarmsGallery { mountGalleryInvisibly(active: true) }
+        withoutAnimations {
+            // Same view identity: a prewarmed gallery is promoted, not rebuilt.
+            showsGallery = true
+            prewarmsGallery = false
+            galleryTransition.galleryActive = true
+        }
+        diagnostics.mark("insert", awaitsFrame: true)
+        // Starts once the grid has built its tiles, so no frame of the fade stalls on them.
+        galleryTransition.whenGalleryReady(timeout: 1.5) {
+            diagnostics.mark("anim start", awaitsFrame: true)
+            // Both start together: the buttons fade while the canvas dissolves into the
+            // gallery. The sheet's background can only go once its buttons are gone.
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                galleryTransition.galleryOpacity = 1
+            } completion: {
+                diagnostics.mark("gallery in")
+                keepsCanvasUnderGallery = false
+            }
+            withAnimation(.easeOut(duration: reduceMotion ? 0.1 : 0.2)) {
+                galleryTransition.hidesMenuContent = true
+            } completion: {
+                diagnostics.mark("btns out")
+                withoutAnimations { showsAppSettings = false }
+                diagnostics.mark("sheet off", awaitsFrame: true)
+                // The gallery already looks like the menu's blur; clear it gradually.
+                withAnimation(.easeOut(duration: reduceMotion ? 0.15 : 0.35)) {
+                    galleryTransition.galleryBlur = 0
+                    galleryTransition.galleryDim = 0
+                } completion: {
+                    diagnostics.mark("unblurred")
+                }
+            }
+        }
+    }
+
+    /// Mounts a fresh gallery at zero opacity over the still-visible canvas.
+    private func mountGalleryInvisibly(active: Bool) {
+        withoutAnimations {
+            galleryArtworkFilename = nil
+            galleryInitialBitmap = nil
+            galleryLaunchID = UUID()
+            galleryTransition.prepareForMount(active: active)
+            keepsCanvasUnderGallery = true
+        }
+    }
+
+    private func unmountPrewarmedGallery() {
+        guard prewarmsGallery else { return }
+        withoutAnimations {
+            prewarmsGallery = false
+            keepsCanvasUnderGallery = false
+            galleryTransition.reset()
+        }
+    }
+
+    private func withoutAnimations(_ change: () -> Void) {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction, change)
+    }
+
+    /// Enters or leaves the menu's tutorial behind the welcome host's iris, as the
+    /// first-launch tour does; crossfades when no iris is installed.
+    private func switchMenuTutorialMode(_ swap: @escaping @MainActor () -> Void) {
+        if let irisTransition {
+            irisTransition(swap)
+        } else {
+            withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) { swap() }
+        }
+    }
+
+    /// Tool settings and More leave the morph open so a collapse does not fight their
+    /// transition. Fold it as the screen starts to close: the menu's controls are still
+    /// faded out and the tool settings hide the panels, so the canvas returns folded
+    /// without a visible jump.
+    private func foldMorphsWithoutAnimation() {
+        var transaction = Transaction(animation: nil)
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            morphState.customExpandedSlot = nil
+            showsMorphToolbar = false
+            showsContentActions = false
+        }
+    }
+
+    private func performQuickAction(_ action: CanvasQuickAction) {
+        guard isActive, controller.activeStroke == nil, !showsAppSettings,
+              quickSettings == nil, !showsGallery, !showsToolSettings,
+              !isMovingCanvas, !lasso.isActive else { return }
+        // Native toolbar slots stay enabled; a tap with nothing to undo, redo or clear
+        // gets a haptic and leaves the morph open.
+        guard action.isAvailable(in: controller) else { return UnavailableActionFeedback.play() }
+        // Every option except Undo, Redo, Tool settings and More collapses the morph with the
+        // same spring as opening; those two screens push in, and a collapse fights that transition.
+        // Save shows its overlay now and exports only after the collapse settles:
+        // the synchronous exporter would otherwise freeze the spring mid-flight.
+        var afterCollapse: (() -> Void)?
+        if case .save = action {
+            guard session.beginSavingDrawing() else { return }
+            let size = canvasSize, scale = displayScale
+            afterCollapse = { session.completeSavingDrawing(size: size, scale: scale) }
+        }
+        if !action.keepsMorphOpen {
+            withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8),
+                          completionCriteria: .removed) {
+                morphState.customExpandedSlot = nil
+                showsMorphToolbar = false
+                showsContentActions = false
+            } completion: {
+                afterCollapse?()
+            }
+        } else {
+            afterCollapse?()
+        }
+        controller.cancelStroke()
+        switch action {
+        case .brush:
+            // Current color, width and opacity open their own pages and remember them, so
+            // with any of them on the canvas Tool settings opens on the tool itself instead
+            // of the last page. Without them it keeps returning to the last page.
+            if customLayout?.actions.contains(where: { $0.toolSettingsPage != nil }) == true {
+                WatchToolSettingsView.opensNext(on: .instrument, style: controller.pencilStyle)
+            }
+            showsToolSettings = true
+        case .currentColor, .currentWidth, .currentOpacity:
+            // The current tool, on the page of that setting when it has one.
+            if let page = action.toolSettingsPage {
+                WatchToolSettingsView.opensNext(on: page, style: controller.pencilStyle)
+            }
+            showsToolSettings = true
+        case .clear:
+            if controller.canClear { session.requestCanvasAction(.clear) }
+        case .save: break // Started above, after the collapse.
+        case .lasso: startLasso()
+        case .undo:
+            if controller.canUndo { controller.undo() }
+        case .redo:
+            if controller.canRedo { controller.redo() }
+        case .layers: showsLayers = true
+        case .gallery:
+            savedNoticeID = nil
+            galleryArtworkFilename = nil
+            galleryInitialBitmap = nil
+            galleryLaunchID = UUID()
+            showsGallery = true
+        case .language, .canvasSize, .toolSynchronization, .visiblePalettes, .blending,
+             .perspectiveGuides, .canvasEditor, .autosave, .share, .reference, .display:
+            quickSettings = action
+        case .eraserToggle: controller.toggleEraser()
+        // Close only collapses the morph (above).
+        case .closeMorph: break
+        case .sketchAssist:
+            // Opens straight into selecting strokes for Image Playground.
+            guard AppReleaseFeatures.current.showsSketchAssist else { break }
+            if sketchAssistOnPhone { startLasso(lockedTo: .sketchAssist) }
+            else { showsSketchAssistRequirements = true }
+        case .tutorial:
+            // Let the person choose the full tour or one chapter; the menu's
+            // preparation, failure alert and tutorial handoff start it.
+            opensTutorialChapters = true
+            showsAppSettings = true
+        case .reportBug:
+            var components = URLComponents()
+            components.scheme = "mailto"
+            components.path = "paintanytime.app@gmail.com"
+            components.queryItems = [URLQueryItem(name: "subject", value: "Paint Anytime — " + L10n.text("Report a bug"))]
+            if let url = components.url { openURL(url) }
+        case .eyedropper, .camera:
+            cameraSampledColor = nil
+            hasEyedropperSession = action == .eyedropper
+            isEyedropperActive = action == .eyedropper
+            isMovingCanvas = true
+        case .palettes:
+            cameraSampledColor = nil
+            showsSampledPalette = true
+        case .more: showsAppSettings = true
+        case .nothing: break
+        }
+    }
+
+    /// Opens the reference full screen, as tapping a photo does.
+    private func openReference() {
+        guard isActive, controller.activeStroke == nil, !showsAppSettings, quickSettings == nil,
+              !showsGallery, !showsToolSettings, !isMovingCanvas, !lasso.isActive,
+              !showsReferenceFullscreen else { return }
+        controller.cancelStroke()
+        foldMorphsWithoutAnimation()
+        showsReferenceFullscreen = true
+    }
+
+    private func finishCameraTool() {
+        let shouldEditColor = hasEyedropperSession && cameraSampledColor != nil
+        controller.cancelStroke()
+        lasso.deactivate()
+        isEyedropperActive = false
+        hasEyedropperSession = false
+        isMovingCanvas = false
+        if shouldEditColor { showsSampledPalette = true }
+    }
+
+    private func startLasso(lockedTo lockedMode: WatchLassoMode? = nil) {
+        controller.cancelStroke()
+        isMovingCanvas = false
+        isEyedropperActive = false
+        hasEyedropperSession = false
+        showsContentActions = false
+        showsMorphToolbar = false
+        showsSelectionActions = false
+        lasso.activate(lockedTo: lockedMode)
+    }
+
+    private func setShowsSelectionActions(_ shows: Bool) {
+        guard showsSelectionActions != shows else { return }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            showsSelectionActions = shows
+        }
+    }
+
+    private func finishLasso() {
+        layerMoveName = nil
+        lasso.deactivate()
+        showsSelectionActions = false
+    }
+
+    private func moveSelectionLayer(_ offset: Int) {
+        guard let name = lasso.moveLayer(offset, controller: controller) else { return }
+        withAnimation(reduceMotion ? .easeOut(duration: 0.15) : .spring(response: 0.3, dampingFraction: 0.8)) {
+            layerMoveID = UUID()
+            layerMoveName = name
+        }
+    }
+
+    private var drawingPage: some View {
+        // Animate the whole page above, keeping the cached artwork fully visible inside it.
+        return WatchCanvasView(controller: controller, lasso: lasso, lassoToolbarInput: lassoToolbarInput, onArtworkPrepared: { succeeded in
+            guard session.isPreparingCanvas else { return }
+            session.isPreparingCanvas = false
+            if succeeded {
+                showsGallery = false
+            } else {
+                session.canvasPreparationError = L10n.text("Could not open the image.")
+            }
+        }, acceptsInput: isActive && quickSettings == nil && !showsLayers && !showsSampledPalette && !showsToolSettings && !showsAppSettings && !showsGallery && !showsReferenceFullscreen && session.savedDrawing == nil && session.pendingCanvasAction == nil && !session.isSavingDrawing, protectedControlsProvider: { protectedCanvasControls }, isMovingCanvas: $isMovingCanvas, isEyedropperActive: isEyedropperActive, onSampleColor: { color in
+            cameraSampledColor = color
+        }, onCanvasInteraction: {
+            if morphState.customExpandedSlot != nil {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+                    morphState.customExpandedSlot = nil
+                }
+            }
+            if showsContentActions {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { showsContentActions = false }
+            }
+            if showsMorphToolbar {
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+                    showsMorphToolbar = false
+                }
+            }
+        }, onProtectedTap: forwardCanvasTap, zoomReadout: zoomReadout)
+            .id(session.canvasSessionID)
+    }
+
+    private var protectedCanvasControls: [CanvasToolbarControl: CGRect] {
+        // While Complete strokes waits for its image, only its ✕ is left on screen.
+        guard isActive && !showsGallery && !showsToolSettings && controller.activeStroke == nil
+                && (!lasso.hidesControls || lasso.isWaitingForSketchAssistResult) else { return [:] }
+        return canvasControlFrames.filter { control, _ in
+            // The thumbnail removes its frame when hidden; it is hidden in lasso and camera.
+            if control == .reference { return !lasso.isActive && !isMovingCanvas }
+            if lasso.isWaitingForSketchAssistResult { return lasso.showsSketchAssistCancel && control == .more }
+            if lasso.isActive { return (!showsSelectionActions && control == .tools) || control == .canvasToolsMorph || (showsSelectionActions && control == .morph) || (lasso.showsSketchAssistCancel && control == .more) }
+            if isMovingCanvas { return control == .tools || control == .more }
+            if let customLayout {
+                if case .custom = control { return true }
+                // An empty slot keeps an invisible native anchor only so the clock stays put;
+                // protecting it left a dead zone in an empty corner of the canvas.
+                if let index = CustomCanvasControls.anchors.firstIndex(of: control) {
+                    return customLayout.slots.indices.contains(index) && !customLayout.slots[index].isEmpty
+                }
+                return control == .more
+            }
+            if case .custom = control { return false }
+            if usesMorphToolbar { return control == .morph || control == .contentMorph }
+            return control != .morph && control != .canvasToolsMorph && control != .clear
+        }
+    }
+}

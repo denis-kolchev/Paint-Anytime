@@ -1,0 +1,1028 @@
+import SwiftUI
+import WatchKit
+
+struct SavedDrawingsView: View {
+    @Environment(\.tutorialHintReservedHeight) private var tutorialHintReservedHeight
+    @ObservedObject var tutorial = TutorialSession.inactive
+    var galleryFolder: URL? = nil
+    var initialArtworkFilename: String? = nil
+    var initialBitmap: GalleryBitmap? = nil
+    @AppStorage(AppLanguage.storageKey) private var languageCode = AppLanguage.defaultCode
+    var needsDiscardConfirmation = false
+    var isPreparingCanvas = false
+    var preparationError: String? = nil
+    /// While the gallery fades in, tiles keep their low-resolution previews; decoding
+    /// sharp thumbnails then would stall the transition's frames.
+    var defersThumbnails = false
+    /// Menu → gallery coordination: readiness for the transition, and whether the gallery
+    /// is active or only prewarmed under the menu. Observed only by a small child view.
+    var transitionState: MenuGalleryTransitionState? = nil
+    @State private var drawingToEdit: CanvasExport?
+    @State private var pendingEdit: CanvasExport?
+    @State private var confirmedEdit: CanvasExport?
+    private var isLoading: Bool { drawingToEdit != nil || isPreparingCanvas }
+    var onClose: () -> Void
+    var onEditDrawing: (CanvasDocument) -> Void
+    @StateObject private var controller = GalleryController()
+    private var drawings: [CanvasExport] { controller.drawings }
+    @State private var zoomLevel = 0
+    @State private var returnGridLevel = 1
+    @State private var crownPosition = 0.0
+    @State private var selectedDrawing: CanvasExport?
+    private var focusedDrawing: CanvasExport? {
+        get { gridStorage.focusedDrawing }
+        nonmutating set { gridStorage.focusedDrawing = newValue }
+    }
+    @State private var pendingDeletion: CanvasExport?
+    // Grid selection mode: tiles toggle membership instead of zooming.
+    @State private var isSelecting = false
+    @State private var selectedURLs: Set<URL> = []
+    @State private var confirmsSelectionDeletion = false
+    private var selectedDrawings: [CanvasExport] { drawings.filter { selectedURLs.contains($0.url) } }
+    // Keep the toolbar item mounted through grid zoom: inserting or removing it
+    // mid-transition makes the native toolbar drop the icon.
+    // The tutorial installs the button for its whole selection lesson and shows it per step.
+    private var hostsSelectButton: Bool { (!tutorial.isActive || tutorial.teachesGallerySelection) && !drawings.isEmpty }
+    private var showsSelectButton: Bool {
+        hostsSelectButton && !showsFullscreen
+            && tutorial.permits([.startSelection, .selectDrawings, .favoriteSelection])
+    }
+    /// Tiles respond while the tour lets them open, or toggle them in its selection lesson.
+    private var allowsTileInput: Bool { tutorial.allowsGalleryZoom || (isSelecting && tutorial.allowsGallerySelection) }
+    @State private var showsFullscreen = false
+    @State private var isCleanViewing = false
+    @State private var showsFullscreenActions = false
+    @State private var morphState = GalleryMorphState()
+    /// Crown zoom inside the settled 1:1 photo; the grid zoom never sees it.
+    @State private var photoZoom = GalleryPhotoZoom()
+    /// A Crown turn that began on the photo zoom stays there until the Crown rests,
+    /// so zooming out stops at the fitted photo instead of running into the grid.
+    @State private var crownTurnZoomsPhoto = false
+    @State private var photoPanStart: CGSize?
+    @State private var pageVisibility: [URL: Double] = [:]
+    @State private var galleryScrollTarget: URL?
+    @State private var gridStorage = GalleryGridStorage()
+    private var thumbnailFrames: [URL: CGRect] { gridStorage.frames }
+    private var thumbnailBitmaps: [URL: GalleryBitmap] { gridStorage.bitmaps }
+    @State private var gridZoom = GalleryGridZoom()
+    @State private var galleryViewport: CGSize = .zero
+    @State private var galleryTopInset: CGFloat = 0
+    @State private var leadingSlots = 0
+    @State private var imageLayout = GalleryImageLayout()
+    /// A tile tapped while the zoom compositor owned input; replayed once it hands back.
+    /// `url == nil` is a queued Back (leave the gallery after zooming out to 5 columns).
+    @State private var queuedTap: (url: URL?, session: UUID?)?
+    @State private var transitionBitmap: GalleryBitmap?
+    @State private var displayedBitmap: GalleryBitmap?
+    @FocusState private var crownTarget: GalleryCrownInput.Target?
+    private var crownFocused: Bool {
+        get { crownTarget != nil }
+        nonmutating set {
+            // A gallery prewarmed under the menu must not take the Crown from it.
+            let isActive = transitionState?.galleryActive ?? true
+            crownTarget = newValue && isActive ? (isTransitioning || showsFullscreen ? .presentation : .grid) : nil
+        }
+    }
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.displayScale) private var displayScale
+
+    private enum FullscreenControlsPhase: Hashable { case hidden, visible }
+    private var fullscreenControlsPhase: FullscreenControlsPhase {
+        guard showsFullscreen, selectedDrawing != nil else { return .hidden }
+        return isTransitioning ? .hidden : .visible
+    }
+
+    // Taps replace the phone's pinch: 5 → 3 → the existing photo screen.
+    // The final zoom step uses its morph actions rather than a one-column grid.
+    private let fullscreenLevel = 2
+    private var gridLevel: Int { showsFullscreen ? returnGridLevel : zoomLevel }
+    private var columnCount: Int { gridLevel == 0 ? 5 : 3 }
+    private var isTransitioning: Bool { gridZoom.active }
+
+    private var galleryContent: some View {
+        GeometryReader { geometry in
+            let spacing: CGFloat = 2
+            let width = (geometry.size.width - spacing * CGFloat(columnCount - 1)) / CGFloat(columnCount)
+            let navigationHeight: CGFloat = max(60, geometry.safeAreaInsets.top + 38)
+            // The first row starts below the back button and clock. This is a
+            // scroll-content inset, so subsequent rows can pass behind the header.
+            // Share it with zoom geometry to keep both layouts aligned.
+            let contentTopInset: CGFloat = navigationHeight + 4
+            let thumbnailPixels = Int(ceil(width * displayScale / 32)) * 32
+            ZStack(alignment: .topLeading) {
+                Color.black
+                ScrollViewReader { scrollProxy in
+                    ScrollView {
+                        SavedDrawingsGrid(
+                            drawings: drawings, isLoaded: controller.hasLoaded,
+                            errorMessage: controller.errorMessage,
+                            columns: columnCount, spacing: spacing, side: width,
+                            leadingSlots: leadingSlots, thumbnailPixels: thumbnailPixels,
+                            displayScale: displayScale,
+                            loadsImages: !defersThumbnails && (!gridZoom.active || gridZoom.pendingCommit != nil),
+                            isSelecting: isSelecting, selectedURLs: selectedURLs,
+                            allowsOpening: allowsTileInput,
+                            gridStorage: gridStorage, onTap: tapThumbnail)
+                            .reportLegacyScrollPosition()
+                    }
+                    .modifier(crownInput(for: .grid))
+                    // Let photos scroll behind the tutorial card while allowing
+                    // the final row to scroll fully above it.
+                    .contentMargins(.bottom, tutorialHintReservedHeight + (isSelecting ? selectionPanelInset : 0),
+                                    for: .scrollContent)
+                    .contentMargins(.top, contentTopInset, for: .scrollContent)
+                    .scrollIndicators(.hidden)
+                    .galleryCustomHeaderEdge()
+                    .scrollDisabled(gridZoom.active || showsFullscreen)
+                    // Observe native scrolling without competing with its swipe gesture.
+                    .onTutorialScrollActivity { tutorial.activity() }
+                    .galleryInputScrollDiagnostics()
+                    .allowsHitTesting(!showsFullscreen && !isTransitioning && allowsTileInput)
+                    .accessibilityHidden(showsFullscreen || gridZoom.active)
+                    .onChange(of: zoomLevel) { previousLevel, level in
+                        if !gridZoom.active, previousLevel != fullscreenLevel, level < fullscreenLevel, let drawing = focusedDrawing {
+                            withoutAnimation {
+                                scrollProxy.scrollTo(drawing.id, anchor: .center)
+                            }
+                        }
+                    }
+                    .onChange(of: galleryScrollTarget) { _, id in
+                        guard !gridZoom.active, showsFullscreen, let id else { return }
+                        withoutAnimation { scrollProxy.scrollTo(id, anchor: .center) }
+                    }
+                    .task(id: gridZoom.pendingCommit?.id) {
+                        await restoreGridZoom(using: scrollProxy, size: geometry.size, navigationHeight: navigationHeight)
+
+                    }
+
+                }
+                // Keep native layout mounted underneath the captured zoom slots.
+                .opacity(gridZoom.active || showsFullscreen ? 0 : 1)
+
+                if showsFullscreen {
+                    Color.black.allowsHitTesting(false)
+                    GalleryFullscreenPager(
+                        drawings: drawings, selectedID: selectedDrawing?.id, size: geometry.size,
+                        canvasOriginX: geometry.frame(in: .global).minX,
+                        canvasOriginY: geometry.frame(in: .global).minY,
+                        thumbnailPixels: thumbnailPixels, displayScale: displayScale,
+                        loadsNearbyPages: !gridZoom.active || gridZoom.pendingCommit?.columns == 1,
+                        isTransitioning: isTransitioning, transitionBitmap: transitionBitmap,
+                        respectsSafeArea: tutorial.isActive, zoom: photoZoom,
+                        onSelect: selectPage, onDisplayedBitmap: pageDisplayed,
+                        onTap: toggleCleanViewing, onVisibilityChange: setPageVisibility)
+                        // A zoomed photo pans instead of paging.
+                        .allowsHitTesting(!isTransitioning && tutorial.allowsGalleryPaging && !photoZoom.isZoomed)
+                        .accessibilityHidden(isTransitioning)
+                    if photoZoom.isZoomed && !isTransitioning {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .gesture(photoPanGesture(viewport: geometry.size))
+                            .onTapGesture(perform: toggleCleanViewing)
+                    }
+                }
+
+                if gridZoom.active {
+                    GalleryGridZoomOverlay(zoom: gridZoom, onTap: tapDuringZoom)
+                }
+                GalleryHeaderBackdrop(height: navigationHeight + 24,
+                                      zoom: gridZoom, showsFullscreen: showsFullscreen)
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
+            .overlay(alignment: .bottomLeading) {
+                if showsFullscreen && !isTransitioning && !tutorial.isActive,
+                   let selectedDrawing {
+                    GalleryMorphActions(state: morphState,
+                                        canvasOrigin: geometry.frame(in: .global).origin,
+                                        drawing: selectedDrawing, size: geometry.size,
+                                        isFavorite: drawings.first(where: { $0.id == selectedDrawing.id })?.isFavorite ?? false,
+                                        favoriteProgress: favoriteProgress,
+                                        onEdit: { editDrawing(selectedDrawing) },
+                                        onFavorite: { favorite in
+                                            controller.setFavorite(favorite, for: selectedDrawing, in: galleryFolder)
+                                        }, onDelete: {
+                                            crownFocused = false
+                                            pendingDeletion = selectedDrawing
+                                        })
+                        .opacity(isCleanViewing || !showsFullscreenActions ? 0 : 1)
+                        .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: isCleanViewing)
+                        .allowsHitTesting(!isCleanViewing && showsFullscreenActions && !isTransitioning)
+                        .accessibilityHidden(isCleanViewing || !showsFullscreenActions || isTransitioning)
+
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if isSelecting && !showsFullscreen && !isTransitioning {
+                    GallerySelectionActions(
+                        drawings: selectedDrawings,
+                        tutorial: tutorial,
+                        onFavorite: { favorite in
+                            for drawing in selectedDrawings {
+                                controller.setFavorite(favorite, for: drawing, in: galleryFolder)
+                            }
+                            guard tutorial.isActive else { return }
+                            // The widget preview after this lesson shows exactly these pictures.
+                            if favorite { tutorial.favoritedDrawings = selectedDrawings.map(\.url) }
+                            tutorial.record(.favoritedSelection)
+                            // Leave selection so the hearts show on the tiles and Back leaves the gallery.
+                            setSelecting(false)
+                        },
+                        onDelete: {
+                            crownFocused = false
+                            confirmsSelectionDeletion = true
+                        })
+                        // In the tutorial the panel sits just above the lesson card.
+                        .padding(.bottom, tutorial.isActive ? tutorialHintReservedHeight + 6 : 8)
+                        .transition(.scale(scale: 0.6).combined(with: .opacity))
+                }
+            }
+            .overlay {
+                if isLoading {
+                    LoadingDimOverlay()
+                }
+            }
+            #if DEBUG
+            .overlay(alignment: .bottomTrailing) {
+                if GalleryDebug.isEnabled {
+                    WatchGalleryDebugOverlay {
+                        WatchGalleryDiagnostics.shared.inputText(zoom: gridZoom,
+                            focus: crownTarget.map { $0 == .grid ? "grid" : "zoom" } ?? "none", dragging: gridZoom.isPanning) + "\n" +
+                        WatchGalleryDiagnostics.shared.gridText(zoom: gridZoom,
+                            urls: drawings.map(\.url), selected: selectedDrawing?.url,
+                            focused: focusedDrawing?.url, displayed: displayedBitmap?.url,
+                            frames: thumbnailFrames, columns: columnCount,
+                            leading: leadingSlots, topInset: galleryTopInset)
+                    }
+                        .padding(.trailing, 4)
+                        .padding(.bottom, max(4, tutorialHintReservedHeight))
+                }
+            }
+            #endif
+            .allowsHitTesting(!isLoading)
+            .coordinateSpace(name: "drawingGallery")
+            .onAppear {
+                galleryViewport = geometry.size
+                galleryTopInset = contentTopInset
+            }
+            .onChange(of: contentTopInset) { _, inset in
+                galleryTopInset = inset
+                gridZoom.reset()
+            }
+            .onChange(of: geometry.size) { _, size in
+                galleryViewport = size
+                galleryTopInset = contentTopInset
+                gridZoom.reset()
+            }
+            #if DEBUG
+            .onAppear {
+                // The tap panel lives at the app root (above the menu timeline); it polls this.
+                WatchGalleryDiagnostics.shared.tapSnapshot = {
+                    WatchGalleryDiagnostics.shared.tapText(zoom: gridZoom,
+                        urls: drawings.map(\.url), queued: queuedTap.flatMap { $0.url == nil ? "back" : nil },
+                        queuedURL: queuedTap?.url)
+                }
+            }
+            #endif
+            .onDisappear {
+                #if DEBUG
+                WatchGalleryDiagnostics.shared.tapSnapshot = nil
+                #endif
+                gridZoom.reset()
+                gridStorage.clearBitmaps()
+            }
+            .task(id: gridZoom.loadingID) {
+                await gridZoom.loadImages(scale: displayScale)
+            }
+            .onChange(of: gridZoom.errorMessage) { _, message in
+                if let message { controller.errorMessage = message }
+            }
+            .onPreferenceChange(GalleryThumbnailFramesKey.self) { frames in
+                #if DEBUG
+                let debugStarted = GalleryDebug.isEnabled ? ProcessInfo.processInfo.systemUptime : 0
+                defer {
+                    if GalleryDebug.isEnabled {
+                        let elapsed = (ProcessInfo.processInfo.systemUptime - debugStarted) * 1000
+                        WatchGalleryDiagnostics.shared.geometry(elapsedMS: elapsed, frames: frames,
+                            viewport: geometry.size, bitmaps: thumbnailBitmaps,
+                            columns: columnCount, zooming: gridZoom.active)
+                    }
+                }
+                #endif
+                gridStorage.update(frames: frames, viewport: geometry.size)
+                if !frames.isEmpty {
+                    MenuGalleryTransitionDiagnostics.shared.markOnce("grid frames")
+                    transitionState?.markGalleryReady()
+                }
+                if !showsFullscreen && !isTransitioning,
+                   let nearest = frames.filter({ $0.value.maxY > navigationHeight && $0.value.minY < geometry.size.height })
+                    .min(by: {
+                        hypot($0.value.midX - geometry.size.width / 2, $0.value.midY - geometry.size.height / 2)
+                            < hypot($1.value.midX - geometry.size.width / 2, $1.value.midY - geometry.size.height / 2)
+                    }) {
+                    focusedDrawing = drawings.first { $0.id == nearest.key }
+                }
+            }
+        }
+        .task(id: drawingToEdit?.id) {
+            guard let drawing = drawingToEdit else { return }
+            defer { drawingToEdit = nil }
+            guard let document = await controller.loadDocument(for: drawing), !Task.isCancelled else { return }
+            onEditDrawing(document)
+        }
+        .onChange(of: preparationError) { _, error in
+            if let error { controller.errorMessage = error }
+        }
+        .onChange(of: isLoading) { _, loading in
+            crownFocused = !loading && pendingDeletion == nil && tutorial.allowsGalleryZoom
+        }
+        .disabled(isLoading)
+        .ignoresSafeArea(.container, edges: tutorial.isActive ? [] : .all)
+        .requestsHiddenClock(isCleanViewing)
+        // A gallery prewarmed under the menu shares the canvas's navigation bar, and toolbar
+        // items ignore its zero opacity: its Select circle showed over the canvas and pushed
+        // the canvas's trailing slot aside, so the drawn brush flew to the corner until the
+        // gallery unmounted. Its items arrive when it is promoted. A child view reads the flag,
+        // so promotion does not re-run this body.
+        .background {
+            GalleryToolbarHost(state: transitionState) {
+                SavedDrawingsToolbar(
+                    tutorial: tutorial, morphState: morphState,
+                    showsMorphButton: showsFullscreen && !isTransitioning && !tutorial.isActive,
+                    hostsSelectButton: hostsSelectButton, showsSelectButton: showsSelectButton,
+                    allowsBack: tutorial.allowsGalleryBack, isSelecting: isSelecting,
+                    isLoading: isLoading, isTransitioning: isTransitioning,
+                    isCleanViewing: isCleanViewing, reduceMotion: reduceMotion,
+                    onToggleSelecting: { setSelecting(!isSelecting) }, onBack: goBack)
+            }
+        }
+
+        .overlay {
+            if tutorial.isActive && showsFullscreen,
+               !isTransitioning,
+               tutorial.allowsGalleryDelete, let selectedDrawing {
+                GalleryTutorialDeleteButton(
+                    tutorial: tutorial, morphState: morphState,
+                    showsActions: showsFullscreenActions, isTransitioning: isTransitioning,
+                    isLoading: isLoading) {
+                    crownFocused = false
+                    tutorial.pauseReminders()
+                    pendingDeletion = selectedDrawing
+                }
+            }
+        }
+        .task(id: fullscreenControlsPhase) {
+            switch fullscreenControlsPhase {
+            case .hidden:
+                showsFullscreenActions = false
+            case .visible:
+                // Photo transitions finish with animations disabled; fade the
+                // controls in a separate update, including in the tutorial.
+                do { try await Task.sleep(for: .milliseconds(20)) } catch { return }
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: reduceMotion ? 0.15 : 0.25)) {
+                    showsFullscreenActions = true
+                }
+
+            }
+        }
+    }
+
+    private func crownInput(for target: GalleryCrownInput.Target) -> GalleryCrownInput {
+        let owner: GalleryCrownInput.Target = isTransitioning || showsFullscreen ? .presentation : .grid
+        return GalleryCrownInput(target: target,
+            enabled: owner == target && !isLoading && pendingDeletion == nil && !isSelecting && tutorial.allowsGalleryZoom,
+            focus: $crownTarget,
+            position: Binding(get: { crownPosition }, set: { value in
+                // A disabled host can still deliver a queued event at handoff.
+                let current: GalleryCrownInput.Target = isTransitioning || showsFullscreen ? .presentation : .grid
+                guard current == target else { return }
+                gridStorage.lastCrownInputTarget = target
+                updateCrownZoom(value)
+            }),
+            onChange: { [step = tutorial.step] event in
+                tutorial.usedCrown(in: step, velocity: event.velocity)
+                #if DEBUG
+                if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.crownVelocity = event.velocity }
+                #endif
+            }, onIdle: {
+                // A short turn may end immediately after changing focus. Its
+                // original host must still settle unless newer input superseded it.
+                guard gridStorage.lastCrownInputTarget == target else { return }
+                settleCrownZoom()
+            })
+    }
+
+    private var galleryWithConfirmations: some View {
+        galleryContent
+        .disabled(isLoading)
+        .modifier(crownInput(for: .presentation))
+        .onChange(of: isTransitioning || showsFullscreen) { _, _ in
+            // Transfer ownership only when the presentation changes, never on
+            // drag samples or scroll phases (which can interrupt native inertia).
+            crownFocused = !isLoading && pendingDeletion == nil && tutorial.allowsGalleryZoom
+        }
+        .fullScreenCover(item: $pendingEdit, onDismiss: {
+            // Start file loading only after Yes and dismissal of the confirmation.
+            if let drawing = confirmedEdit {
+                confirmedEdit = nil
+                drawingToEdit = drawing
+            } else {
+                crownFocused = tutorial.allowsGalleryZoom
+            }
+        }) { drawing in
+            DestructiveConfirmationView(
+                title: L10n.text("Discard the previous unsaved canvas?"),
+                confirmTitle: L10n.text("Yes")) {
+                confirmedEdit = nil
+                pendingEdit = nil
+            } onConfirm: {
+                confirmedEdit = drawing
+                pendingEdit = nil
+            }
+        }
+        .fullScreenCover(item: $pendingDeletion, onDismiss: {
+            tutorial.resumeReminders()
+            crownFocused = tutorial.allowsGalleryZoom
+        }) { drawing in
+            DestructiveConfirmationView(title: deletionConfirmationTitle, confirmTitle: L10n.text("Delete")) {
+                pendingDeletion = nil
+            } onConfirm: {
+                // Prepare the updated grid while confirmation still
+                // covers the pager. Its dismissal then reveals the grid directly.
+                withoutAnimation { deleteDrawing(drawing) }
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                    pendingDeletion = nil
+                }
+            }
+        }
+    }
+
+    var body: some View {
+        galleryWithConfirmations
+        .fullScreenCover(isPresented: $confirmsSelectionDeletion, onDismiss: {
+            crownFocused = tutorial.allowsGalleryZoom
+        }) {
+            DestructiveConfirmationView(title: selectionDeletionTitle, confirmTitle: L10n.text("Delete"),
+                                        fitsScreen: true) {
+                confirmsSelectionDeletion = false
+            } onConfirm: {
+                withoutAnimation { deleteSelectedDrawings() }
+                withAnimation(.easeInOut(duration: reduceMotion ? 0.15 : 0.3)) {
+                    confirmsSelectionDeletion = false
+                }
+            }
+        }
+        .alert(L10n.text("Error"), isPresented: Binding(
+            get: { controller.errorMessage != nil }, set: { if !$0 { controller.errorMessage = nil } }
+        )) { Button(L10n.text("OK"), role: .cancel) { controller.errorMessage = nil } }
+        message: { Text(controller.errorMessage ?? "") }
+        .onReceive(NotificationCenter.default.publisher(for: .galleryDrawingsDeleted)) { _ in
+            handleRemoteDeletions()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .paintProjectImported)) { _ in
+            controller.reload(in: galleryFolder)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .galleryDrawingSaved)) { notification in
+            guard let url = notification.object as? URL else { return }
+            gridStorage.invalidateImage(at: url)
+            controller.reload(in: galleryFolder)
+        }
+         .onAppear {
+            let diagnostics = MenuGalleryTransitionDiagnostics.shared
+            diagnostics.mark("gal appear", awaitsFrame: true)
+            let reloadStarted = ProcessInfo.processInfo.systemUptime
+            defer {
+                diagnostics.note("reload ms", value: (ProcessInfo.processInfo.systemUptime - reloadStarted) * 1000)
+                diagnostics.note("drawings", value: Double(drawings.count))
+            }
+            // The view can survive a presentation while its files change in place.
+            // Refresh mounted cells even when their URLs and grid sizes are unchanged.
+            gridStorage.clearBitmaps()
+            crownFocused = tutorial.allowsGalleryZoom
+            if galleryFolder == nil && initialArtworkFilename == nil {
+                // The grid builds once the list arrives; the transition waits for that.
+                controller.reloadInBackground()
+            } else {
+                // A direct launch must find its drawing now.
+                controller.reload(in: galleryFolder)
+            }
+            if let filename = initialArtworkFilename,
+               let drawing = drawings.first(where: { $0.url.lastPathComponent == filename }) {
+                // Direct launches open at 1:1 without a transition from a grid tile.
+                transitionBitmap = initialBitmap?.url == drawing.url ? initialBitmap : nil
+                focusedDrawing = drawing
+                selectedDrawing = drawing
+                zoomLevel = fullscreenLevel
+                crownPosition = Double(fullscreenLevel)
+                showsFullscreen = true
+                galleryScrollTarget = drawing.id
+            }
+        }
+        .onChange(of: controller.hasLoaded) { _, loaded in
+            // No tiles will report frames: the transition may start now.
+            if loaded && (drawings.isEmpty || controller.errorMessage != nil) {
+                transitionState?.markGalleryReady()
+            }
+        }
+        .background {
+            if let transitionState {
+                GalleryActivationObserver(state: transitionState) {
+                    crownFocused = tutorial.allowsGalleryZoom
+                }
+            }
+        }
+        .onChange(of: drawings.map(\.url), initial: true) { _, urls in
+            imageLayout = GalleryImageLayout(images: urls)
+            if gridZoom.active, urls != gridZoom.snapshot { gridZoom.reset() }
+            leadingSlots = 0
+            gridStorage.retain(urls: Set(urls))
+            GalleryPreviewStore.shared.prepare(urls: urls, displayScale: displayScale)
+            selectedURLs.formIntersection(urls)
+        }
+        .onChange(of: tutorial.showsInstruction) { _, showing in
+            crownFocused = !showing && tutorial.allowsGalleryZoom && pendingDeletion == nil
+            if !showing && showsFullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
+        }
+        .onChange(of: selectedDrawing?.id) { _, _ in
+            resetPhotoZoom()
+        }
+        .onChange(of: showsFullscreen) { _, fullscreen in
+            morphState.isExpanded = false
+            if !fullscreen { resetPhotoZoom() }
+            if fullscreen { setSelecting(false) }
+            if !fullscreen { pageVisibility = [:] }
+            tutorial.galleryIsFullscreen = fullscreen
+            // Reduce Motion opens directly, so isTransitioning never changes.
+            // Record the ready fullscreen state even without an animation callback.
+            if fullscreen && !isTransitioning { tutorial.record(.galleryFullscreen) }
+        }
+        .onChange(of: isTransitioning) { _, transitioning in
+            if transitioning { morphState.isExpanded = false }
+            if !transitioning && showsFullscreen { tutorial.record(.galleryFullscreen) }
+        }
+    }
+
+    private var deletionConfirmationTitle: String {
+        let key = galleryFolder == nil
+            ? "Delete from Apple Watch and iPhone? Export it first to keep a copy."
+            : "Delete the image?"
+        return L10n.text(key)
+    }
+
+    private var selectionDeletionTitle: String {
+        let key = galleryFolder == nil
+            ? "Delete the selected images from Apple Watch and iPhone? Export them first to keep a copy."
+            : "Delete the selected images?"
+        return L10n.text(key)
+    }
+
+    private let selectionPanelInset: CGFloat = GalleryMorphState.buttonDiameter + 12
+
+    private func setSelecting(_ selecting: Bool) {
+        guard isSelecting != selecting else { return }
+        withAnimation(reduceMotion ? nil : .spring(response: 0.35, dampingFraction: 0.8)) {
+            isSelecting = selecting
+            if !selecting { selectedURLs = [] }
+        }
+        tutorial.record(selecting ? .startedSelection : .cancelledSelection)
+    }
+
+    private func toggleSelection(_ drawing: CanvasExport) {
+        if selectedURLs.contains(drawing.url) { selectedURLs.remove(drawing.url) }
+        else { selectedURLs.insert(drawing.url) }
+        WKInterfaceDevice.current().play(.click)
+        tutorial.record(selectedURLs.count >= 2 ? .selectedDrawings : .deselectedDrawings)
+    }
+
+    private func deleteSelectedDrawings() {
+        for drawing in selectedDrawings {
+            _ = controller.delete(drawing, in: galleryFolder)
+        }
+        focusedDrawing = nil
+        isSelecting = false
+        selectedURLs = []
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    private func handleRemoteDeletions() {
+        guard galleryFolder == nil else { return }
+        controller.reload()
+        if let pendingDeletion, !drawings.contains(where: { $0.id == pendingDeletion.id }) {
+            self.pendingDeletion = nil
+        }
+        if let focusedDrawing, !drawings.contains(where: { $0.id == focusedDrawing.id }) {
+            self.focusedDrawing = nil
+            returnToGrid()
+        }
+    }
+
+    private func tapThumbnail(_ drawing: CanvasExport) {
+        if isSelecting {
+            toggleSelection(drawing)
+            return
+        }
+        guard tutorial.allowsGalleryZoom else {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.tap(drawing.url, source: "grid", result: "tutorial")
+            #endif
+            return
+        }
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.tap(drawing.url, source: "grid", result: zoomLevel == 0 ? "zoom 3c" : "open")
+        #endif
+        tutorial.activity()
+        focusedDrawing = drawing
+        if zoomLevel == 0 { setZoom(1) }
+        else { open(drawing) }
+    }
+
+    /// The native grid ignores taps while the compositor is mounted, so a second tap
+    /// mid-animation used to be lost. Queue it and replay it as soon as the grid returns.
+    private func tapDuringZoom(at point: CGPoint) {
+        let url = gridZoom.url(at: point)
+        func record(_ result: String) {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.tap(url, source: "zoom \(gridZoom.debugPhase)", result: result)
+            #endif
+        }
+        guard !isSelecting, tutorial.allowsGalleryZoom else { return record("blocked") }
+        // Already heading to the photo screen: nothing further to zoom into.
+        guard gridZoom.heading != 1 else { return record("ignored→1c") }
+        guard let url else { return record("miss") }
+        tutorial.activity()
+        queuedTap = (url, gridZoom.sessionID)
+        record("queued")
+    }
+
+    private func replayQueuedTap(session: UUID?) {
+        guard let tap = queuedTap else { return }
+        queuedTap = nil
+        let url = tap.url
+        // A tap from a zoom that was reset (size change, error) must not fire later.
+        guard tap.session == session, !isTransitioning else {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.replayed(result: "dropped")
+            #endif
+            return
+        }
+        guard let url else {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.replayed(result: "back")
+            #endif
+            goBack()
+            return
+        }
+        guard !showsFullscreen, let drawing = drawings.first(where: { $0.url == url }) else {
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.replayed(result: "dropped")
+            #endif
+            return
+        }
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.replayed(result: zoomLevel == 0 ? "zoom 3c" : "open")
+        #endif
+        focusedDrawing = drawing
+        if zoomLevel == 0 { setZoom(1) }
+        else { open(drawing) }
+    }
+
+    private func goBack() {
+        guard !isLoading else { return }
+        guard tutorial.allowsGalleryBack else { return }
+        tutorial.activity()
+        // Back first returns a zoomed photo to fit, keeping the photo open.
+        if showsFullscreen, !isTransitioning, photoZoom.isZoomed {
+            resetPhotoZoom(animated: true)
+            WKInterfaceDevice.current().play(.click)
+            return
+        }
+        guard !isTransitioning else { return backDuringZoom() }
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.back(result: isSelecting ? "end select" : showsFullscreen
+            ? "→\(returnGridLevel == 0 ? 5 : 3)c" : zoomLevel > 0 ? "→5c" : "close")
+        #endif
+        if isSelecting { setSelecting(false); return }
+        if showsFullscreen { setZoom(returnGridLevel) }
+        else if zoomLevel > 0 { setZoom(zoomLevel - 1) }
+        else { onClose() }
+    }
+
+    /// Back while the compositor owns input. The zoom target does not matter for
+    /// zooming out, so retarget the running settlement at once (as the Crown does)
+    /// instead of waiting for the restore. Only leaving the gallery waits.
+    private func backDuringZoom() {
+        let heading = gridZoom.heading
+        let destination: Int
+        switch heading {
+        case 1:
+            let base = gridZoom.baseColumns
+            destination = base != 1 ? base : (returnGridLevel == 0 ? 5 : 3)
+        case 3: destination = 5
+        default:
+            queuedTap = (nil, gridZoom.sessionID)
+            #if DEBUG
+            WatchGalleryDiagnostics.shared.back(result: "queued close (\(gridZoom.debugPhase))")
+            #endif
+            return
+        }
+        // A newer Back supersedes a tile tap waiting for the old destination.
+        queuedTap = nil
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.back(result: "retarget \(heading)c→\(destination)c (\(gridZoom.debugPhase))")
+        #endif
+        gridZoom.settle(to: destination, reduceMotion: reduceMotion)
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    @MainActor
+    private func restoreGridZoom(using proxy: ScrollViewProxy, size: CGSize, navigationHeight: CGFloat) async {
+        guard let commit = gridZoom.pendingCommit else { return }
+        #if DEBUG
+        if GalleryDebug.isEnabled {
+            WatchGalleryDiagnostics.shared.restoreAt = ProcessInfo.processInfo.systemUptime
+            WatchGalleryDiagnostics.shared.restoreAttempts = 0
+            WatchGalleryDiagnostics.shared.restoreReady = false
+            WatchGalleryDiagnostics.shared.restoreError = 0
+        }
+        #endif
+        if commit.columns == 1 {
+            guard let drawing = drawings.first(where: { $0.id == gridZoom.target }) else {
+                gridZoom.reset()
+                return
+            }
+            let alreadyDisplayed = showsFullscreen && selectedDrawing?.url == drawing.url && displayedBitmap != nil
+            withoutAnimation {
+                returnGridLevel = gridZoom.baseColumns == 5 ? 0 : 1
+                focusedDrawing = drawing
+                selectedDrawing = drawing
+                transitionBitmap = gridZoom.bitmaps[drawing.url]
+                zoomLevel = fullscreenLevel
+                showsFullscreen = true
+            }
+            if alreadyDisplayed { completeGridZoom() }
+            // The pager acknowledges its displayed bitmap before
+            // the overlay releases the fitted-photo endpoint.
+            return
+        }
+        if commit.anchorY != -1 { gridZoom.nativeLayoutWillChange() }
+        withoutAnimation {
+            showsFullscreen = false
+            selectedDrawing = nil
+            zoomLevel = commit.columns == 5 ? 0 : 1
+            returnGridLevel = zoomLevel
+            leadingSlots = commit.leading
+            if let target = gridZoom.target {
+                focusedDrawing = drawings.first { $0.url == target }
+            }
+        }
+        if commit.anchorY == -1 {
+            completeGridZoom()
+            return
+        }
+        var anchorY = commit.anchorY
+        var attempt = 0
+        while !Task.isCancelled {
+            guard !Task.isCancelled, gridZoom.pendingCommit?.id == commit.id else { return }
+            withoutAnimation { proxy.scrollTo(commit.target, anchor: UnitPoint(x: 0.5, y: attempt < 4 ? anchorY : 0.5)) }
+            attempt += 1
+            #if DEBUG
+            if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.restoreAttempts = attempt }
+            #endif
+            do { try await Task.sleep(for: .milliseconds(16)) } catch { return }
+            guard gridZoom.pendingCommit?.id == commit.id,
+                  let frame = thumbnailFrames[commit.target] else { continue }
+            let side = GalleryZoomRules.side(commit.columns, width: size.width)
+            guard abs(frame.width - side) < 1 else { continue }
+            let visible = thumbnailFrames.filter {
+                $0.value.maxY > 0 && $0.value.minY < size.height
+            }
+            let prepared = gridZoom.loadingComplete || visible.keys.allSatisfy { thumbnailBitmaps[$0] != nil }
+            #if DEBUG
+            if GalleryDebug.isEnabled {
+                WatchGalleryDiagnostics.shared.restoreError = frame.minY - commit.viewportTop
+                WatchGalleryDiagnostics.shared.restoreReady = prepared
+            }
+            #endif
+            if abs(frame.minY - commit.viewportTop) < 1, prepared {
+                completeGridZoom()
+                return
+            }
+            // Compensate for the system scroll view's inset handling.
+            anchorY += (commit.viewportTop - frame.minY) / max(1, size.height - side)
+            if attempt >= 4, prepared, frame.maxY > navigationHeight, frame.minY < size.height {
+                completeGridZoom()
+                return
+            }
+        }
+    }
+
+    private func beginGridZoom(target: CanvasExport) {
+        guard !gridZoom.active else { return }
+        var cached = thumbnailBitmaps
+        if let displayedBitmap, displayedBitmap.url == target.url { cached[target.url] = displayedBitmap }
+        let frame = thumbnailFrames[target.id] ?? .zero
+        gridZoom.begin(images: drawings.map(\.url), target: target.url,
+            baseColumns: showsFullscreen ? 1 : columnCount, baseLeading: showsFullscreen ? 0 : leadingSlots,
+            sourceFrame: frame, viewport: galleryViewport, topInset: galleryTopInset,
+            bottomInset: tutorialHintReservedHeight + 12, layout: imageLayout,
+            cached: cached, favorites: Set(drawings.filter(\.isFavorite).map(\.url)), crown: crownPosition)
+        resetPhotoZoom()
+        isCleanViewing = false
+        morphState.isExpanded = false
+    }
+
+    private func setZoom(_ level: Int) {
+        guard !isTransitioning, let target = selectedDrawing ?? focusedDrawing ?? drawings.first else { return }
+        beginGridZoom(target: target)
+        gridZoom.settle(to: level == 0 ? 5 : 3, reduceMotion: reduceMotion)
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    private func updateCrownZoom(_ value: Double) {
+        #if DEBUG
+        if GalleryDebug.isEnabled {
+            let reason = isLoading ? "loading" : pendingDeletion != nil ? "delete" :
+                !tutorial.allowsGalleryZoom ? "tutorial" : "accepted"
+            WatchGalleryDiagnostics.shared.crown(value, result: reason)
+        }
+        #endif
+        guard !isLoading, pendingDeletion == nil, !isSelecting, tutorial.allowsGalleryZoom else { return }
+        tutorial.activity()
+        // On the settled photo, turning in (or any turn while zoomed) zooms the photo;
+        // turning out from the fitted photo still zooms out to the grid.
+        if showsFullscreen, !gridZoom.active, !tutorial.isActive, let bitmap = displayedBitmap,
+           bitmap.url == selectedDrawing?.url {
+            let delta = value - crownPosition
+            if crownTurnZoomsPhoto || photoZoom.isZoomed || delta > 0 {
+                crownTurnZoomsPhoto = true
+                crownPosition = value
+                var zoom = photoZoom
+                // A click marks reaching 8× or the fitted photo.
+                if zoom.zoom(byCrown: delta, imageSize: bitmap.originalSize, viewport: galleryViewport) {
+                    WKInterfaceDevice.current().play(.click)
+                }
+                withoutAnimation { photoZoom = zoom }
+                return
+            }
+        }
+        if !gridZoom.active {
+            guard let target = selectedDrawing ?? focusedDrawing ?? drawings.first else { return }
+            beginGridZoom(target: target)
+        }
+        gridZoom.updateCrown(value)
+        crownPosition = value
+    }
+
+    private func settleCrownZoom() {
+        #if DEBUG
+        if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.crownIdleEvents += 1 }
+        #endif
+        crownTurnZoomsPhoto = false
+        gridZoom.settle(reduceMotion: reduceMotion)
+    }
+
+    private func photoPanGesture(viewport: CGSize) -> some Gesture {
+        DragGesture(minimumDistance: 2)
+            .onChanged { value in
+                guard let bitmap = displayedBitmap else { return }
+                let start = photoPanStart ?? photoZoom.offset
+                photoPanStart = start
+                var zoom = photoZoom
+                zoom.pan(to: CGSize(width: start.width + value.translation.width,
+                                    height: start.height + value.translation.height),
+                         imageSize: bitmap.originalSize, viewport: viewport)
+                withoutAnimation { photoZoom = zoom }
+            }
+            .onEnded { _ in photoPanStart = nil }
+    }
+
+    private func resetPhotoZoom(animated: Bool = false) {
+        photoPanStart = nil
+        crownTurnZoomsPhoto = false
+        guard photoZoom != GalleryPhotoZoom() else { return }
+        if animated && !reduceMotion {
+            withAnimation(.easeInOut(duration: 0.25)) { photoZoom.reset() }
+        } else {
+            withoutAnimation { photoZoom.reset() }
+        }
+    }
+
+    private func completeGridZoom() {
+        #if DEBUG
+        WatchGalleryDiagnostics.shared.zoomCompleted()
+        #endif
+        let session = gridZoom.sessionID
+        gridZoom.reset()
+        crownPosition = Double(zoomLevel)
+        // Unlike the phone's pinch lift, a watch zoom leaves no stray tap behind,
+        // so the grid accepts the next tap immediately (no 0.3 s suppression).
+        replayQueuedTap(session: session)
+    }
+
+    private func open(_ drawing: CanvasExport) {
+        guard !isTransitioning else { return }
+        focusedDrawing = drawing
+        beginGridZoom(target: drawing)
+        gridZoom.settle(to: 1, reduceMotion: reduceMotion)
+        WKInterfaceDevice.current().play(.click)
+    }
+
+    private func returnToGrid() {
+        queuedTap = nil
+        gridZoom.reset()
+        resetPhotoZoom()
+        isCleanViewing = false
+        showsFullscreen = false
+        selectedDrawing = nil
+        displayedBitmap = nil
+        transitionBitmap = nil
+        zoomLevel = returnGridLevel
+        crownPosition = Double(returnGridLevel)
+    }
+
+    private func withoutAnimation(_ action: () -> Void) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction, action)
+    }
+
+    private var favoriteProgress: Double {
+        let visible = drawings.map { ($0, pageVisibility[$0.id] ?? 0) }
+        let total = visible.reduce(0.0) { $0 + $1.1 }
+        guard total > 0 else {
+            return drawings.first(where: { $0.id == selectedDrawing?.id })?.isFavorite == true ? 1 : 0
+        }
+        return visible.reduce(0.0) { $0 + ($1.0.isFavorite ? $1.1 : 0) } / total
+    }
+
+    private func selectPage(_ id: URL?) {
+        guard tutorial.allowsGalleryPaging, !isTransitioning, id != selectedDrawing?.id,
+              let drawing = drawings.first(where: { $0.id == id }) else { return }
+        tutorial.activity()
+        selectedDrawing = drawing
+        focusedDrawing = drawing
+        galleryScrollTarget = drawing.id
+    }
+
+    private func pageDisplayed(_ drawing: CanvasExport, bitmap: GalleryBitmap) {
+        guard drawing.id == selectedDrawing?.id else { return }
+        if gridZoom.pendingCommit?.columns == 1 {
+            displayedBitmap = bitmap
+            completeGridZoom()
+        } else if !isTransitioning {
+            displayedBitmap = bitmap
+        }
+    }
+
+    private func toggleCleanViewing() {
+        guard showsFullscreen, zoomLevel == fullscreenLevel, !isTransitioning,
+              !tutorial.isActive else { return }
+        morphState.isExpanded = false
+        isCleanViewing.toggle()
+    }
+
+    private func setPageVisibility(_ id: URL, _ visibility: Double?) {
+        // Geometry supplies the animation progress, so do not ease these updates.
+        withoutAnimation { pageVisibility[id] = visibility }
+    }
+
+    private func deleteDrawing(_ drawing: CanvasExport) {
+        guard controller.delete(drawing, in: galleryFolder) else { return }
+        focusedDrawing = nil
+        returnToGrid()
+        WKInterfaceDevice.current().play(.click)
+        tutorial.record(.deleted)
+    }
+
+    private func editDrawing(_ drawing: CanvasExport) {
+        guard !isLoading else { return }
+        crownFocused = false
+        if needsDiscardConfirmation {
+            confirmedEdit = nil
+            pendingEdit = drawing
+        } else {
+            drawingToEdit = drawing
+        }
+    }
+
+}
+
+/// The parent re-renders during the menu → gallery transition. Its closures are never
+/// equal, so without this SwiftUI re-ran the 90-tile body (~300 ms) on every such update.
+/// The closures only write the parent's state, so stale copies behave the same.
+extension SavedDrawingsView: Equatable {
+    nonisolated static func == (lhs: Self, rhs: Self) -> Bool {
+        MainActor.assumeIsolated {
+            lhs.tutorial === rhs.tutorial
+                && lhs.galleryFolder == rhs.galleryFolder
+                && lhs.initialArtworkFilename == rhs.initialArtworkFilename
+                && lhs.initialBitmap === rhs.initialBitmap
+                && lhs.needsDiscardConfirmation == rhs.needsDiscardConfirmation
+                && lhs.isPreparingCanvas == rhs.isPreparingCanvas
+                && lhs.preparationError == rhs.preparationError
+                && lhs.defersThumbnails == rhs.defersThumbnails
+                && lhs.transitionState === rhs.transitionState
+        }
+    }
+}

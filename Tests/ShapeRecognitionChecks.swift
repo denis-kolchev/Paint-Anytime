@@ -86,6 +86,57 @@ struct ShapeRecognitionChecks {
             }
             expect(transformed, kind)
         }
+        // Hand-drawn input: a seam short of the start, an overshoot past it,
+        // an irregular polygon and a proportion unlike the template.
+        func ring(_ turns: Float, count: Int = 100) -> [SIMD2<Float>] {
+            (0...count).map { i -> SIMD2<Float> in
+                let t = Float(i) * 2 * .pi * turns / Float(count)
+                let r: Float = 35 + sin(t * 5) * 0.8
+                return SIMD2(60 + cos(t) * r, 60 + sin(t) * r)
+            }
+        }
+        expect(ring(0.9), .circle)
+        expect(ring(1.12), .circle)
+        expect(polyline([SIMD2(20, 20), SIMD2(80, 20), SIMD2(80, 60), SIMD2(20, 60), SIMD2(20, 20), SIMD2(40, 22)]), .rectangle)
+        let hexagon = (0..<6).map { i -> SIMD2<Float> in
+            let t = Float(i) * .pi / 3 + 0.2
+            let r: Float = 40 + [0, 3, -2, 2, -3, 1][i]
+            return SIMD2(60 + r * cos(t), 60 + r * sin(t))
+        }
+        let wobbly = loop(hexagon).enumerated().map { i, p in p + SIMD2(sin(Float(i) * 0.9), cos(Float(i) * 1.3)) * 0.6 }
+        expect(wobbly, .hexagon)
+        // Symmetric kinds snap only to symmetric outlines: turning the result by
+        // 2π/n about its anchor must map it onto itself.
+        func expectRotationSymmetric(_ points: [SIMD2<Float>], _ kind: ShapeRecognizer.Kind, order n: Int) {
+            guard let result = ShapeRecognizer.recognize(samples(points)) else { return }
+            precondition(result.kind == kind, "Expected \(kind), got \(result.kind)")
+            let outline = result.points, c = cos(2 * Float.pi / Float(n)), s = sin(2 * Float.pi / Float(n))
+            let size = outline.map { simd_distance($0, result.anchor) }.max() ?? 1
+            for p in outline {
+                let d = p - result.anchor, turned = result.anchor + SIMD2(d.x * c - d.y * s, d.x * s + d.y * c)
+                let gap = zip(outline, outline.dropFirst()).map { a, b -> Float in
+                    let e = b - a, t = min(1, max(0, simd_dot(turned - a, e) / max(0.000001, simd_length_squared(e))))
+                    return simd_distance(turned, a + e * t)
+                }.min() ?? .infinity
+                precondition(gap < size * 0.02, "\(kind) is not symmetric")
+            }
+        }
+        expectRotationSymmetric(wobbly, .hexagon, order: 6)
+        expectRotationSymmetric(loop(star).map { SIMD2(60 + ($0.x - 60) * 1.3, $0.y) }, .star, order: 5)
+        expect(heart.map { SIMD2(60 + ($0.x - 60) * 1.4, $0.y) }, .heart)
+        // A hand-drawn cloud: uneven, deep semicircular bumps between cusps on an oval.
+        let cusps = [0, 0.9, 2.0, 3.1, 4.1, 5.2].map { (t: Float) in SIMD2<Float>(60 + 40 * cos(t), 60 + 25 * sin(t)) }
+        var scalloped: [SIMD2<Float>] = []
+        for (a, c) in zip(cusps, cusps.dropFirst() + [cusps[0]]) {
+            let middle = (a + c) / 2, radius = simd_distance(a, c) / 2
+            let along = (a - middle) / radius, outward = SIMD2(c.y - a.y, a.x - c.x) / (2 * radius)
+            scalloped += (0..<20).map { i -> SIMD2<Float> in
+                let phi = Float(i) * .pi / 20
+                return middle + (along * cos(phi) + outward * sin(phi)) * radius
+            }
+        }
+        scalloped.append(scalloped[0])
+        expect(scalloped, .cloud)
         let rejected = [
             [SIMD2<Float>(10, 10), SIMD2(10.2, 10), SIMD2(10.1, 10.1)],
 

@@ -40,6 +40,49 @@ struct RenderCheck {
         style.width = 30
         let erased = render([ink, Stroke(points: [point], style: style)])
         precondition(pixel(erased, 80, 80)[0] == 255, "Eraser must reveal white paper")
+        // A mask replayed only around its erasers must equal the full-canvas replay bit for bit,
+        // including transformed objects, cutouts, edge-crossing and off-canvas erasers.
+        do {
+            var eraserStyle = PencilStyle()
+            eraserStyle.instrument = .eraser
+            eraserStyle.eraserMode = .pixels
+            eraserStyle.width = 9
+            func eraser(_ points: [SIMD2<Float>]) -> Stroke {
+                Stroke(points: points.map { PointerSample(position: $0, pressure: 1, timestamp: 0) }, style: eraserStyle)
+            }
+            var object = Stroke(points: [point, PointerSample(position: SIMD2(70, 55), pressure: 1, timestamp: 0)], style: ink.style)
+            var cut = eraser([SIMD2(30, 30), SIMD2(55, 48), SIMD2(62, 41)])
+            cut.excludedAreas = [[SIMD2(40, 30), SIMD2(60, 30), SIMD2(60, 50), SIMD2(40, 50)]]
+            var moved = eraser([SIMD2(20, 60), SIMD2(35, 65)])
+            moved.transform = StrokeTransform(CGAffineTransform(rotationAngle: 0.4).translatedBy(x: 7.3, y: -3.1))
+            object.erasures = [cut, moved, eraser([SIMD2(-8, 50), SIMD2(12, 52)]), eraser([SIMD2(160, 160)])]
+            for transform in [CGAffineTransform.identity, CGAffineTransform(rotationAngle: -0.3).translatedBy(x: 11.5, y: 4.25)] {
+                object.transform = StrokeTransform(transform)
+                for scale in [CGFloat(1), 1.5, 2] {
+                    let size = CGSize(width: 100, height: 100)
+                    guard let regional = WatchBitmapRenderer.erasureMask(for: object, size: size, scale: scale),
+                          let full = WatchBitmapRenderer.erasureMask(for: object, size: size, scale: scale, allowsRegion: false),
+                          let a = regional.data, let b = full.data else { fatalError("No erasure mask") }
+                    precondition(regional.width == full.width && regional.height == full.height
+                                 && regional.bytesPerRow == full.bytesPerRow)
+                    precondition(memcmp(a, b, full.bytesPerRow * full.height) == 0,
+                                 "Regional erasure mask must match full replay at scale \(scale)")
+                }
+            }
+            // A cached eraser region must reproduce the same ink without replaying erasers.
+            let masks = WatchBitmapRenderer.ErasureMaskCache()
+            let size = CGSize(width: 100, height: 100)
+            let fresh = WatchBitmapRenderer.renderInk(strokes: [object], size: size, scale: 2)!.image
+            _ = WatchBitmapRenderer.renderInk(strokes: [object], size: size, scale: 2, masks: masks)
+            let reused = WatchBitmapRenderer.renderInk(strokes: [object], size: size, scale: 2, masks: masks)!.image
+            precondition(masks.hits == 1, "An unchanged stroke must reuse its eraser region")
+            precondition((fresh.dataProvider!.data! as Data) == (reused.dataProvider!.data! as Data),
+                         "A cached eraser region must render identically")
+            var shiftedObject = object
+            shiftedObject.transform = StrokeTransform(CGAffineTransform(translationX: 3, y: 0))
+            _ = WatchBitmapRenderer.renderInk(strokes: [shiftedObject], size: size, scale: 2, masks: masks)
+            precondition(masks.hits == 1, "A moved stroke must not reuse the old eraser region")
+        }
         let empty = render([])
         precondition(pixel(empty, 80, 80)[0] == 255, "Empty canvas must be white")
         func sample(_ x: Float, _ y: Float) -> PointerSample {
@@ -510,6 +553,27 @@ struct RenderCheck {
         func key(_ revision: UInt64, scale: CGFloat = 2, size: CGSize = CGSize(width: 100, height: 100)) -> WatchBitmapRenderer.CacheKey {
             .init(documentID: cacheID, documentRevision: revision, size: size, scale: scale)
         }
+        // Committing a lasso move must reuse the static layer, but editing
+        // unselected ink must invalidate it.
+        let selectionCache = WatchBitmapRenderer.SelectionRenderCache()
+        var selectionDocument = CanvasDocument(strokes: [ink, border])
+        func preview() -> WatchSelectionPreview {
+            WatchSelectionPreview(sessionID: UUID(), document: selectionDocument,
+                layerID: selectionDocument.layers[0].id, selectedIDs: [border.id],
+                bounds: CGRect(x: 5, y: 5, width: 50, height: 40))
+        }
+        let firstSelection = selectionCache.render(preview(), key: key(100))!
+        selectionDocument.layers[0].strokes[1].transform = StrokeTransform(
+            CGAffineTransform(translationX: 10, y: 10))
+        let movedSelection = selectionCache.render(preview(), key: key(101))!
+        precondition(firstSelection.selection != nil && movedSelection.selection != nil)
+        precondition(firstSelection.selection!.layerBelow === movedSelection.selection!.layerBelow,
+                     "Moving selected ink must reuse the static texture")
+        selectionDocument.layers[0].strokes[0].transform = StrokeTransform(
+            CGAffineTransform(translationX: 5, y: 0))
+        let editedSelection = selectionCache.render(preview(), key: key(102))!
+        precondition(movedSelection.selection!.layerBelow !== editedSelection.selection!.layerBelow,
+                     "Editing unselected ink must rebuild the static texture")
         func assertSame(_ cached: CGImage?, _ full: CGImage?, _ message: String) {
             guard let cached, let full else { fatalError("Missing image: \(message)") }
             precondition(cached.width == full.width && cached.height == full.height)
@@ -643,7 +707,10 @@ struct RenderCheck {
             assertSame(cache.render(strokes: strokes, activeStroke: nil, key: key(revision)),
                        render(strokes), "Commit/undo/redo/object deletion/clear must preserve replay parity")
         }
-        precondition(cache.rebuildCount == 4 && cache.appendCount == 2)
+        // Commit appends; Undo and Redo return to retained snapshots without replay;
+        // object deletion and clear are new states and rebuild.
+        precondition(cache.rebuildCount == 3 && cache.appendCount == 1 && cache.previousStateHits == 2,
+                     "Undo/Redo must reuse retained snapshots")
         for scale: CGFloat in [1, 3] {
             assertSame(cache.render(strokes: history, activeStroke: marker, key: key(7, scale: scale)),
                        WatchBitmapRenderer.render(strokes: history + [marker], size: CGSize(width: 100, height: 100), scale: scale),

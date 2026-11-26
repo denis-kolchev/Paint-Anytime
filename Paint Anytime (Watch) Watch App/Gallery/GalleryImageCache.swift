@@ -1,0 +1,422 @@
+import SwiftUI
+import ImageIO
+import WatchKit
+
+// These values cross from the decoding actor to the UI. CGImage is immutable.
+nonisolated struct GalleryImageRequest: Hashable, Sendable {
+    let url: URL
+    let shortSidePixels: Int?
+    let displayScale: CGFloat
+}
+
+nonisolated final class GalleryBitmap: @unchecked Sendable {
+    let request: GalleryImageRequest
+    let image: CGImage
+    let originalSize: CGSize
+    var url: URL { request.url }
+    var memoryCost: Int { image.bytesPerRow * image.height }
+
+    init(request: GalleryImageRequest, image: CGImage, originalSize: CGSize) {
+        self.request = request
+        self.image = image
+        self.originalSize = originalSize
+    }
+}
+
+nonisolated private final class GalleryThumbnailVariants {
+    var images: [GalleryImageRequest: GalleryBitmap] = [:]
+    var sourceImages: [GalleryImageRequest: CGImage] = [:]
+    var memoryCost: Int {
+        images.values.reduce(0) { $0 + $1.memoryCost }
+            + sourceImages.values.reduce(0) { $0 + $1.bytesPerRow * $1.height }
+    }
+}
+
+// File access, metadata parsing, and decompression run off the main actor.
+// A serial actor also coalesces requests: the next caller finds the cached result.
+actor GalleryImageCache {
+    static let shared = GalleryImageCache()
+    private let thumbnails = NSCache<NSURL, GalleryThumbnailVariants>()
+    private let originals = NSCache<NSURL, GalleryBitmap>()
+    private var fileVersions: [URL: Date] = [:]
+    #if DEBUG
+    private var debugMetrics = GalleryDecodeDiagnostics()
+    func debugSnapshot() -> GalleryDecodeDiagnostics { debugMetrics }
+    #endif
+
+    init() {
+        thumbnails.totalCostLimit = 6 * 1024 * 1024
+        thumbnails.countLimit = 100
+        originals.totalCostLimit = 8 * 1024 * 1024
+        originals.countLimit = 3
+    }
+
+    func load(_ request: GalleryImageRequest) -> GalleryBitmap? {
+        guard !Task.isCancelled else { return nil }
+        // Autosave replaces the image at the same URL. Check the file itself rather
+        // than depending on a fire-and-forget invalidation task winning the race.
+        let modified = (try? FileManager.default.attributesOfItem(atPath: request.url.path))?[.modificationDate] as? Date
+        if modified == nil || fileVersions[request.url] != modified {
+            remove(request.url)
+            fileVersions[request.url] = modified
+        }
+        #if DEBUG
+        let debugStarted = GalleryDebug.isEnabled ? ProcessInfo.processInfo.systemUptime : 0
+        var debugHit = false
+        var debugDecoded = false
+        defer {
+            if GalleryDebug.isEnabled {
+                debugMetrics.requests += 1
+                if debugHit {
+                    debugMetrics.cacheHits += 1
+                } else if debugDecoded {
+                    let elapsed = (ProcessInfo.processInfo.systemUptime - debugStarted) * 1000
+                    debugMetrics.decodes += 1
+                    debugMetrics.decodeMS += elapsed
+                    debugMetrics.maximumDecodeMS = max(debugMetrics.maximumDecodeMS, elapsed)
+                } else if !Task.isCancelled {
+                    debugMetrics.failures += 1
+                }
+            }
+        }
+        #endif
+        let key = request.url as NSURL
+        if request.shortSidePixels != nil {
+            if let cached = thumbnails.object(forKey: key)?.images[request] {
+                #if DEBUG
+                debugHit = true
+                #endif
+                return cached
+            }
+        } else if let cached = originals.object(forKey: key), cached.request == request {
+            #if DEBUG
+            debugHit = true
+            #endif
+            return cached
+        }
+
+        guard let source = CGImageSourceCreateWithURL(request.url as CFURL,
+            [kCGImageSourceShouldCache: false] as CFDictionary),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? NSNumber,
+              let height = properties[kCGImagePropertyPixelHeight] as? NSNumber,
+              width.doubleValue > 0, height.doubleValue > 0 else { return nil }
+
+        let image: CGImage?
+        if let side = request.shortSidePixels {
+            let longest = max(width.doubleValue, height.doubleValue)
+            let shortest = min(width.doubleValue, height.doubleValue)
+            // Preserve enough pixels for a square tile using aspect-fill, without upscaling.
+            let maximum = Int(min(longest, ceil(Double(max(1, side)) * longest / shortest)))
+            image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceThumbnailMaxPixelSize: maximum,
+                kCGImageSourceShouldCacheImmediately: true
+            ] as CFDictionary)
+        } else {
+            image = CGImageSourceCreateImageAtIndex(source, 0,
+                [kCGImageSourceShouldCache: true, kCGImageSourceShouldCacheImmediately: true] as CFDictionary)
+        }
+        guard let image, !Task.isCancelled else { return nil }
+        let size = GalleryImageMetadata.originalSize(properties: properties, pixelWidth: width.doubleValue,
+                                pixelHeight: height.doubleValue, scale: request.displayScale)
+        let bitmap = GalleryBitmap(request: request, image: image, originalSize: size)
+        if request.shortSidePixels != nil {
+            let variants = thumbnails.object(forKey: key) ?? GalleryThumbnailVariants()
+            variants.images[request] = bitmap
+            thumbnails.setObject(variants, forKey: key, cost: variants.memoryCost)
+        } else {
+            originals.setObject(bitmap, forKey: key, cost: bitmap.memoryCost)
+        }
+        #if DEBUG
+        debugDecoded = true
+        #endif
+        return bitmap
+    }
+
+    func remove(_ url: URL) {
+        fileVersions.removeValue(forKey: url)
+        thumbnails.removeObject(forKey: url as NSURL)
+        originals.removeObject(forKey: url as NSURL)
+    }
+}
+
+/// Only grid thumbnails receive this decoration; originals and exported files stay untouched.
+/// Rasterizing the artwork, blur and heart together gives zoom a single image to animate.
+@MainActor
+enum GalleryFavoriteThumbnailRenderer {
+    static func remove(_ url: URL) {
+        cache.removeObject(forKey: url as NSURL)
+    }
+
+    private static let cache: NSCache<NSURL, GalleryThumbnailVariants> = {
+        let cache = NSCache<NSURL, GalleryThumbnailVariants>()
+        cache.totalCostLimit = 3 * 1024 * 1024
+        cache.countLimit = 100
+        return cache
+    }()
+
+    static func render(_ bitmap: GalleryBitmap) -> GalleryBitmap? {
+        let request = bitmap.request
+        let key = bitmap.url as NSURL
+        if let variants = cache.object(forKey: key),
+           let cached = variants.images[request],
+           variants.sourceImages[request] === bitmap.image { return cached }
+        guard let pixels = request.shortSidePixels else { return nil }
+        let scale = max(1, request.displayScale)
+        let side = CGFloat(pixels) / scale
+        let heartSize = side * 0.18
+        let inset = side * 0.075
+        let cornerSize = side * 0.9
+        let artwork = Image(decorative: bitmap.image, scale: 1)
+            .resizable()
+            .interpolation(.high)
+            .scaledToFill()
+            .frame(width: side, height: side)
+            .clipped()
+        let content = artwork
+            .overlay {
+                artwork
+                    .blur(radius: 3)
+                    .opacity(0.25)
+                    .overlay(Color.black.opacity(0.22))
+                    .mask {
+                        RadialGradient(stops: [
+                            .init(color: .black, location: 0),
+                            .init(color: .black.opacity(0.65), location: 0.3),
+                            .init(color: .black.opacity(0.2), location: 0.65),
+                            .init(color: .clear, location: 1)
+                        ], center: .bottomLeading, startRadius: 0, endRadius: cornerSize)
+                    }
+            }
+            .overlay(alignment: .bottomLeading) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: heartSize, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.2), radius: 1, y: 1)
+                    .padding(inset)
+            }
+            .clipped()
+            .environment(\.displayScale, scale)
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = scale
+        guard let image = renderer.cgImage else { return nil }
+        let result = GalleryBitmap(request: request, image: image, originalSize: bitmap.originalSize)
+        let variants = cache.object(forKey: key) ?? GalleryThumbnailVariants()
+        variants.sourceImages[request] = bitmap.image
+        variants.images[request] = result
+        cache.setObject(variants, forKey: key, cost: variants.memoryCost)
+        return result
+    }
+}
+
+struct GalleryThumbnailView: View {
+    let request: GalleryImageRequest
+    /// The tile's side in points; both crossfade layers are cropped to it.
+    let side: CGFloat
+    var loadsImage: Bool
+    let visibility: GalleryThumbnailVisibility
+    var isFavorite = false
+    var showsPreviewBeforeMeasurement = false
+    var onDisplayedBitmap: (GalleryBitmap) -> Void = { _ in }
+    @State private var bitmap: GalleryBitmap?
+    @State private var isMounted = false
+
+    private struct LoadRequest: Equatable {
+        let image: GalleryImageRequest
+        let isFavorite: Bool
+        let contentRevision: UUID
+    }
+
+    var body: some View {
+        let isNearViewport = visibility.isNearViewport
+        let loadRequest = isMounted && loadsImage && isNearViewport
+            ? LoadRequest(image: request, isFavorite: isFavorite,
+                          contentRevision: visibility.contentRevision) : nil
+        let displayed = bitmap ?? visibility.fallback
+        // The grid keeps every tile mounted. Drawing previews for far-off tiles
+        // would make opening the gallery pay for hundreds of images at once.
+        let showsPreview = isNearViewport || (!visibility.isMeasured && showsPreviewBeforeMeasurement)
+        let preview = showsPreview ? GalleryPreviewStore.shared.slot(for: request.url).preview : nil
+        let _ = isNearViewport || showsPreviewBeforeMeasurement
+            ? MenuGalleryTransitionDiagnostics.shared.tile(request.url,
+                displayed != nil ? "sharp" : preview != nil ? "low" : "gray") : ()
+        // The sharp thumbnail fades in over the low-resolution snapshot. Each layer is
+        // cropped to the tile itself, so an oversized aspect-fill image never sizes the
+        // crossfade and both layers always show the same part of the drawing.
+        GalleryLowResCrossfade(showsSharp: displayed != nil) {
+            if let displayed {
+                Image(decorative: displayed.image, scale: 1)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: side, height: side)
+                    .clipped()
+            }
+        } lowRes: {
+            if let preview {
+                // A low-resolution snapshot stands in until the sharp thumbnail decodes.
+                Image(decorative: preview.image, scale: 1)
+                    .resizable()
+                    .interpolation(.medium)
+                    .scaledToFill()
+                    .frame(width: side, height: side)
+                    .clipped()
+                    .overlay {
+                        // The tile's own side, not the decode size: `thumbnailPixels` is
+                        // rounded up to 32 px, which made the badge larger than the tile.
+                        if isFavorite { GalleryFavoriteBadge(side: side) }
+                    }
+            } else {
+                Rectangle().fill(.white.opacity(0.12))
+            }
+        }
+        .onAppear { isMounted = true }
+        .task(id: loadRequest) {
+            guard let loadRequest else {
+                if !isNearViewport { bitmap = nil }
+                return
+            }
+            #if DEBUG
+            if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.beganLoad() }
+            defer {
+                if GalleryDebug.isEnabled { WatchGalleryDiagnostics.shared.endedLoad(cancelled: Task.isCancelled) }
+            }
+            #endif
+            // Use the captured request across suspension. Visibility is supplied
+            // by the gallery's named coordinate space, not global screen bounds.
+            let imageRequest: GalleryImageRequest
+            if loadRequest.isFavorite, let pixels = loadRequest.image.shortSidePixels {
+                imageRequest = GalleryImageRequest(url: loadRequest.image.url,
+                    shortSidePixels: pixels * 2, displayScale: loadRequest.image.displayScale * 2)
+            } else {
+                imageRequest = loadRequest.image
+            }
+            let loaded = await GalleryImageCache.shared.load(imageRequest)
+            guard !Task.isCancelled else { return }
+            MenuGalleryTransitionDiagnostics.shared.loadFinished()
+            if let loaded { GalleryPreviewStore.shared.record(loaded) }
+            if loadRequest.isFavorite, let loaded {
+                bitmap = GalleryFavoriteThumbnailRenderer.render(loaded) ?? loaded
+            } else {
+                bitmap = loaded
+            }
+            if let bitmap {
+                visibility.fallback = bitmap
+                onDisplayedBitmap(bitmap)
+            }
+        }
+        .onDisappear {
+            // Reappearance must restart loading even if URL, size and proximity
+            // have not changed since SwiftUI cancelled the previous task.
+            isMounted = false
+            bitmap = nil
+        }
+    }
+}
+
+/// The favorite decoration drawn live over a low-resolution preview tile.
+/// Matches the geometry `GalleryFavoriteThumbnailRenderer` rasterizes.
+struct GalleryFavoriteBadge: View {
+    let side: CGFloat
+
+    var body: some View {
+        Color.black.opacity(0.28)
+            .mask {
+                RadialGradient(stops: [
+                    .init(color: .black, location: 0),
+                    .init(color: .black.opacity(0.65), location: 0.3),
+                    .init(color: .black.opacity(0.2), location: 0.65),
+                    .init(color: .clear, location: 1)
+                ], center: .bottomLeading, startRadius: 0, endRadius: side * 0.9)
+            }
+            .overlay(alignment: .bottomLeading) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: side * 0.18, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.2), radius: 1, y: 1)
+                    .padding(side * 0.075)
+            }
+            .frame(width: side, height: side)
+            .allowsHitTesting(false)
+    }
+}
+
+struct GalleryFullscreenPage: View {
+    let url: URL
+    let size: CGSize
+    let canvasOriginY: CGFloat
+    let thumbnailPixels: Int
+    let displayScale: CGFloat
+    let isNearby: Bool
+    let loadsOriginal: Bool
+    let fallback: GalleryBitmap?
+    var respectsSafeArea = false
+    var fitsViewport = true
+    var isSelected = false
+    /// Crown zoom of the settled photo; identity for other pages.
+    var zoom = GalleryPhotoZoom()
+    var onDisplayedBitmap: (GalleryBitmap) -> Void = { _ in }
+    @State private var preview: GalleryBitmap?
+    @State private var original: GalleryBitmap?
+
+    var body: some View {
+        // The persistent low-resolution preview keeps a page from ever showing black.
+        let sharpBitmap = original ?? preview ?? fallback
+        let lowResBitmap = GalleryPreviewStore.shared.slot(for: url).bitmap(for: url)
+        let displayedBitmap = sharpBitmap ?? lowResBitmap
+        let previewRequest = isNearby
+            ? GalleryImageRequest(url: url, shortSidePixels: thumbnailPixels, displayScale: displayScale) : nil
+        let originalRequest = loadsOriginal
+            ? GalleryImageRequest(url: url, shortSidePixels: nil, displayScale: displayScale) : nil
+        GeometryReader { pageGeometry in
+            ZStack(alignment: .topLeading) {
+                Color.black
+                // The sharp image fades in over the low-resolution preview.
+                GalleryLowResCrossfade(showsSharp: sharpBitmap != nil) {
+                    if let sharpBitmap { pageImage(sharpBitmap) }
+                } lowRes: {
+                    if let lowResBitmap { pageImage(lowResBitmap) }
+                }
+                .frame(width: size.width, height: size.height, alignment: .topLeading)
+                .scaleEffect(zoom.scale)
+                .offset(zoom.offset)
+            }
+            .frame(width: size.width, height: size.height, alignment: .topLeading)
+            .clipped()
+            // TabView can inset its pages independently of the outer safe area.
+            // Correct the measured vertical origin, retaining horizontal paging motion.
+            .offset(y: canvasOriginY - pageGeometry.frame(in: .global).minY)
+        }
+        .frame(width: size.width, height: size.height, alignment: .topLeading)
+        .ignoresSafeArea(.container, edges: respectsSafeArea ? [] : .all)
+        .onChange(of: displayedBitmap.map { ObjectIdentifier($0) }, initial: true) { _, _ in
+            if isSelected, let displayedBitmap { onDisplayedBitmap(displayedBitmap) }
+        }
+        .onChange(of: isSelected) { _, selected in
+            if selected, let displayedBitmap { onDisplayedBitmap(displayedBitmap) }
+        }
+        .task(id: previewRequest) {
+            guard let previewRequest else { preview = nil; return }
+            let loaded = await GalleryImageCache.shared.load(previewRequest)
+            guard !Task.isCancelled else { return }
+            preview = loaded
+        }
+        .task(id: originalRequest) {
+            guard let originalRequest else { original = nil; return }
+            let loaded = await GalleryImageCache.shared.load(originalRequest)
+            guard !Task.isCancelled else { return }
+            original = loaded
+        }
+        .onDisappear { preview = nil; original = nil }
+    }
+
+    private func pageImage(_ bitmap: GalleryBitmap) -> some View {
+        let frame = GalleryArtworkLayout.frame(imageSize: bitmap.originalSize,
+                                               viewport: size, fitsViewport: fitsViewport)
+        return Image(decorative: bitmap.image, scale: 1)
+            .resizable()
+            .frame(width: frame.width, height: frame.height)
+            .position(x: frame.midX, y: frame.midY)
+    }
+}

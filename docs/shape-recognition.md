@@ -17,7 +17,7 @@ After snapping, moving the finger rotates and uniformly scales the result. Lines
 
 Erasers and canvas panning never invoke recognition. Hold tasks are cancelled on release, gesture cancellation, input disablement, panning, leaving the view, and inactive scene state. Gesture IDs guard against a stale task snapping a later stroke.
 
-Implementation: `Shared/ShapeRecognizer.swift` compares normalized geometric fitting errors. Recognition uses distance-resampled points, closure/convexity/winding guards and ordered outline matching. `PencilTool` owns the snapped/adjusting state. The watch view owns the hold timer.
+Implementation: `Shared/Drawing/ShapeRecognizer.swift` compares normalized geometric fitting errors. Recognition uses distance-resampled points, closure/convexity/winding guards and ordered outline matching. `PencilTool` owns the snapped/adjusting state. The watch view owns the hold timer.
 
 Prepared checks:
 

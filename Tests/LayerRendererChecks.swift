@@ -66,8 +66,20 @@ struct LayerRenderCheck {
             let idleBuilds = layers.compositeBuildCount
             check()
             precondition(layers.compositeBuildCount == idleBuilds, "Idle frames must reuse the complete composition")
+            let replayBeforeUndo = layers.replayedStrokeCount
             document.layers[1].strokes.removeLast()
             check(eraser) // Undo and live erasing remain isolated to their layer.
+            // Undo/Redo restore retained snapshots or the patches of the changed area.
+            func restored() -> Int { layers.previousInkHits + layers.patchHits }
+            precondition(layers.replayedStrokeCount == replayBeforeUndo && restored() == 1,
+                         "Drawing after Undo must reuse the retained layer state, not replay the layer")
+            document.layers[1].strokes.append(eraser)
+            check(ink) // Redo
+            precondition(layers.replayedStrokeCount == replayBeforeUndo && restored() == 2,
+                         "Redo must reuse the retained layer state")
+            document.layers[1].strokes.removeLast()
+            check(eraser)
+            precondition(restored() == 3)
             document.layers[0].opacity = 0.7
             check(ink)
             document.layers[0].isVisible = false

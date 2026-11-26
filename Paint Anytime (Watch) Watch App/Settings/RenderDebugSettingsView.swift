@@ -1,0 +1,152 @@
+import SwiftUI
+import Combine
+
+/// Where the speed HUD sits, so it can be moved away from the toolbar buttons.
+enum RenderHUDPosition: CaseIterable {
+    case top, middle, bottom
+
+    var title: String {
+        switch self {
+        case .top: "Top"
+        case .middle: "Middle"
+        case .bottom: "Bottom"
+        }
+    }
+
+    var alignment: Alignment {
+        switch self {
+        case .top: .top
+        case .middle: .center
+        case .bottom: .bottom
+        }
+    }
+
+    /// Clearance for the round toolbar buttons in the corners.
+    var insets: EdgeInsets {
+        switch self {
+        case .top: EdgeInsets(top: 56, leading: 0, bottom: 0, trailing: 0)
+        case .middle: EdgeInsets()
+        case .bottom: EdgeInsets(top: 0, leading: 0, bottom: 56, trailing: 0)
+        }
+    }
+}
+
+/// Main-actor mirror of the render debug switches for SwiftUI. The renderer reads
+/// `RenderStageSwitches` directly. Only `showsDebugInfo` persists; everything else
+/// starts from the defaults on every launch.
+final class RenderDebugSettings: ObservableObject {
+    static let shared = RenderDebugSettings()
+
+    private static let showsDebugInfoKey = "renderDebug.showsDebugInfo"
+    private static let showsTutorialSamplesKey = "renderDebug.showsTutorialSamples"
+    private static let savesTutorialDrawingsKey = "renderDebug.savesTutorialDrawings"
+
+    /// Master switch for every on-screen debug readout: the speed HUD, the gallery
+    /// tap and transition panels, and the canvas layout touch panel. Off: none is drawn.
+    @Published var showsDebugInfo: Bool = RenderDebug.isEnabled
+        && (UserDefaults.standard.object(forKey: RenderDebugSettings.showsDebugInfoKey) as? Bool ?? true) {
+        didSet { UserDefaults.standard.set(showsDebugInfo, forKey: Self.showsDebugInfoKey) }
+    }
+    /// The bundled `TutorialSample_` drawings, listed first in the gallery,
+    /// followed by the `ExampleSample_` projects.
+    /// Applies the next time the gallery is opened.
+    @Published var showsTutorialSamples: Bool = RenderDebug.isEnabled
+        && (UserDefaults.standard.object(forKey: RenderDebugSettings.showsTutorialSamplesKey) as? Bool ?? true) {
+        didSet { UserDefaults.standard.set(showsTutorialSamples, forKey: Self.showsTutorialSamplesKey) }
+    }
+    /// Off: Save and the practice autosave in the tutorial still play, but write no file,
+    /// so the drawing shows up in neither the tutorial gallery nor the user's. Release: always on.
+    @Published var savesTutorialDrawings: Bool = !RenderDebug.isEnabled
+        || (UserDefaults.standard.object(forKey: RenderDebugSettings.savesTutorialDrawingsKey) as? Bool ?? true) {
+        didSet { UserDefaults.standard.set(savesTutorialDrawings, forKey: Self.savesTutorialDrawingsKey) }
+    }
+    @Published var showsHUD = RenderDebug.isEnabled
+    @Published var hudPosition = RenderHUDPosition.top
+    @Published private(set) var disabledStages = RenderStageSwitches.shared.disabledStages
+
+    func isOn(_ stage: RenderStage) -> Bool {
+        guard RenderDebug.isEnabled else { return stage.isDefaultOn }
+        return !disabledStages.contains(stage)
+    }
+
+    var isAtDefaults: Bool {
+        RenderStage.allCases.allSatisfy { isOn($0) == $0.isDefaultOn }
+    }
+
+    func set(_ stage: RenderStage, isOn: Bool) {
+        guard RenderDebug.isEnabled else { return }
+        RenderStageSwitches.shared.set(stage, isOn: isOn)
+        if isOn { disabledStages.remove(stage) } else { disabledStages.insert(stage) }
+    }
+
+    func resetToDefaults() {
+        for stage in RenderStage.allCases { set(stage, isOn: stage.isDefaultOn) }
+    }
+}
+
+/// ⋯ menu → Render debug: HUD and the latency optimizations.
+/// Changes apply from the next rendered frame; draw on the canvas to compare.
+struct RenderDebugSettingsView: View {
+    @ObservedObject private var settings = RenderDebugSettings.shared
+
+    var body: some View {
+        List {
+            Section {
+                Toggle(isOn: $settings.showsDebugInfo) {
+                    Text(verbatim: "Debug info on screen")
+                }
+            } footer: {
+                Text(verbatim: "Off: no debug panel is drawn anywhere — speed HUD, gallery tap and transition timelines, layout editor touches.")
+            }
+            Section {
+                Toggle(isOn: $settings.showsTutorialSamples) {
+                    Text(verbatim: "Tutorial images in gallery")
+                }
+                Toggle(isOn: $settings.savesTutorialDrawings) {
+                    Text(verbatim: "Save tutorial drawings")
+                }
+            } footer: {
+                Text(verbatim: "Tutorial images: the bundled tutorial drawings at the top of the gallery; applies when the gallery is opened next. Save tutorial drawings off: Save and autosave in the tutorial still play, but the drawing appears in neither the tutorial gallery nor yours.")
+            }
+            Section {
+                Toggle(isOn: $settings.showsHUD) {
+                    Text(verbatim: "Speed HUD")
+                }
+                .disabled(!settings.showsDebugInfo)
+                Picker(selection: $settings.hudPosition) {
+                    ForEach(RenderHUDPosition.allCases, id: \.self) { position in
+                        Text(verbatim: position.title).tag(position)
+                    }
+                } label: {
+                    Text(verbatim: "HUD position")
+                }
+                .disabled(!settings.showsDebugInfo)
+            } footer: {
+                Text(verbatim: "FPS: published frames/s. drop: frames replaced before rendering. ev: touch event → handler. disp: handler → frame queued. pub: queued → published. e2e: touch event → published; the screen shows it 1–2 vsyncs later. Stage times are averages in ms. main lag: wait of a main-queue probe every 50 ms. body: view re-evaluations/s. heat, LPM, mem, WC: thermal state, Low Power Mode, footprint, pending iPhone transfers.")
+            }
+            Section {
+                ForEach(RenderStage.allCases, id: \.self) { stage in
+                    Toggle(isOn: Binding(get: { settings.isOn(stage) },
+                                         set: { settings.set(stage, isOn: $0) })) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(verbatim: stage.title)
+                            Text(verbatim: stage.detail)
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                Text(verbatim: "Latency optimizations")
+            }
+            if !settings.isAtDefaults {
+                Button {
+                    settings.resetToDefaults()
+                } label: {
+                    Text(verbatim: "Reset to defaults")
+                }
+            }
+        }
+        .navigationTitle(Text(verbatim: "Render debug"))
+    }
+}

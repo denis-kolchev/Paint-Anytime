@@ -3,9 +3,11 @@ import SwiftUI
 
 enum ToolSetting: Int, CaseIterable {
     // Keep stored page identifiers stable; display order is defined by the view.
-    case width, color, instrument, mode, direction, opacity, sensitivity
+    case width, color, instrument, mode, direction, opacity, sensitivity, blurStrength, blurRadius
     var title: String {
         switch self {
+        case .blurStrength: L10n.text("Blur strength")
+        case .blurRadius: L10n.text("Blur radius")
         case .sensitivity: L10n.text("Sensitivity")
         case .opacity: L10n.text("Opacity")
         case .width: L10n.text("Width")
@@ -18,6 +20,8 @@ enum ToolSetting: Int, CaseIterable {
 
     func helpDescription(for style: PencilStyle) -> String {
         switch self {
+        case .blurStrength: L10n.text("Sets how strongly the brush softens existing marks.")
+        case .blurRadius: L10n.text("Sets how far nearby pixels are mixed. Larger radii produce softer details.")
         case .width: L10n.text("Sets the stroke width or eraser size.")
         case .color: L10n.text("Sets the drawing color. Choose Add colors to edit your palette.")
         case .instrument: style.instrument.helpDescription

@@ -17,10 +17,38 @@ struct ToolSettingCarousel: View {
         switch setting {
         case .width: return [.openWidth]
         case .opacity: return [.openOpacity]
-        case .instrument: return [.openTool, .selectReed]
+        case .instrument: return [.openTool, .selectReed, .chooseReed]
         case .direction: return [.openAngle]
         default: return []
         }
+    }
+
+    /// A position counted from the Tool title, so switching brushes keeps every slot in place
+    /// and only changes the title it shows.
+    private struct Slot: Identifiable {
+        let id: Int
+        let setting: ToolSetting
+    }
+
+    private var anchorIndex: Int { availableSettings.firstIndex(of: .instrument) ?? 0 }
+
+    private var slots: [Slot] {
+        let anchor = anchorIndex
+        return availableSettings.enumerated().map { Slot(id: $0.offset - anchor, setting: $0.element) }
+    }
+
+    /// The most settings any brush shows before and after Tool. Empty slots keep their
+    /// width as padding, so Tool stays at one content offset and the scroll never moves.
+    private static let reservedLeadingSlots = 3
+    private static let reservedTrailingSlots = 1
+
+    private var missingLeadingSlots: Int { max(0, Self.reservedLeadingSlots - anchorIndex) }
+    private var missingTrailingSlots: Int {
+        max(0, Self.reservedTrailingSlots - (availableSettings.count - anchorIndex - 1))
+    }
+
+    private func slotID(of setting: ToolSetting) -> Int {
+        (availableSettings.firstIndex(of: setting) ?? anchorIndex) - anchorIndex
     }
 
     private let titleFont = Font.caption.weight(.semibold)
@@ -63,7 +91,8 @@ struct ToolSettingCarousel: View {
             ScrollViewReader { proxy in
                 ScrollView(.horizontal) {
                     HStack(spacing: 0) {
-                        ForEach(availableSettings, id: \.rawValue) { setting in
+                        ForEach(slots) { slot in
+                            let setting = slot.setting
                             Button {
                                 onSelect(setting)
                             } label: {
@@ -72,6 +101,8 @@ struct ToolSettingCarousel: View {
                                     .foregroundStyle(selection == setting ? .primary : .secondary)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.1)
+                                    // A slot that now names another setting cross-fades in place.
+                                    .contentTransition(.opacity)
                                     .frame(width: titleWidth, height: 30)
                                     .clipped()
                                     .padding(.horizontal, titleHorizontalPadding)
@@ -82,32 +113,34 @@ struct ToolSettingCarousel: View {
                             .buttonStyle(.borderless)
                             .disabled(!isEnabled(setting))
                             .accessibilityAddTraits(selection == setting ? [.isSelected] : [])
-                            .id(setting)
+                            .id(slot.id)
                             .transition(reduceMotion ? .opacity : .scale(scale: 0.7).combined(with: .opacity))
                         }
                     }
-                    .padding(.horizontal, sideInset)
+                    .padding(.leading, sideInset + CGFloat(missingLeadingSlots) * width)
+                    .padding(.trailing, sideInset + CGFloat(missingTrailingSlots) * width)
+                    // Padding and removed slots animate together, cancelling out around Tool.
                     .animation(pageAnimation, value: availableSettings)
                 }
                 .scrollIndicators(.hidden)
                 .scrollDisabled(true)
-                .onAppear { proxy.scrollTo(selection, anchor: .center) }
+                .onAppear { proxy.scrollTo(slotID(of: selection), anchor: .center) }
                 .onChange(of: width) { _, _ in
-                    proxy.scrollTo(selection, anchor: .center)
+                    proxy.scrollTo(slotID(of: selection), anchor: .center)
                 }
                 .onChange(of: viewportWidth) { _, _ in
                     withAnimation(tutorial.isActive ? pageAnimation : nil) {
-                        proxy.scrollTo(selection, anchor: .center)
+                        proxy.scrollTo(slotID(of: selection), anchor: .center)
                     }
                 }
                 .onChange(of: selection) { _, setting in
                     withAnimation(pageAnimation) {
-                        proxy.scrollTo(setting, anchor: .center)
+                        proxy.scrollTo(slotID(of: setting), anchor: .center)
                     }
                 }
                 .onChange(of: availableSettings) { _, _ in
                     withAnimation(pageAnimation) {
-                        proxy.scrollTo(selection, anchor: .center)
+                        proxy.scrollTo(slotID(of: selection), anchor: .center)
                     }
                 }
             }
