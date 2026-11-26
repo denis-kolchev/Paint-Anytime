@@ -82,40 +82,139 @@ struct CurrentPaletteIcon: View {
     }
 }
 
-private struct BrushColorKey: EnvironmentKey {
-    static let defaultValue: SIMD4<Float>? = nil
-}
+/// What the Current color, width and opacity actions show. A value is nil when the
+/// tool has no such setting, as the eraser has no color and the fill no width.
+struct BrushSummary: Equatable {
+    var color: SIMD4<Float>?
+    /// The width as a share of the tool's maximum, 0...1, for the size of its dot.
+    var width: Double?
+    /// The width in points, as the Width page shows it.
+    var widthPoints: Int?
+    var opacity: Double?
 
-extension EnvironmentValues {
-    /// The brush color, for icons that show it, such as Current color. The canvas
-    /// sets it once at its root, so presented menus and the editor read it too.
-    var brushColor: SIMD4<Float>? {
-        get { self[BrushColorKey.self] }
-        set { self[BrushColorKey.self] = newValue }
+    init(color: SIMD4<Float>? = nil, width: Double? = nil, widthPoints: Int? = nil, opacity: Double? = nil) {
+        self.color = color
+        self.width = width
+        self.widthPoints = widthPoints
+        self.opacity = opacity
+    }
+
+    /// Follows the pages the tool settings offer for this style.
+    init(style: PencilStyle) {
+        let pages = WatchToolSettingsView.availableSettings(for: style)
+        let maximum = style.instrument.maximumWidth
+        let hasWidth = pages.contains(.width) && maximum > 0
+        self.init(color: pages.contains(.color) ? style.color : nil,
+                  width: hasWidth ? Double(min(1, max(0, style.width / maximum))) : nil,
+                  widthPoints: hasWidth ? Int(style.width) : nil,
+                  opacity: pages.contains(.opacity) ? Double(style.effectiveOpacity) : nil)
     }
 }
 
-/// The brush color in a white ring. The color is drawn opaque: opacity is its own
-/// setting, and a faint color would read as an empty circle. A hairline outside
-/// the ring keeps white on a light surface, such as the editor's canvas, visible.
-struct CurrentColorIcon: View {
-    @Environment(\.brushColor) private var brushColor
-    var diameter: CGFloat = 20
+private struct BrushSummaryKey: EnvironmentKey {
+    static let defaultValue = BrushSummary()
+}
+
+extension EnvironmentValues {
+    /// The brush the summary icons show. The canvas sets it once at its root, so
+    /// presented menus and the editor read it too; the tutorial sets its own.
+    var brushSummary: BrushSummary {
+        get { self[BrushSummaryKey.self] }
+        set { self[BrushSummaryKey.self] = newValue }
+    }
+}
+
+/// Current color, width or opacity. Color is the brush in a white ring: a dot of its
+/// color, sized by the width and as see-through as the opacity over a checkerboard.
+/// A hairline outside the ring keeps white visible on a light surface, such as the
+/// editor's canvas; a tool without a color leaves the ring empty. Width and opacity
+/// print their value as the tool settings show it ("40 pt", "100%"), or a dash for
+/// a tool without that setting.
+struct BrushSummaryIcon: View {
+    enum Kind { case color, width, opacity }
+
+    let kind: Kind
+    @Environment(\.brushSummary) private var summary
+
+    /// Large enough for the values. The ring shrinks to fit a tighter space, such as
+    /// a short morph row or a list's icon column.
+    private static let maximumDiameter: CGFloat = 26
 
     var body: some View {
-        let ring = max(1.5, diameter * 0.1)
-        ZStack {
-            if let rgba = brushColor {
-                Circle().fill(Color(.sRGB, red: Double(rgba.x), green: Double(rgba.y),
-                                    blue: Double(rgba.z), opacity: 1))
-            } else {
-                Circle().fill(.secondary)
-            }
-            Circle().strokeBorder(.white, lineWidth: ring)
-            Circle().strokeBorder(Color.black.opacity(0.2), lineWidth: 0.5)
+        switch kind {
+        case .color: colorRing
+        case .width: value(summary.widthPoints.map { L10n.format("%d pt", $0) })
+        case .opacity: value(summary.opacity.map { L10n.percent($0) })
         }
-        .frame(width: diameter, height: diameter)
+    }
+
+    private var colorRing: some View {
+        GeometryReader { proxy in
+            let diameter = min(proxy.size.width, proxy.size.height)
+            let ring = max(1.5, diameter * 0.08)
+            let inner = diameter - ring * 2
+            ZStack {
+                if let rgba = summary.color {
+                    dot(rgba, inner: inner)
+                }
+                Circle().strokeBorder(.white, lineWidth: ring)
+                Circle().strokeBorder(Color.black.opacity(0.2), lineWidth: 0.5)
+            }
+            .frame(width: diameter, height: diameter)
+            .position(x: proxy.size.width / 2, y: proxy.size.height / 2)
+        }
+        // The ideal size answers a layout that proposes none, which a bare GeometryReader
+        // would meet with its 10 pt default.
+        .frame(idealWidth: Self.maximumDiameter, maxWidth: Self.maximumDiameter,
+               idealHeight: Self.maximumDiameter, maxHeight: Self.maximumDiameter)
+        .aspectRatio(1, contentMode: .fit)
         .accessibilityHidden(true)
+    }
+
+    /// The thinnest width still leaves a dot 40% of the opening; the square root
+    /// spreads the thin widths people use most. The widest, or a tool without
+    /// a width such as the fill, fills the ring.
+    private func dot(_ rgba: SIMD4<Float>, inner: CGFloat) -> some View {
+        let size = summary.width.map { inner * (0.4 + 0.6 * CGFloat($0.squareRoot())) } ?? inner
+        let color = Color(.sRGB, red: Double(rgba.x), green: Double(rgba.y), blue: Double(rgba.z), opacity: 1)
+        return ZStack {
+            // Only a see-through brush shows the checkerboard behind its color.
+            if (summary.opacity ?? 1) < 1 {
+                Color.white
+                CheckerboardShape(cell: max(2, inner / 6)).fill(Color(white: 0.75))
+            }
+            color.opacity(summary.opacity ?? 1)
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+    }
+
+    private func value(_ text: String?) -> some View {
+        // The foreground style, so the value dims and tints like the symbols beside it.
+        Text(text ?? "–")
+            .font(.system(size: 11, weight: .bold, design: .rounded))
+            .monospacedDigit()
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
+            .frame(maxWidth: Self.maximumDiameter + 2)
+            .accessibilityHidden(true)
+    }
+}
+
+/// Squares of every other cell, for showing transparency behind a color.
+private struct CheckerboardShape: Shape {
+    let cell: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let columns = Int((rect.width / cell).rounded(.up)), rows = Int((rect.height / cell).rounded(.up))
+        for row in 0..<rows {
+            for column in 0..<columns where (row + column).isMultiple(of: 2) {
+                path.addRect(CGRect(x: rect.minX + CGFloat(column) * cell,
+                                    y: rect.minY + CGFloat(row) * cell, width: cell, height: cell))
+            }
+        }
+        return path
     }
 }
 

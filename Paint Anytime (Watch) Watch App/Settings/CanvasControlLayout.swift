@@ -144,7 +144,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
     case canvasSize, toolSynchronization, visiblePalettes, blending, reportBug
     case eyedropper, camera, palettes, perspectiveGuides, canvasEditor, autosave, sketchAssist
     case eraserToggle, share, reference, display, closeMorph, more, nothing
-    case currentColor
+    case currentColor, currentWidth, currentOpacity
 
     var id: String { rawValue }
     var title: String {
@@ -174,6 +174,8 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .sketchAssist: "Complete strokes"
         case .eraserToggle: "Eraser ↔ tool"
         case .currentColor: "Current color"
+        case .currentWidth: "Current width"
+        case .currentOpacity: "Current opacity"
         case .share: "Share"
         case .reference: "Reference"
         case .display: "Display"
@@ -209,8 +211,10 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
         case .autosave: AutosaveSettings.symbolName
         case .sketchAssist: "sparkles"
         case .eraserToggle: "eraser"
-        // Drawn as the brush color itself; the symbol is the fallback.
+        // Drawn from the brush itself (BrushSummaryIcon); the symbols are fallbacks.
         case .currentColor: "circle.inset.filled"
+        case .currentWidth: "lineweight"
+        case .currentOpacity: "drop.halffull"
         case .share: "square.and.arrow.up"
         case .reference: "photo"
         case .display: "eye"
@@ -224,7 +228,7 @@ enum CanvasQuickAction: String, Codable, CaseIterable, Identifiable, Hashable {
     /// and file actions, then settings opened once in a while. An estimate, not
     /// measured usage: the app collects no analytics.
     private static let usageOrder: [CanvasQuickAction] = [
-        .brush, .undo, .redo, .eraserToggle, .currentColor, .eyedropper, .palettes, .layers, .lasso,
+        .brush, .undo, .redo, .eraserToggle, .currentColor, .currentWidth, .currentOpacity, .eyedropper, .palettes, .layers, .lasso,
         .save, .clear, .gallery, .reference, .share, .sketchAssist, .more, .closeMorph,
         .perspectiveGuides, .canvasSize, .display, .visiblePalettes, .blending, .toolSynchronization,
         .canvasEditor, .autosave, .language, .tutorial, .reportBug

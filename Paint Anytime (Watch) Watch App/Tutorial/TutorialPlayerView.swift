@@ -757,6 +757,8 @@ struct TutorialPlayerView: View {
                                    onTutorialSave: { layout in leavePage { player.finishCanvasEditor(layout) } },
                                    tutorialLeadingFrame: controls[.more], tutorialTrailingFrame: controls[.tools],
                                    onTutorialListChange: { canvasEditorListOpen = $0 })
+            // The locked Current color, width and opacity in its list show the lesson's brush.
+            .environment(\.brushSummary, BrushSummary(style: controller.pencilStyle))
             .opacity(isLeavingPage ? 0 : 1)
             .allowsHitTesting(!isLeavingPage)
             .transition(.opacity)

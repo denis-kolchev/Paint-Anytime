@@ -145,9 +145,30 @@ struct CustomCanvasControls: View {
 
 extension CanvasQuickAction {
     /// Undo and Redo are tapped repeatedly, so choosing them leaves the morph open.
-    /// Tool settings, Current color and More open a screen whose transition a collapse would fight.
+    /// Tool settings, the Current color, width and opacity, and More open a screen whose
+    /// transition a collapse would fight.
     var keepsMorphOpen: Bool {
-        self == .undo || self == .redo || self == .brush || self == .currentColor || self == .more
+        self == .undo || self == .redo || self == .brush || toolSettingsPage != nil || self == .more
+    }
+
+    /// The tool settings page Current color, width or opacity opens.
+    var toolSettingsPage: ToolSetting? {
+        switch self {
+        case .currentColor: .color
+        case .currentWidth: .width
+        case .currentOpacity: .opacity
+        default: nil
+        }
+    }
+
+    /// The brush setting these actions show in place of a symbol.
+    var brushSummaryKind: BrushSummaryIcon.Kind? {
+        switch self {
+        case .currentColor: .color
+        case .currentWidth: .width
+        case .currentOpacity: .opacity
+        default: nil
+        }
     }
 
     /// Undo, Redo and Clear have nothing to do on an empty history or canvas.
@@ -176,7 +197,7 @@ struct CanvasQuickActionIcon: View {
             else if action == .brush || action == .eraserToggle { ToolIcon(instrument: instrument) }
             else if action == .canvasEditor { CanvasLayoutIcon() }
             else if action == .palettes { CurrentPaletteIcon() }
-            else if action == .currentColor { CurrentColorIcon() }
+            else if let kind = action.brushSummaryKind { BrushSummaryIcon(kind: kind) }
             else if action == .sketchAssist {
                 Image(systemName: action.symbol).modifier(SketchAssistLock(isLocked: !sketchAssistOnPhone))
             }

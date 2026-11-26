@@ -338,8 +338,9 @@ struct ContentView: View {
         .task(id: autosaveTaskID) {
             await runAutosave()
         }
-        // Current color shows it on the canvas, in its menus and in the canvas editor.
-        .environment(\.brushColor, controller.pencilStyle.color)
+        // Current color, width and opacity show the brush on the canvas, in its menus
+        // and in the canvas editor; a setting the tool lacks leaves its ring empty.
+        .environment(\.brushSummary, BrushSummary(style: controller.pencilStyle))
     }
 
     private var autosaveConfigurationID: String {
@@ -796,9 +797,11 @@ struct ContentView: View {
         controller.cancelStroke()
         switch action {
         case .brush: showsToolSettings = true
-        case .currentColor:
-            // The current tool, on its Color page when it has one.
-            WatchToolSettingsView.opensNextOnColorPage(style: controller.pencilStyle)
+        case .currentColor, .currentWidth, .currentOpacity:
+            // The current tool, on the page of that setting when it has one.
+            if let page = action.toolSettingsPage {
+                WatchToolSettingsView.opensNext(on: page, style: controller.pencilStyle)
+            }
             showsToolSettings = true
         case .clear:
             if controller.canClear { session.requestCanvasAction(.clear) }
