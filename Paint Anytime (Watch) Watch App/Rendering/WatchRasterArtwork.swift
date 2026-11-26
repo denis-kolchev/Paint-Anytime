@@ -671,6 +671,9 @@ private final class CanvasFrameQueue: ObservableObject {
     private var pending: Job?
     private var latest: Job?
     private var worker: Task<Void, Never>?
+    /// The job the worker is rendering, and which worker that is.
+    private var running: Job?
+    private var workerID: UInt64 = 0
     private var generation: UInt64 = 0
 
     func submit(document: CanvasDocument?, selectedLayerID: UUID?, selectionPreview: WatchSelectionPreview?,
@@ -691,17 +694,32 @@ private final class CanvasFrameQueue: ObservableObject {
                       eventAt: RenderDiagnostics.frameSubmitted(live: activeStroke != nil))
         pending = job
         latest = job
+        // A committed frame of another state can no longer be published (see `publish`), so
+        // finishing it only delays this one: Undo or Redo pressed again waited for every
+        // intermediate layer replay. Cancel it; replays check cancellation per stroke. Live
+        // frames are never cancelled here: a new stroke may build on the commit in flight.
+        if let worker, let running, running.activeStroke == nil, running.selectionPreview == nil,
+           job.activeStroke == nil, job.selectionPreview == nil, running.key != job.key {
+            worker.cancel()
+            self.worker = nil
+            self.running = nil
+        }
         guard worker == nil else { return }
         let token = generation
+        workerID &+= 1
+        let id = workerID
         worker = Task(priority: priority) { [weak self] in
             guard let self else { return }
             while let job = self.pending, !Task.isCancelled {
                 self.pending = nil
+                self.running = job
                 let next = await self.render(job)
+                if self.workerID == id { self.running = nil }
                 guard !Task.isCancelled, self.generation == token else { return }
                 self.publish(next, for: job)
             }
-            if self.generation == token { self.worker = nil }
+            // A worker cancelled for a newer one must not clear its successor.
+            if self.generation == token, self.workerID == id { self.worker = nil }
         }
     }
 
@@ -802,6 +820,7 @@ private final class CanvasFrameQueue: ObservableObject {
         preparedFrame = nil
         worker?.cancel()
         worker = nil
+        running = nil
         pending = nil
         latest = nil
         heldTipStroke = nil

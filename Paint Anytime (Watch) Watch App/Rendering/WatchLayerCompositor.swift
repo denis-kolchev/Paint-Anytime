@@ -22,6 +22,9 @@ nonisolated extension WatchBitmapRenderer {
                 if inks.isEmpty {
                     previousInks.removeAll()
                     compressedInks.removeAll()
+                    // Patches are pixels of this raster; a new size or scale starts again.
+                    patches.removeAll()
+                    reaches.removeAll()
                 }
             }
         }
@@ -157,9 +160,21 @@ nonisolated extension WatchBitmapRenderer {
             evictInks(keeping: layerID)
         }
 
-        /// Commit a snapshot as the layer's current ink, keeping the replaced one for Undo.
-        fileprivate func store(_ ink: InkSnapshot, revisions: [UUID], for layerID: UUID) {
-            if let previous = inks[layerID], previous.revisions != revisions {
+        /// Commit a snapshot as the layer's current ink. The way back to the replaced one is
+        /// kept as patches of the changed area or, when that area cannot be bounded, as the
+        /// whole replaced ink. `patched`: the ink came from patches, which lead back already.
+        fileprivate func store(_ ink: InkSnapshot, revisions: [UUID], strokes: [Stroke], for layerID: UUID,
+                               patched: Bool = false) {
+            // Every edit gives its strokes new geometry revisions; Undo and Redo return to
+            // known ones. (After the cache was emptied an old state may look new: then it
+            // only fails to prune, or records an edge as newer than it is.)
+            let isEdit = strokes.contains { reaches[$0.geometryRevision] == nil }
+            noteReaches(strokes)
+            if isEdit, let previous = inks[layerID], previous.revisions != revisions {
+                pruneRedo(of: layerID, at: LayerState(previous.revisions), keeping: LayerState(revisions))
+            }
+            if let previous = inks[layerID], previous.revisions != revisions, !patched,
+               !recordPatches(layerID: layerID, from: previous, to: revisions, ink: ink, isEdit: isEdit) {
                 previousInks.removeAll { $0.layerID == layerID && $0.revisions == previous.revisions }
                 previousInks.insert((layerID, previous.revisions, previous.ink), at: 0)
             }
@@ -206,7 +221,9 @@ nonisolated extension WatchBitmapRenderer {
         }
 
         /// Drops the copies that only save a replay later: compressed inks of evicted
-        /// layers and the Undo/Redo snapshots. Current inks stay (memory warning).
+        /// layers and the Undo/Redo snapshots. Current inks stay (memory warning), and so do
+        /// the Undo/Redo patches: a few MB that save the most replay per byte. A critical
+        /// warning drops them with the inks.
         func releaseSpareCopies() {
             compressedInks.removeAll()
             previousInks.removeAll()
@@ -217,6 +234,318 @@ nonisolated extension WatchBitmapRenderer {
             inkAccess = inkAccess.filter { inks[$0.key] != nil }
             compressedInks = compressedInks.filter { ids.contains($0.key) }
             previousInks.removeAll { !ids.contains($0.layerID) }
+            patches.removeAll { !ids.contains($0.layerID) }
+        }
+
+        // MARK: Undo/Redo patches
+
+        /// A layer state by its stroke revisions, hashed once: patches compare states often.
+        private struct LayerState: Hashable {
+            let revisions: [UUID]
+            private let digest: Int
+            init(_ revisions: [UUID]) {
+                self.revisions = revisions
+                var hasher = Hasher()
+                hasher.combine(revisions)
+                digest = hasher.finalize()
+            }
+            func hash(into hasher: inout Hasher) { hasher.combine(digest) }
+            static func == (a: LayerState, b: LayerState) -> Bool { a.digest == b.digest && a.revisions == b.revisions }
+        }
+
+        /// Pixels of the `to` state inside the area that differs from `from`: written over
+        /// the ink of `from`, they give the ink of `to` exactly. Each commit that keeps the
+        /// ink size records both directions, so Undo and Redo copy the areas strokes changed
+        /// instead of replaying every stroke of the layer from an empty ink (Krita's tile
+        /// mementos work the same way). Memory follows the area of the strokes, not the
+        /// canvas. A zero-area patch records a change that misses this raster (a zoom tile).
+        private struct InkPatch {
+            let layerID: UUID
+            let from: LayerState
+            let to: LayerState
+            /// Buffer pixels, rows from the top.
+            let x: Int, y: Int, width: Int, height: Int
+            let inkWidth: Int, inkHeight: Int
+            /// Tight rows of float RGBA (16 B/px), LZ4 when `compressed`.
+            let data: Data
+            let compressed: Bool
+            /// `to` is the newer state: a new edit made it from `from`. Only these edges tell
+            /// which side of a state is Redo; patches recorded on Undo or Redo say nothing.
+            let forward: Bool
+        }
+        /// Oldest first; the oldest go first past the budget.
+        private var patches: [InkPatch] = []
+        private var patchBytes = 0
+        private(set) var patchHits = 0
+        /// Patches of all layers; a zoom tile, one of several, keeps less.
+        static let patchByteLimit = 12 * 1024 * 1024
+        static let regionPatchByteLimit = 2 * 1024 * 1024
+        /// Two per history step (256 steps), and the longest chain one frame applies.
+        static let patchLimit = 512
+        static let longestPatchChain = 128
+
+        /// What a stroke version may change, recorded once per geometry revision: a later
+        /// commit bounds the change between two states without the strokes of the old one.
+        private struct StrokeReach {
+            let rect: CGRect
+            let isBlur: Bool
+            /// Alpha-locked strokes pass over every pixel of the layer (unpremultiply and back),
+            /// which may move pixels far from the stroke by a rounding step.
+            let locksTransparency: Bool
+        }
+        private var reaches: [UUID: StrokeReach] = [:]
+        private static let reachLimit = 16_384
+
+        private func noteReaches(_ strokes: [Stroke]) {
+            for stroke in strokes where reaches[stroke.geometryRevision] == nil {
+                reaches[stroke.geometryRevision] = StrokeReach(rect: WatchBitmapRenderer.reach(of: stroke),
+                                                               isBlur: stroke.style.instrument == .blur,
+                                                               locksTransparency: stroke.locksTransparency)
+            }
+        }
+
+        /// Canvas points that may differ between the inks of two states of a layer; `.null`
+        /// when none, nil when the change cannot be bounded. Strokes are local: a pixel
+        /// depends only on the strokes whose reach covers it, in order (region tiles cull
+        /// strokes on the same premise). So the change lies within the strokes present in only
+        /// one state, unless the shared strokes change order, a shared blur, which reads
+        /// around itself, follows a changed stroke and carries the change further, or a
+        /// changed stroke locks transparency (see `StrokeReach`); those keep a whole snapshot.
+        private func changedArea(from a: [UUID], to b: [UUID]) -> CGRect? {
+            let common = zip(a, b).prefix(while: { $0.0 == $0.1 }).count
+            let tailA = a[common...], tailB = b[common...]
+            let inA = Set(tailA), inB = Set(tailB)
+            var area = CGRect.null
+            for (tail, other) in [(tailA, inB), (tailB, inA)] {
+                var changed = false
+                for revision in tail {
+                    guard let reach = reaches[revision] else { return nil }
+                    if !other.contains(revision) {
+                        guard !reach.locksTransparency else { return nil }
+                        changed = true
+                        if !reach.rect.isNull { area = area.union(reach.rect) }
+                    } else if reach.isBlur && changed {
+                        return nil
+                    }
+                }
+            }
+            guard tailA.filter({ inB.contains($0) }) == tailB.filter({ inA.contains($0) }) else { return nil }
+            return area
+        }
+
+        /// Records the patches between the replaced ink and the new one; false when the
+        /// replaced ink must be kept whole instead.
+        private func recordPatches(layerID: UUID, from old: (revisions: [UUID], ink: InkSnapshot),
+                                   to revisions: [UUID], ink: InkSnapshot, isEdit: Bool) -> Bool {
+            let before = LayerState(old.revisions), after = LayerState(revisions)
+            let has = { (from: LayerState, to: LayerState) in
+                self.patches.contains { $0.layerID == layerID && $0.from == from && $0.to == to }
+            }
+            if has(before, after) && has(after, before) { return true }
+            let inkWidth = ink.image.width, inkHeight = ink.image.height
+            guard old.ink.image.width == inkWidth, old.ink.image.height == inkHeight,
+                  let area = changedArea(from: old.revisions, to: revisions) else { return false }
+            var x = 0, y = 0, width = 0, height = 0
+            if !area.isNull {
+                let pixels = CGRect(x: (area.minX - origin.x) * scale, y: (area.minY - origin.y) * scale,
+                                    width: area.width * scale, height: area.height * scale)
+                guard pixels.minX.isFinite, pixels.minY.isFinite, pixels.maxX.isFinite, pixels.maxY.isFinite
+                else { return false }
+                // One more pixel of margin for antialiasing at the rounded edges.
+                let minX = max(0, min(CGFloat(inkWidth), floor(pixels.minX) - 1))
+                let minY = max(0, min(CGFloat(inkHeight), floor(pixels.minY) - 1))
+                let maxX = max(minX, min(CGFloat(inkWidth), ceil(pixels.maxX) + 1))
+                let maxY = max(minY, min(CGFloat(inkHeight), ceil(pixels.maxY) + 1))
+                x = Int(minX); y = Int(minY); width = Int(maxX - minX); height = Int(maxY - minY)
+            }
+            if width == 0 || height == 0 { x = 0; y = 0; width = 0; height = 0 }
+            // Patches of most of the layer would hold about as much as the ink they replace.
+            guard width * height * 2 <= inkWidth * inkHeight else { return false }
+            func patch(_ from: LayerState, _ to: LayerState, _ source: CGImage, forward: Bool) -> InkPatch? {
+                var data = Data(), compressed = false
+                if width > 0 {
+                    guard let raw = Self.pixels(of: source, x: x, y: y, width: width, height: height) else { return nil }
+                    (data, compressed) = Self.compress(raw)
+                }
+                return InkPatch(layerID: layerID, from: from, to: to, x: x, y: y, width: width, height: height,
+                                inkWidth: inkWidth, inkHeight: inkHeight, data: data, compressed: compressed,
+                                forward: forward)
+            }
+            guard let undo = patch(after, before, old.ink.image, forward: false),
+                  let redo = patch(before, after, ink.image, forward: isEdit),
+                  undo.data.count + redo.data.count <= patchLimitBytes else { return false }
+            patches.removeAll { $0.layerID == layerID && (($0.from == before && $0.to == after)
+                || ($0.from == after && $0.to == before)) }
+            patches.append(undo)
+            patches.append(redo)
+            trimPatches()
+            return true
+        }
+
+        private var patchLimitBytes: Int { isRegion ? Self.regionPatchByteLimit : Self.patchByteLimit }
+
+        /// A new edit from `state` clears the document's Redo: the states newer than `state`
+        /// on other branches can never be shown again. Drops their patches, which otherwise
+        /// held the budget until the oldest steps were evicted before them.
+        private func pruneRedo(of layerID: UUID, at state: LayerState, keeping next: LayerState) {
+            let starts = patches.filter { $0.layerID == layerID && $0.forward && $0.from == state && $0.to != next }
+                .map(\.to)
+            guard !starts.isEmpty else { return }
+            var neighbours: [LayerState: [LayerState]] = [:]
+            for patch in patches where patch.layerID == layerID {
+                neighbours[patch.from, default: []].append(patch.to)
+            }
+            // Everything reached from those states without passing back through `state`.
+            var dead = Set(starts)
+            var stack = starts
+            while let current = stack.popLast() {
+                for neighbour in neighbours[current] ?? [] where neighbour != state && neighbour != next
+                    && dead.insert(neighbour).inserted {
+                    stack.append(neighbour)
+                }
+            }
+            patches.removeAll { $0.layerID == layerID && (dead.contains($0.from) || dead.contains($0.to)) }
+            patchBytes = patches.reduce(0) { $0 + $1.data.count }
+        }
+
+        private func trimPatches() {
+            patchBytes = patches.reduce(0) { $0 + $1.data.count }
+            var drop = 0
+            while drop < patches.count, patchBytes > patchLimitBytes || patches.count - drop > Self.patchLimit {
+                patchBytes -= patches[drop].data.count
+                drop += 1
+            }
+            if drop > 0 { patches.removeFirst(drop) }
+            guard reaches.count > Self.reachLimit else { return }
+            // Keep the reaches of states something can still lead to or from.
+            var kept = Set<UUID>()
+            for entry in inks.values { kept.formUnion(entry.revisions) }
+            for entry in compressedInks.values { kept.formUnion(entry.revisions) }
+            for entry in previousInks { kept.formUnion(entry.revisions) }
+            for patch in patches { kept.formUnion(patch.from.revisions); kept.formUnion(patch.to.revisions) }
+            reaches = reaches.filter { kept.contains($0.key) }
+        }
+
+        /// The ink of `revisions` from the layer's current ink through recorded patches (the
+        /// fewest), or nil when no chain leads there. Undo and Redo land here once the frames
+        /// and snapshots of nearby steps are used up.
+        fileprivate func patchedInk(for layerID: UUID, revisions: [UUID]) -> InkSnapshot? {
+            guard !patches.isEmpty else { return nil }
+            let target = LayerState(revisions)
+            // Most commits reach a state no patch leads to: answer those without a search.
+            guard patches.contains(where: { $0.layerID == layerID && $0.to == target }) else { return nil }
+            restoreCompressed(layerID)
+            guard let current = inks[layerID] else { return nil }
+            let start = LayerState(current.revisions)
+            var outgoing: [LayerState: [Int]] = [:]
+            for index in patches.indices where patches[index].layerID == layerID {
+                outgoing[patches[index].from, default: []].append(index)
+            }
+            var reachedBy: [LayerState: Int] = [:]
+            var visited: Set<LayerState> = [start]
+            var frontier = [start]
+            var depth = 0
+            search: while !frontier.isEmpty, depth < Self.longestPatchChain {
+                depth += 1
+                var next: [LayerState] = []
+                for state in frontier {
+                    for index in outgoing[state] ?? [] where visited.insert(patches[index].to).inserted {
+                        reachedBy[patches[index].to] = index
+                        if patches[index].to == target { break search }
+                        next.append(patches[index].to)
+                    }
+                }
+                frontier = next
+            }
+            guard reachedBy[target] != nil else { return nil }
+            var chain: [Int] = []
+            var state = target
+            while state != start, let index = reachedBy[state] {
+                chain.append(index)
+                state = patches[index].from
+            }
+            chain.reverse()
+            let width = current.ink.image.width, height = current.ink.image.height
+            guard chain.allSatisfy({ patches[$0].inkWidth == width && patches[$0].inkHeight == height })
+            else { return nil }
+            patchHits += 1
+            // Changes elsewhere than this raster: the current ink is already the answer.
+            guard chain.contains(where: { patches[$0].width > 0 }) else { return current.ink }
+            guard let context = WatchBitmapRenderer.makeFloatContext(width: width, height: height),
+                  let buffer = context.data else { return nil }
+            context.setBlendMode(.copy)
+            context.draw(current.ink.image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            for index in chain where patches[index].width > 0 {
+                guard Self.write(patches[index], into: buffer, bytesPerRow: context.bytesPerRow) else { return nil }
+            }
+            return context.makeImage().map { InkSnapshot(image: $0) }
+        }
+
+        /// Tight rows of `image` inside the given buffer pixels, copied unchanged.
+        private static func pixels(of image: CGImage, x: Int, y: Int, width: Int, height: Int) -> Data? {
+            guard let cropped = image.cropping(to: CGRect(x: x, y: y, width: width, height: height)),
+                  cropped.width == width, cropped.height == height,
+                  let context = WatchBitmapRenderer.makeFloatContext(width: width, height: height),
+                  let source = context.data else { return nil }
+            context.setBlendMode(.copy)
+            context.interpolationQuality = .none
+            context.draw(cropped, in: CGRect(x: 0, y: 0, width: width, height: height))
+            let row = width * 16
+            var data = Data(count: row * height)
+            data.withUnsafeMutableBytes { target in
+                guard let base = target.baseAddress else { return }
+                for line in 0..<height {
+                    base.advanced(by: line * row).copyMemory(from: source.advanced(by: line * context.bytesPerRow),
+                                                             byteCount: row)
+                }
+            }
+            return data
+        }
+
+        /// LZ4 when it saves anything; ink outside the stroke is zeros and shrinks most.
+        private static func compress(_ raw: Data) -> (Data, Bool) {
+            let count = raw.count
+            guard count > 64 else { return (raw, false) }
+            var output = Data(count: count)
+            let written = output.withUnsafeMutableBytes { target in
+                raw.withUnsafeBytes { input in
+                    compression_encode_buffer(target.bindMemory(to: UInt8.self).baseAddress!, count,
+                                              input.bindMemory(to: UInt8.self).baseAddress!, count,
+                                              nil, COMPRESSION_LZ4)
+                }
+            }
+            guard written > 0, written < count else { return (raw, false) }
+            output.count = written
+            return (output, true)
+        }
+
+        private static func write(_ patch: InkPatch, into buffer: UnsafeMutableRawPointer, bytesPerRow: Int) -> Bool {
+            let row = patch.width * 16
+            let count = row * patch.height
+            let pixels: Data
+            if patch.compressed {
+                var decoded = Data(count: count)
+                let read = decoded.withUnsafeMutableBytes { target in
+                    patch.data.withUnsafeBytes { input in
+                        compression_decode_buffer(target.bindMemory(to: UInt8.self).baseAddress!, count,
+                                                  input.bindMemory(to: UInt8.self).baseAddress!, patch.data.count,
+                                                  nil, COMPRESSION_LZ4)
+                    }
+                }
+                guard read == count else { return false }
+                pixels = decoded
+            } else {
+                guard patch.data.count == count else { return false }
+                pixels = patch.data
+            }
+            pixels.withUnsafeBytes { input in
+                guard let base = input.baseAddress else { return }
+                for line in 0..<patch.height {
+                    buffer.advanced(by: (patch.y + line) * bytesPerRow + patch.x * 16)
+                        .copyMemory(from: base.advanced(by: line * row), byteCount: row)
+                }
+            }
+            return true
         }
         fileprivate struct CompositeKey: Equatable {
             struct Layer: Equatable {
@@ -754,8 +1083,13 @@ nonisolated extension WatchBitmapRenderer {
             return ink
         }
         if let cache, let earlier = cache.previousInk(for: layer.id, revisions: revisions) {
-            cache.store(earlier, revisions: revisions, for: layer.id)
+            cache.store(earlier, revisions: revisions, strokes: layer.strokes, for: layer.id)
             return earlier
+        }
+        // Undo/Redo past the retained snapshots: copy the areas the steps changed.
+        if let cache, let patched = cache.patchedInk(for: layer.id, revisions: revisions) {
+            cache.store(patched, revisions: revisions, strokes: layer.strokes, for: layer.id, patched: true)
+            return patched
         }
         let previous = cache?.appendBase(for: layer.id, revisions: revisions)
         let committed: InkSnapshot
@@ -778,7 +1112,7 @@ nonisolated extension WatchBitmapRenderer {
             cache?.didReplay(pending.count)
             committed = ink
         }
-        cache?.store(committed, revisions: revisions, for: layer.id)
+        cache?.store(committed, revisions: revisions, strokes: layer.strokes, for: layer.id)
         return committed
     }
 
