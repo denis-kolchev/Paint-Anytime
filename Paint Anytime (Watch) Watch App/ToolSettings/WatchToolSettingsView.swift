@@ -164,6 +164,13 @@ struct WatchToolSettingsView: View {
         return saved == ToolSetting.color.rawValue && availableSettings(for: style).contains(.color)
     }
 
+    /// Makes the next opening start on Color, the page it then remembers anyway, so the
+    /// corner shows the palette from the first frame. A tool without Color keeps its page.
+    static func opensNextOnColorPage(style: PencilStyle) {
+        guard availableSettings(for: style).contains(.color) else { return }
+        UserDefaults.standard.set(ToolSetting.color.rawValue, forKey: savedPageKey)
+    }
+
     private var tutorialSwipeTarget: ToolSetting? {
         guard tutorial.acceptsActions, !showsInformation, !showsPaletteCover else { return nil }
         switch tutorial.step {

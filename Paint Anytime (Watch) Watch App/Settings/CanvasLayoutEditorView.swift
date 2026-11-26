@@ -937,6 +937,7 @@ struct CanvasQuickActionLabel: View {
             case .brush, .eraserToggle: ToolIcon(instrument: instrument)
             case .canvasEditor: CanvasLayoutIcon()
             case .palettes: CurrentPaletteIcon()
+            case .currentColor: CurrentColorIcon()
             case .sketchAssist:
                 Image(systemName: action.symbol).modifier(SketchAssistLock(isLocked: !sketchAssistOnPhone))
             default: Image(systemName: action.symbol)

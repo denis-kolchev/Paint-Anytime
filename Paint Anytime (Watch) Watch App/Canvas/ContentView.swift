@@ -338,6 +338,8 @@ struct ContentView: View {
         .task(id: autosaveTaskID) {
             await runAutosave()
         }
+        // Current color shows it on the canvas, in its menus and in the canvas editor.
+        .environment(\.brushColor, controller.pencilStyle.color)
     }
 
     private var autosaveConfigurationID: String {
@@ -794,6 +796,10 @@ struct ContentView: View {
         controller.cancelStroke()
         switch action {
         case .brush: showsToolSettings = true
+        case .currentColor:
+            // The current tool, on its Color page when it has one.
+            WatchToolSettingsView.opensNextOnColorPage(style: controller.pencilStyle)
+            showsToolSettings = true
         case .clear:
             if controller.canClear { session.requestCanvasAction(.clear) }
         case .save: break // Started above, after the collapse.

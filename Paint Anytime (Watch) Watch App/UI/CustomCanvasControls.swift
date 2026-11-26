@@ -145,8 +145,10 @@ struct CustomCanvasControls: View {
 
 extension CanvasQuickAction {
     /// Undo and Redo are tapped repeatedly, so choosing them leaves the morph open.
-    /// Tool settings and More open a screen whose transition a collapse would fight.
-    var keepsMorphOpen: Bool { self == .undo || self == .redo || self == .brush || self == .more }
+    /// Tool settings, Current color and More open a screen whose transition a collapse would fight.
+    var keepsMorphOpen: Bool {
+        self == .undo || self == .redo || self == .brush || self == .currentColor || self == .more
+    }
 
     /// Undo, Redo and Clear have nothing to do on an empty history or canvas.
     func isAvailable(in controller: CanvasController) -> Bool {
@@ -174,6 +176,7 @@ struct CanvasQuickActionIcon: View {
             else if action == .brush || action == .eraserToggle { ToolIcon(instrument: instrument) }
             else if action == .canvasEditor { CanvasLayoutIcon() }
             else if action == .palettes { CurrentPaletteIcon() }
+            else if action == .currentColor { CurrentColorIcon() }
             else if action == .sketchAssist {
                 Image(systemName: action.symbol).modifier(SketchAssistLock(isLocked: !sketchAssistOnPhone))
             }

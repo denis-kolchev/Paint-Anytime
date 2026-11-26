@@ -82,6 +82,43 @@ struct CurrentPaletteIcon: View {
     }
 }
 
+private struct BrushColorKey: EnvironmentKey {
+    static let defaultValue: SIMD4<Float>? = nil
+}
+
+extension EnvironmentValues {
+    /// The brush color, for icons that show it, such as Current color. The canvas
+    /// sets it once at its root, so presented menus and the editor read it too.
+    var brushColor: SIMD4<Float>? {
+        get { self[BrushColorKey.self] }
+        set { self[BrushColorKey.self] = newValue }
+    }
+}
+
+/// The brush color in a white ring. The color is drawn opaque: opacity is its own
+/// setting, and a faint color would read as an empty circle. A hairline outside
+/// the ring keeps white on a light surface, such as the editor's canvas, visible.
+struct CurrentColorIcon: View {
+    @Environment(\.brushColor) private var brushColor
+    var diameter: CGFloat = 20
+
+    var body: some View {
+        let ring = max(1.5, diameter * 0.1)
+        ZStack {
+            if let rgba = brushColor {
+                Circle().fill(Color(.sRGB, red: Double(rgba.x), green: Double(rgba.y),
+                                    blue: Double(rgba.z), opacity: 1))
+            } else {
+                Circle().fill(.secondary)
+            }
+            Circle().strokeBorder(.white, lineWidth: ring)
+            Circle().strokeBorder(Color.black.opacity(0.2), lineWidth: 0.5)
+        }
+        .frame(width: diameter, height: diameter)
+        .accessibilityHidden(true)
+    }
+}
+
 // Upright tool tips, rather than the diagonal editing/pencil action symbol.
 struct ToolIcon: View {
     let instrument: DrawingInstrument
