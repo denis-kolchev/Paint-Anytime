@@ -47,6 +47,7 @@
 		C30000000000000000000001 /* PaintAnytimeComplications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* PaintAnytimeComplications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D40000000000000000000001 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */; };
 		D50000000000000000000001 /* PaintAnytimeWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D50000000000000000000002 /* PaintAnytimeWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D50000000000000000000013 /* Paint Anytime Complications/LauncherComplications.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50000000000000000000012 /* Paint Anytime Complications/LauncherComplications.swift */; };
 		D5000000000000000000000F /* Paint Anytime Complications/GalleryArtworkComplications.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5000000000000000000000E /* Paint Anytime Complications/GalleryArtworkComplications.swift */; };
 		D50000000000000000000010 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */; };
 		D50000000000000000000011 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */; };
@@ -148,6 +149,7 @@
 		C30000000000000000000002 /* PaintAnytimeComplications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeComplications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shared/Gallery/GalleryWidgetStore.swift; sourceTree = SOURCE_ROOT; };
 		D50000000000000000000002 /* PaintAnytimeWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PaintAnytimeWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D50000000000000000000012 /* Paint Anytime Complications/LauncherComplications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime Complications/LauncherComplications.swift"; sourceTree = SOURCE_ROOT; };
 		D5000000000000000000000E /* Paint Anytime Complications/GalleryArtworkComplications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Paint Anytime Complications/GalleryArtworkComplications.swift"; sourceTree = SOURCE_ROOT; };
 		E50000000000000000000002 /* Shared/Localization/Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Shared/Localization/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
 		F60000000000000000000002 /* Paint Anytime (Watch) Watch App/Paint-Anytime.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.icon; path = "Paint Anytime (Watch) Watch App/Paint-Anytime.icon"; sourceTree = SOURCE_ROOT; };
@@ -205,6 +207,7 @@
 			children = (
 				D40000000000000000000002 /* Shared/Gallery/GalleryWidgetStore.swift */,
 				D5000000000000000000000E /* Paint Anytime Complications/GalleryArtworkComplications.swift */,
+				D50000000000000000000012 /* Paint Anytime Complications/LauncherComplications.swift */,
 				AF1030100000000000000002 /* Shared/App/PaintDeepLink.swift */,
 				AF1030200000000000000002 /* Shared/Connectivity/SketchAssistProtocol.swift */,
 				AF1030300000000000000002 /* Shared/Connectivity/PhotoImportProtocol.swift */,
@@ -505,6 +508,7 @@
 			isa = PBXSourcesBuildPhase;
 			files = (
 				D5000000000000000000000F /* Paint Anytime Complications/GalleryArtworkComplications.swift in Sources */,
+				D50000000000000000000013 /* Paint Anytime Complications/LauncherComplications.swift in Sources */,
 				D50000000000000000000010 /* Shared/Gallery/GalleryWidgetStore.swift in Sources */,
 			);
 		};

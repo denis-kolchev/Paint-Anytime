@@ -2,7 +2,8 @@ import SwiftUI
 import WidgetKit
 
 // The provider and layout are shared with the watch complications:
-// Paint Anytime Complications/GalleryArtworkComplications.swift.
+// Paint Anytime Complications/GalleryArtworkComplications.swift; the 1×1 Lock
+// Screen launchers come from Paint Anytime Complications/LauncherComplications.swift.
 
 private var artworkFamilies: [WidgetFamily] {
     var families: [WidgetFamily] = [
@@ -44,5 +45,8 @@ struct PaintAnytimeWidgets: WidgetBundle {
     var body: some Widget {
         RandomArtworkWidget()
         FavoriteArtworkWidget()
+        OpenAppComplication()
+        NewCanvasComplication()
+        GalleryComplication()
     }
 }
