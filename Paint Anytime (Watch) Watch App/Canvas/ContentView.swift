@@ -796,7 +796,14 @@ struct ContentView: View {
         }
         controller.cancelStroke()
         switch action {
-        case .brush: showsToolSettings = true
+        case .brush:
+            // Current color, width and opacity open their own pages and remember them, so
+            // with any of them on the canvas Tool settings opens on the tool itself instead
+            // of the last page. Without them it keeps returning to the last page.
+            if customLayout?.actions.contains(where: { $0.toolSettingsPage != nil }) == true {
+                WatchToolSettingsView.opensNext(on: .instrument, style: controller.pencilStyle)
+            }
+            showsToolSettings = true
         case .currentColor, .currentWidth, .currentOpacity:
             // The current tool, on the page of that setting when it has one.
             if let page = action.toolSettingsPage {
