@@ -16,6 +16,9 @@ nonisolated enum GalleryWidgetStore {
     static let randomTrioKind = "PaintAnytime.RandomArtworkTrio"
     static let favoriteTrioKind = "PaintAnytime.FavoriteArtworkTrio"
     static let favoriteKind = "PaintAnytime.FavoriteArtwork"
+    /// The iPhone's 1×1 Lock Screen artwork widgets.
+    static let randomCircularKind = "PaintAnytime.RandomArtworkCircular"
+    static let favoriteCircularKind = "PaintAnytime.FavoriteArtworkCircular"
     /// Application-context key: the watch's favorite drawing filenames, for the iPhone widgets.
     static let favoritesContextKey = "favoriteDrawings"
     /// Longest preview side. The watch's 360 px fills its complications; iPhone widgets
@@ -107,6 +110,8 @@ nonisolated enum GalleryWidgetStore {
         WidgetCenter.shared.reloadTimelines(ofKind: favoriteKind)
         WidgetCenter.shared.reloadTimelines(ofKind: randomTrioKind)
         WidgetCenter.shared.reloadTimelines(ofKind: favoriteTrioKind)
+        WidgetCenter.shared.reloadTimelines(ofKind: randomCircularKind)
+        WidgetCenter.shared.reloadTimelines(ofKind: favoriteCircularKind)
         #endif
     }
 }

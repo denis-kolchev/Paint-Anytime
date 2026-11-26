@@ -6,7 +6,7 @@ import CoreText
 // extension, which compiles this file through an explicit project reference.
 
 /// The watch offers every accessory slot. The iPhone Lock Screen gets only the
-/// 1×1 circular slot; the gallery widgets use the 2×1 rectangular one.
+/// 1×1 circular Open App launcher; the gallery widgets use the 2×1 rectangular slot.
 private var launcherFamilies: [WidgetFamily] {
 #if os(watchOS)
     [.accessoryCircular, .accessoryCorner, .accessoryInline]
@@ -164,6 +164,9 @@ private struct LauncherSailboat: Shape {
     }
 }
 
+#if os(watchOS)
+// New canvas and Gallery launchers are watch complications only; the iPhone
+// Lock Screen offers just Open App.
 private struct NewCanvasIcon: View {
     var body: some View {
         GeometryReader { geometry in
@@ -233,6 +236,8 @@ private struct GalleryIcon: View {
     }
 }
 
+#endif
+
 struct OpenAppComplication: Widget {
     let kind = "PaintAnytime.OpenApp"
 
@@ -247,25 +252,16 @@ struct OpenAppComplication: Widget {
     }
 }
 
+#if os(watchOS)
 struct NewCanvasComplication: Widget {
     let kind = "PaintAnytime.NewCanvas"
-
-    // Drawing happens on the watch, and an iPhone app cannot open its watch app;
-    // on iPhone the link shows how to start a new canvas there.
-    private var newCanvasDescription: LocalizedStringKey {
-#if os(watchOS)
-        "Open a fresh canvas in Paint Anytime."
-#else
-        "See how to start a fresh canvas on Apple Watch."
-#endif
-    }
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: LauncherProvider()) { _ in
             LauncherView(icon: NewCanvasIcon(), title: "New canvas", shortTitle: "New canvas", destination: "new-canvas")
         }
         .configurationDisplayName("New canvas")
-        .description(newCanvasDescription)
+        .description("Open a fresh canvas in Paint Anytime.")
         .supportedFamilies(launcherFamilies)
     }
 }
@@ -282,3 +278,4 @@ struct GalleryComplication: Widget {
         .supportedFamilies(launcherFamilies)
     }
 }
+#endif

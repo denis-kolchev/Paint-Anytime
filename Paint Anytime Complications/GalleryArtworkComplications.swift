@@ -235,6 +235,13 @@ struct ArtworkView: View {
 
     private var isAccessory: Bool { Self.isAccessory(family) }
 
+    /// The circular slot clips to its circle; other accessories get rounded corners.
+    private var artworkShape: AnyShape {
+        family == .accessoryCircular
+            ? AnyShape(Circle())
+            : AnyShape(RoundedRectangle(cornerRadius: isAccessory ? 15 : 0, style: .continuous))
+    }
+
     private var label: Text {
         Text(favoritesOnly ? LocalizedStringKey("Favorite artwork") : LocalizedStringKey("Gallery artwork"))
     }
@@ -266,16 +273,25 @@ struct ArtworkView: View {
                             }
                         }
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: isAccessory ? 15 : 0, style: .continuous))
+                    .clipShape(artworkShape)
                 }
             } else if let image = entry.image {
                 GeometryReader { geometry in
                     ArtworkImage(image: image)
                         .scaledToFill()
                         .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipShape(RoundedRectangle(cornerRadius: isAccessory ? 15 : 0, style: .continuous))
+                        .clipShape(artworkShape)
                 }
                 .accessibilityLabel(label)
+            } else if family == .accessoryCircular {
+                // A 1×1 slot has no room for the explanation; the icon stands in for it.
+                ZStack {
+                    AccessoryWidgetBackground()
+                    Image(systemName: favoritesOnly ? "heart" : "photo.on.rectangle")
+                        .font(.title3)
+                        .widgetAccentable()
+                }
+                .accessibilityLabel(Text(favoritesOnly ? LocalizedStringKey("No favorites yet") : LocalizedStringKey("No artwork in the gallery to display")))
             } else {
                 VStack(spacing: 3) {
                     Image(systemName: favoritesOnly ? "heart" : "photo.on.rectangle")
