@@ -235,11 +235,20 @@ struct ArtworkView: View {
 
     private var isAccessory: Bool { Self.isAccessory(family) }
 
-    /// The circular slot clips to its circle; other accessories get rounded corners.
-    private var artworkShape: AnyShape {
-        family == .accessoryCircular
-            ? AnyShape(Circle())
-            : AnyShape(RoundedRectangle(cornerRadius: isAccessory ? 15 : 0, style: .continuous))
+    /// Watch complications use a fixed radius. On the iPhone Lock Screen the radius
+    /// matches the rounded frame the system draws around the widget while editing:
+    /// about 11.5% of the slot's shorter side, measured on device. That frame's gap
+    /// to the widget is as wide as its radius, so truly concentric corners would be square.
+    /// The system's own mask for the 1×1 slot cuts its corners at 45°, about 7% of the
+    /// side along the diagonal; a 20% radius keeps the rounded corner inside that cut.
+    private func artworkShape(in size: CGSize) -> AnyShape {
+        #if os(watchOS)
+        AnyShape(RoundedRectangle(cornerRadius: isAccessory ? 15 : 0, style: .continuous))
+        #else
+        let ratio: CGFloat = family == .accessoryCircular ? 0.2 : isAccessory ? 0.115 : 0
+        return AnyShape(RoundedRectangle(cornerRadius: min(size.width, size.height) * ratio,
+                                         style: .continuous))
+        #endif
     }
 
     private var label: Text {
@@ -273,14 +282,14 @@ struct ArtworkView: View {
                             }
                         }
                     }
-                    .clipShape(artworkShape)
+                    .clipShape(artworkShape(in: geometry.size))
                 }
             } else if let image = entry.image {
                 GeometryReader { geometry in
                     ArtworkImage(image: image)
                         .scaledToFill()
                         .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipShape(artworkShape)
+                        .clipShape(artworkShape(in: geometry.size))
                 }
                 .accessibilityLabel(label)
             } else if family == .accessoryCircular {
