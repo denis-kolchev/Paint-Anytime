@@ -53,66 +53,114 @@
 </p>
 
 ## Screenshots
-
+### Apple Watch
 <table>
   <tr>
     <td align="center">
       <img
-        src="images/app%20previews/release%201.1/incoming-1AEBBC6E-A272-4BA0-B910-78FCBD1E6DAD.PNG"
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/watch/incoming-CD583986-CA33-4B7C-A8FC-039D9A7C0355.PNG"
         width="180"
-        alt="Paint Anytime screenshot 1"
+        alt="Paint Anytime on Apple Watch, screenshot 1"
       >
     </td>
     <td align="center">
       <img
-        src="images/app%20previews/release%201.1/incoming-3130074F-56B5-43F4-B57A-162A5D5F04E0.PNG"
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/watch/incoming-18D6E948-7A58-4EBB-991F-9704C5FE5E30.PNG"
         width="180"
-        alt="Paint Anytime screenshot 2"
+        alt="Paint Anytime on Apple Watch, screenshot 2"
       >
     </td>
     <td align="center">
       <img
-        src="images/app%20previews/release%201.1/incoming-4E3E4793-5295-448D-84D5-496EA4E122A2.PNG"
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/watch/incoming-4E3E4793-5295-448D-84D5-496EA4E122A2.PNG"
         width="180"
-        alt="Paint Anytime screenshot 3"
+        alt="Paint Anytime on Apple Watch, screenshot 3"
       >
     </td>
     <td align="center">
       <img
-        src="images/app%20previews/release%201.1/incoming-6FBC533E-7009-475F-8647-BEFFEFAD1808.PNG"
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/watch/incoming-6FBC533E-7009-475F-8647-BEFFEFAD1808.PNG"
         width="180"
-        alt="Paint Anytime screenshot 4"
+        alt="Paint Anytime on Apple Watch, screenshot 4"
       >
     </td>
   </tr>
-
   <tr>
     <td align="center">
       <img
-        src="images/app%20previews/release%201.1/incoming-8C254FDB-0C45-47C7-A118-73F23427EA86.PNG"
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/watch/incoming-8C254FDB-0C45-47C7-A118-73F23427EA86.PNG"
         width="180"
-        alt="Paint Anytime screenshot 5"
+        alt="Paint Anytime on Apple Watch, screenshot 5"
       >
     </td>
     <td align="center">
       <img
-        src="images/app%20previews/release%201.1/incoming-6CDF876B-5B5B-406D-AE09-4C4DF3FBD48A.PNG"
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/watch/incoming-3ACFD553-215C-4EC5-9906-35309578631F.PNG"
         width="180"
-        alt="Paint Anytime screenshot 6"
+        alt="Paint Anytime on Apple Watch, screenshot 6"
       >
     </td>
     <td align="center">
       <img
-        src="images/app%20previews/release%201.1/incoming-4D2D5F4B-0080-4027-90C2-0D0496BF7369.PNG"
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/watch/incoming-4D2D5F4B-0080-4027-90C2-0D0496BF7369.PNG"
         width="180"
-        alt="Paint Anytime screenshot 7"
+        alt="Paint Anytime on Apple Watch, screenshot 7"
       >
     </td>
     <td align="center">
       <img
-        src="images/app%20previews/release%201.1/incoming-EE80BF22-304A-4C77-A428-2D7BC9E92237.PNG"
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/watch/incoming-EE80BF22-304A-4C77-A428-2D7BC9E92237.PNG"
         width="180"
-        alt="Paint Anytime screenshot 8"
+        alt="Paint Anytime on Apple Watch, screenshot 8"
+      >
+    </td>
+  </tr>
+</table>
+
+### iPhone
+<table>
+  <tr>
+    <td align="center">
+      <img
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/iPhone/IMG_5912.PNG"
+        width="157"
+        alt="Paint Anytime iPhone app"
+      >
+    </td>
+  </tr>
+</table>
+
+### iPhone Duo
+<table>
+  <tr>
+    <td align="center">
+      <img
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/Duo/duo-inner.png"
+        width="483"
+        alt="Paint Anytime on iPhone Duo, inner screen"
+      >
+    </td>
+    <td align="center">
+      <img
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/Duo/duo-outer.png"
+        width="234"
+        alt="Paint Anytime on iPhone Duo, outer screen"
+      >
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/Duo/duo-inner%202.png"
+        width="483"
+        alt="Paint Anytime on iPhone Duo, inner screen 2"
+      >
+    </td>
+    <td align="center">
+      <img
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/Duo/duo-outer%202.png"
+        width="234"
+        alt="Paint Anytime on iPhone Duo, outer screen 2"
       >
     </td>
   </tr>
