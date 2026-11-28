@@ -256,7 +256,7 @@ It suits both first-time artists and those who draw every day: the interactive t
 * New Pencil and Crayon brushes with a lively texture.
 * Blur brush for soft edges and smooth gradients, with adjustable strength, width and radius.
 * Perspective guides with 0, 1 or 2 vanishing points — even beyond the canvas. Adjust the angle, tilt, number of rays and distance between points, and draw straight lines along a ray or a ruler.
-* Apple Intelligence turns your sketch into a detailed artwork (requires an iPhone with iOS 18.2 or later).
+* Image Playground turns your sketch into a detailed artwork (requires a compatible iPhone with iOS 18.4 or later and Apple Intelligence availability).
 * Reference: keep an image next to the canvas or over it, pick colors from it with the Eyedropper and zoom it up to 800%.
 * Up to 256 undo steps instead of 30. Simple actions use little memory, so you can undo further back. Heavy ones — erasing, blurring, working with photos — use more, so the history gets shorter, but never below 30 steps. This keeps the app within the watch's memory limit so watchOS doesn't close it.
 * The Lasso can now mirror a selection and has a handle for moving it.
@@ -300,7 +300,7 @@ It suits both first-time artists and those who draw every day: the interactive t
 
 - watchOS 10.0 or later
 - iOS 17 or later
-- iOS 18.2 or later for Apple Intelligence feature 
+- iOS 18.4 or later and a compatible iPhone for the Image Playground feature
 - Xcode with watchOS development support for building from source
 
 ## Build from Source
