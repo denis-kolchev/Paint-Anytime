@@ -166,6 +166,19 @@
   </tr>
 </table>
 
+### iPad
+<table>
+  <tr>
+    <td align="center">
+      <img
+        src="https://raw.githubusercontent.com/denis-kolchev/Paint-Anytime/main/images/app%20previews/release%201.2/iPad/Screenshot%202026-11-28%20at%2014.05.51.png"
+        width="720"
+        alt="Paint Anytime on iPad"
+      >
+    </td>
+  </tr>
+</table>
+
 ## Description
 
 Paint Anytime is for anyone who wants to draw anywhere, anytime. A vector canvas with no loss of quality, 8 brushes, layers, lasso, perspective guides and shape recognition — and Apple Intelligence turns your sketch into a detailed artwork.
@@ -299,8 +312,9 @@ It suits both first-time artists and those who draw every day: the interactive t
 ## Requirements
 
 - watchOS 10.0 or later
-- iOS 17 or later
-- iOS 18.4 or later and a compatible iPhone for the Image Playground feature
+- iOS 17 or later on iPhone
+- iPadOS 17 or later on iPad
+- iOS 18.4 or later and a compatible iPhone, or iPadOS 18.4 or later and a compatible iPad, for the Image Playground feature
 - Xcode with watchOS development support for building from source
 
 ## Build from Source
